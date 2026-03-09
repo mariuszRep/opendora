@@ -1,0 +1,10 @@
+{
+  "name": "explore",
+  "description": "Fast agent specialized for exploring codebases. Use when you need to quickly find files by patterns, search code for keywords, or answer questions about the codebase.",
+  "mode": "subagent",
+  "model": {
+    "modelID": "gpt-5.1-codex",
+    "providerID": "openai"
+  },
+  "tools": []
+}

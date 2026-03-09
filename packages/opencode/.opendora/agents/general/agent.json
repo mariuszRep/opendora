@@ -1,0 +1,14 @@
+{
+  "name": "general",
+  "description": "General-purpose agent for researching complex questions and executing multi-step tasks. Use this agent to execute multiple units of work in parallel.",
+  "mode": "subagent",
+  "model": {
+    "modelID": "gpt-5.1-codex-mini",
+    "providerID": "openai"
+  },
+  "fallback_model": {
+    "modelID": "minimax-m2.5-free",
+    "providerID": "opencode"
+  },
+  "tools": []
+}

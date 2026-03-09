@@ -15,7 +15,6 @@ import { Format } from "../format"
 import { TuiRoutes } from "./routes/tui"
 import { Instance } from "../project/instance"
 import { Vcs } from "../project/vcs"
-import { Agent } from "../agent/agent"
 import { Skill } from "../skill/skill"
 import { Auth } from "../auth"
 import { Flag } from "../flag/flag"
@@ -29,6 +28,8 @@ import { FileRoutes } from "./routes/file"
 import { ConfigRoutes } from "./routes/config"
 import { ExperimentalRoutes } from "./routes/experimental"
 import { ProviderRoutes } from "./routes/provider"
+import { AgentRoutes } from "./routes/agent"
+import { Agent } from "../agent/agent"
 import { lazy } from "../util/lazy"
 import { InstanceBootstrap } from "../project/bootstrap"
 import { NotFoundError } from "../storage/db"
@@ -396,28 +397,7 @@ export namespace Server {
             return c.json(true)
           },
         )
-        .get(
-          "/agent",
-          describeRoute({
-            summary: "List agents",
-            description: "Get a list of all available AI agents in the OpenCode system.",
-            operationId: "app.agents",
-            responses: {
-              200: {
-                description: "List of agents",
-                content: {
-                  "application/json": {
-                    schema: resolver(Agent.Info.array()),
-                  },
-                },
-              },
-            },
-          }),
-          async (c) => {
-            const modes = await Agent.list()
-            return c.json(modes)
-          },
-        )
+        .route("/agent", AgentRoutes())
         .get(
           "/skill",
           describeRoute({
@@ -599,6 +579,9 @@ export namespace Server {
     if (!server) throw new Error(`Failed to start server on port ${opts.port}`)
 
     _url = server.url
+
+    // Eagerly seed agents on startup so PERSONA.md files exist before first UI load
+    Agent.list().catch(() => {})
 
     const shouldPublishMDNS =
       opts.mdns &&

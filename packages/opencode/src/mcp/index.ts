@@ -112,6 +112,10 @@ export namespace MCP {
   function registerNotificationHandlers(client: MCPClient, serverName: string) {
     client.setNotificationHandler(ToolListChangedNotificationSchema, async () => {
       log.info("tools list changed notification received", { server: serverName })
+      // Invalidate the tools cache for this server so the next call re-fetches
+      state().then((s) => {
+        delete s.toolsCache[serverName]
+      })
       Bus.publish(ToolsChanged, { server: serverName })
     })
   }
@@ -193,6 +197,7 @@ export namespace MCP {
       return {
         status,
         clients,
+        toolsCache: {} as Record<string, MCPToolDef[]>,
       }
     },
     async (state) => {
@@ -559,6 +564,7 @@ export namespace MCP {
         log.error("Failed to close MCP client", { name, error })
       })
       delete s.clients[name]
+      delete s.toolsCache[name]
     }
     s.status[name] = { status: "disabled" }
   }
@@ -577,6 +583,11 @@ export namespace MCP {
 
     const toolsResults = await Promise.all(
       connectedClients.map(async ([clientName, client]) => {
+        // Return cached tool list if available — invalidated by ToolListChanged notifications
+        // or when a client is removed due to failure (openclaw-inspired TTL-free cache)
+        if (s.toolsCache[clientName]) {
+          return { clientName, client, toolsResult: { tools: s.toolsCache[clientName] } }
+        }
         const toolsResult = await client.listTools().catch((e) => {
           log.error("failed to get tools", { clientName, error: e.message })
           const failedStatus = {
@@ -585,8 +596,12 @@ export namespace MCP {
           }
           s.status[clientName] = failedStatus
           delete s.clients[clientName]
+          delete s.toolsCache[clientName]
           return undefined
         })
+        if (toolsResult) {
+          s.toolsCache[clientName] = toolsResult.tools
+        }
         return { clientName, client, toolsResult }
       }),
     )

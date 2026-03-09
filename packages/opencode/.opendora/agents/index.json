@@ -1,0 +1,42 @@
+{
+  "agents": [
+    {
+      "id": "build",
+      "name": "build",
+      "mode": "primary"
+    },
+    {
+      "id": "plan",
+      "name": "plan",
+      "mode": "primary"
+    },
+    {
+      "id": "general",
+      "name": "general",
+      "mode": "subagent"
+    },
+    {
+      "id": "explore",
+      "name": "explore",
+      "mode": "subagent"
+    },
+    {
+      "id": "compaction",
+      "name": "compaction",
+      "mode": "primary",
+      "hidden": true
+    },
+    {
+      "id": "title",
+      "name": "title",
+      "mode": "primary",
+      "hidden": true
+    },
+    {
+      "id": "summary",
+      "name": "summary",
+      "mode": "primary",
+      "hidden": true
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "plan",
+  "description": "Plan mode. Disallows all edit tools.",
+  "mode": "primary",
+  "model": {
+    "modelID": "gpt-5.4",
+    "providerID": "openai"
+  },
+  "tools": [
+    "bash",
+    "read",
+    "glob",
+    "grep",
+    "task",
+    "webfetch",
+    "websearch",
+    "codesearch",
+    "question"
+  ]
+}

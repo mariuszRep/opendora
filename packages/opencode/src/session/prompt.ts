@@ -553,6 +553,42 @@ export namespace SessionPrompt {
         continue
       }
 
+      // model switched — compact when conversation is substantial so the new provider
+      // starts with a warm summary instead of processing the full cold history
+      // (threshold: 1/4 of the new model's context window, CoPaw-style auto-compact)
+      if (
+        lastFinished &&
+        lastFinished.summary !== true &&
+        (lastFinished.providerID !== lastUser.model.providerID ||
+          lastFinished.modelID !== lastUser.model.modelID)
+      ) {
+        const cfg = await Config.get()
+        if (cfg.compaction?.auto !== false) {
+          const ctx = model.limit.context
+          const tokenCount =
+            lastFinished.tokens.total ||
+            lastFinished.tokens.input +
+              lastFinished.tokens.output +
+              lastFinished.tokens.cache.read +
+              lastFinished.tokens.cache.write
+          const switchThreshold = ctx > 0 ? ctx / 4 : 20_000
+          if (tokenCount >= switchThreshold) {
+            log.info("model switched with substantial context — auto-compacting", {
+              from: `${lastFinished.providerID}/${lastFinished.modelID}`,
+              to: `${lastUser.model.providerID}/${lastUser.model.modelID}`,
+              tokens: tokenCount,
+            })
+            await SessionCompaction.create({
+              sessionID,
+              agent: lastUser.agent,
+              model: lastUser.model,
+              auto: true,
+            })
+            continue
+          }
+        }
+      }
+
       // normal processing
       const agent = await Agent.get(lastUser.agent)
       const maxSteps = agent.steps ?? Infinity

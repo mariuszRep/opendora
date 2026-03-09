@@ -1,0 +1,24 @@
+{
+  "name": "build",
+  "description": "The default agent. Executes tools based on configured permissions.",
+  "mode": "primary",
+  "model": {
+    "modelID": "minimax-m2.5-free",
+    "providerID": "opencode"
+  },
+  "tools": [
+    "bash",
+    "read",
+    "glob",
+    "grep",
+    "edit",
+    "write",
+    "task",
+    "webfetch",
+    "todowrite",
+    "websearch",
+    "codesearch",
+    "apply_patch",
+    "question"
+  ]
+}

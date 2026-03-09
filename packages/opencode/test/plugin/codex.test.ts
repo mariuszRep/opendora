@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import {
+  codexCatalogToProviderModels,
+  codexRemoteModelToProviderModel,
   parseJwtClaims,
   extractAccountIdFromClaims,
   extractAccountId,
@@ -118,6 +120,56 @@ describe("plugin.codex", () => {
           refresh_token: "rt",
         }),
       ).toBe("acc-123")
+    })
+  })
+
+  describe("codex model catalog mapping", () => {
+    test("maps a remote codex model into opencode provider shape", () => {
+      const mapped = codexRemoteModelToProviderModel({
+        slug: "gpt-5.3-codex",
+        display_name: "GPT-5.3 Codex",
+        supported_reasoning_levels: [{ effort: "medium" }],
+        context_window: 400000,
+        input_modalities: ["text", "image"],
+      })
+
+      expect(mapped.id).toBe("gpt-5.3-codex")
+      expect(mapped.api.id).toBe("gpt-5.3-codex")
+      expect(mapped.api.url).toBe("https://chatgpt.com/backend-api/codex")
+      expect(mapped.capabilities.reasoning).toBe(true)
+      expect(mapped.capabilities.input.image).toBe(true)
+      expect(mapped.cost.input).toBe(0)
+    })
+
+    test("filters hidden and API-unsupported models from the remote catalog", () => {
+      const models = codexCatalogToProviderModels([
+        {
+          slug: "gpt-5.3-codex",
+          display_name: "GPT-5.3 Codex",
+          visibility: "list",
+          supported_in_api: true,
+        },
+        {
+          slug: "gpt-5.1-codex",
+          display_name: "GPT-5.1 Codex",
+          visibility: "hide",
+          supported_in_api: true,
+        },
+        {
+          slug: "gpt-5.4",
+          display_name: "GPT-5.4",
+          visibility: "list",
+          supported_in_api: true,
+        },
+        {
+          slug: "internal-preview",
+          display_name: "Internal Preview",
+          visibility: "list",
+          supported_in_api: false,
+        },
+      ])
+
+      expect(Object.keys(models)).toEqual(["gpt-5.3-codex", "gpt-5.4"])
     })
   })
 })
