@@ -46,6 +46,9 @@ import { applyPatch } from "diff"
 
 type ModeOption = { id: string; name: string; description?: string }
 type ModelOption = { modelId: string; name: string }
+type CachedMessagePart = Pick<Extract<SessionMessageResponse["parts"][number], { type: "text" | "reasoning" }>, "id" | "type"> & {
+  ignored?: boolean
+}
 
 const DEFAULT_VARIANT_VALUE = "default"
 
@@ -76,18 +79,21 @@ export namespace ACP {
     sdk: OpencodeClient,
     sessionID: string,
     directory: string,
+    messages?: SessionMessageResponse[],
   ): Promise<void> {
-    const messages = await sdk.session
-      .messages({ sessionID, directory }, { throwOnError: true })
-      .then((x) => x.data)
-      .catch((error) => {
-        log.error("failed to fetch messages for usage update", { error })
-        return undefined
-      })
+    const sessionMessages =
+      messages ??
+      (await sdk.session
+        .messages({ sessionID, directory }, { throwOnError: true })
+        .then((x) => x.data)
+        .catch((error) => {
+          log.error("failed to fetch messages for usage update", { error })
+          return undefined
+        }))
 
-    if (!messages) return
+    if (!sessionMessages) return
 
-    const assistantMessages = messages.filter(
+    const assistantMessages = sessionMessages.filter(
       (m): m is { info: AssistantMessage; parts: SessionMessageResponse["parts"] } => m.info.role === "assistant",
     )
 
@@ -137,6 +143,10 @@ export namespace ACP {
     private eventStarted = false
     private bashSnapshots = new Map<string, string>()
     private toolStarts = new Set<string>()
+    private providerCache = new Map<string, Awaited<ReturnType<OpencodeClient["config"]["providers"]>>["data"]["providers"]>()
+    private modeCache = new Map<string, ModeOption[]>()
+    private messageRoles = new Map<string, "assistant" | "user">()
+    private messageParts = new Map<string, { type: SessionMessageResponse["parts"][number]["type"]; ignored?: boolean }>()
     private permissionQueues = new Map<string, Promise<void>>()
     private permissionOptions: PermissionOption[] = [
       { optionId: "once", kind: "allow_once", name: "Allow once" },
@@ -180,6 +190,14 @@ export namespace ACP {
 
     private async handleEvent(event: Event) {
       switch (event.type) {
+        case "message.updated": {
+          const info = event.properties.info
+          if (info.role === "assistant" || info.role === "user") {
+            this.messageRoles.set(this.messageKey(info.sessionID, info.id), info.role)
+          }
+          return
+        }
+
         case "permission.asked": {
           const permission = event.properties
           const session = this.sessionManager.tryGet(permission.sessionID)
@@ -265,6 +283,7 @@ export namespace ACP {
           log.info("message part updated", { event: event.properties })
           const props = event.properties
           const part = props.part
+          this.cacheMessagePart(part.sessionID, part.messageID, part)
           const session = this.sessionManager.tryGet(part.sessionID)
           if (!session) return
           const sessionId = session.id
@@ -454,6 +473,46 @@ export namespace ACP {
           const session = this.sessionManager.tryGet(props.sessionID)
           if (!session) return
           const sessionId = session.id
+          const cachedPart = this.messageParts.get(this.partKey(props.sessionID, props.messageID, props.partID))
+          const cachedRole = this.messageRoles.get(this.messageKey(props.sessionID, props.messageID))
+
+          if (cachedPart && cachedRole === "assistant") {
+            if (cachedPart.type === "text" && props.field === "text" && cachedPart.ignored !== true) {
+              await this.connection
+                .sessionUpdate({
+                  sessionId,
+                  update: {
+                    sessionUpdate: "agent_message_chunk",
+                    content: {
+                      type: "text",
+                      text: props.delta,
+                    },
+                  },
+                })
+                .catch((error) => {
+                  log.error("failed to send text delta to ACP", { error })
+                })
+              return
+            }
+
+            if (cachedPart.type === "reasoning" && props.field === "text") {
+              await this.connection
+                .sessionUpdate({
+                  sessionId,
+                  update: {
+                    sessionUpdate: "agent_thought_chunk",
+                    content: {
+                      type: "text",
+                      text: props.delta,
+                    },
+                  },
+                })
+                .catch((error) => {
+                  log.error("failed to send reasoning delta to ACP", { error })
+                })
+              return
+            }
+          }
 
           const message = await this.sdk.session
             .message(
@@ -471,9 +530,11 @@ export namespace ACP {
             })
 
           if (!message || message.info.role !== "assistant") return
+          this.messageRoles.set(this.messageKey(props.sessionID, props.messageID), message.info.role)
 
           const part = message.parts.find((p) => p.id === props.partID)
           if (!part) return
+          this.cacheMessagePart(props.sessionID, props.messageID, part)
 
           if (part.type === "text" && props.field === "text" && part.ignored !== true) {
             await this.connection
@@ -645,11 +706,10 @@ export namespace ACP {
         }
 
         for (const msg of messages ?? []) {
-          log.debug("replay message", msg)
           await this.processMessage(msg)
         }
 
-        await sendUsageUpdate(this.connection, this.sdk, sessionId, directory)
+        await sendUsageUpdate(this.connection, this.sdk, sessionId, directory, messages)
 
         return result
       } catch (e) {
@@ -755,11 +815,10 @@ export namespace ACP {
           })
 
         for (const msg of messages ?? []) {
-          log.debug("replay message", msg)
           await this.processMessage(msg)
         }
 
-        await sendUsageUpdate(this.connection, this.sdk, sessionId, directory)
+        await sendUsageUpdate(this.connection, this.sdk, sessionId, directory, messages)
 
         return mode
       } catch (e) {
@@ -805,11 +864,12 @@ export namespace ACP {
     }
 
     private async processMessage(message: SessionMessageResponse) {
-      log.debug("process message", message)
       if (message.info.role !== "assistant" && message.info.role !== "user") return
       const sessionId = message.info.sessionID
+      this.messageRoles.set(this.messageKey(sessionId, message.info.id), message.info.role)
 
       for (const part of message.parts) {
+        this.cacheMessagePart(sessionId, message.info.id, part)
         if (part.type === "tool") {
           await this.toolStart(sessionId, part)
           switch (part.state.status) {
@@ -1106,7 +1166,30 @@ export namespace ACP {
         })
     }
 
+    private messageKey(sessionID: string, messageID: string) {
+      return `${sessionID}:${messageID}`
+    }
+
+    private partKey(sessionID: string, messageID: string, partID: string) {
+      return `${sessionID}:${messageID}:${partID}`
+    }
+
+    private cacheMessagePart(
+      sessionID: string,
+      messageID: string,
+      part: CachedMessagePart,
+    ) {
+      if (part.type !== "text" && part.type !== "reasoning") return
+      this.messageParts.set(this.partKey(sessionID, messageID, part.id), {
+        type: part.type,
+        ...("ignored" in part && typeof part.ignored === "boolean" ? { ignored: part.ignored } : {}),
+      })
+    }
+
     private async loadAvailableModes(directory: string): Promise<ModeOption[]> {
+      const cached = this.modeCache.get(directory)
+      if (cached) return cached
+
       const agents = await this.config.sdk.app
         .agents(
           {
@@ -1116,13 +1199,24 @@ export namespace ACP {
         )
         .then((resp) => resp.data!)
 
-      return agents
+      const modes = agents
         .filter((agent) => agent.mode !== "subagent" && !agent.hidden)
         .map((agent) => ({
           id: agent.name,
           name: agent.name,
           description: agent.description,
         }))
+      this.modeCache.set(directory, modes)
+      return modes
+    }
+
+    private async loadProviders(directory: string) {
+      const cached = this.providerCache.get(directory)
+      if (cached) return cached
+
+      const providers = await this.sdk.config.providers({ directory }).then((x) => x.data!.providers)
+      this.providerCache.set(directory, providers)
+      return providers
     }
 
     private async resolveModeState(
@@ -1149,7 +1243,7 @@ export namespace ACP {
       const model = await defaultModel(this.config, directory)
       const sessionId = params.sessionId
 
-      const providers = await this.sdk.config.providers({ directory }).then((x) => x.data!.providers)
+      const providers = await this.loadProviders(directory)
       const entries = sortProvidersByName(providers)
       const availableVariants = modelVariantsFromProviders(entries, model)
       const currentVariant = this.sessionManager.getVariant(sessionId)
@@ -1253,9 +1347,7 @@ export namespace ACP {
 
     async unstable_setSessionModel(params: SetSessionModelRequest) {
       const session = this.sessionManager.get(params.sessionId)
-      const providers = await this.sdk.config
-        .providers({ directory: session.cwd }, { throwOnError: true })
-        .then((x) => x.data!.providers)
+      const providers = await this.loadProviders(session.cwd)
 
       const selection = parseModelSelection(params.modelId, providers)
       this.sessionManager.setModel(session.id, selection.model)

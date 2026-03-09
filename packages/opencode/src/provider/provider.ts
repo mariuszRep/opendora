@@ -1162,6 +1162,7 @@ export namespace Provider {
       const availableModels = Object.keys(provider.models)
       const matches = fuzzysort.go(modelID, availableModels, { limit: 3, threshold: -10000 })
       const suggestions = matches.map((m) => m.target)
+      if (matches.length > 0) return provider.models[matches[0].target]!
       throw new ModelNotFoundError({ providerID, modelID, suggestions })
     }
     return info

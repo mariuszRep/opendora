@@ -121,6 +121,7 @@ function createFakeAgent() {
   const updates = new Map<string, string[]>()
   const chunks = new Map<string, string>()
   const sessionUpdates: SessionUpdateParams[] = []
+  let sessionMessagesCalls = 0
   const record = (sessionId: string, type: string) => {
     const list = updates.get(sessionId) ?? []
     list.push(type)
@@ -149,6 +150,9 @@ function createFakeAgent() {
   const calls = {
     eventSubscribe: 0,
     sessionCreate: 0,
+    sessionMessage: 0,
+    configProviders: 0,
+    appAgents: 0,
   }
 
   const sdk = {
@@ -177,9 +181,11 @@ function createFakeAgent() {
         }
       },
       messages: async () => {
+        sessionMessagesCalls++
         return { data: [] }
       },
       message: async (params?: any) => {
+        calls.sessionMessage++
         // Return a message with parts that can be looked up by partID
         return {
           data: {
@@ -204,6 +210,7 @@ function createFakeAgent() {
     },
     config: {
       providers: async () => {
+        calls.configProviders++
         return {
           data: {
             providers: [
@@ -221,6 +228,7 @@ function createFakeAgent() {
     },
     app: {
       agents: async () => {
+        calls.appAgents++
         return {
           data: [
             {
@@ -254,7 +262,18 @@ function createFakeAgent() {
     ;(agent as any).eventAbort.abort()
   }
 
-  return { agent, controller, calls, updates, chunks, sessionUpdates, stop, sdk, connection }
+  return {
+    agent,
+    controller,
+    calls,
+    updates,
+    chunks,
+    sessionUpdates,
+    stop,
+    sdk,
+    connection,
+    getSessionMessagesCalls: () => sessionMessagesCalls,
+  }
 }
 
 describe("acp.agent event subscription", () => {
@@ -340,6 +359,68 @@ describe("acp.agent event subscription", () => {
         for (const part of tokenB) expect(a).not.toContain(part)
         for (const part of tokenA) expect(b).not.toContain(part)
 
+        stop()
+      },
+    })
+  })
+
+  test("uses cached part metadata for assistant deltas without refetching the message", async () => {
+    await using tmp = await tmpdir()
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const { agent, controller, chunks, stop, calls } = createFakeAgent()
+        const cwd = "/tmp/opencode-acp-test"
+        const sessionId = await agent.newSession({ cwd, mcpServers: [] } as any).then((x) => x.sessionId)
+
+        controller.push({
+          directory: cwd,
+          payload: {
+            type: "message.updated",
+            properties: {
+              info: {
+                id: "msg_cached",
+                sessionID: sessionId,
+                role: "assistant",
+              },
+            },
+          },
+        } as any)
+
+        controller.push({
+          directory: cwd,
+          payload: {
+            type: "message.part.updated",
+            properties: {
+              part: {
+                id: "part_cached",
+                sessionID: sessionId,
+                messageID: "msg_cached",
+                type: "text",
+                text: "",
+              },
+            },
+          },
+        } as any)
+
+        controller.push({
+          directory: cwd,
+          payload: {
+            type: "message.part.delta",
+            properties: {
+              sessionID: sessionId,
+              messageID: "msg_cached",
+              partID: "part_cached",
+              field: "text",
+              delta: "hello",
+            },
+          },
+        } as any)
+
+        await new Promise((r) => setTimeout(r, 20))
+
+        expect(chunks.get(sessionId)).toContain("hello")
+        expect(calls.sessionMessage).toBe(0)
         stop()
       },
     })
@@ -626,6 +707,99 @@ describe("acp.agent event subscription", () => {
           .filter((u) => u === "tool_call" || u === "tool_call_update")
 
         expect(types).toEqual(["tool_call", "tool_call_update", "tool_call_update"])
+        stop()
+      },
+    })
+  })
+
+  test("reuses replayed messages for usage update on loadSession", async () => {
+    await using tmp = await tmpdir()
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const { agent, stop, sdk } = createFakeAgent()
+        const cwd = "/tmp/opencode-acp-test"
+        const sessionId = await agent.newSession({ cwd, mcpServers: [] } as any).then((x) => x.sessionId)
+        let messageCalls = 0
+
+        sdk.session.messages = async () => {
+          messageCalls++
+          return {
+            data: [
+              {
+                info: {
+                  role: "assistant",
+                  sessionID: sessionId,
+                  providerID: "openai",
+                  modelID: "gpt-5",
+                  tokens: { input: 10, cache: { read: 5 } },
+                  cost: 0.01,
+                },
+                parts: [{ type: "text", text: "hello" }],
+              },
+            ],
+          }
+        }
+
+        sdk.config.providers = async () => ({
+          data: {
+            providers: [
+              {
+                id: "openai",
+                name: "OpenAI",
+                models: {
+                  "gpt-5": {
+                    id: "gpt-5",
+                    name: "GPT-5",
+                    limit: { context: 128000 },
+                  },
+                },
+              },
+            ],
+          },
+        })
+
+        await agent.loadSession({ sessionId, cwd, mcpServers: [] } as any)
+
+        expect(messageCalls).toBe(1)
+        stop()
+      },
+    })
+  })
+
+  test("reuses cached providers across repeated setSessionModel calls", async () => {
+    await using tmp = await tmpdir()
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const { agent, stop, calls } = createFakeAgent()
+        const cwd = "/tmp/opencode-acp-test"
+        const sessionId = await agent.newSession({ cwd, mcpServers: [] } as any).then((x) => x.sessionId)
+        const providerCallsAfterNewSession = calls.configProviders
+
+        await agent.unstable_setSessionModel({ sessionId, modelId: "opencode/big-pickle" } as any)
+        await agent.unstable_setSessionModel({ sessionId, modelId: "opencode/big-pickle" } as any)
+
+        expect(calls.configProviders).toBe(providerCallsAfterNewSession)
+        stop()
+      },
+    })
+  })
+
+  test("reuses cached modes across repeated setSessionMode calls", async () => {
+    await using tmp = await tmpdir()
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const { agent, stop, calls } = createFakeAgent()
+        const cwd = "/tmp/opencode-acp-test"
+        const sessionId = await agent.newSession({ cwd, mcpServers: [] } as any).then((x) => x.sessionId)
+        const agentCallsAfterNewSession = calls.appAgents
+
+        await agent.setSessionMode({ sessionId, modeId: "build" } as any)
+        await agent.setSessionMode({ sessionId, modeId: "build" } as any)
+
+        expect(calls.appAgents).toBe(agentCallsAfterNewSession)
         stop()
       },
     })
