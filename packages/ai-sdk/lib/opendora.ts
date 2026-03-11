@@ -1,11 +1,15 @@
 const OPENDORA_URL = process.env.NEXT_PUBLIC_OPENDORA_URL ?? "http://localhost:4096"
 
+export type SessionType = "role" | "scope" | "worker" | "scratchpad"
+
 export type Session = {
   id: string
   projectID: string
   directory: string
   parentID?: string
   title?: string
+  agentID?: string
+  sessionType?: SessionType
   time: { created: number; updated: number }
 }
 
@@ -54,8 +58,14 @@ export type ToolPart = {
   sessionID: string
   messageID: string
   type: "tool"
+  callID: string
   tool: string
-  state: { status: "pending" | "running" | "completed" | "error"; [k: string]: unknown }
+  state:
+    | { status: "pending"; input: Record<string, unknown>; metadata?: Record<string, unknown> }
+    | { status: "running"; input: Record<string, unknown>; metadata?: Record<string, unknown> }
+    | { status: "completed"; input: Record<string, unknown>; output: unknown; metadata?: Record<string, unknown> }
+    | { status: "error"; input: Record<string, unknown>; error: string; metadata?: Record<string, unknown> }
+  metadata?: Record<string, unknown>
 }
 
 export type Part =
@@ -67,6 +77,31 @@ export type Part =
 export type MessageWithParts = {
   info: Message
   parts: Part[]
+}
+
+export type QuestionOption = {
+  label: string
+  description: string
+}
+
+export type QuestionInfo = {
+  question: string
+  header: string
+  options: QuestionOption[]
+  multiple?: boolean
+  custom?: boolean
+}
+
+export type QuestionAnswer = string[]
+
+export type QuestionRequest = {
+  id: string
+  sessionID: string
+  questions: QuestionInfo[]
+  tool?: {
+    messageID: string
+    callID: string
+  }
 }
 
 export type Provider = {
@@ -130,6 +165,9 @@ export type Event =
   | { type: "server.heartbeat"; properties: Record<string, never> }
   | { type: "message.updated"; properties: { info: Message } }
   | { type: "message.part.updated"; properties: { part: Part; delta?: string } }
+  | { type: "question.asked"; properties: QuestionRequest }
+  | { type: "question.replied"; properties: { sessionID: string; requestID: string; answers: QuestionAnswer[] } }
+  | { type: "question.rejected"; properties: { sessionID: string; requestID: string } }
   | { type: "session.created"; properties: { info: Session } }
   | { type: "session.updated"; properties: { info: Session } }
   | { type: "session.deleted"; properties: { sessionID: string } }
@@ -162,6 +200,8 @@ export const opendora = {
     messages: (sessionID: string) => req<MessageWithParts[]>(`/session/${sessionID}/message`),
     abort: (sessionID: string) =>
       req<boolean>(`/session/${sessionID}/abort`, { method: "POST", body: JSON.stringify({}) }),
+    setAgent: (sessionID: string, agentID: string | null) =>
+      req<Session>(`/session/${sessionID}`, { method: "PATCH", body: JSON.stringify({ agentID }) }),
     prompt: (
       sessionID: string,
       input: {
@@ -190,6 +230,19 @@ export const opendora = {
         body: JSON.stringify({ method, code }),
       }),
   },
+  question: {
+    list: () => req<QuestionRequest[]>("/question"),
+    reply: (requestID: string, answers: QuestionAnswer[]) =>
+      req<boolean>(`/question/${requestID}/reply`, {
+        method: "POST",
+        body: JSON.stringify({ answers }),
+      }),
+    reject: (requestID: string) =>
+      req<boolean>(`/question/${requestID}/reject`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      }),
+  },
   auth: {
     set: (providerID: string, info: AuthInfo) =>
       req<boolean>(`/auth/${providerID}`, { method: "PUT", body: JSON.stringify(info) }),
@@ -199,6 +252,9 @@ export const opendora = {
   agent: {
     list: () => req<Agent[]>("/agent"),
     get: (id: string) => req<Agent>(`/agent/${id}`),
+    mainSession: (id: string) => req<Session>(`/agent/${id}/main-session`),
+    setMainSession: (id: string, sessionID: string) =>
+      req<Session>(`/agent/${id}/main-session`, { method: "PUT", body: JSON.stringify({ sessionID }) }),
     create: (input: { id?: string; config: AgentConfig; persona?: string }) =>
       req<AgentEntry>("/agent", { method: "POST", body: JSON.stringify(input) }),
     update: (id: string, input: { config?: Partial<AgentConfig>; persona?: string }) =>
@@ -210,6 +266,40 @@ export const opendora = {
     generate: (input: { description: string; model?: { providerID: string; modelID: string } }) =>
       req<GeneratedAgent>("/agent/generate", { method: "POST", body: JSON.stringify(input) }),
     tools: () => req<string[]>("/agent/tools"),
+  },
+  voice: {
+    stt: async (audioBlob: Blob): Promise<{ text: string }> => {
+      const formData = new FormData()
+      formData.append("audio", audioBlob)
+      const res = await fetch(`${OPENDORA_URL}/voice/stt`, {
+        method: "POST",
+        body: formData,
+      })
+      if (!res.ok) {
+        const text = await res.text().catch(() => res.statusText)
+        throw new Error(`opendora /voice/stt ${res.status}: ${text}`)
+      }
+      return res.json()
+    },
+    tts: async (input: {
+      text: string
+      voice?: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer"
+      model?: "tts-1" | "tts-1-hd"
+      speed?: number
+    }): Promise<Blob> => {
+      const res = await fetch(`${OPENDORA_URL}/voice/tts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+      })
+      if (!res.ok) {
+        const text = await res.text().catch(() => res.statusText)
+        throw new Error(`opendora /voice/tts ${res.status}: ${text}`)
+      }
+      return res.blob()
+    },
   },
   events: {
     subscribe: (onEvent: (event: Event) => void): () => void => {

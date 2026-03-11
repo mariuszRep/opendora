@@ -267,6 +267,7 @@ describe("session.llm.stream", () => {
         const resolved = await Provider.getModel(providerID, model.id)
         const sessionID = "session-test-1"
         const agent = {
+          id: "test-agent",
           name: "test",
           mode: "primary",
           options: {},
@@ -397,6 +398,7 @@ describe("session.llm.stream", () => {
         const resolved = await Provider.getModel("openai", model.id)
         const sessionID = "session-test-2"
         const agent = {
+          id: "test-agent-2",
           name: "test",
           mode: "primary",
           options: {},
@@ -519,6 +521,7 @@ describe("session.llm.stream", () => {
         const resolved = await Provider.getModel(providerID, model.id)
         const sessionID = "session-test-3"
         const agent = {
+          id: "test-agent-3",
           name: "test",
           mode: "primary",
           options: {},
@@ -620,6 +623,7 @@ describe("session.llm.stream", () => {
         const resolved = await Provider.getModel(providerID, model.id)
         const sessionID = "session-test-4"
         const agent = {
+          id: "test-agent-4",
           name: "test",
           mode: "primary",
           options: {},

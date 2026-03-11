@@ -5,7 +5,6 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import {
@@ -38,13 +37,18 @@ function formatSessionTitle(session: { title?: string; time: { created: number }
 }
 
 export function Header() {
-  const { selectedAgent, selectedSession, sessions, selectSession } = useOpendoraContext()
-  const [open, setOpen] = useState(false)
+  const { selectedAgent, selectAgent, selectedSession, agentSessions, selectSession, agents } =
+    useOpendoraContext()
+
+  const [sessionOpen, setSessionOpen] = useState(false)
+  const [agentOpen, setAgentOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  const visibleAgents = agents.filter((a) => !a.hidden)
 
   return (
     <header className="border-b bg-background sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
@@ -54,15 +58,50 @@ export function Header() {
 
         <Breadcrumb>
           <BreadcrumbList>
+            {/* Agent — click to switch agent (navigates to its main session) */}
             <BreadcrumbItem>
-              <BreadcrumbPage className="capitalize font-medium">{selectedAgent}</BreadcrumbPage>
+              {mounted ? (
+                <DropdownMenu open={agentOpen} onOpenChange={setAgentOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-1 text-sm font-medium hover:text-foreground transition-colors">
+                      <span className="capitalize">{selectedAgent}</span>
+                      <ChevronDownIcon className="size-3 opacity-50" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-48 p-0">
+                    <Command>
+                      <CommandInput placeholder="Switch agent…" />
+                      <CommandList>
+                        <CommandEmpty>No agents found.</CommandEmpty>
+                        <CommandGroup>
+                          {visibleAgents.map((agent) => (
+                            <CommandItem
+                              key={agent.name}
+                              value={agent.name}
+                              onSelect={() => {
+                                selectAgent(agent.name)
+                                setAgentOpen(false)
+                              }}
+                            >
+                              <span className="capitalize">{agent.name}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <span className="text-sm font-medium capitalize">{selectedAgent}</span>
+              )}
             </BreadcrumbItem>
 
             <BreadcrumbSeparator />
 
+            {/* Session — list scoped to the current agent */}
             <BreadcrumbItem>
               {mounted ? (
-                <DropdownMenu open={open} onOpenChange={setOpen}>
+                <DropdownMenu open={sessionOpen} onOpenChange={setSessionOpen}>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
                       <span>
@@ -75,18 +114,23 @@ export function Header() {
                     <Command>
                       <CommandInput placeholder="Search sessions…" />
                       <CommandList>
-                        <CommandEmpty>No sessions found.</CommandEmpty>
+                        <CommandEmpty>No sessions for this agent.</CommandEmpty>
                         <CommandGroup>
-                          {sessions.map((session) => (
+                          {agentSessions.map((session) => (
                             <CommandItem
                               key={session.id}
                               value={formatSessionTitle(session)}
                               onSelect={() => {
                                 selectSession(session.id)
-                                setOpen(false)
+                                setSessionOpen(false)
                               }}
                             >
-                              {formatSessionTitle(session)}
+                              <span className="flex-1">{formatSessionTitle(session)}</span>
+                              {session.sessionType === "role" && (
+                                <span className="ml-2 rounded px-1 py-px text-[9px] font-medium bg-primary/10 text-primary">
+                                  main
+                                </span>
+                              )}
                             </CommandItem>
                           ))}
                         </CommandGroup>

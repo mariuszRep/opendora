@@ -7,6 +7,11 @@ import { GrepTool } from "./grep"
 import { BatchTool } from "./batch"
 import { ReadTool } from "./read"
 import { TaskTool } from "./task"
+import { DelegateTool } from "./delegate"
+import { PingTool } from "./ping"
+import { PingMainTool } from "./ping_main"
+import { PingSessionTool } from "./ping_session"
+import { SpawnSessionTool } from "./spawn_session"
 import { TodoWriteTool, TodoReadTool } from "./todo"
 import { WebFetchTool } from "./webfetch"
 import { WriteTool } from "./write"
@@ -110,6 +115,11 @@ export namespace ToolRegistry {
       EditTool,
       WriteTool,
       TaskTool,
+      DelegateTool,
+      PingTool,
+      PingMainTool,
+      PingSessionTool,
+      SpawnSessionTool,
       WebFetchTool,
       TodoWriteTool,
       // TodoReadTool,

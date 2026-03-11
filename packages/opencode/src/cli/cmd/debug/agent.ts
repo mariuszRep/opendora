@@ -80,7 +80,26 @@ async function resolveTools(agent: Agent.Info, availableTools: Awaited<ReturnTyp
     agent.permission,
   )
   const resolved: Record<string, boolean> = {}
+  
+  // Apply agent's tools filter
+  const allowedTools = new Set(agent.tools || [])
+  
   for (const tool of availableTools) {
+    // Filter by agent's tools configuration
+    if (agent.tools) {
+      if (agent.tools.length === 0) {
+        // Empty tools array means no tools allowed
+        resolved[tool.id] = false
+        continue
+      }
+      // Only allow tools in the agent's tools array
+      if (!allowedTools.has(tool.id)) {
+        resolved[tool.id] = false
+        continue
+      }
+    }
+    
+    // Apply permission filtering
     resolved[tool.id] = !disabled.has(tool.id)
   }
   return resolved

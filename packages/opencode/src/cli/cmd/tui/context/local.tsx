@@ -13,6 +13,7 @@ import { useArgs } from "./args"
 import { useSDK } from "./sdk"
 import { RGBA } from "@opentui/core"
 import { Filesystem } from "@/util/filesystem"
+import { useRoute } from "./route"
 
 export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
   name: "Local",
@@ -20,6 +21,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
     const sync = useSync()
     const sdk = useSDK()
     const toast = useToast()
+    const route = useRoute()
 
     function isModelValid(model: { providerID: string; modelID: string }) {
       const provider = sync.data.provider.find((x) => x.id === model.providerID)
@@ -67,15 +69,35 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
               duration: 3000,
             })
           setAgentStore("current", name)
+          // Navigate to the agent's main session when switching agents
+          sdk.client.app.agentMainSession({ id: name }).then((result) => {
+            if (result.data) {
+              route.navigate({ type: "session", sessionID: result.data.id })
+            }
+          }).catch(() => {})
+        },
+        /** Update current agent without triggering session navigation (used when session drives the agent). */
+        setWithoutNavigate(name: string) {
+          if (!agents().some((x) => x.name === name)) return
+          setAgentStore("current", name)
         },
         move(direction: 1 | -1) {
+          let nextName: string | undefined
           batch(() => {
             let next = agents().findIndex((x) => x.name === agentStore.current) + direction
             if (next < 0) next = agents().length - 1
             if (next >= agents().length) next = 0
             const value = agents()[next]
             setAgentStore("current", value.name)
+            nextName = value.name
           })
+          if (nextName) {
+            sdk.client.app.agentMainSession({ id: nextName }).then((result) => {
+              if (result.data) {
+                route.navigate({ type: "session", sessionID: result.data.id })
+              }
+            }).catch(() => {})
+          }
         },
         color(name: string) {
           const index = visibleAgents().findIndex((x) => x.name === name)

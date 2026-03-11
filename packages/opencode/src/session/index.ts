@@ -1,6 +1,5 @@
 import { Slug } from "@opencode-ai/util/slug"
 import path from "path"
-import { BusEvent } from "@/bus/bus-event"
 import { Bus } from "@/bus"
 import { Decimal } from "decimal.js"
 import z from "zod"
@@ -10,7 +9,7 @@ import { Flag } from "../flag/flag"
 import { Identifier } from "../id/id"
 import { Installation } from "../installation"
 
-import { Database, NotFoundError, eq, and, or, gte, isNull, desc, like, inArray, lt } from "../storage/db"
+import { Database, NotFoundError, eq, and, gte, isNull, desc, like, inArray, lt, sql } from "../storage/db"
 import type { SQL } from "../storage/db"
 import { SessionTable, MessageTable, PartTable } from "./session.sql"
 import { ProjectTable } from "../project/project.sql"
@@ -29,6 +28,18 @@ import { Global } from "@/global"
 import type { LanguageModelV2Usage } from "@ai-sdk/provider"
 import { iife } from "@/util/iife"
 
+import { SessionManager, RetentionDaemon } from "@pingpong/core"
+import type { SessionType, SessionStatus, RetentionPolicy, SendPolicy, CreateSessionOptions } from "@pingpong/core"
+import { openDoraStorageAdapter } from "./opendora-storage-adapter"
+import { fromRow } from "./from-row"
+import { SessionEvents } from "./events"
+import { BusBridge } from "./bus-bridge"
+
+// ─── PingPong SessionManager singleton ───────────────────────────────────────
+
+export const sessionManager = new SessionManager(openDoraStorageAdapter)
+export const retentionDaemon = new RetentionDaemon()
+
 export namespace Session {
   const log = Log.create({ service: "session" })
 
@@ -43,41 +54,6 @@ export namespace Session {
     return new RegExp(
       `^(${parentTitlePrefix}|${childTitlePrefix})\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$`,
     ).test(title)
-  }
-
-  type SessionRow = typeof SessionTable.$inferSelect
-
-  export function fromRow(row: SessionRow): Info {
-    const summary =
-      row.summary_additions !== null || row.summary_deletions !== null || row.summary_files !== null
-        ? {
-            additions: row.summary_additions ?? 0,
-            deletions: row.summary_deletions ?? 0,
-            files: row.summary_files ?? 0,
-            diffs: row.summary_diffs ?? undefined,
-          }
-        : undefined
-    const share = row.share_url ? { url: row.share_url } : undefined
-    const revert = row.revert ?? undefined
-    return {
-      id: row.id,
-      slug: row.slug,
-      projectID: row.project_id,
-      directory: row.directory,
-      parentID: row.parent_id ?? undefined,
-      title: row.title,
-      version: row.version,
-      summary,
-      share,
-      revert,
-      permission: row.permission ?? undefined,
-      time: {
-        created: row.time_created,
-        updated: row.time_updated,
-        compacting: row.time_compacting ?? undefined,
-        archived: row.time_archived ?? undefined,
-      },
-    }
   }
 
   export function toRow(info: Info) {
@@ -100,6 +76,23 @@ export namespace Session {
       time_updated: info.time.updated,
       time_compacting: info.time.compacting,
       time_archived: info.time.archived,
+      // PingPong fields
+      session_type: info.sessionType,
+      session_status: info.sessionStatus,
+      agent_id: info.agentID,
+      owner_id: info.ownerID,
+      owner_kind: info.ownerKind,
+      allowed_agents: info.allowedAgents ? JSON.stringify(info.allowedAgents) : undefined,
+      send_policy: info.sendPolicy ? JSON.stringify(info.sendPolicy) : undefined,
+      retention: info.retention ? JSON.stringify(info.retention) : undefined,
+      spawn_depth: info.spawnDepth,
+      spawn_parent_session_id: info.spawnParentSessionID,
+      spawn_parent_message_id: info.spawnParentMessageID,
+      input_tokens: info.tokens?.input,
+      output_tokens: info.tokens?.output,
+      cache_read_tokens: info.tokens?.cacheRead,
+      cache_write_tokens: info.tokens?.cacheWrite,
+      compaction_count: info.tokens?.compactionCount,
     }
   }
 
@@ -112,6 +105,9 @@ export namespace Session {
     }
     return `${title} (fork #1)`
   }
+
+  const SessionTypeSchema = z.enum(["role", "scope", "worker", "scratchpad"])
+  const SessionStatusSchema = z.enum(["active", "archived", "closed"])
 
   export const Info = z
     .object({
@@ -150,6 +146,36 @@ export namespace Session {
           diff: z.string().optional(),
         })
         .optional(),
+      // ─── PingPong fields ─────────────────────────────────────────────────
+      sessionType: SessionTypeSchema.optional(),
+      sessionStatus: SessionStatusSchema.optional(),
+      agentID: z.string().optional(),
+      ownerID: z.string().optional(),
+      ownerKind: z.enum(["user", "agent", "service"]).optional(),
+      allowedAgents: z.array(z.string()).optional(),
+      sendPolicy: z.object({ allow: z.array(z.string()), deny: z.array(z.string()) }).optional(),
+      retention: z
+        .object({
+          autoArchive: z.boolean().optional(),
+          autoDelete: z.boolean().optional(),
+          ttlMs: z.number().optional(),
+          maxMessages: z.number().optional(),
+          maxAgeDays: z.number().optional(),
+          onExpire: z.enum(["archive", "close", "delete"]).optional(),
+        })
+        .optional(),
+      spawnDepth: z.number().optional(),
+      spawnParentSessionID: z.string().optional(),
+      spawnParentMessageID: z.string().optional(),
+      tokens: z
+        .object({
+          input: z.number(),
+          output: z.number(),
+          cacheRead: z.number(),
+          cacheWrite: z.number(),
+          compactionCount: z.number(),
+        })
+        .optional(),
     })
     .meta({
       ref: "Session",
@@ -174,40 +200,8 @@ export namespace Session {
   })
   export type GlobalInfo = z.output<typeof GlobalInfo>
 
-  export const Event = {
-    Created: BusEvent.define(
-      "session.created",
-      z.object({
-        info: Info,
-      }),
-    ),
-    Updated: BusEvent.define(
-      "session.updated",
-      z.object({
-        info: Info,
-      }),
-    ),
-    Deleted: BusEvent.define(
-      "session.deleted",
-      z.object({
-        info: Info,
-      }),
-    ),
-    Diff: BusEvent.define(
-      "session.diff",
-      z.object({
-        sessionID: z.string(),
-        diff: Snapshot.FileDiff.array(),
-      }),
-    ),
-    Error: BusEvent.define(
-      "session.error",
-      z.object({
-        sessionID: z.string().optional(),
-        error: MessageV2.Assistant.shape.error,
-      }),
-    ),
-  }
+  // Session bus events — sourced from events.ts to avoid circular deps with bus-bridge.ts.
+  export const Event = SessionEvents
 
   export const create = fn(
     z
@@ -215,6 +209,15 @@ export namespace Session {
         parentID: Identifier.schema("session").optional(),
         title: z.string().optional(),
         permission: Info.shape.permission,
+        sessionType: Info.shape.sessionType,
+        agentID: Info.shape.agentID,
+        ownerID: Info.shape.ownerID,
+        ownerKind: Info.shape.ownerKind,
+        retention: Info.shape.retention,
+        sendPolicy: Info.shape.sendPolicy,
+        spawnDepth: Info.shape.spawnDepth,
+        spawnParentSessionID: Info.shape.spawnParentSessionID,
+        spawnParentMessageID: Info.shape.spawnParentMessageID,
       })
       .optional(),
     async (input) => {
@@ -223,6 +226,15 @@ export namespace Session {
         directory: Instance.directory,
         title: input?.title,
         permission: input?.permission,
+        sessionType: input?.sessionType,
+        agentID: input?.agentID,
+        ownerID: input?.ownerID,
+        ownerKind: input?.ownerKind,
+        retention: input?.retention,
+        sendPolicy: input?.sendPolicy,
+        spawnDepth: input?.spawnDepth,
+        spawnParentSessionID: input?.spawnParentSessionID,
+        spawnParentMessageID: input?.spawnParentMessageID,
       })
     },
   )
@@ -270,18 +282,7 @@ export namespace Session {
   )
 
   export const touch = fn(Identifier.schema("session"), async (sessionID) => {
-    const now = Date.now()
-    Database.use((db) => {
-      const row = db
-        .update(SessionTable)
-        .set({ time_updated: now })
-        .where(eq(SessionTable.id, sessionID))
-        .returning()
-        .get()
-      if (!row) throw new NotFoundError({ message: `Session not found: ${sessionID}` })
-      const info = fromRow(row)
-      Database.effect(() => Bus.publish(Event.Updated, { info }))
-    })
+    await sessionManager.update(sessionID, { updatedAt: Date.now() })
   })
 
   export async function createNext(input: {
@@ -290,38 +291,69 @@ export namespace Session {
     parentID?: string
     directory: string
     permission?: PermissionNext.Ruleset
+    sessionType?: SessionType
+    agentID?: string
+    ownerID?: string
+    ownerKind?: "user" | "agent" | "service"
+    retention?: Partial<RetentionPolicy>
+    sendPolicy?: SendPolicy
+    spawnDepth?: number
+    spawnParentSessionID?: string
+    spawnParentMessageID?: string
   }) {
-    const result: Info = {
-      id: Identifier.descending("session", input.id),
-      slug: Slug.create(),
-      version: Installation.VERSION,
-      projectID: Instance.project.id,
+    const id = Identifier.descending("session", input.id)
+    const slug = Slug.create()
+    const now = Date.now()
+    const sessionType: SessionType = input.sessionType ?? (input.parentID ? "worker" : "scope")
+    const title = input.title ?? createDefaultTitle(!!input.parentID)
+
+    // Pre-register OpenDora-specific fields so the adapter can use them in createSession()
+    openDoraStorageAdapter.setCreateContext(id, {
+      projectId: Instance.project.id,
       directory: input.directory,
-      parentID: input.parentID,
-      title: input.title ?? createDefaultTitle(!!input.parentID),
+      version: Installation.VERSION,
+      slug,
+      parentId: input.parentID,
       permission: input.permission,
-      time: {
-        created: Date.now(),
-        updated: Date.now(),
-      },
+    })
+
+    const ppOpts: CreateSessionOptions = {
+      type: sessionType,
+      label: title,
+      spawnDepth: input.spawnDepth,
+      retention: input.retention,
+      sendPolicy: input.sendPolicy,
+      agentId: input.agentID,
+      ...(input.spawnParentSessionID && {
+        parent: { sessionId: input.spawnParentSessionID, messageId: input.spawnParentMessageID },
+      }),
     }
-    log.info("created", result)
-    Database.use((db) => {
-      db.insert(SessionTable).values(toRow(result)).run()
-      Database.effect(() =>
-        Bus.publish(Event.Created, {
-          info: result,
-        }),
-      )
-    })
-    const cfg = await Config.get()
-    if (!result.parentID && (Flag.OPENCODE_AUTO_SHARE || cfg.share === "auto"))
-      share(result.id).catch(() => {
-        // Silently ignore sharing errors during session creation
+
+    await sessionManager.create(id, ppOpts)
+    // SessionManager → adapter.createSession() → DB insert
+    // SessionManager → PPBus.publish("session.created") → BusBridge → OpenDora Bus.publish(SessionEvents.Created)
+
+    // Fetch the full row so we return a complete Session.Info (including OpenDora fields)
+    const row = Database.use((db) => db.select().from(SessionTable).where(eq(SessionTable.id, id)).get())
+    if (!row) throw new Error(`Session not found after create: ${id}`)
+    const result = fromRow(row)
+
+    log.info("created", { id, sessionType, title })
+
+    // Apply owner fields (not in PingPong's SessionMeta — update directly)
+    if (input.ownerID) {
+      Database.use((db) => {
+        db.update(SessionTable)
+          .set({ owner_id: input.ownerID, owner_kind: input.ownerKind ?? "user" })
+          .where(eq(SessionTable.id, id))
+          .run()
       })
-    Bus.publish(Event.Updated, {
-      info: result,
-    })
+    }
+
+    const cfg = await Config.get()
+    if (!input.parentID && (Flag.OPENCODE_AUTO_SHARE || cfg.share === "auto"))
+      share(id).catch(() => {})
+
     return result
   }
 
@@ -393,20 +425,33 @@ export namespace Session {
       time: z.number().optional(),
     }),
     async (input) => {
-      return Database.use((db) => {
-        const row = db
-          .update(SessionTable)
-          .set({ time_archived: input.time })
-          .where(eq(SessionTable.id, input.sessionID))
-          .returning()
-          .get()
-        if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
-        const info = fromRow(row)
-        Database.effect(() => Bus.publish(Event.Updated, { info }))
-        return info
-      })
+      if (input.time) {
+        await sessionManager.archive(input.sessionID)
+      } else {
+        // Unarchive — reopen brings status back to active
+        await sessionManager.reopen(input.sessionID)
+      }
+      const row = Database.use((db) => db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get())
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      return fromRow(row)
     },
   )
+
+  /** Close a session (PingPong "closed" status — different from archived). */
+  export const close = fn(Identifier.schema("session"), async (sessionID) => {
+    await sessionManager.close(sessionID)
+    const row = Database.use((db) => db.select().from(SessionTable).where(eq(SessionTable.id, sessionID)).get())
+    if (!row) throw new NotFoundError({ message: `Session not found: ${sessionID}` })
+    return fromRow(row)
+  })
+
+  /** Reopen a closed or archived session. */
+  export const reopen = fn(Identifier.schema("session"), async (sessionID) => {
+    await sessionManager.reopen(sessionID)
+    const row = Database.use((db) => db.select().from(SessionTable).where(eq(SessionTable.id, sessionID)).get())
+    if (!row) throw new NotFoundError({ message: `Session not found: ${sessionID}` })
+    return fromRow(row)
+  })
 
   export const setPermission = fn(
     z.object({
@@ -646,26 +691,193 @@ export namespace Session {
   })
 
   export const remove = fn(Identifier.schema("session"), async (sessionID) => {
-    const project = Instance.project
     try {
       const session = await get(sessionID)
-      for (const child of await children(sessionID)) {
+      // Recursively remove OpenDora fork-children (parent_id FK, not spawn parent)
+      for (const child of (await children(sessionID)) as Info[]) {
         await remove(child.id)
       }
       await unshare(sessionID).catch(() => {})
-      // CASCADE delete handles messages and parts automatically
-      Database.use((db) => {
-        db.delete(SessionTable).where(eq(SessionTable.id, sessionID)).run()
-        Database.effect(() =>
-          Bus.publish(Event.Deleted, {
-            info: session,
-          }),
-        )
-      })
+      // sessionManager.delete() handles DB delete + PingPong Bus event
+      // (BusBridge then fires OpenDora Bus.Deleted)
+      await sessionManager.delete(sessionID)
     } catch (e) {
       log.error(e)
     }
   })
+
+  // ─── New PingPong-backed helpers ───────────────────────────────────────────
+
+  /** Set the primary responding agent for this session. */
+  export const setAgentID = fn(
+    z.object({ sessionID: Identifier.schema("session"), agentID: z.string() }),
+    async (input) => {
+      await sessionManager.update(input.sessionID, { agentId: input.agentID })
+      const row = Database.use((db) => db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get())
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      return fromRow(row)
+    },
+  )
+
+  /** Set the session owner (user or agent). */
+  export const setOwner = fn(
+    z.object({
+      sessionID: Identifier.schema("session"),
+      ownerID: z.string(),
+      ownerKind: z.enum(["user", "agent", "service"]).default("user"),
+    }),
+    async (input) => {
+      return Database.use((db) => {
+        const row = db
+          .update(SessionTable)
+          .set({ owner_id: input.ownerID, owner_kind: input.ownerKind, time_updated: Date.now() })
+          .where(eq(SessionTable.id, input.sessionID))
+          .returning()
+          .get()
+        if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+        const info = fromRow(row)
+        Database.effect(() => Bus.publish(Event.Updated, { info }))
+        return info
+      })
+    },
+  )
+
+  /** Set the list of agents allowed to participate in this session. */
+  export const setAllowedAgents = fn(
+    z.object({ sessionID: Identifier.schema("session"), agents: z.array(z.string()) }),
+    async (input) => {
+      return Database.use((db) => {
+        const row = db
+          .update(SessionTable)
+          .set({ allowed_agents: JSON.stringify(input.agents), time_updated: Date.now() })
+          .where(eq(SessionTable.id, input.sessionID))
+          .returning()
+          .get()
+        if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+        const info = fromRow(row)
+        Database.effect(() => Bus.publish(Event.Updated, { info }))
+        return info
+      })
+    },
+  )
+
+  /** Set actor-level access control for this session. */
+  export const setSendPolicy = fn(
+    z.object({
+      sessionID: Identifier.schema("session"),
+      policy: z.object({ allow: z.array(z.string()), deny: z.array(z.string()) }),
+    }),
+    async (input) => {
+      await sessionManager.update(input.sessionID, { sendPolicy: input.policy as SendPolicy })
+      const row = Database.use((db) => db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get())
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      return fromRow(row)
+    },
+  )
+
+  /** Set the retention policy for this session. */
+  export const setRetention = fn(
+    z.object({ sessionID: Identifier.schema("session"), retention: Info.shape.retention.unwrap() }),
+    async (input) => {
+      await sessionManager.update(input.sessionID, { retention: input.retention as RetentionPolicy })
+      const row = Database.use((db) => db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get())
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      return fromRow(row)
+    },
+  )
+
+  /** Accumulate token counts at the session level (called after each LLM stream). */
+  export const incrementTokens = fn(
+    z.object({
+      sessionID: z.string(),
+      input: z.number().default(0),
+      output: z.number().default(0),
+      cacheRead: z.number().default(0),
+      cacheWrite: z.number().default(0),
+    }),
+    async (delta) => {
+      Database.use((db) => {
+        db.update(SessionTable)
+          .set({
+            input_tokens: sql`COALESCE(${SessionTable.input_tokens}, 0) + ${delta.input}`,
+            output_tokens: sql`COALESCE(${SessionTable.output_tokens}, 0) + ${delta.output}`,
+            cache_read_tokens: sql`COALESCE(${SessionTable.cache_read_tokens}, 0) + ${delta.cacheRead}`,
+            cache_write_tokens: sql`COALESCE(${SessionTable.cache_write_tokens}, 0) + ${delta.cacheWrite}`,
+            time_updated: Date.now(),
+          })
+          .where(eq(SessionTable.id, delta.sessionID))
+          .run()
+      })
+    },
+  )
+
+  /**
+   * Promote a session to be the agent's main (role) session.
+   * Demotes the previous main session (if different) to "scope".
+   * Also sets the session's agentID if not already set.
+   */
+  export const promoteToMain = fn(
+    z.object({ sessionID: Identifier.schema("session"), agentID: z.string() }),
+    async (input) => {
+      // Demote any existing role session for this agent (excluding the new one)
+      Database.use((db) =>
+        db
+          .update(SessionTable)
+          .set({ session_type: "scope", time_updated: Date.now() })
+          .where(
+            and(
+              eq(SessionTable.project_id, Instance.project.id),
+              eq(SessionTable.session_type, "role"),
+              eq(SessionTable.agent_id, input.agentID),
+            ),
+          )
+          .run(),
+      )
+      // Promote the target session: set type to "role" and assign agentID
+      Database.use((db) =>
+        db
+          .update(SessionTable)
+          .set({ session_type: "role", agent_id: input.agentID, time_updated: Date.now() })
+          .where(eq(SessionTable.id, input.sessionID))
+          .run(),
+      )
+      const row = Database.use((db) =>
+        db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get(),
+      )
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      return fromRow(row)
+    },
+  )
+
+  /**
+   * Get or create the "role" session for an agent — its permanent home session.
+   * Each agent has exactly one role session per project.
+   */
+  export async function ensureMainSession(agentID: string): Promise<Info> {
+    const row = Database.use((db) =>
+      db
+        .select()
+        .from(SessionTable)
+        .where(
+          and(
+            eq(SessionTable.project_id, Instance.project.id),
+            eq(SessionTable.session_type, "role"),
+            eq(SessionTable.agent_id, agentID),
+            isNull(SessionTable.parent_id),
+          ),
+        )
+        .get(),
+    )
+    if (row) return fromRow(row)
+
+    return createNext({
+      directory: Instance.directory,
+      title: `${agentID} (main)`,
+      sessionType: "role",
+      agentID,
+      retention: { onExpire: "archive" },
+    })
+  }
 
   export const updateMessage = fn(MessageV2.Info, async (msg) => {
     const time_created = msg.time.created

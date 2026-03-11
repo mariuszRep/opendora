@@ -6,6 +6,7 @@ import { AgentFile } from "../../agent/file"
 import { ToolRegistry } from "../../tool/registry"
 import { lazy } from "../../util/lazy"
 import { errors } from "../error"
+import { Session } from "../../session"
 
 export const AgentRoutes = lazy(() =>
   new Hono()
@@ -246,6 +247,67 @@ export const AgentRoutes = lazy(() =>
         const { persona } = c.req.valid("json")
         await Agent.setPersona(id, persona)
         return c.json(true)
+      },
+    )
+
+    // GET /agent/:id/main-session — get or create the main session for an agent
+    .get(
+      "/:id/main-session",
+      describeRoute({
+        summary: "Get agent main session",
+        description:
+          "Get or create the permanent 'role' session for an agent. When switching agents, this is the session that becomes active.",
+        operationId: "agent.mainSession",
+        responses: {
+          200: {
+            description: "Agent main session",
+            content: {
+              "application/json": {
+                schema: resolver(Session.Info),
+              },
+            },
+          },
+          ...errors(404),
+        },
+      }),
+      validator("param", z.object({ id: z.string() })),
+      async (c) => {
+        const { id } = c.req.valid("param")
+        const agent = await Agent.get(id)
+        if (!agent) return c.json({ error: `agent "${id}" not found` }, 404)
+        const session = await Session.ensureMainSession(id)
+        return c.json(session)
+      },
+    )
+
+    // PUT /agent/:id/main-session — promote a specific session to be the agent's main session
+    .put(
+      "/:id/main-session",
+      describeRoute({
+        summary: "Set agent main session",
+        description: "Promote a session to be the agent's main (role) session. Demotes the previous main session to scope.",
+        operationId: "agent.setMainSession",
+        responses: {
+          200: {
+            description: "Promoted session",
+            content: {
+              "application/json": {
+                schema: resolver(Session.Info),
+              },
+            },
+          },
+          ...errors(404),
+        },
+      }),
+      validator("param", z.object({ id: z.string() })),
+      validator("json", z.object({ sessionID: z.string() })),
+      async (c) => {
+        const { id } = c.req.valid("param")
+        const { sessionID } = c.req.valid("json")
+        const agent = await Agent.get(id)
+        if (!agent) return c.json({ error: `agent "${id}" not found` }, 404)
+        const session = await Session.promoteToMain({ sessionID, agentID: id })
+        return c.json(session)
       },
     )
 

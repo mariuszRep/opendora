@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { CheckIcon, ChevronDownIcon, ChevronRightIcon, Loader2Icon, SparklesIcon } from "lucide-react"
+import { CheckIcon, ChevronDownIcon, ChevronRightIcon, Loader2Icon, MessageSquareIcon, SparklesIcon, StarIcon, Trash2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { AgentDeleteDialog } from "@/components/agents/agent-delete-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -52,10 +53,10 @@ type ModelValue = { providerID: string; modelID: string } | undefined
 export default function AgentSettingsPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const { updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, agents, refreshProviders } =
+  const { updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, agents, refreshProviders, sessions, setAgentMainSession, selectSession } =
     useOpendoraContext()
 
-  const agent = agents.find((a) => a.name === id) as any
+  const agent = agents.find((a) => (a as any)._id === id || a.name === id) as any
 
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
@@ -75,6 +76,11 @@ export default function AgentSettingsPage() {
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [promotingSession, setPromotingSession] = useState<string | null>(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+
+  // Sessions that belong to this agent
+  const agentSessions = sessions.filter((s) => s.agentID === id)
 
   const modelList = useMemo(
     () =>
@@ -104,7 +110,7 @@ export default function AgentSettingsPage() {
   useEffect(() => {
     opendora.agent.tools().then((ids) => {
       setAvailableTools(ids.filter((t) => !HIDDEN_TOOLS.has(t)))
-    }).catch(() => {})
+    }).catch(() => { })
   }, [])
 
   // Load agent data — re-run when agent loads (agents list may arrive after mount)
@@ -125,7 +131,7 @@ export default function AgentSettingsPage() {
   // Load persona separately (network call, only on id change)
   useEffect(() => {
     if (!id) return
-    getAgentPersona(id).then(setPersona).catch(() => {})
+    getAgentPersona(id).then(setPersona).catch(() => { })
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleTool(toolId: string) {
@@ -166,7 +172,7 @@ export default function AgentSettingsPage() {
         steps: !isNaN(stepsNum) && stepsNum > 0 ? stepsNum : undefined,
         model,
         fallback_model: fallbackModel,
-        tools: selectedTools,
+        tools: selectedTools.length > 0 ? selectedTools : undefined,
       }
       await updateAgent(id, config, persona)
       router.push("/dashboard")
@@ -197,7 +203,7 @@ export default function AgentSettingsPage() {
           onOpenChange={(nextOpen) => {
             onOpenChange(nextOpen)
             if (nextOpen) {
-              refreshProviders().catch(() => {})
+              refreshProviders().catch(() => { })
             }
           }}
         >
@@ -261,26 +267,30 @@ export default function AgentSettingsPage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink
-                href="/dashboard"
-                className="cursor-pointer"
-                onClick={(e) => { e.preventDefault(); router.back() }}
-              >
+              <BreadcrumbLink href="/dashboard/settings">
+                Settings
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/dashboard/settings/agents">
                 Agents
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage className="capitalize">{id}</BreadcrumbPage>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Settings</BreadcrumbPage>
+              <BreadcrumbPage className="capitalize">{agent?.name || id}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
 
         <div className="flex gap-2">
+          {!agent?.native && (
+            <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)} disabled={saving}>
+              <Trash2Icon className="mr-1.5 size-3.5" />
+              Delete
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => router.push("/dashboard")} disabled={saving}>
             Cancel
           </Button>
@@ -469,9 +479,77 @@ export default function AgentSettingsPage() {
             />
           </div>
 
+          {/* Sessions */}
+          <div className="flex flex-col gap-2">
+            <Label>Sessions</Label>
+            <p className="text-xs text-muted-foreground -mt-1">
+              Sessions that belong to this agent. The <span className="font-medium text-primary">main</span> session is opened automatically when you switch to this agent.
+            </p>
+            {agentSessions.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">No sessions yet — one will be created automatically.</p>
+            ) : (
+              <div className="rounded-md border divide-y">
+                {agentSessions.map((session) => {
+                  const isMain = session.sessionType === "role"
+                  const title = session.title && !session.title.startsWith("New session")
+                    ? session.title
+                    : new Date(session.time.created).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+                  return (
+                    <div key={session.id} className="flex items-center gap-3 px-3 py-2.5">
+                      <MessageSquareIcon className="size-3.5 text-muted-foreground shrink-0" />
+                      <span className="flex-1 min-w-0 text-xs truncate">{title}</span>
+                      {isMain && (
+                        <span className="shrink-0 rounded px-1.5 py-px text-[9px] font-medium bg-primary/10 text-primary">main</span>
+                      )}
+                      {!isMain && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 gap-1 px-2 text-[11px] shrink-0"
+                          disabled={promotingSession === session.id}
+                          onClick={async () => {
+                            setPromotingSession(session.id)
+                            try {
+                              await setAgentMainSession(id, session.id)
+                            } finally {
+                              setPromotingSession(null)
+                            }
+                          }}
+                        >
+                          {promotingSession === session.id
+                            ? <Loader2Icon className="size-3 animate-spin" />
+                            : <StarIcon className="size-3" />}
+                          Set as main
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-2 text-[11px] shrink-0"
+                        onClick={() => { selectSession(session.id); router.push("/dashboard") }}
+                      >
+                        Open
+                      </Button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
       </div>
+
+      {agent && (
+        <AgentDeleteDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          agentId={(agent as any)._id || agent.name}
+          agentName={agent.name}
+          onDeleted={() => router.push("/dashboard")}
+        />
+      )}
     </div>
   )
 }

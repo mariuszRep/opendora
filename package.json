@@ -14,10 +14,12 @@
   },
   "workspaces": {
     "packages": [
+      "packages/agent",
       "packages/opencode",
       "packages/sdk/js",
       "packages/util",
-      "packages/ai-sdk"
+      "packages/ai-sdk",
+      "packages/pingpong-core"
     ],
     "catalog": {
       "@types/bun": "1.3.9",

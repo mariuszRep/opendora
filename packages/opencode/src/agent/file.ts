@@ -259,7 +259,12 @@ export namespace AgentFile {
    */
   export async function update(id: string, patch: Partial<Config>, persona?: string): Promise<Entry> {
     const existing = await load(id)
-    const next = Config.parse({ ...existing.config, ...patch })
+    // Explicitly merge fields — patch values (including undefined) override existing
+    const merged: Partial<Config> = { ...existing.config }
+    for (const key of Object.keys(patch) as Array<keyof Config>) {
+      merged[key] = patch[key] as any
+    }
+    const next = Config.parse(merged)
     const nextPersona = persona ?? existing.persona
 
     // ── File writes first ────────────────────────────────────────────────

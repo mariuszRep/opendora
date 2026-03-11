@@ -44,6 +44,10 @@ export namespace LLM {
   export type StreamOutput = StreamTextResult<ToolSet, unknown>
 
   export async function stream(input: StreamInput) {
+    console.log(`[DEBUG] LLM.stream called for agent ${input.agent.name}`)
+    console.log(`[DEBUG] LLM.stream: tools passed in:`, Object.keys(input.tools))
+    console.log(`[DEBUG] LLM.stream: agent.tools:`, input.agent.tools)
+    
     const l = log
       .clone()
       .tag("providerID", input.model.providerID)
@@ -65,6 +69,17 @@ export namespace LLM {
     const isCodex = provider.id === "openai" && auth?.type === "oauth"
 
     const system = []
+
+    // Build tool restriction notice based on agent config
+    let toolNotice = ""
+    if (input.agent.tools !== undefined) {
+      if (input.agent.tools.length > 0) {
+        toolNotice = `\n\n# IMPORTANT: TOOL ACCESS RESTRICTIONS\nYou have access to ONLY these specific tools: ${input.agent.tools.join(", ")}\nYou CANNOT use any other tools for any reason.\nIf your persona mentions other tools, IGNORE those instructions - you can only use the tools listed above.\nDo not attempt to use tools not in this list under any circumstances.`
+      } else {
+        toolNotice = `\n\n# IMPORTANT: NO TOOLS AVAILABLE\nYou have NO tools available. You can only respond with text.\nIf your persona mentions using tools, IGNORE those instructions - you cannot use any tools.\nDo not attempt to use any tools under any circumstances.`
+      }
+    }
+
     system.push(
       [
         // use agent prompt otherwise provider prompt
@@ -74,6 +89,8 @@ export namespace LLM {
         ...input.system,
         // any custom prompt from last user message
         ...(input.user.system ? [input.user.system] : []),
+        // tool restrictions
+        ...(toolNotice ? [toolNotice] : []),
       ]
         .filter((x) => x)
         .join("\n"),
@@ -255,14 +272,63 @@ export namespace LLM {
     })
   }
 
-  async function resolveTools(input: Pick<StreamInput, "tools" | "agent" | "user">) {
-    const disabled = PermissionNext.disabled(Object.keys(input.tools), input.agent.permission)
-    for (const tool of Object.keys(input.tools)) {
-      if (input.user.tools?.[tool] === false || disabled.has(tool)) {
-        delete input.tools[tool]
+  export function filterToolsByAgent(
+    tools: Record<string, Tool>, 
+    agent: Agent.Info,
+    userTools?: Record<string, boolean>
+  ): Record<string, Tool> {
+    console.log(`[DEBUG] llm.ts filterToolsByAgent: agent ${agent.name}, agent.tools:`, agent.tools)
+    console.log(`[DEBUG] llm.ts filterToolsByAgent: tools before filtering:`, Object.keys(tools))
+    
+    const disabled = PermissionNext.disabled(Object.keys(tools), agent.permission)
+    
+    // Apply agent's tools filter
+    const allowedTools = new Set(agent.tools || [])
+    
+    for (const tool of Object.keys(tools)) {
+      // Always keep "invalid" tool - it's used internally for tool-call repair
+      if (tool === "invalid") {
+        console.log(`[DEBUG] llm.ts keeping ${tool} (invalid tool)`)
+        continue
+      }
+      
+      // Filter by agent's tools configuration
+      if (agent.tools) {
+        if (agent.tools.length === 0) {
+          // Empty tools array means no tools allowed
+          console.log(`[DEBUG] llm.ts removing ${tool} because agent.tools is empty`)
+          delete tools[tool]
+          continue
+        }
+        // Only allow tools in the agent's tools array
+        if (!allowedTools.has(tool)) {
+          console.log(`[DEBUG] llm.ts removing ${tool} because it's not in agent.tools array`)
+          delete tools[tool]
+          continue
+        }
+      }
+      
+      // Apply user-level filtering (but NOT permission filtering for tools explicitly allowed by agent)
+      if (userTools?.[tool] === false) {
+        console.log(`[DEBUG] llm.ts removing ${tool} due to user filter`)
+        delete tools[tool]
+        continue
+      }
+      
+      // Apply permission filtering only if tool is not explicitly in agent's tools array
+      // UI tool selection should override permission defaults
+      if (disabled.has(tool) && !agent.tools?.includes(tool)) {
+        console.log(`[DEBUG] llm.ts removing ${tool} due to permission filter`)
+        delete tools[tool]
       }
     }
-    return input.tools
+    
+    console.log(`[DEBUG] llm.ts filterToolsByAgent: tools after filtering:`, Object.keys(tools))
+    return tools
+  }
+
+  async function resolveTools(input: Pick<StreamInput, "tools" | "agent" | "user">) {
+    return filterToolsByAgent(input.tools, input.agent, input.user.tools)
   }
 
   // Check if messages contain any tool-call content

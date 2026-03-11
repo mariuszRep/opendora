@@ -3,8 +3,27 @@
 import { client } from "./client.gen.js"
 import { buildClientParams, type Client, type Options as Options2, type TDataShape } from "./client/index.js"
 import type {
+  AgentCreateErrors,
+  AgentCreateResponses,
+  AgentDeleteErrors,
+  AgentDeleteResponses,
+  AgentGenerateErrors,
+  AgentGenerateResponses,
+  AgentGetErrors,
+  AgentGetResponses,
+  AgentListResponses,
+  AgentMainSessionErrors,
+  AgentMainSessionResponses,
   AgentPartInput,
-  AppAgentsResponses,
+  AgentPersonaGetErrors,
+  AgentPersonaGetResponses,
+  AgentPersonaSetErrors,
+  AgentPersonaSetResponses,
+  AgentSetMainSessionErrors,
+  AgentSetMainSessionResponses,
+  AgentToolsListResponses,
+  AgentUpdateErrors,
+  AgentUpdateResponses,
   AppLogErrors,
   AppLogResponses,
   AppSkillsResponses,
@@ -1024,6 +1043,25 @@ export class Session2 extends HeyApiClient {
       parentID?: string
       title?: string
       permission?: PermissionRuleset
+      sessionType?: "role" | "scope" | "worker" | "scratchpad"
+      agentID?: string
+      ownerID?: string
+      ownerKind?: "user" | "agent" | "service"
+      retention?: {
+        autoArchive?: boolean
+        autoDelete?: boolean
+        ttlMs?: number
+        maxMessages?: number
+        maxAgeDays?: number
+        onExpire?: "archive" | "close" | "delete"
+      }
+      sendPolicy?: {
+        allow: Array<string>
+        deny: Array<string>
+      }
+      spawnDepth?: number
+      spawnParentSessionID?: string
+      spawnParentMessageID?: string
     },
     options?: Options<never, ThrowOnError>,
   ) {
@@ -1036,6 +1074,15 @@ export class Session2 extends HeyApiClient {
             { in: "body", key: "parentID" },
             { in: "body", key: "title" },
             { in: "body", key: "permission" },
+            { in: "body", key: "sessionType" },
+            { in: "body", key: "agentID" },
+            { in: "body", key: "ownerID" },
+            { in: "body", key: "ownerKind" },
+            { in: "body", key: "retention" },
+            { in: "body", key: "sendPolicy" },
+            { in: "body", key: "spawnDepth" },
+            { in: "body", key: "spawnParentSessionID" },
+            { in: "body", key: "spawnParentMessageID" },
           ],
         },
       ],
@@ -1141,6 +1188,7 @@ export class Session2 extends HeyApiClient {
       sessionID: string
       directory?: string
       title?: string
+      agentID?: string | null
       time?: {
         archived?: number
       }
@@ -1155,6 +1203,7 @@ export class Session2 extends HeyApiClient {
             { in: "path", key: "sessionID" },
             { in: "query", key: "directory" },
             { in: "body", key: "title" },
+            { in: "body", key: "agentID" },
             { in: "body", key: "time" },
           ],
         },
@@ -3168,25 +3217,6 @@ export class App extends HeyApiClient {
   }
 
   /**
-   * List agents
-   *
-   * Get a list of all available AI agents in the OpenCode system.
-   */
-  public agents<ThrowOnError extends boolean = false>(
-    parameters?: {
-      directory?: string
-    },
-    options?: Options<never, ThrowOnError>,
-  ) {
-    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "directory" }] }])
-    return (options?.client ?? this.client).get<AppAgentsResponses, unknown, ThrowOnError>({
-      url: "/agent",
-      ...options,
-      ...params,
-    })
-  }
-
-  /**
    * List skills
    *
    * Get a list of all available skills in the OpenCode system.
@@ -3203,6 +3233,416 @@ export class App extends HeyApiClient {
       ...options,
       ...params,
     })
+  }
+}
+
+export class Tools extends HeyApiClient {
+  /**
+   * List available tools
+   *
+   * Get a list of all tool IDs available in the runtime.
+   */
+  public list<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "directory" }] }])
+    return (options?.client ?? this.client).get<AgentToolsListResponses, unknown, ThrowOnError>({
+      url: "/agent/tools",
+      ...options,
+      ...params,
+    })
+  }
+}
+
+export class Persona extends HeyApiClient {
+  /**
+   * Get agent persona
+   *
+   * Get the raw persona.md content for an agent.
+   */
+  public get<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string
+      directory?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "query", key: "directory" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<AgentPersonaGetResponses, AgentPersonaGetErrors, ThrowOnError>({
+      url: "/agent/{id}/persona",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Set agent persona
+   *
+   * Overwrite the persona.md for an agent.
+   */
+  public set<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string
+      directory?: string
+      persona?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "query", key: "directory" },
+            { in: "body", key: "persona" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).put<AgentPersonaSetResponses, AgentPersonaSetErrors, ThrowOnError>({
+      url: "/agent/{id}/persona",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+}
+
+export class Agent extends HeyApiClient {
+  /**
+   * List agents
+   *
+   * Get a list of all available agents, including file-based agents in .opendora/agents/.
+   */
+  public list<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "directory" }] }])
+    return (options?.client ?? this.client).get<AgentListResponses, unknown, ThrowOnError>({
+      url: "/agent",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Create agent
+   *
+   * Create a new agent. Writes agent.json and persona.md into .opendora/agents/<id>/.
+   */
+  public create<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      id?: string
+      config?: {
+        name: string
+        description?: string
+        mode?: "subagent" | "primary" | "all"
+        model?: {
+          modelID: string
+          providerID: string
+        }
+        fallback_model?: {
+          modelID: string
+          providerID: string
+        }
+        models?: Array<{
+          modelID: string
+          providerID: string
+        }>
+        temperature?: number
+        steps?: number
+        color?: string
+        hidden?: boolean
+        tools?: Array<string>
+        skills?: Array<string>
+      }
+      persona?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "body", key: "id" },
+            { in: "body", key: "config" },
+            { in: "body", key: "persona" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<AgentCreateResponses, AgentCreateErrors, ThrowOnError>({
+      url: "/agent",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Delete agent
+   *
+   * Delete an agent's .opendora/agents/<id>/ directory.
+   */
+  public delete<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string
+      directory?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "query", key: "directory" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).delete<AgentDeleteResponses, AgentDeleteErrors, ThrowOnError>({
+      url: "/agent/{id}",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Get agent
+   *
+   * Get a single agent by id.
+   */
+  public get<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string
+      directory?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "query", key: "directory" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<AgentGetResponses, AgentGetErrors, ThrowOnError>({
+      url: "/agent/{id}",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Update agent
+   *
+   * Partially update an agent's config. Pass persona to also update persona.md.
+   */
+  public update<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string
+      directory?: string
+      config?: {
+        name?: string
+        description?: string
+        mode?: "subagent" | "primary" | "all"
+        model?: {
+          modelID: string
+          providerID: string
+        }
+        fallback_model?: {
+          modelID: string
+          providerID: string
+        }
+        models?: Array<{
+          modelID: string
+          providerID: string
+        }>
+        temperature?: number
+        steps?: number
+        color?: string
+        hidden?: boolean
+        tools?: Array<string>
+        skills?: Array<string>
+      }
+      persona?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "query", key: "directory" },
+            { in: "body", key: "config" },
+            { in: "body", key: "persona" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).patch<AgentUpdateResponses, AgentUpdateErrors, ThrowOnError>({
+      url: "/agent/{id}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Get agent main session
+   *
+   * Get or create the permanent 'role' session for an agent. When switching agents, this is the session that becomes active.
+   */
+  public mainSession<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string
+      directory?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "query", key: "directory" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<AgentMainSessionResponses, AgentMainSessionErrors, ThrowOnError>({
+      url: "/agent/{id}/main-session",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Set agent main session
+   *
+   * Promote a session to be the agent's main (role) session. Demotes the previous main session to scope.
+   */
+  public setMainSession<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string
+      directory?: string
+      sessionID?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "query", key: "directory" },
+            { in: "body", key: "sessionID" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).put<AgentSetMainSessionResponses, AgentSetMainSessionErrors, ThrowOnError>({
+      url: "/agent/{id}/main-session",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Generate agent config
+   *
+   * Use AI to generate an agent configuration from a plain-English description.
+   */
+  public generate<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      description?: string
+      model?: {
+        providerID: string
+        modelID: string
+      }
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "body", key: "description" },
+            { in: "body", key: "model" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<AgentGenerateResponses, AgentGenerateErrors, ThrowOnError>({
+      url: "/agent/generate",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  private _tools?: Tools
+  get tools(): Tools {
+    return (this._tools ??= new Tools({ client: this.client }))
+  }
+
+  private _persona?: Persona
+  get persona(): Persona {
+    return (this._persona ??= new Persona({ client: this.client }))
   }
 }
 
@@ -3385,6 +3825,11 @@ export class OpencodeClient extends HeyApiClient {
   private _app?: App
   get app(): App {
     return (this._app ??= new App({ client: this.client }))
+  }
+
+  private _agent?: Agent
+  get agent(): Agent {
+    return (this._agent ??= new Agent({ client: this.client }))
   }
 
   private _lsp?: Lsp

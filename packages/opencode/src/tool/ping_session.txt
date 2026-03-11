@@ -1,0 +1,3 @@
+Use this tool to ping an existing session by session id.
+
+Use it when you already know which session should receive the message and do not need to create a new one.

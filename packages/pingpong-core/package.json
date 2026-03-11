@@ -1,0 +1,28 @@
+{
+  "name": "@pingpong/core",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".":                        "./src/index.ts",
+    "./storage/adapter":        "./src/storage/adapter.ts",
+    "./storage/drizzle/schema": "./src/storage/drizzle/schema.ts",
+    "./jsonl":                  "./src/storage/jsonl/index.ts",
+    "./sqlite":                 "./src/storage/sqlite/index.ts",
+    "./postgres":               "./src/storage/postgres/index.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.1"
+  },
+  "peerDependencies": {
+    "better-sqlite3": ">=9.0.0",
+    "postgres": ">=3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": { "optional": true },
+    "postgres": { "optional": true }
+  }
+}

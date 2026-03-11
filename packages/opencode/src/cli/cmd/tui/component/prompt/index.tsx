@@ -539,12 +539,15 @@ export function Prompt(props: PromptProps) {
       promptModelWarning()
       return
     }
-    const sessionID = props.sessionID
-      ? props.sessionID
-      : await (async () => {
-          const sessionID = await sdk.client.session.create({}).then((x) => x.data!.id)
-          return sessionID
-        })()
+    // Create session if needed
+    let sessionID: string
+    if (props.sessionID) {
+      sessionID = props.sessionID
+    } else {
+      // Create session and wait for it to complete
+      sessionID = await sdk.client.session.create({}).then((x) => x.data!.id)
+    }
+
     const messageID = Identifier.ascending("message")
     let inputText = store.prompt.input
 
@@ -571,8 +574,9 @@ export function Prompt(props: PromptProps) {
     const currentMode = store.mode
     const variant = local.model.variant.current()
 
+    // Send the message/command/shell with the sessionID
     if (store.mode === "shell") {
-      sdk.client.session.shell({
+      await sdk.client.session.shell({
         sessionID,
         agent: local.agent.current().name,
         model: {
@@ -597,7 +601,7 @@ export function Prompt(props: PromptProps) {
       const restOfInput = firstLineEnd === -1 ? "" : inputText.slice(firstLineEnd + 1)
       const args = firstLineArgs.join(" ") + (restOfInput ? "\n" + restOfInput : "")
 
-      sdk.client.session.command({
+      await sdk.client.session.command({
         sessionID,
         command: command.slice(1),
         arguments: args,
@@ -613,7 +617,7 @@ export function Prompt(props: PromptProps) {
           })),
       })
     } else {
-      sdk.client.session
+      await sdk.client.session
         .prompt({
           sessionID,
           ...selectedModel,
@@ -635,6 +639,8 @@ export function Prompt(props: PromptProps) {
         })
         .catch(() => {})
     }
+
+    // Only clear input after message is sent
     history.append({
       ...store.prompt,
       mode: currentMode,
@@ -647,14 +653,13 @@ export function Prompt(props: PromptProps) {
     setStore("extmarkToPartIndex", new Map())
     props.onSubmit?.()
 
-    // temporary hack to make sure the message is sent
-    if (!props.sessionID)
-      setTimeout(() => {
-        route.navigate({
-          type: "session",
-          sessionID,
-        })
-      }, 50)
+    // Navigate to the new session if it was just created
+    if (!props.sessionID) {
+      route.navigate({
+        type: "session",
+        sessionID,
+      })
+    }
     input.clear()
   }
   const exit = useExit()

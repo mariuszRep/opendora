@@ -794,66 +794,24 @@ export type EventCommandExecuted = {
   }
 }
 
-export type PermissionAction = "allow" | "deny" | "ask"
-
-export type PermissionRule = {
-  permission: string
-  pattern: string
-  action: PermissionAction
-}
-
-export type PermissionRuleset = Array<PermissionRule>
-
-export type Session = {
-  id: string
-  slug: string
-  projectID: string
-  directory: string
-  parentID?: string
-  summary?: {
-    additions: number
-    deletions: number
-    files: number
-    diffs?: Array<FileDiff>
-  }
-  share?: {
-    url: string
-  }
-  title: string
-  version: string
-  time: {
-    created: number
-    updated: number
-    compacting?: number
-    archived?: number
-  }
-  permission?: PermissionRuleset
-  revert?: {
-    messageID: string
-    partID?: string
-    snapshot?: string
-    diff?: string
-  }
-}
-
 export type EventSessionCreated = {
   type: "session.created"
   properties: {
-    info: Session
+    info: unknown
   }
 }
 
 export type EventSessionUpdated = {
   type: "session.updated"
   properties: {
-    info: Session
+    info: unknown
   }
 }
 
 export type EventSessionDeleted = {
   type: "session.deleted"
   properties: {
-    info: Session
+    info: unknown
   }
 }
 
@@ -1055,7 +1013,7 @@ export type PermissionConfig =
   | PermissionActionConfig
 
 export type AgentConfig = {
-  model?: string
+  model?: Model
   /**
    * Default model variant for this agent (applies only when using the agent's configured model).
    */
@@ -1097,6 +1055,7 @@ export type AgentConfig = {
   permission?: PermissionConfig
   [key: string]:
     | unknown
+    | Model
     | string
     | number
     | {
@@ -1300,7 +1259,7 @@ export type Config = {
       template: string
       description?: string
       agent?: string
-      model?: string
+      model?: Model
       subtask?: boolean
     }
   }
@@ -1342,14 +1301,8 @@ export type Config = {
    * When set, ONLY these providers will be enabled. All other providers will be ignored
    */
   enabled_providers?: Array<string>
-  /**
-   * Model to use in the format of provider/model, eg anthropic/claude-2
-   */
-  model?: string
-  /**
-   * Small model to use for tasks like title generation in the format of provider/model
-   */
-  small_model?: string
+  model?: Model
+  small_model?: Model
   /**
    * Default agent to use when none is specified. Must be a primary agent. Falls back to 'build' if not set or if the specified agent is invalid.
    */
@@ -1635,6 +1588,16 @@ export type WorktreeResetInput = {
   directory: string
 }
 
+export type PermissionAction = "allow" | "deny" | "ask"
+
+export type PermissionRule = {
+  permission: string
+  pattern: string
+  action: PermissionAction
+}
+
+export type PermissionRuleset = Array<PermissionRule>
+
 export type ProjectSummary = {
   id: string
   name?: string
@@ -1671,6 +1634,34 @@ export type GlobalSession = {
     snapshot?: string
     diff?: string
   }
+  sessionType?: "role" | "scope" | "worker" | "scratchpad"
+  sessionStatus?: "active" | "archived" | "closed"
+  agentID?: string
+  ownerID?: string
+  ownerKind?: "user" | "agent" | "service"
+  allowedAgents?: Array<string>
+  sendPolicy?: {
+    allow: Array<string>
+    deny: Array<string>
+  }
+  retention?: {
+    autoArchive?: boolean
+    autoDelete?: boolean
+    ttlMs?: number
+    maxMessages?: number
+    maxAgeDays?: number
+    onExpire?: "archive" | "close" | "delete"
+  }
+  spawnDepth?: number
+  spawnParentSessionID?: string
+  spawnParentMessageID?: string
+  tokens?: {
+    input: number
+    output: number
+    cacheRead: number
+    cacheWrite: number
+    compactionCount: number
+  }
   project: ProjectSummary | null
 }
 
@@ -1680,6 +1671,66 @@ export type McpResource = {
   description?: string
   mimeType?: string
   client: string
+}
+
+export type Session = {
+  id: string
+  slug: string
+  projectID: string
+  directory: string
+  parentID?: string
+  summary?: {
+    additions: number
+    deletions: number
+    files: number
+    diffs?: Array<FileDiff>
+  }
+  share?: {
+    url: string
+  }
+  title: string
+  version: string
+  time: {
+    created: number
+    updated: number
+    compacting?: number
+    archived?: number
+  }
+  permission?: PermissionRuleset
+  revert?: {
+    messageID: string
+    partID?: string
+    snapshot?: string
+    diff?: string
+  }
+  sessionType?: "role" | "scope" | "worker" | "scratchpad"
+  sessionStatus?: "active" | "archived" | "closed"
+  agentID?: string
+  ownerID?: string
+  ownerKind?: "user" | "agent" | "service"
+  allowedAgents?: Array<string>
+  sendPolicy?: {
+    allow: Array<string>
+    deny: Array<string>
+  }
+  retention?: {
+    autoArchive?: boolean
+    autoDelete?: boolean
+    ttlMs?: number
+    maxMessages?: number
+    maxAgeDays?: number
+    onExpire?: "archive" | "close" | "delete"
+  }
+  spawnDepth?: number
+  spawnParentSessionID?: string
+  spawnParentMessageID?: string
+  tokens?: {
+    input: number
+    output: number
+    cacheRead: number
+    cacheWrite: number
+    compactionCount: number
+  }
 }
 
 export type TextPartInput = {
@@ -1840,6 +1891,7 @@ export type Command = {
 }
 
 export type Agent = {
+  id: string
   name: string
   description?: string
   mode: "subagent" | "primary" | "all"
@@ -1859,6 +1911,7 @@ export type Agent = {
     [key: string]: unknown
   }
   steps?: number
+  tools?: Array<string>
 }
 
 export type LspStatus = {
@@ -2608,6 +2661,25 @@ export type SessionCreateData = {
     parentID?: string
     title?: string
     permission?: PermissionRuleset
+    sessionType?: "role" | "scope" | "worker" | "scratchpad"
+    agentID?: string
+    ownerID?: string
+    ownerKind?: "user" | "agent" | "service"
+    retention?: {
+      autoArchive?: boolean
+      autoDelete?: boolean
+      ttlMs?: number
+      maxMessages?: number
+      maxAgeDays?: number
+      onExpire?: "archive" | "close" | "delete"
+    }
+    sendPolicy?: {
+      allow: Array<string>
+      deny: Array<string>
+    }
+    spawnDepth?: number
+    spawnParentSessionID?: string
+    spawnParentMessageID?: string
   }
   path?: never
   query?: {
@@ -2732,6 +2804,7 @@ export type SessionGetResponse = SessionGetResponses[keyof SessionGetResponses]
 export type SessionUpdateData = {
   body?: {
     title?: string
+    agentID?: string | null
     time?: {
       archived?: number
     }
@@ -4684,7 +4757,7 @@ export type AppLogResponses = {
 
 export type AppLogResponse = AppLogResponses[keyof AppLogResponses]
 
-export type AppAgentsData = {
+export type AgentListData = {
   body?: never
   path?: never
   query?: {
@@ -4693,14 +4766,423 @@ export type AppAgentsData = {
   url: "/agent"
 }
 
-export type AppAgentsResponses = {
+export type AgentListResponses = {
   /**
    * List of agents
    */
   200: Array<Agent>
 }
 
-export type AppAgentsResponse = AppAgentsResponses[keyof AppAgentsResponses]
+export type AgentListResponse = AgentListResponses[keyof AgentListResponses]
+
+export type AgentCreateData = {
+  body?: {
+    /**
+     * Agent id slug. Derived from name when omitted.
+     */
+    id?: string
+    config: {
+      name: string
+      description?: string
+      mode?: "subagent" | "primary" | "all"
+      model?: {
+        modelID: string
+        providerID: string
+      }
+      fallback_model?: {
+        modelID: string
+        providerID: string
+      }
+      models?: Array<{
+        modelID: string
+        providerID: string
+      }>
+      temperature?: number
+      steps?: number
+      color?: string
+      hidden?: boolean
+      tools?: Array<string>
+      skills?: Array<string>
+    }
+    persona?: string
+  }
+  path?: never
+  query?: {
+    directory?: string
+  }
+  url: "/agent"
+}
+
+export type AgentCreateErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type AgentCreateError = AgentCreateErrors[keyof AgentCreateErrors]
+
+export type AgentCreateResponses = {
+  /**
+   * Agent created
+   */
+  201: {
+    id: string
+    config: {
+      name: string
+      description?: string
+      mode?: "subagent" | "primary" | "all"
+      model?: {
+        modelID: string
+        providerID: string
+      }
+      fallback_model?: {
+        modelID: string
+        providerID: string
+      }
+      models?: Array<{
+        modelID: string
+        providerID: string
+      }>
+      temperature?: number
+      steps?: number
+      color?: string
+      hidden?: boolean
+      tools?: Array<string>
+      skills?: Array<string>
+    }
+    persona: string
+  }
+}
+
+export type AgentCreateResponse = AgentCreateResponses[keyof AgentCreateResponses]
+
+export type AgentToolsListData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+  }
+  url: "/agent/tools"
+}
+
+export type AgentToolsListResponses = {
+  /**
+   * Tool IDs
+   */
+  200: Array<string>
+}
+
+export type AgentToolsListResponse = AgentToolsListResponses[keyof AgentToolsListResponses]
+
+export type AgentDeleteData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: {
+    directory?: string
+  }
+  url: "/agent/{id}"
+}
+
+export type AgentDeleteErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type AgentDeleteError = AgentDeleteErrors[keyof AgentDeleteErrors]
+
+export type AgentDeleteResponses = {
+  /**
+   * Agent deleted
+   */
+  200: boolean
+}
+
+export type AgentDeleteResponse = AgentDeleteResponses[keyof AgentDeleteResponses]
+
+export type AgentGetData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: {
+    directory?: string
+  }
+  url: "/agent/{id}"
+}
+
+export type AgentGetErrors = {
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type AgentGetError = AgentGetErrors[keyof AgentGetErrors]
+
+export type AgentGetResponses = {
+  /**
+   * Agent info
+   */
+  200: Agent
+}
+
+export type AgentGetResponse = AgentGetResponses[keyof AgentGetResponses]
+
+export type AgentUpdateData = {
+  body?: {
+    config?: {
+      name?: string
+      description?: string
+      mode?: "subagent" | "primary" | "all"
+      model?: {
+        modelID: string
+        providerID: string
+      }
+      fallback_model?: {
+        modelID: string
+        providerID: string
+      }
+      models?: Array<{
+        modelID: string
+        providerID: string
+      }>
+      temperature?: number
+      steps?: number
+      color?: string
+      hidden?: boolean
+      tools?: Array<string>
+      skills?: Array<string>
+    }
+    persona?: string
+  }
+  path: {
+    id: string
+  }
+  query?: {
+    directory?: string
+  }
+  url: "/agent/{id}"
+}
+
+export type AgentUpdateErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type AgentUpdateError = AgentUpdateErrors[keyof AgentUpdateErrors]
+
+export type AgentUpdateResponses = {
+  /**
+   * Updated agent file entry
+   */
+  200: {
+    id: string
+    config: {
+      name: string
+      description?: string
+      mode?: "subagent" | "primary" | "all"
+      model?: {
+        modelID: string
+        providerID: string
+      }
+      fallback_model?: {
+        modelID: string
+        providerID: string
+      }
+      models?: Array<{
+        modelID: string
+        providerID: string
+      }>
+      temperature?: number
+      steps?: number
+      color?: string
+      hidden?: boolean
+      tools?: Array<string>
+      skills?: Array<string>
+    }
+    persona: string
+  }
+}
+
+export type AgentUpdateResponse = AgentUpdateResponses[keyof AgentUpdateResponses]
+
+export type AgentPersonaGetData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: {
+    directory?: string
+  }
+  url: "/agent/{id}/persona"
+}
+
+export type AgentPersonaGetErrors = {
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type AgentPersonaGetError = AgentPersonaGetErrors[keyof AgentPersonaGetErrors]
+
+export type AgentPersonaGetResponses = {
+  /**
+   * Persona markdown text
+   */
+  200: {
+    persona: string
+  }
+}
+
+export type AgentPersonaGetResponse = AgentPersonaGetResponses[keyof AgentPersonaGetResponses]
+
+export type AgentPersonaSetData = {
+  body?: {
+    persona: string
+  }
+  path: {
+    id: string
+  }
+  query?: {
+    directory?: string
+  }
+  url: "/agent/{id}/persona"
+}
+
+export type AgentPersonaSetErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type AgentPersonaSetError = AgentPersonaSetErrors[keyof AgentPersonaSetErrors]
+
+export type AgentPersonaSetResponses = {
+  /**
+   * Persona updated
+   */
+  200: boolean
+}
+
+export type AgentPersonaSetResponse = AgentPersonaSetResponses[keyof AgentPersonaSetResponses]
+
+export type AgentMainSessionData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: {
+    directory?: string
+  }
+  url: "/agent/{id}/main-session"
+}
+
+export type AgentMainSessionErrors = {
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type AgentMainSessionError = AgentMainSessionErrors[keyof AgentMainSessionErrors]
+
+export type AgentMainSessionResponses = {
+  /**
+   * Agent main session
+   */
+  200: Session
+}
+
+export type AgentMainSessionResponse = AgentMainSessionResponses[keyof AgentMainSessionResponses]
+
+export type AgentSetMainSessionData = {
+  body?: {
+    sessionID: string
+  }
+  path: {
+    id: string
+  }
+  query?: {
+    directory?: string
+  }
+  url: "/agent/{id}/main-session"
+}
+
+export type AgentSetMainSessionErrors = {
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type AgentSetMainSessionError = AgentSetMainSessionErrors[keyof AgentSetMainSessionErrors]
+
+export type AgentSetMainSessionResponses = {
+  /**
+   * Promoted session
+   */
+  200: Session
+}
+
+export type AgentSetMainSessionResponse = AgentSetMainSessionResponses[keyof AgentSetMainSessionResponses]
+
+export type AgentGenerateData = {
+  body?: {
+    description: string
+    model?: {
+      providerID: string
+      modelID: string
+    }
+  }
+  path?: never
+  query?: {
+    directory?: string
+  }
+  url: "/agent/generate"
+}
+
+export type AgentGenerateErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type AgentGenerateError = AgentGenerateErrors[keyof AgentGenerateErrors]
+
+export type AgentGenerateResponses = {
+  /**
+   * Generated agent config
+   */
+  200: {
+    identifier: string
+    whenToUse: string
+    systemPrompt: string
+  }
+}
+
+export type AgentGenerateResponse = AgentGenerateResponses[keyof AgentGenerateResponses]
 
 export type AppSkillsData = {
   body?: never

@@ -91,13 +91,11 @@ export default function ProvidersPage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink
-                href="/dashboard"
-                className="cursor-pointer"
-                onClick={(e) => { e.preventDefault(); router.push("/dashboard") }}
-              >
-                Dashboard
-              </BreadcrumbLink>
+              <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/dashboard/settings">Settings</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>

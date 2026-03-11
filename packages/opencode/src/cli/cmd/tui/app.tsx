@@ -357,6 +357,22 @@ function App() {
     ),
   )
 
+  // When navigating to a session that has a main agent, update the active agent
+  createEffect(
+    on(
+      () => route.data,
+      (r) => {
+        if (r.type !== "session") return
+        const session = sync.data.session.find((s) => s.id === r.sessionID)
+        if (!session?.agentID) return
+        const agentName = session.agentID
+        if (local.agent.current().name !== agentName) {
+          local.agent.setWithoutNavigate(agentName)
+        }
+      },
+    ),
+  )
+
   const connected = useConnected()
   command.register(() => [
     {

@@ -665,11 +665,11 @@ export namespace SessionPrompt {
           ...MessageV2.toModelMessages(msgs, model),
           ...(isLastStep
             ? [
-                {
-                  role: "assistant" as const,
-                  content: MAX_STEPS,
-                },
-              ]
+              {
+                role: "assistant" as const,
+                content: MAX_STEPS,
+              },
+            ]
             : []),
         ],
         tools,
@@ -919,6 +919,32 @@ export namespace SessionPrompt {
       tools[key] = item
     }
 
+    // If the agent has an explicit tools allowlist, remove everything not on it.
+    // The "invalid" tool is always kept — it's used internally for tool-call repair.
+    console.log(`[DEBUG] prompt.ts resolveTools: agent ${input.agent.name}, agent.tools:`, input.agent.tools)
+    console.log(`[DEBUG] prompt.ts resolveTools: tools before filtering:`, Object.keys(tools))
+    
+    if (input.agent.tools) {
+      if (input.agent.tools.length > 0) {
+        const allowed = new Set(input.agent.tools)
+        for (const id of Object.keys(tools)) {
+          if (id !== "invalid" && !allowed.has(id)) {
+            console.log(`[DEBUG] prompt.ts removing tool: ${id}`)
+            delete tools[id]
+          }
+        }
+      } else {
+        // Empty tools array means no tools allowed (except "invalid")
+        console.log(`[DEBUG] prompt.ts removing all tools (empty agent.tools)`)
+        for (const id of Object.keys(tools)) {
+          if (id !== "invalid") {
+            delete tools[id]
+          }
+        }
+      }
+    }
+
+    console.log(`[DEBUG] prompt.ts resolveTools: tools after filtering:`, Object.keys(tools))
     return tools
   }
 
@@ -1149,8 +1175,8 @@ export namespace SessionPrompt {
                       messageID: info.id,
                       extra: { bypassCwdCheck: true, model },
                       messages: [],
-                      metadata: async () => {},
-                      ask: async () => {},
+                      metadata: async () => { },
+                      ask: async () => { },
                     }
                     const result = await t.execute(args, readCtx)
                     pieces.push({
@@ -1208,8 +1234,8 @@ export namespace SessionPrompt {
                   messageID: info.id,
                   extra: { bypassCwdCheck: true },
                   messages: [],
-                  metadata: async () => {},
-                  ask: async () => {},
+                  metadata: async () => { },
+                  ask: async () => { },
                 }
                 const result = await ReadTool.init().then((t) => t.execute(args, listCtx))
                 return [
@@ -1835,19 +1861,19 @@ NOTE: At any point in time through this workflow you should feel free to ask the
     const isSubtask = (agent.mode === "subagent" && command.subtask !== false) || command.subtask === true
     const parts = isSubtask
       ? [
-          {
-            type: "subtask" as const,
-            agent: agent.name,
-            description: command.description ?? "",
-            command: input.command,
-            model: {
-              providerID: taskModel.providerID,
-              modelID: taskModel.modelID,
-            },
-            // TODO: how can we make task tool accept a more complex input?
-            prompt: templateParts.find((y) => y.type === "text")?.text ?? "",
+        {
+          type: "subtask" as const,
+          agent: agent.name,
+          description: command.description ?? "",
+          command: input.command,
+          model: {
+            providerID: taskModel.providerID,
+            modelID: taskModel.modelID,
           },
-        ]
+          // TODO: how can we make task tool accept a more complex input?
+          prompt: templateParts.find((y) => y.type === "text")?.text ?? "",
+        },
+      ]
       : [...templateParts, ...(input.parts ?? [])]
 
     const userAgent = isSubtask ? (input.agent ?? (await Agent.defaultAgent())) : agentName

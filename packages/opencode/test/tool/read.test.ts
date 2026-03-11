@@ -177,6 +177,7 @@ describe("tool.read env file permissions", () => {
             ...ctx,
             ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
               for (const pattern of req.patterns) {
+                if (!agent) throw new Error("Agent not found")
                 const rule = PermissionNext.evaluate(req.permission, pattern, agent.permission)
                 if (rule.action === "ask" && req.permission === "read") {
                   askedForEnv = true

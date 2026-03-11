@@ -1,0 +1,8 @@
+{
+  "name": "pandora",
+  "mode": "primary",
+  "model": {
+    "modelID": "mimo-v2-flash-free",
+    "providerID": "opencode"
+  }
+}

@@ -4,6 +4,7 @@ import type { MessageV2 } from "./message-v2"
 import type { Snapshot } from "@/snapshot"
 import type { PermissionNext } from "@/permission/next"
 import { Timestamps } from "@/storage/schema.sql"
+import type { SessionType, SessionStatus, RetentionPolicy, SendPolicy } from "@pingpong/core"
 
 type PartData = Omit<MessageV2.Part, "id" | "sessionID" | "messageID">
 type InfoData = Omit<MessageV2.Info, "id" | "sessionID">
@@ -30,8 +31,32 @@ export const SessionTable = sqliteTable(
     ...Timestamps,
     time_compacting: integer(),
     time_archived: integer(),
+    // PingPong session model fields
+    session_type: text().$type<SessionType>(),
+    session_status: text().$type<SessionStatus>(),
+    agent_id: text(),
+    owner_id: text(),
+    owner_kind: text().$type<"user" | "agent" | "service">(),
+    allowed_agents: text().$type<string>(), // stored as JSON string, parsed manually in fromRow
+    send_policy: text().$type<string>(),    // stored as JSON string, parsed manually in fromRow
+    retention: text().$type<string>(),      // stored as JSON string, parsed manually in fromRow
+    spawn_depth: integer(),
+    spawn_parent_session_id: text(),
+    spawn_parent_message_id: text(),
+    input_tokens: integer(),
+    output_tokens: integer(),
+    cache_read_tokens: integer(),
+    cache_write_tokens: integer(),
+    compaction_count: integer(),
   },
-  (table) => [index("session_project_idx").on(table.project_id), index("session_parent_idx").on(table.parent_id)],
+  (table) => [
+    index("session_project_idx").on(table.project_id),
+    index("session_parent_idx").on(table.parent_id),
+    index("session_type_idx").on(table.session_type),
+    index("session_agent_idx").on(table.agent_id),
+    index("session_owner_idx").on(table.owner_id),
+    index("session_spawn_parent_idx").on(table.spawn_parent_session_id),
+  ],
 )
 
 export const MessageTable = sqliteTable(

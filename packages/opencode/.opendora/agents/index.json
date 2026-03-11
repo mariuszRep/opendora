@@ -3,17 +3,12 @@
     {
       "id": "build",
       "name": "build",
-      "mode": "primary"
+      "mode": "all"
     },
     {
       "id": "plan",
       "name": "plan",
       "mode": "primary"
-    },
-    {
-      "id": "general",
-      "name": "general",
-      "mode": "subagent"
     },
     {
       "id": "explore",
@@ -37,6 +32,11 @@
       "name": "summary",
       "mode": "primary",
       "hidden": true
+    },
+    {
+      "id": "pandora",
+      "name": "pandora",
+      "mode": "primary"
     }
   ]
 }

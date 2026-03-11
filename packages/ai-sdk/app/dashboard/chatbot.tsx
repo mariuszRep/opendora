@@ -9,11 +9,20 @@ import {
 } from "@/components/ai-elements/conversation"
 import {
   Message,
+  MessageAction,
+  MessageActions,
   MessageBranch,
   MessageBranchContent,
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message"
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolInput,
+  ToolOutput,
+} from "@/components/ai-elements/tool"
 import {
   ModelSelector,
   ModelSelectorContent,
@@ -49,10 +58,14 @@ import {
 import { SpeechInput } from "@/components/ai-elements/speech-input"
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import type { AssistantMessage, Part, ReasoningPart, TextPart } from "@/lib/opendora"
-import { CheckIcon } from "lucide-react"
+import { QuestionTool } from "@/components/questions/question-tool"
+import type { AssistantMessage, Part, ReasoningPart, TextPart, ToolPart } from "@/lib/opendora"
+import { useVoiceSettings } from "@/hooks/use-voice-settings"
+import { useTextToSpeech } from "@/hooks/use-text-to-speech"
+import { CheckIcon, CopyIcon, Volume2Icon, VolumeXIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
+import { Spinner } from "@/components/ui/spinner"
 
 const suggestions = [
   "What files are in this project?",
@@ -69,8 +82,35 @@ function getReasoningPart(parts: Part[]): ReasoningPart | undefined {
   return parts.find((p): p is ReasoningPart => p.type === "reasoning")
 }
 
+function getToolParts(parts: Part[]): ToolPart[] {
+  return parts.filter((p): p is ToolPart => p.type === "tool")
+}
+
 function getMessageText(parts: Part[]): string {
   return getTextParts(parts).map((p) => p.text).join("")
+}
+
+function formatToolPayload(value: unknown): string {
+  if (value == null) return ""
+  if (typeof value === "string") return value
+  try {
+    return JSON.stringify(value, null, 2)
+  } catch {
+    return String(value)
+  }
+}
+
+function toToolState(status: ToolPart["state"]["status"]) {
+  switch (status) {
+    case "pending":
+      return "input-streaming"
+    case "running":
+      return "input-available"
+    case "completed":
+      return "output-available"
+    case "error":
+      return "output-error"
+  }
 }
 
 const AttachmentsDisplay = () => {
@@ -92,6 +132,9 @@ export const Chatbot = () => {
   const {
     selectedSession,
     messages,
+    questionRequests,
+    replyQuestion,
+    rejectQuestion,
     status,
     sendMessage,
     abort,
@@ -104,6 +147,9 @@ export const Chatbot = () => {
     refreshProviders,
     createSession,
   } = useOpendoraContext()
+
+  const { settings } = useVoiceSettings()
+  const { speak, playingId, isLoading: isTtsLoading, isEnabled: isTtsEnabled } = useTextToSpeech()
 
   const [text, setText] = useState("")
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false)
@@ -194,6 +240,35 @@ export const Chatbot = () => {
     [sendMessage, selectedModel, selectedAgent, selectedSession, createSession],
   )
 
+  const handleCopy = useCallback((content: string) => {
+    navigator.clipboard.writeText(content).catch(() => {})
+  }, [])
+
+  const handleSpeak = useCallback(
+    (text: string, messageId: string) => {
+      speak(text, messageId)
+    },
+    [speak]
+  )
+
+  // Handler for STT with OpenAI Whisper
+  const handleAudioRecorded = useCallback(async (audioBlob: Blob) => {
+    try {
+      const { opendora } = await import("@/lib/opendora")
+      const result = await opendora.voice.stt(audioBlob)
+      return result.text || ""
+    } catch (error) {
+      console.error("STT error:", error)
+      const errorMessage = error instanceof Error ? error.message : "Transcription error"
+      if (errorMessage.includes("not configured")) {
+        toast.error("OpenAI not configured. Please connect OpenAI in Settings → Providers.")
+      } else {
+        toast.error("Transcription failed")
+      }
+      return ""
+    }
+  }, [])
+
   return (
     <div className="relative flex size-full flex-col divide-y overflow-hidden">
       {error && (
@@ -219,11 +294,12 @@ export const Chatbot = () => {
             {messages.map(({ info, parts }) => {
               const content = getMessageText(parts)
               const reasoning = getReasoningPart(parts)
+              const tools = getToolParts(parts)
               const msgError = info.role === "assistant" ? (info as AssistantMessage).error : undefined
               return (
                 <MessageBranch defaultBranch={0} key={info.id}>
                   <MessageBranchContent>
-                    <Message from={info.role === "user" ? "user" : "assistant"} key={info.id}>
+                    <Message className="group/message" from={info.role === "user" ? "user" : "assistant"} key={info.id}>
                       <div>
                         {reasoning && (
                           <Reasoning
@@ -245,9 +321,95 @@ export const Chatbot = () => {
                           </MessageContent>
                         ) : (
                           <MessageContent>
-                            <MessageResponse>{content}</MessageResponse>
+                            {tools.map((tool) => {
+                              const input = "input" in tool.state ? tool.state.input : undefined
+                              const output = "output" in tool.state ? formatToolPayload(tool.state.output) : undefined
+                              const error = "error" in tool.state ? formatToolPayload(tool.state.error) : undefined
+                              const state = toToolState(tool.state.status)
+                              const answered =
+                                "metadata" in tool.state && Array.isArray(tool.state.metadata?.answers)
+                                  ? (tool.state.metadata.answers as string[][])
+                                  : undefined
+                              const questionRequest = tool.tool === "question"
+                                ? questionRequests.find((request) => request.tool?.callID === tool.callID) ?? (
+                                    Array.isArray(input?.questions)
+                                      ? {
+                                          id: tool.callID,
+                                          sessionID: tool.sessionID,
+                                          questions: input.questions,
+                                          tool: {
+                                            messageID: tool.messageID,
+                                            callID: tool.callID,
+                                          },
+                                        }
+                                      : undefined
+                                  )
+                                : undefined
+                              const toolInput = <ToolInput input={input ?? {}} />
+                              return (
+                                <Tool
+                                  defaultOpen={
+                                    tool.tool === "question" || state === "output-available" || state === "output-error"
+                                  }
+                                  key={tool.id}
+                                >
+                                  <ToolHeader
+                                    state={state}
+                                    title={tool.tool}
+                                    toolName={tool.tool}
+                                    type="dynamic-tool"
+                                  />
+                                  <ToolContent>
+                                    {questionRequest ? (
+                                      <QuestionTool
+                                        answered={answered}
+                                        json={toolInput}
+                                        onReject={rejectQuestion}
+                                        onReply={replyQuestion}
+                                        request={questionRequest}
+                                      />
+                                    ) : (
+                                      toolInput
+                                    )}
+                                    {output || error ? (
+                                      <ToolOutput errorText={error} output={output} />
+                                    ) : null}
+                                  </ToolContent>
+                                </Tool>
+                              )
+                            })}
+                            {content ? <MessageResponse>{content}</MessageResponse> : null}
                           </MessageContent>
                         )}
+                        {info.role === "assistant" && content ? (
+                          <MessageActions className="pointer-events-none invisible mt-1 justify-start opacity-0 transition-opacity group-hover/message:visible group-hover/message:pointer-events-auto group-hover/message:opacity-100">
+                            <MessageAction
+                              label="Copy"
+                              onClick={() => handleCopy(content)}
+                              tooltip="Copy to clipboard"
+                              variant="outline"
+                            >
+                              <CopyIcon className="size-4" />
+                            </MessageAction>
+                            {isTtsEnabled && (
+                              <MessageAction
+                                label={playingId === info.id ? "Stop" : "Listen"}
+                                onClick={() => handleSpeak(content, info.id)}
+                                tooltip={playingId === info.id ? "Stop speaking" : "Read aloud"}
+                                variant="outline"
+                                disabled={isTtsLoading && playingId === info.id}
+                              >
+                                {isTtsLoading && playingId === info.id ? (
+                                  <Spinner className="size-4" />
+                                ) : playingId === info.id ? (
+                                  <VolumeXIcon className="size-4" />
+                                ) : (
+                                  <Volume2Icon className="size-4" />
+                                )}
+                              </MessageAction>
+                            )}
+                          </MessageActions>
+                        ) : null}
                       </div>
                     </Message>
                   </MessageBranchContent>
@@ -270,6 +432,7 @@ export const Chatbot = () => {
                 onChange={(e) => setText(e.target.value)}
                 value={text}
                 placeholder={selectedSession ? "Type a message…" : "Create or select a session to chat"}
+                disabled={questionRequests.length > 0}
               />
             </PromptInputBody>
             <PromptInputFooter>
@@ -283,6 +446,14 @@ export const Chatbot = () => {
                 <SpeechInput
                   className="shrink-0"
                   onTranscriptionChange={(t) => setText((prev) => (prev ? `${prev} ${t}` : t))}
+                  onAudioRecorded={handleAudioRecorded}
+                  forceMode={
+                    settings.stt.provider === "disabled"
+                      ? "none"
+                      : settings.stt.provider === "openai-whisper"
+                        ? "media-recorder"
+                        : undefined
+                  }
                   size="icon-sm"
                   variant="ghost"
                 />
@@ -338,7 +509,7 @@ export const Chatbot = () => {
                 )}
 
               </PromptInputTools>
-              <PromptInputSubmit status={status} onStop={abort} />
+              <PromptInputSubmit status={status} onStop={abort} disabled={questionRequests.length > 0} />
             </PromptInputFooter>
           </PromptInput>
         </div>

@@ -70,6 +70,13 @@ export type SpeechInputProps = ComponentProps<typeof Button> & {
    */
   onAudioRecorded?: (audioBlob: Blob) => Promise<string>;
   lang?: string;
+  /**
+   * Force a specific mode regardless of browser capabilities.
+   * Use "media-recorder" to force MediaRecorder mode (for server-side transcription).
+   * Use "speech-recognition" to force Web Speech API mode.
+   * Use "none" to disable.
+   */
+  forceMode?: SpeechInputMode;
 };
 
 const detectSpeechInputMode = (): SpeechInputMode => {
@@ -93,11 +100,14 @@ export const SpeechInput = ({
   onTranscriptionChange,
   onAudioRecorded,
   lang = "en-US",
+  forceMode,
   ...props
 }: SpeechInputProps) => {
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [mode] = useState<SpeechInputMode>(detectSpeechInputMode);
+  const [mode] = useState<SpeechInputMode>(
+    forceMode ?? detectSpeechInputMode
+  );
   const [isRecognitionReady, setIsRecognitionReady] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);

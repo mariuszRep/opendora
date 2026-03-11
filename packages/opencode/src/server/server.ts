@@ -40,7 +40,11 @@ import { errors } from "./error"
 import { QuestionRoutes } from "./routes/question"
 import { PermissionRoutes } from "./routes/permission"
 import { GlobalRoutes } from "./routes/global"
+import { VoiceRoutes } from "./routes/voice"
 import { MDNS } from "./mdns"
+import { BusBridge } from "../session/bus-bridge"
+import { retentionDaemon, sessionManager } from "../session"
+import { openDoraStorageAdapter } from "../session/opendora-storage-adapter"
 
 // @ts-ignore This global is needed to prevent ai-sdk from logging warnings to stdout https://github.com/vercel/ai/blob/2dc67e0ef538307f21368db32d5a12345d98831b/packages/ai/src/logger/log-warnings.ts#L85
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -233,6 +237,7 @@ export namespace Server {
         .route("/permission", PermissionRoutes())
         .route("/question", QuestionRoutes())
         .route("/provider", ProviderRoutes())
+        .route("/voice", VoiceRoutes())
         .route("/", FileRoutes())
         .route("/mcp", McpRoutes())
         .route("/tui", TuiRoutes())
@@ -583,6 +588,10 @@ export namespace Server {
     // Eagerly seed agents on startup so PERSONA.md files exist before first UI load
     Agent.list().catch(() => {})
 
+    // Start PingPong session infrastructure
+    BusBridge.start()
+    retentionDaemon.start(sessionManager, openDoraStorageAdapter)
+
     const shouldPublishMDNS =
       opts.mdns &&
       server.port &&
@@ -598,6 +607,8 @@ export namespace Server {
     const originalStop = server.stop.bind(server)
     server.stop = async (closeActiveConnections?: boolean) => {
       if (shouldPublishMDNS) MDNS.unpublish()
+      retentionDaemon.stop()
+      BusBridge.stop()
       return originalStop(closeActiveConnections)
     }
 
