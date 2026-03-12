@@ -146,7 +146,7 @@ async function createToolContext(agent: Agent.Info) {
     modelID: model.modelID,
     providerID: model.providerID,
     mode: "debug",
-    agent: agent.name,
+    agent: agent.id,
     path: {
       cwd: Instance.directory,
       root: Instance.worktree,
@@ -170,7 +170,7 @@ async function createToolContext(agent: Agent.Info) {
     sessionID: session.id,
     messageID,
     callID: Identifier.ascending("part"),
-    agent: agent.name,
+    agent: agent.id,
     abort: new AbortController().signal,
     messages: [],
     metadata: () => {},

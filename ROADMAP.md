@@ -2,19 +2,20 @@
 
 ## Repository-level direction
 
-Near-term repository work implied by current code and docs:
+Near-term repository work implied by current goal of decoupling:
 
-- keep package boundaries explicit so CLI, web UI, SDK, utilities, and session core can evolve independently
-- continue improving documentation so repository-wide and package-local truth are separated cleanly
-- keep generated API and SDK artifacts aligned with the runtime package
+- Execute the migration to split `opencode` into standalone application (`apps/server`) and reusable packages (`tools`, `agents`, `skills`, `providers`, `db`).
+- Rename and structure existing independent modules: `pingpong-core` becomes `sessions`, `ai-sdk` splits to `apps/web` and `packages/ui`.
+- Enforce strict one-way dependency flow from Applications -> Packages -> External. 
+- Ensure that the resulting system scales better with isolated testing.
 
-## Package-specific work tracked elsewhere
+## App/Package-specific work tracked elsewhere
 
 Use local `ROADMAP.md` files for package plans:
 
-- `packages/opencode` for runtime, CLI, server, and tool work
-- `packages/pingpong-core` for session core and adapter evolution
-- other package roadmaps for local package plans
+- `apps/server` for API server, CLI and bootstrapping the environment.
+- `apps/web` for frontend Dashboard flows.
+- `packages/*` for domain isolation and functional expansion.
 
 ## Unknown or needs verification
 

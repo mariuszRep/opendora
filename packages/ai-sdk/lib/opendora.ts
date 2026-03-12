@@ -156,6 +156,7 @@ export type AgentConfig = {
   hidden?: boolean
   tools?: string[]
   skills?: string[]
+  enableInjection?: boolean
 }
 
 /** What the backend returns from create / update */
@@ -163,6 +164,7 @@ export type AgentEntry = {
   id: string
   config: AgentConfig
   persona: string
+  injection?: string
 }
 
 /** What the backend returns from /agent/generate */
@@ -288,14 +290,17 @@ export const opendora = {
     mainSession: (id: string) => req<Session>(`/agent/${id}/main-session`),
     setMainSession: (id: string, sessionID: string) =>
       req<Session>(`/agent/${id}/main-session`, { method: "PUT", body: JSON.stringify({ sessionID }) }),
-    create: (input: { id?: string; config: AgentConfig; persona?: string }) =>
+    create: (input: { id?: string; config: AgentConfig; persona?: string; injection?: string }) =>
       req<AgentEntry>("/agent", { method: "POST", body: JSON.stringify(input) }),
-    update: (id: string, input: { config?: Partial<AgentConfig>; persona?: string }) =>
+    update: (id: string, input: { config?: Partial<AgentConfig>; persona?: string; injection?: string }) =>
       req<AgentEntry>(`/agent/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
     remove: (id: string) => req<boolean>(`/agent/${id}`, { method: "DELETE" }),
     getPersona: (id: string) => req<{ persona: string }>(`/agent/${id}/persona`).then((r) => r.persona),
     setPersona: (id: string, persona: string) =>
       req<boolean>(`/agent/${id}/persona`, { method: "PUT", body: JSON.stringify({ persona }) }),
+    getInjection: (id: string) => req<{ injection: string }>(`/agent/${id}/injection`).then((r) => r.injection).catch(() => ""),
+    setInjection: (id: string, injection: string) =>
+      req<boolean>(`/agent/${id}/injection`, { method: "PUT", body: JSON.stringify({ injection }) }),
     generate: (input: { description: string; model?: { providerID: string; modelID: string } }) =>
       req<GeneratedAgent>("/agent/generate", { method: "POST", body: JSON.stringify(input) }),
     tools: () => req<string[]>("/agent/tools"),

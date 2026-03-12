@@ -8,5 +8,6 @@
   },
   "tools": [
     "question"
-  ]
+  ],
+  "enableInjection": true
 }

@@ -15,6 +15,7 @@ export const AgentConfig = z.object({
   hidden: z.boolean().optional(),
   tools: z.array(z.string()).optional(),
   skills: z.array(z.string()).optional(),
+  enableInjection: z.boolean().optional(),
 })
 
 export type AgentConfig = z.infer<typeof AgentConfig>
@@ -23,4 +24,5 @@ export type AgentTemplate = {
   id: string
   config: AgentConfig
   persona: string
+  injection?: string
 }

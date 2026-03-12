@@ -161,7 +161,19 @@ export namespace SessionProcessor {
                           JSON.stringify(p.state.input) === JSON.stringify(value.input),
                       )
                     ) {
-                      const agent = await Agent.get(input.assistantMessage.agent)
+                      let agent = await Agent.getByIdOrName(input.assistantMessage.agent)
+                      if (!agent) {
+                        // Fallback to default agent if stored reference is invalid
+                        const defaultAgentName = await Agent.defaultAgent()
+                        agent = await Agent.get(defaultAgentName)
+                        if (!agent) {
+                          throw new Error(`Agent "${input.assistantMessage.agent}" not found and default agent "${defaultAgentName}" is also unavailable`)
+                        }
+                        Log.Default.warn("doom loop agent not found, using default", { 
+                          requested: input.assistantMessage.agent, 
+                          fallback: defaultAgentName 
+                        })
+                      }
                       await PermissionNext.ask({
                         permission: "doom_loop",
                         patterns: [value.toolName],

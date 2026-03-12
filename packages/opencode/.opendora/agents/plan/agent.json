@@ -16,5 +16,6 @@
     "websearch",
     "codesearch",
     "question"
-  ]
+  ],
+  "enableInjection": true
 }

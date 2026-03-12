@@ -209,7 +209,7 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
               <SelectContent>
                 <SelectItem value="__none__">No agent</SelectItem>
                 {visibleAgents.map((agent) => (
-                  <SelectItem key={agent.name} value={agent.name}>
+                  <SelectItem key={(agent as any)._id || agent.id || agent.name} value={(agent as any)._id || agent.id || agent.name}>
                     <span className="capitalize">{agent.name}</span>
                   </SelectItem>
                 ))}

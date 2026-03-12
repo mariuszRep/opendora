@@ -42,8 +42,8 @@ export type UseOpendoraResult = {
   selectedAgent: string
   selectAgent: (name: string) => void
   // Agents — CRUD
-  createAgent: (config: AgentConfig, persona?: string) => Promise<AgentEntry>
-  updateAgent: (id: string, config: Partial<AgentConfig>, persona?: string) => Promise<AgentEntry>
+  createAgent: (config: AgentConfig, persona?: string, injection?: string) => Promise<AgentEntry>
+  updateAgent: (id: string, config: Partial<AgentConfig>, persona?: string, injection?: string) => Promise<AgentEntry>
   deleteAgent: (id: string) => Promise<void>
   getAgentPersona: (id: string) => Promise<string>
   saveAgentPersona: (id: string, text: string) => Promise<void>
@@ -320,8 +320,8 @@ export function useOpendora(): UseOpendoraResult {
 
   // ── Agent CRUD ────────────────────────────────────────────────────────────
 
-  const createAgent = useCallback(async (config: AgentConfig, persona = ""): Promise<AgentEntry> => {
-    const entry = await opendora.agent.create({ config, persona })
+  const createAgent = useCallback(async (config: AgentConfig, persona?: string, injection?: string) => {
+    const entry = await opendora.agent.create({ config, persona, injection })
     // Optimistically add to local list — include all editable fields so the
     // dialog pre-fills correctly if the user re-opens it right after creation.
     const newAgent = {
@@ -345,10 +345,11 @@ export function useOpendora(): UseOpendoraResult {
     return entry
   }, [])
 
-  const updateAgent = useCallback(async (id: string, config: Partial<AgentConfig>, persona?: string): Promise<AgentEntry> => {
-    const entry = await opendora.agent.update(id, { config, persona })
+  const updateAgent = useCallback(async (id: string, config: Partial<AgentConfig>, persona?: string, injection?: string) => {
+    const entry = await opendora.agent.update(id, { config, persona, injection })
     // Optimistically patch local list — match by _id (the slug) not display name
     const updatedAgent = {
+      _id: entry.id,
       id: entry.id,
       name: entry.config.name,
       description: entry.config.description,
@@ -434,20 +435,33 @@ export function useOpendora(): UseOpendoraResult {
     })
   }, [])
 
-  const selectAgent = useCallback(async (name: string) => {
-    setSelectedAgent(name)
+  const selectAgent = useCallback(async (agentId: string) => {
+    setSelectedAgent(agentId)
     // Navigate to the agent's main session when switching agents
     try {
-      const session = await opendora.agent.mainSession(name)
+      const session = await opendora.agent.mainSession(agentId)
       if (session?.id) {
         setSelectedSessionId(session.id)
         selectedSessionRef.current = session
         setMessages([])
         setStatus("ready")
         setError(null)
+      } else {
+        // No main session exists, clear selection but don't crash
+        setSelectedSessionId(null)
+        selectedSessionRef.current = null
+        setMessages([])
+        setStatus("ready")
+        setError(null)
       }
-    } catch {
+    } catch (err) {
       // If main session fetch fails, just switch agent without navigating
+      console.warn("Failed to fetch main session for agent", agentId, err)
+      setSelectedSessionId(null)
+      selectedSessionRef.current = null
+      setMessages([])
+      setStatus("ready")
+      setError(null)
     }
   }, [])
 

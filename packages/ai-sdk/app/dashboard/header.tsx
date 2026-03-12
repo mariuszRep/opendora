@@ -49,6 +49,8 @@ export function Header() {
   }, [])
 
   const visibleAgents = agents.filter((a) => !a.hidden)
+  const selectedAgentObj = agents.find((a) => (a as any)._id === selectedAgent)
+  const selectedAgentName = selectedAgentObj?.name || selectedAgent
 
   return (
     <header className="border-b bg-background sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
@@ -64,7 +66,7 @@ export function Header() {
                 <DropdownMenu open={agentOpen} onOpenChange={setAgentOpen}>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-1 text-sm font-medium hover:text-foreground transition-colors">
-                      <span className="capitalize">{selectedAgent}</span>
+                      <span className="capitalize">{selectedAgentName}</span>
                       <ChevronDownIcon className="size-3 opacity-50" />
                     </button>
                   </DropdownMenuTrigger>
@@ -76,10 +78,10 @@ export function Header() {
                         <CommandGroup>
                           {visibleAgents.map((agent) => (
                             <CommandItem
-                              key={agent.name}
+                              key={(agent as any)._id}
                               value={agent.name}
                               onSelect={() => {
-                                selectAgent(agent.name)
+                                selectAgent((agent as any)._id)
                                 setAgentOpen(false)
                               }}
                             >
@@ -92,7 +94,7 @@ export function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <span className="text-sm font-medium capitalize">{selectedAgent}</span>
+                <span className="text-sm font-medium capitalize">{selectedAgentName}</span>
               )}
             </BreadcrumbItem>
 

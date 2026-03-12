@@ -148,6 +148,7 @@ export const Chatbot = () => {
     defaultModels,
     refreshProviders,
     createSession,
+    updateAgent,
   } = useOpendoraContext()
 
   const { settings } = useVoiceSettings()
@@ -163,7 +164,7 @@ export const Chatbot = () => {
   const [selectedModelID, setSelectedModelID] = useState<string | null>(null)
 
   useEffect(() => {
-    const agent = agents.find((a) => a.name === selectedAgent)
+    const agent = agents.find((a) => (a as any)._id === selectedAgent)
     if (agent?.model) {
       setSelectedProviderID(agent.model.providerID)
       setSelectedModelID(agent.model.modelID)
@@ -172,6 +173,23 @@ export const Chatbot = () => {
       setSelectedModelID(null)
     }
   }, [selectedAgent, agents])
+
+  // Update agent's preferred model when user changes it in chat interface
+  const updateAgentModel = useCallback(async (providerID: string, modelID: string) => {
+    const agent = agents.find((a) => (a as any)._id === selectedAgent)
+    if (!agent || !selectedAgent) return
+
+    // Don't update if it's the same as the current agent model
+    if (agent.model?.providerID === providerID && agent.model?.modelID === modelID) return
+
+    try {
+      await updateAgent(selectedAgent, {
+        model: { providerID, modelID }
+      })
+    } catch (err) {
+      console.error("Failed to update agent model:", err)
+    }
+  }, [selectedAgent, agents, updateAgent])
 
   const modelList = useMemo(
     () =>
@@ -600,6 +618,8 @@ export const Chatbot = () => {
                                     setSelectedProviderID(m.providerID)
                                     setSelectedModelID(m.modelID)
                                     setModelSelectorOpen(false)
+                                    // Sync model change back to agent's preferred model
+                                    updateAgentModel(m.providerID, m.modelID)
                                   }}
                                   value={`${m.providerID}:${m.modelID}`}
                                 >

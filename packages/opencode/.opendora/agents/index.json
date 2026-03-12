@@ -37,6 +37,11 @@
       "id": "pandora",
       "name": "pandora",
       "mode": "primary"
+    },
+    {
+      "id": "project-owner",
+      "name": "Project Owner",
+      "mode": "all"
     }
   ]
 }

@@ -39,6 +39,14 @@ When referencing code, use the pattern \`file_path:line_number\` so the user can
 - Apply security best practices — no XSS, SQL injection, command injection, or other OWASP top 10 vulnerabilities.
 `
 
+const INJECTION = `\
+<system-reminder>
+Your operational mode has changed from plan to build.
+You are no longer in read-only mode.
+You are permitted to make file changes, run shell commands, and utilize your arsenal of tools as needed.
+</system-reminder>
+`
+
 export const buildTemplate: AgentTemplate = {
   id: "build",
   config: {
@@ -46,6 +54,8 @@ export const buildTemplate: AgentTemplate = {
     description: "The default agent. Executes tools based on configured permissions.",
     mode: "primary",
     tools: ["bash", "read", "glob", "grep", "edit", "write", "task", "webfetch", "todowrite", "websearch", "codesearch", "apply_patch", "question"],
+    enableInjection: true,
   },
   persona: PERSONA,
+  injection: INJECTION,
 }

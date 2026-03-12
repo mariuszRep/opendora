@@ -21,16 +21,23 @@ Nested files inherit parent context by default. Treat nested files as stricter o
 - Mark uncertain claims as `needs verification` or `unknown`.
 - Prefer existing scripts, build steps, and generators over ad hoc replacements.
 
-## Package map
+## Application & Package map
 
-Use the local file set when working in these independently developable scopes:
+The architecture enforces the following boundaries. Adhere to these when making structural or logic changes:
 
-- `packages/opencode` - main CLI, server, TUI, storage, tools, provider integration
-- `packages/agent` - file-based agent definitions and template management
-- `packages/ai-sdk` - Next.js web UI
-- `packages/sdk/js` - generated and handwritten TypeScript SDK
-- `packages/util` - shared utility helpers
-- `packages/pingpong-core` - session and storage core library
+**Applications (Consumers):**
+- `apps/server` - API Runtime, CLI, Bootstrapping logic
+- `apps/web` - Next.js UI Frontend
+
+**Packages (Libraries):**
+- `packages/agents` - Definitions, logic, templates
+- `packages/providers` - LLM interaction wrappers
+- `packages/skills` - Chain / workflow definitions 
+- `packages/tools` - Agent action implementations
+- `packages/sessions` - Memory and engine iterations
+- `packages/ui` - Reusable frontend components
+- `packages/db` - Database setup, clients, schemas
+- `packages/utils` - Low-level shared utilities
 
 ## Documentation maintenance
 

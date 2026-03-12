@@ -17,6 +17,11 @@ import { WebFetchTool } from "./webfetch"
 import { WriteTool } from "./write"
 import { InvalidTool } from "./invalid"
 import { SkillTool } from "./skill"
+import { AgentCreateTool } from "./agent-create"
+import { AgentUpdateTool } from "./agent-update"
+import { AgentDeleteTool } from "./agent-delete"
+import { AgentListTool } from "./agent-list"
+import { AgentGetTool } from "./agent-get"
 import type { Agent } from "../agent/agent"
 import { Tool } from "./tool"
 import { Instance } from "../project/instance"
@@ -25,13 +30,12 @@ import path from "path"
 import { type ToolContext as PluginToolContext, type ToolDefinition } from "@opencode-ai/plugin"
 import z from "zod"
 import { Plugin } from "../plugin"
-import { WebSearchTool } from "./websearch"
-import { CodeSearchTool } from "./codesearch"
 import { Flag } from "@/flag/flag"
 import { Log } from "@/util/log"
+import { WebSearchTool } from "./websearch"
+import { CodeSearchTool } from "./codesearch"
 import { LspTool } from "./lsp"
 import { Truncate } from "./truncation"
-
 import { ApplyPatchTool } from "./apply_patch"
 import { Glob } from "../util/glob"
 import { pathToFileURL } from "url"
@@ -127,6 +131,11 @@ export namespace ToolRegistry {
       CodeSearchTool,
       SkillTool,
       ApplyPatchTool,
+      AgentCreateTool,
+      AgentUpdateTool,
+      AgentDeleteTool,
+      AgentListTool,
+      AgentGetTool,
       ...(Flag.OPENCODE_EXPERIMENTAL_LSP_TOOL ? [LspTool] : []),
       ...(config.experimental?.batch_tool === true ? [BatchTool] : []),
       ...(Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE && Flag.OPENCODE_CLIENT === "cli" ? [PlanExitTool] : []),

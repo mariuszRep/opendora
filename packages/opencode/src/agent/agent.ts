@@ -40,6 +40,8 @@ export namespace Agent {
       options: z.record(z.string(), z.any()),
       steps: z.number().int().positive().optional(),
       tools: z.array(z.string()).optional(),
+      enableInjection: z.boolean().optional(),
+      config: AgentStorage.Config.optional(),
     })
     .meta({
       ref: "Agent",
@@ -70,6 +72,12 @@ export namespace Agent {
         "*.env.*": "ask",
         "*.env.example": "allow",
       },
+      // Agent management permissions - allow agents to manage other agents by default
+      agent_create: "allow",
+      agent_update: "allow", 
+      agent_delete: "ask", // Deletion is destructive, so ask by default
+      agent_list: "allow",
+      agent_get: "allow",
     })
 
     const user = PermissionNext.fromConfig(cfg.permission ?? {})
@@ -103,14 +111,32 @@ export namespace Agent {
       model: entry.config.model,
       permission,
       options: {},
+      enableInjection: entry.config.enableInjection,
+      config: entry.config,
     }
   }
 
   /**
-   * Get a single agent by name
+   * Get a single agent by ID
    */
   export async function get(agent: string): Promise<Info | undefined> {
     const entry = await AgentCore.get(Instance.directory, agent)
+    if (!entry) return undefined
+    return entryToInfo(entry)
+  }
+
+  /**
+   * Get agent by ID or name (for backward compatibility with legacy data)
+   * Tries ID first, then falls back to searching by name
+   */
+  export async function getByIdOrName(agentIdOrName: string): Promise<Info | undefined> {
+    // Try by ID first
+    let entry = await AgentCore.get(Instance.directory, agentIdOrName)
+    if (entry) return entryToInfo(entry)
+
+    // Fallback: search by name for legacy data
+    const entries = await AgentCore.list(Instance.directory)
+    entry = entries.find((e) => e.config.name === agentIdOrName)
     if (!entry) return undefined
     return entryToInfo(entry)
   }
@@ -155,12 +181,12 @@ export namespace Agent {
 
   // ── File-based CRUD (delegates to @opendora/agent) ───────────────────────
 
-  export async function create(id: string, config: AgentStorage.Config, persona = "") {
-    return AgentCore.create(Instance.directory, id, config, persona)
+  export async function create(id: string, config: AgentStorage.Config, persona = "", injection = "") {
+    return AgentCore.create(Instance.directory, id, config, persona, injection)
   }
 
-  export async function update(id: string, patch: Partial<AgentStorage.Config>, persona?: string) {
-    return AgentCore.update(Instance.directory, id, patch, persona)
+  export async function update(id: string, patch: Partial<AgentStorage.Config>, persona?: string, injection?: string) {
+    return AgentCore.update(Instance.directory, id, patch, persona, injection)
   }
 
   export async function remove(id: string) {
@@ -173,6 +199,14 @@ export namespace Agent {
 
   export async function setPersona(id: string, text: string) {
     return AgentCore.setPersona(Instance.directory, id, text)
+  }
+
+  export async function getInjection(id: string) {
+    return AgentCore.getInjection(Instance.directory, id)
+  }
+
+  export async function setInjection(id: string, text: string) {
+    return AgentCore.setInjection(Instance.directory, id, text)
   }
 
   export async function resetToTemplate(id: string) {

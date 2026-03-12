@@ -23,9 +23,30 @@ export namespace Agent {
       await AgentStorage.ensureRoot(baseDir)
       // Seed all templates
       for (const template of Templates.getAllTemplates()) {
-        await AgentStorage.create(baseDir, template.id, template.config, template.persona).catch(() => {
+        await AgentStorage.create(baseDir, template.id, template.config, template.persona, template.injection ?? "").catch(() => {
           // Skip if already exists
         })
+      }
+    } else {
+      // Migration: Update existing template agents with injection if they're missing it
+      await AgentStorage.ensureRoot(baseDir)
+      for (const template of Templates.getAllTemplates()) {
+        if (template.injection && await AgentStorage.exists(baseDir, template.id)) {
+          const currentInjection = await AgentStorage.getInjection(baseDir, template.id).catch(() => "")
+          // Only update if injection is missing or empty
+          if (!currentInjection) {
+            await AgentStorage.setInjection(baseDir, template.id, template.injection).catch(() => {
+              // Ignore errors - agent might not exist or be locked
+            })
+            // Also update config to enable injection if not already set
+            const agent = await AgentStorage.load(baseDir, template.id).catch(() => undefined)
+            if (agent && !agent.config.enableInjection) {
+              await AgentStorage.update(baseDir, template.id, { enableInjection: true }).catch(() => {
+                // Ignore errors
+              })
+            }
+          }
+        }
       }
     }
   }
@@ -49,23 +70,23 @@ export namespace Agent {
   /**
    * Create a new agent
    */
-  export async function create(baseDir: string, id: string, config: Config, persona = ""): Promise<Entry> {
+  export async function create(baseDir: string, id: string, config: Config, persona = "", injection = ""): Promise<Entry> {
     await initialize(baseDir)
     const safeId = AgentStorage.toId(id)
     if (await AgentStorage.exists(baseDir, safeId)) {
       throw new Error(`Agent "${safeId}" already exists`)
     }
-    return AgentStorage.create(baseDir, safeId, config, persona)
+    return AgentStorage.create(baseDir, safeId, config, persona, injection)
   }
 
   /**
    * Update an existing agent
    */
-  export async function update(baseDir: string, id: string, patch: Partial<Config>, persona?: string): Promise<Entry> {
+  export async function update(baseDir: string, id: string, patch: Partial<Config>, persona?: string, injection?: string): Promise<Entry> {
     if (!(await AgentStorage.exists(baseDir, id))) {
       throw new Error(`Agent "${id}" not found`)
     }
-    return AgentStorage.update(baseDir, id, patch, persona)
+    return AgentStorage.update(baseDir, id, patch, persona, injection)
   }
 
   /**
@@ -93,6 +114,23 @@ export namespace Agent {
   }
 
   /**
+   * Get agent injection
+   */
+  export async function getInjection(baseDir: string, id: string): Promise<string> {
+    return AgentStorage.getInjection(baseDir, id)
+  }
+
+  /**
+   * Set agent injection
+   */
+  export async function setInjection(baseDir: string, id: string, text: string): Promise<void> {
+    if (!(await AgentStorage.exists(baseDir, id))) {
+      throw new Error(`Agent "${id}" not found`)
+    }
+    return AgentStorage.setInjection(baseDir, id, text)
+  }
+
+  /**
    * Reset agent to template (if template exists)
    */
   export async function resetToTemplate(baseDir: string, id: string): Promise<Entry> {
@@ -101,7 +139,7 @@ export namespace Agent {
       throw new Error(`No template found for "${id}"`)
     }
     // Overwrite with template
-    return AgentStorage.update(baseDir, id, template.config, template.persona)
+    return AgentStorage.update(baseDir, id, template.config, template.persona, template.injection ?? "")
   }
 
   /**

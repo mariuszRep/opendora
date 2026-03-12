@@ -2,11 +2,15 @@
   "name": "pandora",
   "mode": "primary",
   "model": {
-    "modelID": "minimax/minimax-m2.5:free",
-    "providerID": "kilo"
+    "modelID": "gpt-5.4",
+    "providerID": "openai-codex"
   },
   "tools": [
     "spawn_session",
-    "websearch"
+    "agent_create",
+    "websearch",
+    "agent_list",
+    "agent_update",
+    "agent_get"
   ]
 }

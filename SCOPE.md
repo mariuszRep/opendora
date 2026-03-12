@@ -2,14 +2,20 @@
 
 ## What this repository is
 
-`opendora` is a Bun-based monorepo for an AI-assisted development system. It contains:
+`opendora` is a Bun-based monorepo for an AI-assisted development system. It is transitioning to a decoupled application and package-led structure:
 
-- a primary runtime in `packages/opencode`
-- a file-based agent package in `packages/agent`
-- a web UI in `packages/ai-sdk`
-- a TypeScript SDK in `packages/sdk/js`
-- shared utilities in `packages/util`
-- a session/storage core library in `packages/pingpong-core`
+- Applications in `apps/`:
+  - `web`: Next.js frontend UI.
+  - `server`: API runtime and CLI tool.
+- Packages in `packages/`:
+  - `agents`: Agent definition logic.
+  - `sessions`: Session execution engine.
+  - `tools`: Functional executable tools.
+  - `providers`: LLM integrations.
+  - `skills`: Automated workflows.
+  - `ui`: Shared UI library.
+  - `db`: Database logic.
+  - `utils`: Shared utilities.
 
 ## Repository ownership
 
@@ -35,13 +41,20 @@ The repository does not, by itself, own:
 
 ## Local scopes
 
-Independent local scopes currently appear to be:
+The targeted decoupled architecture introduces these definitive independent boundaries:
 
-- `packages/opencode`
-- `packages/agent`
-- `packages/ai-sdk`
-- `packages/sdk/js`
-- `packages/util`
-- `packages/pingpong-core`
+**Apps:**
+- `apps/server`
+- `apps/web`
+
+**Packages:**
+- `packages/agents`
+- `packages/providers`
+- `packages/skills`
+- `packages/tools`
+- `packages/sessions`
+- `packages/ui`
+- `packages/db`
+- `packages/utils`
 
 Other directories inherit root context unless a nearer file set says otherwise.

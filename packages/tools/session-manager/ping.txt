@@ -1,0 +1,15 @@
+Use this tool to ping another agent session.
+
+It supports explicit routing modes:
+- `agent_main`: send a user message into an agent's main role session
+- `existing_session`: send a user message into a known session by session id
+- `new_child_session`: create a child session under the current session, then send the message there
+- `new_root_session`: create a new root session for an agent, then send the message there
+
+Use this when you need session-aware delegation:
+- continue work in an agent's main session such as `build (main)` or `plan (main)`
+- post into a known session without spawning a task subagent
+- create a fresh child or root session for another agent
+
+Provide `agent` for `agent_main`, `new_child_session`, and `new_root_session`.
+Provide `session_id` for `existing_session`.

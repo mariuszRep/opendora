@@ -78,6 +78,8 @@ export default function AgentSettingsPage() {
   const [availableTools, setAvailableTools] = useState<string[]>([])
   const [toolsExpanded, setToolsExpanded] = useState(true)
   const [persona, setPersona] = useState("")
+  const [enableInjection, setEnableInjection] = useState(false)
+  const [injection, setInjection] = useState("")
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -131,12 +133,20 @@ export default function AgentSettingsPage() {
     setModel(agent.model ?? undefined)
     setFallbackModel(agent.fallback_model ?? undefined)
     setSelectedTools(agent.tools ?? [])
+    setEnableInjection((agent as any).enableInjection ?? false)
+    setInjection((agent as any).injection ?? "")
   }, [agentId, agent]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load persona separately (network call, only on id change)
   useEffect(() => {
     if (!id) return
     getAgentPersona(agentId).then(setPersona).catch(() => { })
+  }, [agentId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load injection separately (network call, only on id change)
+  useEffect(() => {
+    if (!id) return
+    opendora.agent.getInjection(agentId).then(setInjection).catch(() => { })
   }, [agentId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleTool(toolId: string) {
@@ -178,8 +188,9 @@ export default function AgentSettingsPage() {
         model,
         fallback_model: fallbackModel,
         tools: selectedTools.length > 0 ? selectedTools : undefined,
+        enableInjection: enableInjection || undefined,
       }
-      await updateAgent(agentId, config, persona)
+      await updateAgent(agentId, config, persona, enableInjection ? injection : undefined)
       router.push("/dashboard")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save")
@@ -483,6 +494,32 @@ export default function AgentSettingsPage() {
               onChange={(e) => setPersona(e.target.value)}
             />
           </div>
+
+          {/* Enable Injection toggle */}
+          <div className="flex items-center justify-between rounded-md border px-3 py-2">
+            <div>
+              <p className="text-sm font-medium">Enable Injection</p>
+              <p className="text-xs text-muted-foreground">Inject custom prompts dynamically before user messages</p>
+            </div>
+            <Switch checked={enableInjection} onCheckedChange={setEnableInjection} />
+          </div>
+
+          {/* Injection (conditional) */}
+          {enableInjection && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="agent-injection">
+                Injection
+                <span className="ml-1 font-normal text-muted-foreground">(INJECTION.md)</span>
+              </Label>
+              <Textarea
+                id="agent-injection"
+                placeholder="<system-reminder>\nCustom workflow instructions...\n</system-reminder>"
+                className="h-72 resize-none overflow-y-auto font-mono text-xs"
+                value={injection}
+                onChange={(e) => setInjection(e.target.value)}
+              />
+            </div>
+          )}
 
           {/* Sessions */}
           <div className="flex flex-col gap-2">

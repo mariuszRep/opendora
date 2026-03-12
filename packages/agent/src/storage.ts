@@ -12,7 +12,7 @@ export namespace AgentStorage {
   export const OPENDORA_DIR = ".opendora"
   export const AGENTS_SUBDIR = "agents"
   export const INDEX_FILE = "index.json"
-  const ALLOWED_FILES = new Set(["agent.json", "PERSONA.md"])
+  const ALLOWED_FILES = new Set(["agent.json", "PERSONA.md", "INJECTION.md"])
 
   // ── Types ─────────────────────────────────────────────────────────────────
   export const Config = AgentConfig
@@ -154,7 +154,7 @@ export namespace AgentStorage {
     return { id, config, persona }
   }
 
-  export async function create(baseDir: string, id: string, config: Config, persona = ""): Promise<Entry> {
+  export async function create(baseDir: string, id: string, config: Config, persona = "", injection = ""): Promise<Entry> {
     await ensureRoot(baseDir)
     const dir = agentDir(baseDir, id)
 
@@ -163,6 +163,9 @@ export namespace AgentStorage {
     const validated = Config.parse(config)
     await safeWrite(baseDir, id, "agent.json", JSON.stringify(validated, null, 2))
     await safeWrite(baseDir, id, "PERSONA.md", persona)
+    if (injection) {
+      await safeWrite(baseDir, id, "INJECTION.md", injection)
+    }
 
     // Then update index
     const index = await readIndex(baseDir)
@@ -177,7 +180,7 @@ export namespace AgentStorage {
     return { id, config: validated, persona }
   }
 
-  export async function update(baseDir: string, id: string, patch: Partial<Config>, persona?: string): Promise<Entry> {
+  export async function update(baseDir: string, id: string, patch: Partial<Config>, persona?: string, injection?: string): Promise<Entry> {
     const existing = await load(baseDir, id)
 
     // Explicit merge - patch values (including undefined) override existing
@@ -192,6 +195,9 @@ export namespace AgentStorage {
     await safeWrite(baseDir, id, "agent.json", JSON.stringify(next, null, 2))
     if (persona !== undefined) {
       await safeWrite(baseDir, id, "PERSONA.md", nextPersona)
+    }
+    if (injection !== undefined) {
+      await safeWrite(baseDir, id, "INJECTION.md", injection)
     }
 
     // Then update index
@@ -220,6 +226,14 @@ export namespace AgentStorage {
 
   export async function setPersona(baseDir: string, id: string, text: string): Promise<void> {
     await safeWrite(baseDir, id, "PERSONA.md", text)
+  }
+
+  export async function getInjection(baseDir: string, id: string): Promise<string> {
+    return safeRead(baseDir, id, "INJECTION.md").catch(() => "")
+  }
+
+  export async function setInjection(baseDir: string, id: string, text: string): Promise<void> {
+    await safeWrite(baseDir, id, "INJECTION.md", text)
   }
 
   export async function exists(baseDir: string, id: string): Promise<boolean> {

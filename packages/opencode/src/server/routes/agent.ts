@@ -102,6 +102,7 @@ export const AgentRoutes = lazy(() =>
                     id: z.string(),
                     config: AgentFile.Config,
                     persona: z.string(),
+                    injection: z.string().optional(),
                   }),
                 ),
               },
@@ -116,12 +117,13 @@ export const AgentRoutes = lazy(() =>
           id: z.string().optional().meta({ description: "Agent id slug. Derived from name when omitted." }),
           config: AgentFile.Config,
           persona: z.string().optional().default(""),
+          injection: z.string().optional().default(""),
         }),
       ),
       async (c) => {
         const body = c.req.valid("json")
         const id = body.id ? AgentFile.toId(body.id) : AgentFile.toId(body.config.name)
-        const entry = await Agent.create(id, body.config, body.persona)
+        const entry = await Agent.create(id, body.config, body.persona, body.injection)
         return c.json(entry, 201)
       },
     )
@@ -143,6 +145,7 @@ export const AgentRoutes = lazy(() =>
                     id: z.string(),
                     config: AgentFile.Config,
                     persona: z.string(),
+                    injection: z.string().optional(),
                   }),
                 ),
               },
@@ -157,12 +160,13 @@ export const AgentRoutes = lazy(() =>
         z.object({
           config: AgentFile.Config.partial().optional(),
           persona: z.string().optional(),
+          injection: z.string().optional(),
         }),
       ),
       async (c) => {
         const { id } = c.req.valid("param")
         const body = c.req.valid("json")
-        const entry = await Agent.update(id, body.config ?? {}, body.persona)
+        const entry = await Agent.update(id, body.config ?? {}, body.persona, body.injection)
         return c.json(entry)
       },
     )
@@ -246,6 +250,62 @@ export const AgentRoutes = lazy(() =>
         const { id } = c.req.valid("param")
         const { persona } = c.req.valid("json")
         await Agent.setPersona(id, persona)
+        return c.json(true)
+      },
+    )
+
+    // GET /agent/:id/injection — get injection.md content
+    .get(
+      "/:id/injection",
+      describeRoute({
+        summary: "Get agent injection",
+        description: "Get the raw INJECTION.md content for an agent.",
+        operationId: "agent.injection.get",
+        responses: {
+          200: {
+            description: "Injection markdown text",
+            content: {
+              "application/json": {
+                schema: resolver(z.object({ injection: z.string() })),
+              },
+            },
+          },
+          ...errors(404),
+        },
+      }),
+      validator("param", z.object({ id: z.string() })),
+      async (c) => {
+        const { id } = c.req.valid("param")
+        const injection = await Agent.getInjection(id)
+        return c.json({ injection })
+      },
+    )
+
+    // PUT /agent/:id/injection — overwrite injection.md
+    .put(
+      "/:id/injection",
+      describeRoute({
+        summary: "Set agent injection",
+        description: "Overwrite the INJECTION.md for an agent.",
+        operationId: "agent.injection.set",
+        responses: {
+          200: {
+            description: "Injection updated",
+            content: {
+              "application/json": {
+                schema: resolver(z.boolean()),
+              },
+            },
+          },
+          ...errors(400, 404),
+        },
+      }),
+      validator("param", z.object({ id: z.string() })),
+      validator("json", z.object({ injection: z.string() })),
+      async (c) => {
+        const { id } = c.req.valid("param")
+        const { injection } = c.req.valid("json")
+        await Agent.setInjection(id, injection)
         return c.json(true)
       },
     )
