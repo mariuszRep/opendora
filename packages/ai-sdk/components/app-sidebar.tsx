@@ -57,13 +57,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarContent>
           {/* Agent section */}
           <SidebarGroup>
-            <SidebarGroupLabel className="group/agents group-data-[collapsible=icon]:hidden flex items-center justify-between pr-1">
+            <SidebarGroupLabel 
+              className="group/agents group-data-[collapsible=icon]:hidden flex items-center justify-between pr-1"
+              onMouseEnter={(e) => {
+                const settingsButton = e.currentTarget.querySelector('button[title="Agents settings"]') as HTMLButtonElement
+                if (settingsButton) {
+                  settingsButton.style.opacity = '1'
+                }
+              }}
+              onMouseLeave={(e) => {
+                const settingsButton = e.currentTarget.querySelector('button[title="Agents settings"]') as HTMLButtonElement
+                if (settingsButton) {
+                  settingsButton.style.opacity = '0'
+                }
+              }}
+            >
               <span>Agents</span>
               <div className="flex items-center">
                 <Button
+                  ref={(el) => {
+                    if (el) el.style.opacity = '0'
+                  }}
                   size="icon-sm"
                   variant="ghost"
-                  className="size-5 text-muted-foreground hover:text-foreground opacity-0 group-hover/agents:opacity-100 transition-opacity"
+                  className="size-5 text-muted-foreground hover:text-foreground transition-opacity"
                   onClick={(e) => {
                     e.stopPropagation()
                     router.push("/dashboard/settings/agents")
@@ -88,7 +105,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 {visibleAgents.map((agent) => {
                   const isActive = agent._id === selectedAgent
                   return (
-                    <SidebarMenuItem key={agent._id}>
+                    <SidebarMenuItem 
+                      key={agent._id}
+                      onMouseEnter={(e) => {
+                        const settingsButton = e.currentTarget.querySelector('[data-sidebar="menu-action"]') as HTMLElement
+                        if (settingsButton) {
+                          settingsButton.style.opacity = '1'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        const settingsButton = e.currentTarget.querySelector('[data-sidebar="menu-action"]') as HTMLElement
+                        if (settingsButton) {
+                          settingsButton.style.opacity = '0'
+                        }
+                      }}
+                    >
                       <SidebarMenuButton
                         isActive={isActive}
                         onClick={() => { selectAgent(agent._id); router.push("/dashboard") }}
@@ -103,10 +134,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
                       {/* Edit — navigates to settings page */}
                       <SidebarMenuAction
-                        className="group-data-[collapsible=icon]:hidden"
+                        className="group-data-[collapsible=icon]:hidden transition-opacity"
+                        style={{ opacity: 0 }}
                         title="Agent settings"
                         onClick={() => router.push(`/dashboard/agents/${agent._id}`)}
-                        showOnHover
                       >
                         <Settings2Icon className="size-3.5" />
                         <span className="sr-only">Settings for {agent.name}</span>
@@ -120,14 +151,31 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
           {/* Sessions — scoped to the selected agent */}
           <SidebarGroup>
-            <SidebarGroupLabel className="group/sessions group-data-[collapsible=icon]:hidden flex items-center justify-between pr-1">
+            <SidebarGroupLabel 
+              className="group/sessions group-data-[collapsible=icon]:hidden flex items-center justify-between pr-1"
+              onMouseEnter={(e) => {
+                const settingsButton = e.currentTarget.querySelector('button[title="Sessions settings"]') as HTMLButtonElement
+                if (settingsButton) {
+                  settingsButton.style.opacity = '1'
+                }
+              }}
+              onMouseLeave={(e) => {
+                const settingsButton = e.currentTarget.querySelector('button[title="Sessions settings"]') as HTMLButtonElement
+                if (settingsButton) {
+                  settingsButton.style.opacity = '0'
+                }
+              }}
+            >
               <span>Sessions</span>
               <div className="flex items-center">
                 {selectedAgent && (
                   <Button
+                    ref={(el) => {
+                      if (el) el.style.opacity = '0'
+                    }}
                     size="icon-sm"
                     variant="ghost"
-                    className="size-5 text-muted-foreground hover:text-foreground opacity-0 group-hover/sessions:opacity-100 transition-opacity"
+                    className="size-5 text-muted-foreground hover:text-foreground transition-opacity"
                     onClick={(e) => {
                       e.stopPropagation()
                       router.push("/dashboard/settings/sessions")
@@ -159,7 +207,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   const isActive = session.id === selectedSession?.id
                   const isMain = session.sessionType === "role"
                   return (
-                    <SidebarMenuItem key={session.id}>
+                    <SidebarMenuItem 
+                      key={session.id}
+                      onMouseEnter={(e) => {
+                        const settingsButton = e.currentTarget.querySelector('[data-sidebar="menu-action"]') as HTMLElement
+                        if (settingsButton) {
+                          settingsButton.style.opacity = '1'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        const settingsButton = e.currentTarget.querySelector('[data-sidebar="menu-action"]') as HTMLElement
+                        if (settingsButton) {
+                          settingsButton.style.opacity = '0'
+                        }
+                      }}
+                    >
                       <SidebarMenuButton
                         isActive={isActive}
                         onClick={() => { selectSession(session.id); router.push("/dashboard") }}
@@ -178,10 +240,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       </SidebarMenuButton>
 
                       <SidebarMenuAction
-                        className="group-data-[collapsible=icon]:hidden"
+                        className="group-data-[collapsible=icon]:hidden transition-opacity"
+                        style={{ opacity: 0 }}
                         title="Session settings"
                         onClick={() => { setEditingSession(session); setSessionEditOpen(true) }}
-                        showOnHover
                       >
                         <Settings2Icon className="size-3.5" />
                         <span className="sr-only">Settings for {formatSessionTitle(session)}</span>

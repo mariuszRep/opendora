@@ -266,6 +266,26 @@ export const SessionRoutes = lazy(() =>
         z.object({
           title: z.string().optional(),
           agentID: z.string().nullable().optional(),
+          sessionType: z.enum(["role", "scope", "worker", "scratchpad"]).optional(),
+          retention: z
+            .object({
+              autoArchive: z.boolean().optional(),
+              autoDelete: z.boolean().optional(),
+              ttlMs: z.number().optional(),
+              maxMessages: z.number().optional(),
+              maxAgeDays: z.number().optional(),
+              onExpire: z.enum(["archive", "close", "delete"]).optional(),
+            })
+            .optional(),
+          sendPolicy: z
+            .object({
+              allow: z.array(z.string()),
+              deny: z.array(z.string()),
+            })
+            .optional(),
+          model: z.string().optional(),
+          toolPolicy: z.array(z.string()).optional(),
+          systemPrompt: z.string().optional(),
           time: z
             .object({
               archived: z.number().optional(),
@@ -283,6 +303,24 @@ export const SessionRoutes = lazy(() =>
         }
         if (updates.agentID !== undefined) {
           session = await Session.setAgentID({ sessionID, agentID: updates.agentID ?? "" })
+        }
+        if (updates.sessionType !== undefined) {
+          session = await Session.setSessionType({ sessionID, sessionType: updates.sessionType })
+        }
+        if (updates.retention !== undefined) {
+          session = await Session.setRetention({ sessionID, retention: updates.retention })
+        }
+        if (updates.sendPolicy !== undefined) {
+          session = await Session.setSendPolicy({ sessionID, policy: updates.sendPolicy })
+        }
+        if (updates.model !== undefined) {
+          session = await Session.setModel({ sessionID, model: updates.model })
+        }
+        if (updates.toolPolicy !== undefined) {
+          session = await Session.setToolPolicy({ sessionID, tools: updates.toolPolicy })
+        }
+        if (updates.systemPrompt !== undefined) {
+          session = await Session.setSystemPrompt({ sessionID, systemPrompt: updates.systemPrompt })
         }
         if (updates.time?.archived !== undefined) {
           session = await Session.setArchived({ sessionID, time: updates.time.archived })

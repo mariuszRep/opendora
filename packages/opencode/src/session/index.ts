@@ -786,6 +786,50 @@ export namespace Session {
     },
   )
 
+  /** Set the session type (role, scope, worker, scratchpad). */
+  export const setSessionType = fn(
+    z.object({ sessionID: Identifier.schema("session"), sessionType: z.enum(["role", "scope", "worker", "scratchpad"]) }),
+    async (input) => {
+      await sessionManager.update(input.sessionID, { type: input.sessionType as SessionType })
+      const row = Database.use((db) => db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get())
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      return fromRow(row)
+    },
+  )
+
+  /** Set the dynamic model override for this session. */
+  export const setModel = fn(
+    z.object({ sessionID: Identifier.schema("session"), model: z.string() }),
+    async (input) => {
+      await sessionManager.update(input.sessionID, { model: input.model })
+      const row = Database.use((db) => db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get())
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      return fromRow(row)
+    },
+  )
+
+  /** Set the allowed tool names for this session. */
+  export const setToolPolicy = fn(
+    z.object({ sessionID: Identifier.schema("session"), tools: z.array(z.string()) }),
+    async (input) => {
+      await sessionManager.update(input.sessionID, { toolPolicy: input.tools })
+      const row = Database.use((db) => db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get())
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      return fromRow(row)
+    },
+  )
+
+  /** Set the system prompt boundary for this session. */
+  export const setSystemPrompt = fn(
+    z.object({ sessionID: Identifier.schema("session"), systemPrompt: z.string() }),
+    async (input) => {
+      await sessionManager.update(input.sessionID, { systemPrompt: input.systemPrompt })
+      const row = Database.use((db) => db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get())
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      return fromRow(row)
+    },
+  )
+
   /** Accumulate token counts at the session level (called after each LLM stream). */
   export const incrementTokens = fn(
     z.object({

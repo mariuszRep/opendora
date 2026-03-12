@@ -60,10 +60,12 @@ import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { QuestionTool } from "@/components/questions/question-tool"
 import type { AssistantMessage, Part, ReasoningPart, TextPart, ToolPart } from "@/lib/opendora"
-import { useVoiceSettings } from "@/hooks/use-voice-settings"
+import { useVoiceSettings, formatHotkey } from "@/hooks/use-voice-settings"
 import { useTextToSpeech } from "@/hooks/use-text-to-speech"
+import { useVoiceRecorder } from "@/hooks/use-voice-recorder"
+import { usePushToTalk } from "@/hooks/use-push-to-talk"
 import { CheckIcon, CopyIcon, Volume2Icon, VolumeXIcon } from "lucide-react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
 
@@ -150,6 +152,10 @@ export const Chatbot = () => {
 
   const { settings } = useVoiceSettings()
   const { speak, playingId, isLoading: isTtsLoading, isEnabled: isTtsEnabled } = useTextToSpeech()
+  const { isRecording, isTranscribing, startRecording, stopRecording } = useVoiceRecorder()
+  const [autoVoiceNextMessage, setAutoVoiceNextMessage] = useState(false)
+  const autoVoiceTimeoutRef = useRef<NodeJS.Timeout>()
+  const expectedAssistantMessageIdRef = useRef<string | null>(null)
 
   const [text, setText] = useState("")
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false)
@@ -251,6 +257,84 @@ export const Chatbot = () => {
     [speak]
   )
 
+  // Handle push-to-talk stop with auto-voice
+  const handlePushToTalkStop = useCallback(async () => {
+    const transcription = await stopRecording()
+    if (transcription) {
+      // Enable auto-voice for the next assistant response
+      setAutoVoiceNextMessage(true)
+      
+      // Clear any existing timeout
+      if (autoVoiceTimeoutRef.current) {
+        clearTimeout(autoVoiceTimeoutRef.current)
+      }
+      
+      // Set a timeout to disable auto-voice after 10 seconds
+      autoVoiceTimeoutRef.current = setTimeout(() => {
+        setAutoVoiceNextMessage(false)
+        expectedAssistantMessageIdRef.current = null
+      }, 10000)
+      
+      // Get the current message count to find the next assistant message
+      const currentMessageCount = messages.length
+      
+      // Submit the transcribed message
+      const model = selectedModel
+        ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
+        : undefined
+      
+      // We'll identify the next assistant message by its position
+      const doSend = () => {
+        sendMessage(transcription, { model, agent: selectedAgent })
+        // The next assistant message will be at position currentMessageCount + 1
+        // We'll track this in the useEffect below
+      }
+      
+      if (!selectedSession) {
+        createSession().then(() => doSend())
+      } else {
+        doSend()
+      }
+    }
+  }, [stopRecording, sendMessage, selectedModel, selectedAgent, selectedSession, createSession, messages.length])
+
+  // Set up push-to-talk
+  usePushToTalk({
+    hotkey: settings.pushToTalk.hotkey,
+    enabled: settings.pushToTalk.enabled && !isTranscribing && status !== "streaming",
+    onStart: startRecording,
+    onStop: handlePushToTalkStop,
+    isActive: isRecording,
+  })
+
+  // Auto-voice assistant responses when enabled
+  useEffect(() => {
+    // Only trigger when auto-voice is enabled and we're not streaming
+    if (!autoVoiceNextMessage || !isTtsEnabled || status === "streaming") return
+    
+    // Small delay to ensure the message is fully rendered
+    const timer = setTimeout(() => {
+      // Find the last assistant message
+      const assistantMessages = messages.filter(m => m.info.role === "assistant")
+      if (assistantMessages.length === 0) return
+      
+      const lastAssistantMessage = assistantMessages[assistantMessages.length - 1]
+      const content = getMessageText(lastAssistantMessage.parts)
+      
+      // Only speak if we have content and it's not already playing
+      if (content && playingId !== lastAssistantMessage.info.id) {
+        speak(content, lastAssistantMessage.info.id)
+        setAutoVoiceNextMessage(false)
+        expectedAssistantMessageIdRef.current = null
+        if (autoVoiceTimeoutRef.current) {
+          clearTimeout(autoVoiceTimeoutRef.current)
+        }
+      }
+    }, 100)
+    
+    return () => clearTimeout(timer)
+  }, [status, messages, autoVoiceNextMessage, isTtsEnabled, playingId, speak])
+
   // Handler for STT with OpenAI Whisper
   const handleAudioRecorded = useCallback(async (audioBlob: Blob) => {
     try {
@@ -299,7 +383,27 @@ export const Chatbot = () => {
               return (
                 <MessageBranch defaultBranch={0} key={info.id}>
                   <MessageBranchContent>
-                    <Message className="group/message" from={info.role === "user" ? "user" : "assistant"} key={info.id}>
+                    <Message 
+                      className="group/message" 
+                      from={info.role === "user" ? "user" : "assistant"} 
+                      key={info.id}
+                      onMouseEnter={(e) => {
+                        const messageActions = e.currentTarget.querySelector('[data-message-actions]') as HTMLElement
+                        if (messageActions) {
+                          messageActions.style.opacity = '1'
+                          messageActions.style.visibility = 'visible'
+                          messageActions.style.pointerEvents = 'auto'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        const messageActions = e.currentTarget.querySelector('[data-message-actions]') as HTMLElement
+                        if (messageActions) {
+                          messageActions.style.opacity = '0'
+                          messageActions.style.visibility = 'hidden'
+                          messageActions.style.pointerEvents = 'none'
+                        }
+                      }}
+                    >
                       <div>
                         {reasoning && (
                           <Reasoning
@@ -382,7 +486,11 @@ export const Chatbot = () => {
                           </MessageContent>
                         )}
                         {info.role === "assistant" && content ? (
-                          <MessageActions className="pointer-events-none invisible mt-1 justify-start opacity-0 transition-opacity group-hover/message:visible group-hover/message:pointer-events-auto group-hover/message:opacity-100">
+                          <MessageActions 
+                            className="pointer-events-none invisible mt-1 justify-start opacity-0 transition-opacity"
+                            style={{ opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
+                            data-message-actions
+                          >
                             <MessageAction
                               label="Copy"
                               onClick={() => handleCopy(content)}
@@ -431,8 +539,8 @@ export const Chatbot = () => {
               <PromptInputTextarea
                 onChange={(e) => setText(e.target.value)}
                 value={text}
-                placeholder={selectedSession ? "Type a message…" : "Create or select a session to chat"}
-                disabled={questionRequests.length > 0}
+                placeholder={selectedSession ? (isRecording ? "Listening..." : isTranscribing ? "Transcribing..." : "Type a message…") : "Create or select a session to chat"}
+                disabled={questionRequests.length > 0 || isRecording}
               />
             </PromptInputBody>
             <PromptInputFooter>
@@ -512,6 +620,13 @@ export const Chatbot = () => {
               <PromptInputSubmit status={status} onStop={abort} disabled={questionRequests.length > 0} />
             </PromptInputFooter>
           </PromptInput>
+          
+          {/* Hotkey hint */}
+          {settings.pushToTalk.enabled && settings.pushToTalk.hotkey && (
+            <p className="text-center text-xs text-muted-foreground px-4 pb-2">
+              Hold <kbd className="px-1 py-0.5 rounded bg-muted font-mono text-[10px]">{formatHotkey(settings.pushToTalk.hotkey)}</kbd> to record and send with voice reply
+            </p>
+          )}
         </div>
       </div>
     </div>

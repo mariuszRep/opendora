@@ -2,6 +2,20 @@ const OPENDORA_URL = process.env.NEXT_PUBLIC_OPENDORA_URL ?? "http://localhost:4
 
 export type SessionType = "role" | "scope" | "worker" | "scratchpad"
 
+export type RetentionPolicy = {
+  autoArchive?: boolean
+  autoDelete?: boolean
+  ttlMs?: number
+  maxMessages?: number
+  maxAgeDays?: number
+  onExpire?: "archive" | "close" | "delete"
+}
+
+export type SendPolicy = {
+  allow: string[]
+  deny: string[]
+}
+
 export type Session = {
   id: string
   projectID: string
@@ -10,6 +24,11 @@ export type Session = {
   title?: string
   agentID?: string
   sessionType?: SessionType
+  retention?: RetentionPolicy
+  sendPolicy?: SendPolicy
+  model?: string
+  toolPolicy?: string[]
+  systemPrompt?: string
   time: { created: number; updated: number }
 }
 
@@ -200,6 +219,20 @@ export const opendora = {
     messages: (sessionID: string) => req<MessageWithParts[]>(`/session/${sessionID}/message`),
     abort: (sessionID: string) =>
       req<boolean>(`/session/${sessionID}/abort`, { method: "POST", body: JSON.stringify({}) }),
+    update: (
+      sessionID: string,
+      updates: {
+        title?: string
+        agentID?: string | null
+        sessionType?: SessionType
+        retention?: Partial<RetentionPolicy>
+        sendPolicy?: SendPolicy
+        model?: string
+        toolPolicy?: string[]
+        systemPrompt?: string
+      },
+    ) => req<Session>(`/session/${sessionID}`, { method: "PATCH", body: JSON.stringify(updates) }),
+    delete: (sessionID: string) => req<boolean>(`/session/${sessionID}`, { method: "DELETE" }),
     setAgent: (sessionID: string, agentID: string | null) =>
       req<Session>(`/session/${sessionID}`, { method: "PATCH", body: JSON.stringify({ agentID }) }),
     prompt: (

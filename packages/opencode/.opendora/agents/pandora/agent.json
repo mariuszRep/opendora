@@ -2,7 +2,11 @@
   "name": "pandora",
   "mode": "primary",
   "model": {
-    "modelID": "mimo-v2-flash-free",
-    "providerID": "opencode"
-  }
+    "modelID": "minimax/minimax-m2.5:free",
+    "providerID": "kilo"
+  },
+  "tools": [
+    "spawn_session",
+    "websearch"
+  ]
 }

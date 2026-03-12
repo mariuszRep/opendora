@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,13 +12,136 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useVoiceSettings } from "@/hooks/use-voice-settings"
-import { Volume2Icon, MicIcon, RotateCcwIcon } from "lucide-react"
+import { useVoiceSettings, formatHotkey, type HotkeyConfig } from "@/hooks/use-voice-settings"
+import { Volume2Icon, MicIcon, RotateCcwIcon, KeyboardIcon } from "lucide-react"
 import { toast } from "sonner"
 
 export default function VoiceSettingsPage() {
   const router = useRouter()
   const { settings, updateSettings, resetSettings, isLoaded } = useVoiceSettings()
+  const [isRecordingHotkey, setIsRecordingHotkey] = useState(false)
+  const [tempHotkey, setTempHotkey] = useState<HotkeyConfig | null>(null)
+  const [recordingKeys, setRecordingKeys] = useState<string[]>([])
+
+  // Handle hotkey recording
+  useEffect(() => {
+    if (!isRecordingHotkey) return
+
+    const keysPressed = new Set<string>()
+    let modifiers = {
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      metaKey: false
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      // Ignore Escape
+      if (e.key === "Escape") {
+        setIsRecordingHotkey(false)
+        keysPressed.clear()
+        setRecordingKeys([])
+        return
+      }
+
+      // Track modifier keys
+      if (e.ctrlKey) modifiers.ctrlKey = true
+      if (e.shiftKey) modifiers.shiftKey = true
+      if (e.altKey) modifiers.altKey = true
+      if (e.metaKey) modifiers.metaKey = true
+
+      // Add non-modifier keys (including special keys like Tab, Enter, etc.)
+      if (!['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+        keysPressed.add(e.key)
+      }
+
+      // Update UI to show current keys being pressed
+      const currentKeys: string[] = []
+      if (modifiers.ctrlKey) currentKeys.push('Ctrl')
+      if (modifiers.shiftKey) currentKeys.push('Shift')
+      if (modifiers.altKey) currentKeys.push('Alt')
+      if (modifiers.metaKey) currentKeys.push('Meta')
+      
+      // Handle special key display names
+      let displayKey = e.key
+      switch (e.key) {
+        case ' ': displayKey = 'Space'; break
+        case 'Tab': displayKey = 'Tab'; break
+        case 'Enter': displayKey = 'Enter'; break
+        case 'Escape': displayKey = 'Esc'; break
+        case 'ArrowUp': displayKey = '↑'; break
+        case 'ArrowDown': displayKey = '↓'; break
+        case 'ArrowLeft': displayKey = '←'; break
+        case 'ArrowRight': displayKey = '→'; break
+        case 'Backspace': displayKey = 'Backspace'; break
+        case 'Delete': displayKey = 'Delete'; break
+        case 'Insert': displayKey = 'Insert'; break
+        case 'Home': displayKey = 'Home'; break
+        case 'End': displayKey = 'End'; break
+        case 'PageUp': displayKey = 'PageUp'; break
+        case 'PageDown': displayKey = 'PageDown'; break
+        case 'CapsLock': displayKey = 'CapsLock'; break
+        case 'NumLock': displayKey = 'NumLock'; break
+        case 'ScrollLock': displayKey = 'ScrollLock'; break
+        case 'Pause': displayKey = 'Pause'; break
+        case 'PrintScreen': displayKey = 'PrintScreen'; break
+        default:
+          if (!['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+            displayKey = e.key.toUpperCase()
+          }
+      }
+      
+      if (!['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+        currentKeys.push(displayKey)
+      }
+      setRecordingKeys(currentKeys)
+
+      // Check if we have a valid combination (1-3 keys total)
+      const totalKeys = keysPressed.size + 
+        (modifiers.ctrlKey ? 1 : 0) + 
+        (modifiers.shiftKey ? 1 : 0) + 
+        (modifiers.altKey ? 1 : 0) + 
+        (modifiers.metaKey ? 1 : 0)
+
+      // Lock in the hotkey immediately when we have at least one non-modifier key
+      if (totalKeys >= 1 && totalKeys <= 3 && keysPressed.size > 0) {
+        // Get the primary non-modifier key
+        const mainKey = Array.from(keysPressed)[0] || ' '
+        
+        // Create hotkey config
+        const hotkey: HotkeyConfig = {
+          key: mainKey,
+          ctrlKey: modifiers.ctrlKey,
+          shiftKey: modifiers.shiftKey,
+          altKey: modifiers.altKey,
+          metaKey: modifiers.metaKey,
+        }
+
+        setTempHotkey(hotkey)
+        setIsRecordingHotkey(false)
+        keysPressed.clear()
+        modifiers = { ctrlKey: false, shiftKey: false, altKey: false, metaKey: false }
+        setRecordingKeys([])
+
+        // Update settings
+        updateSettings({
+          pushToTalk: {
+            ...settings.pushToTalk,
+            hotkey,
+          },
+        })
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [isRecordingHotkey, settings.pushToTalk, updateSettings])
 
   if (!isLoaded) {
     return (
@@ -250,6 +374,148 @@ export default function VoiceSettingsPage() {
               </CardContent>
             </Card>
 
+            {/* Push-to-Talk Settings */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <KeyboardIcon className="h-5 w-5 text-primary" />
+                  <CardTitle>Push-to-Talk</CardTitle>
+                </div>
+                <CardDescription>
+                  Configure hotkey for hold-to-speak functionality
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium">Enable Push-to-Talk</label>
+                    <p className="text-xs text-muted-foreground">
+                      Hold a hotkey to record voice and automatically send with voice reply enabled
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={settings.pushToTalk.enabled}
+                    onClick={() =>
+                      updateSettings({
+                        pushToTalk: {
+                          ...settings.pushToTalk,
+                          enabled: !settings.pushToTalk.enabled,
+                        },
+                      })
+                    }
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
+                      settings.pushToTalk.enabled ? "bg-primary" : "bg-input"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        settings.pushToTalk.enabled ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {settings.pushToTalk.enabled && (
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium">Hotkey</label>
+                    
+                    {/* Hotkey display box */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 px-4 py-3 rounded-md border border-input bg-muted/30 min-h-[60px] flex items-center justify-center">
+                        {isRecordingHotkey ? (
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-primary">
+                              {recordingKeys.length > 0 ? recordingKeys.join(' + ') : 'Press keys...'}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Press up to 3 keys
+                            </p>
+                          </div>
+                        ) : settings.pushToTalk.hotkey ? (
+                          <div className="text-center">
+                            <p className="text-lg font-mono font-semibold">
+                              {formatHotkey(settings.pushToTalk.hotkey)}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            No hotkey set
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Control buttons */}
+                    <div className="flex items-center gap-2">
+                      {!isRecordingHotkey && !settings.pushToTalk.hotkey && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsRecordingHotkey(true)
+                            setTempHotkey(null)
+                            setRecordingKeys([])
+                          }}
+                          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+                        >
+                          Set Hotkey
+                        </button>
+                      )}
+                      
+                      {!isRecordingHotkey && settings.pushToTalk.hotkey && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsRecordingHotkey(true)
+                              setTempHotkey(null)
+                              setRecordingKeys([])
+                            }}
+                            className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors text-sm font-medium"
+                          >
+                            Change
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateSettings({
+                                pushToTalk: {
+                                  ...settings.pushToTalk,
+                                  hotkey: null,
+                                },
+                              })
+                            }
+                            className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 transition-colors text-sm font-medium"
+                          >
+                            Reset
+                          </button>
+                        </>
+                      )}
+                      
+                      {isRecordingHotkey && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsRecordingHotkey(false)
+                            setRecordingKeys([])
+                          }}
+                          className="px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md transition-colors text-sm font-medium"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                    
+                    <p className="text-xs text-muted-foreground">
+                      Press up to 3 keys including modifiers (Ctrl, Shift, Alt, Meta). Example: Ctrl + Shift + V
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Info Card */}
             <Card className="bg-muted/50 border-orange-500/50">
               <CardHeader>
@@ -275,6 +541,7 @@ export default function VoiceSettingsPage() {
                 <p className="text-xs">
                   Voice input will appear as a microphone button in the chat interface.
                   Hover over AI responses to see the "Listen" button for text-to-speech.
+                  Use Push-to-Talk to quickly record and send messages with voice replies.
                 </p>
               </CardContent>
             </Card>

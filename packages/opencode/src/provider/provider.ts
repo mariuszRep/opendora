@@ -159,6 +159,15 @@ export namespace Provider {
         options: {},
       }
     },
+    "openai-codex": async () => {
+      return {
+        autoload: false,
+        async getModel(sdk: any, modelID: string, _options?: Record<string, any>) {
+          return sdk.responses(modelID)
+        },
+        options: {},
+      }
+    },
     "github-copilot": async () => {
       return {
         autoload: false,
@@ -759,6 +768,19 @@ export namespace Provider {
     const config = await Config.get()
     const modelsDev = await ModelsDev.get()
     const database = mapValues(modelsDev, fromModelsDevProvider)
+    if (!database["openai-codex"] && database["openai"]) {
+      const openai = database["openai"]
+      database["openai-codex"] = {
+        ...openai,
+        id: "openai-codex",
+        name: "OpenAI Codex",
+        options: { ...openai.options },
+        models: mapValues(openai.models, (model) => ({
+          ...model,
+          providerID: "openai-codex",
+        })),
+      }
+    }
 
     const disabled = new Set(config.disabled_providers ?? [])
     const enabled = config.enabled_providers ? new Set(config.enabled_providers) : null

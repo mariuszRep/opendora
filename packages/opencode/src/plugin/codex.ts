@@ -81,7 +81,7 @@ function codexModelCapabilities(model: CodexRemoteModel): Provider.Model["capabi
 export function codexRemoteModelToProviderModel(model: CodexRemoteModel): Provider.Model {
   const mapped: Provider.Model = {
     id: model.slug,
-    providerID: "openai",
+    providerID: "openai-codex",
     api: {
       id: model.slug,
       url: CODEX_API_BASE,
@@ -395,6 +395,50 @@ function invalidateAuthCache() {
   authMemoryCache = undefined
 }
 
+async function maybeRefreshCodexTokenOnUnauthorized(
+  response: Response,
+  currentAuth: any,
+  authWithAccount: any,
+  init: RequestInit | undefined,
+  input: PluginInput,
+) {
+  if (response.status !== 401) return undefined
+  const detail = await response
+    .clone()
+    .json()
+    .then((payload: any) => String(payload?.detail ?? ""))
+    .catch(() => "")
+  if (!detail.toLowerCase().includes("could not parse your authentication token")) return undefined
+  if (!currentAuth?.refresh) return undefined
+
+  log.info("codex token rejected by backend, forcing refresh")
+  if (!tokenRefreshInFlight) {
+    tokenRefreshInFlight = refreshAccessToken(currentAuth.refresh, init?.signal ?? undefined).finally(() => {
+      tokenRefreshInFlight = undefined
+    })
+  }
+
+  const tokens = await tokenRefreshInFlight
+  const newAccountId = extractAccountId(tokens) || authWithAccount.accountId
+  await input.client.auth.set({
+    path: { id: "openai-codex" },
+    body: {
+      type: "oauth",
+      refresh: tokens.refresh_token,
+      access: tokens.access_token,
+      expires: Date.now() + (tokens.expires_in ?? 3600) * 1000,
+      ...(newAccountId && { accountId: newAccountId }),
+    },
+  })
+  invalidateAuthCache()
+  currentAuth.access = tokens.access_token
+  authWithAccount.accountId = newAccountId
+  return {
+    access: tokens.access_token,
+    accountId: newAccountId,
+  }
+}
+
 async function startOAuthServer(): Promise<{ port: number; redirectUri: string }> {
   if (oauthServer) {
     return { port: OAUTH_PORT, redirectUri: `http://localhost:${OAUTH_PORT}/auth/callback` }
@@ -546,7 +590,7 @@ function scheduleTokenRefresh(getAuth: () => Promise<{ type: string; refresh?: s
 export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
   return {
     auth: {
-      provider: "openai",
+      provider: "openai-codex",
       async loader(getAuth: () => Promise<any>, provider: any) {
         const auth = await getAuth()
         if (auth.type !== "oauth") return {}
@@ -580,7 +624,7 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
 
         const setAuth = async (tokens: TokenResponse, accountId?: string) => {
           await input.client.auth.set({
-            path: { id: "openai" },
+            path: { id: "openai-codex" },
             body: {
               type: "oauth",
               refresh: tokens.refresh_token,
@@ -636,7 +680,7 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
               const tokens = await tokenRefreshInFlight
               const newAccountId = extractAccountId(tokens) || authWithAccount.accountId
               await input.client.auth.set({
-                path: { id: "openai" },
+                path: { id: "openai-codex" },
                 body: {
                   type: "oauth",
                   refresh: tokens.refresh_token,
@@ -684,9 +728,21 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
                 ? new URL(CODEX_API_ENDPOINT)
                 : parsed
 
-            return fetch(url, {
+            const response = await fetch(url, {
               ...init,
               headers,
+            })
+            const refreshed = await maybeRefreshCodexTokenOnUnauthorized(response, currentAuth, authWithAccount, init, input)
+            if (!refreshed) return response
+
+            const retryHeaders = new Headers(headers)
+            retryHeaders.set("authorization", `Bearer ${refreshed.access}`)
+            if (refreshed.accountId) {
+              retryHeaders.set("ChatGPT-Account-Id", refreshed.accountId)
+            }
+            return fetch(url, {
+              ...init,
+              headers: retryHeaders,
             })
           },
         }
@@ -812,7 +868,7 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
       ],
     },
     "chat.headers": async (input: { model: { providerID: string }; sessionID: string }, output: { headers: Record<string, string> }) => {
-      if (input.model.providerID !== "openai") return
+      if (input.model.providerID !== "openai-codex") return
       output.headers.originator = "opencode"
       output.headers["User-Agent"] = `opencode/${Installation.VERSION} (${os.platform()} ${os.release()}; ${os.arch()})`
       output.headers.session_id = input.sessionID

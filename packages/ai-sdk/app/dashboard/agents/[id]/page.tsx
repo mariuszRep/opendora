@@ -58,6 +58,11 @@ export default function AgentSettingsPage() {
 
   const agent = agents.find((a) => (a as any)._id === id || a.name === id) as any
 
+  // Get the actual agent ID (either _id or name match)
+  const agentId = useMemo(() => {
+    return agent?._id || agent?.name || id
+  }, [agent, id])
+
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [mode, setMode] = useState<AgentConfig["mode"]>("all")
@@ -80,7 +85,7 @@ export default function AgentSettingsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   // Sessions that belong to this agent
-  const agentSessions = sessions.filter((s) => s.agentID === id)
+  const agentSessions = sessions.filter((s) => s.agentID === agentId)
 
   const modelList = useMemo(
     () =>
@@ -126,13 +131,13 @@ export default function AgentSettingsPage() {
     setModel(agent.model ?? undefined)
     setFallbackModel(agent.fallback_model ?? undefined)
     setSelectedTools(agent.tools ?? [])
-  }, [id, agent]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [agentId, agent]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load persona separately (network call, only on id change)
   useEffect(() => {
     if (!id) return
-    getAgentPersona(id).then(setPersona).catch(() => { })
-  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+    getAgentPersona(agentId).then(setPersona).catch(() => { })
+  }, [agentId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleTool(toolId: string) {
     setSelectedTools((prev) =>
@@ -174,7 +179,7 @@ export default function AgentSettingsPage() {
         fallback_model: fallbackModel,
         tools: selectedTools.length > 0 ? selectedTools : undefined,
       }
-      await updateAgent(id, config, persona)
+      await updateAgent(agentId, config, persona)
       router.push("/dashboard")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save")
@@ -510,7 +515,7 @@ export default function AgentSettingsPage() {
                           onClick={async () => {
                             setPromotingSession(session.id)
                             try {
-                              await setAgentMainSession(id, session.id)
+                              await setAgentMainSession(agentId, session.id)
                             } finally {
                               setPromotingSession(null)
                             }

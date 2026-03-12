@@ -1,0 +1,112 @@
+"use client"
+
+import { useEffect, useRef, useCallback } from "react"
+import { matchesHotkey, type HotkeyConfig } from "./use-voice-settings"
+
+interface UsePushToTalkOptions {
+  hotkey: HotkeyConfig | null
+  enabled: boolean
+  onStart: () => void
+  onStop: () => Promise<void> | void
+  isActive: boolean
+}
+
+export function usePushToTalk({
+  hotkey,
+  enabled,
+  onStart,
+  onStop,
+  isActive,
+}: UsePushToTalkOptions) {
+  const isHoldingRef = useRef(false)
+  const startedByHotkeyRef = useRef(false)
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!enabled || !hotkey) return
+
+      // Always prevent default for Tab key combinations to avoid browser navigation
+      if (hotkey.key === "Tab" || hotkey.key === " " || 
+          (hotkey.ctrlKey && event.ctrlKey) ||
+          (hotkey.altKey && event.altKey) ||
+          (hotkey.shiftKey && event.shiftKey) ||
+          (hotkey.metaKey && event.metaKey)) {
+        // Check if this could be our hotkey combination
+        if (matchesHotkey(event, hotkey)) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      }
+
+      // Ignore if typing in an input field (unless it's Space without modifiers)
+      const target = event.target as HTMLElement
+      const isInputField =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+
+      // Allow Space hotkey even in input fields if modifiers are used
+      const hasModifiers = hotkey.ctrlKey || hotkey.altKey || hotkey.shiftKey || hotkey.metaKey
+      
+      // For Tab key, always prevent default when matched to avoid browser navigation
+      if (hotkey.key === "Tab" && matchesHotkey(event, hotkey)) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+      
+      if (isInputField && !hasModifiers && hotkey.key !== "Tab") return
+
+      if (matchesHotkey(event, hotkey) && !isHoldingRef.current) {
+        event.preventDefault()
+        event.stopPropagation()
+        isHoldingRef.current = true
+        startedByHotkeyRef.current = true
+        onStart()
+      }
+    },
+    [enabled, hotkey, onStart]
+  )
+
+  const handleKeyUp = useCallback(
+    async (event: KeyboardEvent) => {
+      if (!enabled || !hotkey) return
+
+      if (matchesHotkey(event, hotkey) && isHoldingRef.current) {
+        event.preventDefault()
+        isHoldingRef.current = false
+        if (startedByHotkeyRef.current) {
+          startedByHotkeyRef.current = false
+          await onStop()
+        }
+      }
+    },
+    [enabled, hotkey, onStop]
+  )
+
+  // Handle window blur (user switches tab/window while holding)
+  const handleBlur = useCallback(async () => {
+    if (isHoldingRef.current && startedByHotkeyRef.current) {
+      isHoldingRef.current = false
+      startedByHotkeyRef.current = false
+      await onStop()
+    }
+  }, [onStop])
+
+  useEffect(() => {
+    if (!enabled || !hotkey) return
+
+    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("keyup", handleKeyUp)
+    window.addEventListener("blur", handleBlur)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keyup", handleKeyUp)
+      window.removeEventListener("blur", handleBlur)
+    }
+  }, [enabled, hotkey, handleKeyDown, handleKeyUp, handleBlur])
+
+  return {
+    isHotkeyTriggered: startedByHotkeyRef.current && isActive,
+  }
+}

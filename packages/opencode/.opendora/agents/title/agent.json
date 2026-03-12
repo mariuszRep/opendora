@@ -2,6 +2,10 @@
   "name": "title",
   "description": "Generates a short title for a session.",
   "mode": "primary",
+  "model": {
+    "modelID": "stepfun/step-3.5-flash:free",
+    "providerID": "openrouter"
+  },
   "hidden": true,
   "tools": []
 }

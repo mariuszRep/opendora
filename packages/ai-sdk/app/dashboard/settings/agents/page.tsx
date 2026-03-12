@@ -6,14 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Separator } from "@/components/ui/separator"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -23,12 +16,71 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { SettingsIcon, PlusIcon, EditIcon, StarIcon, BotIcon } from "lucide-react"
+import { SettingsIcon, PlusIcon, EditIcon, StarIcon, BotIcon, EyeIcon, EyeOffIcon } from "lucide-react"
+
+// AgentCard component for displaying individual agents
+function AgentCard({ agent, sessionCount, router }: {
+  agent: any
+  sessionCount: number
+  router: any
+}) {
+  return (
+    <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+      <CardHeader className="pb-2 p-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+            <div
+              className="w-2.5 h-2.5 rounded-full shrink-0"
+              style={{ backgroundColor: agent.color || "#6366f1" }}
+            />
+            <CardTitle className="capitalize text-sm truncate">
+              {agent.name}
+            </CardTitle>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {agent.hidden && (
+              <EyeOffIcon className="h-3 w-3 text-muted-foreground" />
+            )}
+          </div>
+        </div>
+        {agent.description && (
+          <CardDescription className="line-clamp-2 text-xs mt-1">
+            {agent.description}
+          </CardDescription>
+        )}
+      </CardHeader>
+      <CardContent className="pt-0 p-3">
+        <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+          <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5">
+            {agent.mode || "all"}
+          </Badge>
+          <span className="text-xs">{sessionCount} sessions</span>
+        </div>
+        <div className="flex gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 h-7 text-xs"
+            onClick={() =>
+              router.push(`/dashboard/agents/${(agent as any)._id || agent.name}`)
+            }
+          >
+            <EditIcon className="mr-1 h-2.5 w-2.5" />
+            Edit
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function SettingsAgentsPage() {
   const router = useRouter()
-  const { agents, sessions } = useOpendoraContext()
+  const { allAgents, sessions } = useOpendoraContext()
   const [searchQuery, setSearchQuery] = useState("")
+
+  // Get all agents including hidden ones
+  const agents = allAgents
 
   const filteredAgents = useMemo(() => {
     if (!searchQuery) return agents
@@ -40,6 +92,16 @@ export default function SettingsAgentsPage() {
         (agent.mode && agent.mode.toLowerCase().includes(query))
     )
   }, [agents, searchQuery])
+
+  // Group agents by mode
+  const agentsByMode = useMemo(() => {
+    const groups = {
+      primary: filteredAgents.filter(a => a.mode === 'primary'),
+      subagent: filteredAgents.filter(a => a.mode === 'subagent'),
+      all: filteredAgents.filter(a => a.mode === 'all' || !a.mode),
+    }
+    return groups
+  }, [filteredAgents])
 
   const getSessionCount = (agentId: string) => {
     return sessions.filter((session) => session.agentID === agentId).length
@@ -91,7 +153,7 @@ export default function SettingsAgentsPage() {
             />
           </div>
 
-          {/* Agents Grid */}
+          {/* Agents Grid - Grouped by Mode */}
           {filteredAgents.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
@@ -113,65 +175,74 @@ export default function SettingsAgentsPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredAgents.map((agent) => {
-                const sessionCount = getSessionCount((agent as any)._id || agent.name)
-                return (
-                  <Card key={agent.name} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: agent.color || "#6366f1" }}
-                          />
-                          <CardTitle className="capitalize text-lg">
-                            {agent.name}
-                          </CardTitle>
-                        </div>
-                        {agent.hidden && (
-                          <Badge variant="secondary" className="text-xs">
-                            Hidden
-                          </Badge>
-                        )}
-                      </div>
-                      {agent.description && (
-                        <CardDescription className="line-clamp-2">
-                          {agent.description}
-                        </CardDescription>
-                      )}
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                        <span className="capitalize">{agent.mode || "all"}</span>
-                        <span>{sessionCount} sessions</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() =>
-                            router.push(`/dashboard/agents/${(agent as any)._id || agent.name}`)
-                          }
-                        >
-                          <EditIcon className="mr-1 h-3 w-3" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => router.push(`/dashboard/agents/${(agent as any)._id || agent.name}`)}
-                        >
-                          <SettingsIcon className="mr-1 h-3 w-3" />
-                          Settings
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+            <div className="space-y-8">
+              {/* Primary Agents */}
+              {agentsByMode.primary.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <h2 className="text-lg font-semibold">Primary Agents</h2>
+                    <Badge variant="secondary">{agentsByMode.primary.length}</Badge>
+                  </div>
+                  <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                    {agentsByMode.primary.map((agent) => (
+                      <AgentCard
+                        key={agent.name}
+                        agent={agent}
+                        sessionCount={getSessionCount((agent as any)._id || agent.name)}
+                        router={router}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {agentsByMode.primary.length > 0 && agentsByMode.subagent.length > 0 && (
+                <Separator />
+              )}
+
+              {/* Sub-agents */}
+              {agentsByMode.subagent.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <h2 className="text-lg font-semibold">Sub-agents</h2>
+                    <Badge variant="secondary">{agentsByMode.subagent.length}</Badge>
+                  </div>
+                  <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                    {agentsByMode.subagent.map((agent) => (
+                      <AgentCard
+                        key={agent.name}
+                        agent={agent}
+                        sessionCount={getSessionCount((agent as any)._id || agent.name)}
+                        router={router}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {agentsByMode.subagent.length > 0 && agentsByMode.all.length > 0 && (
+                <Separator />
+              )}
+
+              {/* All Mode Agents */}
+              {agentsByMode.all.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <h2 className="text-lg font-semibold">All Mode Agents</h2>
+                    <Badge variant="secondary">{agentsByMode.all.length}</Badge>
+                  </div>
+                  <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                    {agentsByMode.all.map((agent) => (
+                      <AgentCard
+                        key={agent.name}
+                        agent={agent}
+                        sessionCount={getSessionCount((agent as any)._id || agent.name)}
+                        router={router}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
