@@ -55,6 +55,9 @@ export type UseOpendoraResult = {
   refreshProviders: () => Promise<void>
   // Error
   error: string | null
+  // UI Layout
+  isChatCentered: boolean
+  toggleChatLayout: () => void
 }
 
 export function useOpendora(): UseOpendoraResult {
@@ -70,8 +73,10 @@ export function useOpendora(): UseOpendoraResult {
   const [agents, setAgents] = useState<(Agent & { _id: string })[]>([])
   const [allAgents, setAllAgents] = useState<(Agent & { _id: string })[]>([])
   const [selectedAgent, setSelectedAgent] = useState<string>("build")
+  const [isChatCentered, setIsChatCentered] = useState(false)
 
   const selectedSessionRef = useRef<Session | null>(null)
+
 
   const selectedSession = sessions.find((s) => s.id === selectedSessionId) ?? null
   // Sessions that belong to the currently selected agent
@@ -464,6 +469,9 @@ export function useOpendora(): UseOpendoraResult {
       setError(null)
     }
   }, [])
+  const toggleChatLayout = useCallback(() => {
+    setIsChatCentered((prev) => !prev)
+  }, [])
 
   return {
     sessions,
@@ -495,5 +503,7 @@ export function useOpendora(): UseOpendoraResult {
     defaultModels,
     refreshProviders,
     error,
+    isChatCentered,
+    toggleChatLayout,
   }
 }

@@ -23,7 +23,8 @@ import {
 import { ModeToggle } from "@/components/mode-toggle"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { ChevronDownIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ChevronDownIcon, GalleryHorizontalIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 
 function formatSessionTitle(session: { title?: string; time: { created: number } }): string {
@@ -37,7 +38,7 @@ function formatSessionTitle(session: { title?: string; time: { created: number }
 }
 
 export function Header() {
-  const { selectedAgent, selectAgent, selectedSession, agentSessions, selectSession, agents } =
+  const { selectedAgent, selectAgent, selectedSession, agentSessions, selectSession, agents, isChatCentered, toggleChatLayout } =
     useOpendoraContext()
 
   const [sessionOpen, setSessionOpen] = useState(false)
@@ -147,7 +148,15 @@ export function Header() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleChatLayout}
+            title={isChatCentered ? "Stretched View" : "Centered View"}
+          >
+            <GalleryHorizontalIcon className="size-[1.2rem]" />
+          </Button>
           <ModeToggle />
         </div>
       </div>

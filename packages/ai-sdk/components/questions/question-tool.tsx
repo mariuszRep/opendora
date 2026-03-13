@@ -3,9 +3,7 @@
 import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
-import { ButtonGroup } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
 import type { QuestionAnswer, QuestionRequest } from "@/lib/opendora"
 import { cn } from "@/lib/utils"
 import { BracesIcon, CheckIcon, MessageSquareIcon } from "lucide-react"
@@ -33,13 +31,13 @@ function QuestionStep(props: {
           {multi ? "Select all that apply." : "Select one answer."}
         </p>
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {props.question.options.map((option) => {
           const checked = props.value.includes(option.label)
           return (
             <button
               className={cn(
-                "group flex items-start justify-between gap-3 rounded-lg border px-4 py-4 text-left transition-all",
+                "group flex min-h-32 items-start justify-between gap-3 rounded-lg border px-4 py-4 text-left transition-all",
                 props.submitted
                   ? checked
                     ? "border-accent bg-accent/15"
@@ -157,91 +155,84 @@ export function QuestionTool(props: {
 
   return (
     <div className="grid gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-muted-foreground text-xs">
-          {props.request.questions.length === 1 ? "Question" : `Question ${step + 1} of ${props.request.questions.length}`}
-        </div>
-        <ButtonGroup className="shrink-0">
-          <Button
-            onClick={() => setMode("interactive")}
-            size="sm"
-            type="button"
-            variant={mode === "interactive" ? "secondary" : "outline"}
-          >
-            <MessageSquareIcon className="size-4" />
-            Interactive
-          </Button>
-          <Button
-            onClick={() => setMode("json")}
-            size="sm"
-            type="button"
-            variant={mode === "json" ? "secondary" : "outline"}
-          >
-            <BracesIcon className="size-4" />
-            JSON
-          </Button>
-        </ButtonGroup>
+      <div className="flex justify-end">
+        <Button
+          onClick={() => setMode((current) => (current === "interactive" ? "json" : "interactive"))}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          {mode === "interactive" ? (
+            <>
+              <BracesIcon className="size-4" />
+              View code
+            </>
+          ) : (
+            <>
+              <MessageSquareIcon className="size-4" />
+              Interactive
+            </>
+          )}
+        </Button>
       </div>
 
       {mode === "json" ? (
         props.json
       ) : (
-        <Card className="w-full max-w-lg border-border bg-card">
-          <CardContent className="space-y-4 p-5">
-            {isSubmitted ? (
-              <div className="space-y-4">
-                {props.request.questions.map((question, index) => {
-                  const value = submittedAnswers?.[index] ?? []
-                  const customValue =
-                    value.find((item) => !question.options.some((option) => option.label === item)) ?? ""
-                  return (
-                    <QuestionStep
-                      customValue={customValue}
-                      key={`${props.request.id}:${index}`}
-                      onCustomChange={() => {}}
-                      onPickSingle={() => {}}
-                      onToggle={() => {}}
-                      question={question}
-                      submitted
-                      value={value}
-                    />
-                  )
-                })}
-              </div>
-            ) : (
-              <>
-                <QuestionStep
-                  customValue={customValue}
-                  onCustomChange={setCustomValue}
-                  onPickSingle={setSingleAnswer}
-                  onToggle={toggleAnswer}
-                  question={question}
-                  value={currentValue}
-                />
-                <div className="flex items-center justify-between gap-2">
-                  <Button onClick={() => props.onReject(props.request.id)} type="button" variant="ghost">
-                    Dismiss
-                  </Button>
-                  <div className="flex items-center gap-2">
-                    {step > 0 ? (
-                      <Button onClick={() => setStep((prev) => prev - 1)} type="button" variant="outline">
-                        Back
-                      </Button>
-                    ) : null}
-                    <Button
-                      className="bg-accent text-accent-foreground hover:bg-accent/90"
-                      disabled={!canContinue}
-                      onClick={() => void handleContinue()}
-                      type="button"
-                    >
-                      {isLast ? "Submit" : "Continue"}
+        <div className="space-y-4">
+          {isSubmitted ? (
+            <div className="space-y-4">
+              {props.request.questions.map((question, index) => {
+                const value = submittedAnswers?.[index] ?? []
+                const customValue =
+                  value.find((item) => !question.options.some((option) => option.label === item)) ?? ""
+                return (
+                  <QuestionStep
+                    customValue={customValue}
+                    key={`${props.request.id}:${index}`}
+                    onCustomChange={() => {}}
+                    onPickSingle={() => {}}
+                    onToggle={() => {}}
+                    question={question}
+                    submitted
+                    value={value}
+                  />
+                )
+              })}
+            </div>
+          ) : (
+            <>
+              <QuestionStep
+                customValue={customValue}
+                onCustomChange={setCustomValue}
+                onPickSingle={setSingleAnswer}
+                onToggle={toggleAnswer}
+                question={question}
+                value={currentValue}
+              />
+              <div className="flex items-center justify-between gap-2">
+                <Button onClick={() => props.onReject(props.request.id)} type="button" variant="ghost">
+                  Dismiss
+                </Button>
+                <div className="flex items-center gap-2">
+                  {step > 0 ? (
+                    <Button onClick={() => setStep((prev) => prev - 1)} type="button" variant="outline">
+                      Back
                     </Button>
-                  </div>
+                  ) : null}
+                  <Button
+                    className="bg-accent text-accent-foreground hover:bg-accent/90"
+                    disabled={!canContinue}
+                    onClick={() => void handleContinue()}
+                    type="button"
+                  >
+                    {isLast ? "Submit" : "Continue"}
+                  </Button>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              </div>
+            </>
+          )}
+        </div>
       )}
     </div>
   )

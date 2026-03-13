@@ -431,7 +431,16 @@ export const CodeBlock = ({
   return (
     <CodeBlockContext.Provider value={contextValue}>
       <CodeBlockContainer className={className} language={language} {...props}>
-        {children}
+        {children ?? (
+          <CodeBlockHeader>
+            <CodeBlockTitle>
+              <CodeBlockFilename>{language}</CodeBlockFilename>
+            </CodeBlockTitle>
+            <CodeBlockActions>
+              <CodeBlockCopyButton />
+            </CodeBlockActions>
+          </CodeBlockHeader>
+        )}
         <CodeBlockContent
           code={code}
           language={language}

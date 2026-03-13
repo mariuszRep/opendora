@@ -68,6 +68,7 @@ import { CheckIcon, CopyIcon, Volume2Icon, VolumeXIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
+import { cn } from "@/lib/utils"
 
 const suggestions = [
   "What files are in this project?",
@@ -149,6 +150,7 @@ export const Chatbot = () => {
     refreshProviders,
     createSession,
     updateAgent,
+    isChatCentered,
   } = useOpendoraContext()
 
   const { settings } = useVoiceSettings()
@@ -392,17 +394,23 @@ export const Chatbot = () => {
         </div>
       ) : (
         <Conversation>
-          <ConversationContent>
+          <ConversationContent className={cn(isChatCentered && "max-w-3xl mx-auto w-full")}>
             {messages.map(({ info, parts }) => {
               const content = getMessageText(parts)
               const reasoning = getReasoningPart(parts)
               const tools = getToolParts(parts)
+              const hasTools = tools.length > 0
+              const hasCodeBlock = content.includes("```")
+              const shouldUseFullWidth = hasTools || hasCodeBlock
               const msgError = info.role === "assistant" ? (info as AssistantMessage).error : undefined
               return (
                 <MessageBranch defaultBranch={0} key={info.id}>
                   <MessageBranchContent>
                     <Message 
-                      className="group/message" 
+                      className={cn(
+                        "group/message",
+                        shouldUseFullWidth && info.role === "assistant" && "max-w-full"
+                      )}
                       from={info.role === "user" ? "user" : "assistant"} 
                       key={info.id}
                       onMouseEnter={(e) => {
@@ -436,13 +444,13 @@ export const Chatbot = () => {
                           </Reasoning>
                         )}
                         {msgError ? (
-                          <MessageContent>
+                          <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
                             <p className="text-destructive text-sm">
                               {String((msgError.data as { message?: string })?.message ?? msgError.name)}
                             </p>
                           </MessageContent>
                         ) : (
-                          <MessageContent>
+                          <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
                             {tools.map((tool) => {
                               const input = "input" in tool.state ? tool.state.input : undefined
                               const output = "output" in tool.state ? formatToolPayload(tool.state.output) : undefined
@@ -470,9 +478,7 @@ export const Chatbot = () => {
                               const toolInput = <ToolInput input={input ?? {}} />
                               return (
                                 <Tool
-                                  defaultOpen={
-                                    tool.tool === "question" || state === "output-available" || state === "output-error"
-                                  }
+                                  defaultOpen={false}
                                   key={tool.id}
                                 >
                                   <ToolHeader
@@ -548,7 +554,7 @@ export const Chatbot = () => {
       )}
 
       <div className="grid shrink-0 gap-4 pt-4">
-        <div className="w-full px-4 pb-4">
+        <div className={cn("w-full px-4 pb-4 transition-all duration-300", isChatCentered && "max-w-3xl mx-auto")}>
           <PromptInput globalDrop multiple onSubmit={handleSubmit}>
             <PromptInputHeader>
               <AttachmentsDisplay />

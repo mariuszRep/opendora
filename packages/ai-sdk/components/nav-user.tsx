@@ -3,8 +3,8 @@
 import {
   BadgeCheck,
   Bell,
-  ChevronsUpDown,
   CreditCard,
+  GalleryHorizontalIcon,
   LogOut,
   Sparkles,
 } from "lucide-react"
@@ -58,7 +58,7 @@ export function NavUser({
                 <span className="truncate font-medium">{user.name}</span>
                 <span className="truncate text-xs">{user.email}</span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4" />
+              <GalleryHorizontalIcon className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent

@@ -2,7 +2,16 @@
 
 import type { UIMessage } from "ai";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
+import type { BundledLanguage } from "shiki";
 
+import {
+  CodeBlock,
+  CodeBlockActions,
+  CodeBlockCopyButton,
+  CodeBlockFilename,
+  CodeBlockHeader,
+  CodeBlockTitle,
+} from "@/components/ai-elements/code-block";
 import { Button } from "@/components/ui/button";
 import {
   ButtonGroup,
@@ -22,6 +31,8 @@ import { mermaid } from "@streamdown/mermaid";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import {
   createContext,
+  cloneElement,
+  isValidElement,
   memo,
   useCallback,
   useContext,
@@ -323,14 +334,57 @@ export const MessageBranchPage = ({
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
 const streamdownPlugins = { cjk, code, math, mermaid };
+const languageClassPattern = /language-([a-z0-9_+-]+)/i;
+
+const messageResponseComponents = {
+  code: ({
+    children,
+    className,
+    ...props
+  }: ComponentProps<"code"> & { "data-block"?: boolean }) => {
+    const match = className?.match(languageClassPattern);
+    const language = match?.[1]?.toLowerCase() ?? "text";
+
+    if (!("data-block" in props)) {
+      return (
+        <code
+          className={cn(
+            "rounded bg-muted px-1.5 py-0.5 font-mono text-sm",
+            className
+          )}
+          {...props}
+        >
+          {children}
+        </code>
+      );
+    }
+
+    const code = typeof children === "string" ? children : String(children ?? "");
+
+    return (
+      <CodeBlock code={code} language={language as BundledLanguage}>
+        <CodeBlockHeader>
+          <CodeBlockTitle>
+            <CodeBlockFilename>{language}</CodeBlockFilename>
+          </CodeBlockTitle>
+          <CodeBlockActions>
+            <CodeBlockCopyButton />
+          </CodeBlockActions>
+        </CodeBlockHeader>
+      </CodeBlock>
+    );
+  },
+  pre: ({ children }: ComponentProps<"pre">) =>
+    isValidElement(children)
+      ? cloneElement(children, { "data-block": "true" })
+      : children,
+};
 
 export const MessageResponse = memo(
   ({ className, ...props }: MessageResponseProps) => (
     <Streamdown
-      className={cn(
-        "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
-        className
-      )}
+      className={cn("size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0", className)}
+      components={messageResponseComponents}
       plugins={streamdownPlugins}
       {...props}
     />

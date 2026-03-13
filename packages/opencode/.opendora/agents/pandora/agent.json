@@ -11,6 +11,12 @@
     "websearch",
     "agent_list",
     "agent_update",
-    "agent_get"
+    "agent_get",
+    "question",
+    "task",
+    "ping_main",
+    "webfetch",
+    "delegate",
+    "ping_session"
   ]
 }
