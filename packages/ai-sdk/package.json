@@ -35,6 +35,7 @@
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-icons": "5.6.0",
     "shadcn": "^3.8.5",
     "shiki": "4.0.2",
     "sonner": "^2.0.7",

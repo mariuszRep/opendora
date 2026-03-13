@@ -15,6 +15,7 @@ import {
   type QuestionAnswer,
   type QuestionRequest,
   type Session,
+  type SessionType,
 } from "@/lib/opendora"
 
 export type ChatStatus = "ready" | "submitted" | "streaming" | "error"
@@ -25,9 +26,10 @@ export type UseOpendoraResult = {
   agentSessions: Session[]
   selectedSession: Session | null
   selectSession: (id: string) => void
-  createSession: () => Promise<void>
+  createSession: (sessionType?: SessionType) => Promise<void>
   setSessionAgent: (sessionID: string, agentID: string | null) => Promise<void>
   setAgentMainSession: (agentID: string, sessionID: string) => Promise<void>
+  activeSessions: Set<string>
   // Messages
   messages: MessageWithParts[]
   questionRequests: QuestionRequest[]
@@ -74,6 +76,7 @@ export function useOpendora(): UseOpendoraResult {
   const [allAgents, setAllAgents] = useState<(Agent & { _id: string })[]>([])
   const [selectedAgent, setSelectedAgent] = useState<string>("build")
   const [isChatCentered, setIsChatCentered] = useState(false)
+  const [activeSessions, setActiveSessions] = useState<Set<string>>(new Set())
 
   const selectedSessionRef = useRef<Session | null>(null)
 
@@ -189,6 +192,23 @@ export function useOpendora(): UseOpendoraResult {
         }
         case "message.updated": {
           const { info } = (event as { type: string; properties: { info: Message } }).properties
+          
+          // Track active sessions (sessions with incomplete assistant messages)
+          if (info.role === "assistant") {
+            const assistantInfo = info as { role: "assistant"; time: { created: number; completed?: number }; sessionID: string }
+            if (!assistantInfo.time.completed) {
+              // Assistant message started, mark session as active
+              setActiveSessions((prev) => new Set(prev).add(info.sessionID))
+            } else {
+              // Assistant message completed, remove from active sessions
+              setActiveSessions((prev) => {
+                const next = new Set(prev)
+                next.delete(info.sessionID)
+                return next
+              })
+            }
+          }
+          
           if (info.sessionID !== selectedSessionRef.current?.id) break
           setMessages((prev) => {
             const idx = prev.findIndex((m) => m.info.id === info.id)
@@ -202,6 +222,12 @@ export function useOpendora(): UseOpendoraResult {
         }
         case "session.idle": {
           const { sessionID } = (event as { type: string; properties: { sessionID: string } }).properties
+          // Remove from active sessions when idle
+          setActiveSessions((prev) => {
+            const next = new Set(prev)
+            next.delete(sessionID)
+            return next
+          })
           if (selectedSessionRef.current?.id === sessionID) {
             setStatus("ready")
           }
@@ -249,6 +275,10 @@ export function useOpendora(): UseOpendoraResult {
           break
         }
       }
+    }, () => {
+      // SSE reconnected — if status is stuck in a non-terminal state, reset to ready
+      // so the UI doesn't freeze if session.idle was missed during the disconnect gap
+      setStatus((prev) => (prev === "streaming" || prev === "submitted" ? "ready" : prev))
     })
   }, [])
 
@@ -274,12 +304,16 @@ export function useOpendora(): UseOpendoraResult {
     })
   }, [])
 
-  const createSession = useCallback(async () => {
+  const createSession = useCallback(async (sessionType?: SessionType) => {
     try {
       let session = await opendora.session.create()
       // Automatically assign the currently selected agent to the new session
       if (selectedAgent) {
         session = await opendora.session.setAgent(session.id, selectedAgent)
+      }
+      // Set session type if provided (defaults to scratchpad)
+      if (sessionType) {
+        session = await opendora.session.update(session.id, { sessionType })
       }
       setSessions((prev) => {
         if (prev.find((s) => s.id === session.id)) return prev
@@ -303,12 +337,12 @@ export function useOpendora(): UseOpendoraResult {
       setStatus("submitted")
       setError(null)
       try {
-        await opendora.session.prompt(session.id, {
+        await opendora.session.promptAsync(session.id, {
           parts: [{ type: "text", text }],
           ...(options?.model ? { model: options.model } : {}),
           agent: options?.agent ?? selectedAgent,
         })
-        setStatus("ready")
+        // Status transitions to "ready" via SSE session.idle event
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
         setStatus("error")
@@ -492,6 +526,7 @@ export function useOpendora(): UseOpendoraResult {
     allAgents,
     selectedAgent,
     selectAgent,
+    activeSessions,
     createAgent,
     updateAgent,
     deleteAgent,

@@ -5,6 +5,7 @@
     "modelID": "gpt-5.4",
     "providerID": "openai-codex"
   },
+  "color": "teal",
   "tools": [
     "spawn_session",
     "agent_create",
@@ -13,10 +14,10 @@
     "agent_update",
     "agent_get",
     "question",
-    "task",
     "ping_main",
     "webfetch",
     "delegate",
-    "ping_session"
+    "ping_session",
+    "spawn"
   ]
 }

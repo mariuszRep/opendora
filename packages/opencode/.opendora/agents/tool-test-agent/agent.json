@@ -1,0 +1,10 @@
+{
+  "name": "Tool Test Agent Updated",
+  "description": "Temporary agent updated to verify agent_update works.",
+  "mode": "subagent",
+  "temperature": 0.2,
+  "steps": 6,
+  "hidden": true,
+  "tools": [],
+  "enableInjection": false
+}

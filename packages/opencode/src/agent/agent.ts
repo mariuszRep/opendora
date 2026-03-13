@@ -168,7 +168,7 @@ export namespace Agent {
       const mode = agent.config.mode ?? "all"
       if (mode === "subagent") throw new Error(`default agent "${cfg.default_agent}" is a subagent`)
       if (agent.config.hidden) throw new Error(`default agent "${cfg.default_agent}" is hidden`)
-      return agent.config.name
+      return agent.id
     }
 
     const primaryVisible = entries.find((e) => {
@@ -176,7 +176,7 @@ export namespace Agent {
       return mode !== "subagent" && !e.config.hidden
     })
     if (!primaryVisible) throw new Error("no primary visible agent found")
-    return primaryVisible.config.name
+    return primaryVisible.id
   }
 
   // ── File-based CRUD (delegates to @opendora/agent) ───────────────────────

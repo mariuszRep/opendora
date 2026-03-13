@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { QuestionAnswer, QuestionRequest } from "@/lib/opendora"
 import { cn } from "@/lib/utils"
-import { BracesIcon, CheckIcon, MessageSquareIcon } from "lucide-react"
+import { CheckIcon } from "lucide-react"
 
 function QuestionStep(props: {
   question: QuestionRequest["questions"][number]
@@ -105,13 +105,16 @@ export function QuestionTool(props: {
   onReject: (requestID: string) => Promise<void>
   json: React.ReactNode
   answered?: QuestionAnswer[]
+  viewMode?: "code" | "view"
+  onViewModeChange?: (mode: "code" | "view") => void
 }) {
   const [step, setStep] = useState(0)
-  const [mode, setMode] = useState<"interactive" | "json">("interactive")
   const [answers, setAnswers] = useState<QuestionAnswer[]>(() => props.request.questions.map(() => []))
   const [custom, setCustom] = useState<string[]>(() => props.request.questions.map(() => ""))
   const submittedAnswers = props.answered
   const isSubmitted = Boolean(submittedAnswers)
+  
+  const mode = props.viewMode === "code" ? "json" : "interactive"
 
   const question = props.request.questions[step]
   const isLast = step === props.request.questions.length - 1
@@ -154,28 +157,7 @@ export function QuestionTool(props: {
   }
 
   return (
-    <div className="grid gap-4">
-      <div className="flex justify-end">
-        <Button
-          onClick={() => setMode((current) => (current === "interactive" ? "json" : "interactive"))}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          {mode === "interactive" ? (
-            <>
-              <BracesIcon className="size-4" />
-              View code
-            </>
-          ) : (
-            <>
-              <MessageSquareIcon className="size-4" />
-              Interactive
-            </>
-          )}
-        </Button>
-      </div>
-
+    <>
       {mode === "json" ? (
         props.json
       ) : (
@@ -234,6 +216,6 @@ export function QuestionTool(props: {
           )}
         </div>
       )}
-    </div>
+    </>
   )
 }

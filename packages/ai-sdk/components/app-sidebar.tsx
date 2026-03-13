@@ -2,6 +2,7 @@
 
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { SessionEditSheet } from "@/components/sessions/session-edit-sheet"
+import { SessionCreateDialog, SESSION_TYPE_CONFIG } from "@/components/sessions/session-create-dialog"
 import { Button } from "@/components/ui/button"
 import {
   Sidebar,
@@ -17,7 +18,8 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
-import type { Session } from "@/lib/opendora"
+import type { Session, SessionType } from "@/lib/opendora"
+import { getAgentColor } from "@/lib/agent-colors"
 import { BotIcon, MessageSquareIcon, PencilIcon, PlusIcon, PlugIcon, Settings2Icon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type React from "react"
@@ -43,13 +45,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     agents,
     selectedAgent,
     selectAgent,
+    status,
+    sessions,
+    activeSessions,
   } = useOpendoraContext()
 
   const visibleAgents = agents.filter((a) => !a.hidden)
+  
+  // Track which agents are currently working based on active sessions
+  const workingAgents = new Set<string>()
+  sessions.forEach((session) => {
+    if (session.agentID && activeSessions.has(session.id)) {
+      workingAgents.add(session.agentID)
+    }
+  })
 
   // Session edit sheet state
   const [sessionEditOpen, setSessionEditOpen] = useState(false)
   const [editingSession, setEditingSession] = useState<Session | null>(null)
+  
+  // Session create dialog state
+  const [sessionCreateOpen, setSessionCreateOpen] = useState(false)
 
   return (
     <>
@@ -126,7 +142,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         tooltip={agent.description ?? agent.name}
                         className={cn(isActive && "bg-sidebar-accent text-sidebar-accent-foreground")}
                       >
-                        <BotIcon className="size-4 shrink-0" />
+                        <div className="relative size-4 shrink-0 flex items-center justify-center">
+                          {workingAgents.has(agent._id) && (
+                            <div 
+                              className="absolute inset-0 rounded-full border-2 border-transparent border-t-current animate-spin"
+                              style={{ borderTopColor: getAgentColor(agent.color).hex }}
+                            />
+                          )}
+                          <div 
+                            className="size-2 rounded-full" 
+                            style={{ backgroundColor: getAgentColor(agent.color).hex }}
+                          />
+                        </div>
                         <span className="capitalize group-data-[collapsible=icon]:hidden">
                           {agent.name}
                         </span>
@@ -189,7 +216,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   size="icon-sm"
                   variant="ghost"
                   className="size-5"
-                  onClick={createSession}
+                  onClick={() => setSessionCreateOpen(true)}
                   title="New session for this agent"
                 >
                   <PlusIcon className="size-3" />
@@ -228,7 +255,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         tooltip={`${formatSessionTitle(session)}${isMain ? " (main)" : ""}`}
                         className={cn(isActive && "bg-sidebar-accent text-sidebar-accent-foreground")}
                       >
-                        <MessageSquareIcon className="size-4 shrink-0" />
+                        {(() => {
+                          const sessionType = session.sessionType || "scope"
+                          const Icon = SESSION_TYPE_CONFIG[sessionType]?.icon || MessageSquareIcon
+                          return <Icon className="size-4 shrink-0" />
+                        })()}
                         <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
                           <div className="flex items-center gap-1">
                             <span className="truncate text-xs">{formatSessionTitle(session)}</span>
@@ -276,6 +307,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         session={editingSession}
         open={sessionEditOpen}
         onOpenChange={setSessionEditOpen}
+      />
+      
+      <SessionCreateDialog
+        open={sessionCreateOpen}
+        onOpenChange={setSessionCreateOpen}
+        onCreateSession={async (sessionType: SessionType, openSettings: boolean) => {
+          await createSession(sessionType)
+          if (openSettings) {
+            setTimeout(() => {
+              const newSession = agentSessions[0]
+              if (newSession) {
+                setEditingSession(newSession)
+                setSessionEditOpen(true)
+              }
+            }, 100)
+          }
+        }}
       />
     </>
   )

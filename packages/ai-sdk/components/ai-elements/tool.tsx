@@ -9,6 +9,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { CodeViewToggle } from "@/components/ui/code-view-toggle";
 import { cn } from "@/lib/utils";
 import {
   CheckCircleIcon,
@@ -39,6 +40,9 @@ export type ToolPart = ToolUIPart | DynamicToolUIPart;
 export type ToolHeaderProps = {
   title?: string;
   className?: string;
+  viewMode?: "code" | "view";
+  onViewChange?: (mode: "code" | "view") => void;
+  hasView?: boolean;
 } & (
   | { type: ToolUIPart["type"]; state: ToolUIPart["state"]; toolName?: never }
   | {
@@ -81,6 +85,9 @@ export const ToolHeader = ({
   type,
   state,
   toolName,
+  viewMode,
+  onViewChange,
+  hasView,
   ...props
 }: ToolHeaderProps) => {
   const derivedName =
@@ -99,9 +106,19 @@ export const ToolHeader = ({
         <span className="truncate font-medium text-foreground text-sm">
           {title ?? derivedName}
         </span>
-        {getStatusBadge(state)}
       </div>
-      <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+      <div className="flex items-center gap-2">
+        {getStatusBadge(state)}
+        {hasView && onViewChange && viewMode && (
+          <CodeViewToggle
+            viewMode={viewMode}
+            onViewChange={onViewChange}
+            hasView={hasView}
+            className="h-8 w-8 p-0"
+          />
+        )}
+        <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+      </div>
     </CollapsibleTrigger>
   );
 };

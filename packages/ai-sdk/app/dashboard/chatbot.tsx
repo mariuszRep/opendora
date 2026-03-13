@@ -64,6 +64,7 @@ import { useVoiceSettings, formatHotkey } from "@/hooks/use-voice-settings"
 import { useTextToSpeech } from "@/hooks/use-text-to-speech"
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder"
 import { usePushToTalk } from "@/hooks/use-push-to-talk"
+import { getAgentColor } from "@/lib/agent-colors"
 import { CheckIcon, CopyIcon, Volume2Icon, VolumeXIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
@@ -154,7 +155,11 @@ export const Chatbot = () => {
   } = useOpendoraContext()
 
   const { settings } = useVoiceSettings()
-  const { speak, playingId, isLoading: isTtsLoading, isEnabled: isTtsEnabled } = useTextToSpeech()
+  const { speak, playingId, isLoading: isTtsLoading, isEnabled: isTtsEnabled, error: ttsError } = useTextToSpeech()
+
+  useEffect(() => {
+    if (ttsError) toast.error(`TTS: ${ttsError}`)
+  }, [ttsError])
   const { isRecording, isTranscribing, startRecording, stopRecording } = useVoiceRecorder()
   const [autoVoiceNextMessage, setAutoVoiceNextMessage] = useState(false)
   const autoVoiceTimeoutRef = useRef<NodeJS.Timeout>()
@@ -164,6 +169,7 @@ export const Chatbot = () => {
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false)
   const [selectedProviderID, setSelectedProviderID] = useState<string | null>(null)
   const [selectedModelID, setSelectedModelID] = useState<string | null>(null)
+  const [questionViewModes, setQuestionViewModes] = useState<Record<string, "code" | "view">>({})
 
   useEffect(() => {
     const agent = agents.find((a) => (a as any)._id === selectedAgent)
@@ -225,6 +231,11 @@ export const Chatbot = () => {
     }
     return groups
   }, [modelList])
+
+  const agentDotColor = useMemo(() => {
+    const agent = agents.find((a) => (a as any)._id === selectedAgent)
+    return getAgentColor((agent as any)?.color).hex
+  }, [agents, selectedAgent])
 
   const handleSubmit = useCallback(
     (message: PromptInputMessage) => {
@@ -289,11 +300,11 @@ export const Chatbot = () => {
         clearTimeout(autoVoiceTimeoutRef.current)
       }
       
-      // Set a timeout to disable auto-voice after 10 seconds
+      // Set a timeout to disable auto-voice after 3 minutes (covers long tool-call chains)
       autoVoiceTimeoutRef.current = setTimeout(() => {
         setAutoVoiceNextMessage(false)
         expectedAssistantMessageIdRef.current = null
-      }, 10000)
+      }, 3 * 60 * 1000)
       
       // Get the current message count to find the next assistant message
       const currentMessageCount = messages.length
@@ -395,7 +406,7 @@ export const Chatbot = () => {
       ) : (
         <Conversation>
           <ConversationContent className={cn(isChatCentered && "max-w-3xl mx-auto w-full")}>
-            {messages.map(({ info, parts }) => {
+            {messages.map(({ info, parts }, msgIndex) => {
               const content = getMessageText(parts)
               const reasoning = getReasoningPart(parts)
               const tools = getToolParts(parts)
@@ -403,8 +414,24 @@ export const Chatbot = () => {
               const hasCodeBlock = content.includes("```")
               const shouldUseFullWidth = hasTools || hasCodeBlock
               const msgError = info.role === "assistant" ? (info as AssistantMessage).error : undefined
+              const hasTimeline = info.role === "assistant"
+              const nextMsg = messages[msgIndex + 1]
+              const connectsToNext = hasTimeline && nextMsg?.info.role === "assistant"
               return (
-                <MessageBranch defaultBranch={0} key={info.id}>
+                <div key={info.id} className={cn(hasTimeline && "flex gap-3 items-stretch w-full")}>
+                  {hasTimeline && (
+                    <div className={cn("flex flex-col items-center w-5 shrink-0", connectsToNext && "-mb-8")}>
+                      <div
+                        className="size-2 rounded-full shrink-0 mt-[18px]"
+                        style={{ backgroundColor: agentDotColor }}
+                      />
+                      {connectsToNext && (
+                        <div className="w-px flex-1 mt-1 bg-border" />
+                      )}
+                    </div>
+                  )}
+                  <div className={cn(hasTimeline ? "flex-1 min-w-0" : "w-full")}>
+                <MessageBranch defaultBranch={0}>
                   <MessageBranchContent>
                     <Message 
                       className={cn(
@@ -476,6 +503,10 @@ export const Chatbot = () => {
                                   )
                                 : undefined
                               const toolInput = <ToolInput input={input ?? {}} />
+                              const currentViewMode = questionViewModes[tool.id] ?? "view"
+                              const handleViewModeChange = (mode: "code" | "view") => {
+                                setQuestionViewModes(prev => ({ ...prev, [tool.id]: mode }))
+                              }
                               return (
                                 <Tool
                                   defaultOpen={false}
@@ -486,6 +517,9 @@ export const Chatbot = () => {
                                     title={tool.tool}
                                     toolName={tool.tool}
                                     type="dynamic-tool"
+                                    viewMode={questionRequest ? currentViewMode : undefined}
+                                    onViewChange={questionRequest ? handleViewModeChange : undefined}
+                                    hasView={!!questionRequest}
                                   />
                                   <ToolContent>
                                     {questionRequest ? (
@@ -495,6 +529,8 @@ export const Chatbot = () => {
                                         onReject={rejectQuestion}
                                         onReply={replyQuestion}
                                         request={questionRequest}
+                                        viewMode={currentViewMode}
+                                        onViewModeChange={handleViewModeChange}
                                       />
                                     ) : (
                                       toolInput
@@ -546,6 +582,8 @@ export const Chatbot = () => {
                     </Message>
                   </MessageBranchContent>
                 </MessageBranch>
+                  </div>
+                </div>
               )
             })}
           </ConversationContent>

@@ -9,7 +9,7 @@ export async function resolveAgentName(agent?: string) {
   if (!agent) return undefined
   const found = await Agent.get(agent)
   if (!found) throw new Error(`Unknown agent: ${agent}`)
-  return found.name
+  return found.id
 }
 
 export async function askDelegationPermission(

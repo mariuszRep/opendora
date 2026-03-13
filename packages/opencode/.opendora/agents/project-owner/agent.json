@@ -8,7 +8,7 @@
   },
   "temperature": 0.4,
   "steps": 12,
-  "color": "#2F6B5F",
+  "color": "rose",
   "tools": [
     "bash",
     "read",

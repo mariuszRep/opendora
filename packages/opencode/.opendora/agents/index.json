@@ -42,6 +42,12 @@
       "id": "project-owner",
       "name": "Project Owner",
       "mode": "all"
+    },
+    {
+      "id": "tool-test-agent",
+      "name": "Tool Test Agent Updated",
+      "mode": "subagent",
+      "hidden": true
     }
   ]
 }

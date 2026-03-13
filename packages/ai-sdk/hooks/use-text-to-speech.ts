@@ -7,6 +7,7 @@ export function useTextToSpeech() {
   const { settings } = useVoiceSettings()
   const [playingId, setPlayingId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const stop = useCallback(() => {
@@ -42,6 +43,7 @@ export function useTextToSpeech() {
       setPlayingId(messageId)
 
       try {
+        setError(null)
         const { opendora } = await import("@/lib/opendora")
         const blob = await opendora.voice.tts({
           text,
@@ -65,12 +67,14 @@ export function useTextToSpeech() {
           audioRef.current = null
           setPlayingId(null)
           setIsLoading(false)
+          setError("Audio playback failed")
         }
 
         await audio.play()
         setIsLoading(false)
-      } catch (error) {
-        console.error("TTS error:", error)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "TTS failed"
+        setError(message)
         setPlayingId(null)
         setIsLoading(false)
       }
@@ -83,6 +87,7 @@ export function useTextToSpeech() {
     stop,
     playingId,
     isLoading,
+    error,
     isEnabled: settings.tts.provider !== "disabled",
   }
 }

@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
+import { ColorSelector } from "@/components/ui/color-selector"
+import type { AgentColorId } from "@/lib/agent-colors"
 import {
   Select,
   SelectContent,
@@ -66,7 +68,7 @@ export default function AgentSettingsPage() {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [mode, setMode] = useState<AgentConfig["mode"]>("all")
-  const [color, setColor] = useState("")
+  const [color, setColor] = useState<AgentColorId>("violet")
   const [hidden, setHidden] = useState(false)
   const [temperature, setTemperature] = useState("")
   const [steps, setSteps] = useState("")
@@ -126,7 +128,7 @@ export default function AgentSettingsPage() {
     setName(agent.name)
     setDescription(agent.description ?? "")
     setMode(agent.mode ?? "all")
-    setColor(agent.color ?? "")
+    setColor((agent.color ?? "violet") as AgentColorId)
     setHidden(agent.hidden ?? false)
     setTemperature(agent.temperature != null ? String(agent.temperature) : "")
     setSteps(agent.steps != null ? String(agent.steps) : "")
@@ -181,7 +183,7 @@ export default function AgentSettingsPage() {
         name: name.trim(),
         description: description.trim() || undefined,
         mode,
-        color: color.trim() || undefined,
+        color,
         hidden: hidden || undefined,
         temperature: !isNaN(temp) ? temp : undefined,
         steps: !isNaN(stepsNum) && stepsNum > 0 ? stepsNum : undefined,
@@ -356,31 +358,23 @@ export default function AgentSettingsPage() {
             />
           </div>
 
-          {/* Mode + Color */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label>Mode</Label>
-              <Select value={mode ?? "all"} onValueChange={(v) => setMode(v as AgentConfig["mode"])}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MODE_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value!}>{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="agent-color">Color</Label>
-              <Input
-                id="agent-color"
-                placeholder="#7c3aed"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-              />
-            </div>
+          {/* Mode */}
+          <div className="flex flex-col gap-1.5">
+            <Label>Mode</Label>
+            <Select value={mode ?? "all"} onValueChange={(v) => setMode(v as AgentConfig["mode"])}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MODE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value!}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          {/* Color */}
+          <ColorSelector value={color} onChange={setColor} />
 
           {/* Temperature + Steps */}
           <div className="grid grid-cols-2 gap-4">

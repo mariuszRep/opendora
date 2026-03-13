@@ -1,62 +1,56 @@
 import z from "zod"
 import { Tool } from "./tool"
-import DESCRIPTION from "./delegate.txt"
 import { Agent } from "../agent/agent"
 import { Session } from "../session"
 import { SessionPrompt } from "../session/prompt"
 
 const parameters = z
   .object({
-    description: z.string().describe("A short description for this delegation").optional(),
-    prompt: z.string().describe("The prompt or message to send to the delegated session"),
     agent: z
       .string()
-      .describe("Target agent name. Required when creating a new session, optional when reusing an existing session.")
+      .describe("Target agent name. Required unless session_id is provided.")
       .optional(),
-    session_id: z.string().describe("Existing session to send the message to").optional(),
-    create_session: z
+    session_id: z
+      .string()
+      .describe("Target a specific existing session by ID. If omitted, the agent's main session is used.")
+      .optional(),
+    prompt: z.string().describe("Message to send to the target session"),
+    description: z.string().describe("Short label for this delegation").optional(),
+    wait: z
       .boolean()
-      .describe("Create a new session instead of using an existing one. Default: true when session_id is omitted.")
+      .describe("Wait for the agent to reply. Default: true.")
       .optional(),
-    wait_for_reply: z
-      .boolean()
-      .describe("Wait for the delegated agent to reply. If false, only post the message. Default: true.")
-      .optional(),
-    as_child: z
-      .boolean()
-      .describe("When creating a new session, attach it as a child of the current session. Default: true.")
-      .optional(),
-    title: z.string().describe("Optional title for a newly created session").optional(),
-    session_type: z.enum(["role", "scope", "worker", "scratchpad"]).optional(),
   })
   .superRefine((value, ctx) => {
-    const createSession = value.create_session ?? !value.session_id
-    if (createSession && !value.agent) {
+    if (!value.agent && !value.session_id) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["agent"],
-        message: "agent is required when creating a new delegated session",
-      })
-    }
-    if (!createSession && !value.session_id) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["session_id"],
-        message: "session_id is required when create_session is false",
+        message: "agent or session_id is required",
       })
     }
   })
 
 export const DelegateTool = Tool.define("delegate", {
-  description: DESCRIPTION,
+  description: `Send a message to an agent's persistent session and optionally wait for a reply.
+
+Use this to:
+- Talk to an agent's main (role) session: delegate(agent="project_manager", prompt="...")
+- Continue a conversation in a known session: delegate(session_id="...", prompt="...")
+
+Do NOT use this to run isolated tasks — use spawn for that.`,
   parameters,
   async execute(params, ctx) {
-    const createSession = params.create_session ?? !params.session_id
-    const waitForReply = params.wait_for_reply ?? true
-    let created = false
+    const wait = params.wait ?? true
 
     let targetSession = params.session_id ? await Session.get(params.session_id) : undefined
     let targetAgentName = params.agent ?? targetSession?.agentID
+
+    if (params.agent) {
+      const agent = await Agent.get(params.agent)
+      if (!agent) throw new Error(`Unknown agent: ${params.agent}`)
+      targetAgentName = agent.id
+    }
 
     if (targetAgentName) {
       await ctx.ask({
@@ -64,61 +58,42 @@ export const DelegateTool = Tool.define("delegate", {
         patterns: [targetAgentName],
         always: ["*"],
         metadata: {
-          description: params.description ?? params.title ?? "Delegated work",
+          description: params.description ?? `Delegate to ${targetAgentName}`,
           subagent_type: targetAgentName,
         },
       })
     }
 
-    if (params.agent) {
-      const agent = await Agent.get(params.agent)
-      if (!agent) throw new Error(`Unknown agent: ${params.agent}`)
-      targetAgentName = agent.name
-    }
-
-    if (createSession) {
-      if (!targetAgentName) throw new Error("agent is required when creating a delegated session")
-      targetSession = await Session.create({
-        parentID: params.as_child === false ? undefined : ctx.sessionID,
-        title: params.title ?? params.description ?? `Delegated session (@${targetAgentName})`,
-        sessionType: params.session_type ?? (params.as_child === false ? "role" : "worker"),
-        agentID: targetAgentName,
-        ownerID: ctx.agent,
-        ownerKind: "agent",
-        spawnParentSessionID: ctx.sessionID,
-        spawnParentMessageID: ctx.messageID,
-      })
-      created = true
-    }
-
     if (!targetSession) {
-      throw new Error("Unable to resolve delegated session")
+      if (!targetAgentName) throw new Error("agent or session_id is required")
+      targetSession = await Session.ensureMainSession(targetAgentName)
     }
 
     const result = await SessionPrompt.prompt({
       sessionID: targetSession.id,
       ...(targetAgentName ? { agent: targetAgentName } : {}),
-      noReply: !waitForReply,
+      noReply: !wait,
       parts: await SessionPrompt.resolvePromptParts(params.prompt),
     })
 
     const text = result.parts.findLast((part) => part.type === "text")?.text ?? ""
+    const route = params.session_id ? "existing_session" : "agent_main"
 
-    if (!waitForReply) {
+    if (!wait) {
       return {
         title: params.description ?? `Delegated to ${targetAgentName ?? targetSession.id}`,
         metadata: {
           sessionId: targetSession.id,
           agent: targetAgentName,
-          created,
+          route,
           replied: false,
           messageId: result.info.id,
         },
         output: [
           `session_id: ${targetSession.id}`,
-          `message_id: ${result.info.id}`,
           `agent: ${targetAgentName ?? "(session default)"}`,
-          `created: ${created ? "yes" : "no"}`,
+          `route: ${route}`,
+          `message_id: ${result.info.id}`,
           "status: message posted",
         ].join("\n"),
       }
@@ -129,14 +104,14 @@ export const DelegateTool = Tool.define("delegate", {
       metadata: {
         sessionId: targetSession.id,
         agent: targetAgentName,
-        created,
+        route,
         replied: true,
         messageId: result.info.id,
       },
       output: [
         `session_id: ${targetSession.id}`,
         `agent: ${targetAgentName ?? "(session default)"}`,
-        `created: ${created ? "yes" : "no"}`,
+        `route: ${route}`,
         "",
         "<delegation_result>",
         text,

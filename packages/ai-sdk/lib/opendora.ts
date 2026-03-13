@@ -249,6 +249,18 @@ export const opendora = {
         method: "POST",
         body: JSON.stringify(input),
       }),
+    promptAsync: (
+      sessionID: string,
+      input: {
+        parts: Array<{ type: "text"; text: string } | { type: string; [k: string]: unknown }>
+        model?: { providerID: string; modelID: string }
+        agent?: string
+      },
+    ) =>
+      req<void>(`/session/${sessionID}/prompt_async`, {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
   },
   provider: {
     list: () =>
@@ -340,8 +352,15 @@ export const opendora = {
     },
   },
   events: {
-    subscribe: (onEvent: (event: Event) => void): () => void => {
+    subscribe: (onEvent: (event: Event) => void, onReconnect?: () => void): () => void => {
       const es = new EventSource(`${OPENDORA_URL}/event`)
+      let connected = false
+      es.onopen = () => {
+        if (connected && onReconnect) {
+          onReconnect()
+        }
+        connected = true
+      }
       es.onmessage = (e) => {
         try {
           onEvent(JSON.parse(e.data) as Event)
