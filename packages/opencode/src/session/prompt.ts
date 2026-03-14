@@ -107,6 +107,10 @@ export namespace SessionPrompt {
     format: MessageV2.Format.optional(),
     system: z.string().optional(),
     variant: z.string().optional(),
+    /** Set when the prompt is injected by a tool call in another session */
+    parentSessionID: z.string().optional(),
+    /** The message ID in parentSessionID that contains the tool call injecting this message */
+    parentMessageID: z.string().optional(),
     parts: z.array(
       z.discriminatedUnion("type", [
         MessageV2.TextPart.omit({
@@ -1024,6 +1028,10 @@ export namespace SessionPrompt {
       system: input.system,
       format: input.format,
       variant,
+      ...(input.parentSessionID && {
+        parentSessionID: input.parentSessionID,
+        parentMessageID: input.parentMessageID,
+      }),
     }
     using _ = defer(() => InstructionPrompt.clear(info.id))
 

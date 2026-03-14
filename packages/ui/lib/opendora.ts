@@ -30,6 +30,12 @@ export type Session = {
   toolPolicy?: string[]
   systemPrompt?: string
   time: { created: number; updated: number }
+  /** Session that spawned this one via delegate/spawn_session tool */
+  spawnParentSessionID?: string
+  /** The assistant message ID in the parent session that contains the delegate tool call */
+  spawnParentMessageID?: string
+  /** The first response message produced in this session for the parent delegation */
+  spawnResponseMessageID?: string
 }
 
 export type UserMessage = {
@@ -39,6 +45,10 @@ export type UserMessage = {
   time: { created: number }
   agent: string
   model: { providerID: string; modelID: string }
+  /** Set when this message was injected by a tool in another session */
+  parentSessionID?: string
+  /** The message ID in parentSessionID that contains the tool call that created this message */
+  parentMessageID?: string
 }
 
 export type AssistantMessage = {
@@ -48,6 +58,8 @@ export type AssistantMessage = {
   time: { created: number; completed?: number }
   providerID: string
   modelID: string
+  /** Name/ID of the agent that produced this message */
+  agent?: string
   error?: { name: string; data: Record<string, unknown> }
 }
 

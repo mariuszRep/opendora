@@ -59,13 +59,14 @@ import { SpeechInput } from "@/components/ai-elements/speech-input"
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { QuestionTool } from "@/components/questions/question-tool"
-import type { AssistantMessage, Part, ReasoningPart, TextPart, ToolPart } from "@/lib/opendora"
+import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart } from "@/lib/opendora"
 import { useVoiceSettings, formatHotkey } from "@/hooks/use-voice-settings"
 import { useTextToSpeech } from "@/hooks/use-text-to-speech"
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder"
 import { usePushToTalk } from "@/hooks/use-push-to-talk"
+import { DelegateToolContent, isDelegateTool, getDelegateToolTitle } from "@/components/ai-elements/delegate-tool"
 import { getAgentColor } from "@/lib/agent-colors"
-import { CheckIcon, CopyIcon, Volume2Icon, VolumeXIcon } from "lucide-react"
+import { CheckIcon, CopyIcon, Link2Icon, Volume2Icon, VolumeXIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
@@ -178,6 +179,8 @@ export const Chatbot = () => {
     createSession,
     updateAgent,
     isChatCentered,
+    selectSession,
+    sessions,
   } = useOpendoraContext()
 
   const { settings } = useVoiceSettings()
@@ -196,6 +199,7 @@ export const Chatbot = () => {
   const [selectedProviderID, setSelectedProviderID] = useState<string | null>(null)
   const [selectedModelID, setSelectedModelID] = useState<string | null>(null)
   const [questionViewModes, setQuestionViewModes] = useState<Record<string, "code" | "view">>({})
+  const [delegateViewModes, setDelegateViewModes] = useState<Record<string, "code" | "view">>({})
 
   useEffect(() => {
     const agent = agents.find((a) => (a as any)._id === selectedAgent)
@@ -262,6 +266,23 @@ export const Chatbot = () => {
     const agent = agents.find((a) => (a as any)._id === selectedAgent)
     return getAgentColor((agent as any)?.color).hex
   }, [agents, selectedAgent])
+
+  const scrollToMessageIdRef = useRef<string | null>(null)
+
+  const handleGoToMessage = useCallback((sessionId: string, messageId: string) => {
+    selectSession(sessionId)
+    scrollToMessageIdRef.current = messageId
+  }, [selectSession])
+
+  useEffect(() => {
+    const targetId = scrollToMessageIdRef.current
+    if (!targetId || !messages.length) return
+    const el = document.getElementById(`msg-${targetId}`)
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" })
+      scrollToMessageIdRef.current = null
+    }
+  }, [messages])
 
   const handleSubmit = useCallback(
     (message: PromptInputMessage) => {
@@ -442,18 +463,27 @@ export const Chatbot = () => {
               const msgError = info.role === "assistant" ? (info as AssistantMessage).error : undefined
               const hasTimeline = info.role === "assistant"
               const timelineSteps = hasTimeline ? getTimelineSteps(parts, msgError) : []
-              const nextMsg = messages[msgIndex + 1]
-              const connectsToNext = hasTimeline && nextMsg?.info.role === "assistant"
+              const msgParentSessionID = info.role === "user" ? (info as UserMessage).parentSessionID : undefined
+              const isDelegationMessage = msgParentSessionID !== undefined
+              const msgDotColor = isDelegationMessage
+                ? (() => {
+                    const parentSession = msgParentSessionID ? sessions.find((s) => s.id === msgParentSessionID) : undefined
+                    const agentId = parentSession?.agentID
+                    const agentObj = agentId ? agents.find((a) => (a as any)._id === agentId || a.name === agentId) : undefined
+                    return agentObj ? getAgentColor((agentObj as any).color).hex : undefined
+                  })()
+                : undefined
               return (
-                <div key={info.id} className={cn(hasTimeline && "w-full")}>
+                <div key={info.id} id={`msg-${info.id}`} className={cn(hasTimeline && "w-full")}>
                 <MessageBranch defaultBranch={0}>
                   <MessageBranchContent>
-                    <Message 
+                    <Message
                       className={cn(
                         "group/message",
                         shouldUseFullWidth && info.role === "assistant" && "max-w-full"
                       )}
-                      from={info.role === "user" ? "user" : "assistant"} 
+                      style={info.role === "user" ? { marginLeft: 0 } : undefined}
+                      from={info.role === "user" ? "user" : "assistant"}
                       key={info.id}
                       onMouseEnter={(e) => {
                         const messageActions = e.currentTarget.querySelector('[data-message-actions]') as HTMLElement
@@ -472,31 +502,70 @@ export const Chatbot = () => {
                         }
                       }}
                     >
+                      {info.role === "user" ? (
+                        <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3">
+                          <div className="relative self-stretch">
+                            <div
+                              className={cn("absolute left-1/2 top-[14px] size-2 -translate-x-1/2 rounded-full", !msgDotColor && "bg-muted-foreground/50")}
+                              style={msgDotColor ? { backgroundColor: msgDotColor } : undefined}
+                            />
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <MessageContent className="!ml-0">
+                              {content ? <MessageResponse>{content}</MessageResponse> : null}
+                            </MessageContent>
+                            <MessageActions className="mt-1 justify-start" data-message-actions>
+                              {msgParentSessionID && (
+                                <MessageAction
+                                  label="Source"
+                                  onClick={() => handleGoToMessage(
+                                    msgParentSessionID,
+                                    (info as UserMessage).parentMessageID ?? ""
+                                  )}
+                                  tooltip="Back to delegation tool"
+                                  variant="outline"
+                                >
+                                  <Link2Icon className="size-4" />
+                                </MessageAction>
+                              )}
+                            </MessageActions>
+                          </div>
+                        </div>
+                      ) : (
                       <div>
                         {hasTimeline ? (
-                          <div>
+                          <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3">
                             {timelineSteps.map((step, stepIndex) => {
-                              const stepConnectsToNext =
-                                stepIndex < timelineSteps.length - 1 || connectsToNext
+                              // Line only connects steps within this same reply — never crosses message boundaries
+                              const stepConnectsToNext = stepIndex < timelineSteps.length - 1
+                              const isActiveDot =
+                                status === "streaming" &&
+                                stepIndex === timelineSteps.length - 1
 
                               return (
-                                <div
-                                  key={step.key}
-                                  className={cn("flex gap-3 items-stretch w-full", stepConnectsToNext && "pb-3")}
-                                >
-                                  <div className="relative w-5 shrink-0">
+                                <div key={step.key} className="contents">
+                                  <div className={cn("relative self-stretch", stepConnectsToNext && "pb-3")}>
                                     {stepConnectsToNext ? (
                                       <div
-                                        className="absolute left-1/2 top-[26px] bottom-0 w-px -translate-x-1/2 bg-border"
+                                        className="absolute left-1/2 top-[22px] bottom-0 w-px -translate-x-1/2 bg-border"
                                         aria-hidden="true"
                                       />
                                     ) : null}
-                                    <div
-                                      className="absolute left-1/2 top-[18px] size-2 -translate-x-1/2 rounded-full"
-                                      style={{ backgroundColor: agentDotColor }}
-                                    />
+                                    <div className="absolute left-1/2 top-[6px] size-4 -translate-x-1/2">
+                                      {isActiveDot && (
+                                        <div
+                                          className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
+                                          style={{ borderTopColor: agentDotColor }}
+                                          aria-hidden="true"
+                                        />
+                                      )}
+                                      <div
+                                        className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                                        style={{ backgroundColor: agentDotColor }}
+                                      />
+                                    </div>
                                   </div>
-                                  <div className="flex-1 min-w-0">
+                                  <div className={cn("min-w-0", stepConnectsToNext && "pb-3")}>
                                     {step.kind === "reasoning" ? (
                                       <Reasoning
                                         duration={
@@ -539,17 +608,22 @@ export const Chatbot = () => {
                                       const handleViewModeChange = (mode: "code" | "view") => {
                                         setQuestionViewModes(prev => ({ ...prev, [tool.id]: mode }))
                                       }
+                                      const isDelegateToolCall = isDelegateTool(tool.tool)
+                                      const currentDelegateViewMode = delegateViewModes[tool.id] ?? "view"
+                                      const handleDelegateViewModeChange = (mode: "code" | "view") => {
+                                        setDelegateViewModes(prev => ({ ...prev, [tool.id]: mode }))
+                                      }
 
                                       return (
                                         <Tool defaultOpen={false}>
                                           <ToolHeader
                                             state={state}
-                                            title={tool.tool}
+                                            title={isDelegateToolCall ? getDelegateToolTitle(tool) : tool.tool}
                                             toolName={tool.tool}
                                             type="dynamic-tool"
-                                            viewMode={questionRequest ? currentViewMode : undefined}
-                                            onViewChange={questionRequest ? handleViewModeChange : undefined}
-                                            hasView={!!questionRequest}
+                                            viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : undefined}
+                                            onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : undefined}
+                                            hasView={!!questionRequest || isDelegateToolCall}
                                           />
                                           <ToolContent>
                                             {questionRequest ? (
@@ -562,10 +636,19 @@ export const Chatbot = () => {
                                                 viewMode={currentViewMode}
                                                 onViewModeChange={handleViewModeChange}
                                               />
+                                            ) : isDelegateToolCall ? (
+                                              currentDelegateViewMode === "code" ? toolInput : (
+                                                <DelegateToolContent
+                                                  tool={tool}
+                                                  sessions={sessions}
+                                                  onSelectSession={selectSession}
+                                                  onGoToMessage={handleGoToMessage}
+                                                />
+                                              )
                                             ) : (
                                               toolInput
                                             )}
-                                            {output || error ? (
+                                            {!isDelegateToolCall && (output || error) ? (
                                               <ToolOutput errorText={error} output={output} />
                                             ) : null}
                                           </ToolContent>
@@ -638,6 +721,11 @@ export const Chatbot = () => {
                                   const handleViewModeChange = (mode: "code" | "view") => {
                                     setQuestionViewModes(prev => ({ ...prev, [tool.id]: mode }))
                                   }
+                                  const isDelegateToolCall = isDelegateTool(tool.tool)
+                                  const currentDelegateViewMode = delegateViewModes[tool.id] ?? "view"
+                                  const handleDelegateViewModeChange = (mode: "code" | "view") => {
+                                    setDelegateViewModes(prev => ({ ...prev, [tool.id]: mode }))
+                                  }
                                   return (
                                     <Tool
                                       defaultOpen={false}
@@ -645,12 +733,12 @@ export const Chatbot = () => {
                                     >
                                       <ToolHeader
                                         state={state}
-                                        title={tool.tool}
+                                        title={isDelegateToolCall ? getDelegateToolTitle(tool) : tool.tool}
                                         toolName={tool.tool}
                                         type="dynamic-tool"
-                                        viewMode={questionRequest ? currentViewMode : undefined}
-                                        onViewChange={questionRequest ? handleViewModeChange : undefined}
-                                        hasView={!!questionRequest}
+                                        viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : undefined}
+                                        onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : undefined}
+                                        hasView={!!questionRequest || isDelegateToolCall}
                                       />
                                       <ToolContent>
                                         {questionRequest ? (
@@ -663,10 +751,19 @@ export const Chatbot = () => {
                                             viewMode={currentViewMode}
                                             onViewModeChange={handleViewModeChange}
                                           />
+                                        ) : isDelegateToolCall ? (
+                                          currentDelegateViewMode === "code" ? toolInput : (
+                                            <DelegateToolContent
+                                              tool={tool}
+                                              sessions={sessions}
+                                              onSelectSession={selectSession}
+                                              onGoToMessage={handleGoToMessage}
+                                            />
+                                          )
                                         ) : (
                                           toolInput
                                         )}
-                                        {output || error ? (
+                                        {!isDelegateToolCall && (output || error) ? (
                                           <ToolOutput errorText={error} output={output} />
                                         ) : null}
                                       </ToolContent>
@@ -678,21 +775,23 @@ export const Chatbot = () => {
                             )}
                           </>
                         )}
-                        {info.role === "assistant" && content ? (
-                          <MessageActions 
-                            className="pointer-events-none invisible mt-1 justify-start opacity-0 transition-opacity"
-                            style={{ opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
+                        {(info.role === "assistant" && content) || isDelegationMessage ? (
+                          <MessageActions
+                            className={cn("mt-1 justify-start transition-opacity", isDelegationMessage ? "" : "pointer-events-none invisible opacity-0")}
+                            style={isDelegationMessage ? undefined : { opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
                             data-message-actions
                           >
-                            <MessageAction
-                              label="Copy"
-                              onClick={() => handleCopy(content)}
-                              tooltip="Copy to clipboard"
-                              variant="outline"
-                            >
-                              <CopyIcon className="size-4" />
-                            </MessageAction>
-                            {isTtsEnabled && (
+                            {content && (
+                              <MessageAction
+                                label="Copy"
+                                onClick={() => handleCopy(content)}
+                                tooltip="Copy to clipboard"
+                                variant="outline"
+                              >
+                                <CopyIcon className="size-4" />
+                              </MessageAction>
+                            )}
+                            {content && isTtsEnabled && (
                               <MessageAction
                                 label={playingId === info.id ? "Stop" : "Listen"}
                                 onClick={() => handleSpeak(content, info.id)}
@@ -709,15 +808,29 @@ export const Chatbot = () => {
                                 )}
                               </MessageAction>
                             )}
+                            {isDelegationMessage && msgParentSessionID && (
+                              <MessageAction
+                                label="Source"
+                                onClick={() => handleGoToMessage(
+                                  msgParentSessionID,
+                                  (info as UserMessage).parentMessageID ?? ""
+                                )}
+                                tooltip="Back to delegation tool"
+                                variant="outline"
+                              >
+                                <Link2Icon className="size-4" />
+                              </MessageAction>
+                            )}
                           </MessageActions>
                         ) : null}
                       </div>
+                      )}
                     </Message>
                   </MessageBranchContent>
                 </MessageBranch>
                 </div>
               )
-            })}
+          })}
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>

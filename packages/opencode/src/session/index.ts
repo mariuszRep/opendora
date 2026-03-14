@@ -88,6 +88,7 @@ export namespace Session {
       spawn_depth: info.spawnDepth,
       spawn_parent_session_id: info.spawnParentSessionID,
       spawn_parent_message_id: info.spawnParentMessageID,
+      spawn_response_message_id: info.spawnResponseMessageID,
       input_tokens: info.tokens?.input,
       output_tokens: info.tokens?.output,
       cache_read_tokens: info.tokens?.cacheRead,
@@ -167,6 +168,7 @@ export namespace Session {
       spawnDepth: z.number().optional(),
       spawnParentSessionID: z.string().optional(),
       spawnParentMessageID: z.string().optional(),
+      spawnResponseMessageID: z.string().optional(),
       tokens: z
         .object({
           input: z.number(),
@@ -408,6 +410,27 @@ export namespace Session {
         const row = db
           .update(SessionTable)
           .set({ title: input.title })
+          .where(eq(SessionTable.id, input.sessionID))
+          .returning()
+          .get()
+        if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+        const info = fromRow(row)
+        Database.effect(() => Bus.publish(Event.Updated, { info }))
+        return info
+      })
+    },
+  )
+
+  export const setSpawnResponseMessageID = fn(
+    z.object({
+      sessionID: Identifier.schema("session"),
+      messageID: z.string(),
+    }),
+    async (input) => {
+      return Database.use((db) => {
+        const row = db
+          .update(SessionTable)
+          .set({ spawn_response_message_id: input.messageID })
           .where(eq(SessionTable.id, input.sessionID))
           .returning()
           .get()

@@ -6,7 +6,7 @@
     "modelID": "minimax-m2.5-free",
     "providerID": "opencode"
   },
-  "color": "slate",
+  "color": "blue",
   "tools": [
     "question"
   ],

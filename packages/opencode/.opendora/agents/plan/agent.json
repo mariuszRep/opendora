@@ -6,6 +6,7 @@
     "modelID": "gpt-5.4",
     "providerID": "openai"
   },
+  "color": "lime",
   "tools": [
     "bash",
     "read",

@@ -363,6 +363,10 @@ export namespace MessageV2 {
     system: z.string().optional(),
     tools: z.record(z.string(), z.boolean()).optional(),
     variant: z.string().optional(),
+    /** Set when this message was injected by a tool in another session */
+    parentSessionID: z.string().optional(),
+    /** The message ID in parentSessionID that contains the tool call that created this message */
+    parentMessageID: z.string().optional(),
   }).meta({
     ref: "UserMessage",
   })

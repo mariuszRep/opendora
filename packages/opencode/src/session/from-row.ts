@@ -38,6 +38,7 @@ export type SessionInfo = {
   spawnDepth?: number
   spawnParentSessionID?: string
   spawnParentMessageID?: string
+  spawnResponseMessageID?: string
   tokens?: { input: number; output: number; cacheRead: number; cacheWrite: number; compactionCount: number }
 }
 
@@ -84,6 +85,7 @@ export function fromRow(row: SessionRow): SessionInfo {
     spawnDepth: row.spawn_depth ?? undefined,
     spawnParentSessionID: row.spawn_parent_session_id ?? undefined,
     spawnParentMessageID: row.spawn_parent_message_id ?? undefined,
+    spawnResponseMessageID: row.spawn_response_message_id ?? undefined,
     tokens:
       row.input_tokens !== null
         ? {

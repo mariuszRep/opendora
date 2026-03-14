@@ -60,8 +60,13 @@ Do NOT use this to reach an agent's existing session — use delegate for that.`
       sessionID: session.id,
       agent: agent.id,
       noReply: !wait,
+      parentSessionID: ctx.sessionID,
+      parentMessageID: ctx.messageID,
       parts: await SessionPrompt.resolvePromptParts(params.prompt),
     })
+
+    const pingMessageId = wait ? (result.info as any).parentID as string : result.info.id
+    await Session.setSpawnResponseMessageID({ sessionID: session.id, messageID: pingMessageId })
 
     const text = result.parts.findLast((part) => part.type === "text")?.text ?? ""
 

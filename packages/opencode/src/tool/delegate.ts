@@ -73,8 +73,13 @@ Do NOT use this to run isolated tasks — use spawn for that.`,
       sessionID: targetSession.id,
       ...(targetAgentName ? { agent: targetAgentName } : {}),
       noReply: !wait,
+      parentSessionID: ctx.sessionID,
+      parentMessageID: ctx.messageID,
       parts: await SessionPrompt.resolvePromptParts(params.prompt),
     })
+
+    const pingMessageId = wait ? (result.info as any).parentID as string : result.info.id
+    await Session.setSpawnResponseMessageID({ sessionID: targetSession.id, messageID: pingMessageId })
 
     const text = result.parts.findLast((part) => part.type === "text")?.text ?? ""
     const route = params.session_id ? "existing_session" : "agent_main"
