@@ -540,6 +540,7 @@ export const Chatbot = () => {
                               const stepConnectsToNext = stepIndex < timelineSteps.length - 1
                               const isActiveDot =
                                 status === "streaming" &&
+                                msgIndex === messages.length - 1 &&
                                 stepIndex === timelineSteps.length - 1
 
                               return (
