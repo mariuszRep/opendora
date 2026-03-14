@@ -117,6 +117,32 @@ function toToolState(status: ToolPart["state"]["status"]) {
   }
 }
 
+type TimelineStep =
+  | { key: string; kind: "reasoning"; content: ReasoningPart }
+  | { key: string; kind: "tool"; content: ToolPart }
+  | { key: string; kind: "reply"; content?: string; error?: AssistantMessage["error"] }
+
+function getTimelineSteps(parts: Part[], error?: AssistantMessage["error"]): TimelineStep[] {
+  const reasoning = getReasoningPart(parts)
+  const tools = getToolParts(parts)
+  const reply = getMessageText(parts)
+  const steps: TimelineStep[] = []
+
+  if (reasoning) {
+    steps.push({ key: reasoning.id, kind: "reasoning", content: reasoning })
+  }
+
+  for (const tool of tools) {
+    steps.push({ key: tool.id, kind: "tool", content: tool })
+  }
+
+  if (error || reply) {
+    steps.push({ key: error ? "reply-error" : "reply-text", kind: "reply", content: reply, error })
+  }
+
+  return steps
+}
+
 const AttachmentsDisplay = () => {
   const attachments = usePromptInputAttachments()
   if (attachments.files.length === 0) return null
@@ -162,7 +188,7 @@ export const Chatbot = () => {
   }, [ttsError])
   const { isRecording, isTranscribing, startRecording, stopRecording } = useVoiceRecorder()
   const [autoVoiceNextMessage, setAutoVoiceNextMessage] = useState(false)
-  const autoVoiceTimeoutRef = useRef<NodeJS.Timeout>()
+  const autoVoiceTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const expectedAssistantMessageIdRef = useRef<string | null>(null)
 
   const [text, setText] = useState("")
@@ -415,22 +441,11 @@ export const Chatbot = () => {
               const shouldUseFullWidth = hasTools || hasCodeBlock
               const msgError = info.role === "assistant" ? (info as AssistantMessage).error : undefined
               const hasTimeline = info.role === "assistant"
+              const timelineSteps = hasTimeline ? getTimelineSteps(parts, msgError) : []
               const nextMsg = messages[msgIndex + 1]
               const connectsToNext = hasTimeline && nextMsg?.info.role === "assistant"
               return (
-                <div key={info.id} className={cn(hasTimeline && "flex gap-3 items-stretch w-full")}>
-                  {hasTimeline && (
-                    <div className={cn("flex flex-col items-center w-5 shrink-0", connectsToNext && "-mb-8")}>
-                      <div
-                        className="size-2 rounded-full shrink-0 mt-[18px]"
-                        style={{ backgroundColor: agentDotColor }}
-                      />
-                      {connectsToNext && (
-                        <div className="w-px flex-1 mt-1 bg-border" />
-                      )}
-                    </div>
-                  )}
-                  <div className={cn(hasTimeline ? "flex-1 min-w-0" : "w-full")}>
+                <div key={info.id} className={cn(hasTimeline && "w-full")}>
                 <MessageBranch defaultBranch={0}>
                   <MessageBranchContent>
                     <Message 
@@ -458,92 +473,210 @@ export const Chatbot = () => {
                       }}
                     >
                       <div>
-                        {reasoning && (
-                          <Reasoning
-                            duration={
-                              reasoning.time?.end && reasoning.time?.start
-                                ? reasoning.time.end - reasoning.time.start
-                                : undefined
-                            }
-                          >
-                            <ReasoningTrigger />
-                            <ReasoningContent>{reasoning.text}</ReasoningContent>
-                          </Reasoning>
-                        )}
-                        {msgError ? (
-                          <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
-                            <p className="text-destructive text-sm">
-                              {String((msgError.data as { message?: string })?.message ?? msgError.name)}
-                            </p>
-                          </MessageContent>
-                        ) : (
-                          <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
-                            {tools.map((tool) => {
-                              const input = "input" in tool.state ? tool.state.input : undefined
-                              const output = "output" in tool.state ? formatToolPayload(tool.state.output) : undefined
-                              const error = "error" in tool.state ? formatToolPayload(tool.state.error) : undefined
-                              const state = toToolState(tool.state.status)
-                              const answered =
-                                "metadata" in tool.state && Array.isArray(tool.state.metadata?.answers)
-                                  ? (tool.state.metadata.answers as string[][])
-                                  : undefined
-                              const questionRequest = tool.tool === "question"
-                                ? questionRequests.find((request) => request.tool?.callID === tool.callID) ?? (
-                                    Array.isArray(input?.questions)
-                                      ? {
-                                          id: tool.callID,
-                                          sessionID: tool.sessionID,
-                                          questions: input.questions,
-                                          tool: {
-                                            messageID: tool.messageID,
-                                            callID: tool.callID,
-                                          },
-                                        }
-                                      : undefined
-                                  )
-                                : undefined
-                              const toolInput = <ToolInput input={input ?? {}} />
-                              const currentViewMode = questionViewModes[tool.id] ?? "view"
-                              const handleViewModeChange = (mode: "code" | "view") => {
-                                setQuestionViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                              }
+                        {hasTimeline ? (
+                          <div>
+                            {timelineSteps.map((step, stepIndex) => {
+                              const stepConnectsToNext =
+                                stepIndex < timelineSteps.length - 1 || connectsToNext
+
                               return (
-                                <Tool
-                                  defaultOpen={false}
-                                  key={tool.id}
+                                <div
+                                  key={step.key}
+                                  className={cn("flex gap-3 items-stretch w-full", stepConnectsToNext && "pb-3")}
                                 >
-                                  <ToolHeader
-                                    state={state}
-                                    title={tool.tool}
-                                    toolName={tool.tool}
-                                    type="dynamic-tool"
-                                    viewMode={questionRequest ? currentViewMode : undefined}
-                                    onViewChange={questionRequest ? handleViewModeChange : undefined}
-                                    hasView={!!questionRequest}
-                                  />
-                                  <ToolContent>
-                                    {questionRequest ? (
-                                      <QuestionTool
-                                        answered={answered}
-                                        json={toolInput}
-                                        onReject={rejectQuestion}
-                                        onReply={replyQuestion}
-                                        request={questionRequest}
-                                        viewMode={currentViewMode}
-                                        onViewModeChange={handleViewModeChange}
+                                  <div className="relative w-5 shrink-0">
+                                    {stepConnectsToNext ? (
+                                      <div
+                                        className="absolute left-1/2 top-[26px] bottom-0 w-px -translate-x-1/2 bg-border"
+                                        aria-hidden="true"
                                       />
-                                    ) : (
-                                      toolInput
-                                    )}
-                                    {output || error ? (
-                                      <ToolOutput errorText={error} output={output} />
                                     ) : null}
-                                  </ToolContent>
-                                </Tool>
+                                    <div
+                                      className="absolute left-1/2 top-[18px] size-2 -translate-x-1/2 rounded-full"
+                                      style={{ backgroundColor: agentDotColor }}
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    {step.kind === "reasoning" ? (
+                                      <Reasoning
+                                        duration={
+                                          step.content.time?.end && step.content.time?.start
+                                            ? step.content.time.end - step.content.time.start
+                                            : undefined
+                                        }
+                                      >
+                                        <ReasoningTrigger />
+                                        <ReasoningContent>{step.content.text}</ReasoningContent>
+                                      </Reasoning>
+                                    ) : null}
+                                    {step.kind === "tool" ? (() => {
+                                      const tool = step.content
+                                      const input = "input" in tool.state ? tool.state.input : undefined
+                                      const output = "output" in tool.state ? formatToolPayload(tool.state.output) : undefined
+                                      const error = "error" in tool.state ? formatToolPayload(tool.state.error) : undefined
+                                      const state = toToolState(tool.state.status)
+                                      const answered =
+                                        "metadata" in tool.state && Array.isArray(tool.state.metadata?.answers)
+                                          ? (tool.state.metadata.answers as string[][])
+                                          : undefined
+                                      const questionRequest = tool.tool === "question"
+                                        ? questionRequests.find((request) => request.tool?.callID === tool.callID) ?? (
+                                            Array.isArray(input?.questions)
+                                              ? {
+                                                  id: tool.callID,
+                                                  sessionID: tool.sessionID,
+                                                  questions: input.questions,
+                                                  tool: {
+                                                    messageID: tool.messageID,
+                                                    callID: tool.callID,
+                                                  },
+                                                }
+                                              : undefined
+                                          )
+                                        : undefined
+                                      const toolInput = <ToolInput input={input ?? {}} />
+                                      const currentViewMode = questionViewModes[tool.id] ?? "view"
+                                      const handleViewModeChange = (mode: "code" | "view") => {
+                                        setQuestionViewModes(prev => ({ ...prev, [tool.id]: mode }))
+                                      }
+
+                                      return (
+                                        <Tool defaultOpen={false}>
+                                          <ToolHeader
+                                            state={state}
+                                            title={tool.tool}
+                                            toolName={tool.tool}
+                                            type="dynamic-tool"
+                                            viewMode={questionRequest ? currentViewMode : undefined}
+                                            onViewChange={questionRequest ? handleViewModeChange : undefined}
+                                            hasView={!!questionRequest}
+                                          />
+                                          <ToolContent>
+                                            {questionRequest ? (
+                                              <QuestionTool
+                                                answered={answered}
+                                                json={toolInput}
+                                                onReject={rejectQuestion}
+                                                onReply={replyQuestion}
+                                                request={questionRequest}
+                                                viewMode={currentViewMode}
+                                                onViewModeChange={handleViewModeChange}
+                                              />
+                                            ) : (
+                                              toolInput
+                                            )}
+                                            {output || error ? (
+                                              <ToolOutput errorText={error} output={output} />
+                                            ) : null}
+                                          </ToolContent>
+                                        </Tool>
+                                      )
+                                    })() : null}
+                                    {step.kind === "reply" ? (
+                                      <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
+                                        {step.error ? (
+                                          <p className="text-destructive text-sm">
+                                            {String((step.error.data as { message?: string })?.message ?? step.error.name)}
+                                          </p>
+                                        ) : null}
+                                        {step.content ? <MessageResponse>{step.content}</MessageResponse> : null}
+                                      </MessageContent>
+                                    ) : null}
+                                  </div>
+                                </div>
                               )
                             })}
-                            {content ? <MessageResponse>{content}</MessageResponse> : null}
-                          </MessageContent>
+                          </div>
+                        ) : (
+                          <>
+                            {reasoning && (
+                              <Reasoning
+                                duration={
+                                  reasoning.time?.end && reasoning.time?.start
+                                    ? reasoning.time.end - reasoning.time.start
+                                    : undefined
+                                }
+                              >
+                                <ReasoningTrigger />
+                                <ReasoningContent>{reasoning.text}</ReasoningContent>
+                              </Reasoning>
+                            )}
+                            {msgError ? (
+                              <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
+                                <p className="text-destructive text-sm">
+                                  {String((msgError.data as { message?: string })?.message ?? msgError.name)}
+                                </p>
+                              </MessageContent>
+                            ) : (
+                              <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
+                                {tools.map((tool) => {
+                                  const input = "input" in tool.state ? tool.state.input : undefined
+                                  const output = "output" in tool.state ? formatToolPayload(tool.state.output) : undefined
+                                  const error = "error" in tool.state ? formatToolPayload(tool.state.error) : undefined
+                                  const state = toToolState(tool.state.status)
+                                  const answered =
+                                    "metadata" in tool.state && Array.isArray(tool.state.metadata?.answers)
+                                      ? (tool.state.metadata.answers as string[][])
+                                      : undefined
+                                  const questionRequest = tool.tool === "question"
+                                    ? questionRequests.find((request) => request.tool?.callID === tool.callID) ?? (
+                                        Array.isArray(input?.questions)
+                                          ? {
+                                              id: tool.callID,
+                                              sessionID: tool.sessionID,
+                                              questions: input.questions,
+                                              tool: {
+                                                messageID: tool.messageID,
+                                                callID: tool.callID,
+                                              },
+                                            }
+                                          : undefined
+                                      )
+                                    : undefined
+                                  const toolInput = <ToolInput input={input ?? {}} />
+                                  const currentViewMode = questionViewModes[tool.id] ?? "view"
+                                  const handleViewModeChange = (mode: "code" | "view") => {
+                                    setQuestionViewModes(prev => ({ ...prev, [tool.id]: mode }))
+                                  }
+                                  return (
+                                    <Tool
+                                      defaultOpen={false}
+                                      key={tool.id}
+                                    >
+                                      <ToolHeader
+                                        state={state}
+                                        title={tool.tool}
+                                        toolName={tool.tool}
+                                        type="dynamic-tool"
+                                        viewMode={questionRequest ? currentViewMode : undefined}
+                                        onViewChange={questionRequest ? handleViewModeChange : undefined}
+                                        hasView={!!questionRequest}
+                                      />
+                                      <ToolContent>
+                                        {questionRequest ? (
+                                          <QuestionTool
+                                            answered={answered}
+                                            json={toolInput}
+                                            onReject={rejectQuestion}
+                                            onReply={replyQuestion}
+                                            request={questionRequest}
+                                            viewMode={currentViewMode}
+                                            onViewModeChange={handleViewModeChange}
+                                          />
+                                        ) : (
+                                          toolInput
+                                        )}
+                                        {output || error ? (
+                                          <ToolOutput errorText={error} output={output} />
+                                        ) : null}
+                                      </ToolContent>
+                                    </Tool>
+                                  )
+                                })}
+                                {content ? <MessageResponse>{content}</MessageResponse> : null}
+                              </MessageContent>
+                            )}
+                          </>
                         )}
                         {info.role === "assistant" && content ? (
                           <MessageActions 
@@ -582,7 +715,6 @@ export const Chatbot = () => {
                     </Message>
                   </MessageBranchContent>
                 </MessageBranch>
-                  </div>
                 </div>
               )
             })}

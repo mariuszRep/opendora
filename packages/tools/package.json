@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@opendora/util": "workspace:*",
-    "@pingpong/core": "workspace:*",
+    "@opendora/session": "workspace:*",
     "zod": "catalog:"
   }
 }

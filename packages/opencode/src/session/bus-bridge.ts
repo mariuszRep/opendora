@@ -8,8 +8,8 @@
  * Call BusBridge.start() once at server startup, after the Database is ready.
  */
 
-import { Bus as PPBus } from "@pingpong/core"
-import type { BusHandle } from "@pingpong/core"
+import { Bus as PPBus } from "@opendora/session"
+import type { BusHandle } from "@opendora/session"
 import { Bus } from "@/bus"
 import { Database, eq } from "../storage/db"
 import { SessionTable } from "./session.sql"

@@ -5,7 +5,7 @@
  */
 
 import type { SessionTable } from "./session.sql"
-import type { RetentionPolicy, SendPolicy, SessionType, SessionStatus } from "@pingpong/core"
+import type { RetentionPolicy, SendPolicy, SessionType, SessionStatus } from "@opendora/session"
 import type { PermissionNext } from "@/permission/next"
 import type { Snapshot } from "@/snapshot"
 

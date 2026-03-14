@@ -4,7 +4,7 @@ import type { MessageV2 } from "./message-v2"
 import type { Snapshot } from "@/snapshot"
 import type { PermissionNext } from "@/permission/next"
 import { Timestamps } from "@/storage/schema.sql"
-import type { SessionType, SessionStatus, RetentionPolicy, SendPolicy } from "@pingpong/core"
+import type { SessionType, SessionStatus, RetentionPolicy, SendPolicy } from "@opendora/session"
 
 type PartData = Omit<MessageV2.Part, "id" | "sessionID" | "messageID">
 type InfoData = Omit<MessageV2.Info, "id" | "sessionID">

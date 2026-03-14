@@ -79,7 +79,7 @@
     "@openauthjs/openauth": "catalog:",
     "@opendora/sdk": "workspace:*",
     "@opendora/util": "workspace:*",
-    "@pingpong/core": "workspace:*",
+    "@opendora/session": "workspace:*",
     "@openrouter/ai-sdk-provider": "1.5.4",
     "@opentui/core": "0.1.81",
     "@opentui/solid": "0.1.81",

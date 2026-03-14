@@ -10,15 +10,15 @@
  * for completeness and future interop.
  */
 
-import type { StorageAdapter } from "@pingpong/core/storage/adapter"
-import type { SessionMeta, SessionFilter, Message, MessagePart } from "@pingpong/core"
+import type { StorageAdapter } from "@opendora/session/storage/adapter"
+import type { SessionMeta, SessionFilter, Message, MessagePart } from "@opendora/session"
 import { Database, eq, and, isNull } from "../storage/db"
 import { SessionTable, MessageTable, PartTable } from "./session.sql"
 import { Slug } from "@opencode-ai/util/slug"
 import { Installation } from "../installation"
 import { Instance } from "../project/instance"
 import type { PermissionNext } from "@/permission/next"
-import type { RetentionPolicy, SendPolicy, SessionType, SessionStatus } from "@pingpong/core"
+import type { RetentionPolicy, SendPolicy, SessionType, SessionStatus } from "@opendora/session"
 
 // ─── OpenDora-specific context for session creation ───────────────────────────
 // PingPong's SessionMeta doesn't carry project_id, directory, slug, or version.
