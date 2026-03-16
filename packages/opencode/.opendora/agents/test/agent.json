@@ -1,4 +1,8 @@
 {
   "name": "Test",
-  "mode": "all"
+  "mode": "all",
+  "model": {
+    "modelID": "minimax-m2.5-free",
+    "providerID": "opencode"
+  }
 }

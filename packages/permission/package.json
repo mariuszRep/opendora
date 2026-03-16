@@ -1,0 +1,14 @@
+{
+  "name": "@opendora/permission",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10"
+  }
+}

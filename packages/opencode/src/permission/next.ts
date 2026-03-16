@@ -1,69 +1,30 @@
 import { Bus } from "@/bus"
 import { BusEvent } from "@/bus/bus-event"
-import { Config } from "@/config/config"
 import { Identifier } from "@/id/id"
 import { Instance } from "@/project/instance"
 import { Database, eq } from "@/storage/db"
 import { PermissionTable } from "@/session/session.sql"
 import { fn } from "@/util/fn"
 import { Log } from "@/util/log"
-import { Wildcard } from "@/util/wildcard"
-import os from "os"
 import z from "zod"
+import { Wildcard } from "@/util/wildcard"
+import { Permission } from "@opendora/permission"
 
 export namespace PermissionNext {
   const log = Log.create({ service: "permission" })
 
-  function expand(pattern: string): string {
-    if (pattern.startsWith("~/")) return os.homedir() + pattern.slice(1)
-    if (pattern === "~") return os.homedir()
-    if (pattern.startsWith("$HOME/")) return os.homedir() + pattern.slice(5)
-    if (pattern.startsWith("$HOME")) return os.homedir() + pattern.slice(5)
-    return pattern
-  }
-
-  export const Action = z.enum(["allow", "deny", "ask"]).meta({
-    ref: "PermissionAction",
-  })
-  export type Action = z.infer<typeof Action>
-
-  export const Rule = z
-    .object({
-      permission: z.string(),
-      pattern: z.string(),
-      action: Action,
-    })
-    .meta({
-      ref: "PermissionRule",
-    })
-  export type Rule = z.infer<typeof Rule>
-
-  export const Ruleset = Rule.array().meta({
-    ref: "PermissionRuleset",
-  })
-  export type Ruleset = z.infer<typeof Ruleset>
-
-  export function fromConfig(permission: Config.Permission) {
-    const ruleset: Ruleset = []
-    for (const [key, value] of Object.entries(permission)) {
-      if (typeof value === "string") {
-        ruleset.push({
-          permission: key,
-          action: value,
-          pattern: "*",
-        })
-        continue
-      }
-      ruleset.push(
-        ...Object.entries(value).map(([pattern, action]) => ({ permission: key, pattern: expand(pattern), action })),
-      )
-    }
-    return ruleset
-  }
-
-  export function merge(...rulesets: Ruleset[]): Ruleset {
-    return rulesets.flat()
-  }
+  // Re-export pure types and functions from @opendora/permission
+  export import Action = Permission.Action
+  export import Rule = Permission.Rule
+  export import Ruleset = Permission.Ruleset
+  export import Reply = Permission.Reply
+  export import RejectedError = Permission.RejectedError
+  export import CorrectedError = Permission.CorrectedError
+  export import DeniedError = Permission.DeniedError
+  export const fromConfig = Permission.fromConfig
+  export const merge = Permission.merge
+  export const evaluate = Permission.evaluate
+  export const disabled = Permission.disabled
 
   export const Request = z
     .object({
@@ -85,9 +46,6 @@ export namespace PermissionNext {
     })
 
   export type Request = z.infer<typeof Request>
-
-  export const Reply = z.enum(["once", "always", "reject"])
-  export type Reply = z.infer<typeof Reply>
 
   export const Approval = z.object({
     projectID: z.string(),
@@ -178,7 +136,6 @@ export namespace PermissionNext {
       })
       if (input.reply === "reject") {
         existing.reject(input.message ? new CorrectedError(input.message) : new RejectedError())
-        // Reject all other pending permissions for this session
         const sessionID = existing.info.sessionID
         for (const [id, pending] of Object.entries(s.pending)) {
           if (pending.info.sessionID === sessionID) {
@@ -223,61 +180,10 @@ export namespace PermissionNext {
           })
           pending.resolve()
         }
-
-        // TODO: we don't save the permission ruleset to disk yet until there's
-        // UI to manage it
-        // db().insert(PermissionTable).values({ projectID: Instance.project.id, data: s.approved })
-        //   .onConflictDoUpdate({ target: PermissionTable.projectID, set: { data: s.approved } }).run()
         return
       }
     },
   )
-
-  export function evaluate(permission: string, pattern: string, ...rulesets: Ruleset[]): Rule {
-    const merged = merge(...rulesets)
-    log.info("evaluate", { permission, pattern, ruleset: merged })
-    const match = merged.findLast(
-      (rule) => Wildcard.match(permission, rule.permission) && Wildcard.match(pattern, rule.pattern),
-    )
-    return match ?? { action: "ask", permission, pattern: "*" }
-  }
-
-  const EDIT_TOOLS = ["edit", "write", "patch", "multiedit"]
-
-  export function disabled(tools: string[], ruleset: Ruleset): Set<string> {
-    const result = new Set<string>()
-    for (const tool of tools) {
-      const permission = EDIT_TOOLS.includes(tool) ? "edit" : tool
-
-      const rule = ruleset.findLast((r) => Wildcard.match(permission, r.permission))
-      if (!rule) continue
-      if (rule.pattern === "*" && rule.action === "deny") result.add(tool)
-    }
-    return result
-  }
-
-  /** User rejected without message - halts execution */
-  export class RejectedError extends Error {
-    constructor() {
-      super(`The user rejected permission to use this specific tool call.`)
-    }
-  }
-
-  /** User rejected with message - continues with guidance */
-  export class CorrectedError extends Error {
-    constructor(message: string) {
-      super(`The user rejected permission to use this specific tool call with the following feedback: ${message}`)
-    }
-  }
-
-  /** Auto-rejected by config rule - halts execution */
-  export class DeniedError extends Error {
-    constructor(public readonly ruleset: Ruleset) {
-      super(
-        `The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules ${JSON.stringify(ruleset)}`,
-      )
-    }
-  }
 
   export async function list() {
     const s = await state()

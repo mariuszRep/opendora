@@ -4,13 +4,13 @@
  */
 import z from "zod"
 import { Agent as AgentCore, AgentStorage } from "@opendora/agent"
-import { Instance } from "../project/instance"
+import { Instance } from "./project/instance"
 import { PermissionNext } from "@/permission/next"
-import { Provider } from "../provider/provider"
+import { Provider } from "./provider/provider"
 import { generateObject } from "ai"
-import { Config } from "../config/config"
-import { Truncate } from "../tool/truncation"
-import { Skill } from "../skill"
+import { Config } from "./config/config"
+import { Truncate } from "./tool/truncation"
+import { Skill } from "./skill"
 import path from "path"
 import { pipe, sortBy, values } from "remeda"
 
