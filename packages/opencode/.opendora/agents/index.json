@@ -63,6 +63,11 @@
       "name": "Temp Tool Check Updated",
       "mode": "worker",
       "hidden": true
+    },
+    {
+      "id": "pm",
+      "name": "pm",
+      "mode": "primary"
     }
   ]
 }

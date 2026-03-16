@@ -46,7 +46,7 @@ export namespace Skill {
   // These follow the directory layout used by Claude Code and other agents.
   const EXTERNAL_DIRS = [".claude", ".agents"]
   const EXTERNAL_SKILL_PATTERN = "skills/**/SKILL.md"
-  const OPENCODE_SKILL_PATTERN = "{skill,skills}/**/SKILL.md"
+  const OPENDORA_SKILL_PATTERN = "{skill,skills}/**/SKILL.md"
   const SKILL_PATTERN = "**/SKILL.md"
 
   export const state = Instance.state(async () => {
@@ -119,9 +119,9 @@ export namespace Skill {
       }
     }
 
-    // Scan .opencode/skill/ directories
+    // Scan .opendora/skill/ directories
     for (const dir of await Config.directories()) {
-      const matches = await Glob.scan(OPENCODE_SKILL_PATTERN, {
+      const matches = await Glob.scan(OPENDORA_SKILL_PATTERN, {
         cwd: dir,
         absolute: true,
         include: "file",

@@ -44,6 +44,7 @@ import { LLM } from "./llm"
 import { iife } from "@/util/iife"
 import { Shell } from "@/shell/shell"
 import { Truncate } from "@/tool/truncation"
+import { Skill } from "@/skill"
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -775,7 +776,28 @@ export namespace SessionPrompt {
       abort: options.abortSignal!,
       messageID: input.processor.message.id,
       callID: options.toolCallId,
-      extra: { model: input.model, bypassAgentCheck: input.bypassAgentCheck },
+      extra: { 
+        model: input.model, 
+        bypassAgentCheck: input.bypassAgentCheck,
+        directory: Instance.directory,
+        worktree: Instance.worktree,
+        skills: {
+          all: () => Skill.all(),
+          get: (name: string) => Skill.get(name),
+        },
+        agents: {
+          list: () => Agent.list(),
+          get: (id: string) => Agent.get(id),
+          create: (id: string, config: any, persona?: string, injection?: string) => Agent.create(id, config, persona, injection),
+          update: (id: string, patch: any, persona?: string, injection?: string) => Agent.update(id, patch, persona, injection),
+          remove: (id: string) => Agent.remove(id),
+        },
+        config: {
+          get: () => Config.get(),
+          directories: () => Config.directories(),
+        },
+        containsPath: (p: string) => Instance.containsPath(p),
+      },
       agent: input.agent.name,
       messages: input.messages,
       metadata: async (val: { title?: string; metadata?: any }) => {

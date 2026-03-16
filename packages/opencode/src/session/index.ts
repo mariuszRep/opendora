@@ -34,6 +34,10 @@ import { openDoraStorageAdapter } from "./opendora-storage-adapter"
 import { fromRow } from "./from-row"
 import { SessionEvents } from "./events"
 import { BusBridge } from "./bus-bridge"
+import { configureSessionCore } from "./configure-session-core"
+
+// Configure @opendora/session-core with opencode's runtime dependencies
+configureSessionCore()
 
 // ─── PingPong SessionManager singleton ───────────────────────────────────────
 

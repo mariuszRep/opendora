@@ -1,0 +1,10 @@
+{
+  "agents": [
+    {
+      "id": "pm",
+      "name": "pm",
+      "mode": "primary",
+      "hidden": false
+    }
+  ]
+}

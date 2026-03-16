@@ -1,87 +1,60 @@
-import { PlanExitTool } from "./plan"
-import { QuestionTool } from "./question"
-import { BashTool } from "./bash"
-import { EditTool } from "./edit"
-import { GlobTool } from "./glob"
-import { GrepTool } from "./grep"
-import { BatchTool } from "./batch"
-import { ReadTool } from "./read"
-import { TaskTool } from "./task"
-import { DelegateTool } from "./delegate"
-import { SpawnTool } from "./spawn"
-import { TodoWriteTool, TodoReadTool } from "./todo"
-import { WebFetchTool } from "./webfetch"
-import { WriteTool } from "./write"
-import { InvalidTool } from "./invalid"
-import { SkillTool } from "./skill"
-import { AgentCreateTool } from "./agent-create"
-import { AgentUpdateTool } from "./agent-update"
-import { AgentDeleteTool } from "./agent-delete"
-import { AgentListTool } from "./agent-list"
-import { AgentGetTool } from "./agent-get"
-import type { Agent } from "../agent"
-import { Tool } from "./tool"
-import { Instance } from "../project/instance"
-import { Config } from "../config/config"
-import path from "path"
-import { type ToolContext as PluginToolContext, type ToolDefinition } from "@opencode-ai/plugin"
-import z from "zod"
-import { Plugin } from "../plugin"
+/**
+ * Thin opencode wrapper around @opendora/tools ToolRegistry.
+ * Configures it with opencode-specific runtime dependencies.
+ */
+import { ToolRegistry } from "@opendora/tools/system"
+import { configureRegistry } from "@opendora/tools/system"
 import { Flag } from "@/flag/flag"
-import { Log } from "@/util/log"
-import { WebSearchTool } from "./websearch"
-import { CodeSearchTool } from "./codesearch"
-import { LspTool } from "./lsp"
+import { Config } from "@/config/config"
+import { Plugin } from "@/plugin"
+import { Instance } from "@/project/instance"
+import type { ToolDefinition, ToolContext as PluginToolContext } from "@opencode-ai/plugin"
 import { Truncate } from "./truncation"
-import { ApplyPatchTool } from "./apply_patch"
-import { SessionSearchTool } from "./session-search"
-import { SessionSwitchTool } from "./session-switch"
-import { Glob } from "../util/glob"
-import { pathToFileURL } from "url"
+import z from "zod"
+import type { Tool } from "./tool"
 
-export namespace ToolRegistry {
-  const log = Log.create({ service: "tool.registry" })
+export { ToolRegistry }
 
-  export const state = Instance.state(async () => {
-    const custom = [] as Tool.Info[]
-
-    const matches = await Config.directories().then((dirs) =>
-      dirs.flatMap((dir) =>
-        Glob.scanSync("{tool,tools}/*.{js,ts}", { cwd: dir, absolute: true, dot: true, symlink: true }),
-      ),
-    )
-    if (matches.length) await Config.waitForDependencies()
-    for (const match of matches) {
-      const namespace = path.basename(match, path.extname(match))
-      const mod = await import(pathToFileURL(match).href)
-      for (const [id, def] of Object.entries<ToolDefinition>(mod)) {
-        custom.push(fromPlugin(id === "default" ? namespace : `${namespace}_${id}`, def))
-      }
-    }
-
+// Wire up opencode-specific configuration
+configureRegistry({
+  clientType: Flag.OPENCODE_CLIENT,
+  flags: {
+    enableQuestion: Flag.OPENCODE_ENABLE_QUESTION_TOOL,
+    enableExa: Flag.OPENCODE_ENABLE_EXA,
+    enableLspTool: Flag.OPENCODE_EXPERIMENTAL_LSP_TOOL,
+    enablePlanMode: Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE,
+    // enableBatchTool is checked dynamically in tools() via Config
+    enableBatchTool: false,
+  },
+  async getToolDirs() {
+    return Config.directories()
+  },
+  async waitForDeps() {
+    return Config.waitForDependencies()
+  },
+  async loadPlugin(_category: string) {
     const plugins = await Plugin.list()
-    for (const plugin of plugins) {
-      for (const [id, def] of Object.entries(plugin.tool ?? {})) {
-        custom.push(fromPlugin(id, def))
-      }
-    }
-
-    return { custom }
-  })
-
-  function fromPlugin(id: string, def: ToolDefinition): Tool.Info {
+    return plugins.flatMap((plugin) =>
+      Object.entries(plugin.tool ?? {}).map(([id, def]) => ({ id, def })),
+    )
+  },
+  async triggerPlugin(toolID: string, output: { description: string; parameters: unknown }) {
+    await Plugin.trigger("tool.definition", { toolID }, output)
+  },
+  fromPlugin(id: string, def: unknown): Tool.Info {
+    const d = def as ToolDefinition
     return {
       id,
       init: async (initCtx) => ({
-        parameters: z.object(def.args),
-        description: def.description,
+        parameters: z.object(d.args),
+        description: d.description,
         execute: async (args, ctx) => {
           const pluginCtx = {
             ...ctx,
             directory: Instance.directory,
             worktree: Instance.worktree,
           } as unknown as PluginToolContext
-          const result = await def.execute(args as any, pluginCtx)
+          const result = await d.execute(args as any, pluginCtx)
           const out = await Truncate.output(result, {}, initCtx?.agent)
           return {
             title: "",
@@ -91,100 +64,7 @@ export namespace ToolRegistry {
         },
       }),
     }
-  }
+  },
+})
 
-  export async function register(tool: Tool.Info) {
-    const { custom } = await state()
-    const idx = custom.findIndex((t) => t.id === tool.id)
-    if (idx >= 0) {
-      custom.splice(idx, 1, tool)
-      return
-    }
-    custom.push(tool)
-  }
-
-  async function all(): Promise<Tool.Info[]> {
-    const custom = await state().then((x) => x.custom)
-    const config = await Config.get()
-    const question = ["app", "cli", "desktop"].includes(Flag.OPENCODE_CLIENT) || Flag.OPENCODE_ENABLE_QUESTION_TOOL
-
-    return [
-      InvalidTool,
-      ...(question ? [QuestionTool] : []),
-      BashTool,
-      ReadTool,
-      GlobTool,
-      GrepTool,
-      EditTool,
-      WriteTool,
-      TaskTool,
-      DelegateTool,
-      SpawnTool,
-      SessionSearchTool,
-      SessionSwitchTool,
-      WebFetchTool,
-      TodoWriteTool,
-      // TodoReadTool,
-      WebSearchTool,
-      CodeSearchTool,
-      SkillTool,
-      ApplyPatchTool,
-      AgentCreateTool,
-      AgentUpdateTool,
-      AgentDeleteTool,
-      AgentListTool,
-      AgentGetTool,
-      ...(Flag.OPENCODE_EXPERIMENTAL_LSP_TOOL ? [LspTool] : []),
-      ...(config.experimental?.batch_tool === true ? [BatchTool] : []),
-      ...(Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE && Flag.OPENCODE_CLIENT === "cli" ? [PlanExitTool] : []),
-      ...custom,
-    ]
-  }
-
-  export async function ids() {
-    return all().then((x) => x.map((t) => t.id))
-  }
-
-  export async function tools(
-    model: {
-      providerID: string
-      modelID: string
-    },
-    agent?: Agent.Info,
-  ) {
-    const tools = await all()
-    const result = await Promise.all(
-      tools
-        .filter((t) => {
-          // Enable websearch/codesearch for zen users OR via enable flag
-          if (t.id === "codesearch" || t.id === "websearch") {
-            return model.providerID === "opencode" || Flag.OPENCODE_ENABLE_EXA
-          }
-
-          // use apply tool in same format as codex
-          const usePatch =
-            model.modelID.includes("gpt-") && !model.modelID.includes("oss") && !model.modelID.includes("gpt-4")
-          if (t.id === "apply_patch") return usePatch
-          if (t.id === "edit" || t.id === "write") return !usePatch
-
-          return true
-        })
-        .map(async (t) => {
-          using _ = log.time(t.id)
-          const tool = await t.init({ agent })
-          const output = {
-            description: tool.description,
-            parameters: tool.parameters,
-          }
-          await Plugin.trigger("tool.definition", { toolID: t.id }, output)
-          return {
-            id: t.id,
-            ...tool,
-            description: output.description,
-            parameters: output.parameters,
-          }
-        }),
-    )
-    return result
-  }
-}
+export { configureRegistry }

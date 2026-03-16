@@ -5,6 +5,7 @@ import { exploreTemplate } from "./explore"
 import { compactionTemplate } from "./compaction"
 import { titleTemplate } from "./title"
 import { summaryTemplate } from "./summary"
+import { pmTemplate } from "./pm"
 import type { AgentTemplate } from "./types"
 
 export { AgentConfig, type AgentTemplate } from "./types"
@@ -21,6 +22,7 @@ export const templates: Record<string, AgentTemplate> = {
   compaction: compactionTemplate,
   title: titleTemplate,
   summary: summaryTemplate,
+  pm: pmTemplate,
 }
 
 /**
