@@ -16,6 +16,7 @@
     "packages": [
       "packages/agent",
       "packages/permission",
+      "packages/tools",
       "packages/opencode",
       "packages/sdk/js",
       "packages/util",

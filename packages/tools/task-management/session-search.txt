@@ -1,0 +1,9 @@
+Search and fetch sessions in OpenDora. This tool allows agents to find existing sessions and retrieve their details, enabling session switching and management.
+
+Use this tool to:
+- Find sessions by title, type, status, or agent
+- Get specific session details by ID
+- List root sessions or filter by directory
+- Search for sessions to switch context
+
+The tool supports various filters and can return detailed session information including metadata, message counts, and timestamps.

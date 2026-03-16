@@ -1,6 +1,5 @@
-import { Tool } from "./tool"
-import { Agent } from "../agent/agent"
-import { Instance } from "../project/instance"
+import { Tool } from "../tool.ts"
+import { host } from "../host.ts"
 import z from "zod"
 
 export const AgentUpdateTool = Tool.define(
@@ -45,7 +44,6 @@ export const AgentUpdateTool = Tool.define(
       persona?: string
       injection?: string
     }, ctx) {
-      // Ask for permission to update agents
       await ctx.ask({
         permission: "agent_update",
         patterns: [],
@@ -53,15 +51,16 @@ export const AgentUpdateTool = Tool.define(
         metadata: { agentId: args.id }
       })
 
+      const agents = host(ctx).agents
+      if (!agents) throw new Error("Agent management is not available in this context")
+
       try {
-        // Check if agent exists first
-        const existingAgent = await Agent.get(args.id)
+        const existingAgent = await agents.get(args.id) as any
         if (!existingAgent) {
           throw new Error(`Agent "${args.id}" not found. Use agent_list to see available agents.`)
         }
 
-        // Build config patch from provided arguments
-        const configPatch = {}
+        const configPatch: Record<string, unknown> = {}
         if (args.name !== undefined) configPatch.name = args.name
         if (args.description !== undefined) configPatch.description = args.description
         if (args.mode !== undefined) configPatch.mode = args.mode
@@ -74,16 +73,10 @@ export const AgentUpdateTool = Tool.define(
         if (args.tools !== undefined) configPatch.tools = args.tools
         if (args.enableInjection !== undefined) configPatch.enableInjection = args.enableInjection
 
-        // Update the agent
-        const result = await Agent.update(
-          args.id,
-          configPatch,
-          args.persona,
-          args.injection
-        )
+        await agents.update(args.id, configPatch, args.persona, args.injection)
+        const result = await agents.get(args.id) as any
 
-        // Build summary of changes
-        const changes = []
+        const changes: string[] = []
         if (args.name !== undefined) changes.push(`Name: "${existingAgent.name}" → "${args.name}"`)
         if (args.description !== undefined) changes.push(`Description: ${existingAgent.description || 'none'} → "${args.description}"`)
         if (args.mode !== undefined) changes.push(`Mode: ${existingAgent.mode} → ${args.mode}`)
@@ -95,32 +88,24 @@ export const AgentUpdateTool = Tool.define(
         if (args.temperature !== undefined) changes.push(`Temperature: ${existingAgent.temperature ?? 'default'} → ${args.temperature}`)
         if (args.steps !== undefined) changes.push(`Steps: ${existingAgent.steps ?? 'default'} → ${args.steps}`)
         if (args.hidden !== undefined) changes.push(`Hidden: ${existingAgent.hidden ?? false} → ${args.hidden}`)
-        if (args.enableInjection !== undefined) changes.push(`Injection: ${existingAgent.enableInjection ?? false} → ${args.enableInjection}`)
+        if (args.enableInjection !== undefined) changes.push(`Injection enabled: ${existingAgent.enableInjection ?? false} → ${args.enableInjection}`)
         if (args.persona !== undefined) changes.push(`Persona: updated`)
         if (args.injection !== undefined) changes.push(`Injection: updated`)
+
+        const name = result?.name ?? args.name ?? existingAgent.name
+        const id = result?.id ?? args.id
 
         return {
           title: "Agent Updated Successfully",
           metadata: {
-            agentId: result.id,
-            agentName: result.config.name,
+            agentId: id,
+            agentName: name,
             changesCount: changes.length
           },
-          output: `Successfully updated agent "${result.config.name}" (ID: ${result.id})
+          output: `Successfully updated agent "${name}" (ID: ${id})
 
 Changes made:
 ${changes.length > 0 ? changes.map(change => `- ${change}`).join('\n') : 'No configuration changes'}
-
-Current configuration:
-- Name: ${result.config.name}
-- Description: ${result.config.description || 'None provided'}
-- Mode: ${result.config.mode || 'all'}
-- Temperature: ${result.config.temperature ?? 'default'}
-- Steps: ${result.config.steps ?? 'default'}
-- Model: ${result.config.model ? `${result.config.model.providerID}/${result.config.model.modelID}` : 'default'}
-- Tools: ${result.config.tools ? result.config.tools.join(', ') : 'all available'}
-- Hidden: ${result.config.hidden ?? false}
-- Enable Injection: ${result.config.enableInjection ?? false}
 
 The agent has been updated and changes are now active.`
         }

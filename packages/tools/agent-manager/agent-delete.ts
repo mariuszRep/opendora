@@ -1,6 +1,5 @@
-import { Tool } from "./tool"
-import { Agent } from "../agent/agent"
-import { Instance } from "../project/instance"
+import { Tool } from "../tool.ts"
+import { host } from "../host.ts"
 import z from "zod"
 
 export const AgentDeleteTool = Tool.define(
@@ -12,7 +11,6 @@ export const AgentDeleteTool = Tool.define(
       confirm: z.boolean().describe("Confirmation flag - must be set to true to proceed with deletion")
     }),
     async execute(args: { id: string; confirm: boolean }, ctx) {
-      // Ask for permission to delete agents
       await ctx.ask({
         permission: "agent_delete",
         patterns: [],
@@ -20,27 +18,27 @@ export const AgentDeleteTool = Tool.define(
         metadata: { agentId: args.id }
       })
 
+      const agents = host(ctx).agents
+      if (!agents) throw new Error("Agent management is not available in this context")
+
       try {
         if (!args.confirm) {
           throw new Error("Deletion requires explicit confirmation. Set confirm=true to proceed.")
         }
 
-        // Check if agent exists first
-        const existingAgent = await Agent.get(args.id)
+        const existingAgent = await agents.get(args.id) as any
         if (!existingAgent) {
           throw new Error(`Agent "${args.id}" not found. Use agent_list to see available agents.`)
         }
 
-        // Store info for confirmation message
         const agentInfo = {
-          id: existingAgent.id,
-          name: existingAgent.name,
+          id: existingAgent.id ?? args.id,
+          name: existingAgent.name ?? args.id,
           description: existingAgent.description,
           mode: existingAgent.mode
         }
 
-        // Delete the agent
-        await Agent.remove(args.id)
+        await agents.remove(args.id)
 
         return {
           title: "Agent Deleted Successfully",
@@ -55,13 +53,7 @@ Deleted agent details:
 - Description: ${agentInfo.description || 'None provided'}
 - Mode: ${agentInfo.mode}
 
-⚠️  This action cannot be undone. All agent data including:
-- Configuration file (agent.json)
-- Persona file (PERSONA.md)  
-- Injection file (INJECTION.md)
-- Directory structure
-
-has been permanently removed from the file system.`
+This action cannot be undone. All agent data has been permanently removed from the file system.`
         }
       } catch (error) {
         if (error instanceof Error) {

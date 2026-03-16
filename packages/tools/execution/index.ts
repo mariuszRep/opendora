@@ -1,2 +1,1 @@
-export { BashTool } from "./bash"
-export { BatchTool } from "./batch"
+export { BashTool } from "./bash.ts"

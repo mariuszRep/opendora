@@ -1,11 +1,12 @@
 {
   "name": "title",
   "description": "Generates a short title for a session.",
-  "mode": "primary",
+  "mode": "system",
   "model": {
     "modelID": "stepfun/step-3.5-flash:free",
     "providerID": "openrouter"
   },
+  "color": "violet",
   "hidden": true,
   "tools": []
 }

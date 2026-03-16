@@ -1,14 +1,13 @@
 import z from "zod"
 import { text } from "node:stream/consumers"
-import { Tool } from "./tool"
-import { Filesystem } from "../util/filesystem"
-import { Ripgrep } from "../file/ripgrep"
-import { Process } from "../util/process"
+import { Tool } from "../tool.ts"
+import { Filesystem } from "../lib/filesystem.ts"
+import { Process } from "../lib/process.ts"
 
 import DESCRIPTION from "./grep.txt"
-import { Instance } from "../project/instance"
+import { host, directory, worktree } from "../host.ts"
 import path from "path"
-import { assertExternalDirectory } from "./external-directory"
+import { assertExternalDirectory } from "../system/external-directory.ts"
 
 const MAX_LINE_LENGTH = 2000
 
@@ -35,34 +34,63 @@ export const GrepTool = Tool.define("grep", {
       },
     })
 
-    let searchPath = params.path ?? Instance.directory
-    searchPath = path.isAbsolute(searchPath) ? searchPath : path.resolve(Instance.directory, searchPath)
+    const dir = directory(ctx)
+    const h = host(ctx)
+
+    let searchPath = params.path ?? dir
+    searchPath = path.isAbsolute(searchPath) ? searchPath : path.resolve(dir, searchPath)
     await assertExternalDirectory(ctx, searchPath, { kind: "directory" })
 
-    const rgPath = await Ripgrep.filepath()
-    const args = ["-nH", "--hidden", "--no-messages", "--field-match-separator=|", "--regexp", params.pattern]
-    if (params.include) {
-      args.push("--glob", params.include)
+    let output = ""
+    let exitCode = 0
+    let errorOutput = ""
+
+    if (h.ripgrep) {
+      // Use host ripgrep
+      const args = ["-nH", "--hidden", "--no-messages", "--field-match-separator=|", "--regexp", params.pattern]
+      if (params.include) {
+        args.push("--glob", params.include)
+      }
+      args.push(searchPath)
+      try {
+        const results = await h.ripgrep.search(args, { cwd: searchPath })
+        // results should be lines of output when using raw args
+        output = results.map((r: any) => {
+          if (typeof r === "string") return r
+          if (r.type === "match" && r.data) {
+            const d = r.data as any
+            return `${d.path?.text ?? ""}|${d.line_number ?? ""}|${d.lines?.text?.trimEnd() ?? ""}`
+          }
+          return ""
+        }).filter(Boolean).join("\n")
+      } catch (e) {
+        exitCode = 1
+      }
+    } else {
+      // Fallback: try to find ripgrep in PATH and spawn it directly
+      const { spawn } = await import("child_process")
+      const rg = process.platform === "win32" ? "rg.exe" : "rg"
+      const args = ["-nH", "--hidden", "--no-messages", "--field-match-separator=|", "--regexp", params.pattern]
+      if (params.include) {
+        args.push("--glob", params.include)
+      }
+      args.push(searchPath)
+
+      const proc = Process.spawn([rg, ...args], {
+        stdout: "pipe",
+        stderr: "pipe",
+        abort: ctx.abort,
+      })
+
+      if (!proc.stdout || !proc.stderr) {
+        throw new Error("Process output not available")
+      }
+
+      output = await text(proc.stdout)
+      errorOutput = await text(proc.stderr)
+      exitCode = await proc.exited
     }
-    args.push(searchPath)
 
-    const proc = Process.spawn([rgPath, ...args], {
-      stdout: "pipe",
-      stderr: "pipe",
-      abort: ctx.abort,
-    })
-
-    if (!proc.stdout || !proc.stderr) {
-      throw new Error("Process output not available")
-    }
-
-    const output = await text(proc.stdout)
-    const errorOutput = await text(proc.stderr)
-    const exitCode = await proc.exited
-
-    // Exit codes: 0 = matches found, 1 = no matches, 2 = errors (but may still have matches)
-    // With --no-messages, we suppress error output but still get exit code 2 for broken symlinks etc.
-    // Only fail if exit code is 2 AND no output was produced
     if (exitCode === 1 || (exitCode === 2 && !output.trim())) {
       return {
         title: params.pattern,
@@ -77,7 +105,6 @@ export const GrepTool = Tool.define("grep", {
 
     const hasErrors = exitCode === 2
 
-    // Handle both Unix (\n) and Windows (\r\n) line endings
     const lines = output.trim().split(/\r?\n/)
     const matches = []
 

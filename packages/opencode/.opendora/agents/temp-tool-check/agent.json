@@ -1,0 +1,7 @@
+{
+  "name": "Temp Tool Check Updated",
+  "description": "Temporary hidden agent updated during tool validation",
+  "mode": "worker",
+  "hidden": true,
+  "tools": []
+}

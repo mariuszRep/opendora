@@ -1,15 +1,7 @@
-import { Tool } from "./tool"
+import { Tool } from "../tool.ts"
 import DESCRIPTION from "./task.txt"
 import z from "zod"
-import { Session } from "../session"
-import { MessageV2 } from "../session/message-v2"
-import { Identifier } from "../id/id"
-import { Agent } from "../agent/agent"
-import { SessionPrompt } from "../session/prompt"
-import { iife } from "@/util/iife"
-import { defer } from "@/util/defer"
-import { Config } from "../config/config"
-import { PermissionNext } from "@/permission/next"
+import { host } from "../host.ts"
 
 const parameters = z.object({
   description: z.string().describe("A short (3-5 words) description of the task"),
@@ -24,28 +16,15 @@ const parameters = z.object({
   command: z.string().describe("The command that triggered this task").optional(),
 })
 
-export const TaskTool = Tool.define("task", async (ctx) => {
-  const agents = await Agent.list().then((x) => x.filter((a) => Agent.isWorkerMode(a.mode)))
+export const TaskTool = Tool.define("task", async (initCtx) => {
+  const description = DESCRIPTION.replace("{agents}", "(agents are resolved at runtime via host context)")
 
-  // Filter agents by permissions if agent provided
-  const caller = ctx?.agent
-  const accessibleAgents = caller
-    ? agents.filter((a) => PermissionNext.evaluate("task", a.name, caller.permission).action !== "deny")
-    : agents
-
-  const description = DESCRIPTION.replace(
-    "{agents}",
-    accessibleAgents
-      .map((a) => `- ${a.name}: ${a.description ?? "This worker should only be called manually by the user."}`)
-      .join("\n"),
-  )
   return {
     description,
     parameters,
     async execute(params: z.infer<typeof parameters>, ctx) {
-      const config = await Config.get()
+      const h = host(ctx)
 
-      // Skip permission check when user explicitly invoked via @ or command subtask
       if (!ctx.extra?.bypassAgentCheck) {
         await ctx.ask({
           permission: "task",
@@ -58,108 +37,74 @@ export const TaskTool = Tool.define("task", async (ctx) => {
         })
       }
 
-      const agent = await Agent.get(params.subagent_type)
-      if (!agent) throw new Error(`Unknown agent type: ${params.subagent_type} is not a valid agent type`)
-      if (!Agent.isWorkerMode(agent.mode)) throw new Error(`Agent "${params.subagent_type}" is not a worker agent`)
-
-      const hasTaskPermission = agent.permission.some((rule) => rule.permission === "task")
-
-      const session = await iife(async () => {
-        if (params.task_id) {
-          const found = await Session.get(params.task_id).catch(() => {})
-          if (found) return found
-        }
-
-        return await Session.create({
-          parentID: ctx.sessionID,
-          title: params.description + ` (@${agent.name} worker)`,
-          permission: [
-            {
-              permission: "todowrite",
-              pattern: "*",
-              action: "deny",
-            },
-            {
-              permission: "todoread",
-              pattern: "*",
-              action: "deny",
-            },
-            ...(hasTaskPermission
-              ? []
-              : [
-                  {
-                    permission: "task" as const,
-                    pattern: "*" as const,
-                    action: "deny" as const,
-                  },
-                ]),
-            ...(config.experimental?.primary_tools?.map((t) => ({
-              pattern: "*",
-              action: "allow" as const,
-              permission: t,
-            })) ?? []),
-          ],
-        })
-      })
-      const msg = await MessageV2.get({ sessionID: ctx.sessionID, messageID: ctx.messageID })
-      if (msg.info.role !== "assistant") throw new Error("Not an assistant message")
-
-      const model = agent.model ?? {
-        modelID: msg.info.modelID,
-        providerID: msg.info.providerID,
+      if (!h.prompt) {
+        throw new Error("Task tool requires prompt capability in host context")
       }
 
       ctx.metadata({
         title: params.description,
         metadata: {
-          sessionId: session.id,
-          model,
+          subagent_type: params.subagent_type,
         },
       })
 
-      const messageID = Identifier.ascending("message")
-
-      function cancel() {
-        SessionPrompt.cancel(session.id)
+      // Cancel handler for abort signal
+      let sessionId: string | undefined
+      const cancel = () => {
+        if (sessionId && h.promptCancel) {
+          h.promptCancel(sessionId)
+        }
       }
       ctx.abort.addEventListener("abort", cancel)
-      using _ = defer(() => ctx.abort.removeEventListener("abort", cancel))
-      const promptParts = await SessionPrompt.resolvePromptParts(params.prompt)
 
-      const result = await SessionPrompt.prompt({
-        messageID,
-        sessionID: session.id,
-        model: {
-          modelID: model.modelID,
-          providerID: model.providerID,
-        },
-        agent: agent.id,
-        tools: {
-          todowrite: false,
-          todoread: false,
-          ...(hasTaskPermission ? {} : { task: false }),
-          ...Object.fromEntries((config.experimental?.primary_tools ?? []).map((t) => [t, false])),
-        },
-        parts: promptParts,
-      })
+      try {
+        const promptParts = h.resolvePromptParts
+          ? await h.resolvePromptParts(params.prompt)
+          : params.prompt
 
-      const text = result.parts.findLast((x) => x.type === "text")?.text ?? ""
+        const result = (await h.prompt({
+          messageID: undefined,
+          sessionID: params.task_id,
+          parentSessionID: ctx.sessionID,
+          parentMessageID: ctx.messageID,
+          agent: params.subagent_type,
+          description: params.description,
+          parts: promptParts,
+          createNewSession: !params.task_id,
+          sessionTitle: params.description + ` (@${params.subagent_type} worker)`,
+        })) as any
 
-      const output = [
-        `task_id: ${session.id} (for resuming to continue this task if needed)`,
-        "",
-        "<task_result>",
-        text,
-        "</task_result>",
-      ].join("\n")
+        sessionId = result?.sessionId ?? result?.info?.id ?? params.task_id
 
-      return {
-        title: params.description,
-        metadata: {
-          sessionId: session.id,
-          model,
-        },
-        output,
+        ctx.metadata({
+          title: params.description,
+          metadata: {
+            sessionId,
+            subagent_type: params.subagent_type,
+          },
+        })
+
+        const parts = result?.parts ?? []
+        const text = [...parts].reverse().find((x: any) => x.type === "text")?.text ?? ""
+
+        const output = [
+          `task_id: ${sessionId ?? "unknown"} (for resuming to continue this task if needed)`,
+          "",
+          "<task_result>",
+          text,
+          "</task_result>",
+        ].join("\n")
+
+        return {
+          title: params.description,
+          metadata: {
+            sessionId,
+            subagent_type: params.subagent_type,
+          },
+          output,
+        }
+      } finally {
+        ctx.abort.removeEventListener("abort", cancel)
       }
     },
   }

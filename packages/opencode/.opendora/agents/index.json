@@ -3,34 +3,37 @@
     {
       "id": "build",
       "name": "build",
-      "mode": "all"
+      "mode": "worker",
+      "hidden": true
     },
     {
       "id": "plan",
       "name": "plan",
-      "mode": "primary"
+      "mode": "worker",
+      "hidden": true
     },
     {
       "id": "explore",
       "name": "explore",
-      "mode": "subagent"
+      "mode": "worker",
+      "hidden": true
     },
     {
       "id": "compaction",
       "name": "compaction",
-      "mode": "primary",
+      "mode": "system",
       "hidden": true
     },
     {
       "id": "title",
       "name": "title",
-      "mode": "primary",
+      "mode": "system",
       "hidden": true
     },
     {
       "id": "summary",
       "name": "summary",
-      "mode": "primary",
+      "mode": "system",
       "hidden": true
     },
     {
@@ -41,7 +44,7 @@
     {
       "id": "project-owner",
       "name": "Project Owner",
-      "mode": "all"
+      "mode": "primary"
     },
     {
       "id": "tool-test-agent",
@@ -52,7 +55,14 @@
     {
       "id": "test",
       "name": "Test",
-      "mode": "all"
+      "mode": "worker",
+      "hidden": true
+    },
+    {
+      "id": "temp-tool-check",
+      "name": "Temp Tool Check Updated",
+      "mode": "worker",
+      "hidden": true
     }
   ]
 }

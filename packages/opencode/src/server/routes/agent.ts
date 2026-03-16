@@ -8,6 +8,22 @@ import { lazy } from "../../util/lazy"
 import { errors } from "../error"
 import { Session } from "../../session"
 
+const AgentConfigPatch = z.object({
+  name: z.string().optional(),
+  description: z.string().optional(),
+  mode: z.enum(["subagent", "primary", "all", "worker", "system"]).optional(),
+  model: z.object({ modelID: z.string(), providerID: z.string() }).optional(),
+  fallback_model: z.object({ modelID: z.string(), providerID: z.string() }).optional(),
+  models: z.array(z.object({ modelID: z.string(), providerID: z.string() })).optional(),
+  temperature: z.number().optional(),
+  steps: z.number().int().positive().optional(),
+  color: z.string().optional(),
+  hidden: z.boolean().optional(),
+  tools: z.array(z.string()).optional(),
+  skills: z.array(z.string()).optional(),
+  enableInjection: z.boolean().optional(),
+})
+
 export const AgentRoutes = lazy(() =>
   new Hono()
 
@@ -158,7 +174,7 @@ export const AgentRoutes = lazy(() =>
       validator(
         "json",
         z.object({
-          config: AgentStorage.Config.partial().optional(),
+          config: AgentConfigPatch.optional(),
           persona: z.string().optional(),
           injection: z.string().optional(),
         }),

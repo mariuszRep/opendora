@@ -1,21 +1,39 @@
 import z from "zod"
-import { Tool } from "./tool"
-import { Question } from "../question"
+import { Tool } from "../tool.ts"
+import { host } from "../host.ts"
 import DESCRIPTION from "./question.txt"
+
+const QuestionInfo = z.object({
+  question: z.string(),
+  header: z.string().optional(),
+  options: z
+    .array(
+      z.object({
+        label: z.string(),
+        description: z.string().optional(),
+      }),
+    )
+    .optional(),
+})
 
 export const QuestionTool = Tool.define("question", {
   description: DESCRIPTION,
   parameters: z.object({
-    questions: z.array(Question.Info.omit({ custom: true })).describe("Questions to ask"),
+    questions: z.array(QuestionInfo).describe("Questions to ask"),
   }),
   async execute(params, ctx) {
-    const answers = await Question.ask({
+    const ask = host(ctx).question
+    if (!ask) {
+      throw new Error("Question tool is not available in this context")
+    }
+
+    const answers = (await ask({
       sessionID: ctx.sessionID,
       questions: params.questions,
       tool: ctx.callID ? { messageID: ctx.messageID, callID: ctx.callID } : undefined,
-    })
+    })) as (string[] | undefined)[]
 
-    function format(answer: Question.Answer | undefined) {
+    function format(answer: string[] | undefined) {
       if (!answer?.length) return "Unanswered"
       return answer.join(", ")
     }

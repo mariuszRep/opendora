@@ -1,12 +1,19 @@
 import z from "zod"
-import { Tool } from "./tool"
+import { Tool } from "../tool.ts"
+import { host } from "../host.ts"
 import DESCRIPTION_WRITE from "./todowrite.txt"
-import { Todo } from "../session/todo"
+
+const TodoItem = z.object({
+  id: z.string(),
+  content: z.string(),
+  status: z.enum(["pending", "in-progress", "completed"]),
+  priority: z.enum(["high", "medium", "low"]).optional(),
+})
 
 export const TodoWriteTool = Tool.define("todowrite", {
   description: DESCRIPTION_WRITE,
   parameters: z.object({
-    todos: z.array(z.object(Todo.Info.shape)).describe("The updated todo list"),
+    todos: z.array(TodoItem).describe("The updated todo list"),
   }),
   async execute(params, ctx) {
     await ctx.ask({
@@ -16,10 +23,11 @@ export const TodoWriteTool = Tool.define("todowrite", {
       metadata: {},
     })
 
-    await Todo.update({
-      sessionID: ctx.sessionID,
-      todos: params.todos,
-    })
+    const todo = host(ctx).todo
+    if (todo) {
+      await todo.write(ctx.sessionID, params.todos)
+    }
+
     return {
       title: `${params.todos.filter((x) => x.status !== "completed").length} todos`,
       output: JSON.stringify(params.todos, null, 2),
@@ -41,7 +49,9 @@ export const TodoReadTool = Tool.define("todoread", {
       metadata: {},
     })
 
-    const todos = await Todo.get(ctx.sessionID)
+    const todo = host(ctx).todo
+    const todos = todo ? ((await todo.list(ctx.sessionID)) as z.infer<typeof TodoItem>[]) : []
+
     return {
       title: `${todos.filter((x) => x.status !== "completed").length} todos`,
       metadata: {

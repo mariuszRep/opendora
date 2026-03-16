@@ -1,5 +1,5 @@
-import { Tool } from "./tool"
-import { Agent } from "../agent/agent"
+import { Tool } from "../tool.ts"
+import { host } from "../host.ts"
 import z from "zod"
 
 export const AgentGetTool = Tool.define(
@@ -12,7 +12,6 @@ export const AgentGetTool = Tool.define(
       includeInjection: z.boolean().default(false).describe("Include the agent's injection content")
     }),
     async execute(args: { id: string; includePersona?: boolean; includeInjection?: boolean }, ctx) {
-      // Ask for permission to get agent details
       await ctx.ask({
         permission: "agent_get",
         patterns: [],
@@ -20,33 +19,15 @@ export const AgentGetTool = Tool.define(
         metadata: { agentId: args.id }
       })
 
+      const agents = host(ctx).agents
+      if (!agents) throw new Error("Agent management is not available in this context")
+
       try {
-        const agent = await Agent.get(args.id)
+        const agent = await agents.get(args.id) as any
         if (!agent) {
           throw new Error(`Agent "${args.id}" not found. Use agent_list to see available agents.`)
         }
 
-        // Get additional content if requested
-        let personaContent = ""
-        let injectionContent = ""
-
-        if (args.includePersona) {
-          try {
-            personaContent = await Agent.getPersona(args.id)
-          } catch (error) {
-            personaContent = "Error retrieving persona content"
-          }
-        }
-
-        if (args.includeInjection) {
-          try {
-            injectionContent = await Agent.getInjection(args.id)
-          } catch (error) {
-            injectionContent = "Error retrieving injection content"
-          }
-        }
-
-        // Build detailed agent information
         const details = [
           `ID: ${agent.id}`,
           `Name: ${agent.name}`,
@@ -63,12 +44,12 @@ export const AgentGetTool = Tool.define(
 
         let output = `Agent Details:\n\n${details.join('\n')}`
 
-        if (args.includePersona && personaContent) {
-          output += `\n\nPersona:\n${personaContent}`
+        if (args.includePersona && agent.persona) {
+          output += `\n\nPersona:\n${agent.persona}`
         }
 
-        if (args.includeInjection && injectionContent) {
-          output += `\n\nInjection:\n${injectionContent}`
+        if (args.includeInjection && agent.injection) {
+          output += `\n\nInjection:\n${agent.injection}`
         }
 
         return {
@@ -77,8 +58,6 @@ export const AgentGetTool = Tool.define(
             agentId: agent.id,
             agentName: agent.name,
             mode: agent.mode,
-            hasPersona: !!personaContent,
-            hasInjection: !!injectionContent
           },
           output
         }

@@ -1,10 +1,9 @@
 import z from "zod"
-import { Tool } from "./tool"
+import { Tool } from "../tool.ts"
 import * as path from "path"
 import DESCRIPTION from "./ls.txt"
-import { Instance } from "../project/instance"
-import { Ripgrep } from "../file/ripgrep"
-import { assertExternalDirectory } from "./external-directory"
+import { host, directory, worktree } from "../host.ts"
+import { assertExternalDirectory } from "../system/external-directory.ts"
 
 export const IGNORE_PATTERNS = [
   "node_modules/",
@@ -22,7 +21,6 @@ export const IGNORE_PATTERNS = [
   "zig-out",
   ".coverage",
   "coverage/",
-  "vendor/",
   "tmp/",
   "temp/",
   ".cache/",
@@ -42,7 +40,11 @@ export const ListTool = Tool.define("list", {
     ignore: z.array(z.string()).describe("List of glob patterns to ignore").optional(),
   }),
   async execute(params, ctx) {
-    const searchPath = path.resolve(Instance.directory, params.path || ".")
+    const dir = directory(ctx)
+    const wt = worktree(ctx)
+    const ripgrep = host(ctx).ripgrep
+
+    const searchPath = path.resolve(dir, params.path || ".")
     await assertExternalDirectory(ctx, searchPath, { kind: "directory" })
 
     await ctx.ask({
@@ -55,10 +57,18 @@ export const ListTool = Tool.define("list", {
     })
 
     const ignoreGlobs = IGNORE_PATTERNS.map((p) => `!${p}*`).concat(params.ignore?.map((p) => `!${p}`) || [])
-    const files = []
-    for await (const file of Ripgrep.files({ cwd: searchPath, glob: ignoreGlobs, signal: ctx.abort })) {
-      files.push(file)
-      if (files.length >= LIMIT) break
+    const files: string[] = []
+
+    if (ripgrep) {
+      for await (const file of ripgrep.files({ cwd: searchPath, signal: ctx.abort })) {
+        files.push(file)
+        if (files.length >= LIMIT) break
+      }
+    } else {
+      // Fallback: use Glob
+      const { Glob } = await import("../lib/glob.ts")
+      const matches = await Glob.scan("**/*", { cwd: searchPath, include: "file", dot: false })
+      files.push(...matches.slice(0, LIMIT))
     }
 
     // Build directory structure
@@ -69,13 +79,11 @@ export const ListTool = Tool.define("list", {
       const dir = path.dirname(file)
       const parts = dir === "." ? [] : dir.split("/")
 
-      // Add all parent directories
       for (let i = 0; i <= parts.length; i++) {
         const dirPath = i === 0 ? "." : parts.slice(0, i).join("/")
         dirs.add(dirPath)
       }
 
-      // Add file to its directory
       if (!filesByDir.has(dir)) filesByDir.set(dir, [])
       filesByDir.get(dir)!.push(path.basename(file))
     }
@@ -93,14 +101,12 @@ export const ListTool = Tool.define("list", {
         .filter((d) => path.dirname(d) === dirPath && d !== dirPath)
         .sort()
 
-      // Render subdirectories first
       for (const child of children) {
         output += renderDir(child, depth + 1)
       }
 
-      // Render files
-      const files = filesByDir.get(dirPath) || []
-      for (const file of files.sort()) {
+      const dirFiles = filesByDir.get(dirPath) || []
+      for (const file of dirFiles.sort()) {
         output += `${childIndent}${file}\n`
       }
 
@@ -110,7 +116,7 @@ export const ListTool = Tool.define("list", {
     const output = `${searchPath}/\n` + renderDir(".", 0)
 
     return {
-      title: path.relative(Instance.worktree, searchPath),
+      title: path.relative(wt, searchPath),
       metadata: {
         count: files.length,
         truncated: files.length >= LIMIT,

@@ -1,16 +1,25 @@
 import z from "zod"
-import type { MessageV2 } from "../session/message-v2"
-import type { Agent } from "../agent/agent"
-import type { PermissionNext } from "../permission/next"
-import { Truncate } from "./truncation"
+import { apply as applyTruncation } from "./truncation.ts"
 
 export namespace Tool {
   interface Metadata {
     [key: string]: any
   }
 
+  export interface AgentInfo {
+    permission?: unknown
+  }
+
   export interface InitContext {
-    agent?: Agent.Info
+    agent?: AgentInfo
+  }
+
+  export interface AskInput {
+    permission: string
+    patterns?: string[]
+    always?: string[]
+    explanation?: string
+    metadata?: Record<string, unknown>
   }
 
   export type Context<M extends Metadata = Metadata> = {
@@ -20,10 +29,11 @@ export namespace Tool {
     abort: AbortSignal
     callID?: string
     extra?: { [key: string]: any }
-    messages: MessageV2.WithParts[]
+    messages: unknown[]
     metadata(input: { title?: string; metadata?: M }): void
-    ask(input: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">): Promise<void>
+    ask(input: AskInput): Promise<void>
   }
+
   export interface Info<Parameters extends z.ZodType = z.ZodType, M extends Metadata = Metadata> {
     id: string
     init: (ctx?: InitContext) => Promise<{
@@ -36,7 +46,7 @@ export namespace Tool {
         title: string
         metadata: M
         output: string
-        attachments?: Omit<MessageV2.FilePart, "id" | "sessionID" | "messageID">[]
+        attachments?: unknown[]
       }>
       formatValidationError?(error: z.ZodError): string
     }>
@@ -67,18 +77,17 @@ export namespace Tool {
             )
           }
           const result = await execute(args, ctx)
-          // skip truncation for tools that handle it themselves
           if (result.metadata.truncated !== undefined) {
             return result
           }
-          const truncated = await Truncate.output(result.output, {}, initCtx?.agent)
+          const truncated = await applyTruncation(result.output, initCtx?.agent)
           return {
             ...result,
             output: truncated.content,
             metadata: {
               ...result.metadata,
               truncated: truncated.truncated,
-              ...(truncated.truncated && { outputPath: truncated.outputPath }),
+              ...(truncated.truncated && { outputPath: (truncated as any).outputPath }),
             },
           }
         }

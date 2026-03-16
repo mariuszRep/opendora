@@ -1,11 +1,10 @@
 import z from "zod"
 import path from "path"
-import { Tool } from "./tool"
-import { Filesystem } from "../util/filesystem"
+import { Tool } from "../tool.ts"
+import { Filesystem } from "../lib/filesystem.ts"
 import DESCRIPTION from "./glob.txt"
-import { Ripgrep } from "../file/ripgrep"
-import { Instance } from "../project/instance"
-import { assertExternalDirectory } from "./external-directory"
+import { host, directory, worktree } from "../host.ts"
+import { assertExternalDirectory } from "../system/external-directory.ts"
 
 export const GlobTool = Tool.define("glob", {
   description: DESCRIPTION,
@@ -29,29 +28,46 @@ export const GlobTool = Tool.define("glob", {
       },
     })
 
-    let search = params.path ?? Instance.directory
-    search = path.isAbsolute(search) ? search : path.resolve(Instance.directory, search)
+    const dir = directory(ctx)
+    const wt = worktree(ctx)
+    const ripgrep = host(ctx).ripgrep
+
+    let search = params.path ?? dir
+    search = path.isAbsolute(search) ? search : path.resolve(dir, search)
     await assertExternalDirectory(ctx, search, { kind: "directory" })
 
     const limit = 100
-    const files = []
+    const files: Array<{ path: string; mtime: number }> = []
     let truncated = false
-    for await (const file of Ripgrep.files({
-      cwd: search,
-      glob: [params.pattern],
-      signal: ctx.abort,
-    })) {
-      if (files.length >= limit) {
-        truncated = true
-        break
+
+    if (ripgrep) {
+      for await (const file of ripgrep.files({ cwd: search, signal: ctx.abort })) {
+        // Apply glob filter manually
+        const { minimatch } = await import("minimatch")
+        if (!minimatch(file, params.pattern, { dot: true }) && !minimatch(path.basename(file), params.pattern, { dot: true })) continue
+
+        if (files.length >= limit) {
+          truncated = true
+          break
+        }
+        const full = path.resolve(search, file)
+        const stats = Filesystem.stat(full)?.mtime.getTime() ?? 0
+        files.push({ path: full, mtime: stats })
       }
-      const full = path.resolve(search, file)
-      const stats = Filesystem.stat(full)?.mtime.getTime() ?? 0
-      files.push({
-        path: full,
-        mtime: stats,
-      })
+    } else {
+      // Fallback: use glob library
+      const { Glob } = await import("../lib/glob.ts")
+      const matches = await Glob.scan(params.pattern, { cwd: search, absolute: true, include: "file", dot: true })
+      for (const full of matches) {
+        if (files.length >= limit) {
+          truncated = true
+          break
+        }
+        const stats = Filesystem.stat(full)?.mtime.getTime() ?? 0
+        files.push({ path: full, mtime: stats })
+      }
     }
+
     files.sort((a, b) => b.mtime - a.mtime)
 
     const output = []
@@ -67,7 +83,7 @@ export const GlobTool = Tool.define("glob", {
     }
 
     return {
-      title: path.relative(Instance.worktree, search),
+      title: path.relative(wt, search),
       metadata: {
         count: files.length,
         truncated,

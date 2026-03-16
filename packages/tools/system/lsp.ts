@@ -1,12 +1,11 @@
 import z from "zod"
-import { Tool } from "./tool"
+import { Tool } from "../tool.ts"
 import path from "path"
-import { LSP } from "../lsp"
+import { host, directory, worktree } from "../host.ts"
 import DESCRIPTION from "./lsp.txt"
-import { Instance } from "../project/instance"
 import { pathToFileURL } from "url"
-import { assertExternalDirectory } from "./external-directory"
-import { Filesystem } from "../util/filesystem"
+import { assertExternalDirectory } from "./external-directory.ts"
+import { Filesystem } from "../lib/filesystem.ts"
 
 const operations = [
   "goToDefinition",
@@ -29,7 +28,11 @@ export const LspTool = Tool.define("lsp", {
     character: z.number().int().min(1).describe("The character offset (1-based, as shown in editors)"),
   }),
   execute: async (args, ctx) => {
-    const file = path.isAbsolute(args.filePath) ? args.filePath : path.join(Instance.directory, args.filePath)
+    const dir = directory(ctx)
+    const wt = worktree(ctx)
+    const lsp = host(ctx).lsp
+
+    const file = path.isAbsolute(args.filePath) ? args.filePath : path.join(dir, args.filePath)
     await assertExternalDirectory(ctx, file)
 
     await ctx.ask({
@@ -45,7 +48,7 @@ export const LspTool = Tool.define("lsp", {
       character: args.character - 1,
     }
 
-    const relPath = path.relative(Instance.worktree, file)
+    const relPath = path.relative(wt, file)
     const title = `${args.operation} ${relPath}:${args.line}:${args.character}`
 
     const exists = await Filesystem.exists(file)
@@ -53,33 +56,37 @@ export const LspTool = Tool.define("lsp", {
       throw new Error(`File not found: ${file}`)
     }
 
-    const available = await LSP.hasClients(file)
+    if (!lsp) {
+      throw new Error("No LSP server available for this file type.")
+    }
+
+    const available = lsp.hasClients ? await lsp.hasClients(file) : true
     if (!available) {
       throw new Error("No LSP server available for this file type.")
     }
 
-    await LSP.touchFile(file, true)
+    await lsp.touchFile(file)
 
     const result: unknown[] = await (async () => {
       switch (args.operation) {
         case "goToDefinition":
-          return LSP.definition(position)
+          return lsp.definition ? lsp.definition(position) : []
         case "findReferences":
-          return LSP.references(position)
+          return lsp.references ? lsp.references(position) : []
         case "hover":
-          return LSP.hover(position)
+          return lsp.hover ? lsp.hover(position) : []
         case "documentSymbol":
-          return LSP.documentSymbol(uri)
+          return lsp.documentSymbol ? lsp.documentSymbol(uri) : []
         case "workspaceSymbol":
-          return LSP.workspaceSymbol("")
+          return lsp.workspaceSymbol ? lsp.workspaceSymbol("") : []
         case "goToImplementation":
-          return LSP.implementation(position)
+          return lsp.implementation ? lsp.implementation(position) : []
         case "prepareCallHierarchy":
-          return LSP.prepareCallHierarchy(position)
+          return lsp.prepareCallHierarchy ? lsp.prepareCallHierarchy(position) : []
         case "incomingCalls":
-          return LSP.incomingCalls(position)
+          return lsp.incomingCalls ? lsp.incomingCalls(position) : []
         case "outgoingCalls":
-          return LSP.outgoingCalls(position)
+          return lsp.outgoingCalls ? lsp.outgoingCalls(position) : []
       }
     })()
 

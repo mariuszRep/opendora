@@ -5,18 +5,13 @@
 
 import z from "zod"
 import * as path from "path"
-import { Tool } from "./tool"
-import { LSP } from "../lsp"
+import { Tool } from "../tool.ts"
 import { createTwoFilesPatch, diffLines } from "diff"
 import DESCRIPTION from "./edit.txt"
-import { File } from "../file"
-import { FileWatcher } from "../file/watcher"
-import { Bus } from "../bus"
-import { FileTime } from "../file/time"
-import { Filesystem } from "../util/filesystem"
-import { Instance } from "../project/instance"
-import { Snapshot } from "@/snapshot"
-import { assertExternalDirectory } from "./external-directory"
+import { FileTime } from "../lib/file-time.ts"
+import { Filesystem } from "../lib/filesystem.ts"
+import { host, directory, worktree } from "../host.ts"
+import { assertExternalDirectory } from "../system/external-directory.ts"
 
 const MAX_DIAGNOSTICS_PER_FILE = 20
 
@@ -41,7 +36,11 @@ export const EditTool = Tool.define("edit", {
       throw new Error("No changes to apply: oldString and newString are identical.")
     }
 
-    const filePath = path.isAbsolute(params.filePath) ? params.filePath : path.join(Instance.directory, params.filePath)
+    const dir = directory(ctx)
+    const wt = worktree(ctx)
+    const h = host(ctx)
+
+    const filePath = path.isAbsolute(params.filePath) ? params.filePath : path.join(dir, params.filePath)
     await assertExternalDirectory(ctx, filePath)
 
     let diff = ""
@@ -54,7 +53,7 @@ export const EditTool = Tool.define("edit", {
         diff = trimDiff(createTwoFilesPatch(filePath, filePath, contentOld, contentNew))
         await ctx.ask({
           permission: "edit",
-          patterns: [path.relative(Instance.worktree, filePath)],
+          patterns: [path.relative(wt, filePath)],
           always: ["*"],
           metadata: {
             filepath: filePath,
@@ -62,21 +61,15 @@ export const EditTool = Tool.define("edit", {
           },
         })
         await Filesystem.write(filePath, params.newString)
-        await Bus.publish(File.Event.Edited, {
-          file: filePath,
-        })
-        await Bus.publish(FileWatcher.Event.Updated, {
-          file: filePath,
-          event: existed ? "change" : "add",
-        })
-        FileTime.read(ctx.sessionID, filePath)
+        h.emit?.("file.changed", { file: filePath, event: existed ? "change" : "add" })
+        FileTime.recordRead(ctx.sessionID, filePath)
         return
       }
 
       const stats = Filesystem.stat(filePath)
       if (!stats) throw new Error(`File ${filePath} not found`)
       if (stats.isDirectory()) throw new Error(`Path is a directory, not a file: ${filePath}`)
-      await FileTime.assert(ctx.sessionID, filePath)
+      await FileTime.assert(ctx.sessionID, filePath, h.disableFiletimeCheck)
       contentOld = await Filesystem.readText(filePath)
       contentNew = replace(contentOld, params.oldString, params.newString, params.replaceAll)
 
@@ -85,7 +78,7 @@ export const EditTool = Tool.define("edit", {
       )
       await ctx.ask({
         permission: "edit",
-        patterns: [path.relative(Instance.worktree, filePath)],
+        patterns: [path.relative(wt, filePath)],
         always: ["*"],
         metadata: {
           filepath: filePath,
@@ -94,21 +87,15 @@ export const EditTool = Tool.define("edit", {
       })
 
       await Filesystem.write(filePath, contentNew)
-      await Bus.publish(File.Event.Edited, {
-        file: filePath,
-      })
-      await Bus.publish(FileWatcher.Event.Updated, {
-        file: filePath,
-        event: "change",
-      })
+      h.emit?.("file.changed", { file: filePath, event: "change" })
       contentNew = await Filesystem.readText(filePath)
       diff = trimDiff(
         createTwoFilesPatch(filePath, filePath, normalizeLineEndings(contentOld), normalizeLineEndings(contentNew)),
       )
-      FileTime.read(ctx.sessionID, filePath)
+      FileTime.recordRead(ctx.sessionID, filePath)
     })
 
-    const filediff: Snapshot.FileDiff = {
+    const filediff = {
       file: filePath,
       before: contentOld,
       after: contentNew,
@@ -129,25 +116,26 @@ export const EditTool = Tool.define("edit", {
     })
 
     let output = "Edit applied successfully."
-    await LSP.touchFile(filePath, true)
-    const diagnostics = await LSP.diagnostics()
+    await h.lsp?.touchFile(filePath)
+    const diagnosticsMap = h.lsp?.diagnosticsAll ? await h.lsp.diagnosticsAll() : {}
     const normalizedFilePath = Filesystem.normalizePath(filePath)
-    const issues = diagnostics[normalizedFilePath] ?? []
+    const issues = (diagnosticsMap[normalizedFilePath] ?? []) as any[]
     const errors = issues.filter((item) => item.severity === 1)
     if (errors.length > 0) {
       const limited = errors.slice(0, MAX_DIAGNOSTICS_PER_FILE)
       const suffix =
         errors.length > MAX_DIAGNOSTICS_PER_FILE ? `\n... and ${errors.length - MAX_DIAGNOSTICS_PER_FILE} more` : ""
-      output += `\n\nLSP errors detected in this file, please fix:\n<diagnostics file="${filePath}">\n${limited.map(LSP.Diagnostic.pretty).join("\n")}${suffix}\n</diagnostics>`
+      const prettyDiag = limited.map((d: any) => `${d.message} (${d.source ?? "lsp"}) at line ${d.range?.start?.line ?? "?"}`).join("\n")
+      output += `\n\nLSP errors detected in this file, please fix:\n<diagnostics file="${filePath}">\n${prettyDiag}${suffix}\n</diagnostics>`
     }
 
     return {
       metadata: {
-        diagnostics,
+        diagnostics: diagnosticsMap,
         diff,
         filediff,
       },
-      title: `${path.relative(Instance.worktree, filePath)}`,
+      title: `${path.relative(wt, filePath)}`,
       output,
     }
   },

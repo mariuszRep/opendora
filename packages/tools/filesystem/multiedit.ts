@@ -1,9 +1,9 @@
 import z from "zod"
-import { Tool } from "./tool"
-import { EditTool } from "./edit"
+import { Tool } from "../tool.ts"
+import { EditTool } from "./edit.ts"
 import DESCRIPTION from "./multiedit.txt"
 import path from "path"
-import { Instance } from "../project/instance"
+import { worktree } from "../host.ts"
 
 export const MultiEditTool = Tool.define("multiedit", {
   description: DESCRIPTION,
@@ -35,8 +35,9 @@ export const MultiEditTool = Tool.define("multiedit", {
       )
       results.push(result)
     }
+    const wt = worktree(ctx)
     return {
-      title: path.relative(Instance.worktree, params.filePath),
+      title: path.relative(wt, params.filePath),
       metadata: {
         results: results.map((r) => r.metadata),
       },

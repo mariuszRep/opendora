@@ -1,18 +1,14 @@
 import z from "zod"
 import * as path from "path"
 import * as fs from "fs/promises"
-import { Tool } from "./tool"
-import { Bus } from "../bus"
-import { FileWatcher } from "../file/watcher"
-import { Instance } from "../project/instance"
-import { Patch } from "../patch"
+import { Tool } from "../tool.ts"
+import { host, directory, worktree } from "../host.ts"
+import { Patch } from "../lib/patch.ts"
 import { createTwoFilesPatch, diffLines } from "diff"
-import { assertExternalDirectory } from "./external-directory"
-import { trimDiff } from "./edit"
-import { LSP } from "../lsp"
-import { Filesystem } from "../util/filesystem"
+import { assertExternalDirectory } from "../system/external-directory.ts"
+import { trimDiff } from "./edit.ts"
+import { Filesystem } from "../lib/filesystem.ts"
 import DESCRIPTION from "./apply_patch.txt"
-import { File } from "../file"
 
 const PatchParams = z.object({
   patchText: z.string().describe("The full patch text that describes all changes to be made"),
@@ -25,6 +21,10 @@ export const ApplyPatchTool = Tool.define("apply_patch", {
     if (!params.patchText) {
       throw new Error("patchText is required")
     }
+
+    const dir = directory(ctx)
+    const wt = worktree(ctx)
+    const h = host(ctx)
 
     // Parse the patch to get hunks
     let hunks: Patch.Hunk[]
@@ -58,7 +58,7 @@ export const ApplyPatchTool = Tool.define("apply_patch", {
     let totalDiff = ""
 
     for (const hunk of hunks) {
-      const filePath = path.resolve(Instance.directory, hunk.path)
+      const filePath = path.resolve(dir, hunk.path)
       await assertExternalDirectory(ctx, filePath)
 
       switch (hunk.type) {
@@ -90,7 +90,6 @@ export const ApplyPatchTool = Tool.define("apply_patch", {
         }
 
         case "update": {
-          // Check if file exists for update
           const stats = await fs.stat(filePath).catch(() => null)
           if (!stats || stats.isDirectory()) {
             throw new Error(`apply_patch verification failed: Failed to read file to update: ${filePath}`)
@@ -99,7 +98,6 @@ export const ApplyPatchTool = Tool.define("apply_patch", {
           const oldContent = await fs.readFile(filePath, "utf-8")
           let newContent = oldContent
 
-          // Apply the update chunks to get new content
           try {
             const fileUpdate = Patch.deriveNewContentsFromChunks(filePath, hunk.chunks)
             newContent = fileUpdate.content
@@ -116,7 +114,7 @@ export const ApplyPatchTool = Tool.define("apply_patch", {
             if (change.removed) deletions += change.count || 0
           }
 
-          const movePath = hunk.move_path ? path.resolve(Instance.directory, hunk.move_path) : undefined
+          const movePath = hunk.move_path ? path.resolve(dir, hunk.move_path) : undefined
           await assertExternalDirectory(ctx, movePath)
 
           fileChanges.push({
@@ -158,10 +156,10 @@ export const ApplyPatchTool = Tool.define("apply_patch", {
       }
     }
 
-    // Build per-file metadata for UI rendering (used for both permission and result)
+    // Build per-file metadata
     const files = fileChanges.map((change) => ({
       filePath: change.filePath,
-      relativePath: path.relative(Instance.worktree, change.movePath ?? change.filePath).replaceAll("\\", "/"),
+      relativePath: path.relative(wt, change.movePath ?? change.filePath).replaceAll("\\", "/"),
       type: change.type,
       diff: change.diff,
       before: change.oldContent,
@@ -171,8 +169,7 @@ export const ApplyPatchTool = Tool.define("apply_patch", {
       movePath: change.movePath,
     }))
 
-    // Check permissions if needed
-    const relativePaths = fileChanges.map((c) => path.relative(Instance.worktree, c.filePath).replaceAll("\\", "/"))
+    const relativePaths = fileChanges.map((c) => path.relative(wt, c.filePath).replaceAll("\\", "/"))
     await ctx.ask({
       permission: "edit",
       patterns: relativePaths,
@@ -188,10 +185,8 @@ export const ApplyPatchTool = Tool.define("apply_patch", {
     const updates: Array<{ file: string; event: "add" | "change" | "unlink" }> = []
 
     for (const change of fileChanges) {
-      const edited = change.type === "delete" ? undefined : (change.movePath ?? change.filePath)
       switch (change.type) {
         case "add":
-          // Create parent directories (recursive: true is safe on existing/root dirs)
           await fs.mkdir(path.dirname(change.filePath), { recursive: true })
           await fs.writeFile(change.filePath, change.newContent, "utf-8")
           updates.push({ file: change.filePath, event: "add" })
@@ -204,7 +199,6 @@ export const ApplyPatchTool = Tool.define("apply_patch", {
 
         case "move":
           if (change.movePath) {
-            // Create parent directories (recursive: true is safe on existing/root dirs)
             await fs.mkdir(path.dirname(change.movePath), { recursive: true })
             await fs.writeFile(change.movePath, change.newContent, "utf-8")
             await fs.unlink(change.filePath)
@@ -219,52 +213,51 @@ export const ApplyPatchTool = Tool.define("apply_patch", {
           break
       }
 
+      const edited = change.type === "delete" ? undefined : (change.movePath ?? change.filePath)
       if (edited) {
-        await Bus.publish(File.Event.Edited, {
-          file: edited,
-        })
+        h.emit?.("file.changed", { file: edited })
       }
     }
 
     // Publish file change events
     for (const update of updates) {
-      await Bus.publish(FileWatcher.Event.Updated, update)
+      h.emit?.("file.updated", update)
     }
 
     // Notify LSP of file changes and collect diagnostics
     for (const change of fileChanges) {
       if (change.type === "delete") continue
       const target = change.movePath ?? change.filePath
-      await LSP.touchFile(target, true)
+      await h.lsp?.touchFile(target)
     }
-    const diagnostics = await LSP.diagnostics()
+    const diagnosticsAll = h.lsp?.diagnosticsAll ? await h.lsp.diagnosticsAll() : {}
 
     // Generate output summary
     const summaryLines = fileChanges.map((change) => {
       if (change.type === "add") {
-        return `A ${path.relative(Instance.worktree, change.filePath).replaceAll("\\", "/")}`
+        return `A ${path.relative(wt, change.filePath).replaceAll("\\", "/")}`
       }
       if (change.type === "delete") {
-        return `D ${path.relative(Instance.worktree, change.filePath).replaceAll("\\", "/")}`
+        return `D ${path.relative(wt, change.filePath).replaceAll("\\", "/")}`
       }
       const target = change.movePath ?? change.filePath
-      return `M ${path.relative(Instance.worktree, target).replaceAll("\\", "/")}`
+      return `M ${path.relative(wt, target).replaceAll("\\", "/")}`
     })
     let output = `Success. Updated the following files:\n${summaryLines.join("\n")}`
 
-    // Report LSP errors for changed files
     const MAX_DIAGNOSTICS_PER_FILE = 20
     for (const change of fileChanges) {
       if (change.type === "delete") continue
       const target = change.movePath ?? change.filePath
       const normalized = Filesystem.normalizePath(target)
-      const issues = diagnostics[normalized] ?? []
+      const issues = (diagnosticsAll[normalized] ?? []) as any[]
       const errors = issues.filter((item) => item.severity === 1)
       if (errors.length > 0) {
         const limited = errors.slice(0, MAX_DIAGNOSTICS_PER_FILE)
         const suffix =
           errors.length > MAX_DIAGNOSTICS_PER_FILE ? `\n... and ${errors.length - MAX_DIAGNOSTICS_PER_FILE} more` : ""
-        output += `\n\nLSP errors detected in ${path.relative(Instance.worktree, target).replaceAll("\\", "/")}, please fix:\n<diagnostics file="${target}">\n${limited.map(LSP.Diagnostic.pretty).join("\n")}${suffix}\n</diagnostics>`
+        const prettyDiag = limited.map((d: any) => `${d.message} (${d.source ?? "lsp"}) at line ${d.range?.start?.line ?? "?"}`).join("\n")
+        output += `\n\nLSP errors detected in ${path.relative(wt, target).replaceAll("\\", "/")}, please fix:\n<diagnostics file="${target}">\n${prettyDiag}${suffix}\n</diagnostics>`
       }
     }
 
@@ -273,7 +266,7 @@ export const ApplyPatchTool = Tool.define("apply_patch", {
       metadata: {
         diff: totalDiff,
         files,
-        diagnostics,
+        diagnostics: diagnosticsAll,
       },
       output,
     }

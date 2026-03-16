@@ -3,14 +3,12 @@ import { createReadStream } from "fs"
 import * as fs from "fs/promises"
 import * as path from "path"
 import { createInterface } from "readline"
-import { Tool } from "./tool"
-import { LSP } from "../lsp"
-import { FileTime } from "../file/time"
+import { Tool } from "../tool.ts"
+import { FileTime } from "../lib/file-time.ts"
 import DESCRIPTION from "./read.txt"
-import { Instance } from "../project/instance"
-import { assertExternalDirectory } from "./external-directory"
-import { InstructionPrompt } from "../session/instruction"
-import { Filesystem } from "../util/filesystem"
+import { host, directory, worktree } from "../host.ts"
+import { assertExternalDirectory } from "../system/external-directory.ts"
+import { Filesystem } from "../lib/filesystem.ts"
 
 const DEFAULT_READ_LIMIT = 2000
 const MAX_LINE_LENGTH = 2000
@@ -29,11 +27,16 @@ export const ReadTool = Tool.define("read", {
     if (params.offset !== undefined && params.offset < 1) {
       throw new Error("offset must be greater than or equal to 1")
     }
+
+    const dir = directory(ctx)
+    const wt = worktree(ctx)
+    const h = host(ctx)
+
     let filepath = params.filePath
     if (!path.isAbsolute(filepath)) {
-      filepath = path.resolve(Instance.directory, filepath)
+      filepath = path.resolve(dir, filepath)
     }
-    const title = path.relative(Instance.worktree, filepath)
+    const title = path.relative(wt, filepath)
 
     const stat = Filesystem.stat(filepath)
 
@@ -50,18 +53,18 @@ export const ReadTool = Tool.define("read", {
     })
 
     if (!stat) {
-      const dir = path.dirname(filepath)
+      const dirPath = path.dirname(filepath)
       const base = path.basename(filepath)
 
       const suggestions = await fs
-        .readdir(dir)
+        .readdir(dirPath)
         .then((entries) =>
           entries
             .filter(
               (entry) =>
                 entry.toLowerCase().includes(base.toLowerCase()) || base.toLowerCase().includes(entry.toLowerCase()),
             )
-            .map((entry) => path.join(dir, entry))
+            .map((entry) => path.join(dirPath, entry))
             .slice(0, 3),
         )
         .catch(() => [])
@@ -115,9 +118,11 @@ export const ReadTool = Tool.define("read", {
       }
     }
 
-    const instructions = await InstructionPrompt.resolve(ctx.messages, filepath, ctx.messageID)
+    // Resolve instruction prompts via host
+    const instructions = h.instructionPrompt
+      ? await h.instructionPrompt(ctx.sessionID, ctx.messages, filepath, ctx.messageID)
+      : []
 
-    // Exclude SVG (XML-based) and vnd.fastbidsheet (.fbs extension, commonly FlatBuffers schema files)
     const mime = Filesystem.mimeType(filepath)
     const isImage = mime.startsWith("image/") && mime !== "image/svg+xml" && mime !== "image/vnd.fastbidsheet"
     const isPdf = mime === "application/pdf"
@@ -147,8 +152,6 @@ export const ReadTool = Tool.define("read", {
     const stream = createReadStream(filepath, { encoding: "utf8" })
     const rl = createInterface({
       input: stream,
-      // Note: we use the crlfDelay option to recognize all instances of CR LF
-      // ('\r\n') in file as a single line break.
       crlfDelay: Infinity,
     })
 
@@ -212,9 +215,9 @@ export const ReadTool = Tool.define("read", {
     }
     output += "\n</content>"
 
-    // just warms the lsp client
-    LSP.touchFile(filepath, false)
-    FileTime.read(ctx.sessionID, filepath)
+    // Warm LSP client and record file read
+    await h.lsp?.touchFile(filepath)
+    FileTime.recordRead(ctx.sessionID, filepath)
 
     if (instructions.length > 0) {
       output += `\n\n<system-reminder>\n${instructions.map((i) => i.content).join("\n\n")}\n</system-reminder>`
@@ -234,36 +237,13 @@ export const ReadTool = Tool.define("read", {
 
 async function isBinaryFile(filepath: string, fileSize: number): Promise<boolean> {
   const ext = path.extname(filepath).toLowerCase()
-  // binary check for common non-text extensions
   switch (ext) {
-    case ".zip":
-    case ".tar":
-    case ".gz":
-    case ".exe":
-    case ".dll":
-    case ".so":
-    case ".class":
-    case ".jar":
-    case ".war":
-    case ".7z":
-    case ".doc":
-    case ".docx":
-    case ".xls":
-    case ".xlsx":
-    case ".ppt":
-    case ".pptx":
-    case ".odt":
-    case ".ods":
-    case ".odp":
-    case ".bin":
-    case ".dat":
-    case ".obj":
-    case ".o":
-    case ".a":
-    case ".lib":
-    case ".wasm":
-    case ".pyc":
-    case ".pyo":
+    case ".zip": case ".tar": case ".gz": case ".exe": case ".dll":
+    case ".so": case ".class": case ".jar": case ".war": case ".7z":
+    case ".doc": case ".docx": case ".xls": case ".xlsx": case ".ppt":
+    case ".pptx": case ".odt": case ".ods": case ".odp": case ".bin":
+    case ".dat": case ".obj": case ".o": case ".a": case ".lib":
+    case ".wasm": case ".pyc": case ".pyo":
       return true
     default:
       break
@@ -285,7 +265,6 @@ async function isBinaryFile(filepath: string, fileSize: number): Promise<boolean
         nonPrintableCount++
       }
     }
-    // If >30% non-printable characters, consider it binary
     return nonPrintableCount / result.bytesRead > 0.3
   } finally {
     await fh.close()

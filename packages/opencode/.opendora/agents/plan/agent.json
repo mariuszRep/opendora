@@ -1,12 +1,13 @@
 {
   "name": "plan",
   "description": "Plan mode. Disallows all edit tools.",
-  "mode": "primary",
+  "mode": "worker",
   "model": {
     "modelID": "gpt-5.4",
     "providerID": "openai"
   },
   "color": "lime",
+  "hidden": true,
   "tools": [
     "bash",
     "read",

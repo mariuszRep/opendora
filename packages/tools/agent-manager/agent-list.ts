@@ -1,5 +1,5 @@
-import { Tool } from "./tool"
-import { Agent } from "../agent/agent"
+import { Tool } from "../tool.ts"
+import { host } from "../host.ts"
 import z from "zod"
 
 export const AgentListTool = Tool.define(
@@ -12,7 +12,6 @@ export const AgentListTool = Tool.define(
       format: z.enum(["summary", "detailed"]).default("summary").describe("Output format: summary (compact) or detailed (full info)")
     }),
     async execute(args: { mode?: "subagent" | "primary" | "all" | "worker" | "system"; includeHidden?: boolean; format?: "summary" | "detailed" }, ctx) {
-      // Ask for permission to list agents
       await ctx.ask({
         permission: "agent_list",
         patterns: [],
@@ -20,11 +19,13 @@ export const AgentListTool = Tool.define(
         metadata: {}
       })
 
+      const agents = host(ctx).agents
+      if (!agents) throw new Error("Agent management is not available in this context")
+
       try {
-        const agents = await Agent.list()
-        
-        // Apply filters
-        let filteredAgents = agents
+        const all = (await agents.list()) as any[]
+
+        let filteredAgents = all
         if (args.mode) {
           filteredAgents = filteredAgents.filter(agent => agent.mode === args.mode)
         }
@@ -36,14 +37,13 @@ export const AgentListTool = Tool.define(
           return {
             title: "No Agents Found",
             metadata: { count: 0 },
-            output: args.mode 
+            output: args.mode
               ? `No agents found with mode "${args.mode}"${args.includeHidden ? '' : ' (excluding hidden agents)'}.`
               : `No agents found${args.includeHidden ? '' : ' (excluding hidden agents)'}.`
           }
         }
 
         if (args.format === "detailed") {
-          // Detailed format
           const agentDetails = filteredAgents.map(agent => {
             const details = [
               `ID: ${agent.id}`,
@@ -66,7 +66,6 @@ export const AgentListTool = Tool.define(
             output: `Found ${filteredAgents.length} agent${filteredAgents.length === 1 ? '' : 's'}:\n\n${agentDetails}`
           }
         } else {
-          // Summary format
           const agentSummaries = filteredAgents.map(agent => {
             const modelInfo = agent.model ? `${agent.model.providerID}/${agent.model.modelID}` : 'default'
             const toolInfo = agent.tools ? `${agent.tools.length} tools` : 'all tools'

@@ -1,6 +1,5 @@
-import { Tool } from "./tool"
-import { Agent } from "../agent/agent"
-import { Instance } from "../project/instance"
+import { Tool } from "../tool.ts"
+import { host } from "../host.ts"
 import z from "zod"
 
 export const AgentCreateTool = Tool.define(
@@ -45,7 +44,6 @@ export const AgentCreateTool = Tool.define(
       persona?: string
       injection?: string
     }, ctx) {
-      // Ask for permission to create agents
       await ctx.ask({
         permission: "agent_create",
         patterns: [],
@@ -53,8 +51,10 @@ export const AgentCreateTool = Tool.define(
         metadata: { agentName: args.name }
       })
 
+      const agents = host(ctx).agents
+      if (!agents) throw new Error("Agent management is not available in this context")
+
       try {
-        // Build agent config from arguments
         const config = {
           name: args.name,
           description: args.description,
@@ -69,33 +69,28 @@ export const AgentCreateTool = Tool.define(
           enableInjection: args.enableInjection
         }
 
-        // Create the agent using the core agent functionality
-        const result = await Agent.create(
-          args.id,
-          config,
-          args.persona || "",
-          args.injection || ""
-        )
+        await agents.create(args.id, config, args.persona || "", args.injection || "")
+        const result = await agents.get(args.id) as any
 
         return {
           title: "Agent Created Successfully",
           metadata: {
-            agentId: result.id,
-            agentName: result.config.name,
-            mode: result.config.mode
+            agentId: args.id,
+            agentName: args.name,
+            mode: args.mode || "all"
           },
-          output: `Successfully created agent "${result.config.name}" (ID: ${result.id}) with mode: ${result.config.mode || 'all'}
+          output: `Successfully created agent "${args.name}" (ID: ${args.id}) with mode: ${args.mode || 'all'}
 
 Configuration:
-- Name: ${result.config.name}
-- Description: ${result.config.description || 'None provided'}
-- Mode: ${result.config.mode || 'all'}
-- Temperature: ${result.config.temperature ?? 'default'}
-- Steps: ${result.config.steps ?? 'default'}
-- Model: ${result.config.model ? `${result.config.model.providerID}/${result.config.model.modelID}` : 'default'}
-- Tools: ${result.config.tools ? result.config.tools.join(', ') : 'all available'}
-- Hidden: ${result.config.hidden ?? false}
-- Enable Injection: ${result.config.enableInjection ?? false}
+- Name: ${args.name}
+- Description: ${args.description || 'None provided'}
+- Mode: ${args.mode || 'all'}
+- Temperature: ${args.temperature ?? 'default'}
+- Steps: ${args.steps ?? 'default'}
+- Model: ${args.model ? `${args.model.providerID}/${args.model.modelID}` : 'default'}
+- Tools: ${args.tools ? args.tools.join(', ') : 'all available'}
+- Hidden: ${args.hidden ?? false}
+- Enable Injection: ${args.enableInjection ?? false}
 
 The agent has been saved to the file system and is now available for use.`
         }

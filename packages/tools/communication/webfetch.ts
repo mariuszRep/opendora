@@ -1,8 +1,8 @@
 import z from "zod"
-import { Tool } from "./tool"
+import { Tool } from "../tool.ts"
 import TurndownService from "turndown"
 import DESCRIPTION from "./webfetch.txt"
-import { abortAfterAny } from "../util/abort"
+import { abortAfterAny } from "../lib/abort.ts"
 
 const MAX_RESPONSE_SIZE = 5 * 1024 * 1024 // 5MB
 const DEFAULT_TIMEOUT = 30 * 1000 // 30 seconds

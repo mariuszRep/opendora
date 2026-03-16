@@ -20,11 +20,18 @@
   },
   "devDependencies": {
     "@tsconfig/bun": "catalog:",
+    "@types/bun": "catalog:",
+    "@types/turndown": "5.0.5",
     "typescript": "catalog:"
   },
   "dependencies": {
-    "@opendora/util": "workspace:*",
-    "@opendora/session": "workspace:*",
+    "diff": "catalog:",
+    "glob": "13.0.5",
+    "mime-types": "3.0.2",
+    "minimatch": "10.0.3",
+    "tree-sitter-bash": "0.25.0",
+    "turndown": "7.2.0",
+    "web-tree-sitter": "0.25.10",
     "zod": "catalog:"
   }
 }

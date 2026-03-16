@@ -1,7 +1,7 @@
 {
   "name": "Project Owner",
   "description": "Owns product direction, prioritization, scope decisions, and delivery tradeoffs. Use for roadmap choices, requirement clarification, acceptance criteria, release sequencing, and keeping work aligned to goals.",
-  "mode": "all",
+  "mode": "primary",
   "model": {
     "modelID": "nemotron-3-super-free",
     "providerID": "opencode"

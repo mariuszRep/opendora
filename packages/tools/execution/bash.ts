@@ -1,27 +1,65 @@
 import z from "zod"
 import { spawn } from "child_process"
-import { Tool } from "./tool"
+import { Tool } from "../tool.ts"
 import path from "path"
 import DESCRIPTION from "./bash.txt"
-import { Log } from "../util/log"
-import { Instance } from "../project/instance"
-import { lazy } from "@/util/lazy"
-import { Language } from "web-tree-sitter"
-
-import { $ } from "bun"
-import { Filesystem } from "@/util/filesystem"
+import { host, directory } from "../host.ts"
 import { fileURLToPath } from "url"
-import { Flag } from "@/flag/flag.ts"
-import { Shell } from "@/shell/shell"
-
-import { BashArity } from "@/permission/arity"
-import { Truncate } from "./truncation"
-import { Plugin } from "@/plugin"
+import { Language } from "web-tree-sitter"
+import { $ } from "bun"
+import { Filesystem } from "../lib/filesystem.ts"
 
 const MAX_METADATA_LENGTH = 30_000
-const DEFAULT_TIMEOUT = Flag.OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS || 2 * 60 * 1000
+const DEFAULT_TIMEOUT = 2 * 60 * 1000
 
-export const log = Log.create({ service: "bash-tool" })
+const BLACKLIST = new Set(["fish", "nu"])
+
+function getAcceptableShell(): string {
+  const s = process.env.SHELL
+  if (s && !BLACKLIST.has(process.platform === "win32" ? path.win32.basename(s) : path.basename(s))) return s
+  if (process.platform === "win32") {
+    const git = Bun.which("git")
+    if (git) {
+      const bash = path.join(git, "..", "..", "bin", "bash.exe")
+      const stat = Filesystem.stat(bash)
+      if (stat?.size) return bash
+    }
+    return process.env.COMSPEC || "cmd.exe"
+  }
+  if (process.platform === "darwin") return "/bin/zsh"
+  const bash = Bun.which("bash")
+  if (bash) return bash
+  return "/bin/sh"
+}
+
+async function killTree(proc: ReturnType<typeof spawn>, opts?: { exited?: () => boolean }): Promise<void> {
+  const pid = proc.pid
+  if (!pid || opts?.exited?.()) return
+
+  if (process.platform === "win32") {
+    await new Promise<void>((resolve) => {
+      const killer = spawn("taskkill", ["/pid", String(pid), "/f", "/t"], { stdio: "ignore" })
+      killer.once("exit", () => resolve())
+      killer.once("error", () => resolve())
+    })
+    return
+  }
+
+  const SIGKILL_TIMEOUT_MS = 200
+  try {
+    process.kill(-pid, "SIGTERM")
+    await Bun.sleep(SIGKILL_TIMEOUT_MS)
+    if (!opts?.exited?.()) {
+      process.kill(-pid, "SIGKILL")
+    }
+  } catch (_e) {
+    proc.kill("SIGTERM")
+    await Bun.sleep(SIGKILL_TIMEOUT_MS)
+    if (!opts?.exited?.()) {
+      proc.kill("SIGKILL")
+    }
+  }
+}
 
 const resolveWasm = (asset: string) => {
   if (asset.startsWith("file://")) return fileURLToPath(asset)
@@ -30,7 +68,9 @@ const resolveWasm = (asset: string) => {
   return fileURLToPath(url)
 }
 
-const parser = lazy(async () => {
+let _parser: ReturnType<typeof import("web-tree-sitter").then> | null = null
+async function getParser() {
+  if (_parser) return _parser
   const { Parser } = await import("web-tree-sitter")
   const { default: treeWasm } = await import("web-tree-sitter/tree-sitter.wasm" as string, {
     with: { type: "wasm" },
@@ -48,25 +88,23 @@ const parser = lazy(async () => {
   const bashLanguage = await Language.load(bashPath)
   const p = new Parser()
   p.setLanguage(bashLanguage)
+  _parser = p as any
   return p
-})
+}
 
 // TODO: we may wanna rename this tool so it works better on other shells
 export const BashTool = Tool.define("bash", async () => {
-  const shell = Shell.acceptable()
-  log.info("bash tool using shell", { shell })
+  const shell = getAcceptableShell()
 
   return {
-    description: DESCRIPTION.replaceAll("${directory}", Instance.directory)
-      .replaceAll("${maxLines}", String(Truncate.MAX_LINES))
-      .replaceAll("${maxBytes}", String(Truncate.MAX_BYTES)),
+    description: DESCRIPTION,
     parameters: z.object({
       command: z.string().describe("The command to execute"),
       timeout: z.number().describe("Optional timeout in milliseconds").optional(),
       workdir: z
         .string()
         .describe(
-          `The working directory to run the command in. Defaults to ${Instance.directory}. Use this instead of 'cd' commands.`,
+          "The working directory to run the command in. Use this instead of 'cd' commands.",
         )
         .optional(),
       description: z
@@ -76,17 +114,23 @@ export const BashTool = Tool.define("bash", async () => {
         ),
     }),
     async execute(params, ctx) {
-      const cwd = params.workdir || Instance.directory
+      const h = host(ctx)
+      const dir = directory(ctx)
+      const cwd = params.workdir || dir
+      const timeout = params.timeout ?? (h.flags?.["OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS"] as number | undefined) ?? DEFAULT_TIMEOUT
+
       if (params.timeout !== undefined && params.timeout < 0) {
         throw new Error(`Invalid timeout value: ${params.timeout}. Timeout must be a positive number.`)
       }
-      const timeout = params.timeout ?? DEFAULT_TIMEOUT
-      const tree = await parser().then((p) => p.parse(params.command))
+
+      const parser = await getParser()
+      const tree = await (parser as any).parse(params.command)
       if (!tree) {
         throw new Error("Failed to parse command")
       }
       const directories = new Set<string>()
-      if (!Instance.containsPath(cwd)) directories.add(cwd)
+      const containsPath = h.containsPath ?? ((p: string) => !path.relative(h.worktree ?? dir, p).startsWith(".."))
+      if (!containsPath(cwd)) directories.add(cwd)
       const patterns = new Set<string>()
       const always = new Set<string>()
 
@@ -121,14 +165,13 @@ export const BashTool = Tool.define("bash", async () => {
               .quiet()
               .nothrow()
               .text()
-              .then((x) => x.trim())
-            log.info("resolved path", { arg, resolved })
+              .then((x: string) => x.trim())
             if (resolved) {
               const normalized =
                 process.platform === "win32" ? Filesystem.windowsPath(resolved).replace(/\//g, "\\") : resolved
-              if (!Instance.containsPath(normalized)) {
-                const dir = (await Filesystem.isDir(normalized)) ? normalized : path.dirname(normalized)
-                directories.add(dir)
+              if (!containsPath(normalized)) {
+                const dir2 = (await Filesystem.isDir(normalized)) ? normalized : path.dirname(normalized)
+                directories.add(dir2)
               }
             }
           }
@@ -137,15 +180,16 @@ export const BashTool = Tool.define("bash", async () => {
         // cd covered by above check
         if (command.length && command[0] !== "cd") {
           patterns.add(commandText)
-          always.add(BashArity.prefix(command).join(" ") + " *")
+          // prefix permission pattern: "command *"
+          always.add(command[0] + " *")
         }
       }
 
       if (directories.size > 0) {
-        const globs = Array.from(directories).map((dir) => {
+        const globs = Array.from(directories).map((d) => {
           // Preserve POSIX-looking paths with /s, even on Windows
-          if (dir.startsWith("/")) return `${dir.replace(/[\\/]+$/, "")}/*`
-          return path.join(dir, "*")
+          if (d.startsWith("/")) return `${d.replace(/[\\/]+$/, "")}/*`
+          return path.join(d, "*")
         })
         await ctx.ask({
           permission: "external_directory",
@@ -164,17 +208,23 @@ export const BashTool = Tool.define("bash", async () => {
         })
       }
 
-      const shellEnv = await Plugin.trigger(
-        "shell.env",
-        { cwd, sessionID: ctx.sessionID, callID: ctx.callID },
-        { env: {} },
-      )
+      // Collect shell env from plugin trigger if available
+      let shellEnv: Record<string, string> = {}
+      if (h.pluginTrigger) {
+        const result = await h.pluginTrigger(
+          "shell.env",
+          { cwd, sessionID: ctx.sessionID, callID: ctx.callID },
+          { env: {} },
+        ) as any
+        shellEnv = result?.env ?? {}
+      }
+
       const proc = spawn(params.command, {
         shell,
         cwd,
         env: {
           ...process.env,
-          ...shellEnv.env,
+          ...shellEnv,
         },
         stdio: ["ignore", "pipe", "pipe"],
         detached: process.platform !== "win32",
@@ -208,7 +258,7 @@ export const BashTool = Tool.define("bash", async () => {
       let aborted = false
       let exited = false
 
-      const kill = () => Shell.killTree(proc, { exited: () => exited })
+      const kill = () => killTree(proc, { exited: () => exited })
 
       if (ctx.abort.aborted) {
         aborted = true
