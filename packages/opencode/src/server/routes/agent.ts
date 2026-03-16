@@ -1,8 +1,8 @@
 import { Hono } from "hono"
 import { describeRoute, resolver, validator } from "hono-openapi"
 import z from "zod"
-import { Agent } from "../../agent/agent"
-import { AgentFile } from "../../agent/file"
+import { Agent } from "../../agent"
+import { AgentStorage } from "@opendora/agent"
 import { ToolRegistry } from "../../tool/registry"
 import { lazy } from "../../util/lazy"
 import { errors } from "../error"
@@ -100,7 +100,7 @@ export const AgentRoutes = lazy(() =>
                 schema: resolver(
                   z.object({
                     id: z.string(),
-                    config: AgentFile.Config,
+                    config: AgentStorage.Config,
                     persona: z.string(),
                     injection: z.string().optional(),
                   }),
@@ -115,14 +115,14 @@ export const AgentRoutes = lazy(() =>
         "json",
         z.object({
           id: z.string().optional().meta({ description: "Agent id slug. Derived from name when omitted." }),
-          config: AgentFile.Config,
+          config: AgentStorage.Config,
           persona: z.string().optional().default(""),
           injection: z.string().optional().default(""),
         }),
       ),
       async (c) => {
         const body = c.req.valid("json")
-        const id = body.id ? AgentFile.toId(body.id) : AgentFile.toId(body.config.name)
+        const id = body.id ? AgentStorage.toId(body.id) : AgentStorage.toId(body.config.name)
         const entry = await Agent.create(id, body.config, body.persona, body.injection)
         return c.json(entry, 201)
       },
@@ -143,7 +143,7 @@ export const AgentRoutes = lazy(() =>
                 schema: resolver(
                   z.object({
                     id: z.string(),
-                    config: AgentFile.Config,
+                    config: AgentStorage.Config,
                     persona: z.string(),
                     injection: z.string().optional(),
                   }),
@@ -158,7 +158,7 @@ export const AgentRoutes = lazy(() =>
       validator(
         "json",
         z.object({
-          config: AgentFile.Config.partial().optional(),
+          config: AgentStorage.Config.partial().optional(),
           persona: z.string().optional(),
           injection: z.string().optional(),
         }),

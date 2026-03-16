@@ -1,6 +1,6 @@
 import z from "zod"
 import { Tool } from "./tool"
-import { Agent } from "../agent/agent"
+import { Agent } from "../agent"
 import { Session } from "../session"
 import { SessionPrompt } from "../session/prompt"
 

@@ -1,5 +1,5 @@
 import { Tool } from "./tool"
-import { Agent } from "../agent/agent"
+import { Agent } from "../agent"
 import z from "zod"
 
 export const AgentGetTool = Tool.define(

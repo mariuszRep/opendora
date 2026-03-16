@@ -48,6 +48,11 @@
       "name": "Tool Test Agent Updated",
       "mode": "subagent",
       "hidden": true
+    },
+    {
+      "id": "test",
+      "name": "Test",
+      "mode": "all"
     }
   ]
 }

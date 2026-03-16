@@ -1,5 +1,5 @@
 import { Tool } from "./tool"
-import { Agent } from "../agent/agent"
+import { Agent } from "../agent"
 import { Instance } from "../project/instance"
 import z from "zod"
 

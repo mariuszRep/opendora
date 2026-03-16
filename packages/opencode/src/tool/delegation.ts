@@ -1,4 +1,4 @@
-import { Agent } from "../agent/agent"
+import { Agent } from "../agent"
 import { Session } from "../session"
 import { SessionPrompt } from "../session/prompt"
 import type { Tool } from "./tool"
