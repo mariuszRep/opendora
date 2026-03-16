@@ -616,7 +616,7 @@ export const Chatbot = () => {
                                       }
 
                                       return (
-                                        <Tool defaultOpen={false}>
+                                        <Tool defaultOpen={isDelegateToolCall}>
                                           <ToolHeader
                                             state={state}
                                             title={isDelegateToolCall ? getDelegateToolTitle(tool) : tool.tool}
@@ -729,7 +729,7 @@ export const Chatbot = () => {
                                   }
                                   return (
                                     <Tool
-                                      defaultOpen={false}
+                                      defaultOpen={isDelegateToolCall}
                                       key={tool.id}
                                     >
                                       <ToolHeader

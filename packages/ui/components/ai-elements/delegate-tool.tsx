@@ -2,11 +2,7 @@
 
 import type { Session, ToolPart } from "@/lib/opendora"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { ArrowRightIcon, BotIcon, ExternalLinkIcon, GitBranchIcon } from "lucide-react"
-
-import { CodeBlock } from "./code-block"
+import { ArrowRightIcon, BotIcon, ExternalLinkIcon } from "lucide-react"
 
 type DelegateMetadata = {
   sessionId?: string
@@ -37,17 +33,14 @@ export const DelegateToolContent = ({
   onSelectSession,
   onGoToMessage,
 }: DelegateToolContentProps) => {
-  const isSpawn = tool.tool === "spawn_session"
   const input = "input" in tool.state ? tool.state.input : {}
   const metadata = getDelegateMetadata(tool)
 
   const prompt = input.prompt as string | undefined
   const description = input.description as string | undefined
   const inputAgent = input.agent as string | undefined
-  const inputRoute = input.route as string | undefined
 
   const agent = metadata.agent ?? inputAgent
-  const route = metadata.route ?? inputRoute
   const sessionId = metadata.sessionId
 
   const targetSession = sessionId ? sessions.find((s) => s.id === sessionId) : undefined
@@ -55,107 +48,52 @@ export const DelegateToolContent = ({
     targetSession?.title ??
     (sessionId ? `Session ${sessionId.slice(0, 8)}…` : undefined)
 
-  const isCompleted = tool.state.status === "completed"
-  const isError = tool.state.status === "error"
+  const handleNavigate = () => {
+    if (!sessionId) return
+    if (metadata.messageId && onGoToMessage) {
+      onGoToMessage(sessionId, metadata.messageId)
+    } else {
+      onSelectSession(sessionId)
+    }
+  }
 
   return (
-    <div className="space-y-4">
-      {/* Request */}
-      <div className="space-y-2">
-        <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-          Request
-        </h4>
-        <div className="space-y-2">
-          {description && (
-            <p className="text-sm text-foreground">{description}</p>
-          )}
-          <div className="flex flex-wrap items-center gap-2">
-            {isSpawn && route && (
-              <Badge variant="secondary" className="gap-1.5 text-xs">
-                <GitBranchIcon className="size-3" />
-                {route === "new_child_session" ? "New child session" : "New root session"}
-              </Badge>
-            )}
-            {agent && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <BotIcon className="size-3.5" />
-                <span>{agent}</span>
-              </div>
-            )}
-          </div>
-          {prompt && (
-            <div className="max-h-36 overflow-y-auto rounded-md bg-muted/50">
-              <CodeBlock code={prompt} language="text" />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Session card — shown once session ID is known */}
-      {sessionId && (
-        <div className="space-y-2">
-          <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-            {isSpawn ? "Spawned Session" : "Delegated Session"}
-          </h4>
-          <div className="flex items-center justify-between gap-3 rounded-md border bg-background px-3 py-2.5">
-            <div className="flex min-w-0 items-center gap-2">
-              <BotIcon className="size-4 shrink-0 text-muted-foreground" />
-              <div className="min-w-0">
-                {sessionLabel && (
-                  <p className="truncate text-sm font-medium">{sessionLabel}</p>
-                )}
-                {agent && (
-                  <p className="truncate text-xs text-muted-foreground">{agent}</p>
-                )}
-              </div>
-            </div>
-            <Button
-              className="h-7 shrink-0 gap-1.5"
-              onClick={() =>
-                metadata.messageId && onGoToMessage
-                  ? onGoToMessage(sessionId, metadata.messageId)
-                  : onSelectSession(sessionId)
-              }
-              size="sm"
-              variant="outline"
-            >
-              <ExternalLinkIcon className="size-3.5" />
-              View
-            </Button>
-          </div>
+    <div className="rounded-md border bg-background">
+      {/* Prompt */}
+      {prompt && (
+        <div className="px-3 py-2.5 space-y-0.5">
+          <p className="text-xs text-muted-foreground">Message</p>
+          <p className="text-sm text-foreground leading-relaxed">{prompt}</p>
         </div>
       )}
 
-      {/* Result */}
-      {isCompleted && "output" in tool.state && tool.state.output ? (
-        <div className="space-y-2">
-          <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-            Result
-          </h4>
-          <div className="max-h-48 overflow-y-auto rounded-md bg-muted/50">
-            <CodeBlock
-              code={
-                typeof tool.state.output === "string"
-                  ? tool.state.output
-                  : JSON.stringify(tool.state.output, null, 2)
-              }
-              language="text"
-            />
-          </div>
+      {/* Agent + session row */}
+      <div className="flex items-center justify-between gap-3 border-t px-3 py-2">
+        <div className="flex items-center gap-3 min-w-0">
+          {agent && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <BotIcon className="size-3.5 shrink-0" />
+              <span className="truncate">{agent}</span>
+            </div>
+          )}
+          {sessionLabel && (
+            <>
+              {agent && <span className="text-muted-foreground/40 text-xs">·</span>}
+              <span className="truncate text-xs text-muted-foreground">{sessionLabel}</span>
+            </>
+          )}
         </div>
-      ) : null}
-
-      {/* Error */}
-      {isError && "error" in tool.state && tool.state.error ? (
-        <div className="space-y-2">
-          <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-            Error
-          </h4>
-          <div className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
-            {String(tool.state.error)}
-          </div>
-        </div>
-      ) : null}
+        {sessionId && (
+          <button
+            className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            onClick={handleNavigate}
+            type="button"
+          >
+            <ExternalLinkIcon className="size-3.5" />
+            View
+          </button>
+        )}
+      </div>
     </div>
   )
 }
@@ -168,14 +106,11 @@ export function getDelegateToolTitle(tool: ToolPart): string {
   const input = "input" in tool.state ? tool.state.input : {}
   const description = input.description as string | undefined
   const agent = input.agent as string | undefined
-  const route = input.route as string | undefined
-  const isSpawn = tool.tool === "spawn_session"
-
-  const base = description ?? (isSpawn ? "Spawn session" : "Delegate")
+  const base = description ?? "Delegate"
   return agent ? `${base} → ${agent}` : base
 }
 
-const DELEGATE_TOOLS = new Set(["delegate", "spawn_session"])
+const DELEGATE_TOOLS = new Set(["delegate", "spawn_session", "spawn"])
 
 export function isDelegateTool(toolName: string): boolean {
   return DELEGATE_TOOLS.has(toolName)

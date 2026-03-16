@@ -34,6 +34,8 @@ import { CodeSearchTool } from "./codesearch"
 import { LspTool } from "./lsp"
 import { Truncate } from "./truncation"
 import { ApplyPatchTool } from "./apply_patch"
+import { SessionSearchTool } from "./session-search"
+import { SessionSwitchTool } from "./session-switch"
 import { Glob } from "../util/glob"
 import { pathToFileURL } from "url"
 
@@ -118,6 +120,8 @@ export namespace ToolRegistry {
       TaskTool,
       DelegateTool,
       SpawnTool,
+      SessionSearchTool,
+      SessionSwitchTool,
       WebFetchTool,
       TodoWriteTool,
       // TodoReadTool,

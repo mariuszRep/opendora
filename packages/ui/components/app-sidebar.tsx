@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/utils"
 import type { Session, SessionType } from "@/lib/opendora"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BotIcon, MessageSquareIcon, PencilIcon, PlusIcon, PlugIcon, Settings2Icon } from "lucide-react"
+import { BotIcon, MessageSquareIcon, PencilIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type React from "react"
 import { useState } from "react"
@@ -45,6 +45,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     agents,
     selectedAgent,
     selectAgent,
+    defaultAgent,
+    setDefaultAgent,
     status,
     sessions,
     activeSessions,
@@ -120,20 +122,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenu>
                 {visibleAgents.map((agent) => {
                   const isActive = agent._id === selectedAgent
+                  const isDefault = agent._id === defaultAgent
                   return (
-                    <SidebarMenuItem 
+                    <SidebarMenuItem
                       key={agent._id}
                       onMouseEnter={(e) => {
-                        const settingsButton = e.currentTarget.querySelector('[data-sidebar="menu-action"]') as HTMLElement
-                        if (settingsButton) {
-                          settingsButton.style.opacity = '1'
-                        }
+                        e.currentTarget.querySelectorAll('[data-sidebar="menu-action"]').forEach((el) => {
+                          (el as HTMLElement).style.opacity = '1'
+                        })
                       }}
                       onMouseLeave={(e) => {
-                        const settingsButton = e.currentTarget.querySelector('[data-sidebar="menu-action"]') as HTMLElement
-                        if (settingsButton) {
-                          settingsButton.style.opacity = '0'
-                        }
+                        e.currentTarget.querySelectorAll('[data-sidebar="menu-action"]').forEach((el) => {
+                          (el as HTMLElement).style.opacity = '0'
+                        })
                       }}
                     >
                       <SidebarMenuButton
@@ -144,20 +145,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       >
                         <div className="relative size-4 shrink-0 flex items-center justify-center">
                           {workingAgents.has(agent._id) && (
-                            <div 
+                            <div
                               className="absolute inset-0 rounded-full border-2 border-transparent border-t-current animate-spin"
                               style={{ borderTopColor: getAgentColor(agent.color).hex }}
                             />
                           )}
-                          <div 
-                            className="size-2 rounded-full" 
+                          <div
+                            className="size-2 rounded-full"
                             style={{ backgroundColor: getAgentColor(agent.color).hex }}
                           />
                         </div>
-                        <span className="capitalize group-data-[collapsible=icon]:hidden">
+                        <span className="capitalize group-data-[collapsible=icon]:hidden flex-1 truncate">
                           {agent.name}
                         </span>
+                        {isDefault && (
+                          <StarIcon className="size-3 shrink-0 fill-current text-amber-400 group-data-[collapsible=icon]:hidden" />
+                        )}
                       </SidebarMenuButton>
+
+                      {/* Set as default — only shown on hover for non-default agents */}
+                      {!isDefault && (
+                        <SidebarMenuAction
+                          className="group-data-[collapsible=icon]:hidden transition-opacity"
+                          style={{ opacity: 0, right: "1.75rem" }}
+                          title="Set as default"
+                          onClick={() => setDefaultAgent(agent._id)}
+                        >
+                          <StarIcon className="size-3.5" />
+                          <span className="sr-only">Set as default</span>
+                        </SidebarMenuAction>
+                      )}
 
                       {/* Edit — navigates to settings page */}
                       <SidebarMenuAction

@@ -11,7 +11,6 @@
   "exports": {
     "./filesystem": "./filesystem/index.ts",
     "./agent-manager": "./agent-manager/index.ts",
-    "./session-manager": "./session-manager/index.ts",
     "./system": "./system/index.ts",
     "./task-management": "./task-management/index.ts",
     "./communication": "./communication/index.ts",

@@ -1,7 +1,0 @@
-Use this tool to create a delegated session and immediately ping it.
-
-It can create:
-- a child `worker` session under the current session
-- a new root session, typically a `role` session
-
-Use this when the work should live in its own session instead of another agent's main thread.

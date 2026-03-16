@@ -20,6 +20,14 @@ import {
 
 export type ChatStatus = "ready" | "submitted" | "streaming" | "error"
 
+const DEFAULT_AGENT_KEY = "opendora:default-agent"
+function getStoredDefaultAgent(): string | null {
+  try { return localStorage.getItem(DEFAULT_AGENT_KEY) } catch { return null }
+}
+function storeDefaultAgent(id: string): void {
+  try { localStorage.setItem(DEFAULT_AGENT_KEY, id) } catch { }
+}
+
 export type UseOpendoraResult = {
   // Sessions
   sessions: Session[]
@@ -43,6 +51,8 @@ export type UseOpendoraResult = {
   allAgents: (Agent & { _id: string })[]
   selectedAgent: string
   selectAgent: (name: string) => void
+  defaultAgent: string | null
+  setDefaultAgent: (agentId: string) => void
   // Agents — CRUD
   createAgent: (config: AgentConfig, persona?: string, injection?: string) => Promise<AgentEntry>
   updateAgent: (id: string, config: Partial<AgentConfig>, persona?: string, injection?: string) => Promise<AgentEntry>
@@ -77,6 +87,7 @@ export function useOpendora(): UseOpendoraResult {
   const [selectedAgent, setSelectedAgent] = useState<string>("build")
   const [isChatCentered, setIsChatCentered] = useState(false)
   const [activeSessions, setActiveSessions] = useState<Set<string>>(new Set())
+  const [defaultAgentId, setDefaultAgentId] = useState<string | null>(() => getStoredDefaultAgent())
 
   const selectedSessionRef = useRef<Session | null>(null)
 
@@ -125,6 +136,23 @@ export function useOpendora(): UseOpendoraResult {
 
         const sorted = [...sessionData].sort((a, b) => b.time.updated - a.time.updated)
         setSessions(sorted)
+
+        // Navigate to the default agent's main session on startup
+        const storedDefault = getStoredDefaultAgent()
+        const targetAgentId = (storedDefault && agentsWithId.some((a) => a._id === storedDefault))
+          ? storedDefault
+          : visibleAgents[0]?._id ?? null
+        if (targetAgentId) {
+          setSelectedAgent(targetAgentId)
+          const mainSess = sorted.find((s) => s.agentID === targetAgentId && s.sessionType === "role")
+            ?? sorted.find((s) => s.agentID === targetAgentId)
+            ?? null
+          if (mainSess) {
+            setSelectedSessionId(mainSess.id)
+            selectedSessionRef.current = mainSess
+          }
+        }
+
         setQuestionRequests(
           questionData.reduce<Record<string, QuestionRequest[]>>((acc, request) => {
             acc[request.sessionID] ??= []
@@ -276,9 +304,29 @@ export function useOpendora(): UseOpendoraResult {
         }
       }
     }, () => {
-      // SSE reconnected — if status is stuck in a non-terminal state, reset to ready
-      // so the UI doesn't freeze if session.idle was missed during the disconnect gap
+      // SSE reconnected — reset stuck status and navigate back to the default agent's main session
       setStatus((prev) => (prev === "streaming" || prev === "submitted" ? "ready" : prev))
+      const defaultId = getStoredDefaultAgent()
+      if (defaultId) {
+        setSelectedAgent(defaultId)
+        setMessages([])
+        opendora.agent.mainSession(defaultId).then((session) => {
+          if (session?.id) {
+            setSelectedSessionId(session.id)
+            selectedSessionRef.current = session
+          }
+        }).catch(() => {
+          // If API fails, fall back to local sessions
+          setSessions((prev) => {
+            const fallback = prev.find((s) => s.agentID === defaultId && s.sessionType === "role")
+              ?? prev.find((s) => s.agentID === defaultId)
+              ?? null
+            setSelectedSessionId(fallback?.id ?? null)
+            selectedSessionRef.current = fallback
+            return prev
+          })
+        })
+      }
     })
   }, [])
 
@@ -476,33 +524,48 @@ export function useOpendora(): UseOpendoraResult {
 
   const selectAgent = useCallback(async (agentId: string) => {
     setSelectedAgent(agentId)
-    // Navigate to the agent's main session when switching agents
-    try {
-      const session = await opendora.agent.mainSession(agentId)
+    setMessages([])
+    setStatus("ready")
+    setError(null)
+
+    const applySession = (session: Session | null | undefined) => {
       if (session?.id) {
         setSelectedSessionId(session.id)
         selectedSessionRef.current = session
-        setMessages([])
-        setStatus("ready")
-        setError(null)
       } else {
-        // No main session exists, clear selection but don't crash
         setSelectedSessionId(null)
         selectedSessionRef.current = null
-        setMessages([])
-        setStatus("ready")
-        setError(null)
+      }
+    }
+
+    const fallbackFromLocal = () => {
+      setSessions((prev) => {
+        const fallback = prev.find((s) => s.agentID === agentId && s.sessionType === "role")
+          ?? prev.find((s) => s.agentID === agentId)
+          ?? null
+        applySession(fallback)
+        return prev
+      })
+    }
+
+    try {
+      const session = await opendora.agent.mainSession(agentId)
+      if (session?.id) {
+        applySession(session)
+      } else {
+        fallbackFromLocal()
       }
     } catch (err) {
-      // If main session fetch fails, just switch agent without navigating
       console.warn("Failed to fetch main session for agent", agentId, err)
-      setSelectedSessionId(null)
-      selectedSessionRef.current = null
-      setMessages([])
-      setStatus("ready")
-      setError(null)
+      fallbackFromLocal()
     }
   }, [])
+
+  const setDefaultAgent = useCallback((agentId: string) => {
+    storeDefaultAgent(agentId)
+    setDefaultAgentId(agentId)
+  }, [])
+
   const toggleChatLayout = useCallback(() => {
     setIsChatCentered((prev) => !prev)
   }, [])
@@ -526,6 +589,8 @@ export function useOpendora(): UseOpendoraResult {
     allAgents,
     selectedAgent,
     selectAgent,
+    defaultAgent: defaultAgentId,
+    setDefaultAgent,
     activeSessions,
     createAgent,
     updateAgent,
