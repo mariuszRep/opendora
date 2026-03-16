@@ -78,7 +78,7 @@ const TIPS = [
   "Press {highlight}Ctrl+C{/highlight} when typing to clear the input field",
   "Press {highlight}Escape{/highlight} to stop the AI mid-response",
   "Switch to {highlight}Plan{/highlight} agent to get suggestions without making actual changes",
-  "Use {highlight}@agent-name{/highlight} in prompts to invoke specialized subagents",
+  "Use {highlight}@agent-name{/highlight} in prompts to invoke specialized workers",
   "Press {highlight}Ctrl+X Right/Left{/highlight} to cycle through parent and child sessions",
   "Create {highlight}opencode.json{/highlight} for server settings and {highlight}tui.json{/highlight} for TUI settings",
   "Place TUI settings in {highlight}~/.config/opencode/tui.json{/highlight} for global config",

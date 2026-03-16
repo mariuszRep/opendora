@@ -27,7 +27,9 @@ import type { AgentConfig } from "@/lib/opendora"
 
 const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
   { value: "primary", label: "Primary" },
-  { value: "subagent", label: "Sub-agent" },
+  { value: "worker", label: "Worker" },
+  { value: "system", label: "System" },
+  { value: "subagent", label: "Sub-agent (Legacy)" },
   { value: "all", label: "All" },
 ]
 

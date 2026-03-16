@@ -133,6 +133,7 @@ export type SessionMeta = {
   model?: string                  // dynamic model for this session
   toolPolicy?: string[]           // allowed tool names; agent enforces intersection with its own list
   systemPrompt?: string           // boundary prompt prepended to all agent system prompts
+  defaultPath?: string            // default file system path for this session
   share?: { url: string }         // set when session is shared publicly
   compactionCount?: number        // incremented each time context is compacted
   compactingAt?: number           // set while compaction is running, cleared on completion
@@ -156,6 +157,7 @@ export type CreateSessionOptions = {
   model?: string
   toolPolicy?: string[]
   systemPrompt?: string
+  defaultPath?: string
 }
 
 export type SessionFilter = {

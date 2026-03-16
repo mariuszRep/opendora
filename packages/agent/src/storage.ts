@@ -21,7 +21,7 @@ export namespace AgentStorage {
   export const IndexEntry = z.object({
     id: z.string(),
     name: z.string(),
-    mode: z.enum(["subagent", "primary", "all"]).default("all"),
+    mode: z.enum(["subagent", "primary", "all", "worker", "system"]).default("all"),
     hidden: z.boolean().optional(),
   })
   export type IndexEntry = z.infer<typeof IndexEntry>

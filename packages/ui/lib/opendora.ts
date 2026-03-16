@@ -144,7 +144,7 @@ export type Provider = {
 export type Agent = {
   name: string
   description?: string
-  mode?: "subagent" | "primary" | "all"
+  mode?: "subagent" | "primary" | "all" | "worker" | "system"
   hidden?: boolean
   color?: string
   temperature?: number
@@ -159,7 +159,7 @@ export type Agent = {
 export type AgentConfig = {
   name: string
   description?: string
-  mode?: "subagent" | "primary" | "all"
+  mode?: "subagent" | "primary" | "all" | "worker" | "system"
   model?: { modelID: string; providerID: string }
   fallback_model?: { modelID: string; providerID: string }
   temperature?: number

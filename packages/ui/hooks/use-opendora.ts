@@ -91,6 +91,14 @@ export function useOpendora(): UseOpendoraResult {
 
   const selectedSessionRef = useRef<Session | null>(null)
 
+  const refreshAgentsState = useCallback(async () => {
+    const agentData = await opendora.agent.list()
+    const agentsWithId = agentData.map((a) => ({ ...a, _id: (a as any).id || a.name, id: (a as any).id || a.name }))
+    setAllAgents(agentsWithId)
+    setAgents(agentsWithId.filter((a) => !a.hidden))
+    return agentsWithId
+  }, [])
+
 
   const selectedSession = sessions.find((s) => s.id === selectedSessionId) ?? null
   // Sessions that belong to the currently selected agent
@@ -127,7 +135,7 @@ export function useOpendora(): UseOpendoraResult {
 
         // Attach _id (agent slug) so CRUD can match by id rather than display name
         // allAgents includes all agents (visible and hidden)
-        const agentsWithId = agentData.map((a) => ({ ...a, _id: (a as any).id || a.name }))
+        const agentsWithId = agentData.map((a) => ({ ...a, _id: (a as any).id || a.name, id: (a as any).id || a.name }))
         setAllAgents(agentsWithId)
         
         // agents only includes visible agents (for sidebar)
@@ -409,67 +417,15 @@ export function useOpendora(): UseOpendoraResult {
 
   const createAgent = useCallback(async (config: AgentConfig, persona?: string, injection?: string) => {
     const entry = await opendora.agent.create({ config, persona, injection })
-    // Optimistically add to local list — include all editable fields so the
-    // dialog pre-fills correctly if the user re-opens it right after creation.
-    const newAgent = {
-      _id: entry.id,
-      id: entry.id,
-      name: entry.config.name,
-      description: entry.config.description,
-      mode: entry.config.mode,
-      hidden: entry.config.hidden,
-      color: entry.config.color,
-      temperature: entry.config.temperature,
-      steps: entry.config.steps,
-      model: entry.config.model,
-      fallback_model: entry.config.fallback_model,
-      tools: entry.config.tools,
-    }
-    setAllAgents((prev) => [...prev, newAgent])
-    if (!entry.config.hidden) {
-      setAgents((prev) => [...prev, newAgent])
-    }
+    await refreshAgentsState()
     return entry
-  }, [])
+  }, [refreshAgentsState])
 
   const updateAgent = useCallback(async (id: string, config: Partial<AgentConfig>, persona?: string, injection?: string) => {
     const entry = await opendora.agent.update(id, { config, persona, injection })
-    // Optimistically patch local list — match by _id (the slug) not display name
-    const updatedAgent = {
-      _id: entry.id,
-      id: entry.id,
-      name: entry.config.name,
-      description: entry.config.description,
-      mode: entry.config.mode,
-      hidden: entry.config.hidden,
-      color: entry.config.color,
-      temperature: entry.config.temperature,
-      steps: entry.config.steps,
-      model: entry.config.model,
-      fallback_model: entry.config.fallback_model,
-      tools: entry.config.tools,
-    }
-    
-    setAllAgents((prev) =>
-      prev.map((a) =>
-        a._id === id
-          ? { ...a, ...updatedAgent }
-          : a,
-      ),
-    )
-    
-    setAgents((prev) => {
-      const updated = prev.map((a) =>
-        a._id === id
-          ? { ...a, ...updatedAgent }
-          : a,
-      )
-      // Filter based on hidden status - use the updated hidden value
-      return updated.filter((a) => !a.hidden)
-    })
-    
+    await refreshAgentsState()
     return entry
-  }, [allAgents])
+  }, [refreshAgentsState])
 
   const deleteAgent = useCallback(async (id: string): Promise<void> => {
     await opendora.agent.remove(id)

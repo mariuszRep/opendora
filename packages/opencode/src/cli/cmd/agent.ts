@@ -12,7 +12,7 @@ import { Instance } from "../../project/instance"
 import { EOL } from "os"
 import type { Argv } from "yargs"
 
-type AgentMode = "all" | "primary" | "subagent"
+type AgentMode = "all" | "primary" | "subagent" | "worker" | "system"
 
 const AVAILABLE_TOOLS = [
   "bash",
@@ -44,7 +44,7 @@ const AgentCreateCommand = cmd({
       .option("mode", {
         type: "string",
         describe: "agent mode",
-        choices: ["all", "primary", "subagent"] as const,
+        choices: ["all", "primary", "subagent", "worker", "system"] as const,
       })
       .option("tools", {
         type: "string",
@@ -157,7 +157,7 @@ const AgentCreateCommand = cmd({
               {
                 label: "All",
                 value: "all" as const,
-                hint: "Can function in both primary and subagent roles",
+                hint: "Can function in both primary and worker roles",
               },
               {
                 label: "Primary",
@@ -165,9 +165,19 @@ const AgentCreateCommand = cmd({
                 hint: "Acts as a primary/main agent",
               },
               {
-                label: "Subagent",
+                label: "Worker",
+                value: "worker" as const,
+                hint: "Can be used as a worker by other agents",
+              },
+              {
+                label: "System",
+                value: "system" as const,
+                hint: "Reserved for system-level agents",
+              },
+              {
+                label: "Subagent (Legacy)",
                 value: "subagent" as const,
-                hint: "Can be used as a subagent by other agents",
+                hint: "Legacy worker-compatible mode",
               },
             ],
             initialValue: "all" as const,

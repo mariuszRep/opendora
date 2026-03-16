@@ -11,7 +11,7 @@ export const AgentUpdateTool = Tool.define(
       id: z.string().describe("ID of the agent to update"),
       name: z.string().optional().describe("New human-readable name for the agent"),
       description: z.string().optional().describe("New description of what this agent does"),
-      mode: z.enum(["subagent", "primary", "all"]).optional().describe("New agent mode"),
+      mode: z.enum(["subagent", "primary", "all", "worker", "system"]).optional().describe("New agent mode"),
       model: z.object({
         providerID: z.string(),
         modelID: z.string()
@@ -33,7 +33,7 @@ export const AgentUpdateTool = Tool.define(
       id: string
       name?: string
       description?: string
-      mode?: "subagent" | "primary" | "all"
+      mode?: "subagent" | "primary" | "all" | "worker" | "system"
       model?: { providerID: string; modelID: string }
       fallbackModel?: { providerID: string; modelID: string }
       temperature?: number

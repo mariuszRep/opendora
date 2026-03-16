@@ -26,7 +26,7 @@ export const exploreTemplate: AgentTemplate = {
   config: {
     name: "explore",
     description: "Fast agent specialized for exploring codebases. Use when you need to quickly find files by patterns, search code for keywords, or answer questions about the codebase.",
-    mode: "subagent",
+    mode: "worker",
     tools: ["grep", "glob", "read", "bash", "webfetch", "websearch", "codesearch"],
   },
   persona: PERSONA,

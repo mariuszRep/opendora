@@ -28,13 +28,15 @@ import { opendora, type Agent, type AgentConfig, type Provider } from "@/lib/ope
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  agent?: Agent & { id: string }
+  agent?: Agent & { id?: string; _id?: string }
   onSaved?: () => void
 }
 
 const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
   { value: "primary", label: "Primary" },
-  { value: "subagent", label: "Sub-agent" },
+  { value: "worker", label: "Worker" },
+  { value: "system", label: "System" },
+  { value: "subagent", label: "Sub-agent (Legacy)" },
   { value: "all", label: "All" },
 ]
 
@@ -70,6 +72,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
     useOpendoraContext()
 
   const isEdit = !!agent
+  const agentId = agent?._id || agent?.id || agent?.name
 
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
@@ -84,6 +87,8 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [availableTools, setAvailableTools] = useState<string[]>([])
   const [toolsExpanded, setToolsExpanded] = useState(false)
   const [persona, setPersona] = useState("")
+  const [defaultPath, setDefaultPath] = useState("")
+  const [enableDefaultPath, setEnableDefaultPath] = useState(false)
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -113,8 +118,10 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setFallbackModel(modelToValue(a.fallback_model))
       setSelectedTools(a.tools ?? [])
       setPersona("")
+      setDefaultPath(a.defaultPath ?? "")
+      setEnableDefaultPath(!!a.defaultPath)
       setError(null)
-      getAgentPersona(agent.id).then(setPersona).catch(() => {})
+      if (agentId) getAgentPersona(agentId).then(setPersona).catch(() => {})
     } else {
       setName("")
       setDescription("")
@@ -127,9 +134,11 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setFallbackModel(NONE)
       setSelectedTools([])
       setPersona("")
+      setDefaultPath("")
+      setEnableDefaultPath(false)
       setError(null)
     }
-  }, [open, isEdit, agent?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, isEdit, agentId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleTool(id: string) {
     setSelectedTools((prev) =>
@@ -174,9 +183,10 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
         model: valueToModel(model),
         fallback_model: valueToModel(fallbackModel),
         tools: selectedTools.length > 0 ? selectedTools : undefined,
+        defaultPath: enableDefaultPath && defaultPath.trim() ? defaultPath.trim() : undefined,
       }
-      if (isEdit && agent) {
-        await updateAgent(agent.id, config, persona)
+      if (isEdit && agentId) {
+        await updateAgent(agentId, config, persona)
       } else {
         await createAgent(config, persona)
       }
@@ -354,6 +364,25 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                 <p className="text-xs text-muted-foreground">Hide this agent from the sidebar</p>
               </div>
               <Switch checked={hidden} onCheckedChange={setHidden} />
+            </div>
+
+            {/* Default Path */}
+            <div className="flex flex-col gap-2 rounded-md border p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Default Path</p>
+                  <p className="text-xs text-muted-foreground">Set a default directory for this agent</p>
+                </div>
+                <Switch checked={enableDefaultPath} onCheckedChange={setEnableDefaultPath} />
+              </div>
+              {enableDefaultPath && (
+                <Input
+                  placeholder="/path/to/directory"
+                  value={defaultPath}
+                  onChange={(e) => setDefaultPath(e.target.value)}
+                  className="mt-1"
+                />
+              )}
             </div>
 
             {/* Tools — expandable */}

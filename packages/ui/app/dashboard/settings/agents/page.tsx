@@ -97,7 +97,8 @@ export default function SettingsAgentsPage() {
   const agentsByMode = useMemo(() => {
     const groups = {
       primary: filteredAgents.filter(a => a.mode === 'primary'),
-      subagent: filteredAgents.filter(a => a.mode === 'subagent'),
+      worker: filteredAgents.filter(a => a.mode === 'worker' || a.mode === 'subagent'),
+      system: filteredAgents.filter(a => a.mode === 'system'),
       all: filteredAgents.filter(a => a.mode === 'all' || !a.mode),
     }
     return groups
@@ -196,19 +197,19 @@ export default function SettingsAgentsPage() {
                 </div>
               )}
 
-              {agentsByMode.primary.length > 0 && agentsByMode.subagent.length > 0 && (
+              {agentsByMode.primary.length > 0 && agentsByMode.worker.length > 0 && (
                 <Separator />
               )}
 
-              {/* Sub-agents */}
-              {agentsByMode.subagent.length > 0 && (
+              {/* Workers */}
+              {agentsByMode.worker.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-4">
-                    <h2 className="text-lg font-semibold">Sub-agents</h2>
-                    <Badge variant="secondary">{agentsByMode.subagent.length}</Badge>
+                    <h2 className="text-lg font-semibold">Workers</h2>
+                    <Badge variant="secondary">{agentsByMode.worker.length}</Badge>
                   </div>
                   <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                    {agentsByMode.subagent.map((agent) => (
+                    {agentsByMode.worker.map((agent) => (
                       <AgentCard
                         key={agent.name}
                         agent={agent}
@@ -220,7 +221,31 @@ export default function SettingsAgentsPage() {
                 </div>
               )}
 
-              {agentsByMode.subagent.length > 0 && agentsByMode.all.length > 0 && (
+              {agentsByMode.worker.length > 0 && agentsByMode.system.length > 0 && (
+                <Separator />
+              )}
+
+              {/* System Agents */}
+              {agentsByMode.system.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <h2 className="text-lg font-semibold">System Agents</h2>
+                    <Badge variant="secondary">{agentsByMode.system.length}</Badge>
+                  </div>
+                  <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                    {agentsByMode.system.map((agent) => (
+                      <AgentCard
+                        key={agent.name}
+                        agent={agent}
+                        sessionCount={getSessionCount((agent as any)._id || agent.name)}
+                        router={router}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {agentsByMode.system.length > 0 && agentsByMode.all.length > 0 && (
                 <Separator />
               )}
 

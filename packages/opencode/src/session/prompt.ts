@@ -1820,7 +1820,7 @@ export namespace SessionPrompt {
     }
 
     const templateParts = await resolvePromptParts(template)
-    const isSubtask = (agent.mode === "subagent" && command.subtask !== false) || command.subtask === true
+    const isSubtask = (Agent.isWorkerMode(agent.mode) && command.subtask !== false) || command.subtask === true
     const parts = isSubtask
       ? [
         {

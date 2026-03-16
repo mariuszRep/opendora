@@ -11,7 +11,7 @@ export const AgentCreateTool = Tool.define(
       id: z.string().describe("Unique identifier for the new agent (will be auto-formatted)"),
       name: z.string().describe("Human-readable name for the agent"),
       description: z.string().optional().describe("Description of what this agent does and when to use it"),
-      mode: z.enum(["subagent", "primary", "all"]).default("all").describe("Agent mode: subagent (can be used by other agents), primary (acts as main agent), or all (both)"),
+      mode: z.enum(["subagent", "primary", "all", "worker", "system"]).default("all").describe("Agent mode: primary, worker, system, or legacy compatibility modes subagent/all."),
       model: z.object({
         providerID: z.string(),
         modelID: z.string()
@@ -33,7 +33,7 @@ export const AgentCreateTool = Tool.define(
       id: string
       name: string
       description?: string
-      mode?: "subagent" | "primary" | "all"
+      mode?: "subagent" | "primary" | "all" | "worker" | "system"
       model?: { providerID: string; modelID: string }
       fallbackModel?: { providerID: string; modelID: string }
       temperature?: number

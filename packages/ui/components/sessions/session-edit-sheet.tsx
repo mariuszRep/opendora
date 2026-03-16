@@ -50,6 +50,7 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
   const [sessionType, setSessionType] = useState<SessionType>("scope")
   const [model, setModel] = useState("")
   const [systemPrompt, setSystemPrompt] = useState("")
+  const [defaultPath, setDefaultPath] = useState("")
   const [autoArchive, setAutoArchive] = useState(false)
   const [autoDelete, setAutoDelete] = useState(false)
   const [maxMessages, setMaxMessages] = useState("")
@@ -68,6 +69,7 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
       setSessionType(session.sessionType ?? "scope")
       setModel(session.model ?? "")
       setSystemPrompt(session.systemPrompt ?? "")
+      setDefaultPath(session.defaultPath ?? "")
       setAutoArchive(session.retention?.autoArchive ?? false)
       setAutoDelete(session.retention?.autoDelete ?? false)
       setMaxMessages(session.retention?.maxMessages?.toString() ?? "")
@@ -114,6 +116,7 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
         sessionType: sessionType !== session.sessionType ? sessionType : undefined,
         model: model !== (session.model ?? "") ? model : undefined,
         systemPrompt: systemPrompt !== (session.systemPrompt ?? "") ? systemPrompt : undefined,
+        defaultPath: defaultPath !== (session.defaultPath ?? "") ? defaultPath : undefined,
         retention: Object.keys(retention).length > 0 ? retention : undefined,
       })
       
@@ -244,6 +247,19 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
             />
             <p className="text-[11px] text-muted-foreground">
               Boundary prompt prepended to all agent system prompts.
+            </p>
+          </div>
+
+          {/* Default Path */}
+          <div className="flex flex-col gap-1.5">
+            <Label>Default Path</Label>
+            <Input
+              value={defaultPath}
+              onChange={(e) => setDefaultPath(e.target.value)}
+              placeholder="/path/to/directory"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Default file system path for this session. Sub-agents will inherit this path.
             </p>
           </div>
 

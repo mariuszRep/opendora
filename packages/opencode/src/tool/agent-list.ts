@@ -7,11 +7,11 @@ export const AgentListTool = Tool.define(
   async (initCtx) => ({
     description: "List all available agents with their configurations. This allows agents to discover what agents exist and their properties.",
     parameters: z.object({
-      mode: z.enum(["subagent", "primary", "all"]).optional().describe("Optional filter by agent mode. If not provided, returns all agents regardless of their mode setting."),
+      mode: z.enum(["subagent", "primary", "all", "worker", "system"]).optional().describe("Optional filter by agent mode. If not provided, returns all agents regardless of their mode setting."),
       includeHidden: z.boolean().default(false).describe("Include hidden agents in the results"),
       format: z.enum(["summary", "detailed"]).default("summary").describe("Output format: summary (compact) or detailed (full info)")
     }),
-    async execute(args: { mode?: "subagent" | "primary" | "all"; includeHidden?: boolean; format?: "summary" | "detailed" }, ctx) {
+    async execute(args: { mode?: "subagent" | "primary" | "all" | "worker" | "system"; includeHidden?: boolean; format?: "summary" | "detailed" }, ctx) {
       // Ask for permission to list agents
       await ctx.ask({
         permission: "agent_list",

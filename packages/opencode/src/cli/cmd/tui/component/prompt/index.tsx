@@ -158,7 +158,7 @@ export function Prompt(props: PromptProps) {
 
       syncedSessionID = sessionID
 
-      // Only set agent if it's a primary agent (not a subagent)
+      // Only set the active agent when the session is using a primary-capable agent.
       const isPrimaryAgent = local.agent.list().some((x) => x.name === msg.agent)
       if (msg.agent && isPrimaryAgent) {
         local.agent.set(msg.agent)

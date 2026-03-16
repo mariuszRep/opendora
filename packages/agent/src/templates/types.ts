@@ -5,7 +5,7 @@ const ModelRef = z.object({ modelID: z.string(), providerID: z.string() })
 export const AgentConfig = z.object({
   name: z.string(),
   description: z.string().optional(),
-  mode: z.enum(["subagent", "primary", "all"]).default("all"),
+  mode: z.enum(["subagent", "primary", "all", "worker", "system"]).default("all"),
   model: ModelRef.optional(),
   fallback_model: ModelRef.optional(),
   models: z.array(ModelRef).optional(),
@@ -16,6 +16,7 @@ export const AgentConfig = z.object({
   tools: z.array(z.string()).optional(),
   skills: z.array(z.string()).optional(),
   enableInjection: z.boolean().optional(),
+  defaultPath: z.string().optional(),
 })
 
 export type AgentConfig = z.infer<typeof AgentConfig>

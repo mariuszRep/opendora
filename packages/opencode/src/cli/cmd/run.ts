@@ -180,7 +180,7 @@ function task(info: ToolProps<typeof TaskTool>) {
   inline({
     icon,
     title: name,
-    description: desc ? `${agent} Agent` : undefined,
+    description: desc ? `${agent} Worker` : undefined,
   })
 }
 
@@ -564,11 +564,11 @@ export const RunCommand = cmd({
           )
           return undefined
         }
-        if (entry.mode === "subagent") {
+        if (Agent.isWorkerMode(entry.mode) && !Agent.isPrimaryMode(entry.mode)) {
           UI.println(
             UI.Style.TEXT_WARNING_BOLD + "!",
             UI.Style.TEXT_NORMAL,
-            `agent "${args.agent}" is a subagent, not a primary agent. Falling back to default agent`,
+            `agent "${args.agent}" is a worker, not a primary agent. Falling back to default agent`,
           )
           return undefined
         }

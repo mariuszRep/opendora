@@ -1934,7 +1934,7 @@ function Task(props: ToolProps<typeof TaskTool>) {
           <Show when={props.metadata.sessionId}>
             <text fg={theme.text}>
               {keybind.print("session_child_cycle")}
-              <span style={{ fg: theme.textMuted }}> view subagents</span>
+              <span style={{ fg: theme.textMuted }}> view workers</span>
             </text>
           </Show>
         </BlockTool>

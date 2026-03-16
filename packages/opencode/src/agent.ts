@@ -17,12 +17,23 @@ import { pipe, sortBy, values } from "remeda"
 import PROMPT_GENERATE from "./generate.txt"
 
 export namespace Agent {
+  const PRIMARY_AGENT_MODES = new Set(["primary", "all"] as const)
+  const WORKER_AGENT_MODES = new Set(["worker", "subagent", "all"] as const)
+
+  export function isPrimaryMode(mode: string): boolean {
+    return PRIMARY_AGENT_MODES.has(mode as "primary" | "all")
+  }
+
+  export function isWorkerMode(mode: string): boolean {
+    return WORKER_AGENT_MODES.has(mode as "worker" | "subagent" | "all")
+  }
+
   export const Info = z
     .object({
       id: z.string(),
       name: z.string(),
       description: z.string().optional(),
-      mode: z.enum(["subagent", "primary", "all"]),
+      mode: z.enum(["subagent", "primary", "all", "worker", "system"]),
       native: z.boolean().optional(),
       hidden: z.boolean().optional(),
       topP: z.number().optional(),
@@ -166,14 +177,14 @@ export namespace Agent {
       const agent = entries.find((e) => e.config.name === cfg.default_agent)
       if (!agent) throw new Error(`default agent "${cfg.default_agent}" not found`)
       const mode = agent.config.mode ?? "all"
-      if (mode === "subagent") throw new Error(`default agent "${cfg.default_agent}" is a subagent`)
+      if (!isPrimaryMode(mode)) throw new Error(`default agent "${cfg.default_agent}" is not a primary agent`)
       if (agent.config.hidden) throw new Error(`default agent "${cfg.default_agent}" is hidden`)
       return agent.id
     }
 
     const primaryVisible = entries.find((e) => {
       const mode = e.config.mode ?? "all"
-      return mode !== "subagent" && !e.config.hidden
+      return isPrimaryMode(mode) && !e.config.hidden
     })
     if (!primaryVisible) throw new Error("no primary visible agent found")
     return primaryVisible.id

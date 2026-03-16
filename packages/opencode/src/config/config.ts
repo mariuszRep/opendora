@@ -675,11 +675,11 @@ export namespace Config {
       tools: z.record(z.string(), z.boolean()).optional().describe("@deprecated Use 'permission' field instead"),
       disable: z.boolean().optional(),
       description: z.string().optional().describe("Description of when to use the agent"),
-      mode: z.enum(["subagent", "primary", "all"]).optional(),
+      mode: z.enum(["subagent", "primary", "all", "worker", "system"]).optional(),
       hidden: z
         .boolean()
         .optional()
-        .describe("Hide this subagent from the @ autocomplete menu (default: false, only applies to mode: subagent)"),
+        .describe("Hide this agent from UI listings where applicable (default: false)."),
       options: z.record(z.string(), z.any()).optional(),
       color: z
         .union([

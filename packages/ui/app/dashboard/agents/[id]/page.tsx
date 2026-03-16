@@ -44,7 +44,9 @@ import { opendora, type AgentConfig } from "@/lib/opendora"
 
 const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
   { value: "primary", label: "Primary" },
-  { value: "subagent", label: "Sub-agent" },
+  { value: "worker", label: "Worker" },
+  { value: "system", label: "System" },
+  { value: "subagent", label: "Sub-agent (Legacy)" },
   { value: "all", label: "All" },
 ]
 
@@ -55,10 +57,10 @@ type ModelValue = { providerID: string; modelID: string } | undefined
 export default function AgentSettingsPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const { updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, agents, refreshProviders, sessions, setAgentMainSession, selectSession } =
+  const { updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, allAgents, refreshProviders, sessions, setAgentMainSession, selectSession } =
     useOpendoraContext()
 
-  const agent = agents.find((a) => (a as any)._id === id || a.name === id) as any
+  const agent = allAgents.find((a) => (a as any)._id === id || (a as any).id === id || a.name === id) as any
 
   // Get the actual agent ID (either _id or name match)
   const agentId = useMemo(() => {

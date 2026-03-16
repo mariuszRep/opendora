@@ -1200,7 +1200,7 @@ export namespace ACP {
         .then((resp) => resp.data!)
 
       const modes = agents
-        .filter((agent) => agent.mode !== "subagent" && !agent.hidden)
+        .filter((agent) => AgentModule.isPrimaryMode(agent.mode) && !agent.hidden)
         .map((agent) => ({
           id: agent.name,
           name: agent.name,
