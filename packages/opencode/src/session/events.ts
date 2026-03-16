@@ -1,1 +1,1 @@
-export { SessionEvents, MessageV2 } from "@opendora/session-core/events"
+export { SessionEvents, MessageV2 } from "@opendora/session/events"

@@ -1,8 +1,8 @@
 /**
- * Configures @opendora/session-core with opencode's runtime dependencies.
+ * Configures @opendora/session with opencode's runtime dependencies.
  * Call once at startup, after the Database is initialized.
  */
-import { configure } from "@opendora/session-core"
+import { configure } from "@opendora/session"
 import { Database } from "@/storage/db"
 import { Global } from "@/global"
 import { Bus } from "@/bus"
@@ -15,6 +15,22 @@ import { PermissionNext } from "@/permission/next"
 import { Plugin } from "@/plugin"
 import { Scheduler } from "@/scheduler"
 import { LSP } from "@/lsp"
+import { Provider } from "@/provider/provider"
+import { ProviderTransform } from "@/provider/transform"
+import { Installation } from "@/installation"
+import { ToolRegistry } from "@/tool/registry"
+import { MCP } from "@/mcp"
+import { ReadTool } from "@/tool/read"
+import { FileTime } from "@/file/time"
+import { ConfigMarkdown } from "@/config/markdown"
+import { Command } from "@/command"
+import { TaskTool } from "@/tool/task"
+import { Shell } from "@/shell/shell"
+import { Truncate } from "@/tool/truncation"
+import { Skill } from "@/skill"
+import { Ripgrep } from "@/file/ripgrep"
+import { SessionPrompt } from "./prompt"
+import { Session } from "@opendora/session/session"
 
 let configured = false
 
@@ -28,6 +44,8 @@ export function configureSessionCore() {
       return Database.Client()
     },
     dataPath: Global.Path.data,
+    globalConfigPath: Global.Path.config,
+    installationVersion: Installation.VERSION,
     opencodeBus: {
       publish(eventDef: any, payload: any) {
         Bus.publish(eventDef, payload)
@@ -43,7 +61,7 @@ export function configureSessionCore() {
         return Config.get()
       },
       async directories() {
-        return []
+        return Config.directories()
       },
     },
     storage: {
@@ -79,6 +97,9 @@ export function configureSessionCore() {
         directory: Instance.directory,
         worktree: Instance.worktree,
         project: Instance.project,
+        containsPath(p: string) {
+          return Instance.containsPath(p)
+        },
       }
     },
     agent: {
@@ -91,10 +112,34 @@ export function configureSessionCore() {
       defaultAgent() {
         return Agent.defaultAgent()
       },
+      list() {
+        return Agent.list()
+      },
+      create(id: string, config: any, persona?: string, injection?: string) {
+        return Agent.create(id, config, persona, injection)
+      },
+      update(id: string, patch: any, persona?: string, injection?: string) {
+        return Agent.update(id, patch, persona, injection)
+      },
+      remove(id: string) {
+        return Agent.remove(id)
+      },
+      getInjection(id: string) {
+        return Agent.getInjection(id)
+      },
+      isWorkerMode(mode: string) {
+        return Agent.isWorkerMode(mode)
+      },
     },
     permissionNext: {
       ask: PermissionNext.ask,
       disabled: PermissionNext.disabled,
+      merge(a: any, b: any) {
+        return PermissionNext.merge(a, b)
+      },
+      evaluate(permission: string, name: string, ruleset: any) {
+        return PermissionNext.evaluate(permission, name, ruleset)
+      },
       // Expose error classes for instanceof checks in processor.ts
       get RejectedError() {
         return PermissionNext.RejectedError
@@ -113,6 +158,169 @@ export function configureSessionCore() {
       async diagnostics(_path: string) {
         return LSP.diagnostics()
       },
+      async documentSymbol(uri: string) {
+        return LSP.documentSymbol(uri)
+      },
+    },
+    ripgrep: {
+      async tree(opts: { cwd: string; limit: number }) {
+        return Ripgrep.tree(opts)
+      },
+    },
+    provider: {
+      async getLanguage(model: any) {
+        return Provider.getLanguage(model)
+      },
+      async getProvider(providerID: string) {
+        return Provider.getProvider(providerID)
+      },
+      async getModel(providerID: string, modelID: string) {
+        return Provider.getModel(providerID, modelID)
+      },
+      defaultModel() {
+        return Provider.defaultModel()
+      },
+      async getSmallModel(providerID: string) {
+        return Provider.getSmallModel(providerID)
+      },
+      parseModel(model: string) {
+        return Provider.parseModel(model)
+      },
+      ModelNotFoundError: {
+        isInstance(e: unknown) {
+          return Provider.ModelNotFoundError.isInstance(e)
+        },
+      },
+      isWorkerMode(mode: string) {
+        return Agent.isWorkerMode(mode)
+      },
+    },
+    providerTransform: {
+      get OUTPUT_TOKEN_MAX() {
+        return ProviderTransform.OUTPUT_TOKEN_MAX
+      },
+      smallOptions(model: any) {
+        return ProviderTransform.smallOptions(model)
+      },
+      options(opts: { model: any; sessionID: string; providerOptions?: any }) {
+        return ProviderTransform.options(opts)
+      },
+      maxOutputTokens(model: any) {
+        return ProviderTransform.maxOutputTokens(model)
+      },
+      temperature(model: any) {
+        return ProviderTransform.temperature(model)
+      },
+      topP(model: any) {
+        return ProviderTransform.topP(model)
+      },
+      topK(model: any) {
+        return ProviderTransform.topK(model)
+      },
+      providerOptions(model: any, opts: any) {
+        return ProviderTransform.providerOptions(model, opts)
+      },
+      message(prompt: any, model: any, options: any) {
+        return ProviderTransform.message(prompt, model, options)
+      },
+      schema(model: any, schema: any) {
+        return ProviderTransform.schema(model, schema)
+      },
+    },
+    toolRegistry: {
+      async get(opts: any, agent: any) {
+        // Convert tool array to record
+        const items = await ToolRegistry.tools(opts, agent)
+        return Object.fromEntries(items.map((t: any) => [t.id, t]))
+      },
+      async tools(opts: any, agent: any) {
+        return ToolRegistry.tools(opts, agent)
+      },
+    },
+    mcp: {
+      async get(sessionID: string, agent: any, model: any, sessionPermission: any, abort: AbortSignal) {
+        return MCP.tools()
+      },
+      async tools() {
+        return MCP.tools()
+      },
+      async readResource(clientName: string, uri: string) {
+        return MCP.readResource(clientName, uri)
+      },
+    },
+    readTool: {
+      async init() {
+        return ReadTool.init()
+      },
+    },
+    taskTool: {
+      id: TaskTool.id,
+      async init() {
+        return TaskTool.init()
+      },
+    },
+    fileTime: {
+      file(path: string) {
+        return FileTime.file(path)
+      },
+      read(sessionID: string, filePath: string) {
+        return FileTime.read(sessionID, filePath)
+      },
+    },
+    configMarkdown: {
+      files(template: string) {
+        return ConfigMarkdown.files(template)
+      },
+      shell(template: string) {
+        return ConfigMarkdown.shell(template)
+      },
+      async generate() {
+        return ConfigMarkdown.generate()
+      },
+    },
+    commandInit: Command.Default.INIT,
+    commandDefault: {
+      async get(name: string) {
+        return Command.get(name)
+      },
+    },
+    commandEvent: {
+      get Executed() {
+        return Command.Event.Executed
+      },
+    },
+    shell: {
+      preferred() {
+        return Shell.preferred()
+      },
+      async killTree(proc: any, opts: { exited: () => boolean }) {
+        return Shell.killTree(proc, opts)
+      },
+    },
+    truncate: {
+      async output(text: string, opts: any, agent: any) {
+        return Truncate.output(text, opts, agent)
+      },
+    },
+    skill: {
+      async get(id: string) {
+        return Skill.get(id)
+      },
+      async all() {
+        return Skill.all()
+      },
+    },
+    // Wire session methods so compaction.create can call them without circular dep
+    session: {
+      updateMessage: Session.updateMessage,
+      updatePart: Session.updatePart,
+      messages: Session.messages,
+    },
+    // Wire sessionPrompt so session.initialize can call it
+    get sessionPrompt() {
+      return {
+        command: SessionPrompt.command,
+      }
     },
   })
 }

@@ -1,7 +1,7 @@
 import { sqliteTable, text, integer, index, primaryKey } from "drizzle-orm/sqlite-core"
 import type { MessageV2 } from "./message-v2"
 import type { Permission } from "@opendora/permission"
-import type { SessionType, SessionStatus, RetentionPolicy, SendPolicy } from "@opendora/session"
+import type { SessionType, SessionStatus, RetentionPolicy, SendPolicy } from "./types"
 
 // Inlined from @/storage/schema.sql — 2-line helper
 const Timestamps = {
@@ -15,7 +15,7 @@ const Timestamps = {
 
 // Minimal ProjectTable reference — only the id column is needed for the FK
 // The full ProjectTable lives in opencode/src/project/project.sql.ts
-const ProjectTable = sqliteTable("project", {
+export const ProjectTable = sqliteTable("project", {
   id: text().primaryKey(),
   worktree: text().notNull(),
   vcs: text(),

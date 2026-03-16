@@ -8,8 +8,8 @@
  * Call BusBridge.start() once at server startup, after the Database is ready.
  */
 
-import { Bus as PPBus } from "@opendora/session"
-import type { BusHandle } from "@opendora/session"
+import { Bus as PPBus } from "./bus"
+import type { BusHandle } from "./bus"
 import { eq } from "drizzle-orm"
 import { SessionTable } from "./session.sql"
 import { fromRow } from "./from-row"

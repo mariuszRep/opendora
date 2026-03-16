@@ -1,1 +1,1 @@
-export { Todo } from "@opendora/session-core/todo"
+export { Todo } from "@opendora/session/todo"

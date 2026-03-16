@@ -1,1 +1,1 @@
-export { SessionStatus } from "@opendora/session-core/status"
+export { SessionStatus } from "@opendora/session/status"

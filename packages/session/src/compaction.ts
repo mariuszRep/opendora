@@ -11,19 +11,9 @@
  */
 
 import z from "zod"
+import { fn } from "@opendora/util/fn"
 import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
-
-// Inline fn helper
-function fn<Input, Output>(
-  schema: z.ZodType<Input>,
-  handler: (input: Input) => Output,
-): (input: Input) => Output {
-  return (input: Input) => {
-    schema.parse(input)
-    return handler(input)
-  }
-}
 
 // Inline Identifier
 const Identifier = {
@@ -239,16 +229,55 @@ When constructing the summary, try to stick to this template:
 
     const promptText = compacting.prompt ?? [defaultPrompt, ...compacting.context].join("\n\n")
 
-    // Get LLM stream — we need the LLM module from opencode, injected via config
-    // For now we use the provider service directly via cfg.provider
-    // The actual streaming is done via SessionProcessor.process with a pre-built stream
-    // This requires the streamInput to be passed — we defer to caller to provide it
-    // TODO: inject LLM.stream via config when fully migrated
+    const result = await processor.process({
+      user: userMessage,
+      agent,
+      abort: input.abort,
+      sessionID: input.sessionID,
+      tools: {},
+      system: [],
+      messages: [
+        ...MessageV2.toModelMessages(input.messages, model),
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: promptText,
+            },
+          ],
+        },
+      ],
+      model,
+    })
 
-    // For now, build streamInput and call processor.process
-    // The stream must be built externally (still lives in opencode's llm.ts)
-    // We return a marker so the opencode caller can handle this
-    return "needs-llm-stream"
+    if (result === "continue" && input.auto) {
+      const continueMsg = await input.updateMessage({
+        id: Identifier.ascending("message"),
+        role: "user",
+        sessionID: input.sessionID,
+        time: {
+          created: Date.now(),
+        },
+        agent: userMessage.agent,
+        model: userMessage.model,
+      })
+      await input.updatePart({
+        id: Identifier.ascending("part"),
+        messageID: continueMsg.id,
+        sessionID: input.sessionID,
+        type: "text",
+        synthetic: true,
+        text: "Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.",
+        time: {
+          start: Date.now(),
+          end: Date.now(),
+        },
+      })
+    }
+    if (processor.message.error) return "stop"
+    cfg.bus?.publish(Event.Compacted, { sessionID: input.sessionID })
+    return "continue"
   }
 
   export const create = fn(
@@ -261,11 +290,30 @@ When constructing the summary, try to stick to this template:
       }),
       auto: z.boolean(),
     }),
-    async (input: { sessionID: string; agent: string; model: { providerID: string; modelID: string }; auto: boolean },
-    ) => {
-      // This is a stub — actual implementation in opencode's compaction.ts which calls updateMessage/updatePart
-      // We expose only the logic that can be called from opencode
-      return input
+    async (input) => {
+      const cfg = getConfig()
+      const sessionSvc = cfg.session
+      if (!sessionSvc) {
+        console.warn("[session-core] compaction.create: session not configured")
+        return
+      }
+      const msg = await sessionSvc.updateMessage({
+        id: Identifier.ascending("message"),
+        role: "user",
+        model: input.model,
+        sessionID: input.sessionID,
+        agent: input.agent,
+        time: {
+          created: Date.now(),
+        },
+      })
+      await sessionSvc.updatePart({
+        id: Identifier.ascending("part"),
+        messageID: msg.id,
+        sessionID: msg.sessionID,
+        type: "compaction",
+        auto: input.auto,
+      })
     },
   )
 }

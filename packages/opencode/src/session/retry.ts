@@ -1,1 +1,1 @@
-export { SessionRetry } from "@opendora/session-core/retry"
+export { SessionRetry } from "@opendora/session/retry"

@@ -1,1 +1,1 @@
-export { BusBridge } from "@opendora/session-core/bus-bridge"
+export { BusBridge } from "@opendora/session/bus-bridge"

@@ -8,14 +8,42 @@
     "./storage/drizzle/schema": "./src/storage/drizzle/schema.ts",
     "./jsonl":                  "./src/storage/jsonl/index.ts",
     "./sqlite":                 "./src/storage/sqlite/index.ts",
-    "./postgres":               "./src/storage/postgres/index.ts"
+    "./postgres":               "./src/storage/postgres/index.ts",
+    "./sql":                    "./src/session.sql.ts",
+    "./message":                "./src/message-v2.ts",
+    "./message-legacy":         "./src/message.ts",
+    "./events":                 "./src/events.ts",
+    "./from-row":               "./src/from-row.ts",
+    "./bus-bridge":             "./src/bus-bridge.ts",
+    "./storage-adapter":        "./src/opendora-storage-adapter.ts",
+    "./todo":                   "./src/todo.ts",
+    "./status":                 "./src/status.ts",
+    "./retry":                  "./src/retry.ts",
+    "./processor":              "./src/processor.ts",
+    "./summary":                "./src/summary.ts",
+    "./revert":                 "./src/revert.ts",
+    "./compaction":             "./src/compaction.ts",
+    "./config":                 "./src/config.ts",
+    "./system":                 "./src/system.ts",
+    "./instruction":            "./src/instruction.ts",
+    "./llm":                    "./src/llm.ts",
+    "./session":                "./src/session.ts",
+    "./prompt":                 "./src/prompt.ts"
   },
   "devDependencies": {
+    "@types/node": "catalog:",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "catalog:"
   },
   "dependencies": {
-    "drizzle-orm": "^0.45.1"
+    "@opendora/permission": "workspace:*",
+    "@opendora/util": "workspace:*",
+    "ai": "catalog:",
+    "decimal.js": "10.5.0",
+    "drizzle-orm": "catalog:",
+    "remeda": "catalog:",
+    "ulid": "catalog:",
+    "zod": "catalog:"
   },
   "peerDependencies": {
     "better-sqlite3": ">=9.0.0",

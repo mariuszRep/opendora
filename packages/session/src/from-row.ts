@@ -3,7 +3,7 @@
  */
 
 import type { SessionTable } from "./session.sql"
-import type { RetentionPolicy, SendPolicy, SessionType, SessionStatus } from "@opendora/session"
+import type { RetentionPolicy, SendPolicy, SessionType, SessionStatus } from "./types"
 import type { Permission } from "@opendora/permission"
 
 type SessionRow = typeof SessionTable.$inferSelect

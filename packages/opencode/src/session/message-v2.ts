@@ -1,6 +1,6 @@
 /**
- * Re-exports MessageV2 from @opendora/session-core.
+ * Re-exports MessageV2 from @opendora/session.
  * DB-accessing operations (stream, parts) require session-core to be configured
  * — see configure-session-core.ts.
  */
-export { MessageV2 } from "@opendora/session-core/message"
+export { MessageV2 } from "@opendora/session/message"

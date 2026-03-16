@@ -74,7 +74,6 @@
         "@opendora/permission": "workspace:*",
         "@opendora/sdk": "workspace:*",
         "@opendora/session": "workspace:*",
-        "@opendora/session-core": "workspace:*",
         "@opendora/tools": "workspace:*",
         "@opendora/util": "workspace:*",
         "@openrouter/ai-sdk-provider": "1.5.4",
@@ -172,11 +171,19 @@
       "name": "@opendora/session",
       "version": "0.1.0",
       "dependencies": {
-        "drizzle-orm": "^0.45.1",
+        "@opendora/permission": "workspace:*",
+        "@opendora/util": "workspace:*",
+        "ai": "catalog:",
+        "decimal.js": "10.5.0",
+        "drizzle-orm": "catalog:",
+        "remeda": "catalog:",
+        "ulid": "catalog:",
+        "zod": "catalog:",
       },
       "devDependencies": {
+        "@types/node": "catalog:",
         "tsx": "^4.19.0",
-        "typescript": "^5.7.0",
+        "typescript": "catalog:",
       },
       "peerDependencies": {
         "better-sqlite3": ">=9.0.0",
@@ -186,23 +193,6 @@
         "better-sqlite3",
         "postgres",
       ],
-    },
-    "packages/session-core": {
-      "name": "@opendora/session-core",
-      "version": "0.1.0",
-      "dependencies": {
-        "@opendora/permission": "workspace:*",
-        "@opendora/session": "workspace:*",
-        "@opendora/util": "workspace:*",
-        "ai": "catalog:",
-        "decimal.js": "10.5.0",
-        "drizzle-orm": "catalog:",
-        "zod": "catalog:",
-      },
-      "devDependencies": {
-        "@types/node": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/tools": {
       "name": "@opendora/tools",
@@ -963,8 +953,6 @@
     "@opendora/sdk": ["@opendora/sdk@workspace:packages/sdk/js"],
 
     "@opendora/session": ["@opendora/session@workspace:packages/session"],
-
-    "@opendora/session-core": ["@opendora/session-core@workspace:packages/session-core"],
 
     "@opendora/tools": ["@opendora/tools@workspace:packages/tools"],
 
@@ -3586,9 +3574,7 @@
 
     "@opendora/permission/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 
-    "@opendora/session/drizzle-orm": ["drizzle-orm@0.45.1", "", { "peerDependencies": { "@aws-sdk/client-rds-data": ">=3", "@cloudflare/workers-types": ">=4", "@electric-sql/pglite": ">=0.2.0", "@libsql/client": ">=0.10.0", "@libsql/client-wasm": ">=0.10.0", "@neondatabase/serverless": ">=0.10.0", "@op-engineering/op-sqlite": ">=2", "@opentelemetry/api": "^1.4.1", "@planetscale/database": ">=1.13", "@prisma/client": "*", "@tidbcloud/serverless": "*", "@types/better-sqlite3": "*", "@types/pg": "*", "@types/sql.js": "*", "@upstash/redis": ">=1.34.7", "@vercel/postgres": ">=0.8.0", "@xata.io/client": "*", "better-sqlite3": ">=7", "bun-types": "*", "expo-sqlite": ">=14.0.0", "gel": ">=2", "knex": "*", "kysely": "*", "mysql2": ">=2", "pg": ">=8", "postgres": ">=3", "sql.js": ">=1", "sqlite3": ">=5" }, "optionalPeers": ["@aws-sdk/client-rds-data", "@cloudflare/workers-types", "@electric-sql/pglite", "@libsql/client", "@libsql/client-wasm", "@neondatabase/serverless", "@op-engineering/op-sqlite", "@opentelemetry/api", "@planetscale/database", "@prisma/client", "@tidbcloud/serverless", "@types/better-sqlite3", "@types/pg", "@types/sql.js", "@upstash/redis", "@vercel/postgres", "@xata.io/client", "better-sqlite3", "bun-types", "expo-sqlite", "gel", "knex", "kysely", "mysql2", "pg", "postgres", "sql.js", "sqlite3"] }, "sha512-Te0FOdKIistGNPMq2jscdqngBRfBpC8uMFVwqjf6gtTVJHIQ/dosgV/CLBU2N4ZJBsXL5savCba9b0YJskKdcA=="],
-
-    "@opendora/session-core/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
+    "@opendora/session/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 
     "@opendora/tools/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 

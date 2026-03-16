@@ -11,17 +11,7 @@
 import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
 import z from "zod"
-
-// Inline fn helper
-function fn<Input, Output>(
-  schema: z.ZodType<Input>,
-  handler: (input: Input) => Output,
-): (input: Input) => Output {
-  return (input: Input) => {
-    schema.parse(input)
-    return handler(input)
-  }
-}
+import { fn } from "@opendora/util/fn"
 
 // Inline Identifier schema helper
 const Identifier = {
