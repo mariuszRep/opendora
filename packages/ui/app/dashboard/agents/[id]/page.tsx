@@ -50,7 +50,7 @@ const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
   { value: "all", label: "All" },
 ]
 
-const HIDDEN_TOOLS = new Set(["invalid", "plan_exit", "skill"])
+const HIDDEN_TOOLS = new Set(["invalid", "plan_exit"])
 
 type ModelValue = { providerID: string; modelID: string } | undefined
 

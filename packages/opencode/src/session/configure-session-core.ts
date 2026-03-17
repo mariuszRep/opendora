@@ -31,6 +31,7 @@ import { Skill } from "@/skill"
 import { Ripgrep } from "@/file/ripgrep"
 import { SessionPrompt } from "./prompt"
 import { Session } from "@opendora/session/session"
+import { Question } from "@/question"
 
 let configured = false
 
@@ -315,6 +316,9 @@ export function configureSessionCore() {
       updateMessage: Session.updateMessage,
       updatePart: Session.updatePart,
       messages: Session.messages,
+    },
+    question: {
+      ask: Question.ask,
     },
     // Wire sessionPrompt so session.initialize can call it
     get sessionPrompt() {

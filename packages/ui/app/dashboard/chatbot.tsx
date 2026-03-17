@@ -619,7 +619,8 @@ export const Chatbot = () => {
                                         <Tool defaultOpen={isDelegateToolCall}>
                                           <ToolHeader
                                             state={state}
-                                            title={isDelegateToolCall ? getDelegateToolTitle(tool) : tool.tool}
+                                            title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : tool.tool}
+                                            centerTitle={!!questionRequest}
                                             toolName={tool.tool}
                                             type="dynamic-tool"
                                             viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : undefined}
@@ -649,7 +650,7 @@ export const Chatbot = () => {
                                             ) : (
                                               toolInput
                                             )}
-                                            {!isDelegateToolCall && (output || error) ? (
+                                            {!isDelegateToolCall && !questionRequest && (output || error) ? (
                                               <ToolOutput errorText={error} output={output} />
                                             ) : null}
                                           </ToolContent>
@@ -734,7 +735,8 @@ export const Chatbot = () => {
                                     >
                                       <ToolHeader
                                         state={state}
-                                        title={isDelegateToolCall ? getDelegateToolTitle(tool) : tool.tool}
+                                        title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : tool.tool}
+                                        centerTitle={!!questionRequest}
                                         toolName={tool.tool}
                                         type="dynamic-tool"
                                         viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : undefined}
@@ -764,7 +766,7 @@ export const Chatbot = () => {
                                         ) : (
                                           toolInput
                                         )}
-                                        {!isDelegateToolCall && (output || error) ? (
+                                        {!isDelegateToolCall && !questionRequest && (output || error) ? (
                                           <ToolOutput errorText={error} output={output} />
                                         ) : null}
                                       </ToolContent>

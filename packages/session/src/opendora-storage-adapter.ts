@@ -63,6 +63,7 @@ export function rowToMeta(row: SessionRow): SessionMeta {
 function patchToColumns(patch: Partial<SessionMeta>): Partial<typeof SessionTable.$inferInsert> {
   const cols: Partial<typeof SessionTable.$inferInsert> = {}
 
+  if (patch.type !== undefined) cols.session_type = patch.type
   if (patch.status !== undefined) {
     cols.session_status = patch.status
     if (patch.status === "active") cols.time_archived = null as any

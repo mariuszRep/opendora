@@ -19,7 +19,7 @@ import { WebFetchTool } from "../communication/webfetch.ts"
 import { WebSearchTool } from "../communication/websearch.ts"
 import { InvalidTool } from "./invalid.ts"
 import { LspTool } from "./lsp.ts"
-import { SkillTool } from "./skill.ts"
+import { SkillTool, SkillDiscoverTool, SkillLoadTool } from "./skill.ts"
 import { AgentCreateTool } from "../agent-manager/agent-create.ts"
 import { AgentUpdateTool } from "../agent-manager/agent-update.ts"
 import { AgentDeleteTool } from "../agent-manager/agent-delete.ts"
@@ -132,7 +132,8 @@ export namespace ToolRegistry {
       // TodoReadTool,
       WebSearchTool,
       CodeSearchTool,
-      SkillTool,
+      SkillDiscoverTool,
+      SkillLoadTool,
       ApplyPatchTool,
       AgentCreateTool,
       AgentUpdateTool,

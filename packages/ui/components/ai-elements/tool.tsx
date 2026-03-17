@@ -40,6 +40,7 @@ export type ToolPart = ToolUIPart | DynamicToolUIPart;
 export type ToolHeaderProps = {
   title?: string;
   className?: string;
+  centerTitle?: boolean;
   viewMode?: "code" | "view";
   onViewChange?: (mode: "code" | "view") => void;
   hasView?: boolean;
@@ -82,6 +83,7 @@ export const getStatusBadge = (status: ToolPart["state"]) => (
 export const ToolHeader = ({
   className,
   title,
+  centerTitle,
   type,
   state,
   toolName,
@@ -96,7 +98,7 @@ export const ToolHeader = ({
   return (
     <CollapsibleTrigger
       className={cn(
-        "flex w-full items-center justify-between gap-4 bg-muted/80 px-3 py-2 text-xs",
+        "relative flex w-full items-center justify-between gap-4 bg-muted/80 px-3 py-2 text-xs",
         className
       )}
       {...props}
@@ -104,9 +106,14 @@ export const ToolHeader = ({
       <div className="flex min-w-0 items-center gap-2">
         <WrenchIcon className="size-4 text-muted-foreground" />
         <span className="truncate font-medium text-foreground text-sm">
-          {title ?? derivedName}
+          {centerTitle ? derivedName : (title ?? derivedName)}
         </span>
       </div>
+      {centerTitle && title && (
+        <span className="absolute left-1/2 -translate-x-1/2 truncate font-medium text-foreground text-sm">
+          {title}
+        </span>
+      )}
       <div className="flex items-center gap-2">
         {getStatusBadge(state)}
         {hasView && onViewChange && viewMode && (

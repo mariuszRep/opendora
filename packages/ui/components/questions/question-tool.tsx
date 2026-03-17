@@ -23,9 +23,6 @@ function QuestionStep(props: {
   return (
     <div className="grid gap-4">
       <div className="space-y-1.5">
-        <span className="inline-block rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
-          {props.question.header}
-        </span>
         <p className="text-sm font-medium leading-relaxed text-foreground">{props.question.question}</p>
         <p className="text-muted-foreground text-xs">
           {multi ? "Select all that apply." : "Select one answer."}
@@ -160,60 +157,56 @@ export function QuestionTool(props: {
     <>
       {mode === "json" ? (
         props.json
-      ) : (
+      ) : isSubmitted ? (
         <div className="space-y-4">
-          {isSubmitted ? (
-            <div className="space-y-4">
-              {props.request.questions.map((question, index) => {
-                const value = submittedAnswers?.[index] ?? []
-                const customValue =
-                  value.find((item) => !question.options.some((option) => option.label === item)) ?? ""
-                return (
-                  <QuestionStep
-                    customValue={customValue}
-                    key={`${props.request.id}:${index}`}
-                    onCustomChange={() => {}}
-                    onPickSingle={() => {}}
-                    onToggle={() => {}}
-                    question={question}
-                    submitted
-                    value={value}
-                  />
-                )
-              })}
-            </div>
-          ) : (
-            <>
+          {props.request.questions.map((question, index) => {
+            const value = submittedAnswers?.[index] ?? []
+            const customValue =
+              value.find((item) => !question.options.some((option) => option.label === item)) ?? ""
+            return (
               <QuestionStep
                 customValue={customValue}
-                onCustomChange={setCustomValue}
-                onPickSingle={setSingleAnswer}
-                onToggle={toggleAnswer}
+                key={`${props.request.id}:${index}`}
+                onCustomChange={() => {}}
+                onPickSingle={() => {}}
+                onToggle={() => {}}
                 question={question}
-                value={currentValue}
+                submitted
+                value={value}
               />
-              <div className="flex items-center justify-between gap-2">
-                <Button onClick={() => props.onReject(props.request.id)} type="button" variant="ghost">
-                  Dismiss
+            )
+          })}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <QuestionStep
+            customValue={customValue}
+            onCustomChange={setCustomValue}
+            onPickSingle={setSingleAnswer}
+            onToggle={toggleAnswer}
+            question={question}
+            value={currentValue}
+          />
+          <div className="flex items-center justify-between gap-2">
+            <Button onClick={() => props.onReject(props.request.id)} type="button" variant="ghost">
+              Dismiss
+            </Button>
+            <div className="flex items-center gap-2">
+              {step > 0 ? (
+                <Button onClick={() => setStep((prev) => prev - 1)} type="button" variant="outline">
+                  Back
                 </Button>
-                <div className="flex items-center gap-2">
-                  {step > 0 ? (
-                    <Button onClick={() => setStep((prev) => prev - 1)} type="button" variant="outline">
-                      Back
-                    </Button>
-                  ) : null}
-                  <Button
-                    className="bg-accent text-accent-foreground hover:bg-accent/90"
-                    disabled={!canContinue}
-                    onClick={() => void handleContinue()}
-                    type="button"
-                  >
-                    {isLast ? "Submit" : "Continue"}
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
+              ) : null}
+              <Button
+                className="bg-accent text-accent-foreground hover:bg-accent/90"
+                disabled={!canContinue}
+                onClick={() => void handleContinue()}
+                type="button"
+              >
+                {isLast ? "Submit" : "Continue"}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </>

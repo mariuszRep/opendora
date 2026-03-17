@@ -10,15 +10,9 @@
 
 import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
+import { Identifier } from "@opendora/util/id"
 import z from "zod"
 import { fn } from "@opendora/util/fn"
-
-// Inline Identifier schema helper
-const Identifier = {
-  schema(prefix: string) {
-    return z.string().startsWith(prefix + "_")
-  },
-}
 
 // Inline unquoteGitPath
 function unquoteGitPath(input: string): string {

@@ -1,5 +1,5 @@
 // ─── Original @opendora/session exports ──────────────────────────────────────
-export { Session } from "./session"
+export { Session as PingPongSession } from "./pingpong-session"
 export { SessionManager } from "./session-manager"
 export { SessionQueue } from "./session-queue"
 export type { StorageAdapter } from "./storage/adapter"
@@ -7,7 +7,7 @@ export type { Actor, Message, MessageKind, MessagePart, Parent, PingOptions, Pon
               StreamOptions, InputProvenance, SendPolicy,
               SessionType, SessionStatus, SessionMeta, SessionParent,
               SessionFilter, CreateSessionOptions, RetentionPolicy } from "./types"
-export type { MessageStream } from "./session"
+export type { MessageStream } from "./pingpong-session"
 export { DEFAULT_RETENTION, evaluateSendPolicy } from "./types"
 export { Bus } from "./bus"
 export type { BusEventMap, BusHandle } from "./bus"
@@ -16,6 +16,7 @@ export type { RetentionDaemonOptions } from "./daemon"
 export type { SyncAdapter } from "./sync-adapter"
 
 // ─── OpenDora session runtime ─────────────────────────────────────────────────
+export { Session, sessionManager, retentionDaemon } from "./session"
 
 // Core session types and schemas
 export * from "./message-v2"

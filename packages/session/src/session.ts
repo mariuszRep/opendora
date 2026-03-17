@@ -1,5 +1,6 @@
 import { Slug } from "@opendora/util/slug"
 import { fn } from "@opendora/util/fn"
+import { Identifier } from "@opendora/util/id"
 import path from "path"
 import { Decimal } from "decimal.js"
 import z from "zod"
@@ -15,23 +16,6 @@ import { openDoraStorageAdapter } from "./opendora-storage-adapter.ts"
 import { SessionManager } from "./session-manager"
 import { RetentionDaemon } from "./daemon"
 import type { SessionType, RetentionPolicy, SendPolicy, CreateSessionOptions } from "./types"
-
-// Inline Identifier
-const Identifier = {
-  schema(prefix: string) {
-    return z.string().startsWith(prefix + "_")
-  },
-  ascending(prefix: string): string {
-    const now = Date.now()
-    return `${prefix}_${now.toString(16).padStart(12, "0")}${Math.random().toString(36).slice(2, 14)}`
-  },
-  descending(prefix: string, id?: string): string {
-    if (id) return id
-    const now = Date.now()
-    const flipped = (0xffffffffffff - now).toString(16).padStart(12, "0")
-    return `${prefix}_${flipped}${Math.random().toString(36).slice(2, 14)}`
-  },
-}
 
 // Inline NotFoundError
 class NotFoundError extends Error {

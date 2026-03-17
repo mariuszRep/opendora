@@ -1,5 +1,5 @@
 {
-  "name": "pm",
+  "name": "Project Manager",
   "description": "Project Manager agent specialized in orchestrating end-to-end feature implementation through coordinated sub-sessions",
   "mode": "primary",
   "model": {
@@ -8,24 +8,16 @@
   },
   "temperature": 0.7,
   "steps": 50,
+  "color": "violet",
   "tools": [
-    "bash",
-    "read",
-    "glob",
-    "grep",
-    "edit",
-    "write",
-    "task",
-    "delegate",
-    "spawn",
-    "session_search",
-    "session_switch",
     "skill",
-    "agent_create",
-    "agent_update",
-    "agent_delete",
-    "agent_list",
-    "agent_get"
+    "spawn",
+    "session_switch",
+    "session_search",
+    "todowrite",
+    "skill_discover",
+    "skill_load",
+    "delegate"
   ],
   "skills": [
     "pm-feature-workflow"

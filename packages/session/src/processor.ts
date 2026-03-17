@@ -13,14 +13,8 @@ import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
 import { SessionRetry } from "./retry.ts"
 import { SessionStatus } from "./status.ts"
-
-// Inline Identifier helper
-const Identifier = {
-  ascending(prefix: string): string {
-    const now = Date.now()
-    return `${prefix}_${now.toString(16).padStart(12, "0")}${Math.random().toString(36).slice(2, 14)}`
-  },
-}
+import { Identifier } from "@opendora/util/id"
+import { LLM } from "./llm.ts"
 
 // Inline iife helper
 function iife<T>(fn: () => T): T {
@@ -62,7 +56,7 @@ export namespace SessionProcessor {
       partFromToolCall(toolCallID: string) {
         return toolcalls[toolCallID]
       },
-      async process(streamInput: any) {
+      async process(streamInput: LLM.StreamInput) {
         needsCompaction = false
         const cfg = getConfig()
         const configSvc = cfg.config
@@ -75,8 +69,7 @@ export namespace SessionProcessor {
             let currentText: MessageV2.TextPart | undefined
             let reasoningMap: Record<string, MessageV2.ReasoningPart> = {}
 
-            // streamInput must have .fullStream
-            const stream = streamInput
+            const stream = await LLM.stream(streamInput)
             for await (const value of stream.fullStream) {
               input.abort.throwIfAborted()
               switch (value.type) {

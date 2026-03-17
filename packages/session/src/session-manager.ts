@@ -1,4 +1,4 @@
-import { Session } from "./session.ts"
+import { Session } from "./pingpong-session.ts"
 import { SessionQueue } from "./session-queue.ts"
 import type { StorageAdapter } from "./storage/adapter.ts"
 import type { CreateSessionOptions, Message, MessagePart, SendPolicy, SessionFilter, SessionMeta, SessionType } from "./types.ts"

@@ -10,18 +10,12 @@
  */
 
 import z from "zod"
+import { Identifier } from "@opendora/util/id"
 import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
 import { SessionSummary } from "./summary.ts"
 import { MessageTable, PartTable } from "./session.sql.ts"
 import { eq } from "drizzle-orm"
-
-// Inline Identifier schema helper
-const Identifier = {
-  schema(prefix: string) {
-    return z.string().startsWith(prefix + "_")
-  },
-}
 
 const SessionDiffEvent = { type: "session.diff" }
 const MessageRemovedEvent = { type: "message.removed" }

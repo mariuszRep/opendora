@@ -171,6 +171,10 @@ export interface SessionCoreConfig {
     updatePart(part: any): Promise<any>
     messages(opts: { sessionID: string }): Promise<any[]>
   }
+  /** Question service — presents questions to the user via the UI */
+  question?: {
+    ask(params: any): Promise<any[]>
+  }
 }
 
 let _config: SessionCoreConfig | null = null

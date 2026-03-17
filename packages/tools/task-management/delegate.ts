@@ -72,6 +72,13 @@ export const DelegateTool = Tool.define("delegate", {
       targetSession = await sessionSvc.ensureMainSession(targetAgentName)
     }
 
+    if (targetSession.id === ctx.sessionID) {
+      throw new Error(
+        `Cannot delegate to the current session (${targetSession.id}). ` +
+        `Use spawn to create a new worker session instead.`,
+      )
+    }
+
     const result = await promptFn({
       sessionID: targetSession.id,
       ...(targetAgentName ? { agent: targetAgentName } : {}),

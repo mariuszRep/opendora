@@ -40,7 +40,7 @@ const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
   { value: "all", label: "All" },
 ]
 
-const HIDDEN_TOOLS = new Set(["invalid", "plan_exit", "skill"])
+const HIDDEN_TOOLS = new Set(["invalid", "plan_exit"])
 
 const NONE = "__none__"
 
@@ -433,6 +433,63 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                 </div>
               )}
             </div>
+
+            {/* Skills Configuration - TEMPORARILY COMMENTED OUT */}
+            {/* <div className="flex flex-col gap-1.5 border-2 border-red-500 bg-red-50 p-2">
+              <button
+                type="button"
+                className="flex items-center gap-2 text-sm font-medium hover:text-foreground/80"
+                onClick={() => setSkillsExpanded(!skillsExpanded)}
+              >
+                <ChevronRightIcon className={`size-4 transition-transform ${skillsExpanded ? "rotate-90" : ""}`} />
+                Skills Configuration
+                {(canDiscoverSkills || canLoadSkills) && (
+                  <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+                    {[canDiscoverSkills && "discover", canLoadSkills && "load"].filter(Boolean).join(" + ")}
+                  </span>
+                )}
+              </button>
+
+              {skillsExpanded && (
+                <div className="rounded-md border p-3">
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    Configure how this agent can interact with skills. Note: The agent must also have the "skill" tool selected above to use skills.
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="can-discover-skills" className="text-sm cursor-pointer">
+                        Can discover skills
+                        <span className="ml-1 font-normal text-muted-foreground">(see available skills)</span>
+                      </Label>
+                      <Switch
+                        id="can-discover-skills"
+                        checked={canDiscoverSkills}
+                        onCheckedChange={setCanDiscoverSkills}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="can-load-skills" className="text-sm cursor-pointer">
+                        Can load skills
+                        <span className="ml-1 font-normal text-muted-foreground">(use skill content)</span>
+                      </Label>
+                      <Switch
+                        id="can-load-skills"
+                        checked={canLoadSkills}
+                        onCheckedChange={setCanLoadSkills}
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3 text-xs text-muted-foreground">
+                    <div className="mb-1">💡 <strong>Recommended combinations:</strong></div>
+                    <ul className="ml-4 space-y-1">
+                      <li>• <strong>Both off:</strong> Agent cannot use skills (default for most agents)</li>
+                      <li>• <strong>Discover only:</strong> Agent can see skills but not load them</li>
+                      <li>• <strong>Both on:</strong> Full skill access (recommended for workflow agents)</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div> */}
 
             {/* Persona */}
             <div className="flex flex-col gap-1.5">

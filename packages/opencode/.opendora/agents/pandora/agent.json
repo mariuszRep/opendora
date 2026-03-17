@@ -18,6 +18,8 @@
     "webfetch",
     "delegate",
     "ping_session",
-    "spawn"
+    "spawn",
+    "skill_discover",
+    "session_search"
   ]
 }

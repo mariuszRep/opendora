@@ -4,11 +4,54 @@ import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 
-export const SkillTool = Tool.define("skill", async (initCtx) => {
-  // Skills list is not available at init time without host context.
-  // The description will be generic; the host can override via plugin trigger.
+// Tool to discover/list available skills
+export const SkillDiscoverTool = Tool.define("skill_discover", async (initCtx) => {
   const description =
-    "Load a specialized skill that provides domain-specific instructions and workflows. Use this tool to load detailed instructions when a task matches an available skill."
+    "Discover and list available skills that provide domain-specific instructions and workflows. Use this tool to see what specialized skills are available. To actually load and use a skill, use the skill_load tool."
+
+  const parameters = z.object({})
+
+  return {
+    description,
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
+      const skills = host(ctx).skills
+      if (!skills) {
+        throw new Error("Skill discovery is not available in this context")
+      }
+
+      const all = await skills.all()
+
+      return {
+        title: "Available Skills",
+        metadata: {
+          count: all.length,
+          skills: all.map(s => s.name),
+        },
+        output: [
+          "<available_skills>",
+          ...all.flatMap((skill) => [
+            `  <skill>`,
+            `    <name>${skill.name}</name>`,
+            `    <description>${skill.description}</description>`,
+            `    <location>${pathToFileURL(skill.location).href}</location>`,
+            `  </skill>`,
+          ]),
+          "</available_skills>",
+          "",
+          `Total: ${all.length} skill(s) available`,
+          "",
+          "To load a skill, use the skill_load tool with the skill name.",
+        ].join("\n"),
+      }
+    },
+  }
+})
+
+// Tool to load and use a specific skill
+export const SkillLoadTool = Tool.define("skill_load", async (initCtx) => {
+  const description =
+    "Load a specialized skill that provides domain-specific instructions and workflows. When you recognize that a task matches one of the available skills, use this tool to load the full skill instructions."
 
   const parameters = z.object({
     name: z.string().describe("The name of the skill to load"),
@@ -80,3 +123,6 @@ export const SkillTool = Tool.define("skill", async (initCtx) => {
     },
   }
 })
+
+// Export both tools
+export const SkillTool = SkillLoadTool // For backward compatibility

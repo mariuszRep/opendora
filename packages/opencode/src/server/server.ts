@@ -43,7 +43,7 @@ import { GlobalRoutes } from "./routes/global"
 import { VoiceRoutes } from "./routes/voice"
 import { MDNS } from "./mdns"
 import { BusBridge } from "../session/bus-bridge"
-import { retentionDaemon, sessionManager } from "../session"
+import { retentionDaemon, sessionManager, configureSessionCore } from "../session"
 import { openDoraStorageAdapter } from "../session/opendora-storage-adapter"
 
 // @ts-ignore This global is needed to prevent ai-sdk from logging warnings to stdout https://github.com/vercel/ai/blob/2dc67e0ef538307f21368db32d5a12345d98831b/packages/ai/src/logger/log-warnings.ts#L85
@@ -565,6 +565,7 @@ export namespace Server {
     mdnsDomain?: string
     cors?: string[]
   }) {
+    configureSessionCore()
     _corsWhitelist = opts.cors ?? []
 
     const args = {

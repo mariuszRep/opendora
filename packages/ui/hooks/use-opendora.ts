@@ -362,15 +362,10 @@ export function useOpendora(): UseOpendoraResult {
 
   const createSession = useCallback(async (sessionType?: SessionType) => {
     try {
-      let session = await opendora.session.create()
-      // Automatically assign the currently selected agent to the new session
-      if (selectedAgent) {
-        session = await opendora.session.setAgent(session.id, selectedAgent)
-      }
-      // Set session type if provided (defaults to scratchpad)
-      if (sessionType) {
-        session = await opendora.session.update(session.id, { sessionType })
-      }
+      const session = await opendora.session.create({
+        ...(sessionType ? { sessionType } : {}),
+        ...(selectedAgent ? { agentID: selectedAgent } : {}),
+      })
       setSessions((prev) => {
         if (prev.find((s) => s.id === session.id)) return prev
         return [session, ...prev]

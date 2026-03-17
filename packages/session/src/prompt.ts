@@ -3,24 +3,8 @@ import os from "os"
 import fs from "fs/promises"
 import z from "zod"
 import { fn } from "@opendora/util/fn"
+import { Identifier } from "@opendora/util/id"
 import { MessageV2 } from "./message-v2.ts"
-
-// Inline Identifier — matches opencode's id/id.ts prefixes via startsWith
-const Identifier = {
-  schema(prefix: string) {
-    return z.string()
-  },
-  ascending(prefix: string): string {
-    const now = Date.now()
-    return `${prefix}_${now.toString(16).padStart(12, "0")}${Math.random().toString(36).slice(2, 14)}`
-  },
-  descending(prefix: string, id?: string): string {
-    if (id) return id
-    const now = Date.now()
-    const flipped = (0xffffffffffff - now).toString(16).padStart(12, "0")
-    return `${prefix}_${flipped}${Math.random().toString(36).slice(2, 14)}`
-  },
-}
 import { SessionRevert } from "./revert.ts"
 import { Session } from "./session.ts"
 import { type Tool as AITool, tool, jsonSchema, type ToolCallOptions, asSchema } from "ai"
@@ -301,6 +285,11 @@ export namespace SessionPrompt {
 
     const abort = resume_existing ? resume(sessionID) : start(sessionID)
     if (!abort) {
+      if (!resume_existing) {
+        throw new Error(
+          `Session ${sessionID} is already running. Cannot start a nested loop — use spawn to create a new session.`,
+        )
+      }
       return new Promise<MessageV2.WithParts>((resolve, reject) => {
         const callbacks = state()[sessionID].callbacks
         callbacks.push({ resolve, reject })
@@ -639,6 +628,14 @@ export namespace SessionPrompt {
         sessionID: sessionID,
         model,
         abort,
+        updateMessage: Session.updateMessage,
+        updatePart: Session.updatePart,
+        updatePartDelta: Session.updatePartDelta,
+        getUsage: Session.getUsage,
+        summarize: (input: { sessionID: string; messageID: string }) =>
+          SessionSummary.summarize(input),
+        isOverflow: (input: { tokens: any; model: any }) =>
+          SessionCompaction.isOverflow(input),
       })
       using _2 = defer(() => InstructionPrompt.clear(processor.message.id))
 
@@ -820,6 +817,17 @@ export namespace SessionPrompt {
           directories: () => cfg.config?.directories(),
         },
         containsPath: (p: string) => cfg.instance?.containsPath?.(p),
+        session: {
+          list: (filter?: any) => Session.list(filter),
+          get: (id: string) => Session.get(id),
+          messages: (id: string) => Session.messages(id),
+          create: (opts: any) => Session.create(opts),
+          ensureMainSession: (agentID: string) => Session.ensureMainSession(agentID),
+          setSpawnResponseMessageID: (opts: any) => Session.setSpawnResponseMessageID(opts),
+        },
+        prompt: (opts: any) => SessionPrompt.prompt(opts),
+        resolvePromptParts: (template: string) => resolvePromptParts(template),
+        question: cfg.question ? (params: any) => cfg.question!.ask(params) : undefined,
       },
       agent: input.agent.name,
       messages: input.messages,

@@ -232,7 +232,8 @@ async function req<T>(path: string, opts?: RequestInit): Promise<T> {
 export const opendora = {
   session: {
     list: () => req<Session[]>(`/session`),
-    create: () => req<Session>("/session", { method: "POST", body: JSON.stringify({}) }),
+    create: (input?: { sessionType?: SessionType; agentID?: string | null; title?: string }) =>
+      req<Session>("/session", { method: "POST", body: JSON.stringify(input ?? {}) }),
     messages: (sessionID: string) => req<MessageWithParts[]>(`/session/${sessionID}/message`),
     abort: (sessionID: string) =>
       req<boolean>(`/session/${sessionID}/abort`, { method: "POST", body: JSON.stringify({}) }),

@@ -12,19 +12,9 @@
 
 import z from "zod"
 import { fn } from "@opendora/util/fn"
+import { Identifier } from "@opendora/util/id"
 import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
-
-// Inline Identifier
-const Identifier = {
-  schema(prefix: string) {
-    return z.string().startsWith(prefix + "_")
-  },
-  ascending(prefix: string): string {
-    const now = Date.now()
-    return `${prefix}_${now.toString(16).padStart(12, "0")}${Math.random().toString(36).slice(2, 14)}`
-  },
-}
 
 // Token.estimate — rough approximation: 1 token ≈ 4 chars
 function estimateTokens(text: any): number {

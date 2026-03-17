@@ -1,6 +1,6 @@
 export { InvalidTool } from "./invalid"
 export { LspTool } from "./lsp"
-export { SkillTool } from "./skill"
+export { SkillTool, SkillDiscoverTool, SkillLoadTool } from "./skill"
 export { ToolRegistry, configure as configureRegistry } from "./registry"
 export type { RegistryConfig } from "./registry"
 export { assertExternalDirectory } from "./external-directory"

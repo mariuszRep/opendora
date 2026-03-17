@@ -10,15 +10,14 @@
   "steps": 12,
   "color": "rose",
   "tools": [
-    "bash",
-    "read",
-    "glob",
-    "grep",
-    "task",
-    "webfetch",
-    "websearch",
-    "codesearch",
-    "question"
+    "question",
+    "skill_discover",
+    "skill_load",
+    "agent_list",
+    "session_search",
+    "session_switch",
+    "delegate",
+    "spawn"
   ],
   "enableInjection": false
 }
