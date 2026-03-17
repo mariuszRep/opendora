@@ -73,12 +73,24 @@ export namespace LLM {
       }
     }
 
+    // Build delegate restriction notice
+    let delegateNotice = ""
+    const allowedAgentNames: string[] | undefined = input.agent.config?.toolConfig?.delegate?.allowedAgents
+    if (allowedAgentNames && allowedAgentNames.length > 0) {
+      const allAgents = await cfg.agent?.list?.() ?? []
+      const entries = (allAgents as any[])
+        .filter((a) => allowedAgentNames.includes(a.name))
+        .map((a) => `- ${a.name}${a.description ? `: ${a.description}` : ""}`)
+      delegateNotice = `\n\n# IMPORTANT: DELEGATION RESTRICTIONS\nYou may only delegate to the following agents:\n${entries.join("\n")}\nDo not delegate to any other agent. If your persona mentions other agents, disregard those names.`
+    }
+
     system.push(
       [
         ...(input.agent.prompt ? [input.agent.prompt] : isCodex ? [] : SystemPrompt.provider(input.model)),
         ...input.system,
         ...(input.user.system ? [input.user.system] : []),
         ...(toolNotice ? [toolNotice] : []),
+        ...(delegateNotice ? [delegateNotice] : []),
       ]
         .filter((x) => x)
         .join("\n"),

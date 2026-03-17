@@ -8,6 +8,13 @@ export namespace Tool {
 
   export interface AgentInfo {
     permission?: unknown
+    config?: {
+      toolConfig?: {
+        delegate?: { allowedAgents?: string[] }
+      }
+    }
+    /** Resolved agent entries for the delegate tool's allowed list */
+    delegateAgents?: Array<{ name: string; description?: string }>
   }
 
   export interface InitContext {

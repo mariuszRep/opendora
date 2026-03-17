@@ -110,7 +110,7 @@ export function getDelegateToolTitle(tool: ToolPart): string {
   return agent ? `${base} → ${agent}` : base
 }
 
-const DELEGATE_TOOLS = new Set(["delegate", "spawn_session", "spawn"])
+const DELEGATE_TOOLS = new Set(["delegate"])
 
 export function isDelegateTool(toolName: string): boolean {
   return DELEGATE_TOOLS.has(toolName)

@@ -15,9 +15,7 @@
     "skill_load",
     "agent_list",
     "session_search",
-    "session_switch",
-    "delegate",
-    "spawn"
+    "delegate"
   ],
   "enableInjection": false
 }

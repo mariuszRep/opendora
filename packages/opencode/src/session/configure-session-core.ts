@@ -33,6 +33,16 @@ import { SessionPrompt } from "./prompt"
 import { Session } from "@opendora/session/session"
 import { Question } from "@/question"
 
+async function enrichAgent(agent: any): Promise<any> {
+  const allowedAgents: string[] | undefined = agent?.config?.toolConfig?.delegate?.allowedAgents
+  if (!allowedAgents || allowedAgents.length === 0) return agent
+  const all = await Agent.list()
+  const delegateAgents = all
+    .filter((a) => allowedAgents.includes(a.name))
+    .map((a) => ({ name: a.name, description: a.description }))
+  return { ...agent, delegateAgents }
+}
+
 let configured = false
 
 export function configureSessionCore() {
@@ -230,12 +240,13 @@ export function configureSessionCore() {
     },
     toolRegistry: {
       async get(opts: any, agent: any) {
-        // Convert tool array to record
-        const items = await ToolRegistry.tools(opts, agent)
+        const enriched = await enrichAgent(agent)
+        const items = await ToolRegistry.tools(opts, enriched)
         return Object.fromEntries(items.map((t: any) => [t.id, t]))
       },
       async tools(opts: any, agent: any) {
-        return ToolRegistry.tools(opts, agent)
+        const enriched = await enrichAgent(agent)
+        return ToolRegistry.tools(opts, enriched)
       },
     },
     mcp: {

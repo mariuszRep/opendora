@@ -7,19 +7,23 @@
   },
   "color": "teal",
   "tools": [
-    "spawn_session",
     "agent_create",
     "websearch",
     "agent_list",
     "agent_update",
     "agent_get",
     "question",
-    "ping_main",
     "webfetch",
     "delegate",
-    "ping_session",
-    "spawn",
     "skill_discover",
     "session_search"
-  ]
+  ],
+  "toolConfig": {
+    "delegate": {
+      "allowedAgents": [
+        "Project Owner",
+        "Project Manager"
+      ]
+    }
+  }
 }

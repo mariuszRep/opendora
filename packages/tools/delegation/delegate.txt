@@ -1,0 +1,11 @@
+Send a prompt to an agent session and optionally wait for its reply.
+
+Session targeting — pick one:
+- Provide session_id to message a specific existing session by ID.
+- Provide session_type (worker / scope / scratchpad / role) to create a new child session and send the prompt there. Use title to name it.
+- Provide only agent to message that agent's main session (one is created automatically if it does not exist).
+
+agent is required unless session_id alone is sufficient to identify the target.
+session_id and session_type are mutually exclusive.
+
+The agent parameter must be an agent ID exactly as it appears in the available agent list. Do not invent or guess agent names.

@@ -11,8 +11,6 @@
   "color": "violet",
   "tools": [
     "skill",
-    "spawn",
-    "session_switch",
     "session_search",
     "todowrite",
     "skill_discover",

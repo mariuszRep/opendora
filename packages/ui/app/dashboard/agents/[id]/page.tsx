@@ -2,14 +2,22 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { CheckIcon, ChevronDownIcon, ChevronRightIcon, Loader2Icon, MessageSquareIcon, SparklesIcon, StarIcon, Trash2Icon } from "lucide-react"
+import { CheckIcon, Loader2Icon, MessageSquareIcon, SparklesIcon, StarIcon, Trash2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { AgentDeleteDialog } from "@/components/agents/agent-delete-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { ColorSelector } from "@/components/ui/color-selector"
 import type { AgentColorId } from "@/lib/agent-colors"
 import {
@@ -51,6 +59,7 @@ const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
 ]
 
 const HIDDEN_TOOLS = new Set(["invalid", "plan_exit"])
+const DELEGATION_TOOLS = new Set(["delegate", "session_search"])
 
 type ModelValue = { providerID: string; modelID: string } | undefined
 
@@ -80,7 +89,8 @@ export default function AgentSettingsPage() {
   const [fallbackModelOpen, setFallbackModelOpen] = useState(false)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const [availableTools, setAvailableTools] = useState<string[]>([])
-  const [toolsExpanded, setToolsExpanded] = useState(true)
+  const [expandedGroup, setExpandedGroup] = useState<"delegation" | "others" | null>(null)
+  const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [persona, setPersona] = useState("")
   const [enableInjection, setEnableInjection] = useState(false)
   const [injection, setInjection] = useState("")
@@ -137,6 +147,7 @@ export default function AgentSettingsPage() {
     setModel(agent.model ?? undefined)
     setFallbackModel(agent.fallback_model ?? undefined)
     setSelectedTools(agent.tools ?? [])
+    setDelegateAllowedAgents((agent as any).config?.toolConfig?.delegate?.allowedAgents ?? agent.toolConfig?.delegate?.allowedAgents ?? [])
     setEnableInjection((agent as any).enableInjection ?? false)
     setInjection((agent as any).injection ?? "")
   }, [agentId, agent]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -152,6 +163,12 @@ export default function AgentSettingsPage() {
     if (!id) return
     opendora.agent.getInjection(agentId).then(setInjection).catch(() => { })
   }, [agentId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function toggleDelegateAgent(agentName: string) {
+    setDelegateAllowedAgents((prev) =>
+      prev.includes(agentName) ? prev.filter((n) => n !== agentName) : [...prev, agentName],
+    )
+  }
 
   function toggleTool(toolId: string) {
     setSelectedTools((prev) =>
@@ -192,6 +209,9 @@ export default function AgentSettingsPage() {
         model,
         fallback_model: fallbackModel,
         tools: selectedTools.length > 0 ? selectedTools : undefined,
+        toolConfig: delegateAllowedAgents.length > 0
+          ? { delegate: { allowedAgents: delegateAllowedAgents } }
+          : undefined,
         enableInjection: enableInjection || undefined,
       }
       await updateAgent(agentId, config, persona, enableInjection ? injection : undefined)
@@ -281,9 +301,9 @@ export default function AgentSettingsPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       {/* Breadcrumb header */}
-      <div className="flex items-center justify-between border-b px-6 py-3 shrink-0">
+      <div className="flex shrink-0 items-center justify-between border-b px-6 py-3">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -321,263 +341,326 @@ export default function AgentSettingsPage() {
         </div>
       </div>
 
-      {/* Form */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-2xl px-6 py-8 flex flex-col gap-6">
-
-          {/* Name */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="agent-name">Name</Label>
-            <Input
-              id="agent-name"
-              placeholder="my-agent"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-
-          {/* Description */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="agent-desc">Description</Label>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 gap-1 px-2 text-xs"
-                disabled={!description.trim() || generating}
-                onClick={handleGenerate}
-              >
-                {generating ? <Loader2Icon className="size-3 animate-spin" /> : <SparklesIcon className="size-3" />}
-                AI fill
-              </Button>
-            </div>
-            <Textarea
-              id="agent-desc"
-              placeholder="When to use this agent…"
-              rows={2}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-
-          {/* Mode */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Mode</Label>
-            <Select value={mode ?? "all"} onValueChange={(v) => setMode(v as AgentConfig["mode"])}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MODE_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value!}>{o.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Color */}
-          <ColorSelector value={color} onChange={setColor} />
-
-          {/* Temperature + Steps */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="agent-temp">Temperature</Label>
-              <Input
-                id="agent-temp"
-                type="number"
-                min={0}
-                max={2}
-                step={0.1}
-                placeholder="default"
-                value={temperature}
-                onChange={(e) => setTemperature(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="agent-steps">Max steps</Label>
-              <Input
-                id="agent-steps"
-                type="number"
-                min={1}
-                step={1}
-                placeholder="default"
-                value={steps}
-                onChange={(e) => setSteps(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Model + Fallback */}
-          <div className="grid grid-cols-2 gap-4">
-            {renderModelSelector("Preferred model", model, modelOpen, setModelOpen, setModel, "Use default")}
-            {renderModelSelector("Fallback model", fallbackModel, fallbackModelOpen, setFallbackModelOpen, setFallbackModel, "None")}
-          </div>
-
-          {/* Hidden toggle */}
-          <div className="flex items-center justify-between rounded-md border px-4 py-3">
-            <div>
-              <p className="text-sm font-medium">Hidden</p>
-              <p className="text-xs text-muted-foreground">Hide this agent from the sidebar</p>
-            </div>
-            <Switch checked={hidden} onCheckedChange={setHidden} />
-          </div>
-
-          {/* Tools */}
-          <div className="flex flex-col gap-1.5">
-            <button
-              type="button"
-              className="flex items-center gap-1.5 text-sm font-medium text-left"
-              onClick={() => setToolsExpanded((v) => !v)}
-            >
-              {toolsExpanded
-                ? <ChevronDownIcon className="size-3.5 text-muted-foreground" />
-                : <ChevronRightIcon className="size-3.5 text-muted-foreground" />}
-              Tools
+      {/* Tabs */}
+      <Tabs defaultValue="main" className="flex flex-1 flex-col overflow-hidden">
+        <TabsList variant="line" className="shrink-0 border-b px-6 justify-start rounded-none w-full">
+          <TabsTrigger value="main">Main</TabsTrigger>
+          <TabsTrigger value="tools">
+            Tools
+            {selectedTools.length > 0 && (
               <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
-                {selectedTools.length === availableTools.length ? "all" : selectedTools.length} selected
+                {selectedTools.length}
               </span>
-            </button>
-
-            {toolsExpanded && (
-              <div className="rounded-md border p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">
-                    No tools selected = agent has no tools.
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      className="text-xs text-muted-foreground underline-offset-2 hover:underline"
-                      onClick={() => setSelectedTools([])}
-                    >
-                      None
-                    </button>
-                    <button
-                      type="button"
-                      className="text-xs text-primary underline-offset-2 hover:underline"
-                      onClick={() => setSelectedTools([...availableTools])}
-                    >
-                      Select all
-                    </button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-x-4 gap-y-2.5">
-                  {availableTools.map((toolId) => (
-                    <label key={toolId} className="flex cursor-pointer items-center gap-2 text-xs">
-                      <Checkbox
-                        checked={selectedTools.includes(toolId)}
-                        onCheckedChange={() => toggleTool(toolId)}
-                      />
-                      <span className="font-mono">{toolId}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
             )}
-          </div>
+          </TabsTrigger>
+        </TabsList>
 
-          {/* Persona */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="agent-persona">
-              Persona
-              <span className="ml-1 font-normal text-muted-foreground">(PERSONA.md)</span>
-            </Label>
-            <Textarea
-              id="agent-persona"
-              placeholder="You are a…"
-              className="h-72 resize-none overflow-y-auto font-mono text-xs"
-              value={persona}
-              onChange={(e) => setPersona(e.target.value)}
-            />
-          </div>
+        {/* ── Main tab ── */}
+        <TabsContent value="main" className="flex-1 overflow-y-auto">
+          <div className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-8">
 
-          {/* Enable Injection toggle */}
-          <div className="flex items-center justify-between rounded-md border px-3 py-2">
-            <div>
-              <p className="text-sm font-medium">Enable Injection</p>
-              <p className="text-xs text-muted-foreground">Inject custom prompts dynamically before user messages</p>
-            </div>
-            <Switch checked={enableInjection} onCheckedChange={setEnableInjection} />
-          </div>
-
-          {/* Injection (conditional) */}
-          {enableInjection && (
+            {/* Name */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="agent-injection">
-                Injection
-                <span className="ml-1 font-normal text-muted-foreground">(INJECTION.md)</span>
+              <Label htmlFor="agent-name">Name</Label>
+              <Input
+                id="agent-name"
+                placeholder="my-agent"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+
+            {/* Description */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="agent-desc">Description</Label>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 gap-1 px-2 text-xs"
+                  disabled={!description.trim() || generating}
+                  onClick={handleGenerate}
+                >
+                  {generating ? <Loader2Icon className="size-3 animate-spin" /> : <SparklesIcon className="size-3" />}
+                  AI fill
+                </Button>
+              </div>
+              <Textarea
+                id="agent-desc"
+                placeholder="When to use this agent…"
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+
+            {/* Mode */}
+            <div className="flex flex-col gap-1.5">
+              <Label>Mode</Label>
+              <Select value={mode ?? "all"} onValueChange={(v) => setMode(v as AgentConfig["mode"])}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MODE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value!}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Color */}
+            <ColorSelector value={color} onChange={setColor} />
+
+            {/* Temperature + Steps */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="agent-temp">Temperature</Label>
+                <Input
+                  id="agent-temp"
+                  type="number"
+                  min={0}
+                  max={2}
+                  step={0.1}
+                  placeholder="default"
+                  value={temperature}
+                  onChange={(e) => setTemperature(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="agent-steps">Max steps</Label>
+                <Input
+                  id="agent-steps"
+                  type="number"
+                  min={1}
+                  step={1}
+                  placeholder="default"
+                  value={steps}
+                  onChange={(e) => setSteps(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Model + Fallback */}
+            <div className="grid grid-cols-2 gap-4">
+              {renderModelSelector("Preferred model", model, modelOpen, setModelOpen, setModel, "Use default")}
+              {renderModelSelector("Fallback model", fallbackModel, fallbackModelOpen, setFallbackModelOpen, setFallbackModel, "None")}
+            </div>
+
+            {/* Hidden toggle */}
+            <div className="flex items-center justify-between rounded-md border px-4 py-3">
+              <div>
+                <p className="text-sm font-medium">Hidden</p>
+                <p className="text-xs text-muted-foreground">Hide this agent from the sidebar</p>
+              </div>
+              <Switch checked={hidden} onCheckedChange={setHidden} />
+            </div>
+
+            {/* Persona */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="agent-persona">
+                Persona
+                <span className="ml-1 font-normal text-muted-foreground">(PERSONA.md)</span>
               </Label>
               <Textarea
-                id="agent-injection"
-                placeholder="<system-reminder>\nCustom workflow instructions...\n</system-reminder>"
+                id="agent-persona"
+                placeholder="You are a…"
                 className="h-72 resize-none overflow-y-auto font-mono text-xs"
-                value={injection}
-                onChange={(e) => setInjection(e.target.value)}
+                value={persona}
+                onChange={(e) => setPersona(e.target.value)}
               />
             </div>
-          )}
 
-          {/* Sessions */}
-          <div className="flex flex-col gap-2">
-            <Label>Sessions</Label>
-            <p className="text-xs text-muted-foreground -mt-1">
-              Sessions that belong to this agent. The <span className="font-medium text-primary">main</span> session is opened automatically when you switch to this agent.
-            </p>
-            {agentSessions.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-2">No sessions yet — one will be created automatically.</p>
-            ) : (
-              <div className="rounded-md border divide-y">
-                {agentSessions.map((session) => {
-                  const isMain = session.sessionType === "role"
-                  const title = session.title && !session.title.startsWith("New session")
-                    ? session.title
-                    : new Date(session.time.created).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
-                  return (
-                    <div key={session.id} className="flex items-center gap-3 px-3 py-2.5">
-                      <MessageSquareIcon className="size-3.5 text-muted-foreground shrink-0" />
-                      <span className="flex-1 min-w-0 text-xs truncate">{title}</span>
-                      {isMain && (
-                        <span className="shrink-0 rounded px-1.5 py-px text-[9px] font-medium bg-primary/10 text-primary">main</span>
-                      )}
-                      {!isMain && (
+            {/* Enable Injection toggle */}
+            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <div>
+                <p className="text-sm font-medium">Enable Injection</p>
+                <p className="text-xs text-muted-foreground">Inject custom prompts dynamically before user messages</p>
+              </div>
+              <Switch checked={enableInjection} onCheckedChange={setEnableInjection} />
+            </div>
+
+            {/* Injection (conditional) */}
+            {enableInjection && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="agent-injection">
+                  Injection
+                  <span className="ml-1 font-normal text-muted-foreground">(INJECTION.md)</span>
+                </Label>
+                <Textarea
+                  id="agent-injection"
+                  placeholder="<system-reminder>\nCustom workflow instructions...\n</system-reminder>"
+                  className="h-72 resize-none overflow-y-auto font-mono text-xs"
+                  value={injection}
+                  onChange={(e) => setInjection(e.target.value)}
+                />
+              </div>
+            )}
+
+            {/* Sessions */}
+            <div className="flex flex-col gap-2">
+              <Label>Sessions</Label>
+              <p className="-mt-1 text-xs text-muted-foreground">
+                Sessions that belong to this agent. The <span className="font-medium text-primary">main</span> session is opened automatically when you switch to this agent.
+              </p>
+              {agentSessions.length === 0 ? (
+                <p className="py-2 text-xs text-muted-foreground">No sessions yet — one will be created automatically.</p>
+              ) : (
+                <div className="divide-y rounded-md border">
+                  {agentSessions.map((session) => {
+                    const isMain = session.sessionType === "role"
+                    const title = session.title && !session.title.startsWith("New session")
+                      ? session.title
+                      : new Date(session.time.created).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+                    return (
+                      <div key={session.id} className="flex items-center gap-3 px-3 py-2.5">
+                        <MessageSquareIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                        <span className="min-w-0 flex-1 truncate text-xs">{title}</span>
+                        {isMain && (
+                          <span className="shrink-0 rounded px-1.5 py-px text-[9px] font-medium bg-primary/10 text-primary">main</span>
+                        )}
+                        {!isMain && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 shrink-0 gap-1 px-2 text-[11px]"
+                            disabled={promotingSession === session.id}
+                            onClick={async () => {
+                              setPromotingSession(session.id)
+                              try {
+                                await setAgentMainSession(agentId, session.id)
+                              } finally {
+                                setPromotingSession(null)
+                              }
+                            }}
+                          >
+                            {promotingSession === session.id
+                              ? <Loader2Icon className="size-3 animate-spin" />
+                              : <StarIcon className="size-3" />}
+                            Set as main
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-6 gap-1 px-2 text-[11px] shrink-0"
-                          disabled={promotingSession === session.id}
-                          onClick={async () => {
-                            setPromotingSession(session.id)
-                            try {
-                              await setAgentMainSession(agentId, session.id)
-                            } finally {
-                              setPromotingSession(null)
-                            }
+                          className="h-6 shrink-0 px-2 text-[11px]"
+                          onClick={() => { selectSession(session.id); router.push("/dashboard") }}
+                        >
+                          Open
+                        </Button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
+        </TabsContent>
+
+        {/* ── Tools tab ── */}
+        <TabsContent value="tools" className="flex-1 overflow-y-auto">
+          <div className="mx-auto flex max-w-2xl flex-col gap-4 px-6 py-8">
+            <p className="text-xs text-muted-foreground">
+              Leave all unchecked to allow all tools. Select specific tools to restrict this agent.
+            </p>
+
+            {(["delegation", "others"] as const).map((group) => {
+              const groupTools = availableTools.filter((id) =>
+                group === "delegation" ? DELEGATION_TOOLS.has(id) : !DELEGATION_TOOLS.has(id),
+              )
+              const selectedCount = groupTools.filter((id) => selectedTools.includes(id)).length
+              const isExpanded = expandedGroup === group
+
+              return (
+                <Card key={group} size="sm" className="cursor-pointer">
+                  <CardHeader
+                    className="flex-row items-center justify-between"
+                    onClick={() => setExpandedGroup(isExpanded ? null : group)}
+                  >
+                    <div>
+                      <CardTitle className="capitalize">{group}</CardTitle>
+                      <CardDescription>{groupTools.length} tools</CardDescription>
+                    </div>
+                    {selectedCount > 0 && (
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                        {selectedCount} selected
+                      </span>
+                    )}
+                  </CardHeader>
+
+                  {isExpanded && (
+                    <CardContent className="border-t pt-2">
+                      <div className="grid grid-cols-3 gap-x-4 gap-y-2.5">
+                        {groupTools.map((toolId) => (
+                          <Label key={toolId} className="flex cursor-pointer items-center gap-2 font-normal">
+                            <Checkbox
+                              checked={selectedTools.includes(toolId)}
+                              onCheckedChange={() => toggleTool(toolId)}
+                            />
+                            <span className="font-mono text-xs">{toolId}</span>
+                          </Label>
+                        ))}
+                      </div>
+                      {selectedCount > 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="mt-1 h-auto px-0 text-xs text-muted-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedTools((prev) => prev.filter((id) => !groupTools.includes(id)))
                           }}
                         >
-                          {promotingSession === session.id
-                            ? <Loader2Icon className="size-3 animate-spin" />
-                            : <StarIcon className="size-3" />}
-                          Set as main
+                          Clear group
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 px-2 text-[11px] shrink-0"
-                        onClick={() => { selectSession(session.id); router.push("/dashboard") }}
-                      >
-                        Open
-                      </Button>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
-        </div>
-      </div>
+                      {group === "delegation" && selectedTools.includes("delegate") && (
+                        <div className="mt-3 border-t pt-3">
+                          <p className="mb-0.5 text-xs font-medium">Allowed agents for delegate</p>
+                          <p className="mb-2 text-xs text-muted-foreground">
+                            Leave empty to allow all agents.
+                          </p>
+                          <div className="grid grid-cols-3 gap-x-4 gap-y-2.5">
+                            {allAgents
+                              .filter((a) => a.name !== name.trim())
+                              .map((a) => (
+                                <Label key={(a as any)._id || a.name} className="flex cursor-pointer items-center gap-2 font-normal">
+                                  <Checkbox
+                                    checked={delegateAllowedAgents.includes(a.name)}
+                                    onCheckedChange={() => toggleDelegateAgent(a.name)}
+                                  />
+                                  <span className="font-mono text-xs">{a.name}</span>
+                                </Label>
+                              ))}
+                          </div>
+                          {delegateAllowedAgents.length > 0 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="mt-1 h-auto px-0 text-xs text-muted-foreground"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setDelegateAllowedAgents([])
+                              }}
+                            >
+                              Clear allowed agents
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  )}
+                </Card>
+              )
+            })}
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {agent && (
         <AgentDeleteDialog
