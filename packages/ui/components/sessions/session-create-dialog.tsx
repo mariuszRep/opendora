@@ -1,23 +1,14 @@
 "use client"
 
-import { useState } from "react"
 import { BicepsFlexedIcon, FolderGitIcon, NotebookPenIcon, UserPenIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import type { SessionType } from "@/lib/opendora"
 
 interface SessionCreateDialogProps {
@@ -50,18 +41,14 @@ const SESSION_TYPE_CONFIG = {
 } as const
 
 export function SessionCreateDialog({ open, onOpenChange, onCreateSession }: SessionCreateDialogProps) {
-  const [sessionType, setSessionType] = useState<SessionType>("scratchpad")
-
-  function handleCreate(openSettings: boolean) {
-    onCreateSession(sessionType, openSettings)
+  function handleCreateSession(sessionType: SessionType) {
+    onCreateSession(sessionType, false)
     onOpenChange(false)
   }
 
-  const SelectedIcon = SESSION_TYPE_CONFIG[sessionType].icon
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Create new session</DialogTitle>
           <DialogDescription>
@@ -69,51 +56,25 @@ export function SessionCreateDialog({ open, onOpenChange, onCreateSession }: Ses
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-4">
-          <div className="flex flex-col gap-2">
-            <label htmlFor="session-type" className="text-sm font-medium">
-              Session Type
-            </label>
-            <Select value={sessionType} onValueChange={(v) => setSessionType(v as SessionType)}>
-              <SelectTrigger id="session-type">
-                <SelectValue>
-                  <div className="flex items-center gap-2">
-                    <SelectedIcon className="size-4" />
-                    <span>{SESSION_TYPE_CONFIG[sessionType].label}</span>
-                  </div>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(SESSION_TYPE_CONFIG).map(([type, config]) => {
-                  const Icon = config.icon
-                  return (
-                    <SelectItem key={type} value={type}>
-                      <div className="flex items-center gap-2">
-                        <Icon className="size-4" />
-                        <div className="flex flex-col">
-                          <span className="font-medium">{config.label}</span>
-                          <span className="text-xs text-muted-foreground">{config.description}</span>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  )
-                })}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              {SESSION_TYPE_CONFIG[sessionType].description}
-            </p>
-          </div>
+        <div className="grid grid-cols-2 gap-3 py-4">
+          {Object.entries(SESSION_TYPE_CONFIG).map(([type, config]) => {
+            const Icon = config.icon
+            return (
+              <Button
+                key={type}
+                variant="outline"
+                onClick={() => handleCreateSession(type as SessionType)}
+                className="flex flex-col items-center gap-2 h-auto p-4 hover:bg-accent"
+              >
+                <Icon className="size-6" />
+                <div className="flex flex-col text-center">
+                  <span className="font-medium">{config.label}</span>
+                  <span className="text-xs text-muted-foreground">{config.description}</span>
+                </div>
+              </Button>
+            )
+          })}
         </div>
-
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => handleCreate(false)} className="flex-1">
-            Create
-          </Button>
-          <Button onClick={() => handleCreate(true)} className="flex-1">
-            Create & Configure
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

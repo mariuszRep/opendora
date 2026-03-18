@@ -11,6 +11,9 @@ type DelegateMetadata = {
   replied?: boolean
   messageId?: string
   route?: string
+  kind?: "delegate" | "reply"
+  parentSessionId?: string
+  parentMessageId?: string
 }
 
 function getDelegateMetadata(tool: ToolPart): DelegateMetadata {
@@ -35,9 +38,11 @@ export const DelegateToolContent = ({
 }: DelegateToolContentProps) => {
   const input = "input" in tool.state ? tool.state.input : {}
   const metadata = getDelegateMetadata(tool)
+  const isReply = metadata.kind === "reply" || tool.tool === "reply"
 
   const prompt = input.prompt as string | undefined
   const description = input.description as string | undefined
+  const replyMessage = input.message as string | undefined
   const inputAgent = input.agent as string | undefined
 
   const agent = metadata.agent ?? inputAgent
@@ -60,10 +65,10 @@ export const DelegateToolContent = ({
   return (
     <div className="rounded-md border bg-background">
       {/* Prompt */}
-      {prompt && (
+      {(prompt || replyMessage) && (
         <div className="px-3 py-2.5 space-y-0.5">
-          <p className="text-xs text-muted-foreground">Message</p>
-          <p className="text-sm text-foreground leading-relaxed">{prompt}</p>
+          <p className="text-xs text-muted-foreground">{isReply ? "Reply" : "Message"}</p>
+          <p className="text-sm text-foreground leading-relaxed">{replyMessage ?? prompt}</p>
         </div>
       )}
 
@@ -104,13 +109,18 @@ export const DelegateToolContent = ({
  */
 export function getDelegateToolTitle(tool: ToolPart): string {
   const input = "input" in tool.state ? tool.state.input : {}
+  const metadata = getDelegateMetadata(tool)
+  if (metadata.kind === "reply" || tool.tool === "reply") {
+    const sessionId = metadata.sessionId
+    return sessionId ? `Reply → ${sessionId.slice(0, 8)}…` : "Reply"
+  }
   const description = input.description as string | undefined
   const agent = input.agent as string | undefined
   const base = description ?? "Delegate"
   return agent ? `${base} → ${agent}` : base
 }
 
-const DELEGATE_TOOLS = new Set(["delegate"])
+const DELEGATE_TOOLS = new Set(["delegate", "reply"])
 
 export function isDelegateTool(toolName: string): boolean {
   return DELEGATE_TOOLS.has(toolName)

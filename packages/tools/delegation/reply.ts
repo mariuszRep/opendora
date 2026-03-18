@@ -19,21 +19,47 @@ export const ReplyTool = Tool.define("reply", async (_initCtx) => ({
     const h = host(ctx)
     const sessionSvc = h.session as any
     if (!sessionSvc) throw new Error("session service not available")
+    const parentMessageID = params.parent_message_id ?? ctx.messageID
+
+    if (sessionSvc.reply) {
+      const msg = await sessionSvc.reply({
+        sessionID: params.session_id,
+        agentID: ctx.agent,
+        message: params.message,
+        parentMessageID,
+        parentSessionID: ctx.sessionID,
+      })
+
+      return {
+        title: `Reply posted to session ${params.session_id}`,
+        metadata: {
+          sessionId: params.session_id,
+          messageId: msg?.id,
+          parentSessionId: ctx.sessionID,
+          parentMessageId: ctx.messageID,
+          agent: ctx.agent,
+          kind: "reply",
+        },
+        output: `Message posted to session ${params.session_id}.`,
+      }
+    }
 
     const from = { kind: "agent" as const, id: ctx.agent }
-    const parent = params.parent_message_id
-      ? { messageId: params.parent_message_id }
-      : { messageId: ctx.messageID }
-
     await sessionSvc.pong(params.session_id, {
       from,
       content: params.message,
-      parent,
+      parent: { messageId: parentMessageID },
     })
 
     return {
       title: `Reply posted to session ${params.session_id}`,
-      metadata: { sessionId: params.session_id },
+      metadata: {
+        sessionId: params.session_id,
+        parentSessionId: ctx.sessionID,
+        parentMessageId: ctx.messageID,
+        agent: ctx.agent,
+        kind: "reply",
+      },
       output: `Message posted to session ${params.session_id}.`,
     }
   },

@@ -192,6 +192,7 @@ export class OpenDoraStorageAdapter implements StorageAdapter {
         time_created: msg.timestamp,
         data: {
           role,
+          from: msg.from,
           parentID: msg.parent?.messageId,
           time: { created: msg.timestamp },
         } as any,
@@ -221,7 +222,7 @@ export class OpenDoraStorageAdapter implements StorageAdapter {
       id: row.id,
       sessionId,
       parent: (row.data as any).parentID ? { messageId: (row.data as any).parentID } : null,
-      from: { kind: (row.data as any).role === "user" ? "user" : "agent", id: "opencode" } as any,
+      from: (row.data as any).from ?? { kind: (row.data as any).role === "user" ? "user" : "agent", id: "opencode" },
       kind: (row.data as any).role === "user" ? "ping" : ("pong" as any),
       parts: [],
       timestamp: row.time_created,
@@ -234,9 +235,9 @@ export class OpenDoraStorageAdapter implements StorageAdapter {
     if (!row) return null
     return {
       id: row.id,
-      sessionId: (row.data as any).sessionID ?? "",
+      sessionId: row.session_id,
       parent: (row.data as any).parentID ? { messageId: (row.data as any).parentID } : null,
-      from: { kind: (row.data as any).role === "user" ? "user" : "agent", id: "opencode" } as any,
+      from: (row.data as any).from ?? { kind: (row.data as any).role === "user" ? "user" : "agent", id: "opencode" },
       kind: (row.data as any).role === "user" ? "ping" : ("pong" as any),
       parts: [],
       timestamp: row.time_created,

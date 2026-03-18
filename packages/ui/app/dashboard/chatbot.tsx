@@ -71,6 +71,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 const suggestions = [
   "What files are in this project?",
@@ -144,6 +145,16 @@ function getTimelineSteps(parts: Part[], error?: AssistantMessage["error"]): Tim
   return steps
 }
 
+type AssistantContributionBadgeProps = {
+  agentName: string
+}
+
+const AssistantContributionBadge = ({ agentName }: AssistantContributionBadgeProps) => (
+  <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs font-medium text-muted-foreground">
+    {agentName}
+  </span>
+)
+
 const AttachmentsDisplay = () => {
   const attachments = usePromptInputAttachments()
   if (attachments.files.length === 0) return null
@@ -160,6 +171,9 @@ const AttachmentsDisplay = () => {
 }
 
 export const Chatbot = () => {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const {
     selectedSession,
     messages,
@@ -200,6 +214,7 @@ export const Chatbot = () => {
   const [selectedModelID, setSelectedModelID] = useState<string | null>(null)
   const [questionViewModes, setQuestionViewModes] = useState<Record<string, "code" | "view">>({})
   const [delegateViewModes, setDelegateViewModes] = useState<Record<string, "code" | "view">>({})
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     const agent = agents.find((a) => (a as any)._id === selectedAgent)
@@ -211,6 +226,13 @@ export const Chatbot = () => {
       setSelectedModelID(null)
     }
   }, [selectedAgent, agents])
+
+  // Focus input when a session is selected
+  useEffect(() => {
+    if (selectedSession && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [selectedSession])
 
   // Update agent's preferred model when user changes it in chat interface
   const updateAgentModel = useCallback(async (providerID: string, modelID: string) => {
@@ -269,10 +291,26 @@ export const Chatbot = () => {
 
   const scrollToMessageIdRef = useRef<string | null>(null)
 
+  const buildDashboardUrl = useCallback((sessionId: string, messageId?: string | null) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("session", sessionId)
+    if (messageId) params.set("message", messageId)
+    else params.delete("message")
+    const query = params.toString()
+    return query ? `${pathname}?${query}` : pathname
+  }, [pathname, searchParams])
+
   const handleGoToMessage = useCallback((sessionId: string, messageId: string) => {
+    router.push(buildDashboardUrl(sessionId, messageId), { scroll: false })
     selectSession(sessionId)
     scrollToMessageIdRef.current = messageId
-  }, [selectSession])
+  }, [router, buildDashboardUrl, selectSession])
+
+  useEffect(() => {
+    const messageId = searchParams.get("message")
+    if (!messageId) return
+    scrollToMessageIdRef.current = messageId
+  }, [searchParams])
 
   useEffect(() => {
     const targetId = scrollToMessageIdRef.current
@@ -280,9 +318,12 @@ export const Chatbot = () => {
     const el = document.getElementById(`msg-${targetId}`)
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" })
+      if (selectedSession?.id) {
+        router.replace(buildDashboardUrl(selectedSession.id, null), { scroll: false })
+      }
       scrollToMessageIdRef.current = null
     }
-  }, [messages])
+  }, [messages, router, buildDashboardUrl, selectedSession?.id])
 
   const handleSubmit = useCallback(
     (message: PromptInputMessage) => {
@@ -463,16 +504,49 @@ export const Chatbot = () => {
               const msgError = info.role === "assistant" ? (info as AssistantMessage).error : undefined
               const hasTimeline = info.role === "assistant"
               const timelineSteps = hasTimeline ? getTimelineSteps(parts, msgError) : []
-              const msgParentSessionID = info.role === "user" ? (info as UserMessage).parentSessionID : undefined
-              const isDelegationMessage = msgParentSessionID !== undefined
-              const msgDotColor = isDelegationMessage
-                ? (() => {
-                    const parentSession = msgParentSessionID ? sessions.find((s) => s.id === msgParentSessionID) : undefined
-                    const agentId = parentSession?.agentID
-                    const agentObj = agentId ? agents.find((a) => (a as any)._id === agentId || a.name === agentId) : undefined
-                    return agentObj ? getAgentColor((agentObj as any).color).hex : undefined
-                  })()
+              const msgParentSessionID = info.role === "user"
+                ? (info as UserMessage).parentSessionID
+                : info.role === "assistant"
+                  ? (info as AssistantMessage).parentSessionID
+                  : undefined
+              const msgParentMessageID = info.role === "user"
+                ? (info as UserMessage).parentMessageID
+                : info.role === "assistant"
+                  ? (info as AssistantMessage).parentMessageID
+                  : undefined
+              const parentSession = msgParentSessionID ? sessions.find((s) => s.id === msgParentSessionID) : undefined
+              const parentAgentId = parentSession?.agentID
+              const parentAgent = parentAgentId
+                ? agents.find((a) => (a as any)._id === parentAgentId || a.name === parentAgentId)
                 : undefined
+              const hasLinkedParentMessage = msgParentSessionID !== undefined
+              const msgDotColor = hasLinkedParentMessage
+                ? (parentAgent ? getAgentColor((parentAgent as any).color).hex : undefined)
+                : undefined
+              const sessionAgentId = selectedSession?.agentID
+              const assistantAuthorId = info.role === "assistant"
+                ? (info as AssistantMessage).from?.kind === "agent"
+                  ? (info as AssistantMessage).from?.id
+                  : (info as AssistantMessage).agent
+                : undefined
+              const assistantAgentId = info.role === "assistant"
+                ? (info as AssistantMessage).agent ?? assistantAuthorId
+                : undefined
+              const assistantAgent = assistantAgentId
+                ? agents.find((a) => (a as any)._id === assistantAgentId || a.name === assistantAgentId)
+                : undefined
+              const assistantAuthor = assistantAuthorId
+                ? agents.find((a) => (a as any)._id === assistantAuthorId || a.name === assistantAuthorId)
+                : assistantAgent
+              const isAssistantContribution =
+                info.role === "assistant" &&
+                !!assistantAuthorId &&
+                !!sessionAgentId &&
+                assistantAuthorId !== sessionAgentId
+              const assistantContributionColor = assistantAuthor
+                ? getAgentColor((assistantAuthor as any).color).hex
+                : undefined
+              const assistantMessageColor = assistantContributionColor ?? agentDotColor
               return (
                 <div key={info.id} id={`msg-${info.id}`} className={cn(hasTimeline && "w-full")}>
                 <MessageBranch defaultBranch={0}>
@@ -520,7 +594,7 @@ export const Chatbot = () => {
                                   label="Source"
                                   onClick={() => handleGoToMessage(
                                     msgParentSessionID,
-                                    (info as UserMessage).parentMessageID ?? ""
+                                    msgParentMessageID ?? ""
                                   )}
                                   tooltip="Back to delegation tool"
                                   variant="outline"
@@ -556,13 +630,13 @@ export const Chatbot = () => {
                                       {isActiveDot && (
                                         <div
                                           className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
-                                          style={{ borderTopColor: agentDotColor }}
+                                          style={{ borderTopColor: assistantMessageColor }}
                                           aria-hidden="true"
                                         />
                                       )}
                                       <div
                                         className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                                        style={{ backgroundColor: agentDotColor }}
+                                        style={{ backgroundColor: assistantMessageColor }}
                                       />
                                     </div>
                                   </div>
@@ -778,10 +852,10 @@ export const Chatbot = () => {
                             )}
                           </>
                         )}
-                        {(info.role === "assistant" && content) || isDelegationMessage ? (
+                        {(info.role === "assistant" && content) || hasLinkedParentMessage ? (
                           <MessageActions
-                            className={cn("mt-1 justify-start transition-opacity", isDelegationMessage ? "" : "pointer-events-none invisible opacity-0")}
-                            style={isDelegationMessage ? undefined : { opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
+                            className={cn("relative mt-1 justify-start transition-opacity", hasLinkedParentMessage ? "" : "pointer-events-none invisible opacity-0")}
+                            style={hasLinkedParentMessage ? undefined : { opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
                             data-message-actions
                           >
                             {content && (
@@ -811,12 +885,40 @@ export const Chatbot = () => {
                                 )}
                               </MessageAction>
                             )}
-                            {isDelegationMessage && msgParentSessionID && (
+                            {isAssistantContribution && (assistantAuthor?.name ?? assistantAuthorId ?? assistantAgentId) ? (
+                              <AssistantContributionBadge
+                                agentName={assistantAuthor?.name ?? assistantAuthorId ?? assistantAgentId ?? ""}
+                              />
+                            ) : null}
+                            {info.role === "assistant" && selectedSession?.id && (
+                              <MessageAction
+                                label="Link"
+                                onClick={() => router.push(buildDashboardUrl(selectedSession.id, info.id), { scroll: false })}
+                                tooltip="Open link to this reply"
+                                variant="outline"
+                              >
+                                <Link2Icon className="size-4" />
+                              </MessageAction>
+                            )}
+                            {info.role === "assistant" && hasLinkedParentMessage && msgParentSessionID && (
                               <MessageAction
                                 label="Source"
                                 onClick={() => handleGoToMessage(
                                   msgParentSessionID,
-                                  (info as UserMessage).parentMessageID ?? ""
+                                  msgParentMessageID ?? ""
+                                )}
+                                tooltip="Open originating tool call"
+                                variant="outline"
+                              >
+                                <Link2Icon className="size-4" />
+                              </MessageAction>
+                            )}
+                            {info.role === "user" && hasLinkedParentMessage && msgParentSessionID && (
+                              <MessageAction
+                                label="Source"
+                                onClick={() => handleGoToMessage(
+                                  msgParentSessionID,
+                                  msgParentMessageID ?? ""
                                 )}
                                 tooltip="Back to delegation tool"
                                 variant="outline"
@@ -847,6 +949,7 @@ export const Chatbot = () => {
             </PromptInputHeader>
             <PromptInputBody>
               <PromptInputTextarea
+                ref={inputRef}
                 onChange={(e) => setText(e.target.value)}
                 value={text}
                 placeholder={selectedSession ? (isRecording ? "Listening..." : isTranscribing ? "Transcribing..." : "Type a message…") : "Create or select a session to chat"}

@@ -56,11 +56,16 @@ export type AssistantMessage = {
   id: string
   sessionID: string
   role: "assistant"
+  from?: { kind: "user" | "agent" | "service"; id: string }
   time: { created: number; completed?: number }
   providerID: string
   modelID: string
   /** Name/ID of the agent that produced this message */
   agent?: string
+  /** Set when this assistant reply was injected by a tool in another session */
+  parentSessionID?: string
+  /** The message ID in parentSessionID that contains the tool call that created this assistant reply */
+  parentMessageID?: string
   error?: { name: string; data: Record<string, unknown> }
 }
 

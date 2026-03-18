@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   opendora,
   type Agent,
@@ -34,7 +35,7 @@ export type UseOpendoraResult = {
   agentSessions: Session[]
   selectedSession: Session | null
   selectSession: (id: string) => void
-  createSession: (sessionType?: SessionType) => Promise<void>
+  createSession: (sessionType?: SessionType) => Promise<string>
   setSessionAgent: (sessionID: string, agentID: string | null) => Promise<void>
   setAgentMainSession: (agentID: string, sessionID: string) => Promise<void>
   activeSessions: Set<string>
@@ -73,6 +74,9 @@ export type UseOpendoraResult = {
 }
 
 export function useOpendora(): UseOpendoraResult {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [sessions, setSessions] = useState<Session[]>([])
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [messages, setMessages] = useState<MessageWithParts[]>([])
@@ -90,6 +94,17 @@ export function useOpendora(): UseOpendoraResult {
   const [defaultAgentId, setDefaultAgentId] = useState<string | null>(() => getStoredDefaultAgent())
 
   const selectedSessionRef = useRef<Session | null>(null)
+  const suppressUrlSyncRef = useRef(false)
+
+  const buildDashboardUrl = useCallback((sessionID?: string | null, messageID?: string | null) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (sessionID) params.set("session", sessionID)
+    else params.delete("session")
+    if (messageID) params.set("message", messageID)
+    else params.delete("message")
+    const query = params.toString()
+    return query ? `${pathname}?${query}` : pathname
+  }, [pathname, searchParams])
 
   const refreshAgentsState = useCallback(async () => {
     const agentData = await opendora.agent.list()
@@ -145,14 +160,21 @@ export function useOpendora(): UseOpendoraResult {
         const sorted = [...sessionData].sort((a, b) => b.time.updated - a.time.updated)
         setSessions(sorted)
 
-        // Navigate to the default agent's main session on startup
+        const requestedSessionID = searchParams.get("session")
+        const requestedSession = requestedSessionID
+          ? sorted.find((s) => s.id === requestedSessionID) ?? null
+          : null
+
+        // Navigate to the requested session first; otherwise fall back to the default agent's main session.
         const storedDefault = getStoredDefaultAgent()
-        const targetAgentId = (storedDefault && agentsWithId.some((a) => a._id === storedDefault))
-          ? storedDefault
-          : visibleAgents[0]?._id ?? null
+        const targetAgentId = requestedSession?.agentID
+          ?? ((storedDefault && agentsWithId.some((a) => a._id === storedDefault))
+            ? storedDefault
+            : visibleAgents[0]?._id ?? null)
         if (targetAgentId) {
           setSelectedAgent(targetAgentId)
-          const mainSess = sorted.find((s) => s.agentID === targetAgentId && s.sessionType === "role")
+          const mainSess = requestedSession
+            ?? sorted.find((s) => s.agentID === targetAgentId && s.sessionType === "role")
             ?? sorted.find((s) => s.agentID === targetAgentId)
             ?? null
           if (mainSess) {
@@ -200,6 +222,33 @@ export function useOpendora(): UseOpendoraResult {
     return () => { cancelled = true }
   }, [selectedSessionId])
 
+  useEffect(() => {
+    const requestedSessionID = searchParams.get("session")
+    if (!requestedSessionID || requestedSessionID === selectedSessionRef.current?.id) return
+    const targetSession = sessions.find((session) => session.id === requestedSessionID)
+    if (!targetSession) return
+
+    suppressUrlSyncRef.current = true
+    setSelectedSessionId(targetSession.id)
+    selectedSessionRef.current = targetSession
+    setStatus("ready")
+    setError(null)
+    if (targetSession.agentID) {
+      setSelectedAgent(targetSession.agentID)
+    }
+  }, [searchParams, sessions])
+
+  useEffect(() => {
+    if (!selectedSessionId) return
+    if (suppressUrlSyncRef.current) {
+      suppressUrlSyncRef.current = false
+      return
+    }
+    const requestedSessionID = searchParams.get("session")
+    if (requestedSessionID === selectedSessionId) return
+    router.replace(buildDashboardUrl(selectedSessionId, null), { scroll: false })
+  }, [selectedSessionId, searchParams, router, buildDashboardUrl])
+
   // SSE events
   useEffect(() => {
     return opendora.events.subscribe((event: Event) => {
@@ -210,6 +259,7 @@ export function useOpendora(): UseOpendoraResult {
             if (prev.find((s) => s.id === info.id)) return prev
             return [info, ...prev]
           })
+          // Don't change the selected session - let the creator handle selection
           break
         }
         case "session.updated": {
@@ -350,6 +400,7 @@ export function useOpendora(): UseOpendoraResult {
     setSelectedSessionId(id)
     setStatus("ready")
     setError(null)
+    router.push(buildDashboardUrl(id, null), { scroll: false })
     // Sync the selected agent to match the session's assigned agent
     setSessions((prev) => {
       const session = prev.find((s) => s.id === id)
@@ -360,7 +411,7 @@ export function useOpendora(): UseOpendoraResult {
     })
   }, [])
 
-  const createSession = useCallback(async (sessionType?: SessionType) => {
+  const createSession = useCallback(async (sessionType?: SessionType): Promise<string> => {
     try {
       const session = await opendora.session.create({
         ...(sessionType ? { sessionType } : {}),
@@ -371,15 +422,18 @@ export function useOpendora(): UseOpendoraResult {
         return [session, ...prev]
       })
       setSelectedSessionId(session.id)
+      router.push(buildDashboardUrl(session.id, null), { scroll: false })
       // Update ref immediately to avoid race condition
       selectedSessionRef.current = session
       setMessages([])
       setStatus("ready")
       setError(null)
+      return session.id
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
+      throw err
     }
-  }, [selectedAgent])
+  }, [selectedAgent, router, buildDashboardUrl])
 
   const sendMessage = useCallback(
     async (text: string, options?: { model?: { providerID: string; modelID: string }; agent?: string }) => {
@@ -463,15 +517,21 @@ export function useOpendora(): UseOpendoraResult {
       if (s.agentID === agentID && s.sessionType === "role") return { ...s, sessionType: "scope" as const }
       return s
     }))
-    // If this is the currently selected agent, navigate to the new main session
+    // Only navigate to the new main session if the user is currently on that agent's old main session
+    // or if no session is currently selected
     setSelectedAgent((prev) => {
       if (prev === agentID) {
-        setSelectedSessionId(sessionID)
-        selectedSessionRef.current = updated
+        const currentSession = selectedSessionRef.current
+        const shouldNavigate = !currentSession || 
+          (currentSession.agentID === agentID && currentSession.sessionType === "role")
+        if (shouldNavigate) {
+          setSelectedSessionId(sessionID)
+          router.push(buildDashboardUrl(sessionID, null), { scroll: false })
+        }
       }
       return prev
     })
-  }, [])
+  }, [router, buildDashboardUrl])
 
   const selectAgent = useCallback(async (agentId: string) => {
     setSelectedAgent(agentId)
@@ -482,6 +542,7 @@ export function useOpendora(): UseOpendoraResult {
     const applySession = (session: Session | null | undefined) => {
       if (session?.id) {
         setSelectedSessionId(session.id)
+        router.push(buildDashboardUrl(session.id, null), { scroll: false })
         selectedSessionRef.current = session
       } else {
         setSelectedSessionId(null)
@@ -510,7 +571,7 @@ export function useOpendora(): UseOpendoraResult {
       console.warn("Failed to fetch main session for agent", agentId, err)
       fallbackFromLocal()
     }
-  }, [])
+  }, [router, buildDashboardUrl])
 
   const setDefaultAgent = useCallback((agentId: string) => {
     storeDefaultAgent(agentId)

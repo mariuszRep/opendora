@@ -66,11 +66,19 @@ function userInfo(id: string): MessageV2.User {
   } as unknown as MessageV2.User
 }
 
+function userInfoFrom(id: string, from: MessageV2.Actor): MessageV2.User {
+  return {
+    ...userInfo(id),
+    from,
+  }
+}
+
 function assistantInfo(
   id: string,
   parentID: string,
   error?: MessageV2.Assistant["error"],
   meta?: { providerID: string; modelID: string },
+  from?: MessageV2.Actor,
 ): MessageV2.Assistant {
   const infoModel = meta ?? { providerID: model.providerID, modelID: model.api.id }
   return {
@@ -84,6 +92,7 @@ function assistantInfo(
     providerID: infoModel.providerID,
     mode: "",
     agent: "agent",
+    from,
     path: { cwd: "/", root: "/" },
     cost: 0,
     tokens: {
@@ -186,6 +195,84 @@ describe("session.message-v2.toModelMessage", () => {
       {
         role: "assistant",
         content: [{ type: "text", text: "assistant" }],
+      },
+    ])
+  })
+
+  test("prefixes assistant text with actor attribution for non-human speakers", () => {
+    const input: MessageV2.WithParts[] = [
+      {
+        info: assistantInfo("m-assistant", "m-user", undefined, undefined, {
+          kind: "agent",
+          id: "BA",
+        }),
+        parts: [
+          {
+            ...basePart("m-assistant", "a1"),
+            type: "text",
+            text: "Need a requirements pass first.",
+          },
+        ] as MessageV2.Part[],
+      },
+    ]
+
+    expect(MessageV2.toModelMessages(input, model)).toStrictEqual([
+      {
+        role: "assistant",
+        content: [{ type: "text", text: "[agent:BA] Need a requirements pass first." }],
+      },
+    ])
+  })
+
+  test("does not prefix assistant text when the speaker matches the active agent", () => {
+    const input: MessageV2.WithParts[] = [
+      {
+        info: {
+          ...assistantInfo("m-assistant", "m-user", undefined, undefined, {
+            kind: "agent",
+            id: "pandora",
+          }),
+          agent: "pandora",
+        },
+        parts: [
+          {
+            ...basePart("m-assistant", "a1"),
+            type: "text",
+            text: "I can route this to Project Owner.",
+          },
+        ] as MessageV2.Part[],
+      },
+    ]
+
+    expect(MessageV2.toModelMessages(input, model)).toStrictEqual([
+      {
+        role: "assistant",
+        content: [{ type: "text", text: "I can route this to Project Owner." }],
+      },
+    ])
+  })
+
+  test("prefixes user text with actor attribution for agent-originated pings", () => {
+    const input: MessageV2.WithParts[] = [
+      {
+        info: userInfoFrom("m-user", {
+          kind: "agent",
+          id: "PO",
+        }),
+        parts: [
+          {
+            ...basePart("m-user", "u1"),
+            type: "text",
+            text: "the user wants to build a calculator app",
+          },
+        ] as MessageV2.Part[],
+      },
+    ]
+
+    expect(MessageV2.toModelMessages(input, model)).toStrictEqual([
+      {
+        role: "user",
+        content: [{ type: "text", text: "[agent:PO] the user wants to build a calculator app" }],
       },
     ])
   })

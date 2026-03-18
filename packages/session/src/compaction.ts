@@ -143,6 +143,7 @@ export namespace SessionCompaction {
     const msg = (await input.updateMessage({
       id: Identifier.ascending("message"),
       role: "assistant",
+      from: { kind: "agent", id: "compaction" },
       parentID: input.parentID,
       sessionID: input.sessionID,
       mode: "compaction",

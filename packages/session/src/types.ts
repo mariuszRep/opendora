@@ -79,7 +79,7 @@ export type StreamOptions = {
  */
 export type SessionType = "role" | "scope" | "worker" | "scratchpad"
 
-export type SessionStatus = "active" | "archived" | "closed"
+export type SessionStatus = "active" | "archived" | "closed" | "waiting"
 
 export type RetentionPolicy = {
   autoArchive?: boolean       // archive automatically when done

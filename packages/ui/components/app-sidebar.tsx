@@ -250,6 +250,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 {agentSessions.map((session) => {
                   const isActive = session.id === selectedSession?.id
                   const isMain = session.sessionType === "role"
+                  const isWaiting = session.sessionStatus === "waiting"
                   return (
                     <SidebarMenuItem 
                       key={session.id}
@@ -269,19 +270,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       <SidebarMenuButton
                         isActive={isActive}
                         onClick={() => { selectSession(session.id); router.push("/dashboard") }}
-                        tooltip={`${formatSessionTitle(session)}${isMain ? " (main)" : ""}`}
+                        tooltip={`${formatSessionTitle(session)}${isMain ? " (main)" : ""}${isWaiting ? " - waiting for response" : ""}`}
                         className={cn(isActive && "bg-sidebar-accent text-sidebar-accent-foreground")}
                       >
-                        {(() => {
-                          const sessionType = session.sessionType || "scope"
-                          const Icon = SESSION_TYPE_CONFIG[sessionType]?.icon || MessageSquareIcon
-                          return <Icon className="size-4 shrink-0" />
-                        })()}
+                        <div className="relative size-4 shrink-0 flex items-center justify-center">
+                          {(() => {
+                            const sessionType = session.sessionType || "scope"
+                            const Icon = SESSION_TYPE_CONFIG[sessionType]?.icon || MessageSquareIcon
+                            return <Icon className="size-4 shrink-0" />
+                          })()}
+                          {isWaiting && (
+                            <div
+                              className="absolute inset-0 rounded-full border-2 border-transparent border-t-current animate-spin"
+                              style={{ borderTopColor: "hsl(var(--primary))" }}
+                            />
+                          )}
+                        </div>
                         <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
                           <div className="flex items-center gap-1">
                             <span className="truncate text-xs">{formatSessionTitle(session)}</span>
                             {isMain && (
                               <span className="shrink-0 rounded px-1 py-px text-[9px] font-medium bg-primary/10 text-primary">main</span>
+                            )}
+                            {isWaiting && (
+                              <span className="shrink-0 rounded px-1 py-px text-[9px] font-medium bg-amber-10 text-amber-600 animate-pulse">waiting</span>
                             )}
                           </div>
                         </div>
@@ -331,15 +343,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         onOpenChange={setSessionCreateOpen}
         onCreateSession={async (sessionType: SessionType, openSettings: boolean) => {
           await createSession(sessionType)
-          if (openSettings) {
-            setTimeout(() => {
-              const newSession = agentSessions[0]
-              if (newSession) {
-                setEditingSession(newSession)
-                setSessionEditOpen(true)
-              }
-            }, 100)
-          }
+          // Navigate to conversation - the session should already be selected
+          router.push("/dashboard")
         }}
       />
     </>

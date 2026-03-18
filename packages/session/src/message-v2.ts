@@ -49,6 +49,16 @@ const SnapshotFileDiff = z.any()
 type SystemError = Error & { code?: string; syscall?: string }
 
 export namespace MessageV2 {
+  export const Actor = z
+    .object({
+      kind: z.enum(["user", "agent", "service"]),
+      id: z.string(),
+    })
+    .meta({
+      ref: "Actor",
+    })
+  export type Actor = z.infer<typeof Actor>
+
   export const OutputLengthError = NamedError.create("MessageOutputLengthError", z.object({}))
   export const AbortedError = NamedError.create("MessageAbortedError", z.object({ message: z.string() }))
   export const StructuredOutputError = NamedError.create(
@@ -376,6 +386,7 @@ export namespace MessageV2 {
 
   export const User = Base.extend({
     role: z.literal("user"),
+    from: Actor.optional(),
     time: z.object({
       created: z.number(),
     }),
@@ -426,6 +437,7 @@ export namespace MessageV2 {
 
   export const Assistant = Base.extend({
     role: z.literal("assistant"),
+    from: Actor.optional(),
     time: z.object({
       created: z.number(),
       completed: z.number().optional(),
@@ -468,6 +480,10 @@ export namespace MessageV2 {
     structured: z.any().optional(),
     variant: z.string().optional(),
     finish: z.string().optional(),
+    /** Set when this assistant reply was contributed from another session/tool */
+    parentSessionID: z.string().optional(),
+    /** The message ID in parentSessionID that contains the tool call that created this assistant reply */
+    parentMessageID: z.string().optional(),
   }).meta({
     ref: "AssistantMessage",
   })
@@ -531,6 +547,12 @@ export namespace MessageV2 {
   export function toModelMessages(input: WithParts[], model: any): ModelMessage[] {
     const result: UIMessage[] = []
     const toolNames = new Set<string>()
+    const attributionPrefix = (info: MessageV2.Info) => {
+      if (!info.from?.id) return ""
+      if (info.from.kind === "user") return ""
+      if (info.role === "assistant" && info.from.kind === "agent" && info.from.id === info.agent) return ""
+      return `[${info.from.kind}:${info.from.id}] `
+    }
     const supportsMediaInToolResults = (() => {
       if (model.api?.npm === "@ai-sdk/anthropic") return true
       if (model.api?.npm === "@ai-sdk/openai") return true
@@ -577,6 +599,7 @@ export namespace MessageV2 {
       if (msg.parts.length === 0) continue
 
       if (msg.info.role === "user") {
+        const prefix = attributionPrefix(msg.info)
         const userMessage: UIMessage = {
           id: msg.info.id,
           role: "user",
@@ -585,19 +608,20 @@ export namespace MessageV2 {
         result.push(userMessage)
         for (const part of msg.parts) {
           if (part.type === "text" && !part.ignored)
-            userMessage.parts.push({ type: "text", text: part.text })
+            userMessage.parts.push({ type: "text", text: prefix + part.text })
           if (part.type === "file" && part.mime !== "text/plain" && part.mime !== "application/x-directory")
             userMessage.parts.push({ type: "file", url: part.url, mediaType: part.mime, filename: part.filename })
           if (part.type === "compaction")
-            userMessage.parts.push({ type: "text", text: "What did we do so far?" })
+            userMessage.parts.push({ type: "text", text: prefix + "What did we do so far?" })
           if (part.type === "subtask")
-            userMessage.parts.push({ type: "text", text: "The following tool was executed by the user" })
+            userMessage.parts.push({ type: "text", text: prefix + "The following tool was executed by the user" })
         }
       }
 
       if (msg.info.role === "assistant") {
         const differentModel = `${model.providerID}/${model.id}` !== `${msg.info.providerID}/${msg.info.modelID}`
         const media: Array<{ mime: string; url: string }> = []
+        const prefix = attributionPrefix(msg.info)
 
         if (
           msg.info.error &&
@@ -613,7 +637,7 @@ export namespace MessageV2 {
           if (part.type === "text")
             assistantMessage.parts.push({
               type: "text",
-              text: part.text,
+              text: prefix + part.text,
               ...(differentModel ? {} : { providerMetadata: part.metadata }),
             })
           if (part.type === "step-start") assistantMessage.parts.push({ type: "step-start" })
@@ -661,7 +685,7 @@ export namespace MessageV2 {
           if (part.type === "reasoning") {
             assistantMessage.parts.push({
               type: "reasoning",
-              text: part.text,
+              text: prefix + part.text,
               ...(differentModel ? {} : { providerMetadata: part.metadata }),
             })
           }

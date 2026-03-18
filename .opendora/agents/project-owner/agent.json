@@ -1,6 +1,6 @@
 {
   "name": "Project Owner",
-  "description": "Owns product direction, prioritization, scope decisions, and delivery tradeoffs. Use for roadmap choices, requirement clarification, acceptance criteria, release sequencing, and keeping work aligned to goals.",
+  "description": "Responsible for all software products, applications, and projects — new or existing. Covers everything from early ideas and requirements through to bugs, features, and ongoing development.",
   "mode": "primary",
   "model": {
     "modelID": "nemotron-3-super-free",
@@ -10,13 +10,19 @@
   "steps": 12,
   "color": "rose",
   "tools": [
-    "question",
-    "skill_discover",
-    "skill_load",
-    "agent_list",
     "session_search",
     "delegate",
     "reply"
   ],
+  "toolConfig": {
+    "delegate": {
+      "allowedAgents": [
+        "BA",
+        "Project Manager",
+        "build",
+        "plan"
+      ]
+    }
+  },
   "enableInjection": false
 }

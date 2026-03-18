@@ -802,6 +802,22 @@ export namespace Session {
     },
   )
 
+  export const setSessionStatus = fn(
+    z.object({ 
+      sessionID: Identifier.schema("session"), 
+      status: z.enum(["active", "archived", "closed", "waiting"])
+    }),
+    async (input) => {
+      await sessionManager.update(input.sessionID, { status: input.status as SessionStatus })
+      const db = getConfig().db
+      const row = db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get()
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      const info = fromRow(row)
+      getConfig().bus?.publish(Event.Updated, { info })
+      return info
+    },
+  )
+
   export const setModel = fn(
     z.object({ sessionID: Identifier.schema("session"), model: z.string() }),
     async (input) => {
@@ -918,6 +934,67 @@ export namespace Session {
   export async function pong(sessionID: string, opts: PongOptions): Promise<void> {
     await sessionManager.pong(sessionID, opts)
   }
+
+  export const reply = fn(
+    z.object({
+      sessionID: Identifier.schema("session"),
+      agentID: z.string(),
+      message: z.string(),
+      parentMessageID: Identifier.schema("message"),
+      parentSessionID: Identifier.schema("session").optional(),
+    }),
+    async (input) => {
+      const cfg = getConfig()
+      const agent = await cfg.agent?.get?.(input.agentID)
+      const fallbackAgent = input.sessionID ? await get(input.sessionID).catch(() => undefined) : undefined
+      const fallbackModel =
+        fallbackAgent?.agentID ? await cfg.agent?.get?.(fallbackAgent.agentID).then((x: any) => x?.model).catch(() => undefined) : undefined
+      const model = agent?.model ?? fallbackModel ?? { providerID: "system", modelID: "reply" }
+      const now = Date.now()
+
+      const msg: MessageV2.Assistant = {
+        id: Identifier.ascending("message"),
+        sessionID: input.sessionID,
+        parentID: input.parentMessageID,
+        role: "assistant",
+        from: { kind: "agent", id: input.agentID },
+        mode: input.agentID,
+        agent: input.agentID,
+        path: {
+          cwd: cfg.instance?.directory ?? process.cwd(),
+          root: cfg.instance?.worktree ?? process.cwd(),
+        },
+        cost: 0,
+        tokens: {
+          input: 0,
+          output: 0,
+          reasoning: 0,
+          cache: { read: 0, write: 0 },
+        },
+        modelID: model.modelID,
+        providerID: model.providerID,
+        time: {
+          created: now,
+          completed: now,
+        },
+        ...(input.parentSessionID && {
+          parentSessionID: input.parentSessionID,
+          parentMessageID: input.parentMessageID,
+        }),
+      }
+
+      await updateMessage(msg)
+      await updatePart({
+        type: "text",
+        id: Identifier.ascending("part"),
+        messageID: msg.id,
+        sessionID: input.sessionID,
+        text: input.message,
+      })
+      await touch(input.sessionID)
+      return msg
+    },
+  )
 
   export const updateMessage = fn(MessageV2.Info, async (msg) => {
     const cfg = getConfig()

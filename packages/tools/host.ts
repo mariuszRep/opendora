@@ -60,6 +60,7 @@ export interface HostServices {
     messages(sessionId: string): Promise<unknown[]>
     get(sessionId: string): Promise<unknown | undefined>
     setTitle(sessionId: string, title: string): Promise<void>
+    reply?(input: { sessionID: string; agentID: string; message: string; parentMessageID: string; parentSessionID?: string }): Promise<unknown>
     pong(sessionId: string, opts: { from: { kind: string; id: string }; content: string; parent: { messageId: string } }): Promise<void>
   }
   prompt?: (options: unknown) => Promise<unknown>
