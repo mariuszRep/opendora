@@ -1,0 +1,15 @@
+{
+  "name": "build",
+  "description": "The default agent. Executes tools based on configured permissions.",
+  "mode": "worker",
+  "model": {
+    "modelID": "minimax-m2.5-free",
+    "providerID": "opencode"
+  },
+  "color": "blue",
+  "hidden": true,
+  "tools": [
+    "question"
+  ],
+  "enableInjection": true
+}

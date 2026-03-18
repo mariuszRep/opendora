@@ -1,0 +1,14 @@
+{
+  "name": "explore",
+  "description": "Fast agent specialized for exploring codebases. Use when you need to quickly find files by patterns, search code for keywords, or answer questions about the codebase.",
+  "mode": "worker",
+  "model": {
+    "modelID": "gpt-5.4",
+    "providerID": "openai-codex"
+  },
+  "color": "orange",
+  "hidden": true,
+  "tools": [
+    "bash"
+  ]
+}

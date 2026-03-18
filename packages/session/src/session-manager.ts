@@ -1,7 +1,7 @@
 import { Session } from "./pingpong-session.ts"
 import { SessionQueue } from "./session-queue.ts"
 import type { StorageAdapter } from "./storage/adapter.ts"
-import type { CreateSessionOptions, Message, MessagePart, SendPolicy, SessionFilter, SessionMeta, SessionType } from "./types.ts"
+import type { CreateSessionOptions, Message, MessagePart, PongOptions, SendPolicy, SessionFilter, SessionMeta, SessionType } from "./types.ts"
 import { DEFAULT_RETENTION } from "./types.ts"
 import { Bus } from "./bus.ts"
 
@@ -104,6 +104,15 @@ export class SessionManager {
     await this.storage.deleteSession(id)
     this.sessions.delete(id)
     Bus.publish("session.deleted", { id })
+  }
+
+  // ─── Pong ────────────────────────────────────────────────────────────────────
+
+  async pong(id: string, opts: PongOptions): Promise<Message> {
+    const meta = await this.storage.getSession(id)
+    if (!meta) throw new Error(`Session "${id}" not found`)
+    const session = this.sessions.get(id) ?? this.mount(id, meta.sendPolicy)
+    return session.pong(opts)
   }
 
   async update(id: string, patch: Partial<SessionMeta>): Promise<void> {

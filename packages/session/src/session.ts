@@ -15,7 +15,7 @@ import { fromRow } from "./from-row.ts"
 import { openDoraStorageAdapter } from "./opendora-storage-adapter.ts"
 import { SessionManager } from "./session-manager"
 import { RetentionDaemon } from "./daemon"
-import type { SessionType, RetentionPolicy, SendPolicy, CreateSessionOptions } from "./types"
+import type { SessionType, RetentionPolicy, SendPolicy, CreateSessionOptions, PongOptions } from "./types"
 
 // Inline NotFoundError
 class NotFoundError extends Error {
@@ -913,6 +913,10 @@ export namespace Session {
       agentID,
       retention: { onExpire: "archive" },
     })
+  }
+
+  export async function pong(sessionID: string, opts: PongOptions): Promise<void> {
+    await sessionManager.pong(sessionID, opts)
   }
 
   export const updateMessage = fn(MessageV2.Info, async (msg) => {

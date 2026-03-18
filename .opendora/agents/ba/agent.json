@@ -1,0 +1,12 @@
+{
+  "name": "BA",
+  "description": "Business Analyst — gathers product requirements, asks clarifying questions, and documents scope before work begins.",
+  "mode": "worker",
+  "temperature": 0.5,
+  "steps": 10,
+  "color": "violet",
+  "tools": [
+    "session_search",
+    "reply"
+  ]
+}

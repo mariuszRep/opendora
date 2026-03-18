@@ -824,6 +824,7 @@ export namespace SessionPrompt {
           create: (opts: any) => Session.create(opts),
           ensureMainSession: (agentID: string) => Session.ensureMainSession(agentID),
           setSpawnResponseMessageID: (opts: any) => Session.setSpawnResponseMessageID(opts),
+          pong: (sessionID: string, opts: any) => Session.pong(sessionID, opts),
         },
         prompt: (opts: any) => SessionPrompt.prompt(opts),
         resolvePromptParts: (template: string) => resolvePromptParts(template),

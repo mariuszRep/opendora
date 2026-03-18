@@ -13,6 +13,7 @@ import { Truncate } from "./tool/truncation"
 import { Skill } from "./skill"
 import path from "path"
 import { pipe, sortBy, values } from "remeda"
+import { Flag } from "./flag/flag"
 
 import PROMPT_GENERATE from "./generate.txt"
 
@@ -127,11 +128,15 @@ export namespace Agent {
     }
   }
 
+  function agentBaseDir() {
+    return Flag.OPENCODE_CONFIG_DIR ? path.dirname(Flag.OPENCODE_CONFIG_DIR) : Instance.directory
+  }
+
   /**
    * Get a single agent by ID
    */
   export async function get(agent: string): Promise<Info | undefined> {
-    const entry = await AgentCore.get(Instance.directory, agent)
+    const entry = await AgentCore.get(agentBaseDir(), agent)
     if (!entry) return undefined
     return entryToInfo(entry)
   }
@@ -142,11 +147,11 @@ export namespace Agent {
    */
   export async function getByIdOrName(agentIdOrName: string): Promise<Info | undefined> {
     // Try by ID first
-    let entry = await AgentCore.get(Instance.directory, agentIdOrName)
+    let entry = await AgentCore.get(agentBaseDir(), agentIdOrName)
     if (entry) return entryToInfo(entry)
 
     // Fallback: search by name for legacy data
-    const entries = await AgentCore.list(Instance.directory)
+    const entries = await AgentCore.list(agentBaseDir())
     entry = entries.find((e) => e.config.name === agentIdOrName)
     if (!entry) return undefined
     return entryToInfo(entry)
@@ -157,7 +162,7 @@ export namespace Agent {
    */
   export async function list(): Promise<Info[]> {
     const cfg = await Config.get()
-    const entries = await AgentCore.list(Instance.directory)
+    const entries = await AgentCore.list(agentBaseDir())
     const infos = await Promise.all(entries.map(entryToInfo))
 
     return pipe(
@@ -171,7 +176,7 @@ export namespace Agent {
    */
   export async function defaultAgent(): Promise<string> {
     const cfg = await Config.get()
-    const entries = await AgentCore.list(Instance.directory)
+    const entries = await AgentCore.list(agentBaseDir())
 
     if (cfg.default_agent) {
       const agent = entries.find((e) => e.config.name === cfg.default_agent)
@@ -193,35 +198,35 @@ export namespace Agent {
   // ── File-based CRUD (delegates to @opendora/agent) ───────────────────────
 
   export async function create(id: string, config: AgentStorage.Config, persona = "", injection = "") {
-    return AgentCore.create(Instance.directory, id, config, persona, injection)
+    return AgentCore.create(agentBaseDir(), id, config, persona, injection)
   }
 
   export async function update(id: string, patch: Partial<AgentStorage.Config>, persona?: string, injection?: string) {
-    return AgentCore.update(Instance.directory, id, patch, persona, injection)
+    return AgentCore.update(agentBaseDir(), id, patch, persona, injection)
   }
 
   export async function remove(id: string) {
-    return AgentCore.remove(Instance.directory, id)
+    return AgentCore.remove(agentBaseDir(), id)
   }
 
   export async function getPersona(id: string) {
-    return AgentCore.getPersona(Instance.directory, id)
+    return AgentCore.getPersona(agentBaseDir(), id)
   }
 
   export async function setPersona(id: string, text: string) {
-    return AgentCore.setPersona(Instance.directory, id, text)
+    return AgentCore.setPersona(agentBaseDir(), id, text)
   }
 
   export async function getInjection(id: string) {
-    return AgentCore.getInjection(Instance.directory, id)
+    return AgentCore.getInjection(agentBaseDir(), id)
   }
 
   export async function setInjection(id: string, text: string) {
-    return AgentCore.setInjection(Instance.directory, id, text)
+    return AgentCore.setInjection(agentBaseDir(), id, text)
   }
 
   export async function resetToTemplate(id: string) {
-    return AgentCore.resetToTemplate(Instance.directory, id)
+    return AgentCore.resetToTemplate(agentBaseDir(), id)
   }
 
   // ── AI generation ─────────────────────────────────────────────────────────

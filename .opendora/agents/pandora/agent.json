@@ -1,0 +1,28 @@
+{
+  "name": "pandora",
+  "mode": "primary",
+  "model": {
+    "modelID": "gpt-5.4",
+    "providerID": "openai-codex"
+  },
+  "color": "teal",
+  "tools": [
+    "agent_create",
+    "websearch",
+    "agent_list",
+    "agent_update",
+    "agent_get",
+    "question",
+    "webfetch",
+    "delegate",
+    "skill_discover",
+    "session_search"
+  ],
+  "toolConfig": {
+    "delegate": {
+      "allowedAgents": [
+        "Project Owner"
+      ]
+    }
+  }
+}

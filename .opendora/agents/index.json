@@ -1,10 +1,66 @@
 {
   "agents": [
     {
+      "id": "build",
+      "name": "build",
+      "mode": "worker",
+      "hidden": true
+    },
+    {
+      "id": "plan",
+      "name": "plan",
+      "mode": "worker",
+      "hidden": true
+    },
+    {
+      "id": "explore",
+      "name": "explore",
+      "mode": "worker",
+      "hidden": true
+    },
+    {
+      "id": "compaction",
+      "name": "compaction",
+      "mode": "system",
+      "hidden": true
+    },
+    {
+      "id": "title",
+      "name": "title",
+      "mode": "system",
+      "hidden": true
+    },
+    {
+      "id": "summary",
+      "name": "summary",
+      "mode": "system",
+      "hidden": true
+    },
+    {
+      "id": "pandora",
+      "name": "pandora",
+      "mode": "primary"
+    },
+    {
+      "id": "project-owner",
+      "name": "Project Owner",
+      "mode": "primary"
+    },
+    {
+      "id": "test",
+      "name": "Test",
+      "mode": "worker",
+      "hidden": true
+    },
+    {
       "id": "pm",
-      "name": "pm",
-      "mode": "primary",
-      "hidden": false
+      "name": "Project Manager",
+      "mode": "worker"
+    },
+    {
+      "id": "ba",
+      "name": "BA",
+      "mode": "worker"
     }
   ]
 }

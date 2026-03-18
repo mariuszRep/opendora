@@ -1,0 +1,8 @@
+{
+  "name": "summary",
+  "description": "Summarises a session.",
+  "mode": "system",
+  "color": "violet",
+  "hidden": true,
+  "tools": []
+}
