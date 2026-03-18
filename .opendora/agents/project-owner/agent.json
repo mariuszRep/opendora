@@ -3,7 +3,7 @@
   "description": "Responsible for all software products, applications, and projects — new or existing. Covers everything from early ideas and requirements through to bugs, features, and ongoing development.",
   "mode": "primary",
   "model": {
-    "modelID": "nemotron-3-super-free",
+    "modelID": "minimax-m2.5-free",
     "providerID": "opencode"
   },
   "temperature": 0.4,
@@ -18,9 +18,7 @@
     "delegate": {
       "allowedAgents": [
         "BA",
-        "Project Manager",
-        "build",
-        "plan"
+        "Project Manager"
       ]
     }
   },

@@ -1,11 +1,70 @@
 Send a prompt to an agent session and optionally wait for its reply.
 
-Session targeting — pick one:
-- Provide session_id to message a specific existing session by ID.
-- Provide session_type (worker / scope / scratchpad / role) to create a new child session and send the prompt there. Use title to name it.
-- Provide only agent to message that agent's main session (one is created automatically if it does not exist).
+SESSION TYPES - Choose the right session type for your delegation:
 
-agent is required unless session_id alone is sufficient to identify the target.
-session_id and session_type are mutually exclusive.
+🎯 ROLE SESSIONS (role)
+- Purpose: Continuous, long-lived sessions for specific agent roles (BA, Architect, PM, etc.)
+- Use when: Ongoing relationship with the agent, multiple related tasks over time
+- Retention: Never auto-archives, persists indefinitely
+- Example: "Delegate to BA agent for requirements gathering" - creates persistent BA session
 
-The agent parameter must be an agent ID exactly as it appears in the available agent list. Do not invent or guess agent names.
+🏗️ SCOPE SESSIONS (scope) 
+- Purpose: Long-term memory anchor for one project or idea
+- Use when: Working on a specific project that needs context preservation
+- Retention: Auto-archives when done, keeps project history
+- Example: "Build calculator app" - creates scoped session for that project
+
+⚡ WORKER SESSIONS (worker)
+- Purpose: Short-lived execution sessions for one specific task
+- Use when: Quick, focused tasks that return artifacts (code, analysis, etc.)
+- Retention: Auto-closes when done, limited to 500 messages
+- Example: "Write unit tests for this function" - creates temporary worker session
+
+📝 SCRATCHPAD SESSIONS (scratchpad)
+- Purpose: Throwaway sessions for experiments, drafts, or temporary work
+- Use when: Exploratory work, debugging, or disposable content
+- Retention: Auto-deletes after 6h inactivity, max 100 messages
+- Example: "Try different approaches to this algorithm" - creates disposable session
+
+SESSION TARGETING - Pick one approach:
+
+1. EXISTING SESSION: Provide session_id to message a specific existing session
+2. NEW SESSION: Provide session_type + agent + title to create a new child session
+3. MAIN SESSION: Provide only agent to use their main session (auto-created if needed)
+
+PARAMETERS:
+- agent: Required unless session_id alone identifies the target
+- session_type: One of [role, scope, worker, scratchpad] - mutually exclusive with session_id
+- title: Name for new sessions (highly recommended for clarity)
+- session_id: Target existing session by ID - mutually exclusive with session_type
+
+WAITING STRATEGY - Choose deliberately:
+
+🚫 WAIT: false (default, recommended)
+- Use for: Complex tasks, multi-agent work, user interaction, research, anything > few seconds
+- Benefit: Fire-and-forget, doesn't block your workflow
+- Rule: If they might talk to others or the user, don't wait
+
+✅ WAIT: true (use sparingly)
+- Use for: Quick factual questions where answer drives your immediate next step
+- Example: "What's the API endpoint for user creation?" - need answer to proceed
+- Cost: Blocks your session until reply
+
+DELEGATION BEST PRACTICES:
+
+✅ DO:
+- Choose session_type based on task longevity and complexity
+- Provide descriptive titles for new sessions
+- Use worker sessions for quick, focused tasks
+- Use scope sessions for project-based work
+- Use role sessions for ongoing agent relationships
+- Set wait: false for anything involving multiple agents or user interaction
+
+❌ DON'T:
+- Use wait: true for complex tasks (blocks your workflow)
+- Create scratchpad sessions for important work (gets deleted)
+- Use worker sessions for long-term projects (auto-closes)
+- Skip titles for new sessions (hard to identify later)
+- Delegate the same task multiple times (duplicates work)
+
+REMEMBER: After fire-and-forget delegation (wait: false), your turn is complete. Don't poll, follow up, or resend.

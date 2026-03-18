@@ -7,25 +7,35 @@ const parameters = z
   .object({
     agent: z
       .string()
-      .describe("Target agent name. Required unless session_id alone identifies the target.")
+      .describe("Target agent name (exact match from agent list). Required unless session_id alone identifies the target.")
       .optional(),
     session_id: z
       .string()
-      .describe("Target a specific existing session by ID. Mutually exclusive with session_type.")
+      .describe("Target a specific existing session by ID. Mutually exclusive with session_type. Use for continuing conversations in existing sessions.")
       .optional(),
     session_type: z
       .enum(["worker", "scope", "scratchpad", "role"])
-      .describe("Create a new session of this type and send the prompt there. Mutually exclusive with session_id.")
+      .describe("Create a new session of this type. Choose based on task: role=ongoing relationship, scope=project-based, worker=quick task, scratchpad=experimental. Mutually exclusive with session_id.")
       .optional(),
     title: z
       .string()
-      .describe("Title for the new session. Only applies when session_type is provided.")
+      .describe("Title for the new session. Highly recommended for clarity when session_type is provided. Make it descriptive of the task.")
       .optional(),
-    prompt: z.string().describe("Message to send to the target session"),
-    description: z.string().describe("Short label for this delegation").optional(),
+    prompt: z.string().describe("Message to send to the target session. Be clear and specific about what you want the agent to do."),
+    description: z.string().describe("Short label for this delegation (appears in logs and UI). Optional but helpful for tracking.").optional(),
     wait: z
       .boolean()
-      .describe("Wait for the agent to reply. Default: true.")
+      .describe("Wait for the agent to reply. Default: false. Only set to true for quick factual questions where you need the answer immediately. Use false for complex tasks, multi-agent work, or anything involving user interaction.")
+      .optional(),
+    origin_session_id: z
+      .string()
+      .describe(
+        "Override the origin session ID passed to the receiving agent. Use when forwarding delegation chains to ensure replies go to the original caller.",
+      )
+      .optional(),
+    origin_message_id: z
+      .string()
+      .describe("Override the origin message ID passed alongside origin_session_id. Use for delegation forwarding.")
       .optional(),
   })
   .superRefine((value, ctx) => {
@@ -33,14 +43,28 @@ const parameters = z
       ctx.addIssue({
         code: "custom",
         path: ["agent"],
-        message: "agent or session_id is required",
+        message: "agent or session_id is required. Choose: 1) agent for their main session, 2) agent + session_type for new session, or 3) session_id for existing session",
       })
     }
     if (value.session_id && value.session_type) {
       ctx.addIssue({
         code: "custom",
         path: ["session_type"],
-        message: "session_type cannot be combined with session_id",
+        message: "session_type cannot be combined with session_id. Use session_id for existing sessions OR session_type for new sessions, not both.",
+      })
+    }
+    if (value.session_type && !value.agent) {
+      ctx.addIssue({
+        code: "custom", 
+        path: ["agent"],
+        message: "agent is required when using session_type. You need to specify which agent should handle the new session.",
+      })
+    }
+    if (value.session_type && !value.title) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["title"], 
+        message: "title is highly recommended when creating new sessions. Without it, sessions get generic names and are hard to identify.",
       })
     }
   })
@@ -57,7 +81,7 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
   parameters,
   async execute(params, ctx) {
     const h = host(ctx)
-    const wait = params.wait ?? true
+    const wait = params.wait ?? false
 
     const sessionSvc = h.session as any
     if (!sessionSvc) throw new Error("session service not available")
@@ -143,12 +167,25 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
       )
     }
 
+    // Caller context — auto-captured from ctx. origin_* params allow chaining:
+    // e.g. PO passes Pandora's origin down to BA so BA can reply to the right place.
+    // If only origin_message_id is provided, resolve the session from it via getMessage.
+    let originSessionID = params.origin_session_id ?? ctx.sessionID
+    const originMessageID = params.origin_message_id ?? ctx.messageID
+
+    if (params.origin_message_id && !params.origin_session_id) {
+      const originMsg = await sessionSvc.getMessage(params.origin_message_id) as any
+      if (originMsg?.session_id) originSessionID = originMsg.session_id
+    }
+
     const result = await promptFn({
       sessionID: targetSession.id,
       ...(targetAgentName ? { agent: targetAgentName } : {}),
-      noReply: !wait,
+      noWait: !wait,
       parentSessionID: ctx.sessionID,
       parentMessageID: ctx.messageID,
+      originSessionID,
+      originMessageID,
       parts: await resolvePromptParts(params.prompt),
     })
 
@@ -168,6 +205,8 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
           created,
           replied: false,
           messageId: result.info.id,
+          originSessionId: originSessionID,
+          originMessageId: originMessageID,
         },
         output: [
           `session_id: ${targetSession.id}`,
@@ -188,6 +227,8 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
         created,
         replied: true,
         messageId: result.info.id,
+        originSessionId: originSessionID,
+        originMessageId: originMessageID,
       },
       output: [
         `session_id: ${targetSession.id}`,

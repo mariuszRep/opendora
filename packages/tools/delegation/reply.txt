@@ -1,10 +1,18 @@
-Post a message directly into another session without triggering LLM inference.
+Post a message directly into another session.
 
-Use this to send a notification, invitation, or status update back to a session (typically a parent or originating session) from the current agent. The message appears as a normal assistant reply in the target session — no agent wakes up, no inference runs.
+Use this to reach back to the session that originated a request — to notify, invite, update, or engage the user through the channel where they are waiting.
 
-This is the correct tool for the "pong back" pattern: when an agent finishes a task and needs to notify the session that originated the request, use reply instead of delegate.
+Before using this tool, be fully aware of where the current request came from. Trace it back: which session sent the work to you, and which session before that? The user may not be in your session — they are in the session where the original request was made. That is where your reply should go.
+
+The session_id parameter can be omitted when the origin is unambiguous — the tool will resolve it automatically from the session chain. Use it explicitly when you need to target a specific session other than your immediate parent.
+
+Use reply (not delegate) when:
+- You are notifying the originating session that work is in progress
+- You are inviting the user to engage with you in your own session
+- You are reporting a result or summary back up the chain
+- You need to reach the user without starting a new delegation
 
 Parameters:
-- session_id: the target session to post into (required)
-- message: the text content to post (required)
-- parent_message_id: ID of the message this is replying to, for threading (optional)
+- session_id: target session to post into — omit to auto-resolve from spawn parent
+- message: the text to post
+- parent_message_id: message ID to thread against (optional, auto-resolved if omitted)

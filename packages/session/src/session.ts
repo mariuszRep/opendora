@@ -585,6 +585,21 @@ export namespace Session {
     },
   )
 
+  /** Look up a message by its ID alone — returns the message row including its session_id. */
+  export const getMessage = fn(
+    Identifier.schema("message"),
+    async (messageID) => {
+      const cfg = getConfig()
+      const db = cfg.db
+      const row = db
+        .select()
+        .from(MessageTable)
+        .where(eq(MessageTable.id, messageID))
+        .get()
+      return row ?? null
+    },
+  )
+
   export function* list(input?: {
     directory?: string
     roots?: boolean

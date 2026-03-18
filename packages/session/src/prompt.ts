@@ -98,6 +98,7 @@ export namespace SessionPrompt {
       .optional(),
     agent: z.string().optional(),
     noReply: z.boolean().optional(),
+    noWait: z.boolean().optional(),
     tools: z
       .record(z.string(), z.boolean())
       .optional()
@@ -181,6 +182,14 @@ export namespace SessionPrompt {
     }
 
     if (input.noReply === true) {
+      return message
+    }
+
+    if (input.noWait === true) {
+      // Fire LLM in background — caller does not wait for the response
+      loop({ sessionID: input.sessionID }).catch((err) =>
+        log.error("background loop error", { sessionID: input.sessionID, err }),
+      )
       return message
     }
 
@@ -826,6 +835,7 @@ export namespace SessionPrompt {
           create: (opts: any) => Session.create(opts),
           ensureMainSession: (agentID: string) => Session.ensureMainSession(agentID),
           setSpawnResponseMessageID: (opts: any) => Session.setSpawnResponseMessageID(opts),
+          getMessage: (messageId: string) => Session.getMessage(messageId),
           reply: (opts: any) => Session.reply(opts),
           pong: (sessionID: string, opts: any) => Session.pong(sessionID, opts),
         },

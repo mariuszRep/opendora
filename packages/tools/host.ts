@@ -59,6 +59,7 @@ export interface HostServices {
     list(filter?: unknown): Promise<unknown[]>
     messages(sessionId: string): Promise<unknown[]>
     get(sessionId: string): Promise<unknown | undefined>
+    getMessage(messageId: string): Promise<{ id: string; session_id: string } | null>
     setTitle(sessionId: string, title: string): Promise<void>
     reply?(input: { sessionID: string; agentID: string; message: string; parentMessageID: string; parentSessionID?: string }): Promise<unknown>
     pong(sessionId: string, opts: { from: { kind: string; id: string }; content: string; parent: { messageId: string } }): Promise<void>
