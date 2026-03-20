@@ -1,0 +1,7 @@
+{
+  "name": "compaction",
+  "description": "Compacts conversation history to reduce token usage.",
+  "mode": "primary",
+  "hidden": true,
+  "tools": []
+}

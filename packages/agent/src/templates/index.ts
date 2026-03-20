@@ -6,6 +6,7 @@ import { compactionTemplate } from "./compaction"
 import { titleTemplate } from "./title"
 import { summaryTemplate } from "./summary"
 import { pmTemplate } from "./pm"
+import { agentOwnerTemplate } from "./agent-owner"
 import type { AgentTemplate } from "./types"
 
 export { AgentConfig, type AgentTemplate } from "./types"
@@ -23,6 +24,7 @@ export const templates: Record<string, AgentTemplate> = {
   title: titleTemplate,
   summary: summaryTemplate,
   pm: pmTemplate,
+  "agent-owner": agentOwnerTemplate,
 }
 
 /**

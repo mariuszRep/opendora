@@ -31,6 +31,7 @@ export type SessionInfo = {
   allowedAgents?: string[]
   sendPolicy?: SendPolicy
   retention?: RetentionPolicy
+  defaultPath?: string
   spawnDepth?: number
   spawnParentSessionID?: string
   spawnParentMessageID?: string
@@ -78,6 +79,7 @@ export function fromRow(row: SessionRow): SessionInfo {
     allowedAgents: row.allowed_agents ? (JSON.parse(row.allowed_agents) as string[]) : undefined,
     sendPolicy: row.send_policy ? (JSON.parse(row.send_policy) as SendPolicy) : undefined,
     retention: row.retention ? (JSON.parse(row.retention) as RetentionPolicy) : undefined,
+    defaultPath: row.default_path ?? undefined,
     spawnDepth: row.spawn_depth ?? undefined,
     spawnParentSessionID: row.spawn_parent_session_id ?? undefined,
     spawnParentMessageID: row.spawn_parent_message_id ?? undefined,

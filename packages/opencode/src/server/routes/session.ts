@@ -267,6 +267,7 @@ export const SessionRoutes = lazy(() =>
           title: z.string().optional(),
           agentID: z.string().nullable().optional(),
           sessionType: z.enum(["role", "scope", "worker", "scratchpad"]).optional(),
+          defaultPath: z.string().nullable().optional(),
           retention: z
             .object({
               autoArchive: z.boolean().optional(),
@@ -321,6 +322,9 @@ export const SessionRoutes = lazy(() =>
         }
         if (updates.systemPrompt !== undefined) {
           session = await Session.setSystemPrompt({ sessionID, systemPrompt: updates.systemPrompt })
+        }
+        if (updates.defaultPath !== undefined) {
+          session = await Session.setDefaultPath({ sessionID, defaultPath: updates.defaultPath })
         }
         if (updates.time?.archived !== undefined) {
           session = await Session.setArchived({ sessionID, time: updates.time.archived })

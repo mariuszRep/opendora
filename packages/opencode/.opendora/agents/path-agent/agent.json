@@ -1,0 +1,5 @@
+{
+  "name": "path-agent",
+  "mode": "primary",
+  "defaultPath": "/tmp/agent-default"
+}

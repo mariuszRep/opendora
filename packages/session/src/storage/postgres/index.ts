@@ -35,6 +35,7 @@ const MIGRATION_SQL = `
     retention         JSONB       NOT NULL,
     send_policy       JSONB,
     agent_id          TEXT,
+    default_path      TEXT,
     tool_policy       JSONB,
     system_prompt     TEXT,
     share_url         TEXT,
@@ -80,6 +81,7 @@ function rowToMeta(row: typeof S.$inferSelect): SessionMeta {
     retention:       row.retention,
     sendPolicy:      row.sendPolicy      ?? undefined,
     agentId:         row.agentId         ?? undefined,
+    defaultPath:     row.defaultPath     ?? undefined,
     toolPolicy:      (row.toolPolicy as string[] | null) ?? undefined,
     systemPrompt:    row.systemPrompt    ?? undefined,
     share:           row.shareUrl        ? { url: row.shareUrl } : undefined,
@@ -142,6 +144,7 @@ export class PostgresAdapter implements StorageAdapter {
       retention:       meta.retention,
       sendPolicy:      meta.sendPolicy,
       agentId:         meta.agentId,
+      defaultPath:     meta.defaultPath,
       toolPolicy:      meta.toolPolicy,
       systemPrompt:    meta.systemPrompt,
       shareUrl:        meta.share?.url,
@@ -170,6 +173,7 @@ export class PostgresAdapter implements StorageAdapter {
     if (patch.label           !== undefined) update.label           = patch.label
     if (patch.retention       !== undefined) update.retention       = patch.retention
     if (patch.sendPolicy      !== undefined) update.sendPolicy      = patch.sendPolicy
+    if ("defaultPath" in patch)             update.defaultPath     = patch.defaultPath ?? null
     if (patch.archivedAt      !== undefined) update.archivedAt      = patch.archivedAt
     if (patch.spawnDepth      !== undefined) update.spawnDepth      = patch.spawnDepth
     if (patch.compactionCount  !== undefined) update.compactionCount  = patch.compactionCount

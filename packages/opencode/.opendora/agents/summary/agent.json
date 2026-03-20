@@ -1,0 +1,7 @@
+{
+  "name": "summary",
+  "description": "Summarises a session.",
+  "mode": "primary",
+  "hidden": true,
+  "tools": []
+}

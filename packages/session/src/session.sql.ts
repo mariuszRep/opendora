@@ -65,6 +65,7 @@ export const SessionTable = sqliteTable(
     allowed_agents: text().$type<string>(), // stored as JSON string, parsed manually in fromRow
     send_policy: text().$type<string>(),    // stored as JSON string, parsed manually in fromRow
     retention: text().$type<string>(),      // stored as JSON string, parsed manually in fromRow
+    default_path: text(),
     spawn_depth: integer(),
     spawn_parent_session_id: text(),
     spawn_parent_message_id: text(),

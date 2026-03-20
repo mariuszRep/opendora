@@ -54,6 +54,27 @@ export namespace Session {
     ).test(title)
   }
 
+  async function resolveAgentDefaultPath(agentID?: string): Promise<string | undefined> {
+    if (!agentID) return undefined
+    const agent = await getConfig().agent?.get?.(agentID)
+    return agent?.config?.defaultPath ?? agent?.defaultPath ?? undefined
+  }
+
+  export async function effectiveDefaultPath(session: string | Info, seen = new Set<string>()): Promise<string> {
+    const info = typeof session === "string" ? await get(session) : session
+    if (info.defaultPath) return info.defaultPath
+    if (seen.has(info.id)) return info.directory
+    seen.add(info.id)
+
+    const parentID = info.spawnParentSessionID ?? info.parentID
+    if (parentID) {
+      const parent = await get(parentID).catch(() => undefined)
+      if (parent) return effectiveDefaultPath(parent, seen)
+    }
+
+    return (await resolveAgentDefaultPath(info.agentID)) ?? info.directory
+  }
+
   export function toRow(info: Info) {
     return {
       id: info.id,
@@ -83,6 +104,7 @@ export namespace Session {
       allowed_agents: info.allowedAgents ? JSON.stringify(info.allowedAgents) : undefined,
       send_policy: info.sendPolicy ? JSON.stringify(info.sendPolicy) : undefined,
       retention: info.retention ? JSON.stringify(info.retention) : undefined,
+      default_path: info.defaultPath,
       spawn_depth: info.spawnDepth,
       spawn_parent_session_id: info.spawnParentSessionID,
       spawn_parent_message_id: info.spawnParentMessageID,
@@ -163,6 +185,7 @@ export namespace Session {
           onExpire: z.enum(["archive", "close", "delete"]).optional(),
         })
         .optional(),
+      defaultPath: z.string().optional(),
       spawnDepth: z.number().optional(),
       spawnParentSessionID: z.string().optional(),
       spawnParentMessageID: z.string().optional(),
@@ -215,6 +238,7 @@ export namespace Session {
         ownerKind: Info.shape.ownerKind,
         retention: Info.shape.retention,
         sendPolicy: Info.shape.sendPolicy,
+        defaultPath: Info.shape.defaultPath,
         spawnDepth: Info.shape.spawnDepth,
         spawnParentSessionID: Info.shape.spawnParentSessionID,
         spawnParentMessageID: Info.shape.spawnParentMessageID,
@@ -233,6 +257,7 @@ export namespace Session {
         ownerKind: input?.ownerKind,
         retention: input?.retention,
         sendPolicy: input?.sendPolicy,
+        defaultPath: input?.defaultPath,
         spawnDepth: input?.spawnDepth,
         spawnParentSessionID: input?.spawnParentSessionID,
         spawnParentMessageID: input?.spawnParentMessageID,
@@ -299,6 +324,7 @@ export namespace Session {
     ownerKind?: "user" | "agent" | "service"
     retention?: Partial<RetentionPolicy>
     sendPolicy?: SendPolicy
+    defaultPath?: string
     spawnDepth?: number
     spawnParentSessionID?: string
     spawnParentMessageID?: string
@@ -326,6 +352,7 @@ export namespace Session {
       retention: input.retention,
       sendPolicy: input.sendPolicy,
       agentId: input.agentID,
+      defaultPath: input.defaultPath,
       ...(input.spawnParentSessionID && {
         parent: { sessionId: input.spawnParentSessionID, messageId: input.spawnParentMessageID },
       }),
@@ -866,6 +893,17 @@ export namespace Session {
     },
   )
 
+  export const setDefaultPath = fn(
+    z.object({ sessionID: Identifier.schema("session"), defaultPath: z.string().nullable() }),
+    async (input) => {
+      await sessionManager.update(input.sessionID, { defaultPath: input.defaultPath ?? undefined })
+      const db = getConfig().db
+      const row = db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get()
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      return fromRow(row)
+    },
+  )
+
   export const incrementTokens = fn(
     z.object({
       sessionID: z.string(),
@@ -937,11 +975,13 @@ export namespace Session {
       if (row) return fromRow(row)
     }
 
+    const defaultPath = await resolveAgentDefaultPath(agentID)
     return createNext({
-      directory: cfg.instance?.directory ?? process.cwd(),
+      directory: defaultPath ?? cfg.instance?.directory ?? process.cwd(),
       title: `${agentID} (main)`,
       sessionType: "role",
       agentID,
+      defaultPath,
       retention: { onExpire: "archive" },
     })
   }
@@ -966,6 +1006,8 @@ export namespace Session {
         fallbackAgent?.agentID ? await cfg.agent?.get?.(fallbackAgent.agentID).then((x: any) => x?.model).catch(() => undefined) : undefined
       const model = agent?.model ?? fallbackModel ?? { providerID: "system", modelID: "reply" }
       const now = Date.now()
+      const cwd = await effectiveDefaultPath(input.sessionID)
+      const root = cfg.instance?.worktree ?? process.cwd()
 
       const msg: MessageV2.Assistant = {
         id: Identifier.ascending("message"),
@@ -976,8 +1018,8 @@ export namespace Session {
         mode: input.agentID,
         agent: input.agentID,
         path: {
-          cwd: cfg.instance?.directory ?? process.cwd(),
-          root: cfg.instance?.worktree ?? process.cwd(),
+          cwd,
+          root,
         },
         cost: 0,
         tokens: {

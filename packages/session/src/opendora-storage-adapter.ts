@@ -47,6 +47,7 @@ export function rowToMeta(row: SessionRow): SessionMeta {
     retention: row.retention ? (JSON.parse(row.retention) as RetentionPolicy) : { onExpire: "archive" },
     sendPolicy: row.send_policy ? (JSON.parse(row.send_policy) as SendPolicy) : undefined,
     agentId: row.agent_id ?? undefined,
+    defaultPath: row.default_path ?? undefined,
     share: row.share_url ? { url: row.share_url } : undefined,
     compactionCount: row.compaction_count ?? undefined,
     inputTokens: row.input_tokens ?? undefined,
@@ -71,6 +72,7 @@ function patchToColumns(patch: Partial<SessionMeta>): Partial<typeof SessionTabl
   if (patch.archivedAt !== undefined) cols.time_archived = patch.archivedAt
   if (patch.label !== undefined) cols.title = patch.label
   if (patch.agentId !== undefined) cols.agent_id = patch.agentId
+  if ("defaultPath" in patch) cols.default_path = patch.defaultPath ?? null
   if (patch.sendPolicy !== undefined) cols.send_policy = patch.sendPolicy ? JSON.stringify(patch.sendPolicy) : null as any
   if (patch.retention !== undefined) cols.retention = patch.retention ? JSON.stringify(patch.retention) : null as any
   if ("share" in patch) cols.share_url = patch.share?.url ?? null
@@ -134,6 +136,7 @@ export class OpenDoraStorageAdapter implements StorageAdapter {
         allowed_agents: null,
         send_policy: meta.sendPolicy ? JSON.stringify(meta.sendPolicy) : null,
         retention: meta.retention ? JSON.stringify(meta.retention) : null,
+        default_path: meta.defaultPath ?? null,
         spawn_depth: meta.spawnDepth ?? null,
         spawn_parent_session_id: meta.parent?.sessionId ?? null,
         spawn_parent_message_id: meta.parent?.messageId ?? null,

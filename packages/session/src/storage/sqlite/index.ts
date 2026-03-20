@@ -23,6 +23,7 @@ const MIGRATION = `
     retention         TEXT    NOT NULL,
     send_policy       TEXT,
     agent_id          TEXT,
+    default_path      TEXT,
     tool_policy       TEXT,
     system_prompt     TEXT,
     share_url         TEXT,
@@ -68,6 +69,7 @@ function rowToMeta(row: typeof S.$inferSelect): SessionMeta {
     retention:       row.retention       as ReturnType<typeof rowToMeta>["retention"],
     sendPolicy:      row.sendPolicy      ?? undefined,
     agentId:         row.agentId         ?? undefined,
+    defaultPath:     row.defaultPath     ?? undefined,
     toolPolicy:      row.toolPolicy      ?? undefined,
     systemPrompt:    row.systemPrompt    ?? undefined,
     share:           row.shareUrl        ? { url: row.shareUrl } : undefined,
@@ -124,6 +126,7 @@ export class SqliteAdapter implements StorageAdapter {
       retention:       meta.retention,
       sendPolicy:      meta.sendPolicy,
       agentId:         meta.agentId,
+      defaultPath:     meta.defaultPath,
       toolPolicy:      meta.toolPolicy,
       systemPrompt:    meta.systemPrompt,
       shareUrl:        meta.share?.url,
@@ -150,6 +153,7 @@ export class SqliteAdapter implements StorageAdapter {
     if (patch.label           !== undefined) values.label           = patch.label
     if (patch.retention       !== undefined) values.retention       = patch.retention
     if (patch.sendPolicy      !== undefined) values.sendPolicy      = patch.sendPolicy
+    if ("defaultPath" in patch)             values.defaultPath     = patch.defaultPath ?? null
     if (patch.archivedAt      !== undefined) values.archivedAt      = patch.archivedAt
     if (patch.spawnDepth      !== undefined) values.spawnDepth      = patch.spawnDepth
     if (patch.compactionCount  !== undefined) values.compactionCount  = patch.compactionCount

@@ -1,0 +1,21 @@
+{
+  "name": "build",
+  "description": "The default agent. Executes tools based on configured permissions.",
+  "mode": "primary",
+  "tools": [
+    "bash",
+    "read",
+    "glob",
+    "grep",
+    "edit",
+    "write",
+    "task",
+    "webfetch",
+    "todowrite",
+    "websearch",
+    "codesearch",
+    "apply_patch",
+    "question"
+  ],
+  "enableInjection": true
+}

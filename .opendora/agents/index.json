@@ -61,6 +61,11 @@
       "id": "ba",
       "name": "BA",
       "mode": "worker"
+    },
+    {
+      "id": "agent-owner",
+      "name": "Minds",
+      "mode": "primary"
     }
   ]
 }

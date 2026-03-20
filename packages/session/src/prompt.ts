@@ -367,6 +367,8 @@ export namespace SessionPrompt {
         throw e
       })
       const task = tasks.pop()
+      const effectiveDirectory = await Session.effectiveDefaultPath(sessionID)
+      const rootDirectory = cfg.instance?.worktree ?? process.cwd()
 
       // pending subtask
       if (task?.type === "subtask") {
@@ -382,8 +384,8 @@ export namespace SessionPrompt {
           agent: task.agent,
           variant: lastUser.variant,
           path: {
-            cwd: cfg.instance?.directory ?? process.cwd(),
-            root: cfg.instance?.worktree ?? process.cwd(),
+            cwd: effectiveDirectory,
+            root: rootDirectory,
           },
           cost: 0,
           tokens: {
@@ -619,8 +621,8 @@ export namespace SessionPrompt {
           agent: agent.id,
           variant: lastUser.variant,
           path: {
-            cwd: cfg.instance?.directory ?? process.cwd(),
-            root: cfg.instance?.worktree ?? process.cwd(),
+            cwd: effectiveDirectory,
+            root: rootDirectory,
           },
           cost: 0,
           tokens: {
@@ -703,7 +705,7 @@ export namespace SessionPrompt {
       await cfg.plugin?.trigger("experimental.chat.messages.transform", {}, { messages: msgs })
 
       // Build system prompt
-      const system = [...(await SystemPrompt.environment(model)), ...(await InstructionPrompt.system())]
+      const system = [...(await SystemPrompt.environment(model, sessionID)), ...(await InstructionPrompt.system())]
       const format = lastUser.format ?? { type: "text" }
       if (format.type === "json_schema") {
         system.push(STRUCTURED_OUTPUT_SYSTEM_PROMPT)
@@ -801,6 +803,8 @@ export namespace SessionPrompt {
   }) {
     const cfg = getConfig()
     const tools: Record<string, AITool> = {}
+    const effectiveDirectory = await Session.effectiveDefaultPath(input.session)
+    const worktree = cfg.instance?.worktree ?? process.cwd()
 
     const context = (args: any, options: ToolCallOptions): any => ({
       sessionID: input.session.id,
@@ -810,8 +814,8 @@ export namespace SessionPrompt {
       extra: {
         model: input.model,
         bypassAgentCheck: input.bypassAgentCheck,
-        directory: cfg.instance?.directory ?? process.cwd(),
-        worktree: cfg.instance?.worktree ?? process.cwd(),
+        directory: effectiveDirectory,
+        worktree,
         skills: {
           all: () => cfg.skill?.all?.(),
           get: (name: string) => cfg.skill?.get?.(name),
@@ -1565,6 +1569,8 @@ export namespace SessionPrompt {
     }
     await Session.updatePart(userPart)
 
+    const cwd = await Session.effectiveDefaultPath(input.sessionID)
+    const root = cfg.instance?.worktree ?? process.cwd()
     const msg: MessageV2.Assistant = {
       id: Identifier.ascending("message"),
       sessionID: input.sessionID,
@@ -1574,8 +1580,8 @@ export namespace SessionPrompt {
       agent: input.agent,
       cost: 0,
       path: {
-        cwd: cfg.instance?.directory ?? process.cwd(),
-        root: cfg.instance?.worktree ?? process.cwd(),
+        cwd,
+        root,
       },
       time: {
         created: Date.now(),
@@ -1648,7 +1654,6 @@ export namespace SessionPrompt {
     const matchingInvocation = invocations[shellName] ?? invocations[""]
     const args = matchingInvocation?.args
 
-    const cwd = cfg.instance?.directory ?? process.cwd()
     const shellEnv = await cfg.plugin?.trigger(
       "shell.env",
       { cwd, sessionID: input.sessionID, callID: (part as any).callID },
