@@ -11,7 +11,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { BotIcon, MessageSquareIcon, SettingsIcon, ChevronRightIcon, PlugIcon, Volume2Icon } from "lucide-react"
+import { BotIcon, MessageSquareIcon, SettingsIcon, ChevronRightIcon, PlugIcon, Volume2Icon, CalendarClockIcon } from "lucide-react"
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -47,6 +47,14 @@ export default function SettingsPage() {
       description: "Configure speech-to-text and text-to-speech",
       icon: Volume2Icon,
       href: "/dashboard/settings/voice",
+      count: null,
+      countLabel: null,
+    },
+    {
+      title: "Schedules",
+      description: "Manage background delegations",
+      icon: CalendarClockIcon,
+      href: "/dashboard/settings/schedules",
       count: null,
       countLabel: null,
     },

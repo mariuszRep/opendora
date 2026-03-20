@@ -58,6 +58,7 @@ import {
 import { SpeechInput } from "@/components/ai-elements/speech-input"
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
+
 import { QuestionTool } from "@/components/questions/question-tool"
 import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart } from "@/lib/opendora"
 import { useVoiceSettings, formatHotkey } from "@/hooks/use-voice-settings"
@@ -214,6 +215,7 @@ export const Chatbot = () => {
   const [selectedModelID, setSelectedModelID] = useState<string | null>(null)
   const [questionViewModes, setQuestionViewModes] = useState<Record<string, "code" | "view">>({})
   const [delegateViewModes, setDelegateViewModes] = useState<Record<string, "code" | "view">>({})
+
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {

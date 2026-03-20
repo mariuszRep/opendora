@@ -453,7 +453,7 @@ export namespace MessageV2 {
         APIError.Schema,
       ])
       .optional(),
-    parentID: z.string(),
+    parentID: z.string().optional(),
     modelID: z.string(),
     providerID: z.string(),
     /**

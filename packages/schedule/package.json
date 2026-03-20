@@ -1,0 +1,17 @@
+{
+  "name": "@opendora/schedule",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./sql": "./src/schedule.sql.ts",
+    "./cron-scheduler": "./src/cron-scheduler.ts"
+  },
+  "dependencies": {
+    "@opendora/session": "workspace:*",
+    "@opendora/util": "workspace:*",
+    "croner": "9.0.0",
+    "drizzle-orm": "catalog:",
+    "zod": "catalog:"
+  }
+}

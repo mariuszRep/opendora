@@ -29,6 +29,9 @@ import { ConfigRoutes } from "./routes/config"
 import { ExperimentalRoutes } from "./routes/experimental"
 import { ProviderRoutes } from "./routes/provider"
 import { AgentRoutes } from "./routes/agent"
+import { ScheduleRoutes } from "./routes/schedule"
+import { CronScheduler, type ScheduleDispatchFn } from "@opendora/schedule/cron-scheduler"
+import { Database } from "../storage/db"
 import { Agent } from "../agent"
 import { lazy } from "../util/lazy"
 import { InstanceBootstrap } from "../project/bootstrap"
@@ -45,6 +48,10 @@ import { MDNS } from "./mdns"
 import { BusBridge } from "../session/bus-bridge"
 import { retentionDaemon, sessionManager, configureSessionCore } from "../session"
 import { openDoraStorageAdapter } from "../session/opendora-storage-adapter"
+import { Session } from "../session"
+import { SessionPrompt } from "../session/prompt"
+import { Identifier } from "@opendora/util/id"
+import { MessageV2 } from "@opendora/session/message"
 
 // @ts-ignore This global is needed to prevent ai-sdk from logging warnings to stdout https://github.com/vercel/ai/blob/2dc67e0ef538307f21368db32d5a12345d98831b/packages/ai/src/logger/log-warnings.ts#L85
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -54,6 +61,7 @@ export namespace Server {
 
   let _url: URL | undefined
   let _corsWhitelist: string[] = []
+  let _scheduleDispatch: ScheduleDispatchFn = async () => {}
 
   export function url(): URL {
     return _url ?? new URL("http://localhost:4096")
@@ -237,6 +245,7 @@ export namespace Server {
         .route("/permission", PermissionRoutes())
         .route("/question", QuestionRoutes())
         .route("/provider", ProviderRoutes())
+        .route("/schedule", ScheduleRoutes(_scheduleDispatch))
         .route("/voice", VoiceRoutes())
         .route("/", FileRoutes())
         .route("/mcp", McpRoutes())
@@ -568,6 +577,163 @@ export namespace Server {
     configureSessionCore()
     _corsWhitelist = opts.cors ?? []
 
+    // Define before App() is called so the route captures the real function, not the no-op.
+    _scheduleDispatch = async (schedule) => {
+      if (schedule.action_type === "tool" && schedule.tool_name === "delegate") {
+        let params: any
+        try { params = JSON.parse(schedule.prompt) } catch {
+          log.warn("schedule delegate prompt is not valid JSON, skipping", { id: schedule.id })
+          return
+        }
+
+        if (typeof params.prompt !== "string") {
+          log.warn("schedule delegate: params.prompt is not a string, skipping", { id: schedule.id })
+          return
+        }
+
+        // Resolve agent by name or ID (like the delegate tool does via agents.find)
+        let resolvedAgentID: string | undefined
+        if (params.agent) {
+          const lookedUpAgent = await Agent.getByIdOrName(params.agent)
+          if (!lookedUpAgent) {
+            log.warn("schedule delegate: agent not found", { id: schedule.id, agent: params.agent })
+            return
+          }
+          resolvedAgentID = lookedUpAgent.id
+        }
+
+        // Resolve source session (where the tool call appears in the UI)
+        let sourceSessionID = schedule.session_id
+        if (!sourceSessionID && schedule.agent_id) {
+          const src = await Session.ensureMainSession(schedule.agent_id)
+          sourceSessionID = src.id
+        }
+        if (!sourceSessionID) {
+          log.warn("schedule delegate: cannot resolve source session", { id: schedule.id })
+          return
+        }
+
+        // Resolve target session (where the message will be delivered)
+        let targetSession: any
+        if (params.session_id) {
+          targetSession = await Session.get(params.session_id)
+          if (!targetSession) { log.warn("schedule delegate: target session not found", { id: schedule.id }); return }
+        } else if (resolvedAgentID && params.session_type) {
+          targetSession = await Session.createNext({
+            directory: process.cwd(),
+            title: params.title ?? params.description ?? `Scheduled (@${resolvedAgentID})`,
+            sessionType: params.session_type,
+            agentID: resolvedAgentID,
+            ownerKind: "service",
+          })
+        } else if (resolvedAgentID) {
+          targetSession = await Session.ensureMainSession(resolvedAgentID)
+        } else {
+          log.warn("schedule delegate: no agent or session_id in params", { id: schedule.id })
+          return
+        }
+
+        // Inject a synthetic assistant message into the source session to surface
+        // the delegate tool call in the UI. No parent user message needed.
+        const now = Date.now()
+        const cwd = process.cwd()
+
+        const assistantMsg: MessageV2.Assistant = {
+          id: Identifier.ascending("message"),
+          sessionID: sourceSessionID,
+          role: "assistant",
+          from: { kind: "agent", id: resolvedAgentID ?? "schedule" },
+          agent: resolvedAgentID ?? "schedule",
+          mode: resolvedAgentID ?? "schedule",
+          modelID: "schedule",
+          providerID: "schedule",
+          cost: 0,
+          tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+          path: { cwd, root: cwd },
+          time: { created: now },
+        }
+        await Session.updateMessage(assistantMsg)
+
+        // Keep a reference to the part data — we need the same fields for the status update later.
+        // Don't rely on Session.updatePart's return value, which may not include all fields.
+        const toolPartData = {
+          id: Identifier.ascending("part"),
+          messageID: assistantMsg.id,
+          sessionID: sourceSessionID,
+          type: "tool" as const,
+          callID: Identifier.ascending("part"),
+          tool: "delegate",
+          state: {
+            status: "running" as const,
+            input: params,
+            metadata: {},
+            time: { start: now },
+          },
+        }
+        await Session.updatePart(toolPartData as any)
+
+        // Pre-generate the posted message ID so we know it upfront without
+        // parentSessionID/parentMessageID wire the posted message back to this tool call.
+        const start = Date.now()
+        let postedMessageId: string | undefined
+        let error: string | undefined
+        try {
+          const posted = await SessionPrompt.prompt({
+            sessionID: targetSession.id,
+            ...(resolvedAgentID ? { agent: resolvedAgentID } : {}),
+            noWait: !(params.wait ?? false),
+            parentSessionID: sourceSessionID,
+            parentMessageID: assistantMsg.id,
+            parts: await SessionPrompt.resolvePromptParts(params.prompt),
+          })
+          postedMessageId = (posted as any).info.id
+        } catch (e: any) {
+          error = e?.message ?? String(e)
+        }
+
+        const completedState = error
+          ? { status: "error", input: params, error, metadata: {}, time: { start, end: Date.now() } }
+          : {
+              status: "completed",
+              input: params,
+              output: "message posted",
+              metadata: {
+                sessionId: targetSession.id,
+                messageId: postedMessageId,
+                agent: resolvedAgentID,
+              },
+              title: params.description ?? `Delegate → ${resolvedAgentID ?? targetSession.id}`,
+              time: { start, end: Date.now() },
+            }
+        try {
+          await Session.updatePart({ ...toolPartData, state: completedState } as any)
+        } catch (updateErr: any) {
+          log.error("scheduler delegate: failed to finalize tool part", {
+            err: updateErr?.message,
+            state: JSON.stringify(completedState),
+          })
+        }
+
+        await Session.updateMessage({ ...assistantMsg, time: { ...assistantMsg.time, completed: Date.now() } })
+        return
+      }
+
+      // Default: message action — send text to the schedule's own session/agent
+      let sessionID = schedule.session_id
+      if (!sessionID && schedule.agent_id) {
+        const session = await Session.ensureMainSession(schedule.agent_id)
+        sessionID = session.id
+      }
+      if (!sessionID) {
+        log.warn("schedule has no session or agent, skipping", { id: schedule.id })
+        return
+      }
+      await SessionPrompt.prompt({
+        sessionID,
+        parts: [{ type: "text", text: schedule.prompt }],
+      })
+    }
+
     const args = {
       hostname: opts.hostname,
       idleTimeout: 0,
@@ -592,6 +758,21 @@ export namespace Server {
     // Start PingPong session infrastructure
     BusBridge.start()
     retentionDaemon.start(sessionManager, openDoraStorageAdapter)
+    
+    // Cron fires outside any HTTP context so it needs its own Instance.provide wrapper.
+    const cronDispatch: ScheduleDispatchFn = async (schedule) => {
+      await Instance.provide({
+        directory: process.cwd(),
+        init: InstanceBootstrap,
+        async fn() {
+          await _scheduleDispatch(schedule)
+        },
+      })
+    }
+
+    // Start Cron Scheduler Loop
+    const cronManager = new CronScheduler(Database.Client(), cronDispatch)
+    cronManager.start()
 
     const shouldPublishMDNS =
       opts.mdns &&
@@ -607,6 +788,7 @@ export namespace Server {
 
     const originalStop = server.stop.bind(server)
     server.stop = async (closeActiveConnections?: boolean) => {
+      cronManager.stop()
       if (shouldPublishMDNS) MDNS.unpublish()
       retentionDaemon.stop()
       BusBridge.stop()

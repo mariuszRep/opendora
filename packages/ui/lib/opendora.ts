@@ -131,6 +131,22 @@ export type QuestionInfo = {
 
 export type QuestionAnswer = string[]
 
+export type Schedule = {
+  id: string
+  project_id?: string
+  session_id?: string
+  agent_id?: string
+  prompt: string
+  cron_expression: string
+  timezone?: string
+  is_active: boolean
+  action_type: "message" | "tool"
+  tool_name?: string
+  last_executed?: number
+  time_created: number
+  time_updated: number
+}
+
 export type QuestionRequest = {
   id: string
   sessionID: string
@@ -319,6 +335,15 @@ export const opendora = {
       req<boolean>(`/auth/${providerID}`, { method: "PUT", body: JSON.stringify(info) }),
     remove: (providerID: string) =>
       req<boolean>(`/auth/${providerID}`, { method: "DELETE" }),
+  },
+  schedule: {
+    list: () => req<Schedule[]>("/schedule"),
+    create: (input: { agent_id?: string; prompt: string; cron_expression: string; session_id?: string; action_type?: "message" | "tool"; tool_name?: string }) =>
+      req<Schedule>("/schedule", { method: "POST", body: JSON.stringify(input) }),
+    update: (id: string, input: { is_active?: boolean; cron_expression?: string; prompt?: string; action_type?: "message" | "tool"; tool_name?: string }) =>
+      req<Schedule>(`/schedule/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
+    remove: (id: string) => req<boolean>(`/schedule/${id}`, { method: "DELETE" }),
+    run: (id: string) => req<boolean>(`/schedule/${id}/run`, { method: "POST" }),
   },
   agent: {
     list: () => req<Agent[]>("/agent"),

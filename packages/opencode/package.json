@@ -45,6 +45,7 @@
   },
   "dependencies": {
     "@opendora/agent": "workspace:*",
+    "@opendora/schedule": "workspace:*",
     "@opendora/tools": "workspace:*",
     "@opendora/permission": "workspace:*",
     "@actions/core": "1.11.1",

@@ -21,7 +21,8 @@
       "packages/sdk/js",
       "packages/util",
       "packages/ui",
-      "packages/session"
+      "packages/session",
+      "packages/schedule"
     ],
     "catalog": {
       "@types/bun": "1.3.9",
