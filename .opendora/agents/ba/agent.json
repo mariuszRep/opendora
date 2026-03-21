@@ -11,6 +11,15 @@
   "color": "violet",
   "tools": [
     "session_search",
-    "reply"
-  ]
+    "reply",
+    "delegate"
+  ],
+  "toolConfig": {
+    "delegate": {
+      "allowedAgents": [
+        "Project Owner",
+        "Project Manager"
+      ]
+    }
+  }
 }

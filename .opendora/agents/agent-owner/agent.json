@@ -13,20 +13,18 @@
     "read",
     "write",
     "edit",
-    "glob",
-    "grep",
-    "bash",
     "agent_create",
     "agent_update",
-    "agent_delete",
     "agent_list",
     "agent_get",
     "delegate",
     "session_search",
     "skill_discover",
     "skill_load",
-    "task",
-    "todowrite"
+    "log",
+    "todowrite",
+    "session_get",
+    "reply"
   ],
   "skills": []
 }

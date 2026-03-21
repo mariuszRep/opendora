@@ -823,6 +823,7 @@ export namespace SessionPrompt {
         agents: {
           list: () => cfg.agent?.list?.(),
           get: (id: string) => cfg.agent?.get?.(id),
+          getInjection: (id: string) => cfg.agent?.getInjection?.(id),
           create: (id: string, c: any, persona?: string, injection?: string) => cfg.agent?.create?.(id, c, persona, injection),
           update: (id: string, patch: any, persona?: string, injection?: string) => cfg.agent?.update?.(id, patch, persona, injection),
           remove: (id: string) => cfg.agent?.remove?.(id),

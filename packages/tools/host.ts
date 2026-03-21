@@ -71,6 +71,7 @@ export interface HostServices {
   agents?: {
     list(): Promise<unknown[]>
     get(id: string): Promise<unknown | undefined>
+    getInjection?(id: string): Promise<string>
     create(id: string, config: unknown, persona?: string, injection?: string): Promise<void>
     update(id: string, patch: unknown, persona?: string, injection?: string): Promise<void>
     remove(id: string): Promise<void>

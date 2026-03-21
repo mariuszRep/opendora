@@ -59,7 +59,7 @@ const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
 ]
 
 const HIDDEN_TOOLS = new Set(["invalid", "plan_exit"])
-const DELEGATION_TOOLS = new Set(["delegate", "session_search"])
+const DELEGATION_TOOLS = new Set(["delegate", "session_search", "session_get", "reply"])
 
 type ModelValue = { providerID: string; modelID: string } | undefined
 

@@ -10,13 +10,14 @@ import { GrepTool } from "../filesystem/grep.ts"
 import { ApplyPatchTool } from "../filesystem/apply_patch.ts"
 import { CodeSearchTool } from "../filesystem/codesearch.ts"
 import { TaskTool } from "../task-management/task.ts"
-import { DelegateTool, SessionSearchTool, ReplyTool } from "../delegation/index.ts"
+import { DelegateTool, SessionSearchTool, SessionGetTool, ReplyTool } from "../delegation/index.ts"
 import { TodoWriteTool, TodoReadTool } from "../task-management/todo.ts"
 import { WebFetchTool } from "../communication/webfetch.ts"
 import { WebSearchTool } from "../communication/websearch.ts"
 import { InvalidTool } from "./invalid.ts"
 import { LspTool } from "./lsp.ts"
 import { SkillTool, SkillDiscoverTool, SkillLoadTool } from "./skill.ts"
+import { LogLessonTool } from "./log-lesson.ts"
 import { AgentCreateTool } from "../agent-manager/agent-create.ts"
 import { AgentUpdateTool } from "../agent-manager/agent-update.ts"
 import { AgentDeleteTool } from "../agent-manager/agent-delete.ts"
@@ -122,6 +123,7 @@ export namespace ToolRegistry {
       TaskTool,
       DelegateTool,
       SessionSearchTool,
+      SessionGetTool,
       ReplyTool,
       WebFetchTool,
       TodoWriteTool,
@@ -130,6 +132,7 @@ export namespace ToolRegistry {
       CodeSearchTool,
       SkillDiscoverTool,
       SkillLoadTool,
+      LogLessonTool,
       ApplyPatchTool,
       AgentCreateTool,
       AgentUpdateTool,

@@ -48,8 +48,11 @@ export const AgentGetTool = Tool.define(
           output += `\n\nPersona:\n${agent.persona}`
         }
 
-        if (args.includeInjection && agent.injection) {
-          output += `\n\nInjection:\n${agent.injection}`
+        if (args.includeInjection) {
+          const injection = agents.getInjection ? await agents.getInjection(args.id) : undefined
+          if (injection) {
+            output += `\n\nInjection:\n${injection}`
+          }
         }
 
         return {
