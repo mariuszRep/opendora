@@ -48,7 +48,8 @@
       "apply_patch"
     ],
     "allowedPaths": [
-      "/home/ubuntu/projects/opendora/.opendora/skill"
+      "/home/ubuntu/projects/opendora/.opendora/skill",
+      "/home/ubuntu/projects/opendora/.opendora/agents"
     ]
   }
 }

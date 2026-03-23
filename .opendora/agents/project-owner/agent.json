@@ -14,7 +14,8 @@
     "session_tree",
     "delegate",
     "reply",
-    "list"
+    "list",
+    "session_get"
   ],
   "toolConfig": {
     "delegate": {

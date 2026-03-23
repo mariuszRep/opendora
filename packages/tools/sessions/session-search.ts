@@ -18,7 +18,7 @@ const parameters = z
   .superRefine((value, ctx) => {
     if (value.session_id && (value.query || value.directory || value.session_type || value.agent_id || value.roots_only)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["session_id"],
         message: "session_id cannot be combined with other filters",
       })
@@ -40,24 +40,21 @@ export const SessionSearchTool = Tool.define("session_search", {
         if (!session) {
           return {
             title: "Session Not Found",
-            metadata: {
-              sessionId: params.session_id,
-              found: false,
-            },
-            output: `Session with ID '${params.session_id}' not found.`,
+            metadata: { found: false } as any,
+            output: JSON.stringify({ error: `Session '${params.session_id}' not found.` }),
           }
         }
 
         return {
           title: `Session Found: ${session.title || params.session_id}`,
           metadata: {
-            sessionId: session.id,
             found: true,
+            sessionId: session.id,
             sessionType: session.sessionType,
             sessionStatus: session.sessionStatus,
             agentId: session.agentID,
-          },
-          output: formatSession(session),
+          } as any,
+          output: JSON.stringify({ count: 1, sessions: [formatSession(session)] }, null, 2),
         }
       }
 
@@ -83,57 +80,39 @@ export const SessionSearchTool = Tool.define("session_search", {
       if (sessions.length === 0) {
         return {
           title: "No Sessions Found",
-          metadata: {
-            count: 0,
-            found: false,
-          },
-          output: "No sessions match the specified criteria.",
+          metadata: { count: 0, found: false } as any,
+          output: JSON.stringify({ count: 0, sessions: [] }),
         }
       }
 
-      const formattedSessions = sessions.map((session) => formatSession(session)).join("\n" + "=".repeat(80) + "\n")
-
       return {
         title: `Found ${sessions.length} Session${sessions.length === 1 ? "" : "s"}`,
-        metadata: {
-          count: sessions.length,
-          sessionIds: sessions.map((s) => s.id),
-          found: true,
-        },
-        output: formattedSessions,
+        metadata: { count: sessions.length, sessionIds: sessions.map((s) => s.id), found: true } as any,
+        output: JSON.stringify({ count: sessions.length, sessions: sessions.map(formatSession) }, null, 2),
       }
     } catch (error) {
       return {
         title: "Session Search Failed",
-        metadata: {
-          error: error instanceof Error ? error.message : String(error),
-          found: false,
-        },
-        output: `Failed to search sessions: ${error instanceof Error ? error.message : String(error)}`,
+        metadata: { found: false, error: error instanceof Error ? error.message : String(error) } as any,
+        output: JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       }
     }
   },
 })
 
-function formatSession(session: any): string {
-  const parts = [
-    `ID: ${session.id}`,
-    `Title: ${session.title || "(unnamed)"}`,
-    `Type: ${session.sessionType || "(undefined)"}`,
-    `Status: ${session.sessionStatus || "(undefined)"}`,
-    `Agent: ${session.agentID || "(none)"}`,
-    `Directory: ${session.directory || "(none)"}`,
-    `Created: ${new Date(session.time.created).toLocaleString()}`,
-    `Updated: ${new Date(session.time.updated).toLocaleString()}`,
-  ]
-
-  if (session.parentID) {
-    parts.push(`Parent: ${session.parentID}`)
+function formatSession(session: any): Record<string, any> {
+  const result: Record<string, any> = {
+    id: session.id,
+    title: session.title || null,
+    type: session.sessionType || null,
+    status: session.sessionStatus || null,
+    agentId: session.agentID || null,
+    directory: session.directory || null,
+    created: session.time?.created ?? null,
+    updated: session.time?.updated ?? null,
+    parentId: session.parentID || null,
+    messageCount: session.messageCount ?? null,
   }
 
-  if (session.messageCount !== undefined) {
-    parts.push(`Messages: ${session.messageCount}`)
-  }
-
-  return parts.join("\n")
+  return result
 }

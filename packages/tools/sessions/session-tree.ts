@@ -5,9 +5,10 @@ import DESCRIPTION from "./session-tree.txt"
 
 const parameters = z.object({
   session_id: z.string().optional().describe("ID of the session to inspect. Defaults to the current session."),
+  include_stats: z.boolean().default(false).describe("Include per-node statistics: message count and tool call count."),
 })
 
-function sessionNode(session: any, isTarget: boolean, children: any[]): any {
+function sessionNode(session: any, isTarget: boolean, children: any[], stats?: { messageCount: number; toolCallCount: number }): any {
   return {
     id: session.id,
     title: session.title || null,
@@ -15,6 +16,7 @@ function sessionNode(session: any, isTarget: boolean, children: any[]): any {
     status: session.sessionStatus ?? null,
     agentId: session.agentID ?? null,
     isTarget: isTarget || undefined,
+    ...(stats !== undefined ? { stats } : {}),
     children,
   }
 }
@@ -41,7 +43,7 @@ export const SessionTreeTool = Tool.define("session_tree", {
       if (!target) {
         return {
           title: "Session Not Found",
-          metadata: { sessionId: targetId, found: false },
+          metadata: { sessionId: targetId, found: false } as any,
           output: JSON.stringify({ error: `Session '${targetId}' not found` }),
         }
       }
@@ -58,11 +60,29 @@ export const SessionTreeTool = Tool.define("session_tree", {
 
       const treeRoot = ancestors.length > 0 ? ancestors[0] : target
 
+      // Compute stats for a session node if requested
+      async function getStats(session: any): Promise<{ messageCount: number; toolCallCount: number } | undefined> {
+        if (!params.include_stats) return undefined
+        try {
+          const msgs: any[] = await sessionSvc.messages({ sessionID: session.id }).catch(() => [])
+          const toolCallCount = msgs.reduce((sum: number, msg: any) => {
+            const parts: any[] = msg.parts || []
+            return sum + parts.filter((p: any) => p.type === "tool").length
+          }, 0)
+          return { messageCount: msgs.length, toolCallCount }
+        } catch {
+          return { messageCount: 0, toolCallCount: 0 }
+        }
+      }
+
       // Recursively build JSON tree
       async function buildNode(session: any): Promise<any> {
         const kids: any[] = await sessionSvc.children(session.id).catch(() => [])
-        const children = await Promise.all(kids.map(buildNode))
-        return sessionNode(session, session.id === targetId, children)
+        const [children, stats] = await Promise.all([
+          Promise.all(kids.map(buildNode)),
+          getStats(session),
+        ])
+        return sessionNode(session, session.id === targetId, children, stats)
       }
 
       const tree = await buildNode(treeRoot)
@@ -83,13 +103,13 @@ export const SessionTreeTool = Tool.define("session_tree", {
           treeRootId: treeRoot.id,
           depth: ancestors.length,
           found: true,
-        },
+        } as any,
         output: JSON.stringify(result, null, 2),
       }
     } catch (error) {
       return {
         title: "Session Tree Failed",
-        metadata: { sessionId: targetId, found: false },
+        metadata: { sessionId: targetId, found: false } as any,
         output: JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       }
     }

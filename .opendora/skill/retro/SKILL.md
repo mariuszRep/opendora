@@ -33,33 +33,35 @@ If `session_id` is not given, ask for it before proceeding.
 
 Starting from the root, build the full tree recursively:
 
-1. `session_get` the current session — record: id, label, agentId, inputTokens, outputTokens, message count, spawnDepth
-2. `session_search` for child sessions where `parentSessionId` = current session id
-3. For each child, repeat until no more children or depth limit reached
+1. `session_tree(root_id, include_stats: true)` — get full tree with message and tool call counts per node
+2. For each node, if you need more detail, use `session_get(child_id, include_tool_calls: true)`
 
 Render the tree as you build it:
 
 ```
-root (id) — agent: {agentId} — {N} messages — {X} in / {Y} out tokens
-├── child-1 (id) — agent: {agentId} — {N} messages — {X} in / {Y} out tokens
-│   └── grandchild-1 (id) — agent: {agentId} — {N} messages — {X} in / {Y} out tokens
-└── child-2 (id) — agent: {agentId} — {N} messages — {X} in / {Y} out tokens
+root (id) — agent: {agentId} — {N} messages — {X} in / {Y} out tokens — {T} tool calls
+├── child-1 (id) — agent: {agentId} — {N} messages — {X} in / {Y} out tokens — {T} tool calls
+│   └── grandchild-1 (id) — agent: {agentId} — {N} messages — {X} in / {Y} out tokens — {T} tool calls
+└── child-2 (id) — agent: {agentId} — {N} messages — {X} in / {Y} out tokens — {T} tool calls
 ```
+
+**Key:** The `include_stats: true` flag gives you messageCount and toolCallCount instantly. Use this instead of counting manually.
 
 ### 3. Analyse each session node
 
-For each session, load its messages via `session_get` and extract the following from message parts:
+For each session, use `session_get(id, include_tool_calls: true)` to get exact tool invocation data:
 
-**Step count**: total number of tool call invocations (each tool invocation = 1 step)
+**Step count**: directly from toolCallCount in stats (or from tool_calls array)
 
-**Tool call breakdown** — tally by tool name:
+**Tool call breakdown** — from the tool_calls array:
 ```
-read: N  write: N  edit: N  bash: N  delegate: N  session_get: N  skill_load: N  agent_get: N  ...
+delegate: N  reply: N  read: N  write: N  edit: N  bash: N  session_get: N  skill_load: N  agent_get: N  ...
 ```
 
-**Skills loaded**: list every `skill_load` call and which skill was loaded
-
-**Delegation calls**: list every `delegate` call — which agent was targeted, and a one-line summary of the prompt
+**Delegation chain**:
+- Which agent was targeted (delegate call)
+- Was `wait: true` or `wait: false` used
+- Was a reply received back (check child session has reply_to set)
 
 **Token breakdown**: from session metadata — inputTokens, outputTokens, cacheReadTokens (if available)
 
@@ -67,12 +69,14 @@ Record all of this per session node.
 
 ### 4. Build the summary table
 
-| Session label | Agent | Depth | Steps | Input tokens | Output tokens | Skills loaded | Delegations out |
-|---------------|-------|-------|-------|-------------|--------------|---------------|-----------------|
-| root          | ...   | 0     | N     | X           | Y            | [...]         | N               |
-| child-1       | ...   | 1     | N     | X           | Y            | [...]         | N               |
-| ...           |       |       |       |             |              |               |                 |
-| **TOTAL**     |       |       | **N** | **X**       | **Y**        |               | **N**           |
+| Session label | Agent | Depth | Steps | Input tokens | Output tokens | Skills loaded | Delegations out | Tool calls |
+|---------------|-------|-------|-------|-------------|--------------|---------------|-----------------|------------|
+| root          | ...   | 0     | N     | X           | Y            | [...]         | N               | [...]      |
+| child-1       | ...   | 1     | N     | X           | Y            | [...]         | N               | [...]      |
+| ...           |       |       |       |             |              |               |                 |            |
+| **TOTAL**     |       |       | **N** | **X**       | **Y**        |               | **N**           | **[...]**  |
+
+**Note:** Steps = tool calls. Use `include_tool_calls: true` to get exact counts.
 
 ### 5. Identify inefficiencies
 
@@ -91,6 +95,14 @@ Based on the goal, look for:
 **Deep chains for shallow work** — tasks that travelled to grandchild depth when child level would have sufficed
 
 **Idle delegations** — delegate calls where the delegated session produced minimal output or no useful result
+
+**Ghost delegations** — agent claims to have delegated but the delegate tool was never called (check via include_tool_calls)
+
+**Missing replies** — delegated to another agent but never received a reply back (no reply tool called in child session)
+
+**Reply chain latency** — large time gap between delegation and reply (indicates the flow is broken)
+
+**Message bloat** — messages with excessive thinking/reasoning text without corresponding tool calls (overproduction)
 
 For each inefficiency found, note: which session(s) it appears in, how many tokens or steps it costs, and how often it occurs across the tree.
 
@@ -168,9 +180,13 @@ If nothing was logged, omit this line entirely.
 ## Rules
 
 - Build the full tree before analysing — partial trees lead to incomplete or misleading conclusions
+- Use `session_tree(id, include_stats: true)` for fast tree building — don't manually count messages
+- Use `session_get(id, include_tool_calls: true)` to get exact tool calls — don't guess from message content
 - Token data comes from session metadata, not from counting message text
-- Step counts come from tool invocation parts in messages, not from message count
+- Step counts come from tool call data, not from message count
 - This skill is read-only — it produces no edits, no agent updates, no commits
 - If a session has no token data, note it as "tokens not recorded" and continue
 - If the tree has more than 20 sessions, summarise at the agent-level rather than per-session to keep the report readable
 - Pair with `experiment`: retro reveals where to experiment; experiment makes the change and measures it
+- **Flow analysis:** trace the delegation → reply chain. If a delegation was made but no reply was received, note it as "missing reply" inefficiency
+- **Efficiency check:** if a session has many messages but few/no tool calls, it may be overproducing (excessive thinking text)
