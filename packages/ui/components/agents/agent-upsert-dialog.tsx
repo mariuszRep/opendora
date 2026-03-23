@@ -50,11 +50,25 @@ const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
 ]
 
 const HIDDEN_TOOLS = new Set(["invalid", "plan_exit"])
-const DELEGATION_TOOLS = new Set(["delegate", "session_search", "session_get", "reply"])
-const FILESYSTEM_TOOL_IDS = new Set([
-  "read", "write", "edit", "glob", "grep", "list",
+
+const FILESYSTEM_TOOLS = new Set([
+  "read", "write", "edit", "list", "glob", "grep",
   "apply_patch", "multiedit", "codesearch",
 ])
+
+const SHELL_TOOLS = new Set(["bash", "batch"])
+
+const WEB_TOOLS = new Set(["webfetch", "websearch"])
+
+const SESSION_TOOLS = new Set([
+  "delegate", "reply", "session_get", "session_search", "session_tree",
+])
+
+const AGENT_TOOLS = new Set([
+  "agent_create", "agent_delete", "agent_get", "agent_list", "agent_update",
+])
+
+const SKILL_TOOLS = new Set(["skill_discover", "skill_load"])
 
 const NONE = "__none__"
 
@@ -99,7 +113,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [fallbackModel, setFallbackModel] = useState<string>(NONE)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const [availableTools, setAvailableTools] = useState<string[]>([])
-  const [expandedGroup, setExpandedGroup] = useState<"delegation" | "filesystem" | "others" | null>(null)
+  const [expandedGroup, setExpandedGroup] = useState<"filesystem" | "shell" | "web" | "sessions" | "agents" | "skills" | "others" | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [fsAllowedPaths, setFsAllowedPaths] = useState<string[]>([])
   const [newPathInput, setNewPathInput] = useState("")
@@ -209,7 +223,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
           ? { delegate: { allowedAgents: delegateAllowedAgents } }
           : undefined,
         filesystemConfig: (() => {
-          const fsSelectedTools = selectedTools.filter((id) => FILESYSTEM_TOOL_IDS.has(id))
+          const fsSelectedTools = selectedTools.filter((id) => FILESYSTEM_TOOLS.has(id))
           if (fsSelectedTools.length === 0 && fsAllowedPaths.length === 0) return undefined
           return {
             enabledTools: fsSelectedTools.length > 0 ? fsSelectedTools : undefined,
@@ -434,14 +448,18 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                 Leave all unchecked to allow all tools. Select specific tools to restrict this agent.
               </p>
 
-              {(["delegation", "filesystem", "others"] as const).map((group) => {
-                const groupTools = availableTools.filter((id) =>
-                  group === "delegation"
-                    ? DELEGATION_TOOLS.has(id)
-                    : group === "filesystem"
-                      ? FILESYSTEM_TOOL_IDS.has(id)
-                      : !DELEGATION_TOOLS.has(id) && !FILESYSTEM_TOOL_IDS.has(id),
-                )
+              {(["filesystem", "shell", "web", "sessions", "agents", "skills", "others"] as const).map((group) => {
+                const groupTools = availableTools.filter((id) => {
+                  if (group === "filesystem") return FILESYSTEM_TOOLS.has(id)
+                  if (group === "shell") return SHELL_TOOLS.has(id)
+                  if (group === "web") return WEB_TOOLS.has(id)
+                  if (group === "sessions") return SESSION_TOOLS.has(id)
+                  if (group === "agents") return AGENT_TOOLS.has(id)
+                  if (group === "skills") return SKILL_TOOLS.has(id)
+                  // others: everything not in any specific group
+                  return !FILESYSTEM_TOOLS.has(id) && !SHELL_TOOLS.has(id) && !WEB_TOOLS.has(id) &&
+                         !SESSION_TOOLS.has(id) && !AGENT_TOOLS.has(id) && !SKILL_TOOLS.has(id)
+                })
                 const selectedCount = groupTools.filter((id) => selectedTools.includes(id)).length
                 const isExpanded = expandedGroup === group
 
@@ -548,7 +566,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                           </div>
                         )}
 
-                        {group === "delegation" && selectedTools.includes("delegate") && (
+                        {group === "sessions" && selectedTools.includes("delegate") && (
                           <div className="mt-3 border-t pt-3">
                             <p className="mb-0.5 text-xs font-medium">Allowed agents for delegate</p>
                             <p className="mb-2 text-xs text-muted-foreground">

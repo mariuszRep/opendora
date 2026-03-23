@@ -1,1 +1,1 @@
-export { BashTool } from "@opendora/tools/execution"
+export { BashTool } from "@opendora/tools/shell"

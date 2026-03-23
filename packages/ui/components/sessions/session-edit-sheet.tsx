@@ -41,7 +41,7 @@ import { opendora } from "@/lib/opendora"
 import { ScheduleDialog } from "./schedule-dialog"
 import { toast } from "sonner"
 
-const FILESYSTEM_TOOL_IDS = ["read", "write", "edit", "glob", "grep", "list", "apply_patch", "multiedit", "codesearch"]
+const FILESYSTEM_TOOLS = ["read", "write", "edit", "list", "glob", "grep", "apply_patch", "multiedit", "codesearch"]
 
 interface SessionEditSheetProps {
   session: Session | null
@@ -293,7 +293,7 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
                   )
                   const agentFsTools = ((currentAgent as any)?.config?.filesystemConfig?.enabledTools ?? (currentAgent as any)?.filesystemConfig?.enabledTools) as string[] | undefined
                   const agentFsPaths = ((currentAgent as any)?.config?.filesystemConfig?.allowedPaths ?? (currentAgent as any)?.filesystemConfig?.allowedPaths) as string[] | undefined
-                  const visibleTools = agentFsTools ?? FILESYSTEM_TOOL_IDS
+                  const visibleTools = agentFsTools ?? FILESYSTEM_TOOLS
                   return (
                     <div className="flex flex-col gap-3">
                       <Label>Filesystem Restrictions</Label>
@@ -303,7 +303,7 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
 
                       {/* Tool checkboxes */}
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                        {visibleTools.map((id) => (
+                        {visibleTools.map((id: string) => (
                           <Label key={id} className="flex cursor-pointer items-center gap-2 font-normal">
                             <Checkbox
                               checked={fsEnabledTools.includes(id)}

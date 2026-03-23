@@ -1055,8 +1055,8 @@ export namespace SessionPrompt {
     }
 
     // Filter filesystem tools by the effective enabledTools (agent ∩ session)
-    const FILESYSTEM_TOOL_IDS = new Set([
-      "read", "write", "edit", "glob", "grep", "list",
+    const FILESYSTEM_TOOLS = new Set([
+      "read", "write", "edit", "list", "glob", "grep",
       "apply_patch", "multiedit", "codesearch",
     ])
     const agentFsTools = input.agent.config?.filesystemConfig?.enabledTools
@@ -1071,7 +1071,7 @@ export namespace SessionPrompt {
     })()
     if (effectiveFsTools !== undefined) {
       for (const id of Object.keys(tools)) {
-        if (FILESYSTEM_TOOL_IDS.has(id) && !effectiveFsTools.has(id)) {
+        if (FILESYSTEM_TOOLS.has(id) && !effectiveFsTools.has(id)) {
           delete tools[id]
         }
       }

@@ -24,7 +24,7 @@ import { CodeSearchTool } from "../../tool/codesearch"
 import { WebSearchTool } from "../../tool/websearch"
 import { TaskTool } from "../../tool/task"
 import { SkillTool } from "../../tool/skill"
-import { BashTool, BatchTool } from "@opendora/tools/execution"
+import { BashTool, BatchTool } from "@opendora/tools/shell"
 import { TodoWriteTool } from "../../tool/todo"
 import { Locale } from "../../util/locale"
 

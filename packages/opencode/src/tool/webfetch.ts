@@ -1,1 +1,1 @@
-export { WebFetchTool } from "@opendora/tools/communication"
+export { WebFetchTool } from "@opendora/tools/web"
