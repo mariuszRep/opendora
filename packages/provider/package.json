@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@opendora/provider",
+  "version": "1.0.0",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "exports": {
+    "./*": "./src/provider/*.ts"
+  },
+  "dependencies": {
+    "@opendora/core": "workspace:*",
+    "@opencode-ai/plugin": "*",
+    "@opencode-ai/util": "*",
+    "@ai-sdk/amazon-bedrock": "*",
+    "@ai-sdk/anthropic": "*",
+    "@ai-sdk/azure": "*",
+    "@ai-sdk/cerebras": "*",
+    "@ai-sdk/cohere": "*",
+    "@ai-sdk/deepinfra": "*",
+    "@ai-sdk/gateway": "*",
+    "@ai-sdk/google": "*",
+    "@ai-sdk/google-vertex": "*",
+    "@ai-sdk/groq": "*",
+    "@ai-sdk/mistral": "*",
+    "@ai-sdk/openai": "*",
+    "@ai-sdk/openai-compatible": "*",
+    "@ai-sdk/perplexity": "*",
+    "@ai-sdk/provider": "*",
+    "@ai-sdk/togetherai": "*",
+    "@ai-sdk/vercel": "*",
+    "@ai-sdk/xai": "*",
+    "@aws-sdk/credential-providers": "*",
+    "@gitlab/gitlab-ai-provider": "*",
+    "@openrouter/ai-sdk-provider": "*",
+    "ai": "catalog:",
+    "fuzzysort": "*",
+    "google-auth-library": "*",
+    "remeda": "catalog:",
+    "zod": "catalog:"
+  }
+}

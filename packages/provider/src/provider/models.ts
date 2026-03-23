@@ -1,11 +1,11 @@
-import { Global } from "../global"
-import { Log } from "../util/log"
+import { Global } from "@opendora/core/global"
+import { Log } from "@opendora/core/util/log"
 import path from "path"
 import z from "zod"
-import { Installation } from "../installation"
-import { Flag } from "../flag/flag"
-import { lazy } from "@/util/lazy"
-import { Filesystem } from "../util/filesystem"
+import { Installation } from "@opendora/core/installation"
+import { Flag } from "@opendora/core/flag/flag"
+import { lazy } from "@opendora/core/util/lazy"
+import { Filesystem } from "@opendora/core/util/filesystem"
 
 // Try to import bundled snapshot (generated at build time)
 // Falls back to undefined in dev mode when snapshot doesn't exist

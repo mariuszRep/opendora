@@ -1,7 +1,7 @@
 import { EOL } from "os"
 import { basename } from "path"
 import { Agent } from "../../../agent"
-import { Provider } from "../../../provider/provider"
+import { Provider } from "@opendora/provider/provider"
 import { Session } from "@opendora/session/session"
 import type { MessageV2 } from "@opendora/session/message"
 import { Identifier } from "../../../id/id"

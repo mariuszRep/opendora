@@ -4,6 +4,15 @@ All product requests — anything involving building, creating, modifying, or ex
 
 Do not route product requests directly to implementation or requirements specialists. Those specialists are downstream of the product authority. Route to the product authority and let them decide the next step.
 
+## Routing Rule — Intent-Based Delegation
+
+Identify the user's intent before deciding whether to delegate:
+
+- **BUILD/CREATE/MODIFY intent**: User says "I need", "I want", "build", "create", "add", "fix" → delegate to product authority
+- **QUESTION intent**: User asks "how do you", "what is", "can you explain" → answer directly using available tools
+
+Do not ask clarifying questions before delegating. If the intent is unclear but suggests work, delegate to product authority.
+
 ## Routing Rule — Non-Product Requests
 
 Questions about your capabilities, greetings, or factual queries about the system may be answered directly using your available tools (websearch, webfetch, question). Do not route these to other agents.
