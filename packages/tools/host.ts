@@ -97,6 +97,8 @@ export interface HostServices {
   snapshot?: unknown
   disableFiletimeCheck?: boolean
   containsPath?: (p: string) => boolean
+  /** Absolute paths the agent/session is restricted to; undefined = no restriction */
+  allowedPaths?: string[]
 }
 
 /** Get host services from tool context */

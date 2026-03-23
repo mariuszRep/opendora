@@ -1,7 +1,7 @@
 import z from "zod"
 import path from "path"
 import { Tool } from "../tool.ts"
-import { Filesystem } from "../lib/filesystem.ts"
+import { Filesystem } from "./lib/primitives.ts"
 import DESCRIPTION from "./glob.txt"
 import { host, directory, worktree } from "../host.ts"
 import { assertExternalDirectory } from "../system/external-directory.ts"
@@ -56,7 +56,7 @@ export const GlobTool = Tool.define("glob", {
       }
     } else {
       // Fallback: use glob library
-      const { Glob } = await import("../lib/glob.ts")
+      const { Glob } = await import("./lib/glob.ts")
       const matches = await Glob.scan(params.pattern, { cwd: search, absolute: true, include: "file", dot: true })
       for (const full of matches) {
         if (files.length >= limit) {

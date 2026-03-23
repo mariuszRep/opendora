@@ -1,5 +1,5 @@
 import { statSync } from "fs"
-import { Filesystem } from "./filesystem.ts"
+import { Filesystem } from "./primitives.ts"
 
 export namespace FileTime {
   // Per-session read times plus per-file write locks.

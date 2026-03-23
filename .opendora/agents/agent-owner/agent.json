@@ -26,7 +26,29 @@
     "session_get",
     "session_tree",
     "reply",
-    "agent_delete"
+    "agent_delete",
+    "glob",
+    "grep",
+    "codesearch",
+    "apply_patch"
   ],
-  "skills": ["improve", "retro", "agent-author"]
+  "skills": [
+    "improve",
+    "retro",
+    "agent-author"
+  ],
+  "filesystemConfig": {
+    "enabledTools": [
+      "read",
+      "write",
+      "edit",
+      "glob",
+      "grep",
+      "codesearch",
+      "apply_patch"
+    ],
+    "allowedPaths": [
+      "/home/ubuntu/projects/opendora/.opendora/skill"
+    ]
+  }
 }

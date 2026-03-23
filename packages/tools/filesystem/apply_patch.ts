@@ -3,11 +3,11 @@ import * as path from "path"
 import * as fs from "fs/promises"
 import { Tool } from "../tool.ts"
 import { host, directory, worktree } from "../host.ts"
-import { Patch } from "../lib/patch.ts"
+import { Patch } from "./lib/patch.ts"
 import { createTwoFilesPatch, diffLines } from "diff"
 import { assertExternalDirectory } from "../system/external-directory.ts"
 import { trimDiff } from "./edit.ts"
-import { Filesystem } from "../lib/filesystem.ts"
+import { Filesystem } from "./lib/primitives.ts"
 import DESCRIPTION from "./apply_patch.txt"
 
 const PatchParams = z.object({

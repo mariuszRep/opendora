@@ -26,6 +26,11 @@ export namespace Global {
   }
 }
 
+// Initialize ripgrep with binary path BEFORE async operations
+// This ensures it's available when File.init() is called during bootstrap
+import { Ripgrep } from "@opendora/tools/filesystem/lib/ripgrep"
+Ripgrep.setBinaryPath(Global.Path.bin)
+
 await Promise.all([
   fs.mkdir(Global.Path.data, { recursive: true }),
   fs.mkdir(Global.Path.config, { recursive: true }),

@@ -10,6 +10,8 @@
   },
   "exports": {
     "./filesystem": "./filesystem/index.ts",
+    "./filesystem/*": "./filesystem/*.ts",
+    "./filesystem/lib/*": "./filesystem/lib/*.ts",
     "./agent-manager": "./agent-manager/index.ts",
     "./system": "./system/index.ts",
     "./task-management": "./task-management/index.ts",
@@ -25,8 +27,11 @@
     "typescript": "catalog:"
   },
   "dependencies": {
+    "@zip.js/zip.js": "2.7.62",
     "diff": "catalog:",
+    "fuzzysort": "3.1.0",
     "glob": "13.0.5",
+    "ignore": "7.0.5",
     "mime-types": "3.0.2",
     "minimatch": "10.0.3",
     "tree-sitter-bash": "0.25.0",

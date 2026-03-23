@@ -29,7 +29,10 @@ export type Session = {
   model?: string
   toolPolicy?: string[]
   systemPrompt?: string
-  defaultPath?: string
+  filesystemConfig?: {
+    enabledTools?: string[]
+    allowedPaths?: string[]
+  }
   time: { created: number; updated: number }
   /** Session that spawned this one via delegate/spawn_session tool */
   spawnParentSessionID?: string
@@ -175,7 +178,10 @@ export type Agent = {
   fallback_model?: { modelID: string; providerID: string }
   tools?: string[]
   toolConfig?: { delegate?: { allowedAgents?: string[] } }
-  defaultPath?: string
+  filesystemConfig?: {
+    enabledTools?: string[]
+    allowedPaths?: string[]
+  }
   native?: boolean
 }
 
@@ -194,7 +200,10 @@ export type AgentConfig = {
   skills?: string[]
   toolConfig?: { delegate?: { allowedAgents?: string[] } }
   enableInjection?: boolean
-  defaultPath?: string
+  filesystemConfig?: {
+    enabledTools?: string[]
+    allowedPaths?: string[]
+  }
 }
 
 /** What the backend returns from create / update */
@@ -271,7 +280,10 @@ export const opendora = {
         model?: string
         toolPolicy?: string[]
         systemPrompt?: string
-        defaultPath?: string
+        filesystemConfig?: {
+          enabledTools?: string[]
+          allowedPaths?: string[]
+        } | null
       },
     ) => req<Session>(`/session/${sessionID}`, { method: "PATCH", body: JSON.stringify(updates) }),
     delete: (sessionID: string) => req<boolean>(`/session/${sessionID}`, { method: "DELETE" }),

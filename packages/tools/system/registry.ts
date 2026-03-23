@@ -5,8 +5,10 @@ import { BatchTool } from "../execution/batch.ts"
 import { EditTool } from "../filesystem/edit.ts"
 import { WriteTool } from "../filesystem/write.ts"
 import { ReadTool } from "../filesystem/read.ts"
+import { ListTool } from "../filesystem/ls.ts"
 import { GlobTool } from "../filesystem/glob.ts"
 import { GrepTool } from "../filesystem/grep.ts"
+import { MultiEditTool } from "../filesystem/multiedit.ts"
 import { ApplyPatchTool } from "../filesystem/apply_patch.ts"
 import { CodeSearchTool } from "../filesystem/codesearch.ts"
 import { TaskTool } from "../task-management/task.ts"
@@ -116,9 +118,11 @@ export namespace ToolRegistry {
       ...(question ? [QuestionTool] : []),
       BashTool,
       ReadTool,
+      ListTool,
       GlobTool,
       GrepTool,
       EditTool,
+      MultiEditTool,
       WriteTool,
       TaskTool,
       DelegateTool,

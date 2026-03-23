@@ -13,7 +13,8 @@
     "session_search",
     "session_tree",
     "delegate",
-    "reply"
+    "reply",
+    "list"
   ],
   "toolConfig": {
     "delegate": {
@@ -23,5 +24,13 @@
       ]
     }
   },
-  "enableInjection": true
+  "enableInjection": true,
+  "filesystemConfig": {
+    "enabledTools": [
+      "list"
+    ],
+    "allowedPaths": [
+      "/home/ubuntu/projects"
+    ]
+  }
 }

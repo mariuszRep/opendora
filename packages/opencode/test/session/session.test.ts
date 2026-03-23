@@ -73,27 +73,29 @@ describe("session.started event", () => {
 })
 
 describe("session default path inheritance", () => {
-  test("session override beats agent default path and child inherits parent effective path", async () => {
+  test("session allowedPaths[0] beats agent allowedPaths[0] and child inherits parent effective path", async () => {
     await Instance.provide({
       directory: projectRoot,
       fn: async () => {
         await Agent.create("path-agent", {
           name: "path-agent",
           mode: "primary",
-          defaultPath: "/tmp/agent-default",
+          filesystemConfig: { allowedPaths: ["/tmp/agent-default"] },
         })
 
         const root = await Session.create({
           agentID: "path-agent",
-          defaultPath: "/tmp/session-override",
         })
+        // Manually set filesystem config on the root session to override agent path
+        await Session.setFilesystemConfig({ sessionID: root.id, filesystemConfig: { allowedPaths: ["/tmp/session-override"] } })
+        const rootUpdated = await Session.get(root.id)
         const child = await Session.create({
           parentID: root.id,
           agentID: "path-agent",
           spawnParentSessionID: root.id,
         })
 
-        expect(await Session.effectiveDefaultPath(root.id)).toBe("/tmp/session-override")
+        expect(await Session.effectiveDefaultPath(rootUpdated)).toBe("/tmp/session-override")
         expect(await Session.effectiveDefaultPath(child.id)).toBe("/tmp/session-override")
 
         await Session.remove(root.id)
@@ -102,19 +104,18 @@ describe("session default path inheritance", () => {
     })
   })
 
-  test("main session inherits the agent default path when the session has none", async () => {
+  test("main session directory uses agent allowedPaths[0] when set", async () => {
     await Instance.provide({
       directory: projectRoot,
       fn: async () => {
         await Agent.create("agent-main-path", {
           name: "agent-main-path",
           mode: "primary",
-          defaultPath: "/tmp/main-agent-default",
+          filesystemConfig: { allowedPaths: ["/tmp/main-agent-default"] },
         })
 
         const session = await Session.ensureMainSession("agent-main-path")
 
-        expect(session.defaultPath).toBe("/tmp/main-agent-default")
         expect(await Session.effectiveDefaultPath(session.id)).toBe("/tmp/main-agent-default")
 
         await Session.remove(session.id)

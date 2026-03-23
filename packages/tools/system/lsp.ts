@@ -5,7 +5,7 @@ import { host, directory, worktree } from "../host.ts"
 import DESCRIPTION from "./lsp.txt"
 import { pathToFileURL } from "url"
 import { assertExternalDirectory } from "./external-directory.ts"
-import { Filesystem } from "../lib/filesystem.ts"
+import { Filesystem } from "../filesystem/lib/primitives.ts"
 
 const operations = [
   "goToDefinition",

@@ -25,6 +25,7 @@ const MIGRATION = `
     agent_id          TEXT,
     default_path      TEXT,
     tool_policy       TEXT,
+    filesystem_config TEXT,
     system_prompt     TEXT,
     share_url         TEXT,
     compaction_count  INTEGER,
@@ -39,6 +40,9 @@ const MIGRATION = `
   );
   CREATE INDEX IF NOT EXISTS sessions_status_idx ON sessions(status);
   CREATE INDEX IF NOT EXISTS sessions_parent_idx ON sessions(parent_session_id);
+
+  -- Migration: add filesystem_config if it doesn't exist (for existing DBs)
+  -- SQLite does not support IF NOT EXISTS for ADD COLUMN, so this is handled below.
 
   CREATE TABLE IF NOT EXISTS messages (
     id          TEXT    PRIMARY KEY,
@@ -69,8 +73,8 @@ function rowToMeta(row: typeof S.$inferSelect): SessionMeta {
     retention:       row.retention       as ReturnType<typeof rowToMeta>["retention"],
     sendPolicy:      row.sendPolicy      ?? undefined,
     agentId:         row.agentId         ?? undefined,
-    defaultPath:     row.defaultPath     ?? undefined,
     toolPolicy:      row.toolPolicy      ?? undefined,
+    filesystemConfig: row.filesystemConfig ?? undefined,
     systemPrompt:    row.systemPrompt    ?? undefined,
     share:           row.shareUrl        ? { url: row.shareUrl } : undefined,
     compactionCount:  row.compactionCount  ?? undefined,
@@ -109,6 +113,11 @@ export class SqliteAdapter implements StorageAdapter {
     client.pragma("journal_mode = WAL")
     client.pragma("foreign_keys = ON")
     client.exec(MIGRATION)
+    // Add filesystem_config column to existing DBs (SQLite doesn't support IF NOT EXISTS on ADD COLUMN)
+    const cols = client.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>
+    if (!cols.some((c) => c.name === "filesystem_config")) {
+      client.exec("ALTER TABLE sessions ADD COLUMN filesystem_config TEXT")
+    }
     this.db = drizzle(client, { schema })
   }
 
@@ -126,8 +135,8 @@ export class SqliteAdapter implements StorageAdapter {
       retention:       meta.retention,
       sendPolicy:      meta.sendPolicy,
       agentId:         meta.agentId,
-      defaultPath:     meta.defaultPath,
       toolPolicy:      meta.toolPolicy,
+      filesystemConfig: meta.filesystemConfig,
       systemPrompt:    meta.systemPrompt,
       shareUrl:        meta.share?.url,
       compactionCount:  meta.compactionCount,
@@ -153,7 +162,7 @@ export class SqliteAdapter implements StorageAdapter {
     if (patch.label           !== undefined) values.label           = patch.label
     if (patch.retention       !== undefined) values.retention       = patch.retention
     if (patch.sendPolicy      !== undefined) values.sendPolicy      = patch.sendPolicy
-    if ("defaultPath" in patch)             values.defaultPath     = patch.defaultPath ?? null
+    if ("filesystemConfig" in patch)        values.filesystemConfig = patch.filesystemConfig ?? null
     if (patch.archivedAt      !== undefined) values.archivedAt      = patch.archivedAt
     if (patch.spawnDepth      !== undefined) values.spawnDepth      = patch.spawnDepth
     if (patch.compactionCount  !== undefined) values.compactionCount  = patch.compactionCount

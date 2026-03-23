@@ -133,7 +133,10 @@ export type SessionMeta = {
   model?: string                  // dynamic model for this session
   toolPolicy?: string[]           // allowed tool names; agent enforces intersection with its own list
   systemPrompt?: string           // boundary prompt prepended to all agent system prompts
-  defaultPath?: string            // default file system path for this session
+  filesystemConfig?: {
+    enabledTools?: string[]       // filesystem tool IDs allowed in this session
+    allowedPaths?: string[]       // absolute paths the agent may access in this session
+  }
   share?: { url: string }         // set when session is shared publicly
   compactionCount?: number        // incremented each time context is compacted
   compactingAt?: number           // set while compaction is running, cleared on completion
@@ -157,7 +160,10 @@ export type CreateSessionOptions = {
   model?: string
   toolPolicy?: string[]
   systemPrompt?: string
-  defaultPath?: string
+  filesystemConfig?: {
+    enabledTools?: string[]
+    allowedPaths?: string[]
+  }
 }
 
 export type SessionFilter = {

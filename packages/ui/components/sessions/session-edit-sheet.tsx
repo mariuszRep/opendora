@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Loader2Icon, Trash2Icon, PlusIcon, PlayIcon, TrashIcon, BellRingIcon, CalendarClockIcon } from "lucide-react"
+import { Loader2Icon, Trash2Icon, PlusIcon, PlayIcon, TrashIcon, BellRingIcon, CalendarClockIcon, XIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -40,6 +41,8 @@ import { opendora } from "@/lib/opendora"
 import { ScheduleDialog } from "./schedule-dialog"
 import { toast } from "sonner"
 
+const FILESYSTEM_TOOL_IDS = ["read", "write", "edit", "glob", "grep", "list", "apply_patch", "multiedit", "codesearch"]
+
 interface SessionEditSheetProps {
   session: Session | null
   open: boolean
@@ -54,11 +57,13 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
   const [sessionType, setSessionType] = useState<SessionType>("scope")
   const [model, setModel] = useState("")
   const [systemPrompt, setSystemPrompt] = useState("")
-  const [defaultPath, setDefaultPath] = useState("")
   const [autoArchive, setAutoArchive] = useState(false)
   const [autoDelete, setAutoDelete] = useState(false)
   const [maxMessages, setMaxMessages] = useState("")
   const [ttlHours, setTtlHours] = useState("")
+  const [fsEnabledTools, setFsEnabledTools] = useState<string[]>([])
+  const [fsAllowedPaths, setFsAllowedPaths] = useState<string[]>([])
+  const [newFsPathInput, setNewFsPathInput] = useState("")
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -78,7 +83,9 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
       setSessionType(session.sessionType ?? "scope")
       setModel(session.model ?? "")
       setSystemPrompt(session.systemPrompt ?? "")
-      setDefaultPath(session.defaultPath ?? "")
+      setFsEnabledTools(session.filesystemConfig?.enabledTools ?? [])
+      setFsAllowedPaths(session.filesystemConfig?.allowedPaths ?? [])
+      setNewFsPathInput("")
       setAutoArchive(session.retention?.autoArchive ?? false)
       setAutoDelete(session.retention?.autoDelete ?? false)
       setMaxMessages(session.retention?.maxMessages?.toString() ?? "")
@@ -130,7 +137,13 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
         sessionType: sessionType !== session.sessionType ? sessionType : undefined,
         model: model !== (session.model ?? "") ? model : undefined,
         systemPrompt: systemPrompt !== (session.systemPrompt ?? "") ? systemPrompt : undefined,
-        defaultPath: defaultPath !== (session.defaultPath ?? "") ? defaultPath : undefined,
+        filesystemConfig: (() => {
+          if (fsEnabledTools.length === 0 && fsAllowedPaths.length === 0) return null
+          return {
+            enabledTools: fsEnabledTools.length > 0 ? fsEnabledTools : undefined,
+            allowedPaths: fsAllowedPaths.length > 0 ? fsAllowedPaths : undefined,
+          }
+        })(),
         retention: Object.keys(retention).length > 0 ? retention : undefined,
       })
 
@@ -273,11 +286,114 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
                   <p className="text-[11px] text-muted-foreground">Boundary prompt prepended to all agent system prompts.</p>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label>Default Path</Label>
-                  <Input value={defaultPath} onChange={(e) => setDefaultPath(e.target.value)} placeholder="/path/to/directory" />
-                  <p className="text-[11px] text-muted-foreground">Default file system path for this session.</p>
-                </div>
+                {/* ── Filesystem Restrictions ── */}
+                {(() => {
+                  const currentAgent = agents.find(
+                    (a) => ((a as any)._id || a.name) === (agentID === "__none__" ? null : agentID),
+                  )
+                  const agentFsTools = ((currentAgent as any)?.config?.filesystemConfig?.enabledTools ?? (currentAgent as any)?.filesystemConfig?.enabledTools) as string[] | undefined
+                  const agentFsPaths = ((currentAgent as any)?.config?.filesystemConfig?.allowedPaths ?? (currentAgent as any)?.filesystemConfig?.allowedPaths) as string[] | undefined
+                  const visibleTools = agentFsTools ?? FILESYSTEM_TOOL_IDS
+                  return (
+                    <div className="flex flex-col gap-3">
+                      <Label>Filesystem Restrictions</Label>
+                      <p className="text-[11px] text-muted-foreground -mt-2">
+                        Narrow which filesystem tools and paths this session may use (inherits from agent if not set).
+                      </p>
+
+                      {/* Tool checkboxes */}
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        {visibleTools.map((id) => (
+                          <Label key={id} className="flex cursor-pointer items-center gap-2 font-normal">
+                            <Checkbox
+                              checked={fsEnabledTools.includes(id)}
+                              onCheckedChange={() =>
+                                setFsEnabledTools((prev) =>
+                                  prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+                                )
+                              }
+                            />
+                            <span className="font-mono text-xs">{id}</span>
+                          </Label>
+                        ))}
+                      </div>
+                      {fsEnabledTools.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto w-fit px-0 text-xs text-muted-foreground"
+                          onClick={() => setFsEnabledTools([])}
+                        >
+                          Clear tool selection (inherit from agent)
+                        </Button>
+                      )}
+
+                      {/* Path restriction */}
+                      <div className="flex flex-col gap-1.5">
+                        <p className="text-[11px] font-medium">Allowed Paths</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Leave empty to inherit from agent. Paths must be within the agent&apos;s allowed paths.
+                        </p>
+                        {fsAllowedPaths.map((p) => (
+                          <div key={p} className="flex items-center gap-2">
+                            <span className="flex-1 truncate font-mono text-[11px]">{p}</span>
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              onClick={() => setFsAllowedPaths((prev) => prev.filter((x) => x !== p))}
+                            >
+                              <XIcon className="size-3" />
+                            </Button>
+                          </div>
+                        ))}
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder={agentFsPaths ? (agentFsPaths[0] ?? "/path") : "/absolute/path"}
+                            value={newFsPathInput}
+                            onChange={(e) => setNewFsPathInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault()
+                                const p = newFsPathInput.trim()
+                                if (!p || fsAllowedPaths.includes(p)) return
+                                if (agentFsPaths && agentFsPaths.length > 0) {
+                                  const ok = agentFsPaths.some(
+                                    (ap) => p === ap || p.startsWith(ap + "/"),
+                                  )
+                                  if (!ok) return
+                                }
+                                setFsAllowedPaths((prev) => [...prev, p])
+                                setNewFsPathInput("")
+                              }
+                            }}
+                            className="h-7 text-xs"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-7 shrink-0"
+                            onClick={() => {
+                              const p = newFsPathInput.trim()
+                              if (!p || fsAllowedPaths.includes(p)) return
+                              if (agentFsPaths && agentFsPaths.length > 0) {
+                                const ok = agentFsPaths.some(
+                                  (ap) => p === ap || p.startsWith(ap + "/"),
+                                )
+                                if (!ok) return
+                              }
+                              setFsAllowedPaths((prev) => [...prev, p])
+                              setNewFsPathInput("")
+                            }}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 <div className="flex flex-col gap-3">
                   <Label>Retention Policy</Label>

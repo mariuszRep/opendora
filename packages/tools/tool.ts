@@ -12,6 +12,10 @@ export namespace Tool {
       toolConfig?: {
         delegate?: { allowedAgents?: string[] }
       }
+      filesystemConfig?: {
+        enabledTools?: string[]
+        allowedPaths?: string[]
+      }
     }
     /** Resolved agent entries for the delegate tool's allowed list */
     delegateAgents?: Array<{ name: string; description?: string }>

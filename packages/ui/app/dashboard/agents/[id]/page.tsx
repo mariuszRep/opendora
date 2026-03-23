@@ -60,6 +60,10 @@ const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
 
 const HIDDEN_TOOLS = new Set(["invalid", "plan_exit"])
 const DELEGATION_TOOLS = new Set(["delegate", "session_search", "session_get", "reply"])
+const FILESYSTEM_TOOL_IDS = new Set([
+  "read", "write", "edit", "glob", "grep", "list",
+  "apply_patch", "multiedit", "codesearch",
+])
 
 type ModelValue = { providerID: string; modelID: string } | undefined
 
@@ -89,8 +93,10 @@ export default function AgentSettingsPage() {
   const [fallbackModelOpen, setFallbackModelOpen] = useState(false)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const [availableTools, setAvailableTools] = useState<string[]>([])
-  const [expandedGroup, setExpandedGroup] = useState<"delegation" | "others" | null>(null)
+  const [expandedGroup, setExpandedGroup] = useState<"delegation" | "filesystem" | "others" | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
+  const [fsAllowedPaths, setFsAllowedPaths] = useState<string[]>([])
+  const [newPathInput, setNewPathInput] = useState("")
   const [persona, setPersona] = useState("")
   const [enableInjection, setEnableInjection] = useState(false)
   const [injection, setInjection] = useState("")
@@ -148,6 +154,8 @@ export default function AgentSettingsPage() {
     setFallbackModel(agent.fallback_model ?? undefined)
     setSelectedTools(agent.tools ?? [])
     setDelegateAllowedAgents((agent as any).config?.toolConfig?.delegate?.allowedAgents ?? agent.toolConfig?.delegate?.allowedAgents ?? [])
+    setFsAllowedPaths((agent as any).config?.filesystemConfig?.allowedPaths ?? (agent as any).filesystemConfig?.allowedPaths ?? [])
+    setNewPathInput("")
     setEnableInjection((agent as any).enableInjection ?? false)
     setInjection((agent as any).injection ?? "")
   }, [agentId, agent]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -213,6 +221,14 @@ export default function AgentSettingsPage() {
           ? { delegate: { allowedAgents: delegateAllowedAgents } }
           : undefined,
         enableInjection: enableInjection || undefined,
+        filesystemConfig: (() => {
+          const fsSelectedTools = selectedTools.filter((id) => FILESYSTEM_TOOL_IDS.has(id))
+          if (fsSelectedTools.length === 0 && fsAllowedPaths.length === 0) return undefined
+          return {
+            enabledTools: fsSelectedTools.length > 0 ? fsSelectedTools : undefined,
+            allowedPaths: fsAllowedPaths.length > 0 ? fsAllowedPaths : undefined,
+          }
+        })(),
       }
       await updateAgent(agentId, config, persona, enableInjection ? injection : undefined)
       router.push("/dashboard")
@@ -566,9 +582,13 @@ export default function AgentSettingsPage() {
               Leave all unchecked to allow all tools. Select specific tools to restrict this agent.
             </p>
 
-            {(["delegation", "others"] as const).map((group) => {
+            {(["delegation", "filesystem", "others"] as const).map((group) => {
               const groupTools = availableTools.filter((id) =>
-                group === "delegation" ? DELEGATION_TOOLS.has(id) : !DELEGATION_TOOLS.has(id),
+                group === "delegation"
+                  ? DELEGATION_TOOLS.has(id)
+                  : group === "filesystem"
+                    ? FILESYSTEM_TOOL_IDS.has(id)
+                    : !DELEGATION_TOOLS.has(id) && !FILESYSTEM_TOOL_IDS.has(id),
               )
               const selectedCount = groupTools.filter((id) => selectedTools.includes(id)).length
               const isExpanded = expandedGroup === group
@@ -651,6 +671,62 @@ export default function AgentSettingsPage() {
                               Clear allowed agents
                             </Button>
                           )}
+                        </div>
+                      )}
+
+                      {group === "filesystem" && (
+                        <div className="mt-3 border-t pt-3" onClick={(e) => e.stopPropagation()}>
+                          <p className="mb-0.5 text-xs font-medium">Allowed paths</p>
+                          <p className="mb-2 text-xs text-muted-foreground">
+                            Agent can only access files within these paths. Leave empty to allow all paths.
+                          </p>
+                          {fsAllowedPaths.map((p) => (
+                            <div key={p} className="mb-1.5 flex items-center gap-2">
+                              <span className="flex-1 truncate font-mono text-xs">{p}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-xs text-muted-foreground"
+                                onClick={() => setFsAllowedPaths((prev) => prev.filter((x) => x !== p))}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          ))}
+                          <div className="mt-1 flex gap-2">
+                            <Input
+                              className="h-7 font-mono text-xs"
+                              placeholder="/absolute/path"
+                              value={newPathInput}
+                              onChange={(e) => setNewPathInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault()
+                                  const val = newPathInput.trim()
+                                  if (val && !fsAllowedPaths.includes(val)) {
+                                    setFsAllowedPaths((prev) => [...prev, val])
+                                    setNewPathInput("")
+                                  }
+                                }
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                              onClick={() => {
+                                const val = newPathInput.trim()
+                                if (val && !fsAllowedPaths.includes(val)) {
+                                  setFsAllowedPaths((prev) => [...prev, val])
+                                  setNewPathInput("")
+                                }
+                              }}
+                            >
+                              Add
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </CardContent>

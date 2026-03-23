@@ -177,6 +177,28 @@ export function configureSessionCore() {
       async tree(opts: { cwd: string; limit: number }) {
         return Ripgrep.tree(opts)
       },
+      async search(args: string[], options?: { cwd?: string }) {
+        return Ripgrep.search({
+          cwd: options?.cwd || Instance.directory,
+          pattern: args.find(arg => !arg.startsWith('-')) || '',
+          glob: args.includes('--glob') ? [args[args.indexOf('--glob') + 1]] : undefined,
+        })
+      },
+      async glob(pattern: string, options?: { cwd?: string; include?: "file" | "dir" | "all"; absolute?: boolean; dot?: boolean }) {
+        const results: string[] = []
+        for await (const file of Ripgrep.files({ cwd: options?.cwd || Instance.directory })) {
+          const { minimatch } = await import('minimatch')
+          if (minimatch(file, pattern, { dot: options?.dot })) {
+            results.push(options?.absolute ? file : file)
+          }
+        }
+        return results
+      },
+      async *files(options?: { cwd?: string; follow?: boolean; hidden?: boolean; signal?: AbortSignal }) {
+        for await (const file of Ripgrep.files({ cwd: options?.cwd || Instance.directory })) {
+          yield file
+        }
+      },
     },
     provider: {
       async getLanguage(model: any) {

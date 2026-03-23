@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode --conditions=browser src/index.ts",
     "serve": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode --conditions=browser src/index.ts serve --port 4096",
-    "dev:ui": "concurrently --kill-others-on-fail \"bun run serve\" \"bun run --cwd packages/ui dev\"",
+    "dev:ui": "bash ./scripts/dev-ui.sh",
     "typecheck": "bun turbo typecheck",
     "test": "echo 'do not run tests from root' && exit 1"
   },
@@ -73,7 +73,8 @@
     "@opendora/sdk": "workspace:*",
     "@opendora/util": "workspace:*",
     "quansync": "1.0.0",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@opencode-ai/plugin": "*"
   },
   "repository": {
     "type": "git",

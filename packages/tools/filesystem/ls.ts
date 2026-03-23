@@ -66,7 +66,7 @@ export const ListTool = Tool.define("list", {
       }
     } else {
       // Fallback: use Glob
-      const { Glob } = await import("../lib/glob.ts")
+      const { Glob } = await import("./lib/glob.ts")
       const matches = await Glob.scan("**/*", { cwd: searchPath, include: "file", dot: false })
       files.push(...matches.slice(0, LIMIT))
     }

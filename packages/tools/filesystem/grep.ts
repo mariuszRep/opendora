@@ -1,7 +1,7 @@
 import z from "zod"
 import { text } from "node:stream/consumers"
 import { Tool } from "../tool.ts"
-import { Filesystem } from "../lib/filesystem.ts"
+import { Filesystem } from "./lib/primitives.ts"
 import { Process } from "../lib/process.ts"
 
 import DESCRIPTION from "./grep.txt"

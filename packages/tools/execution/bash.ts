@@ -7,7 +7,7 @@ import { host, directory } from "../host.ts"
 import { fileURLToPath } from "url"
 import { Language } from "web-tree-sitter"
 import { $ } from "bun"
-import { Filesystem } from "../lib/filesystem.ts"
+import { Filesystem } from "../filesystem/lib/primitives.ts"
 
 const MAX_METADATA_LENGTH = 30_000
 const DEFAULT_TIMEOUT = 2 * 60 * 1000

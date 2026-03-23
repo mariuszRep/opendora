@@ -31,7 +31,6 @@ export class SessionManager {
       ...(opts.agentId      !== undefined && { agentId:      opts.agentId }),
       ...(opts.toolPolicy   !== undefined && { toolPolicy:   opts.toolPolicy }),
       ...(opts.systemPrompt !== undefined && { systemPrompt: opts.systemPrompt }),
-      ...(opts.defaultPath  !== undefined && { defaultPath:  opts.defaultPath }),
       createdAt: Date.now(),
       updatedAt: Date.now(),
     }

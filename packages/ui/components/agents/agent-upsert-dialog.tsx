@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
+import { XIcon } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -50,6 +51,10 @@ const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
 
 const HIDDEN_TOOLS = new Set(["invalid", "plan_exit"])
 const DELEGATION_TOOLS = new Set(["delegate", "session_search", "session_get", "reply"])
+const FILESYSTEM_TOOL_IDS = new Set([
+  "read", "write", "edit", "glob", "grep", "list",
+  "apply_patch", "multiedit", "codesearch",
+])
 
 const NONE = "__none__"
 
@@ -94,11 +99,11 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [fallbackModel, setFallbackModel] = useState<string>(NONE)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const [availableTools, setAvailableTools] = useState<string[]>([])
-  const [expandedGroup, setExpandedGroup] = useState<"delegation" | "others" | null>(null)
+  const [expandedGroup, setExpandedGroup] = useState<"delegation" | "filesystem" | "others" | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
+  const [fsAllowedPaths, setFsAllowedPaths] = useState<string[]>([])
+  const [newPathInput, setNewPathInput] = useState("")
   const [persona, setPersona] = useState("")
-  const [defaultPath, setDefaultPath] = useState("")
-  const [enableDefaultPath, setEnableDefaultPath] = useState(false)
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -129,8 +134,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setSelectedTools(a.tools ?? [])
       setDelegateAllowedAgents((a as any).config?.toolConfig?.delegate?.allowedAgents ?? a.toolConfig?.delegate?.allowedAgents ?? [])
       setPersona("")
-      setDefaultPath(a.defaultPath ?? "")
-      setEnableDefaultPath(!!a.defaultPath)
+      setFsAllowedPaths((a as any).config?.filesystemConfig?.allowedPaths ?? (a as any).filesystemConfig?.allowedPaths ?? [])
       setError(null)
       if (agentId) getAgentPersona(agentId).then(setPersona).catch(() => {})
     } else {
@@ -146,8 +150,8 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setSelectedTools([])
       setDelegateAllowedAgents([])
       setPersona("")
-      setDefaultPath("")
-      setEnableDefaultPath(false)
+      setFsAllowedPaths([])
+      setNewPathInput("")
       setError(null)
     }
   }, [open, isEdit, agentId]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -204,7 +208,14 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
         toolConfig: delegateAllowedAgents.length > 0
           ? { delegate: { allowedAgents: delegateAllowedAgents } }
           : undefined,
-        defaultPath: enableDefaultPath && defaultPath.trim() ? defaultPath.trim() : undefined,
+        filesystemConfig: (() => {
+          const fsSelectedTools = selectedTools.filter((id) => FILESYSTEM_TOOL_IDS.has(id))
+          if (fsSelectedTools.length === 0 && fsAllowedPaths.length === 0) return undefined
+          return {
+            enabledTools: fsSelectedTools.length > 0 ? fsSelectedTools : undefined,
+            allowedPaths: fsAllowedPaths.length > 0 ? fsAllowedPaths : undefined,
+          }
+        })(),
       }
       if (isEdit && agentId) {
         await updateAgent(agentId, config, persona)
@@ -397,25 +408,6 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                 <Switch checked={hidden} onCheckedChange={setHidden} />
               </div>
 
-              {/* Default Path */}
-              <div className="flex flex-col gap-2 rounded-md border p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Default Path</p>
-                    <p className="text-xs text-muted-foreground">Set a default directory for this agent</p>
-                  </div>
-                  <Switch checked={enableDefaultPath} onCheckedChange={setEnableDefaultPath} />
-                </div>
-                {enableDefaultPath && (
-                  <Input
-                    placeholder="/path/to/directory"
-                    value={defaultPath}
-                    onChange={(e) => setDefaultPath(e.target.value)}
-                    className="mt-1"
-                  />
-                )}
-              </div>
-
               {/* Persona */}
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="agent-persona">
@@ -442,9 +434,13 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                 Leave all unchecked to allow all tools. Select specific tools to restrict this agent.
               </p>
 
-              {(["delegation", "others"] as const).map((group) => {
+              {(["delegation", "filesystem", "others"] as const).map((group) => {
                 const groupTools = availableTools.filter((id) =>
-                  group === "delegation" ? DELEGATION_TOOLS.has(id) : !DELEGATION_TOOLS.has(id),
+                  group === "delegation"
+                    ? DELEGATION_TOOLS.has(id)
+                    : group === "filesystem"
+                      ? FILESYSTEM_TOOL_IDS.has(id)
+                      : !DELEGATION_TOOLS.has(id) && !FILESYSTEM_TOOL_IDS.has(id),
                 )
                 const selectedCount = groupTools.filter((id) => selectedTools.includes(id)).length
                 const isExpanded = expandedGroup === group
@@ -492,6 +488,64 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                           >
                             Clear group
                           </Button>
+                        )}
+
+                        {group === "filesystem" && isExpanded && (
+                          <div className="mt-3 border-t pt-3">
+                            <p className="mb-0.5 text-xs font-medium">Allowed paths</p>
+                            <p className="mb-2 text-xs text-muted-foreground">
+                              Leave empty to allow all paths. Add absolute paths to restrict this agent.
+                            </p>
+                            {fsAllowedPaths.map((p) => (
+                              <div key={p} className="mb-1 flex items-center gap-2">
+                                <span className="flex-1 truncate font-mono text-xs">{p}</span>
+                                <Button
+                                  size="icon-sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setFsAllowedPaths((prev) => prev.filter((x) => x !== p))
+                                  }}
+                                >
+                                  <XIcon className="size-3" />
+                                </Button>
+                              </div>
+                            ))}
+                            <div className="mt-2 flex gap-2">
+                              <Input
+                                placeholder="/absolute/path"
+                                value={newPathInput}
+                                onChange={(e) => setNewPathInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault()
+                                    const p = newPathInput.trim()
+                                    if (p && !fsAllowedPaths.includes(p)) {
+                                      setFsAllowedPaths((prev) => [...prev, p])
+                                      setNewPathInput("")
+                                    }
+                                  }
+                                }}
+                                className="h-7 text-xs"
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-7"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const p = newPathInput.trim()
+                                  if (p && !fsAllowedPaths.includes(p)) {
+                                    setFsAllowedPaths((prev) => [...prev, p])
+                                    setNewPathInput("")
+                                  }
+                                }}
+                              >
+                                Add
+                              </Button>
+                            </div>
+                          </div>
                         )}
 
                         {group === "delegation" && selectedTools.includes("delegate") && (

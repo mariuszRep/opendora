@@ -15,6 +15,22 @@ export async function assertExternalDirectory(ctx: Tool.Context, target?: string
   if (options?.bypass) return
 
   const h = host(ctx)
+
+  // If allowedPaths is configured, the path must be within one of them.
+  // This is a hard policy boundary — throw rather than ask for permission.
+  if (h.allowedPaths && h.allowedPaths.length > 0) {
+    const isAllowed = h.allowedPaths.some(
+      (allowed) => target === allowed || target.startsWith(allowed + path.sep),
+    )
+    if (!isAllowed) {
+      throw new Error(
+        `Path "${target}" is outside the allowed filesystem paths for this session.\n` +
+          `Allowed paths: ${h.allowedPaths.join(", ")}`,
+      )
+    }
+    return
+  }
+
   const containsPath = h.containsPath ?? ((p: string) => {
     if (!h.worktree) return true
     return !path.relative(h.worktree, p).startsWith("..")
