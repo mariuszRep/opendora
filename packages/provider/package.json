@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "@opendora/core": "workspace:*",
+    "@opendora/util": "workspace:*",
     "@opencode-ai/plugin": "*",
-    "@opencode-ai/util": "*",
     "@ai-sdk/amazon-bedrock": "*",
     "@ai-sdk/anthropic": "*",
     "@ai-sdk/azure": "*",

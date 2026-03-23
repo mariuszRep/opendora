@@ -16,7 +16,13 @@
     "opendora": "./bin/opencode"
   },
   "exports": {
-    "./*": "./src/*.ts"
+    "./*": "./src/*.ts",
+    "./bun": "./src/bun/index.ts",
+    "./plugin": "./src/plugin/index.ts",
+    "./auth": "./src/auth/index.ts",
+    "./env": "./src/env/index.ts",
+    "./global": "./src/global/index.ts",
+    "./installation": "./src/installation/index.ts"
   },
   "devDependencies": {
     "@babel/core": "7.28.4",

@@ -4,7 +4,7 @@ import { map, filter, pipe, fromEntries, mapValues } from "remeda"
 import z from "zod"
 import { fn } from "@opendora/core/util/fn"
 import type { AuthOuathResult, Hooks } from "@opencode-ai/plugin"
-import { NamedError } from "@opencode-ai/util/error"
+import { NamedError } from "@opendora/util/error"
 import { Auth } from "@opendora/core/auth"
 
 export namespace ProviderAuth {

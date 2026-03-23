@@ -3,8 +3,8 @@ import { Log } from "../util/log"
 import { Installation } from "../installation"
 import { Auth, OAUTH_DUMMY_KEY } from "../auth"
 import os from "os"
-import { Provider } from "@/provider/provider"
-import { ProviderTransform } from "@/provider/transform"
+import { Provider } from "@opendora/provider/provider"
+import { ProviderTransform } from "@opendora/provider/transform"
 
 const log = Log.create({ service: "plugin.codex" })
 

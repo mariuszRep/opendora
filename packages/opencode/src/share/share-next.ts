@@ -1,7 +1,7 @@
 import { Bus } from "@/bus"
 import { Config } from "@/config/config"
 import { ulid } from "ulid"
-import { Provider } from "@/provider/provider"
+import { Provider } from "@opendora/provider/provider"
 import { Session } from "@opendora/session/session"
 import { MessageV2 } from "@opendora/session/message"
 import { Database, eq } from "@/storage/db"
