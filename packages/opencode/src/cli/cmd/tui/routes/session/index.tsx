@@ -34,7 +34,7 @@ import { Locale } from "@/util/locale"
 import type { Tool } from "@/tool/tool"
 import type { ReadTool } from "@/tool/read"
 import type { WriteTool } from "@/tool/write"
-import { BashTool } from "@/tool/bash"
+import { BashTool, BatchTool } from "@opendora/tools/execution"
 import type { GlobTool } from "@/tool/glob"
 import { TodoWriteTool } from "@/tool/todo"
 import type { GrepTool } from "@/tool/grep"
@@ -1465,6 +1465,9 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         <Match when={props.part.tool === "bash"}>
           <Bash {...toolprops} />
         </Match>
+        <Match when={props.part.tool === "batch"}>
+          <Batch {...toolprops} />
+        </Match>
         <Match when={props.part.tool === "glob"}>
           <Glob {...toolprops} />
         </Match>
@@ -1756,6 +1759,39 @@ function Bash(props: ToolProps<typeof BashTool>) {
         </InlineTool>
       </Match>
     </Switch>
+  )
+}
+
+function Batch(props: ToolProps<typeof BatchTool>) {
+  const { theme } = useTheme()
+  const summary = createMemo(() => {
+    const md = props.metadata as {
+      totalCalls?: number
+      successful?: number
+      failed?: number
+      tools?: string[]
+    }
+    const total = md.totalCalls ?? 0
+    const successful = md.successful ?? 0
+    const failed = md.failed ?? 0
+    return { total, successful, failed, tools: md.tools ?? [] }
+  })
+
+  return (
+    <BlockTool title="# Batch" part={props.part} spinner={props.part.state.status === "running"}>
+      <box gap={1}>
+        <text fg={theme.text}>
+          {summary().successful}/{summary().total} tools succeeded
+          <Show when={summary().failed > 0}>{" · "}{summary().failed} failed</Show>
+        </text>
+        <Show when={summary().tools.length > 0}>
+          <text fg={theme.textMuted}>{summary().tools.join(", ")}</text>
+        </Show>
+        <Show when={props.output}>
+          <text fg={theme.text}>{stripAnsi(props.output?.trim() ?? "")}</text>
+        </Show>
+      </box>
+    </BlockTool>
   )
 }
 

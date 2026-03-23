@@ -24,7 +24,7 @@ import { CodeSearchTool } from "../../tool/codesearch"
 import { WebSearchTool } from "../../tool/websearch"
 import { TaskTool } from "../../tool/task"
 import { SkillTool } from "../../tool/skill"
-import { BashTool } from "../../tool/bash"
+import { BashTool, BatchTool } from "@opendora/tools/execution"
 import { TodoWriteTool } from "../../tool/todo"
 import { Locale } from "../../util/locale"
 
@@ -199,6 +199,21 @@ function bash(info: ToolProps<typeof BashTool>) {
       title: `${info.input.command}`,
     },
     output,
+  )
+}
+
+function batchTool(info: ToolProps<typeof BatchTool>) {
+  const total = info.metadata.totalCalls ?? 0
+  const successful = info.metadata.successful ?? 0
+  const failed = info.metadata.failed ?? 0
+  const tools = Array.isArray(info.metadata.tools) ? info.metadata.tools.join(", ") : undefined
+  block(
+    {
+      icon: "∥",
+      title: `Batch ${successful}/${total} successful`,
+      ...(failed > 0 ? { description: `${failed} failed${tools ? ` · ${tools}` : ""}` } : tools ? { description: tools } : {}),
+    },
+    info.part.state.status === "completed" ? info.part.state.output : undefined,
   )
 }
 
@@ -407,6 +422,7 @@ export const RunCommand = cmd({
       function tool(part: ToolPart) {
         try {
           if (part.tool === "bash") return bash(props<typeof BashTool>(part))
+          if (part.tool === "batch") return batchTool(props<typeof BatchTool>(part))
           if (part.tool === "glob") return glob(props<typeof GlobTool>(part))
           if (part.tool === "grep") return grep(props<typeof GrepTool>(part))
           if (part.tool === "list") return list(props<typeof ListTool>(part))

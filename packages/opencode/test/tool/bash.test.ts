@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test"
 import os from "os"
 import path from "path"
-import { BashTool } from "../../src/tool/bash"
+import "../../src/tool/tool"
+import { BashTool } from "@opendora/tools/execution"
 import { Instance } from "../../src/project/instance"
 import { Filesystem } from "../../src/util/filesystem"
 import { tmpdir } from "../fixture/fixture"
@@ -19,6 +20,19 @@ const ctx = {
   ask: async () => {},
 }
 
+function toolCtx(overrides: Partial<typeof ctx> = {}) {
+  return {
+    ...ctx,
+    ...overrides,
+    extra: {
+      directory: Instance.directory,
+      worktree: Instance.worktree,
+      containsPath: Instance.containsPath,
+      ...(overrides as any).extra,
+    },
+  }
+}
+
 const projectRoot = path.join(__dirname, "../..")
 
 describe("tool.bash", () => {
@@ -32,7 +46,7 @@ describe("tool.bash", () => {
             command: "echo 'test'",
             description: "Echo test message",
           },
-          ctx,
+          toolCtx(),
         )
         expect(result.metadata.exit).toBe(0)
         expect(result.metadata.output).toContain("test")
@@ -49,12 +63,11 @@ describe("tool.bash permissions", () => {
       fn: async () => {
         const bash = await BashTool.init()
         const requests: Array<Omit<PermissionNext.Request, "id" | "sessionID" | "tool">> = []
-        const testCtx = {
-          ...ctx,
+        const testCtx = toolCtx({
           ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
             requests.push(req)
           },
-        }
+        })
         await bash.execute(
           {
             command: "echo hello",
@@ -76,12 +89,11 @@ describe("tool.bash permissions", () => {
       fn: async () => {
         const bash = await BashTool.init()
         const requests: Array<Omit<PermissionNext.Request, "id" | "sessionID" | "tool">> = []
-        const testCtx = {
-          ...ctx,
+        const testCtx = toolCtx({
           ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
             requests.push(req)
           },
-        }
+        })
         await bash.execute(
           {
             command: "echo foo && echo bar",
@@ -104,12 +116,11 @@ describe("tool.bash permissions", () => {
       fn: async () => {
         const bash = await BashTool.init()
         const requests: Array<Omit<PermissionNext.Request, "id" | "sessionID" | "tool">> = []
-        const testCtx = {
-          ...ctx,
+        const testCtx = toolCtx({
           ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
             requests.push(req)
           },
-        }
+        })
         await bash.execute(
           {
             command: "cd ../",
@@ -130,12 +141,11 @@ describe("tool.bash permissions", () => {
       fn: async () => {
         const bash = await BashTool.init()
         const requests: Array<Omit<PermissionNext.Request, "id" | "sessionID" | "tool">> = []
-        const testCtx = {
-          ...ctx,
+        const testCtx = toolCtx({
           ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
             requests.push(req)
           },
-        }
+        })
         await bash.execute(
           {
             command: "ls",
@@ -163,12 +173,11 @@ describe("tool.bash permissions", () => {
       fn: async () => {
         const bash = await BashTool.init()
         const requests: Array<Omit<PermissionNext.Request, "id" | "sessionID" | "tool">> = []
-        const testCtx = {
-          ...ctx,
+        const testCtx = toolCtx({
           ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
             requests.push(req)
           },
-        }
+        })
         const filepath = path.join(outerTmp.path, "outside.txt")
         await bash.execute(
           {
@@ -193,12 +202,11 @@ describe("tool.bash permissions", () => {
       fn: async () => {
         const bash = await BashTool.init()
         const requests: Array<Omit<PermissionNext.Request, "id" | "sessionID" | "tool">> = []
-        const testCtx = {
-          ...ctx,
+        const testCtx = toolCtx({
           ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
             requests.push(req)
           },
-        }
+        })
 
         await Bun.write(path.join(tmp.path, "tmpfile"), "x")
 
@@ -223,12 +231,11 @@ describe("tool.bash permissions", () => {
       fn: async () => {
         const bash = await BashTool.init()
         const requests: Array<Omit<PermissionNext.Request, "id" | "sessionID" | "tool">> = []
-        const testCtx = {
-          ...ctx,
+        const testCtx = toolCtx({
           ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
             requests.push(req)
           },
-        }
+        })
         await bash.execute(
           {
             command: "git log --oneline -5",
@@ -250,12 +257,11 @@ describe("tool.bash permissions", () => {
       fn: async () => {
         const bash = await BashTool.init()
         const requests: Array<Omit<PermissionNext.Request, "id" | "sessionID" | "tool">> = []
-        const testCtx = {
-          ...ctx,
+        const testCtx = toolCtx({
           ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
             requests.push(req)
           },
-        }
+        })
         await bash.execute(
           {
             command: "cd .",
@@ -276,12 +282,11 @@ describe("tool.bash permissions", () => {
       fn: async () => {
         const bash = await BashTool.init()
         const requests: Array<Omit<PermissionNext.Request, "id" | "sessionID" | "tool">> = []
-        const testCtx = {
-          ...ctx,
+        const testCtx = toolCtx({
           ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
             requests.push(req)
           },
-        }
+        })
         await bash.execute({ command: "cat > /tmp/output.txt", description: "Redirect ls output" }, testCtx)
         const bashReq = requests.find((r) => r.permission === "bash")
         expect(bashReq).toBeDefined()
@@ -297,12 +302,11 @@ describe("tool.bash permissions", () => {
       fn: async () => {
         const bash = await BashTool.init()
         const requests: Array<Omit<PermissionNext.Request, "id" | "sessionID" | "tool">> = []
-        const testCtx = {
-          ...ctx,
+        const testCtx = toolCtx({
           ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
             requests.push(req)
           },
-        }
+        })
         await bash.execute({ command: "ls -la", description: "List" }, testCtx)
         const bashReq = requests.find((r) => r.permission === "bash")
         expect(bashReq).toBeDefined()
@@ -325,7 +329,7 @@ describe("tool.bash truncation", () => {
             command: `seq 1 ${lineCount}`,
             description: "Generate lines exceeding limit",
           },
-          ctx,
+          toolCtx(),
         )
         expect((result.metadata as any).truncated).toBe(true)
         expect(result.output).toContain("truncated")
@@ -345,7 +349,7 @@ describe("tool.bash truncation", () => {
             command: `head -c ${byteCount} /dev/zero | tr '\\0' 'a'`,
             description: "Generate bytes exceeding limit",
           },
-          ctx,
+          toolCtx(),
         )
         expect((result.metadata as any).truncated).toBe(true)
         expect(result.output).toContain("truncated")
@@ -364,7 +368,7 @@ describe("tool.bash truncation", () => {
             command: "echo hello",
             description: "Echo hello",
           },
-          ctx,
+          toolCtx(),
         )
         expect((result.metadata as any).truncated).toBe(false)
         const eol = process.platform === "win32" ? "\r\n" : "\n"
@@ -384,7 +388,7 @@ describe("tool.bash truncation", () => {
             command: `seq 1 ${lineCount}`,
             description: "Generate lines for file check",
           },
-          ctx,
+          toolCtx(),
         )
         expect((result.metadata as any).truncated).toBe(true)
 
