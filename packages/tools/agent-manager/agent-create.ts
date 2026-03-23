@@ -24,6 +24,7 @@ export const AgentCreateTool = Tool.define(
       color: z.string().optional().describe("Hex color code for UI display"),
       hidden: z.boolean().optional().describe("Whether to hide this agent from UI listings"),
       tools: z.array(z.string()).optional().describe("Specific tools this agent can use (empty array = no tools, undefined = all available tools)"),
+      skills: z.array(z.string()).optional().describe("Skills allocated to this agent (skill names)"),
       enableInjection: z.boolean().optional().describe("Enable dynamic prompt injection for this agent"),
       persona: z.string().optional().describe("The agent's persona and system prompt (PERSONA.md content)"),
       injection: z.string().optional().describe("Dynamic injection content (INJECTION.md content)")
@@ -40,6 +41,7 @@ export const AgentCreateTool = Tool.define(
       color?: string
       hidden?: boolean
       tools?: string[]
+      skills?: string[]
       enableInjection?: boolean
       persona?: string
       injection?: string
@@ -66,6 +68,7 @@ export const AgentCreateTool = Tool.define(
           color: args.color,
           hidden: args.hidden,
           tools: args.tools,
+          skills: args.skills,
           enableInjection: args.enableInjection
         }
 

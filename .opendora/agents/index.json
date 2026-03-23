@@ -66,6 +66,11 @@
       "id": "agent-owner",
       "name": "Minds",
       "mode": "primary"
+    },
+    {
+      "id": "skill-crud-test-agent",
+      "name": "Skill CRUD Test Agent",
+      "mode": "worker"
     }
   ]
 }

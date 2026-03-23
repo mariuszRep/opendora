@@ -12,6 +12,7 @@
   "tools": [
     "skill",
     "session_search",
+    "session_tree",
     "todowrite",
     "skill_discover",
     "skill_load",

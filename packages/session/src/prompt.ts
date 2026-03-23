@@ -835,11 +835,13 @@ export namespace SessionPrompt {
         containsPath: (p: string) => cfg.instance?.containsPath?.(p),
         session: {
           list: (filter?: any) => Session.list(filter),
+          children: (id: string) => Session.children(id),
           get: (id: string) => Session.get(id),
           messages: (id: string) => Session.messages(id),
           create: (opts: any) => Session.create(opts),
           ensureMainSession: (agentID: string) => Session.ensureMainSession(agentID),
           setSpawnResponseMessageID: (opts: any) => Session.setSpawnResponseMessageID(opts),
+          setReplyToMessageID: (opts: any) => Session.setReplyToMessageID(opts),
           getMessage: (messageId: string) => Session.getMessage(messageId),
           reply: (opts: any) => Session.reply(opts),
           pong: (sessionID: string, opts: any) => Session.pong(sessionID, opts),

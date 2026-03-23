@@ -51,3 +51,16 @@
 - **Post**: 1/1 correct | pandora delegated only, chain completed to BA asking questions
 - **Decision**: KEEP
 - **Lesson**: Runtime-only agents need explicit injection rules to prevent dual-handling; the question tool alone was insufficient guardrail
+
+---
+
+### exp-pandora-20260322-1 — 2026-03-22
+
+- **Target**: pandora
+- **Goal**: delegate vague product requests through the full product chain (pandora → project-owner → BA → project-owner → PM) and receive a completed requirements summary back
+- **Scope**: injection (chain tracing — no artifact change attempted)
+- **Change**: None — tracing experiment only
+- **Baseline**: Chain traced end-to-end with manual intervention needed at step 3 | pandora→project-owner: ✅ | project-owner→BA: ✅ | BA asks questions in isolation: ⚠️ chain stalled | BA→summary after manual answers: ✅ | project-owner→PM: ✅ | requirements reached PM: ✅
+- **Post**: n/a
+- **Decision**: IMPROVE (not KEEP/DISCARD — this is a tracing experiment that surfaced a workflow mismatch; next step: fix BA's injection)
+- **Lesson**: BA's workflow is incompatible with being spawned as a worker sub-session — it asks questions in an isolated session with no mechanism for the user to respond, stalling the chain; fix: BA should produce a requirements summary directly from the injected prompt when spawned via delegation, without asking questions; project-owner should handle user clarification through a separate role session or skip BA entirely for simple clear requests

@@ -15,6 +15,8 @@ export namespace Tool {
     }
     /** Resolved agent entries for the delegate tool's allowed list */
     delegateAgents?: Array<{ name: string; description?: string }>
+    /** Skills allocated to this agent — skill_load is restricted to this list if non-empty */
+    skills?: string[]
   }
 
   export interface InitContext {

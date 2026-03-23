@@ -16,7 +16,6 @@
   "toolConfig": {
     "delegate": {
       "allowedAgents": [
-        "BA",
         "Minds",
         "Project Owner"
       ]

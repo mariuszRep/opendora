@@ -28,12 +28,21 @@ export const ReplyTool = Tool.define("reply", async (_initCtx) => ({
     let targetSessionId = params.session_id
     let parentMessageID = params.parent_message_id
 
-    // Resolve target by walking the message parent chain back to the root origin session.
-    // Each delegated message carries parent.sessionId pointing to the session it came from.
-    // Walking this chain finds the session where the original user request was made.
+    // Resolve target: prefer explicit reply_to_message_id stored on this session,
+    // then fall back to walking the spawn parent chain.
     if (!targetSessionId || !parentMessageID) {
       const currentSession = await sessionSvc.get(ctx.sessionID) as any
-      let spawnMsgId = currentSession?.spawnParentMessageID
+
+      // If the session has an explicit replyToMessageID, use it directly
+      if (!parentMessageID && currentSession?.replyToMessageID) {
+        parentMessageID = currentSession.replyToMessageID
+        if (!targetSessionId) {
+          const replyMsg = await sessionSvc.getMessage(currentSession.replyToMessageID) as any
+          if (replyMsg?.session_id) targetSessionId = replyMsg.session_id
+        }
+      }
+
+      let spawnMsgId = !parentMessageID ? currentSession?.spawnParentMessageID : undefined
 
       if (spawnMsgId) {
         let resolvedSessionId: string | undefined

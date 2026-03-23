@@ -9,7 +9,14 @@
   "color": "blue",
   "hidden": true,
   "tools": [
-    "question"
+    "read",
+    "edit",
+    "write",
+    "glob",
+    "grep",
+    "bash",
+    "todowrite",
+    "delegate"
   ],
   "enableInjection": true
 }

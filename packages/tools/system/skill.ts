@@ -5,7 +5,7 @@ import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 
 // Tool to discover/list available skills
-export const SkillDiscoverTool = Tool.define("skill_discover", async (initCtx) => {
+export const SkillDiscoverTool = Tool.define("skill_discover", async (_initCtx) => {
   const description =
     "Discover and list available skills that provide domain-specific instructions and workflows. Use this tool to see what specialized skills are available. To actually load and use a skill, use the skill_load tool."
 
@@ -14,7 +14,7 @@ export const SkillDiscoverTool = Tool.define("skill_discover", async (initCtx) =
   return {
     description,
     parameters,
-    async execute(params: z.infer<typeof parameters>, ctx) {
+    async execute(_params: z.infer<typeof parameters>, ctx) {
       const skills = host(ctx).skills
       if (!skills) {
         throw new Error("Skill discovery is not available in this context")
@@ -50,8 +50,11 @@ export const SkillDiscoverTool = Tool.define("skill_discover", async (initCtx) =
 
 // Tool to load and use a specific skill
 export const SkillLoadTool = Tool.define("skill_load", async (initCtx) => {
-  const description =
-    "Load a specialized skill that provides domain-specific instructions and workflows. When you recognize that a task matches one of the available skills, use this tool to load the full skill instructions."
+  const allowedSkills = initCtx?.agent?.skills ?? []
+
+  const description = allowedSkills.length > 0
+    ? `Load a specialized skill. This agent can load the following skills: ${allowedSkills.join(", ")}.`
+    : "Load a specialized skill that provides domain-specific instructions and workflows. When you recognize that a task matches one of the available skills, use this tool to load the full skill instructions."
 
   const parameters = z.object({
     name: z.string().describe("The name of the skill to load"),
@@ -64,6 +67,12 @@ export const SkillLoadTool = Tool.define("skill_load", async (initCtx) => {
       const skills = host(ctx).skills
       if (!skills) {
         throw new Error("Skill tool is not available in this context")
+      }
+
+      if (allowedSkills.length > 0 && !allowedSkills.includes(params.name)) {
+        throw new Error(
+          `Skill "${params.name}" is not allocated to this agent. Allowed skills: ${allowedSkills.join(", ")}`
+        )
       }
 
       const skill = await skills.get(params.name)

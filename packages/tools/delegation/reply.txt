@@ -1,18 +1,29 @@
-Post a message directly into another session.
+Post a message silently into another session. This does NOT trigger the LLM there. The message appears in that session and waits — the human or agent in that session must decide what to do next.
 
-Use this to reach back to the session that originated a request — to notify, invite, update, or engage the user through the channel where they are waiting.
+Use this tool when you are done with a task and need to report back, but the caller should decide whether to continue. The caller's session will show your message with no automatic follow-up.
 
-Before using this tool, be fully aware of where the current request came from. Trace it back: which session sent the work to you, and which session before that? The user may not be in your session — they are in the session where the original request was made. That is where your reply should go.
+WHEN TO USE reply vs delegate:
 
-The session_id parameter can be omitted when the origin is unambiguous — the tool will resolve it automatically from the session chain. Use it explicitly when you need to target a specific session other than your immediate parent.
+Use reply (this tool) when:
+- You were given reply_to in your session context — this is the expected tool
+- You are reporting a result, summary, or status back to the originating session
+- You want the caller to see your output and decide what happens next
+- You do NOT want to automatically trigger the caller's LLM
 
-Use reply (not delegate) when:
-- You are notifying the originating session that work is in progress
-- You are inviting the user to engage with you in your own session
-- You are reporting a result or summary back up the chain
-- You need to reach the user without starting a new delegation
+Use delegate (not this tool) when:
+- You want to actively trigger the LLM in the target session
+- You need the target agent to respond and continue working
+- You are initiating new work in another session, not closing out a task
+
+HOW REPLY THREADING WORKS:
+
+When reply_to_message_id is set on your session (visible in your <session> context), reply will automatically:
+- Target the correct session
+- Thread the message under the correct parent message
+
+You only need to provide session_id or parent_message_id explicitly when targeting a session other than the one that spawned you.
 
 Parameters:
-- session_id: target session to post into — omit to auto-resolve from spawn parent
+- session_id: target session to post into — omit to auto-resolve from session context
 - message: the text to post
-- parent_message_id: message ID to thread against (optional, auto-resolved if omitted)
+- parent_message_id: message ID to thread against — omit to auto-resolve from session context

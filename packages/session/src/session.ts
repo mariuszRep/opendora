@@ -109,6 +109,7 @@ export namespace Session {
       spawn_parent_session_id: info.spawnParentSessionID,
       spawn_parent_message_id: info.spawnParentMessageID,
       spawn_response_message_id: info.spawnResponseMessageID,
+      reply_to_message_id: info.replyToMessageID,
       input_tokens: info.tokens?.input,
       output_tokens: info.tokens?.output,
       cache_read_tokens: info.tokens?.cacheRead,
@@ -190,6 +191,7 @@ export namespace Session {
       spawnParentSessionID: z.string().optional(),
       spawnParentMessageID: z.string().optional(),
       spawnResponseMessageID: z.string().optional(),
+      replyToMessageID: z.string().optional(),
       tokens: z
         .object({
           input: z.number(),
@@ -242,6 +244,7 @@ export namespace Session {
         spawnDepth: Info.shape.spawnDepth,
         spawnParentSessionID: Info.shape.spawnParentSessionID,
         spawnParentMessageID: Info.shape.spawnParentMessageID,
+        replyToMessageID: Info.shape.replyToMessageID,
       })
       .optional(),
     async (input) => {
@@ -261,6 +264,7 @@ export namespace Session {
         spawnDepth: input?.spawnDepth,
         spawnParentSessionID: input?.spawnParentSessionID,
         spawnParentMessageID: input?.spawnParentMessageID,
+        replyToMessageID: input?.replyToMessageID,
       })
     },
   )
@@ -328,6 +332,7 @@ export namespace Session {
     spawnDepth?: number
     spawnParentSessionID?: string
     spawnParentMessageID?: string
+    replyToMessageID?: string
   }) {
     const cfg = getConfig()
     const id = Identifier.descending("session", input.id)
@@ -367,12 +372,17 @@ export namespace Session {
 
     log.info("[session] created", id, sessionType, title)
 
-    // Apply owner fields
+    // Apply owner + reply_to fields
+    const extraFields: Record<string, any> = {}
     if (input.ownerID) {
-      db.update(SessionTable)
-        .set({ owner_id: input.ownerID, owner_kind: input.ownerKind ?? "user" })
-        .where(eq(SessionTable.id, id))
-        .run()
+      extraFields.owner_id = input.ownerID
+      extraFields.owner_kind = input.ownerKind ?? "user"
+    }
+    if (input.replyToMessageID) {
+      extraFields.reply_to_message_id = input.replyToMessageID
+    }
+    if (Object.keys(extraFields).length > 0) {
+      db.update(SessionTable).set(extraFields).where(eq(SessionTable.id, id)).run()
     }
 
     const config = await cfg.config?.get() ?? {}
@@ -455,6 +465,26 @@ export namespace Session {
       const row = db
         .update(SessionTable)
         .set({ spawn_response_message_id: input.messageID })
+        .where(eq(SessionTable.id, input.sessionID))
+        .returning()
+        .get()
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      const info = fromRow(row)
+      getConfig().bus?.publish(Event.Updated, { info })
+      return info
+    },
+  )
+
+  export const setReplyToMessageID = fn(
+    z.object({
+      sessionID: Identifier.schema("session"),
+      messageID: z.string(),
+    }),
+    async (input) => {
+      const db = getConfig().db
+      const row = db
+        .update(SessionTable)
+        .set({ reply_to_message_id: input.messageID })
         .where(eq(SessionTable.id, input.sessionID))
         .returning()
         .get()

@@ -10,7 +10,7 @@ import { GrepTool } from "../filesystem/grep.ts"
 import { ApplyPatchTool } from "../filesystem/apply_patch.ts"
 import { CodeSearchTool } from "../filesystem/codesearch.ts"
 import { TaskTool } from "../task-management/task.ts"
-import { DelegateTool, SessionSearchTool, SessionGetTool, ReplyTool } from "../delegation/index.ts"
+import { DelegateTool, SessionSearchTool, SessionGetTool, SessionTreeTool, ReplyTool } from "../delegation/index.ts"
 import { TodoWriteTool, TodoReadTool } from "../task-management/todo.ts"
 import { WebFetchTool } from "../communication/webfetch.ts"
 import { WebSearchTool } from "../communication/websearch.ts"
@@ -124,6 +124,7 @@ export namespace ToolRegistry {
       DelegateTool,
       SessionSearchTool,
       SessionGetTool,
+      SessionTreeTool,
       ReplyTool,
       WebFetchTool,
       TodoWriteTool,

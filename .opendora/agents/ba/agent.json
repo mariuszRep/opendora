@@ -7,12 +7,12 @@
     "providerID": "opencode"
   },
   "temperature": 0.5,
-  "steps": 10,
+  "steps": 15,
   "color": "violet",
   "tools": [
     "session_search",
-    "reply",
-    "delegate"
+    "session_tree",
+    "reply"
   ],
   "toolConfig": {
     "delegate": {

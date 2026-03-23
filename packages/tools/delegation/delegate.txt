@@ -1,70 +1,61 @@
-Send a prompt to an agent session and optionally wait for its reply.
+Send a task to another agent session. Always triggers the LLM in the target session.
 
-SESSION TYPES - Choose the right session type for your delegation:
+This is the tool for starting work elsewhere. The target agent receives your message, runs, and produces a response. Use delegate when you want another agent to do something — not just to post a message.
 
-🎯 ROLE SESSIONS (role)
-- Purpose: Continuous, long-lived sessions for specific agent roles (BA, Architect, PM, etc.)
-- Use when: Ongoing relationship with the agent, multiple related tasks over time
-- Retention: Never auto-archives, persists indefinitely
-- Example: "Delegate to BA agent for requirements gathering" - creates persistent BA session
+If you only need to post a message without triggering the LLM, use reply instead.
 
-🏗️ SCOPE SESSIONS (scope) 
-- Purpose: Long-term memory anchor for one project or idea
-- Use when: Working on a specific project that needs context preservation
-- Retention: Auto-archives when done, keeps project history
-- Example: "Build calculator app" - creates scoped session for that project
+─────────────────────────────────────────
+REPLY MODES — choose one when delegating
+─────────────────────────────────────────
 
-⚡ WORKER SESSIONS (worker)
-- Purpose: Short-lived execution sessions for one specific task
-- Use when: Quick, focused tasks that return artifacts (code, analysis, etc.)
-- Retention: Auto-closes when done, limited to 500 messages
-- Example: "Write unit tests for this function" - creates temporary worker session
+1. WAIT (synchronous)
+   wait: true
+   You block until the target agent finishes. You receive the result inline.
+   Use for: quick factual questions where the answer drives your immediate next step.
+   Avoid for: anything involving user interaction or further delegation — it will deadlock.
 
-📝 SCRATCHPAD SESSIONS (scratchpad)
-- Purpose: Throwaway sessions for experiments, drafts, or temporary work
-- Use when: Exploratory work, debugging, or disposable content
-- Retention: Auto-deletes after 6h inactivity, max 100 messages
-- Example: "Try different approaches to this algorithm" - creates disposable session
+2. FIRE AND FORGET (no reply expected)
+   wait: false, no reply_to
+   You send the task and move on. The target agent works independently.
+   Use for: tasks where you don't need the result, or where the agent will reach back on its own.
 
-SESSION TARGETING - Pick one approach:
+3. SILENT REPLY (async, reply expected)
+   wait: false, reply_to: <message_id>
+   You send the task. When done, the target agent posts a silent reply under that message
+   using the reply tool — this does NOT trigger your LLM. You (or the user) will see the
+   reply in your session and decide what to do next.
+   Use for: async tasks where you want results delivered back but will act on them later.
 
-1. EXISTING SESSION: Provide session_id to message a specific existing session
-2. NEW SESSION: Provide session_type + agent + title to create a new child session
-3. MAIN SESSION: Provide only agent to use their main session (auto-created if needed)
+4. TRIGGERING REPLY (async, LLM re-triggered)
+   This is not a separate parameter — it is the receiving agent's choice.
+   If a receiving agent wants to trigger the LLM in the origin session after finishing,
+   it calls delegate targeting the origin session. This is appropriate when the receiving
+   agent's output should immediately continue a workflow without human action.
 
-PARAMETERS:
-- agent: Required unless session_id alone identifies the target
-- session_type: One of [role, scope, worker, scratchpad] - mutually exclusive with session_id
-- title: Name for new sessions (highly recommended for clarity)
-- session_id: Target existing session by ID - mutually exclusive with session_type
+─────────────────────────────────────────
+SESSION TYPES
+─────────────────────────────────────────
 
-WAITING STRATEGY - Choose deliberately:
+worker   — short-lived, one task, auto-closes when done (max 500 messages)
+scope    — project-anchored, preserves context, auto-archives when done
+role     — persistent ongoing session for a specific agent role (BA, Architect, etc.)
+scratchpad — throwaway, auto-deletes after 6h inactivity (max 100 messages)
 
-🚫 WAIT: false (default, recommended)
-- Use for: Complex tasks, multi-agent work, user interaction, research, anything > few seconds
-- Benefit: Fire-and-forget, doesn't block your workflow
-- Rule: If they might talk to others or the user, don't wait
+─────────────────────────────────────────
+SESSION TARGETING — pick one approach
+─────────────────────────────────────────
 
-✅ WAIT: true (use sparingly)
-- Use for: Quick factual questions where answer drives your immediate next step
-- Example: "What's the API endpoint for user creation?" - need answer to proceed
-- Cost: Blocks your session until reply
+1. NEW SESSION:      agent + session_type + title  →  creates a child session
+2. EXISTING SESSION: session_id                    →  targets a specific session
+3. AGENT MAIN:       agent only                    →  uses or creates the agent's main session
 
-DELEGATION BEST PRACTICES:
+─────────────────────────────────────────
+RULES
+─────────────────────────────────────────
 
-✅ DO:
-- Choose session_type based on task longevity and complexity
-- Provide descriptive titles for new sessions
-- Use worker sessions for quick, focused tasks
-- Use scope sessions for project-based work
-- Use role sessions for ongoing agent relationships
-- Set wait: false for anything involving multiple agents or user interaction
-
-❌ DON'T:
-- Use wait: true for complex tasks (blocks your workflow)
-- Create scratchpad sessions for important work (gets deleted)
-- Use worker sessions for long-term projects (auto-closes)
-- Skip titles for new sessions (hard to identify later)
-- Delegate the same task multiple times (duplicates work)
-
-REMEMBER: After fire-and-forget delegation (wait: false), your turn is complete. Don't poll, follow up, or resend.
+- Always provide a title when creating a new session.
+- After fire-and-forget (wait: false), your turn is complete. Do not poll or resend.
+- Do not delegate to your own session.
+- reply_to is for silent reply only. If you want the origin LLM triggered, the receiving
+  agent must call delegate back — you cannot force this from the calling side.
+- Each agent only delegates to agents it knows about. Do not invent agent names.

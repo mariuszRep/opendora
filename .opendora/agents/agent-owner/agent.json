@@ -24,7 +24,9 @@
     "log",
     "todowrite",
     "session_get",
-    "reply"
+    "session_tree",
+    "reply",
+    "agent_delete"
   ],
-  "skills": []
+  "skills": ["improve", "retro", "agent-author"]
 }

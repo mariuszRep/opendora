@@ -27,6 +27,12 @@ const parameters = z
       .boolean()
       .describe("Wait for the agent to reply. Default: false. Only set to true for quick factual questions where you need the answer immediately. Use false for complex tasks, multi-agent work, or anything involving user interaction.")
       .optional(),
+    reply_to: z
+      .string()
+      .describe(
+        "Message ID the receiving agent should reply to when done, using the reply tool (silent — does NOT trigger the LLM there). Omit for fire-and-forget. Do not set this if you want the origin LLM triggered — in that case the receiving agent must call delegate back to the origin session.",
+      )
+      .optional(),
     origin_session_id: z
       .string()
       .describe(
@@ -122,6 +128,7 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
           ownerKind: "agent",
           spawnParentSessionID: ctx.sessionID,
           spawnParentMessageID: ctx.messageID,
+          ...(params.reply_to ? { replyToMessageID: params.reply_to } : {}),
         })
         created = true
         route = "new_session"
@@ -130,6 +137,11 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
         targetSession = await sessionSvc.ensureMainSession(targetAgentName)
         route = "agent_main"
       }
+    }
+
+    // Store reply_to on existing/main sessions (new sessions already get it at create time)
+    if (params.reply_to && !created && sessionSvc.setReplyToMessageID) {
+      await sessionSvc.setReplyToMessageID({ sessionID: targetSession.id, messageID: params.reply_to })
     }
 
     // Enforce caller's allowed-agent list if configured
@@ -205,6 +217,7 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
           created,
           replied: false,
           messageId: result.info.id,
+          replyTo: params.reply_to,
           originSessionId: originSessionID,
           originMessageId: originMessageID,
         },
@@ -213,6 +226,7 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
           `agent: ${targetAgentName ?? "(session default)"}`,
           `route: ${route}`,
           `message_id: ${result.info.id}`,
+          `reply_mode: ${params.reply_to ? `silent_reply → msg ${params.reply_to}` : "none"}`,
           "status: message posted",
         ].join("\n"),
       }
@@ -227,6 +241,7 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
         created,
         replied: true,
         messageId: result.info.id,
+        replyTo: params.reply_to,
         originSessionId: originSessionID,
         originMessageId: originMessageID,
       },

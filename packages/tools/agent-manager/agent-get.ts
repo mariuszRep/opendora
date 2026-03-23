@@ -4,75 +4,186 @@ import z from "zod"
 
 export const AgentGetTool = Tool.define(
   "agent_get",
-  async (initCtx) => ({
-    description: "Get detailed information about a specific agent including configuration, persona, and injection content.",
+  async () => ({
+    description: `Get information about a specific agent.
+
+Use the \`view\` parameter to control what is returned:
+
+- \`config\` (default) — agent.json fields: name, mode, model, tools list, skills list, temperature, steps, etc.
+- \`persona\` — raw PERSONA.md content (the agent's identity and behaviour instructions)
+- \`injection\` — raw INJECTION.md content (dynamic context injected at runtime)
+- \`tools\` — tools allocated to the agent as they are configured (IDs and descriptions)
+- \`skills\` — skills allocated to the agent with their full SKILL.md content
+- \`system_prompt\` — full assembled view: persona + injection + tools + skills, as the agent would receive them`,
+
     parameters: z.object({
       id: z.string().describe("ID of the agent to retrieve"),
-      includePersona: z.boolean().default(true).describe("Include the agent's persona content"),
-      includeInjection: z.boolean().default(false).describe("Include the agent's injection content")
+      view: z
+        .enum(["config", "persona", "injection", "tools", "skills", "system_prompt"])
+        .default("config")
+        .describe(
+          "What to return: config (default), persona, injection, tools, skills, or system_prompt (full assembled view)"
+        ),
     }),
-    async execute(args: { id: string; includePersona?: boolean; includeInjection?: boolean }, ctx) {
+
+    async execute(args: { id: string; view?: "config" | "persona" | "injection" | "tools" | "skills" | "system_prompt" }, ctx) {
       await ctx.ask({
         permission: "agent_get",
         patterns: [],
         always: ["*"],
-        metadata: { agentId: args.id }
+        metadata: { agentId: args.id },
       })
 
-      const agents = host(ctx).agents
+      const services = host(ctx)
+      const agents = services.agents
       if (!agents) throw new Error("Agent management is not available in this context")
 
-      try {
-        const agent = await agents.get(args.id) as any
-        if (!agent) {
-          throw new Error(`Agent "${args.id}" not found. Use agent_list to see available agents.`)
-        }
+      const agent = (await agents.get(args.id)) as any
+      if (!agent) {
+        throw new Error(`Agent "${args.id}" not found. Use agent_list to see available agents.`)
+      }
 
-        const details = [
+      const view = args.view ?? "config"
+
+      // ── config ─────────────────────────────────────────────────────────────
+      if (view === "config") {
+        const lines = [
           `ID: ${agent.id}`,
           `Name: ${agent.name}`,
           `Mode: ${agent.mode}`,
-          `Description: ${agent.description || 'No description provided'}`,
-          `Temperature: ${agent.temperature ?? 'default'}`,
-          `Steps: ${agent.steps ?? 'default'}`,
-          `Color: ${agent.color ?? 'none'}`,
+          `Description: ${agent.description || "none"}`,
+          `Temperature: ${agent.temperature ?? "default"}`,
+          `Steps: ${agent.steps ?? "default"}`,
+          `Color: ${agent.color ?? "none"}`,
           `Hidden: ${agent.hidden ?? false}`,
-          `Model: ${agent.model ? `${agent.model.providerID}/${agent.model.modelID}` : 'default'}`,
-          `Tools: ${agent.tools ? agent.tools.join(', ') : 'all available'}`,
-          `Enable Injection: ${agent.enableInjection ?? false}`
+          `Model: ${agent.model ? `${agent.model.providerID}/${agent.model.modelID}` : "default"}`,
+          `Enable Injection: ${agent.enableInjection ?? false}`,
+          `Tools: ${agent.tools ? agent.tools.join(", ") : "all available"}`,
+          `Skills: ${agent.skills && agent.skills.length > 0 ? agent.skills.join(", ") : "none"}`,
         ]
+        return {
+          title: `Agent Config: ${agent.name}`,
+          metadata: { agentId: agent.id, view },
+          output: lines.join("\n"),
+        }
+      }
 
-        let output = `Agent Details:\n\n${details.join('\n')}`
+      // ── persona ─────────────────────────────────────────────────────────────
+      if (view === "persona") {
+        const persona = agent.prompt ?? ""
+        return {
+          title: `Agent Persona: ${agent.name}`,
+          metadata: { agentId: agent.id, view },
+          output: persona || "(no persona configured)",
+        }
+      }
 
-        if (args.includePersona && agent.persona) {
-          output += `\n\nPersona:\n${agent.persona}`
+      // ── injection ──────────────────────────────────────────────────────────
+      if (view === "injection") {
+        const injection = agents.getInjection ? await agents.getInjection(args.id) : ""
+        return {
+          title: `Agent Injection: ${agent.name}`,
+          metadata: { agentId: agent.id, view },
+          output: injection || "(no injection configured)",
+        }
+      }
+
+      // ── tools ──────────────────────────────────────────────────────────────
+      if (view === "tools") {
+        const toolIds: string[] = agent.tools ?? []
+        if (toolIds.length === 0) {
+          return {
+            title: `Agent Tools: ${agent.name}`,
+            metadata: { agentId: agent.id, view },
+            output: "All available tools (no restrictions configured)",
+          }
+        }
+        const output = `Tools allocated to ${agent.name} (${toolIds.length}):\n\n${toolIds.map((id: string) => `- ${id}`).join("\n")}`
+        return {
+          title: `Agent Tools: ${agent.name}`,
+          metadata: { agentId: agent.id, view },
+          output,
+        }
+      }
+
+      // ── skills ─────────────────────────────────────────────────────────────
+      if (view === "skills") {
+        const skillNames: string[] = agent.skills ?? []
+        if (skillNames.length === 0) {
+          return {
+            title: `Agent Skills: ${agent.name}`,
+            metadata: { agentId: agent.id, view },
+            output: "(no skills allocated)",
+          }
         }
 
-        if (args.includeInjection) {
-          const injection = agents.getInjection ? await agents.getInjection(args.id) : undefined
-          if (injection) {
-            output += `\n\nInjection:\n${injection}`
+        const skillsService = services.skills
+        const sections: string[] = []
+
+        for (const name of skillNames) {
+          if (skillsService?.get) {
+            const skill = await skillsService.get(name)
+            if (skill) {
+              sections.push(`## Skill: ${name}\n\n${skill.content}`)
+            } else {
+              sections.push(`## Skill: ${name}\n\n(not found)`)
+            }
+          } else {
+            sections.push(`## Skill: ${name}`)
           }
         }
 
         return {
-          title: `Agent: ${agent.name}`,
-          metadata: {
-            agentId: agent.id,
-            agentName: agent.name,
-            mode: agent.mode,
-          },
-          output
+          title: `Agent Skills: ${agent.name}`,
+          metadata: { agentId: agent.id, view },
+          output: sections.join("\n\n---\n\n"),
         }
-      } catch (error) {
-        if (error instanceof Error) {
-          if (error.message.includes('not found')) {
-            throw new Error(`Agent "${args.id}" not found. Use agent_list to see available agents.`)
-          }
-          throw new Error(`Failed to get agent: ${error.message}`)
-        }
-        throw new Error(`Failed to get agent: ${String(error)}`)
       }
-    }
+
+      // ── system_prompt ──────────────────────────────────────────────────────
+      if (view === "system_prompt") {
+        const parts: string[] = []
+
+        const persona = agent.prompt ?? ""
+        if (persona) {
+          parts.push(`# PERSONA\n\n${persona}`)
+        }
+
+        const injection = agents.getInjection ? await agents.getInjection(args.id) : ""
+        if (injection) {
+          parts.push(`# INJECTION\n\n${injection}`)
+        }
+
+        const toolIds: string[] = agent.tools ?? []
+        if (toolIds.length > 0) {
+          parts.push(`# TOOLS\n\n${toolIds.map((id: string) => `- ${id}`).join("\n")}`)
+        } else {
+          parts.push(`# TOOLS\n\nAll available tools (no restrictions)`)
+        }
+
+        const skillNames: string[] = agent.skills ?? []
+        if (skillNames.length > 0) {
+          const skillsService = services.skills
+          const skillSections: string[] = []
+          for (const name of skillNames) {
+            if (skillsService?.get) {
+              const skill = await skillsService.get(name)
+              skillSections.push(skill ? `### ${name}\n\n${skill.content}` : `### ${name}\n\n(not found)`)
+            } else {
+              skillSections.push(`### ${name}`)
+            }
+          }
+          parts.push(`# SKILLS\n\n${skillSections.join("\n\n---\n\n")}`)
+        }
+
+        return {
+          title: `Agent System Prompt: ${agent.name}`,
+          metadata: { agentId: agent.id, view },
+          output: parts.join("\n\n---\n\n"),
+        }
+      }
+
+      throw new Error(`Unknown view: ${view}`)
+    },
   })
 )

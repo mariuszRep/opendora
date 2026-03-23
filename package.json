@@ -14,8 +14,10 @@
   },
   "workspaces": {
     "packages": [
+      "apps/web",
       "packages/agent",
       "packages/permission",
+      "packages/script",
       "packages/tools",
       "packages/opencode",
       "packages/sdk/js",
@@ -52,7 +54,9 @@
       "zod": "4.1.8",
       "remeda": "2.26.0",
       "shiki": "3.20.0",
-      "solid-js": "1.9.10"
+      "solid-js": "1.9.10",
+      "@types/react": "19.0.0",
+      "@types/react-dom": "19.0.0"
     }
   },
   "devDependencies": {

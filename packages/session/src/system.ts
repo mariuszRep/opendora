@@ -27,6 +27,35 @@ export namespace SystemPrompt {
     const cfg = getConfig()
     const project = cfg.instance?.project
     const cwd = sessionID ? await Session.effectiveDefaultPath(sessionID).catch(() => cfg.instance?.directory ?? process.cwd()) : cfg.instance?.directory ?? process.cwd()
+
+    const sessionContext: string[] = []
+    if (sessionID) {
+      const session = await Session.get(sessionID).catch(() => undefined)
+      if (session) {
+        sessionContext.push(`<session>`)
+        sessionContext.push(`  Session ID: ${session.id}`)
+        if (session.title) sessionContext.push(`  Title: ${session.title}`)
+        if (session.sessionType) sessionContext.push(`  Type: ${session.sessionType}`)
+        if (session.sessionStatus) sessionContext.push(`  Status: ${session.sessionStatus}`)
+        if (session.agentID) sessionContext.push(`  Agent: ${session.agentID}`)
+        if (session.spawnParentSessionID) {
+          sessionContext.push(`  Spawned from session: ${session.spawnParentSessionID}`)
+          if (session.spawnParentMessageID) {
+            sessionContext.push(`  Spawned from message: ${session.spawnParentMessageID}`)
+            sessionContext.push(`  If you delegate further and want replies routed back here, set reply_to: ${session.spawnParentMessageID}`)
+          }
+        }
+        if (session.replyToMessageID) {
+          sessionContext.push(`  Reply expected: silent`)
+          sessionContext.push(`  Reply to message ID: ${session.replyToMessageID}`)
+          sessionContext.push(`  When your task is complete, use the reply tool (not delegate) to post your result.`)
+          sessionContext.push(`  reply posts silently — it does NOT trigger the LLM in the target session.`)
+          sessionContext.push(`  The caller will see your message and decide what to do next.`)
+        }
+        sessionContext.push(`</session>`)
+      }
+    }
+
     return [
       [
         `You are powered by the model named ${model.api.id}. The exact model ID is ${model.providerID}/${model.api.id}`,
@@ -47,6 +76,7 @@ export namespace SystemPrompt {
             : ""
         }`,
         `</directories>`,
+        ...(sessionContext.length ? [sessionContext.join("\n")] : []),
       ].join("\n"),
     ]
   }

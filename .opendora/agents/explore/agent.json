@@ -9,6 +9,12 @@
   "color": "orange",
   "hidden": true,
   "tools": [
-    "bash"
-  ]
+    "read",
+    "glob",
+    "grep",
+    "bash",
+    "webfetch",
+    "codesearch"
+  ],
+  "enableInjection": true
 }

@@ -57,6 +57,13 @@ export const SessionGetTool = Tool.define("session_get", {
         metadata.push(`Messages: ${session.messageCount}`)
       }
 
+      if (session.tokens) {
+        metadata.push(`Tokens in: ${session.tokens.input}`)
+        metadata.push(`Tokens out: ${session.tokens.output}`)
+        metadata.push(`Cache read: ${session.tokens.cacheRead}`)
+        metadata.push(`Cache write: ${session.tokens.cacheWrite}`)
+      }
+
       let output = `Session Details:\n\n${metadata.join('\n')}`
 
       // Include messages if requested

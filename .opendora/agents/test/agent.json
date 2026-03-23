@@ -1,10 +1,21 @@
 {
   "name": "Test",
+  "description": "Test specialist — creates and runs automated tests for feature verification.",
   "mode": "worker",
   "model": {
     "modelID": "minimax-m2.5-free",
     "providerID": "opencode"
   },
   "color": "violet",
-  "hidden": true
+  "hidden": true,
+  "tools": [
+    "read",
+    "glob",
+    "grep",
+    "bash",
+    "edit",
+    "write",
+    "todowrite"
+  ],
+  "enableInjection": true
 }

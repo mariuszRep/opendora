@@ -70,6 +70,7 @@ export const SessionTable = sqliteTable(
     spawn_parent_session_id: text(),
     spawn_parent_message_id: text(),
     spawn_response_message_id: text(),
+    reply_to_message_id: text(),
     input_tokens: integer(),
     output_tokens: integer(),
     cache_read_tokens: integer(),
