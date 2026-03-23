@@ -1,5 +1,5 @@
 import type { Argv } from "yargs"
-import { Session } from "../../session"
+import { Session } from "@opendora/session/session"
 import { cmd } from "./cmd"
 import { bootstrap } from "../bootstrap"
 import { UI } from "../ui"

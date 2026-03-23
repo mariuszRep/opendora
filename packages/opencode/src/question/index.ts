@@ -3,7 +3,7 @@ import { BusEvent } from "@/bus/bus-event"
 import { Identifier } from "@/id/id"
 import { Instance } from "@/project/instance"
 import { Log } from "@/util/log"
-import { Session } from "@/session"
+import { Session } from "@opendora/session/session"
 import z from "zod"
 
 export namespace Question {

@@ -10,7 +10,7 @@ import { Global } from "@/global"
 import { Filesystem } from "@/util/filesystem"
 import { Flag } from "@/flag/flag"
 import { Bus } from "@/bus"
-import { Session } from "@/session"
+import { Session } from "@opendora/session/session"
 import { Discovery } from "./discovery"
 import { Glob } from "../util/glob"
 

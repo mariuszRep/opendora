@@ -1,9 +1,9 @@
 import type { Argv } from "yargs"
 import { cmd } from "./cmd"
-import { Session } from "../../session"
+import { Session } from "@opendora/session/session"
 import { bootstrap } from "../bootstrap"
 import { Database } from "../../storage/db"
-import { SessionTable } from "../../session/session.sql"
+import { SessionTable } from "@opendora/session/sql"
 import { Project } from "../../project/project"
 import { Instance } from "../../project/instance"
 

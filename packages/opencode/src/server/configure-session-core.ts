@@ -29,7 +29,7 @@ import { Shell } from "@/shell/shell"
 import { Truncate } from "@/tool/truncation"
 import { Skill } from "@/skill"
 import { Ripgrep } from "@/file/ripgrep"
-import { SessionPrompt } from "./prompt"
+import { SessionPrompt } from "@opendora/session/prompt"
 import { Session } from "@opendora/session/session"
 import { Question } from "@/question"
 

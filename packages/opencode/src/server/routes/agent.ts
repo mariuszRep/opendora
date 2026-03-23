@@ -6,7 +6,7 @@ import { AgentStorage } from "@opendora/agent"
 import { ToolRegistry } from "../../tool/registry"
 import { lazy } from "../../util/lazy"
 import { errors } from "../error"
-import { Session } from "../../session"
+import { Session } from "@opendora/session/session"
 
 const AgentConfigPatch = z.object({
   name: z.string().optional(),
