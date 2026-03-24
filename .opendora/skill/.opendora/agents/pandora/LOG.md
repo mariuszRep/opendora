@@ -16,3 +16,10 @@ Phantom delegation: Pandora claimed she "passed to the right team" but hadn't ac
 _Context: ses_2e4fc422affe2hg6n91iMcIRkl_
 
 ---
+### 2026-03-24 13:14:43 UTC [BUG]
+
+Pandora delegated with wait: false (fire and forget) and didn't set up reply tracking. User was left without knowing who would respond. Should have either waited (if quick) or set reply_to to ensure user gets a reply.
+
+_Context: ses_2e179f3aaffemt9fyidvyofnW0_
+
+---

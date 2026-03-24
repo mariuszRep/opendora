@@ -29,7 +29,7 @@ function QuestionStep(props: {
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {props.question.options.map((option) => {
+        {(props.question.options ?? []).map((option) => {
           const checked = props.value.includes(option.label)
           return (
             <button

@@ -3,8 +3,8 @@
   "description": "Generates a short title for a session.",
   "mode": "system",
   "model": {
-    "modelID": "stepfun/step-3.5-flash:free",
-    "providerID": "openrouter"
+    "modelID": "gemini-2.5-flash-lite",
+    "providerID": "google-gemini-cli"
   },
   "color": "violet",
   "hidden": true,

@@ -84,7 +84,7 @@ type ModelValue = { providerID: string; modelID: string } | undefined
 export default function AgentSettingsPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const { updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, allAgents, refreshProviders, sessions, setAgentMainSession, selectSession } =
+  const { updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, modelFilters, allAgents, refreshProviders, sessions, setAgentMainSession, selectSession } =
     useOpendoraContext()
 
   const agent = allAgents.find((a) => (a as any)._id === id || (a as any).id === id || a.name === id) as any

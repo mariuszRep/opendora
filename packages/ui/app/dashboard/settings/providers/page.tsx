@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2Icon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon } from "lucide-react"
+import { CheckCircle2Icon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon, BrainIcon } from "lucide-react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -14,6 +14,19 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  ModelSelector,
+  ModelSelectorContent,
+  ModelSelectorEmpty,
+  ModelSelectorGroup,
+  ModelSelectorInput,
+  ModelSelectorItem,
+  ModelSelectorList,
+  ModelSelectorLogo,
+  ModelSelectorName,
+  ModelSelectorTrigger,
+} from "@/components/ai-elements/model-selector"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { opendora, type AuthMethod, type Provider } from "@/lib/opendora"
 import { cn } from "@/lib/utils"
@@ -24,6 +37,8 @@ type ProviderState = {
   connected: boolean
 }
 
+type ModelValue = { providerID: string; modelID: string } | undefined
+
 type ApiKeyFormState = {
   providerID: string
   key: string
@@ -33,16 +48,80 @@ type ApiKeyFormState = {
 
 export default function ProvidersPage() {
   const router = useRouter()
-  const { providers, connectedProviders, modelFilters, setModelFilter } = useOpendoraContext()
+  const { providers, connectedProviders, modelFilters, setModelFilter, defaultModels, refreshProviders } = useOpendoraContext()
   const [authMethods, setAuthMethods] = useState<Record<string, AuthMethod[]>>({})
   const [apiKeyForm, setApiKeyForm] = useState<ApiKeyFormState | null>(null)
   const [removing, setRemoving] = useState<string | null>(null)
   const [oauthLoading, setOauthLoading] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [defaultModel, setDefaultModel] = useState<ModelValue>(undefined)
+  const [defaultModelOpen, setDefaultModelOpen] = useState(false)
+  const [savingDefaultModel, setSavingDefaultModel] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [globalConfig, setGlobalConfig] = useState<{ model?: string; model_filters?: Record<string, "all" | "free" | "none">; [k: string]: unknown } | null>(null)
 
   useEffect(() => {
     opendora.provider.authMethods().then(setAuthMethods).catch(() => {})
   }, [])
+
+  // Load global config
+  useEffect(() => {
+    opendora.config.get().then(setGlobalConfig).catch(() => {})
+  }, [])
+
+  // Load default model from global config or provider defaults
+  useEffect(() => {
+    if (globalConfig?.model) {
+      // Parse global default model (e.g., "anthropic/claude-3-5-sonnet-20241022")
+      const [providerID, ...modelParts] = globalConfig.model.split("/")
+      if (providerID && modelParts.length > 0) {
+        const modelID = modelParts.join("/")
+        setDefaultModel({ providerID, modelID })
+        return
+      }
+    }
+    
+    // Fallback to first connected provider's default
+    if (connectedProviders.length > 0 && defaultModels) {
+      const firstProvider = connectedProviders[0]
+      const defaultModelId = defaultModels[firstProvider]
+      if (defaultModelId) {
+        setDefaultModel({ providerID: firstProvider, modelID: defaultModelId })
+      }
+    }
+  }, [globalConfig, connectedProviders, defaultModels])
+
+  const modelList = useMemo(() => {
+    const isFreeModel = (m: { id: string; [k: string]: unknown }) => {
+      const cost = (m as any).cost as { input: number; output: number } | undefined
+      if (cost && cost.input === 0 && cost.output === 0) return true
+      return m.id.endsWith(":free") || m.id.endsWith("-free")
+    }
+    return providers
+      .filter((p) => connectedProviders.includes(p.id))
+      .flatMap((p) => {
+        const filter = modelFilters[p.id] ?? "all"
+        if (filter === "none") return []
+        const models = Object.values(p.models)
+        const filtered = filter === "free" ? models.filter(isFreeModel) : models
+        return filtered.map((m) => ({
+          providerID: p.id,
+          providerName: p.name,
+          modelID: m.id,
+          modelName: (m as { name?: string }).name ?? m.id,
+        }))
+      })
+  }, [providers, connectedProviders, modelFilters])
+
+  const modelsByProvider = useMemo(() => {
+    const groups = new Map<string, typeof modelList>()
+    for (const m of modelList) {
+      if (!groups.has(m.providerName)) groups.set(m.providerName, [])
+      groups.get(m.providerName)!.push(m)
+    }
+    return groups
+  }, [modelList])
 
   const providerStates: ProviderState[] = providers.map((p) => ({
     provider: p,
@@ -114,6 +193,34 @@ export default function ProvidersPage() {
     }
   }
 
+  async function handleSaveDefaultModel() {
+    if (!defaultModel) return
+    setSavingDefaultModel(true)
+    setSaveSuccess(false)
+    setSaveError(null)
+    try {
+      // Save the default model configuration using the config API
+      const modelString = `${defaultModel.providerID}/${defaultModel.modelID}`
+      await opendora.config.update({ model: modelString })
+      
+      // Refresh providers and global config to get updated defaults
+      await Promise.all([
+        refreshProviders(),
+        opendora.config.get().then(setGlobalConfig)
+      ])
+      
+      // Show success feedback
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000) // Hide after 3 seconds
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to save default model"
+      setSaveError(errorMessage)
+      setTimeout(() => setSaveError(null), 5000) // Hide after 5 seconds
+    } finally {
+      setSavingDefaultModel(false)
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between border-b px-6 py-3 shrink-0">
@@ -135,10 +242,121 @@ export default function ProvidersPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-2xl px-6 py-8 flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">
-            Connect AI providers by adding API keys or signing in with OAuth.
-          </p>
+        <div className="mx-auto max-w-2xl px-6 py-8 flex flex-col gap-6">
+          {/* Default Model Configuration */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <BrainIcon className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Default Model</CardTitle>
+              </div>
+              <CardDescription>
+                Set the default AI model used when agents don't have a specific model configured.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label>Default Model</Label>
+                  <ModelSelector
+                    open={defaultModelOpen}
+                    onOpenChange={(nextOpen) => {
+                      setDefaultModelOpen(nextOpen)
+                      if (nextOpen) {
+                        refreshProviders().catch(() => { })
+                      }
+                    }}
+                  >
+                    <ModelSelectorTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start font-normal">
+                        {defaultModel ? (
+                          (() => {
+                            const selected = modelList.find((m) => m.providerID === defaultModel.providerID && m.modelID === defaultModel.modelID)
+                            return selected ? (
+                              <>
+                                <ModelSelectorLogo provider={selected.providerID} />
+                                <ModelSelectorName>{selected.modelName}</ModelSelectorName>
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground">Select model...</span>
+                            )
+                          })()
+                        ) : (
+                          <span className="text-muted-foreground">Select default model...</span>
+                        )}
+                      </Button>
+                    </ModelSelectorTrigger>
+                    <ModelSelectorContent>
+                      <ModelSelectorInput placeholder="Search models…" />
+                      <ModelSelectorList>
+                        <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
+                        <ModelSelectorGroup heading="">
+                          <ModelSelectorItem
+                            value="__none__"
+                            onSelect={() => { setDefaultModel(undefined); setDefaultModelOpen(false) }}
+                          >
+                            <span className="text-muted-foreground">No default model</span>
+                            {!defaultModel && <CheckCircle2Icon className="ml-auto size-4" />}
+                          </ModelSelectorItem>
+                        </ModelSelectorGroup>
+                        {[...modelsByProvider.entries()].map(([providerName, models]) => (
+                          <ModelSelectorGroup heading={providerName} key={providerName}>
+                            {models.map((m) => {
+                              const active = defaultModel?.providerID === m.providerID && defaultModel?.modelID === m.modelID
+                              return (
+                                <ModelSelectorItem
+                                  key={`${m.providerID}:${m.modelID}`}
+                                  value={`${m.providerID}:${m.modelID}`}
+                                  onSelect={() => {
+                                    setDefaultModel({ providerID: m.providerID, modelID: m.modelID })
+                                    setDefaultModelOpen(false)
+                                  }}
+                                >
+                                  <ModelSelectorLogo provider={m.providerID} />
+                                  <ModelSelectorName>{m.modelName}</ModelSelectorName>
+                                  {active ? <CheckCircle2Icon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}
+                                </ModelSelectorItem>
+                              )
+                            })}
+                          </ModelSelectorGroup>
+                        ))}
+                      </ModelSelectorList>
+                    </ModelSelectorContent>
+                  </ModelSelector>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs text-muted-foreground">
+                      This model will be used as the default for new agents and sessions.
+                    </p>
+                    {saveSuccess && (
+                      <p className="text-xs text-green-600 dark:text-green-400">
+                        Default model saved successfully!
+                      </p>
+                    )}
+                    {saveError && (
+                      <p className="text-xs text-red-600 dark:text-red-400">
+                        {saveError}
+                      </p>
+                    )}
+                  </div>
+                  <Button 
+                    size="sm" 
+                    onClick={handleSaveDefaultModel}
+                    disabled={savingDefaultModel || !defaultModel}
+                  >
+                    {savingDefaultModel && <Loader2Icon className="mr-1.5 size-3.5 animate-spin" />}
+                    {savingDefaultModel ? "Saving..." : "Save Default"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-muted-foreground">
+              Connect AI providers by adding API keys or signing in with OAuth.
+            </p>
 
           {/* Search bar */}
           <div className="relative">
@@ -406,6 +624,7 @@ export default function ProvidersPage() {
               )}
             </div>
           ))}
+          </div>
         </div>
       </div>
     </div>

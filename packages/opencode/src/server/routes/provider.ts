@@ -5,6 +5,7 @@ import { Config } from "../../config/config"
 import { Provider } from "@opendora/provider/provider"
 import { ModelsDev } from "@opendora/provider/models"
 import { ProviderAuth } from "@opendora/provider/auth"
+import { Auth } from "../../auth"
 import { FallbackManager } from "@opendora/session/fallback"
 import { mapValues } from "remeda"
 import { errors } from "../error"
@@ -53,6 +54,36 @@ export const ProviderRoutes = lazy(() =>
           mapValues(filteredProviders, (x) => Provider.fromModelsDevProvider(x)),
           connected,
         )
+
+        // Inject synthetic provider entries for plugins with auth methods not yet in the list
+        const authMethodMap = await ProviderAuth.methods()
+        for (const [providerID, methods] of Object.entries(authMethodMap)) {
+          if (!providers[providerID] && methods.length > 0) {
+            const name =
+              providerID === "google-gemini-cli"
+                ? "Google Gemini CLI"
+                : providerID
+                    .split("-")
+                    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                    .join(" ")
+            providers[providerID] = {
+              id: providerID,
+              name,
+              env: [],
+              models: {},
+              source: "custom",
+              options: {},
+            } as any
+          }
+        }
+
+        // Supplement connected with fresh auth data (bypasses cached Provider.state)
+        const liveAuth = await Auth.all()
+        for (const [providerID] of Object.entries(liveAuth)) {
+          if (authMethodMap[providerID] && !connected[providerID] && providers[providerID]) {
+            connected[providerID] = providers[providerID]
+          }
+        }
 
         // Inject synthetic "fallback" provider for cross-provider free model groups
         const connectedSet = new Set(Object.keys(connected))
