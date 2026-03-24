@@ -123,20 +123,27 @@ export default function AgentSettingsPage() {
   // Sessions that belong to this agent
   const agentSessions = sessions.filter((s) => s.agentID === agentId)
 
-  const modelList = useMemo(
-    () =>
-      providers
-        .filter((p) => connectedProviders.includes(p.id))
-        .flatMap((p) =>
-          Object.values(p.models).map((m) => ({
-            providerID: p.id,
-            providerName: p.name,
-            modelID: m.id,
-            modelName: (m as { name?: string }).name ?? m.id,
-          })),
-        ),
-    [providers, connectedProviders],
-  )
+  const modelList = useMemo(() => {
+    const isFreeModel = (m: { id: string; [k: string]: unknown }) => {
+      const cost = (m as any).cost as { input: number; output: number } | undefined
+      if (cost && cost.input === 0 && cost.output === 0) return true
+      return m.id.endsWith(":free") || m.id.endsWith("-free")
+    }
+    return providers
+      .filter((p) => connectedProviders.includes(p.id))
+      .flatMap((p) => {
+        const filter = modelFilters[p.id] ?? "all"
+        if (filter === "none") return []
+        const models = Object.values(p.models)
+        const filtered = filter === "free" ? models.filter(isFreeModel) : models
+        return filtered.map((m) => ({
+          providerID: p.id,
+          providerName: p.name,
+          modelID: m.id,
+          modelName: (m as { name?: string }).name ?? m.id,
+        }))
+      })
+  }, [providers, connectedProviders, modelFilters])
 
   const modelsByProvider = useMemo(() => {
     const groups = new Map<string, typeof modelList>()

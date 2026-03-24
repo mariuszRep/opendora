@@ -1018,6 +1018,10 @@ export namespace Config {
         .array(z.string())
         .optional()
         .describe("When set, ONLY these providers will be enabled. All other providers will be ignored"),
+      model_filters: z
+        .record(z.string(), z.enum(["all", "free", "none"]))
+        .optional()
+        .describe("Per-provider model filter: 'all' shows all models, 'free' shows only free models, 'none' hides all models"),
       model: ModelId.describe("Model to use in the format of provider/model, eg anthropic/claude-2").optional(),
       small_model: ModelId.describe(
         "Small model to use for tasks like title generation in the format of provider/model",
@@ -1286,7 +1290,17 @@ export namespace Config {
   }
 
   export async function update(config: Info) {
-    const filepath = path.join(Instance.directory, "config.json")
+    // Determine the correct config file to write to
+    let filepath: string
+    if (Flag.OPENCODE_CONFIG_DIR) {
+      // Write to .opendora/opendora.json when using custom config dir
+      filepath = path.join(Flag.OPENCODE_CONFIG_DIR, "opendora.json")
+    } else {
+      // Otherwise write to project's opencode.json
+      const projectFiles = await ConfigPaths.projectFiles("opencode", Instance.directory, Instance.worktree)
+      filepath = projectFiles[0] ?? path.join(Instance.directory, "opencode.json")
+    }
+    
     const existing = await loadFile(filepath)
     await Filesystem.writeJson(filepath, mergeDeep(existing, config))
     await Instance.dispose()

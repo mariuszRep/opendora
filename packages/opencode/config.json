@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model_filters": {
+    "fallback": "free",
+    "kilo": "free",
+    "openai-codex": "all",
+    "opencode": "free",
+    "openrouter": "free"
+  }
+}

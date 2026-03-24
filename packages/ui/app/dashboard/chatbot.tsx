@@ -192,6 +192,7 @@ export const Chatbot = () => {
     defaultModels,
     refreshProviders,
     fallbackActiveSlots,
+    modelFilters,
     createSession,
     updateAgent,
     isChatCentered,
@@ -255,17 +256,26 @@ export const Chatbot = () => {
   }, [selectedAgent, agents, updateAgent])
 
   const modelList = useMemo(() => {
+    const isFreeModel = (m: { id: string; [k: string]: unknown }) => {
+      const cost = (m as any).cost as { input: number; output: number } | undefined
+      if (cost && cost.input === 0 && cost.output === 0) return true
+      return m.id.endsWith(":free") || m.id.endsWith("-free")
+    }
     const real = providers
       .filter((p) => connectedProviders.includes(p.id) && p.id !== "fallback")
-      .flatMap((p) =>
-        Object.values(p.models).map((m) => ({
+      .flatMap((p) => {
+        const filter = modelFilters[p.id] ?? "all"
+        if (filter === "none") return []
+        const models = Object.values(p.models)
+        const filtered = filter === "free" ? models.filter(isFreeModel) : models
+        return filtered.map((m) => ({
           providerID: p.id,
           providerName: p.name,
           modelID: m.id,
           modelName: (m as { name?: string }).name ?? m.id,
           isFallback: false,
-        })),
-      )
+        }))
+      })
     const fallbackProvider = providers.find((p) => p.id === "fallback")
     const fallback = fallbackProvider
       ? Object.values(fallbackProvider.models).map((m) => ({
@@ -277,7 +287,7 @@ export const Chatbot = () => {
         }))
       : []
     return [...real, ...fallback]
-  }, [providers, connectedProviders])
+  }, [providers, connectedProviders, modelFilters])
 
   const selectedModel = useMemo(() => {
     if (selectedProviderID && selectedModelID)

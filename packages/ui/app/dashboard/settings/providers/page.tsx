@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2Icon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, Trash2Icon } from "lucide-react"
+import { CheckCircle2Icon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon } from "lucide-react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { opendora, type AuthMethod, type Provider } from "@/lib/opendora"
+import { cn } from "@/lib/utils"
 
 type ProviderState = {
   provider: Provider
@@ -32,11 +33,12 @@ type ApiKeyFormState = {
 
 export default function ProvidersPage() {
   const router = useRouter()
-  const { providers, connectedProviders } = useOpendoraContext()
+  const { providers, connectedProviders, modelFilters, setModelFilter } = useOpendoraContext()
   const [authMethods, setAuthMethods] = useState<Record<string, AuthMethod[]>>({})
   const [apiKeyForm, setApiKeyForm] = useState<ApiKeyFormState | null>(null)
   const [removing, setRemoving] = useState<string | null>(null)
   const [oauthLoading, setOauthLoading] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
 
   useEffect(() => {
     opendora.provider.authMethods().then(setAuthMethods).catch(() => {})
@@ -47,6 +49,33 @@ export default function ProvidersPage() {
     methods: authMethods[p.id] ?? [],
     connected: connectedProviders.includes(p.id),
   }))
+
+  const filteredStates = useMemo(() => {
+    if (!searchQuery.trim()) return providerStates
+    const q = searchQuery.toLowerCase()
+    return providerStates.filter(
+      ({ provider }) =>
+        provider.name.toLowerCase().includes(q) ||
+        provider.id.toLowerCase().includes(q),
+    )
+  }, [providerStates, searchQuery])
+
+  const connectedStates = useMemo(
+    () => [...filteredStates.filter((s) => s.connected)].sort((a, b) => a.provider.name.localeCompare(b.provider.name)),
+    [filteredStates],
+  )
+  const unconnectedStates = useMemo(
+    () => [...filteredStates.filter((s) => !s.connected)].sort((a, b) => a.provider.name.localeCompare(b.provider.name)),
+    [filteredStates],
+  )
+
+  function hasFreeModels(provider: Provider): boolean {
+    return Object.values(provider.models).some((m) => {
+      const cost = (m as any).cost as { input: number; output: number } | undefined
+      if (cost && cost.input === 0 && cost.output === 0) return true
+      return m.id.endsWith(":free") || m.id.endsWith("-free")
+    })
+  }
 
   async function handleSaveApiKey() {
     if (!apiKeyForm || !apiKeyForm.key.trim()) return
@@ -111,11 +140,23 @@ export default function ProvidersPage() {
             Connect AI providers by adding API keys or signing in with OAuth.
           </p>
 
-          {providerStates.length === 0 && (
-            <p className="text-sm text-muted-foreground">No providers available.</p>
+          {/* Search bar */}
+          <div className="relative">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder="Search providers…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 text-sm"
+            />
+          </div>
+
+          {filteredStates.length === 0 && (
+            <p className="text-sm text-muted-foreground">No providers found.</p>
           )}
 
-          {providerStates.map(({ provider, methods, connected }) => (
+          {/* Connected providers */}
+          {connectedStates.length > 0 && connectedStates.map(({ provider, methods, connected }) => (
             <div key={provider.id} className="rounded-lg border p-4 flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -158,6 +199,150 @@ export default function ProvidersPage() {
                   )}
                 </div>
               </div>
+
+              {/* Model filter toggle — only for providers with free models */}
+              {hasFreeModels(provider) && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">Models:</span>
+                  {(["all", "free", "none"] as const).map((opt) => {
+                    const current = modelFilters[provider.id] ?? "all"
+                    return (
+                      <button
+                        key={opt}
+                        onClick={() => setModelFilter(provider.id, opt)}
+                        className={cn(
+                          "px-2 py-0.5 text-xs rounded border transition-colors capitalize",
+                          current === opt
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
+                        )}
+                      >
+                        {opt}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Auth method buttons */}
+              {!connected && methods.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {methods.map((method, idx) => (
+                    method.type === "api" ? (
+                      <Button
+                        key={idx}
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5"
+                        onClick={() => setApiKeyForm({ providerID: provider.id, key: "", saving: false, error: null })}
+                      >
+                        <KeyRoundIcon className="size-3.5" />
+                        {method.label ?? "Enter API key"}
+                      </Button>
+                    ) : (
+                      <Button
+                        key={idx}
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5"
+                        disabled={oauthLoading === provider.id}
+                        onClick={() => handleOAuth(provider.id, idx)}
+                      >
+                        {oauthLoading === provider.id
+                          ? <Loader2Icon className="size-3.5 animate-spin" />
+                          : <ExternalLinkIcon className="size-3.5" />}
+                        {method.label ?? "Sign in"}
+                      </Button>
+                    )
+                  ))}
+                </div>
+              )}
+
+              {/* Inline API key form */}
+              {apiKeyForm?.providerID === provider.id && (
+                <div className="flex flex-col gap-2 pt-1">
+                  <Label htmlFor={`key-${provider.id}`} className="text-xs">API key</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id={`key-${provider.id}`}
+                      type="password"
+                      placeholder="sk-…"
+                      value={apiKeyForm.key}
+                      onChange={(e) => setApiKeyForm((f) => f && { ...f, key: e.target.value })}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleSaveApiKey() }}
+                      className="font-mono text-xs"
+                      autoFocus
+                    />
+                    <Button size="sm" onClick={handleSaveApiKey} disabled={apiKeyForm.saving || !apiKeyForm.key.trim()}>
+                      {apiKeyForm.saving && <Loader2Icon className="mr-1.5 size-3.5 animate-spin" />}
+                      Save
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setApiKeyForm(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                  {apiKeyForm.error && <p className="text-xs text-destructive">{apiKeyForm.error}</p>}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Divider between connected and unconnected */}
+          {connectedStates.length > 0 && unconnectedStates.length > 0 && (
+            <div className="flex items-center gap-3 py-1">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground select-none">Other providers</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+          )}
+
+          {/* Unconnected providers */}
+          {unconnectedStates.map(({ provider, methods, connected }) => (
+            <div key={provider.id} className="rounded-lg border p-4 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <img
+                    src={`https://models.dev/logos/${provider.id}.svg`}
+                    alt={provider.name}
+                    className="size-4 dark:invert"
+                    width={16}
+                    height={16}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+                  />
+                  <span className="font-medium text-sm">{provider.name}</span>
+                  <span className="text-xs text-muted-foreground">({provider.id})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <CircleIcon className="size-3.5" />
+                    Not connected
+                  </span>
+                </div>
+              </div>
+
+              {/* Model filter toggle — only for providers with free models */}
+              {hasFreeModels(provider) && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">Models:</span>
+                  {(["all", "free", "none"] as const).map((opt) => {
+                    const current = modelFilters[provider.id] ?? "all"
+                    return (
+                      <button
+                        key={opt}
+                        onClick={() => setModelFilter(provider.id, opt)}
+                        className={cn(
+                          "px-2 py-0.5 text-xs rounded border transition-colors capitalize",
+                          current === opt
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
+                        )}
+                      >
+                        {opt}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
 
               {/* Auth method buttons */}
               {!connected && methods.length > 0 && (

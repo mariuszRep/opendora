@@ -47,6 +47,7 @@ export type UseOpendoraResult = {
   status: ChatStatus
   sendMessage: (text: string, options?: { model?: { providerID: string; modelID: string }; agent?: string }) => Promise<void>
   abort: () => void
+  abortSession: (sessionID: string) => void
   // Agents — read
   agents: (Agent & { _id: string })[]
   allAgents: (Agent & { _id: string })[]
@@ -68,6 +69,9 @@ export type UseOpendoraResult = {
   refreshProviders: () => Promise<void>
   // Fallback groups — active provider slot per groupID
   fallbackActiveSlots: Record<string, { providerID: string; modelID: string }>
+  // Per-provider model filter: "all" | "free" | "none"
+  modelFilters: Record<string, "all" | "free" | "none">
+  setModelFilter: (providerID: string, filter: "all" | "free" | "none") => void
   // Error
   error: string | null
   // UI Layout
@@ -90,6 +94,7 @@ export function useOpendora(): UseOpendoraResult {
   const [defaultModels, setDefaultModels] = useState<Record<string, string>>({})
   const [agents, setAgents] = useState<(Agent & { _id: string })[]>([])
   const [fallbackActiveSlots, setFallbackActiveSlots] = useState<Record<string, { providerID: string; modelID: string }>>({})
+  const [modelFilters, setModelFilters] = useState<Record<string, "all" | "free" | "none">>({})
   const [allAgents, setAllAgents] = useState<(Agent & { _id: string })[]>([])
   const [selectedAgent, setSelectedAgent] = useState<string>("build")
   const [isChatCentered, setIsChatCentered] = useState(false)
@@ -139,17 +144,23 @@ export function useOpendora(): UseOpendoraResult {
 
     async function init() {
       try {
-        const [providerData, agentData, sessionData, questionData] = await Promise.all([
+        const [providerData, agentData, sessionData, questionData, configData] = await Promise.all([
           opendora.provider.list(),
           opendora.agent.list(),
           opendora.session.list(),
           opendora.question.list(),
+          opendora.config.get(),
         ])
         if (cancelled) return
 
         setProviders(providerData.all)
         setConnectedProviders(providerData.connected)
         setDefaultModels(providerData.default)
+        
+        // Load model filters from backend config
+        if (configData.model_filters) {
+          setModelFilters(configData.model_filters)
+        }
 
         // Attach _id (agent slug) so CRUD can match by id rather than display name
         // allAgents includes all agents (visible and hidden)
@@ -470,6 +481,10 @@ export function useOpendora(): UseOpendoraResult {
     setStatus("ready")
   }, [])
 
+  const abortSession = useCallback((sessionID: string) => {
+    opendora.session.abort(sessionID).catch(() => { })
+  }, [])
+
   // ── Agent CRUD ────────────────────────────────────────────────────────────
 
   const createAgent = useCallback(async (config: AgentConfig, persona?: string, injection?: string) => {
@@ -590,6 +605,17 @@ export function useOpendora(): UseOpendoraResult {
     setIsChatCentered((prev) => !prev)
   }, [])
 
+  const setModelFilter = useCallback(async (providerID: string, filter: "all" | "free" | "none") => {
+    setModelFilters((prev) => {
+      const next = { ...prev, [providerID]: filter }
+      // Save to backend config for persistence
+      opendora.config.update({ model_filters: next }).catch((err) => {
+        console.error("Failed to save model filter to config:", err)
+      })
+      return next
+    })
+  }, [])
+
   return {
     sessions,
     agentSessions,
@@ -605,6 +631,7 @@ export function useOpendora(): UseOpendoraResult {
     status,
     sendMessage,
     abort,
+    abortSession,
     agents,
     allAgents,
     selectedAgent,
@@ -623,6 +650,8 @@ export function useOpendora(): UseOpendoraResult {
     defaultModels,
     refreshProviders,
     fallbackActiveSlots,
+    modelFilters,
+    setModelFilter,
     error,
     isChatCentered,
     toggleChatLayout,

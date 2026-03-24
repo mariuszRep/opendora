@@ -12,6 +12,7 @@ import { Session } from "@opendora/session/session"
 import { NamedError } from "@opencode-ai/util/error"
 import { CopilotAuthPlugin } from "./copilot"
 import { gitlabAuthPlugin as GitlabAuthPlugin } from "@gitlab/opencode-gitlab-auth"
+import { googleOAuthPlugin as GoogleAuthPlugin } from "@opendora/provider/google-oauth-plugin"
 
 export namespace Plugin {
   const log = Log.create({ service: "plugin" })
@@ -19,7 +20,7 @@ export namespace Plugin {
   const BUILTIN = ["opencode-anthropic-auth@0.0.13"]
 
   // Built-in plugins that are directly imported (not installed from npm)
-  const INTERNAL_PLUGINS: PluginInstance[] = [CodexAuthPlugin, CopilotAuthPlugin, GitlabAuthPlugin]
+  const INTERNAL_PLUGINS: PluginInstance[] = [CodexAuthPlugin, CopilotAuthPlugin, GitlabAuthPlugin, GoogleAuthPlugin]
 
   const state = Instance.state(async () => {
     const client = createOpencodeClient({

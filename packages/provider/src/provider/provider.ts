@@ -597,6 +597,53 @@ export namespace Provider {
         },
       }
     },
+    "google-gemini-cli": async (input) => {
+      const auth = await Auth.get(input.id)
+
+      // Only OAuth authentication for Gemini CLI
+      if (auth?.type !== "oauth") {
+        return { autoload: false }
+      }
+
+      const { GoogleOAuth } = await import("./google-oauth")
+      return {
+        autoload: true,
+        options: {
+          fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+            // Get current auth
+            const currentAuth = await Auth.get("google-gemini-cli")
+            if (currentAuth?.type !== "oauth") {
+              throw new Error("OAuth credentials not found for Gemini CLI")
+            }
+
+            // Check if token is expired and refresh if needed
+            let accessToken = currentAuth.access
+            if (currentAuth.expires && Date.now() >= currentAuth.expires) {
+              if (!currentAuth.refresh) {
+                throw new Error("Refresh token not available")
+              }
+
+              const refreshed = await GoogleOAuth.refreshAccessToken(currentAuth.refresh)
+              accessToken = refreshed.access_token
+
+              // Update stored credentials
+              await Auth.set("google-gemini-cli", {
+                type: "oauth",
+                access: refreshed.access_token,
+                refresh: currentAuth.refresh,
+                expires: refreshed.expiry_date,
+                accountId: currentAuth.accountId,
+              })
+            }
+
+            const headers = new Headers(init?.headers)
+            headers.set("Authorization", `Bearer ${accessToken}`)
+
+            return fetch(input, { ...init, headers })
+          },
+        },
+      }
+    },
   }
 
   export const Model = z

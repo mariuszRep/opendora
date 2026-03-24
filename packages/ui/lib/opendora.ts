@@ -412,6 +412,11 @@ export const opendora = {
       return res.blob()
     },
   },
+  config: {
+    get: () => req<{ model_filters?: Record<string, "all" | "free" | "none">; [k: string]: unknown }>("/config"),
+    update: (updates: { model_filters?: Record<string, "all" | "free" | "none">; [k: string]: unknown }) =>
+      req<boolean>("/config", { method: "PATCH", body: JSON.stringify(updates) }),
+  },
   events: {
     subscribe: (onEvent: (event: Event) => void, onReconnect?: () => void): () => void => {
       const es = new EventSource(`${OPENDORA_URL}/event`)

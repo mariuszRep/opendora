@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/utils"
 import type { Session, SessionType } from "@/lib/opendora"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BotIcon, MessageSquareIcon, PencilIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon } from "lucide-react"
+import { BotIcon, MessageSquareIcon, PencilIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type React from "react"
 import { useState } from "react"
@@ -50,6 +50,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     status,
     sessions,
     activeSessions,
+    abortSession,
   } = useOpendoraContext()
 
   const visibleAgents = agents.filter((a) => !a.hidden)
@@ -162,6 +163,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           <StarIcon className="size-3 shrink-0 fill-current text-amber-400 group-data-[collapsible=icon]:hidden" />
                         )}
                       </SidebarMenuButton>
+
+                      {/* Stop — only shown when agent is working */}
+                      {workingAgents.has(agent._id) && (
+                        <SidebarMenuAction
+                          className="group-data-[collapsible=icon]:hidden"
+                          style={{ right: isDefault ? "1.75rem" : "3.5rem" }}
+                          title="Stop agent"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            sessions
+                              .filter((s) => s.agentID === agent._id && activeSessions.has(s.id))
+                              .forEach((s) => abortSession(s.id))
+                          }}
+                        >
+                          <SquareIcon className="size-3.5 fill-current" />
+                          <span className="sr-only">Stop {agent.name}</span>
+                        </SidebarMenuAction>
+                      )}
 
                       {/* Set as default — only shown on hover for non-default agents */}
                       {!isDefault && (
