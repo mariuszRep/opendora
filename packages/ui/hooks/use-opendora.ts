@@ -66,6 +66,8 @@ export type UseOpendoraResult = {
   connectedProviders: string[]
   defaultModels: Record<string, string>
   refreshProviders: () => Promise<void>
+  // Fallback groups — active provider slot per groupID
+  fallbackActiveSlots: Record<string, { providerID: string; modelID: string }>
   // Error
   error: string | null
   // UI Layout
@@ -87,6 +89,7 @@ export function useOpendora(): UseOpendoraResult {
   const [connectedProviders, setConnectedProviders] = useState<string[]>([])
   const [defaultModels, setDefaultModels] = useState<Record<string, string>>({})
   const [agents, setAgents] = useState<(Agent & { _id: string })[]>([])
+  const [fallbackActiveSlots, setFallbackActiveSlots] = useState<Record<string, { providerID: string; modelID: string }>>({})
   const [allAgents, setAllAgents] = useState<(Agent & { _id: string })[]>([])
   const [selectedAgent, setSelectedAgent] = useState<string>("build")
   const [isChatCentered, setIsChatCentered] = useState(false)
@@ -334,6 +337,11 @@ export function useOpendora(): UseOpendoraResult {
               return { ...m, parts: m.parts.map((p, i) => (i === idx ? part : p)) }
             }),
           )
+          break
+        }
+        case "session.fallback.switched": {
+          const { groupID, newSlot } = (event as { type: string; properties: { groupID: string; newSlot: { providerID: string; modelID: string } } }).properties
+          setFallbackActiveSlots((prev) => ({ ...prev, [groupID]: newSlot }))
           break
         }
         case "question.asked": {
@@ -614,6 +622,7 @@ export function useOpendora(): UseOpendoraResult {
     connectedProviders,
     defaultModels,
     refreshProviders,
+    fallbackActiveSlots,
     error,
     isChatCentered,
     toggleChatLayout,

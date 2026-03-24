@@ -15,6 +15,7 @@ import { fn } from "@opendora/util/fn"
 import { Identifier } from "@opendora/util/id"
 import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
+import { LLM } from "./llm.ts"
 
 // Token.estimate — rough approximation: 1 token ≈ 4 chars
 function estimateTokens(text: any): number {
@@ -46,8 +47,8 @@ export namespace SessionCompaction {
       input.tokens.total ||
       input.tokens.input + input.tokens.output + input.tokens.cache.read + input.tokens.cache.write
 
-    // maxOutputTokens approximation — use model.limit.output or fallback
-    const maxOutput = input.model.limit?.output ?? COMPACTION_BUFFER
+    // maxOutputTokens approximation — clamp to OUTPUT_TOKEN_MAX to match what llm.ts actually requests
+    const maxOutput = Math.min(input.model.limit?.output ?? COMPACTION_BUFFER, LLM.OUTPUT_TOKEN_MAX)
     const configSvc2 = cfg.config
     const configVal = configSvc2 ? await configSvc2.get() : null
     const reserved = configVal?.compaction?.reserved ?? Math.min(COMPACTION_BUFFER, maxOutput)

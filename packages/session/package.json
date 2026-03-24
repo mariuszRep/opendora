@@ -28,7 +28,8 @@
     "./instruction":            "./src/instruction.ts",
     "./llm":                    "./src/llm.ts",
     "./session":                "./src/session.ts",
-    "./prompt":                 "./src/prompt.ts"
+    "./prompt":                 "./src/prompt.ts",
+    "./fallback":               "./src/fallback.ts"
   },
   "devDependencies": {
     "@types/node": "catalog:",

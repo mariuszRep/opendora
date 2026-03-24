@@ -5,6 +5,7 @@ import { Config } from "../../config/config"
 import { Provider } from "@opendora/provider/provider"
 import { ModelsDev } from "@opendora/provider/models"
 import { ProviderAuth } from "@opendora/provider/auth"
+import { FallbackManager } from "@opendora/session/fallback"
 import { mapValues } from "remeda"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
@@ -52,9 +53,40 @@ export const ProviderRoutes = lazy(() =>
           mapValues(filteredProviders, (x) => Provider.fromModelsDevProvider(x)),
           connected,
         )
+
+        // Inject synthetic "fallback" provider for cross-provider free model groups
+        const connectedSet = new Set(Object.keys(connected))
+        const fallbackModels: Record<string, any> = {}
+        for (const group of FallbackManager.allGroups()) {
+          const connectedSlots = group.slots.filter((s) => connectedSet.has(s.providerID))
+          if (connectedSlots.length < 2) continue
+          fallbackModels[group.id] = {
+            id: group.id,
+            name: `${group.displayName} ↔ ${connectedSlots.length} providers`,
+            tool_call: true,
+            reasoning: true,
+            attachment: false,
+            release_date: "",
+            cost: { input: 0, output: 0 },
+            limit: { context: 204800, output: 32000 },
+            options: {},
+            modalities: { input: ["text"], output: ["text"] },
+          }
+        }
+        if (Object.keys(fallbackModels).length > 0) {
+          const fallbackProvider: any = {
+            id: "fallback",
+            name: "Free Fallback Groups",
+            env: [],
+            models: fallbackModels,
+          }
+          providers["fallback"] = fallbackProvider
+          connected["fallback"] = fallbackProvider
+        }
+
         return c.json({
           all: Object.values(providers),
-          default: mapValues(providers, (item) => Provider.sort(Object.values(item.models))[0].id),
+          default: mapValues(providers, (item) => Provider.sort(Object.values(item.models))[0]?.id ?? ""),
           connected: Object.keys(connected),
         })
       },

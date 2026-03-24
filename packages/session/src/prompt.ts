@@ -18,6 +18,7 @@ import { NamedError } from "@opendora/util/error"
 import { SessionProcessor } from "./processor.ts"
 import { SessionStatus } from "./status.ts"
 import { LLM } from "./llm.ts"
+import { FallbackManager } from "./fallback.ts"
 import { ulid } from "ulid"
 import { spawn } from "child_process"
 import { $, fileURLToPath, pathToFileURL } from "bun"
@@ -354,7 +355,12 @@ export namespace SessionPrompt {
           history: msgs,
         })
 
-      const model = await cfg.provider?.getModel(lastUser.model.providerID, lastUser.model.modelID).catch((e: any) => {
+      const _resolvedModel = lastUser.model.providerID === "fallback"
+        ? await FallbackManager.resolve(lastUser.model.modelID).then((slot) =>
+            cfg.provider!.getModel(slot.providerID, slot.modelID)
+          )
+        : null
+      const model = _resolvedModel ?? await cfg.provider?.getModel(lastUser.model.providerID, lastUser.model.modelID).catch((e: any) => {
         if (cfg.provider?.ModelNotFoundError?.isInstance?.(e)) {
           const hint = e.data.suggestions?.length ? ` Did you mean: ${e.data.suggestions.join(", ")}?` : ""
           cfg.bus?.publish(Session.Event.Error, {
@@ -641,6 +647,7 @@ export namespace SessionPrompt {
         sessionID: sessionID,
         model,
         abort,
+        fallbackGroupID: lastUser.model.providerID === "fallback" ? lastUser.model.modelID : undefined,
         updateMessage: Session.updateMessage,
         updatePart: Session.updatePart,
         updatePartDelta: Session.updatePartDelta,

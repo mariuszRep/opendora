@@ -15,6 +15,8 @@ import { SessionRetry } from "./retry.ts"
 import { SessionStatus } from "./status.ts"
 import { Identifier } from "@opendora/util/id"
 import { LLM } from "./llm.ts"
+import { FallbackManager } from "./fallback.ts"
+import { SessionEvents } from "./events.ts"
 
 // Inline iife helper
 function iife<T>(fn: () => T): T {
@@ -42,6 +44,7 @@ export namespace SessionProcessor {
     getUsage: (input: any) => any
     summarize?: (input: { sessionID: string; messageID: string }) => void
     isOverflow?: (input: { tokens: any; model: any }) => Promise<boolean>
+    fallbackGroupID?: string
   }) {
     const toolcalls: Record<string, MessageV2.ToolPart> = {}
     let snapshot: string | undefined
@@ -412,6 +415,36 @@ export namespace SessionProcessor {
               await SessionRetry.sleep(delay, input.abort).catch(() => {})
               continue
             }
+            // Fallback: if this is a fallback group, try next provider before hard-failing
+            if (input.fallbackGroupID) {
+              const statusCode = (error as any)?.data?.statusCode as number | undefined
+              const isFallbackEligible = statusCode === undefined || [400, 404, 500, 502, 503].includes(statusCode)
+              if (isFallbackEligible) {
+                const currentSlot = { providerID: streamInput.model.providerID, modelID: streamInput.model.id }
+                const nextSlot = await FallbackManager.reportError(
+                  input.fallbackGroupID,
+                  currentSlot,
+                  statusCode,
+                  (error as any)?.message ?? String(error),
+                )
+                if (nextSlot) {
+                  const nextModel = await getConfig().provider?.getModel(nextSlot.providerID, nextSlot.modelID)
+                  if (nextModel) {
+                    streamInput = { ...streamInput, model: nextModel }
+                    input.model = nextModel
+                    getConfig().bus?.publish(SessionEvents.FallbackSwitched, {
+                      sessionID: input.sessionID,
+                      groupID: input.fallbackGroupID,
+                      previousSlot: currentSlot,
+                      newSlot: nextSlot,
+                    })
+                    attempt = 0
+                    continue
+                  }
+                }
+              }
+            }
+
             input.assistantMessage.error = error
             const bus = getConfig().bus
             bus?.publish(SessionErrorEvent, {

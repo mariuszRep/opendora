@@ -3,8 +3,8 @@
   "description": "First point of contact. Routes users to the right specialist agent by understanding intent and delegating accordingly. Greetings, confirmations, and simple clarifications are handled directly. Everything else is delegated.",
   "mode": "primary",
   "model": {
-    "modelID": "minimax-m2.5-free",
-    "providerID": "opencode"
+    "modelID": "minimax-m2.5",
+    "providerID": "fallback"
   },
   "color": "teal",
   "tools": [

@@ -1,0 +1,54 @@
+{
+  "groups": [
+    {
+      "id": "nemotron-3-super",
+      "displayName": "Nemotron Free",
+      "slots": [
+        { "providerID": "opencode",   "modelID": "nemotron-3-super-free" },
+        { "providerID": "openrouter", "modelID": "nvidia/nemotron-3-super-120b-a12b-free" },
+        { "providerID": "kilo",       "modelID": "nvidia/nemotron-3-super-120b-a12b:free" }
+      ]
+    },
+    {
+      "id": "trinity-large",
+      "displayName": "Trinity Large Free",
+      "slots": [
+        { "providerID": "opencode",   "modelID": "trinity-large-preview-free" },
+        { "providerID": "openrouter", "modelID": "arcee-ai/trinity-large-preview:free" },
+        { "providerID": "kilo",       "modelID": "arcee-ai/trinity-large-preview:free" }
+      ]
+    },
+    {
+      "id": "kimi-k2",
+      "displayName": "Kimi K2 Free",
+      "slots": [
+        { "providerID": "opencode",   "modelID": "kimi-k2.5-free" },
+        { "providerID": "openrouter", "modelID": "moonshotai/kimi-k2:free" }
+      ]
+    },
+    {
+      "id": "grok-code",
+      "displayName": "Grok Code Free",
+      "slots": [
+        { "providerID": "opencode", "modelID": "grok-code" },
+        { "providerID": "kilo",     "modelID": "x-ai/grok-code-fast-1:optimized:free" }
+      ]
+    },
+    {
+      "id": "step-3.5-flash",
+      "displayName": "Step 3.5 Flash Free",
+      "slots": [
+        { "providerID": "openrouter", "modelID": "stepfun/step-3.5-flash:free" },
+        { "providerID": "kilo",       "modelID": "stepfun/step-3.5-flash:free" }
+      ]
+    },
+    {
+      "id": "minimax-m2.5",
+      "displayName": "MiniMax M2.5 Free",
+      "slots": [
+        { "providerID": "opencode", "modelID": "minimax-m2.5-free" },
+        { "providerID": "kilo",     "modelID": "minimax/minimax-m2.5:free" }
+      ]
+    }
+  ]
+}

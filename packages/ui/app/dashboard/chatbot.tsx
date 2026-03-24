@@ -191,6 +191,7 @@ export const Chatbot = () => {
     connectedProviders,
     defaultModels,
     refreshProviders,
+    fallbackActiveSlots,
     createSession,
     updateAgent,
     isChatCentered,
@@ -253,20 +254,30 @@ export const Chatbot = () => {
     }
   }, [selectedAgent, agents, updateAgent])
 
-  const modelList = useMemo(
-    () =>
-      providers
-        .filter((p) => connectedProviders.includes(p.id))
-        .flatMap((p) =>
-          Object.values(p.models).map((m) => ({
-            providerID: p.id,
-            providerName: p.name,
-            modelID: m.id,
-            modelName: (m as { name?: string }).name ?? m.id,
-          })),
-        ),
-    [providers, connectedProviders],
-  )
+  const modelList = useMemo(() => {
+    const real = providers
+      .filter((p) => connectedProviders.includes(p.id) && p.id !== "fallback")
+      .flatMap((p) =>
+        Object.values(p.models).map((m) => ({
+          providerID: p.id,
+          providerName: p.name,
+          modelID: m.id,
+          modelName: (m as { name?: string }).name ?? m.id,
+          isFallback: false,
+        })),
+      )
+    const fallbackProvider = providers.find((p) => p.id === "fallback")
+    const fallback = fallbackProvider
+      ? Object.values(fallbackProvider.models).map((m) => ({
+          providerID: "fallback",
+          providerName: "Free Fallback Groups",
+          modelID: m.id,
+          modelName: (m as { name?: string }).name ?? m.id,
+          isFallback: true,
+        }))
+      : []
+    return [...real, ...fallback]
+  }, [providers, connectedProviders])
 
   const selectedModel = useMemo(() => {
     if (selectedProviderID && selectedModelID)
@@ -994,7 +1005,14 @@ export const Chatbot = () => {
                   >
                     <ModelSelectorTrigger asChild>
                       <PromptInputButton>
-                        {selectedModel?.providerID && <ModelSelectorLogo provider={selectedModel.providerID} />}
+                        {selectedModel?.isFallback
+                          ? (() => {
+                              const activeSlot = fallbackActiveSlots[selectedModel.modelID]
+                              const iconProvider = activeSlot?.providerID ?? "opencode"
+                              return <ModelSelectorLogo provider={iconProvider} />
+                            })()
+                          : selectedModel?.providerID && <ModelSelectorLogo provider={selectedModel.providerID} />
+                        }
                         {selectedModel?.modelName && <ModelSelectorName>{selectedModel.modelName}</ModelSelectorName>}
                       </PromptInputButton>
                     </ModelSelectorTrigger>
@@ -1020,7 +1038,13 @@ export const Chatbot = () => {
                                   }}
                                   value={`${m.providerID}:${m.modelID}`}
                                 >
-                                  <ModelSelectorLogo provider={m.providerID} />
+                                  <ModelSelectorLogo
+                                    provider={
+                                      (m as { isFallback?: boolean }).isFallback
+                                        ? (fallbackActiveSlots[m.modelID]?.providerID ?? "opencode")
+                                        : m.providerID
+                                    }
+                                  />
                                   <ModelSelectorName>{m.modelName}</ModelSelectorName>
                                   {active ? <CheckIcon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}
                                 </ModelSelectorItem>

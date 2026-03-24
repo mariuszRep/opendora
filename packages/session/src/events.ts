@@ -42,4 +42,13 @@ export const SessionEvents = {
       error: MessageV2.Assistant.shape.error,
     }),
   ),
+  FallbackSwitched: defineBusEvent(
+    "session.fallback.switched",
+    z.object({
+      sessionID: z.string(),
+      groupID: z.string(),
+      previousSlot: z.object({ providerID: z.string(), modelID: z.string() }),
+      newSlot: z.object({ providerID: z.string(), modelID: z.string() }),
+    }),
+  ),
 }
