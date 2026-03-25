@@ -7,10 +7,11 @@ Repository-wide instructions for agents working in `opendora`.
 Before changing code in any scope, read:
 
 1. This root `AGENTS.md`
-2. The root [`SCOPE.md`](/home/ubuntu/projects/opendora/SCOPE.md), [`STATE.md`](/home/ubuntu/projects/opendora/STATE.md), and [`ROADMAP.md`](/home/ubuntu/projects/opendora/ROADMAP.md)
-3. The nearest nested `AGENTS.md`, `SCOPE.md`, `STATE.md`, and `ROADMAP.md` for the package or app you are editing
+2. [`VISION.md`](/home/ubuntu/projects/opendora/VISION.md) — target architecture, human-owned, never edit during migration
+3. [`MIGRATION.md`](/home/ubuntu/projects/opendora/MIGRATION.md) — current migration progress, update as work happens
+4. The nearest nested `AGENTS.md` for the package or app you are editing
 
-Nested files inherit parent context by default. Treat nested files as stricter or more specific unless they explicitly mark something as `unknown` or `needs verification`.
+Nested files inherit parent context by default. Treat nested files as stricter or more specific.
 
 ## Repository rules
 
@@ -23,25 +24,24 @@ Nested files inherit parent context by default. Treat nested files as stricter o
 
 ## Application & Package map
 
-The architecture enforces the following boundaries. Adhere to these when making structural or logic changes:
+See `VISION.md` for the target architecture. During migration, the actual structure is in flux — consult `MIGRATION.md` for current state.
 
-**Applications (Consumers):**
-- `apps/server` - API Runtime, CLI, Bootstrapping logic
-- `apps/web` - Next.js UI Frontend
+**Target applications:**
+- `apps/web` — web frontend
+- `apps/cli` — CLI binary
+- `apps/tui` — terminal UI
+- `server/` — Hono API server + typed client export
 
-**Packages (Libraries):**
-- `packages/agents` - Definitions, logic, templates
-- `packages/providers` - LLM interaction wrappers
-- `packages/skills` - Chain / workflow definitions 
-- `packages/tools` - Agent action implementations
-- `packages/sessions` - Memory and engine iterations
-- `packages/ui` - Reusable frontend components
-- `packages/db` - Database setup, clients, schemas
-- `packages/utils` - Low-level shared utilities
+**Target packages (self-contained, no cross-pollination):**
+- `packages/session` — session types, storage adapters
+- `packages/provider` — LLM provider abstraction
+- `packages/tools` — tool implementations, MCP
+- `packages/agent` — agent loop, streaming, orchestration
+- `packages/permission` — permission types and enforcement
 
 ## Documentation maintenance
 
-- If you learn a stable fact about current behavior, update the relevant `STATE.md`.
-- If you define a new boundary or ownership rule, update the relevant `SCOPE.md`.
+- `VISION.md` is human-owned. Never modify it during migration or implementation work.
+- `MIGRATION.md` is agent-owned. Update it as steps complete, start, or get blocked.
 - If you add or tighten workflow constraints for agents, update the relevant `AGENTS.md`.
-- If you capture future work, move it into the nearest `ROADMAP.md`.
+- Code is the source of truth for current state — do not maintain parallel state documents.

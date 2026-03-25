@@ -35,6 +35,10 @@ function formatSessionTitle(session: { title?: string; time: { created: number }
   })
 }
 
+function actionRight(slot: number): string {
+  return `${0.25 + slot * 1.75}rem`
+}
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter()
   const {
@@ -124,6 +128,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 {visibleAgents.map((agent) => {
                   const isActive = agent._id === selectedAgent
                   const isDefault = agent._id === defaultAgent
+                  const isWorking = workingAgents.has(agent._id)
                   return (
                     <SidebarMenuItem
                       key={agent._id}
@@ -142,15 +147,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         isActive={isActive}
                         onClick={() => { selectAgent(agent._id); router.push("/dashboard") }}
                         tooltip={agent.description ?? agent.name}
-                        className={cn(isActive && "bg-sidebar-accent text-sidebar-accent-foreground")}
+                        className={cn(
+                          "pr-2 group-has-data-[sidebar=menu-action]/menu-item:pr-2",
+                          isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
+                        )}
                       >
                         <div className="relative size-4 shrink-0 flex items-center justify-center">
-                          {workingAgents.has(agent._id) && (
-                            <div
-                              className="absolute inset-0 rounded-full border-2 border-transparent border-t-current animate-spin"
-                              style={{ borderTopColor: getAgentColor(agent.color).hex }}
-                            />
-                          )}
                           <div
                             className="size-2 rounded-full"
                             style={{ backgroundColor: getAgentColor(agent.color).hex }}
@@ -159,16 +161,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <span className="capitalize group-data-[collapsible=icon]:hidden flex-1 truncate">
                           {agent.name}
                         </span>
-                        {isDefault && (
-                          <StarIcon className="size-3 shrink-0 fill-current text-amber-400 group-data-[collapsible=icon]:hidden" />
-                        )}
                       </SidebarMenuButton>
 
                       {/* Stop — only shown when agent is working */}
-                      {workingAgents.has(agent._id) && (
+                      {isWorking && (
                         <SidebarMenuAction
                           className="group-data-[collapsible=icon]:hidden"
-                          style={{ right: isDefault ? "1.75rem" : "3.5rem" }}
+                          style={{ right: actionRight(0) }}
                           title="Stop agent"
                           onClick={(e) => {
                             e.stopPropagation()
@@ -186,7 +185,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       {!isDefault && (
                         <SidebarMenuAction
                           className="group-data-[collapsible=icon]:hidden transition-opacity"
-                          style={{ opacity: 0, right: "1.75rem" }}
+                          style={{ opacity: 0, right: actionRight(isWorking ? 1 : 0) }}
                           title="Set as default"
                           onClick={() => setDefaultAgent(agent._id)}
                         >
@@ -195,10 +194,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         </SidebarMenuAction>
                       )}
 
+                      {isDefault && (
+                        <SidebarMenuAction
+                          className="group-data-[collapsible=icon]:hidden"
+                          style={{ right: actionRight(isWorking ? 1 : 0) }}
+                          title="Default agent"
+                        >
+                          <StarIcon className="size-3.5 fill-current text-white" />
+                          <span className="sr-only">Default agent</span>
+                        </SidebarMenuAction>
+                      )}
+
                       {/* Edit — navigates to settings page */}
                       <SidebarMenuAction
                         className="group-data-[collapsible=icon]:hidden transition-opacity"
-                        style={{ opacity: 0 }}
+                        style={{ opacity: 0, right: actionRight((isWorking ? 1 : 0) + (isDefault ? 1 : 0)) }}
                         title="Agent settings"
                         onClick={() => router.push(`/dashboard/agents/${agent._id}`)}
                       >
@@ -269,28 +279,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 {agentSessions.map((session) => {
                   const isActive = session.id === selectedSession?.id
                   const isMain = session.sessionType === "role"
-                  const isWaiting = session.sessionStatus === "waiting"
+                  const isWorking = activeSessions.has(session.id)
                   return (
                     <SidebarMenuItem 
                       key={session.id}
                       onMouseEnter={(e) => {
-                        const settingsButton = e.currentTarget.querySelector('[data-sidebar="menu-action"]') as HTMLElement
-                        if (settingsButton) {
-                          settingsButton.style.opacity = '1'
-                        }
+                        e.currentTarget.querySelectorAll('[data-sidebar="menu-action"]').forEach((el) => {
+                          (el as HTMLElement).style.opacity = '1'
+                        })
                       }}
                       onMouseLeave={(e) => {
-                        const settingsButton = e.currentTarget.querySelector('[data-sidebar="menu-action"]') as HTMLElement
-                        if (settingsButton) {
-                          settingsButton.style.opacity = '0'
-                        }
+                        e.currentTarget.querySelectorAll('[data-sidebar="menu-action"]').forEach((el) => {
+                          (el as HTMLElement).style.opacity = '0'
+                        })
                       }}
                     >
                       <SidebarMenuButton
                         isActive={isActive}
                         onClick={() => { selectSession(session.id); router.push("/dashboard") }}
-                        tooltip={`${formatSessionTitle(session)}${isMain ? " (main)" : ""}${isWaiting ? " - waiting for response" : ""}`}
-                        className={cn(isActive && "bg-sidebar-accent text-sidebar-accent-foreground")}
+                        tooltip={`${formatSessionTitle(session)}${isMain ? " (main)" : ""}${isWorking ? " - active" : ""}`}
+                        className={cn(
+                          "pr-2 group-has-data-[sidebar=menu-action]/menu-item:pr-2",
+                          isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
+                        )}
                       >
                         <div className="relative size-4 shrink-0 flex items-center justify-center">
                           {(() => {
@@ -298,31 +309,50 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             const Icon = SESSION_TYPE_CONFIG[sessionType]?.icon || MessageSquareIcon
                             return <Icon className="size-4 shrink-0" />
                           })()}
-                          {isWaiting && (
-                            <div
-                              className="absolute inset-0 rounded-full border-2 border-transparent border-t-current animate-spin"
-                              style={{ borderTopColor: "hsl(var(--primary))" }}
-                            />
-                          )}
                         </div>
-                        <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
-                          <div className="flex items-center gap-1">
-                            <span className="truncate text-xs">{formatSessionTitle(session)}</span>
-                            {isMain && (
-                              <span className="shrink-0 rounded px-1 py-px text-[9px] font-medium bg-primary/10 text-primary">main</span>
-                            )}
-                            {isWaiting && (
-                              <span className="shrink-0 rounded px-1 py-px text-[9px] font-medium bg-amber-10 text-amber-600 animate-pulse">waiting</span>
-                            )}
-                          </div>
+                        <div className="relative min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+                          <span className="block truncate text-xs leading-5">
+                            {formatSessionTitle(session)}
+                          </span>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-sidebar via-sidebar/95 to-transparent opacity-0 transition-opacity group-hover/menu-item:opacity-100" />
                         </div>
                       </SidebarMenuButton>
 
+                      {isWorking && (
+                        <SidebarMenuAction
+                          className="group-data-[collapsible=icon]:hidden"
+                          style={{ right: actionRight(0) }}
+                          title="Stop session"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            abortSession(session.id)
+                          }}
+                        >
+                          <SquareIcon className="size-3.5 fill-current" />
+                          <span className="sr-only">Stop {formatSessionTitle(session)}</span>
+                        </SidebarMenuAction>
+                      )}
+
+                      {isMain && (
+                        <SidebarMenuAction
+                          className="group-data-[collapsible=icon]:hidden"
+                          style={{ right: actionRight(isWorking ? 1 : 0) }}
+                          title="Main session"
+                        >
+                          <StarIcon className="size-3.5 fill-current text-white" />
+                          <span className="sr-only">Main session</span>
+                        </SidebarMenuAction>
+                      )}
+
                       <SidebarMenuAction
                         className="group-data-[collapsible=icon]:hidden transition-opacity"
-                        style={{ opacity: 0 }}
+                        style={{ opacity: 0, right: actionRight((isWorking ? 1 : 0) + (isMain ? 1 : 0)) }}
                         title="Session settings"
-                        onClick={() => { setEditingSession(session); setSessionEditOpen(true) }}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditingSession(session)
+                          setSessionEditOpen(true)
+                        }}
                       >
                         <Settings2Icon className="size-3.5" />
                         <span className="sr-only">Settings for {formatSessionTitle(session)}</span>

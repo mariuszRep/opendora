@@ -22,7 +22,7 @@ trap cleanup EXIT INT TERM
 bun run serve </dev/null &
 pids+=($!)
 
-bun run --cwd packages/ui dev </dev/null &
+bun run --cwd ui/web dev </dev/null &
 pids+=($!)
 
 wait -n "${pids[@]}"

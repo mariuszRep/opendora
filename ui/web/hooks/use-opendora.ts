@@ -22,11 +22,23 @@ import {
 export type ChatStatus = "ready" | "submitted" | "streaming" | "error"
 
 const DEFAULT_AGENT_KEY = "opendora:default-agent"
+const LAST_SESSION_BY_AGENT_KEY = "opendora:last-session-by-agent"
 function getStoredDefaultAgent(): string | null {
   try { return localStorage.getItem(DEFAULT_AGENT_KEY) } catch { return null }
 }
 function storeDefaultAgent(id: string): void {
   try { localStorage.setItem(DEFAULT_AGENT_KEY, id) } catch { }
+}
+function getStoredLastSessionByAgent(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(LAST_SESSION_BY_AGENT_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+function storeLastSessionByAgent(map: Record<string, string>): void {
+  try { localStorage.setItem(LAST_SESSION_BY_AGENT_KEY, JSON.stringify(map)) } catch { }
 }
 
 export type UseOpendoraResult = {
@@ -100,9 +112,12 @@ export function useOpendora(): UseOpendoraResult {
   const [isChatCentered, setIsChatCentered] = useState(false)
   const [activeSessions, setActiveSessions] = useState<Set<string>>(new Set())
   const [defaultAgentId, setDefaultAgentId] = useState<string | null>(() => getStoredDefaultAgent())
+  const [lastSessionByAgent, setLastSessionByAgent] = useState<Record<string, string>>(() => getStoredLastSessionByAgent())
 
   const selectedSessionRef = useRef<Session | null>(null)
   const suppressUrlSyncRef = useRef(false)
+  const lastSessionByAgentRef = useRef<Record<string, string>>(lastSessionByAgent)
+  const initialRequestedSessionIdRef = useRef<string | null>(searchParams.get("session"))
 
   const buildDashboardUrl = useCallback((sessionID?: string | null, messageID?: string | null) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -114,18 +129,31 @@ export function useOpendora(): UseOpendoraResult {
     return query ? `${pathname}?${query}` : pathname
   }, [pathname, searchParams])
 
+  const getAgentId = useCallback((agent: Agent & { id?: string }) => agent.id ?? agent.name, [])
+
   const refreshAgentsState = useCallback(async () => {
     const agentData = await opendora.agent.list()
-    const agentsWithId = agentData.map((a) => ({ ...a, _id: (a as any).id || a.name, id: (a as any).id || a.name }))
+    const agentsWithId = agentData.map((a) => {
+      const id = getAgentId(a)
+      return { ...a, _id: id, id }
+    })
     setAllAgents(agentsWithId)
     setAgents(agentsWithId.filter((a) => !a.hidden))
     return agentsWithId
-  }, [])
+  }, [getAgentId])
 
 
   const selectedSession = sessions.find((s) => s.id === selectedSessionId) ?? null
+  const sortSessionsForAgent = useCallback((agentId: string, source: Session[]) => {
+    const agentScoped = source.filter((s) => s.agentID === agentId)
+    const mainSession = agentScoped.find((s) => s.sessionType === "role") ?? null
+    const remaining = agentScoped
+      .filter((s) => s.id !== mainSession?.id)
+      .sort((a, b) => b.time.updated - a.time.updated)
+    return mainSession ? [mainSession, ...remaining] : remaining
+  }, [])
   // Sessions that belong to the currently selected agent
-  const agentSessions = sessions.filter((s) => s.agentID === selectedAgent)
+  const agentSessions = sortSessionsForAgent(selectedAgent, sessions)
 
   const refreshProviders = useCallback(async () => {
     const providerData = await opendora.provider.list()
@@ -137,6 +165,24 @@ export function useOpendora(): UseOpendoraResult {
   useEffect(() => {
     selectedSessionRef.current = selectedSession
   }, [selectedSession])
+
+  useEffect(() => {
+    lastSessionByAgentRef.current = lastSessionByAgent
+  }, [lastSessionByAgent])
+
+  const rememberSessionForAgent = useCallback((session: Session | null | undefined) => {
+    if (!session?.agentID) return
+    setLastSessionByAgent((prev) => {
+      if (prev[session.agentID!] === session.id) return prev
+      const next = { ...prev, [session.agentID!]: session.id }
+      storeLastSessionByAgent(next)
+      return next
+    })
+  }, [])
+
+  useEffect(() => {
+    rememberSessionForAgent(selectedSession)
+  }, [selectedSession, rememberSessionForAgent])
 
   // Bootstrap: load providers, agents, sessions
   useEffect(() => {
@@ -164,7 +210,10 @@ export function useOpendora(): UseOpendoraResult {
 
         // Attach _id (agent slug) so CRUD can match by id rather than display name
         // allAgents includes all agents (visible and hidden)
-        const agentsWithId = agentData.map((a) => ({ ...a, _id: (a as any).id || a.name, id: (a as any).id || a.name }))
+        const agentsWithId = agentData.map((a) => {
+          const id = getAgentId(a)
+          return { ...a, _id: id, id }
+        })
         setAllAgents(agentsWithId)
         
         // agents only includes visible agents (for sidebar)
@@ -174,7 +223,7 @@ export function useOpendora(): UseOpendoraResult {
         const sorted = [...sessionData].sort((a, b) => b.time.updated - a.time.updated)
         setSessions(sorted)
 
-        const requestedSessionID = searchParams.get("session")
+        const requestedSessionID = initialRequestedSessionIdRef.current
         const requestedSession = requestedSessionID
           ? sorted.find((s) => s.id === requestedSessionID) ?? null
           : null
@@ -187,13 +236,18 @@ export function useOpendora(): UseOpendoraResult {
             : visibleAgents[0]?._id ?? null)
         if (targetAgentId) {
           setSelectedAgent(targetAgentId)
+          const sortedForAgent = sortSessionsForAgent(targetAgentId, sorted)
+          const remembered = lastSessionByAgentRef.current[targetAgentId]
+            ? sortedForAgent.find((s) => s.id === lastSessionByAgentRef.current[targetAgentId]) ?? null
+            : null
           const mainSess = requestedSession
-            ?? sorted.find((s) => s.agentID === targetAgentId && s.sessionType === "role")
-            ?? sorted.find((s) => s.agentID === targetAgentId)
+            ?? remembered
+            ?? sortedForAgent[0]
             ?? null
           if (mainSess) {
             setSelectedSessionId(mainSess.id)
             selectedSessionRef.current = mainSess
+            rememberSessionForAgent(mainSess)
           }
         }
 
@@ -212,7 +266,7 @@ export function useOpendora(): UseOpendoraResult {
 
     init()
     return () => { cancelled = true }
-  }, [])
+  }, [getAgentId, rememberSessionForAgent, sortSessionsForAgent])
 
   useEffect(() => {
     function handleFocus() {
@@ -426,9 +480,10 @@ export function useOpendora(): UseOpendoraResult {
       if (session?.agentID) {
         setSelectedAgent(session.agentID)
       }
+      rememberSessionForAgent(session)
       return prev
     })
-  }, [])
+  }, [buildDashboardUrl, rememberSessionForAgent, router])
 
   const createSession = useCallback(async (sessionType?: SessionType): Promise<string> => {
     try {
@@ -567,6 +622,7 @@ export function useOpendora(): UseOpendoraResult {
         setSelectedSessionId(session.id)
         router.push(buildDashboardUrl(session.id, null), { scroll: false })
         selectedSessionRef.current = session
+        rememberSessionForAgent(session)
       } else {
         setSelectedSessionId(null)
         selectedSessionRef.current = null
@@ -575,8 +631,14 @@ export function useOpendora(): UseOpendoraResult {
 
     const fallbackFromLocal = () => {
       setSessions((prev) => {
-        const fallback = prev.find((s) => s.agentID === agentId && s.sessionType === "role")
-          ?? prev.find((s) => s.agentID === agentId)
+        const sortedForAgent = sortSessionsForAgent(agentId, prev)
+        const activeForAgent = sortedForAgent.filter((s) => activeSessions.has(s.id))
+        const remembered = lastSessionByAgentRef.current[agentId]
+          ? sortedForAgent.find((s) => s.id === lastSessionByAgentRef.current[agentId]) ?? null
+          : null
+        const fallback = activeForAgent[0]
+          ?? remembered
+          ?? sortedForAgent[0]
           ?? null
         applySession(fallback)
         return prev
@@ -584,9 +646,14 @@ export function useOpendora(): UseOpendoraResult {
     }
 
     try {
-      const session = await opendora.agent.mainSession(agentId)
-      if (session?.id) {
-        applySession(session)
+      const mainSession = await opendora.agent.mainSession(agentId)
+      const localSorted = sortSessionsForAgent(agentId, sessions)
+      const activeForAgent = localSorted.filter((s) => activeSessions.has(s.id))
+      const remembered = lastSessionByAgentRef.current[agentId]
+        ? localSorted.find((s) => s.id === lastSessionByAgentRef.current[agentId]) ?? null
+        : null
+      if (activeForAgent[0] || remembered || mainSession?.id) {
+        applySession(activeForAgent[0] ?? remembered ?? mainSession)
       } else {
         fallbackFromLocal()
       }
@@ -594,7 +661,7 @@ export function useOpendora(): UseOpendoraResult {
       console.warn("Failed to fetch main session for agent", agentId, err)
       fallbackFromLocal()
     }
-  }, [router, buildDashboardUrl])
+  }, [activeSessions, buildDashboardUrl, rememberSessionForAgent, router, sessions, sortSessionsForAgent])
 
   const setDefaultAgent = useCallback((agentId: string) => {
     storeDefaultAgent(agentId)
