@@ -67,7 +67,7 @@ export namespace Session {
     if (seen.has(info.id)) return info.directory
     seen.add(info.id)
 
-    const parentID = info.spawnParentSessionID ?? info.parentID
+    const parentID = info.parentSessionID
     if (parentID) {
       const parent = await get(parentID).catch(() => undefined)
       if (parent) return effectiveDefaultPath(parent, seen)
@@ -80,7 +80,6 @@ export namespace Session {
     return {
       id: info.id,
       project_id: info.projectID,
-      parent_id: info.parentID,
       slug: info.slug,
       directory: info.directory,
       title: info.title,
@@ -107,10 +106,8 @@ export namespace Session {
       retention: info.retention ? JSON.stringify(info.retention) : undefined,
       filesystem_config: info.filesystemConfig ? JSON.stringify(info.filesystemConfig) : undefined,
       spawn_depth: info.spawnDepth,
-      spawn_parent_session_id: info.spawnParentSessionID,
-      spawn_parent_message_id: info.spawnParentMessageID,
-      spawn_response_message_id: info.spawnResponseMessageID,
-      reply_to_message_id: info.replyToMessageID,
+      parent_session_id: info.parentSessionID,
+      reply_to_session_id: info.replyToSessionID,
       input_tokens: info.tokens?.input,
       output_tokens: info.tokens?.output,
       cache_read_tokens: info.tokens?.cacheRead,
@@ -138,7 +135,6 @@ export namespace Session {
       slug: z.string(),
       projectID: z.string(),
       directory: z.string(),
-      parentID: Identifier.schema("session").optional(),
       summary: z
         .object({
           additions: z.number(),
@@ -192,10 +188,8 @@ export namespace Session {
         allowedPaths: z.array(z.string()).optional(),
       }).optional(),
       spawnDepth: z.number().optional(),
-      spawnParentSessionID: z.string().optional(),
-      spawnParentMessageID: z.string().optional(),
-      spawnResponseMessageID: z.string().optional(),
-      replyToMessageID: z.string().optional(),
+      parentSessionID: z.string().optional(),
+      replyToSessionID: z.string().optional(),
       tokens: z
         .object({
           input: z.number(),
@@ -235,7 +229,6 @@ export namespace Session {
   export const create = fn(
     z
       .object({
-        parentID: Identifier.schema("session").optional(),
         title: z.string().optional(),
         permission: Info.shape.permission,
         sessionType: Info.shape.sessionType,
@@ -245,15 +238,13 @@ export namespace Session {
         retention: Info.shape.retention,
         sendPolicy: Info.shape.sendPolicy,
         spawnDepth: Info.shape.spawnDepth,
-        spawnParentSessionID: Info.shape.spawnParentSessionID,
-        spawnParentMessageID: Info.shape.spawnParentMessageID,
-        replyToMessageID: Info.shape.replyToMessageID,
+        parentSessionID: Info.shape.parentSessionID,
+        replyToSessionID: Info.shape.replyToSessionID,
       })
       .optional(),
     async (input) => {
       const cfg = getConfig()
       return createNext({
-        parentID: input?.parentID,
         directory: cfg.instance?.directory ?? process.cwd(),
         title: input?.title,
         permission: input?.permission,
@@ -264,9 +255,8 @@ export namespace Session {
         retention: input?.retention,
         sendPolicy: input?.sendPolicy,
         spawnDepth: input?.spawnDepth,
-        spawnParentSessionID: input?.spawnParentSessionID,
-        spawnParentMessageID: input?.spawnParentMessageID,
-        replyToMessageID: input?.replyToMessageID,
+        parentSessionID: input?.parentSessionID,
+        replyToSessionID: input?.replyToSessionID,
       })
     },
   )
@@ -321,7 +311,6 @@ export namespace Session {
   export async function createNext(input: {
     id?: string
     title?: string
-    parentID?: string
     directory: string
     permission?: any
     sessionType?: SessionType
@@ -331,15 +320,14 @@ export namespace Session {
     retention?: Partial<RetentionPolicy>
     sendPolicy?: SendPolicy
     spawnDepth?: number
-    spawnParentSessionID?: string
-    spawnParentMessageID?: string
-    replyToMessageID?: string
+    parentSessionID?: string
+    replyToSessionID?: string
   }) {
     const cfg = getConfig()
     const id = Identifier.descending("session", input.id)
     const slug = Slug.create()
-    const sessionType: SessionType = input.sessionType ?? (input.parentID ? "worker" : "scope")
-    const title = input.title ?? createDefaultTitle(!!input.parentID)
+    const sessionType: SessionType = input.sessionType ?? (input.parentSessionID ? "worker" : "scope")
+    const title = input.title ?? createDefaultTitle(!!input.parentSessionID)
 
     // Pre-register OpenDora-specific fields
     openDoraStorageAdapter.setCreateContext(id, {
@@ -347,7 +335,6 @@ export namespace Session {
       directory: input.directory,
       version: cfg.installationVersion ?? "local",
       slug,
-      parentId: input.parentID,
       permission: input.permission,
     })
 
@@ -358,8 +345,8 @@ export namespace Session {
       retention: input.retention,
       sendPolicy: input.sendPolicy,
       agentId: input.agentID,
-      ...(input.spawnParentSessionID && {
-        parent: { sessionId: input.spawnParentSessionID, messageId: input.spawnParentMessageID },
+      ...(input.parentSessionID && {
+        parent: { sessionId: input.parentSessionID },
       }),
     }
 
@@ -378,8 +365,8 @@ export namespace Session {
       extraFields.owner_id = input.ownerID
       extraFields.owner_kind = input.ownerKind ?? "user"
     }
-    if (input.replyToMessageID) {
-      extraFields.reply_to_message_id = input.replyToMessageID
+    if (input.replyToSessionID) {
+      extraFields.reply_to_session_id = input.replyToSessionID
     }
     if (Object.keys(extraFields).length > 0) {
       db.update(SessionTable).set(extraFields).where(eq(SessionTable.id, id)).run()
@@ -455,36 +442,16 @@ export namespace Session {
     },
   )
 
-  export const setSpawnResponseMessageID = fn(
+  export const setReplyToSessionID = fn(
     z.object({
       sessionID: Identifier.schema("session"),
-      messageID: z.string(),
+      replyToSessionID: z.string(),
     }),
     async (input) => {
       const db = getConfig().db
       const row = db
         .update(SessionTable)
-        .set({ spawn_response_message_id: input.messageID })
-        .where(eq(SessionTable.id, input.sessionID))
-        .returning()
-        .get()
-      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
-      const info = fromRow(row)
-      getConfig().bus?.publish(Event.Updated, { info })
-      return info
-    },
-  )
-
-  export const setReplyToMessageID = fn(
-    z.object({
-      sessionID: Identifier.schema("session"),
-      messageID: z.string(),
-    }),
-    async (input) => {
-      const db = getConfig().db
-      const row = db
-        .update(SessionTable)
-        .set({ reply_to_message_id: input.messageID })
+        .set({ reply_to_session_id: input.replyToSessionID })
         .where(eq(SessionTable.id, input.sessionID))
         .returning()
         .get()
@@ -1032,8 +999,7 @@ export namespace Session {
       sessionID: Identifier.schema("session"),
       agentID: z.string(),
       message: z.string(),
-      parentMessageID: Identifier.schema("message"),
-      parentSessionID: Identifier.schema("session").optional(),
+      parentMessageID: Identifier.schema("message").optional(),
     }),
     async (input) => {
       const cfg = getConfig()
@@ -1071,10 +1037,6 @@ export namespace Session {
           created: now,
           completed: now,
         },
-        ...(input.parentSessionID && {
-          parentSessionID: input.parentSessionID,
-          parentMessageID: input.parentMessageID,
-        }),
       }
 
       await updateMessage(msg)
@@ -1095,14 +1057,19 @@ export namespace Session {
     const db = cfg.db
     const time_created = msg.time.created
     const { id, sessionID, ...data } = msg
+    // Extract parent_message_id for the SQL column (cross-session parent message reference)
+    const parent_message_id = (msg as any).parentMessageID ?? null
+    // Strip parentSessionID and parentMessageID from JSON data — now tracked as SQL columns on the session
+    const { parentSessionID: _ps, parentMessageID: _pm, ...cleanData } = data as any
     db.insert(MessageTable)
       .values({
         id,
         session_id: sessionID,
         time_created,
-        data,
+        parent_message_id,
+        data: cleanData,
       })
-      .onConflictDoUpdate({ target: MessageTable.id, set: { data } })
+      .onConflictDoUpdate({ target: MessageTable.id, set: { data: cleanData } })
       .run()
     cfg.bus?.publish(MessageV2.Event.Updated, { info: msg })
     return msg

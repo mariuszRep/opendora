@@ -38,19 +38,17 @@ export namespace SystemPrompt {
         if (session.sessionType) sessionContext.push(`  Type: ${session.sessionType}`)
         if (session.sessionStatus) sessionContext.push(`  Status: ${session.sessionStatus}`)
         if (session.agentID) sessionContext.push(`  Agent: ${session.agentID}`)
-        if (session.spawnParentSessionID) {
-          sessionContext.push(`  Spawned from session: ${session.spawnParentSessionID}`)
-          if (session.spawnParentMessageID) {
-            sessionContext.push(`  Spawned from message: ${session.spawnParentMessageID}`)
-            sessionContext.push(`  If you delegate further and want replies routed back here, set reply_to: ${session.spawnParentMessageID}`)
-          }
+        if (session.parentSessionID) {
+          sessionContext.push(`  Parent session: ${session.parentSessionID}`)
         }
-        if (session.replyToMessageID) {
+        if (session.replyToSessionID) {
           sessionContext.push(`  Reply expected: silent`)
-          sessionContext.push(`  Reply to message ID: ${session.replyToMessageID}`)
+          sessionContext.push(`  Reply to session ID: ${session.replyToSessionID}`)
           sessionContext.push(`  When your task is complete, use the reply tool (not delegate) to post your result.`)
           sessionContext.push(`  reply posts silently — it does NOT trigger the LLM in the target session.`)
           sessionContext.push(`  The caller will see your message and decide what to do next.`)
+        } else if (session.parentSessionID) {
+          sessionContext.push(`  When done, use the reply tool to post your result back to the parent session.`)
         }
         sessionContext.push(`</session>`)
       }

@@ -14,7 +14,6 @@ export type SessionInfo = {
   slug: string
   projectID: string
   directory: string
-  parentID?: string
   title: string
   version: string
   summary?: { additions: number; deletions: number; files: number; diffs?: unknown[] }
@@ -33,10 +32,8 @@ export type SessionInfo = {
   retention?: RetentionPolicy
   filesystemConfig?: { enabledTools?: string[]; allowedPaths?: string[] }
   spawnDepth?: number
-  spawnParentSessionID?: string
-  spawnParentMessageID?: string
-  spawnResponseMessageID?: string
-  replyToMessageID?: string
+  parentSessionID?: string
+  replyToSessionID?: string
   tokens?: { input: number; output: number; cacheRead: number; cacheWrite: number; compactionCount: number }
 }
 
@@ -58,7 +55,6 @@ export function fromRow(row: SessionRow): SessionInfo {
     slug: row.slug,
     projectID: row.project_id,
     directory: row.directory,
-    parentID: row.parent_id ?? undefined,
     title: row.title,
     version: row.version,
     summary,
@@ -84,10 +80,8 @@ export function fromRow(row: SessionRow): SessionInfo {
       ? (JSON.parse(row.filesystem_config) as { enabledTools?: string[]; allowedPaths?: string[] })
       : undefined,
     spawnDepth: row.spawn_depth ?? undefined,
-    spawnParentSessionID: row.spawn_parent_session_id ?? undefined,
-    spawnParentMessageID: row.spawn_parent_message_id ?? undefined,
-    spawnResponseMessageID: row.spawn_response_message_id ?? undefined,
-    replyToMessageID: row.reply_to_message_id ?? undefined,
+    parentSessionID: row.parent_session_id ?? undefined,
+    replyToSessionID: row.reply_to_session_id ?? undefined,
     tokens:
       row.input_tokens !== null
         ? {

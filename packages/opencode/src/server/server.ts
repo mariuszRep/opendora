@@ -684,7 +684,6 @@ export namespace Server {
             sessionID: targetSession.id,
             ...(resolvedAgentID ? { agent: resolvedAgentID } : {}),
             noWait: !(params.wait ?? false),
-            parentSessionID: sourceSessionID,
             parentMessageID: assistantMsg.id,
             parts: await SessionPrompt.resolvePromptParts(params.prompt),
           })

@@ -41,7 +41,6 @@ export const SessionTable = sqliteTable(
     project_id: text()
       .notNull()
       .references(() => ProjectTable.id, { onDelete: "cascade" }),
-    parent_id: text(),
     slug: text().notNull(),
     directory: text().notNull(),
     title: text().notNull(),
@@ -68,10 +67,8 @@ export const SessionTable = sqliteTable(
     default_path: text(),
     filesystem_config: text().$type<string>(), // stored as JSON string, parsed manually in fromRow
     spawn_depth: integer(),
-    spawn_parent_session_id: text(),
-    spawn_parent_message_id: text(),
-    spawn_response_message_id: text(),
-    reply_to_message_id: text(),
+    parent_session_id: text(),
+    reply_to_session_id: text(),
     input_tokens: integer(),
     output_tokens: integer(),
     cache_read_tokens: integer(),
@@ -80,11 +77,10 @@ export const SessionTable = sqliteTable(
   },
   (table) => [
     index("session_project_idx").on(table.project_id),
-    index("session_parent_idx").on(table.parent_id),
+    index("session_parent_session_idx").on(table.parent_session_id),
     index("session_type_idx").on(table.session_type),
     index("session_agent_idx").on(table.agent_id),
     index("session_owner_idx").on(table.owner_id),
-    index("session_spawn_parent_idx").on(table.spawn_parent_session_id),
   ],
 )
 
@@ -96,9 +92,10 @@ export const MessageTable = sqliteTable(
       .notNull()
       .references(() => SessionTable.id, { onDelete: "cascade" }),
     ...Timestamps,
+    parent_message_id: text(),
     data: text({ mode: "json" }).notNull().$type<InfoData>(),
   },
-  (table) => [index("message_session_idx").on(table.session_id)],
+  (table) => [index("message_session_idx").on(table.session_id), index("message_parent_message_idx").on(table.parent_message_id)],
 )
 
 export const PartTable = sqliteTable(

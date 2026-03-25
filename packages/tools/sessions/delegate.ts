@@ -30,18 +30,8 @@ const parameters = z
     reply_to: z
       .string()
       .describe(
-        "Message ID the receiving agent should reply to when done, using the reply tool (silent — does NOT trigger the LLM there). Omit for fire-and-forget. Do not set this if you want the origin LLM triggered — in that case the receiving agent must call delegate back to the origin session.",
+        "Session ID the receiving agent should reply to when done, using the reply tool (silent — does NOT trigger the LLM there). Omit for fire-and-forget.",
       )
-      .optional(),
-    origin_session_id: z
-      .string()
-      .describe(
-        "Override the origin session ID passed to the receiving agent. Use when forwarding delegation chains to ensure replies go to the original caller.",
-      )
-      .optional(),
-    origin_message_id: z
-      .string()
-      .describe("Override the origin message ID passed alongside origin_session_id. Use for delegation forwarding.")
       .optional(),
   })
   .superRefine((value, ctx) => {
@@ -120,15 +110,13 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
       if (params.session_type) {
         // ── Create a new child session ──
         targetSession = await sessionSvc.create({
-          parentID: ctx.sessionID,
           title: params.title ?? params.description ?? `Task (@${targetAgentName})`,
           sessionType: params.session_type,
           agentID: targetAgentName,
           ownerID: ctx.agent,
           ownerKind: "agent",
-          spawnParentSessionID: ctx.sessionID,
-          spawnParentMessageID: ctx.messageID,
-          ...(params.reply_to ? { replyToMessageID: params.reply_to } : {}),
+          parentSessionID: ctx.sessionID,
+          ...(params.reply_to ? { replyToSessionID: params.reply_to } : {}),
         })
         created = true
         route = "new_session"
@@ -140,8 +128,8 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
     }
 
     // Store reply_to on existing/main sessions (new sessions already get it at create time)
-    if (params.reply_to && !created && sessionSvc.setReplyToMessageID) {
-      await sessionSvc.setReplyToMessageID({ sessionID: targetSession.id, messageID: params.reply_to })
+    if (params.reply_to && !created && sessionSvc.setReplyToSessionID) {
+      await sessionSvc.setReplyToSessionID({ sessionID: targetSession.id, replyToSessionID: params.reply_to })
     }
 
     // Enforce caller's allowed-agent list if configured
@@ -179,30 +167,12 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
       )
     }
 
-    // Caller context — auto-captured from ctx. origin_* params allow chaining:
-    // e.g. PO passes Pandora's origin down to BA so BA can reply to the right place.
-    // If only origin_message_id is provided, resolve the session from it via getMessage.
-    let originSessionID = params.origin_session_id ?? ctx.sessionID
-    const originMessageID = params.origin_message_id ?? ctx.messageID
-
-    if (params.origin_message_id && !params.origin_session_id) {
-      const originMsg = await sessionSvc.getMessage(params.origin_message_id) as any
-      if (originMsg?.session_id) originSessionID = originMsg.session_id
-    }
-
     const result = await promptFn({
       sessionID: targetSession.id,
       ...(targetAgentName ? { agent: targetAgentName } : {}),
       noWait: !wait,
-      parentSessionID: ctx.sessionID,
-      parentMessageID: ctx.messageID,
-      originSessionID,
-      originMessageID,
       parts: await resolvePromptParts(params.prompt),
     })
-
-    const pingMessageId = wait ? (result.info as any).parentID as string : result.info.id
-    await sessionSvc.setSpawnResponseMessageID({ sessionID: targetSession.id, messageID: pingMessageId })
 
     const text = result.parts.findLast((part: any) => part.type === "text")?.text ?? ""
     const resultTag = created ? "spawn_result" : "delegation_result"
@@ -218,15 +188,13 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
           replied: false,
           messageId: result.info.id,
           replyTo: params.reply_to,
-          originSessionId: originSessionID,
-          originMessageId: originMessageID,
         },
         output: [
           `session_id: ${targetSession.id}`,
           `agent: ${targetAgentName ?? "(session default)"}`,
           `route: ${route}`,
           `message_id: ${result.info.id}`,
-          `reply_mode: ${params.reply_to ? `silent_reply → msg ${params.reply_to}` : "none"}`,
+          `reply_mode: ${params.reply_to ? `silent_reply → session ${params.reply_to}` : "none"}`,
           "status: message posted",
         ].join("\n"),
       }
@@ -242,8 +210,6 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
         replied: true,
         messageId: result.info.id,
         replyTo: params.reply_to,
-        originSessionId: originSessionID,
-        originMessageId: originMessageID,
       },
       output: [
         `session_id: ${targetSession.id}`,

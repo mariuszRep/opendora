@@ -1040,7 +1040,6 @@ export class Session2 extends HeyApiClient {
   public create<ThrowOnError extends boolean = false>(
     parameters?: {
       directory?: string
-      parentID?: string
       title?: string
       permission?: PermissionRuleset
       sessionType?: "role" | "scope" | "worker" | "scratchpad"
@@ -1060,8 +1059,8 @@ export class Session2 extends HeyApiClient {
         deny: Array<string>
       }
       spawnDepth?: number
-      spawnParentSessionID?: string
-      spawnParentMessageID?: string
+      parentSessionID?: string
+      replyToSessionID?: string
     },
     options?: Options<never, ThrowOnError>,
   ) {
@@ -1071,7 +1070,6 @@ export class Session2 extends HeyApiClient {
         {
           args: [
             { in: "query", key: "directory" },
-            { in: "body", key: "parentID" },
             { in: "body", key: "title" },
             { in: "body", key: "permission" },
             { in: "body", key: "sessionType" },
@@ -1081,8 +1079,8 @@ export class Session2 extends HeyApiClient {
             { in: "body", key: "retention" },
             { in: "body", key: "sendPolicy" },
             { in: "body", key: "spawnDepth" },
-            { in: "body", key: "spawnParentSessionID" },
-            { in: "body", key: "spawnParentMessageID" },
+            { in: "body", key: "parentSessionID" },
+            { in: "body", key: "replyToSessionID" },
           ],
         },
       ],

@@ -26,7 +26,6 @@ export type CreateContext = {
   directory: string
   version: string
   slug: string
-  parentId?: string
   permission?: Permission.Ruleset
 }
 
@@ -40,8 +39,8 @@ export function rowToMeta(row: SessionRow): SessionMeta {
     type: (row.session_type ?? "scope") as SessionType,
     status: (row.session_status ?? (row.time_archived ? "archived" : "active")) as SessionStatus,
     label: row.title,
-    parent: row.spawn_parent_session_id
-      ? { sessionId: row.spawn_parent_session_id, messageId: row.spawn_parent_message_id ?? undefined }
+    parent: row.parent_session_id
+      ? { sessionId: row.parent_session_id }
       : undefined,
     spawnDepth: row.spawn_depth ?? undefined,
     retention: row.retention ? (JSON.parse(row.retention) as RetentionPolicy) : { onExpire: "archive" },
@@ -121,7 +120,6 @@ export class OpenDoraStorageAdapter implements StorageAdapter {
       .values({
         id: meta.id,
         project_id: projectId,
-        parent_id: ctx?.parentId ?? null,
         slug,
         directory,
         title: meta.label ?? meta.id,
@@ -141,8 +139,7 @@ export class OpenDoraStorageAdapter implements StorageAdapter {
         retention: meta.retention ? JSON.stringify(meta.retention) : null,
         filesystem_config: meta.filesystemConfig ? JSON.stringify(meta.filesystemConfig) : null,
         spawn_depth: meta.spawnDepth ?? null,
-        spawn_parent_session_id: meta.parent?.sessionId ?? null,
-        spawn_parent_message_id: meta.parent?.messageId ?? null,
+        parent_session_id: meta.parent?.sessionId ?? null,
         input_tokens: 0,
         output_tokens: 0,
         cache_read_tokens: 0,
@@ -170,7 +167,7 @@ export class OpenDoraStorageAdapter implements StorageAdapter {
     const conditions = []
     if (filter?.type) conditions.push(eq(SessionTable.session_type, filter.type))
     if (filter?.status) conditions.push(eq(SessionTable.session_status, filter.status))
-    if (filter?.parentId) conditions.push(eq(SessionTable.spawn_parent_session_id, filter.parentId))
+    if (filter?.parentId) conditions.push(eq(SessionTable.parent_session_id, filter.parentId))
 
     const query = conditions.length > 0
       ? db.select().from(SessionTable).where(and(...conditions))

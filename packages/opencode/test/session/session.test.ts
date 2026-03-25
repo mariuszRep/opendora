@@ -90,9 +90,8 @@ describe("session default path inheritance", () => {
         await Session.setFilesystemConfig({ sessionID: root.id, filesystemConfig: { allowedPaths: ["/tmp/session-override"] } })
         const rootUpdated = await Session.get(root.id)
         const child = await Session.create({
-          parentID: root.id,
           agentID: "path-agent",
-          spawnParentSessionID: root.id,
+          parentSessionID: root.id,
         })
 
         expect(await Session.effectiveDefaultPath(rootUpdated)).toBe("/tmp/session-override")

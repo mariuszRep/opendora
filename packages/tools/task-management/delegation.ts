@@ -61,7 +61,6 @@ export async function resolveDelegationTarget(input: {
   if (!targetAgentName) throw new Error(`agent is required when route is ${input.route}`)
 
   const session = await sessionSvc.create({
-    parentID: input.route === "new_child_session" ? input.ctx.sessionID : undefined,
     title:
       input.title ??
       input.description ??
@@ -70,8 +69,7 @@ export async function resolveDelegationTarget(input: {
     agentID: targetAgentName,
     ownerID: input.ctx.agent,
     ownerKind: "agent",
-    spawnParentSessionID: input.ctx.sessionID,
-    spawnParentMessageID: input.ctx.messageID,
+    parentSessionID: input.ctx.sessionID,
   })
   return { session, agent: targetAgentName, created: true }
 }

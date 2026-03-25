@@ -4,17 +4,7 @@ import { host } from "../host.ts"
 import DESCRIPTION from "./reply.txt"
 
 const parameters = z.object({
-  session_id: z
-    .string()
-    .describe(
-      "Target session ID. If omitted, resolved automatically from the spawn parent message ID stored on this session.",
-    )
-    .optional(),
   message: z.string().describe("Text content to post into the target session."),
-  parent_message_id: z
-    .string()
-    .describe("Message ID to thread the reply against. If omitted, uses spawnParentMessageID from this session.")
-    .optional(),
 })
 
 export const ReplyTool = Tool.define("reply", async (_initCtx) => ({
@@ -25,56 +15,17 @@ export const ReplyTool = Tool.define("reply", async (_initCtx) => ({
     const sessionSvc = h.session as any
     if (!sessionSvc) throw new Error("session service not available")
 
-    let targetSessionId = params.session_id
-    let parentMessageID = params.parent_message_id
+    const currentSession = await sessionSvc.get(ctx.sessionID) as any
 
-    // Resolve target: prefer explicit reply_to_message_id stored on this session,
-    // then fall back to walking the spawn parent chain.
-    if (!targetSessionId || !parentMessageID) {
-      const currentSession = await sessionSvc.get(ctx.sessionID) as any
-
-      // If the session has an explicit replyToMessageID, use it directly
-      if (!parentMessageID && currentSession?.replyToMessageID) {
-        parentMessageID = currentSession.replyToMessageID
-        if (!targetSessionId) {
-          const replyMsg = await sessionSvc.getMessage(currentSession.replyToMessageID) as any
-          if (replyMsg?.session_id) targetSessionId = replyMsg.session_id
-        }
-      }
-
-      let spawnMsgId = !parentMessageID ? currentSession?.spawnParentMessageID : undefined
-
-      if (spawnMsgId) {
-        let resolvedSessionId: string | undefined
-        let resolvedMessageId: string = spawnMsgId
-
-        // Walk the message parent chain until we reach the root (no further cross-session parent)
-        let currentMsgId: string | undefined = spawnMsgId
-        while (currentMsgId) {
-          const msg = await sessionSvc.getMessage(currentMsgId) as any
-          if (!msg) break
-          const parentSessionId = msg.data?.parent?.sessionId
-          if (parentSessionId) {
-            // There's a cross-session parent — keep walking up
-            resolvedSessionId = parentSessionId
-            resolvedMessageId = msg.data?.parent?.messageId ?? currentMsgId
-            currentMsgId = msg.data?.parent?.messageId
-          } else {
-            // No further cross-session parent — this session is the root
-            resolvedSessionId = resolvedSessionId ?? msg.session_id
-            break
-          }
-        }
-
-        if (!targetSessionId && resolvedSessionId) targetSessionId = resolvedSessionId
-        if (!parentMessageID) parentMessageID = resolvedMessageId
-      }
-    }
-
-    parentMessageID ??= ctx.messageID
+    // 1. Check session.replyToSessionID → post there
+    // 2. Else check session.parentSessionID → post there
+    // 3. Throw if neither
+    const targetSessionId: string | undefined = currentSession?.replyToSessionID ?? currentSession?.parentSessionID
 
     if (!targetSessionId) {
-      throw new Error("No reply target: session_id not provided and spawnParentMessageID could not be resolved.")
+      throw new Error(
+        "No reply target: this session has no replyToSessionID or parentSessionID set.",
+      )
     }
 
     if (sessionSvc.reply) {
@@ -82,8 +33,6 @@ export const ReplyTool = Tool.define("reply", async (_initCtx) => ({
         sessionID: targetSessionId,
         agentID: ctx.agent,
         message: params.message,
-        parentMessageID,
-        parentSessionID: ctx.sessionID,
       }) as any
 
       return {
@@ -91,8 +40,7 @@ export const ReplyTool = Tool.define("reply", async (_initCtx) => ({
         metadata: {
           sessionId: targetSessionId,
           messageId: msg?.id,
-          parentSessionId: ctx.sessionID,
-          parentMessageId: parentMessageID,
+          sourceSessionId: ctx.sessionID,
           agent: ctx.agent,
           kind: "reply",
         },
@@ -104,7 +52,7 @@ export const ReplyTool = Tool.define("reply", async (_initCtx) => ({
     const ponged = await sessionSvc.pong(targetSessionId, {
       from,
       content: params.message,
-      parent: { messageId: parentMessageID },
+      parent: null,
     }) as any
 
     return {
@@ -112,8 +60,7 @@ export const ReplyTool = Tool.define("reply", async (_initCtx) => ({
       metadata: {
         sessionId: targetSessionId,
         messageId: ponged?.id,
-        parentSessionId: ctx.sessionID,
-        parentMessageId: parentMessageID,
+        sourceSessionId: ctx.sessionID,
         agent: ctx.agent,
         kind: "reply",
       },

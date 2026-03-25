@@ -91,6 +91,8 @@ export namespace SessionPrompt {
   export const PromptInput = z.object({
     sessionID: Identifier.schema("session"),
     messageID: Identifier.schema("message").optional(),
+    /** ID of the message in the parent session that triggered this prompt (cross-session parent) */
+    parentMessageID: Identifier.schema("message").optional(),
     model: z
       .object({
         providerID: z.string(),
@@ -109,10 +111,6 @@ export namespace SessionPrompt {
     format: MessageV2.Format.optional(),
     system: z.string().optional(),
     variant: z.string().optional(),
-    /** Set when the prompt is injected by a tool call in another session */
-    parentSessionID: z.string().optional(),
-    /** The message ID in parentSessionID that contains the tool call injecting this message */
-    parentMessageID: z.string().optional(),
     parts: z.array(
       z.discriminatedUnion("type", [
         MessageV2.TextPart.omit({
@@ -858,8 +856,7 @@ export namespace SessionPrompt {
           messages: (id: string) => Session.messages(id),
           create: (opts: any) => Session.create(opts),
           ensureMainSession: (agentID: string) => Session.ensureMainSession(agentID),
-          setSpawnResponseMessageID: (opts: any) => Session.setSpawnResponseMessageID(opts),
-          setReplyToMessageID: (opts: any) => Session.setReplyToMessageID(opts),
+          setReplyToSessionID: (opts: any) => Session.setReplyToSessionID(opts),
           getMessage: (messageId: string) => Session.getMessage(messageId),
           reply: (opts: any) => Session.reply(opts),
           pong: (sessionID: string, opts: any) => Session.pong(sessionID, opts),
@@ -1141,10 +1138,10 @@ export namespace SessionPrompt {
       system: input.system,
       format: input.format,
       variant,
-      ...(input.parentSessionID && {
-        parentSessionID: input.parentSessionID,
-        parentMessageID: input.parentMessageID,
-      }),
+    }
+    // Write cross-session parent to SQL column via updateMessage (not in JSON data)
+    if (input.parentMessageID) {
+      ;(info as any).parentMessageID = input.parentMessageID
     }
     using _3 = defer(() => InstructionPrompt.clear(info.id))
 
@@ -1963,7 +1960,7 @@ export namespace SessionPrompt {
     modelID: string
   }) {
     const cfg = getConfig()
-    if (input.session.parentID) return
+    if (input.session.parentSessionID) return
     if (!Session.isDefaultTitle(input.session.title)) return
 
     const firstRealUserIdx = input.history.findIndex(

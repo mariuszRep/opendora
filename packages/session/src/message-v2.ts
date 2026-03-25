@@ -406,10 +406,6 @@ export namespace MessageV2 {
     system: z.string().optional(),
     tools: z.record(z.string(), z.boolean()).optional(),
     variant: z.string().optional(),
-    /** Set when this message was injected by a tool in another session */
-    parentSessionID: z.string().optional(),
-    /** The message ID in parentSessionID that contains the tool call that created this message */
-    parentMessageID: z.string().optional(),
   }).meta({
     ref: "UserMessage",
   })
@@ -480,10 +476,6 @@ export namespace MessageV2 {
     structured: z.any().optional(),
     variant: z.string().optional(),
     finish: z.string().optional(),
-    /** Set when this assistant reply was contributed from another session/tool */
-    parentSessionID: z.string().optional(),
-    /** The message ID in parentSessionID that contains the tool call that created this assistant reply */
-    parentMessageID: z.string().optional(),
   }).meta({
     ref: "AssistantMessage",
   })

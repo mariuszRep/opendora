@@ -1653,8 +1653,8 @@ export type GlobalSession = {
     onExpire?: "archive" | "close" | "delete"
   }
   spawnDepth?: number
-  spawnParentSessionID?: string
-  spawnParentMessageID?: string
+  parentSessionID?: string
+  replyToSessionID?: string
   tokens?: {
     input: number
     output: number
@@ -1678,7 +1678,6 @@ export type Session = {
   slug: string
   projectID: string
   directory: string
-  parentID?: string
   summary?: {
     additions: number
     deletions: number
@@ -1722,8 +1721,8 @@ export type Session = {
     onExpire?: "archive" | "close" | "delete"
   }
   spawnDepth?: number
-  spawnParentSessionID?: string
-  spawnParentMessageID?: string
+  parentSessionID?: string
+  replyToSessionID?: string
   tokens?: {
     input: number
     output: number
@@ -2658,7 +2657,6 @@ export type SessionListResponse = SessionListResponses[keyof SessionListResponse
 
 export type SessionCreateData = {
   body?: {
-    parentID?: string
     title?: string
     permission?: PermissionRuleset
     sessionType?: "role" | "scope" | "worker" | "scratchpad"
@@ -2678,8 +2676,8 @@ export type SessionCreateData = {
       deny: Array<string>
     }
     spawnDepth?: number
-    spawnParentSessionID?: string
-    spawnParentMessageID?: string
+    parentSessionID?: string
+    replyToSessionID?: string
   }
   path?: never
   query?: {
