@@ -733,7 +733,7 @@ export namespace Session {
     const cfg = getConfig()
     const project = cfg.instance?.project
     const db = cfg.db
-    const conditions: any[] = [eq(SessionTable.parent_id, parentID)]
+    const conditions: any[] = [eq(SessionTable.parent_session_id, parentID)]
     if (project) conditions.unshift(eq(SessionTable.project_id, project.id))
     const rows = db
       .select()

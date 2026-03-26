@@ -115,6 +115,7 @@ export function useOpendora(): UseOpendoraResult {
   const [lastSessionByAgent, setLastSessionByAgent] = useState<Record<string, string>>(() => getStoredLastSessionByAgent())
 
   const selectedSessionRef = useRef<Session | null>(null)
+  const statusRef = useRef<ChatStatus>("ready")
   const suppressUrlSyncRef = useRef(false)
   const lastSessionByAgentRef = useRef<Record<string, string>>(lastSessionByAgent)
   const initialRequestedSessionIdRef = useRef<string | null>(searchParams.get("session"))
@@ -165,6 +166,10 @@ export function useOpendora(): UseOpendoraResult {
   useEffect(() => {
     selectedSessionRef.current = selectedSession
   }, [selectedSession])
+
+  useEffect(() => {
+    statusRef.current = status
+  }, [status])
 
   useEffect(() => {
     lastSessionByAgentRef.current = lastSessionByAgent
@@ -487,8 +492,9 @@ export function useOpendora(): UseOpendoraResult {
 
   const createSession = useCallback(async (sessionType?: SessionType): Promise<string> => {
     try {
+      // Always create as "scope" first, user can promote to "role" by clicking star
       const session = await opendora.session.create({
-        ...(sessionType ? { sessionType } : {}),
+        sessionType: "scope",
         ...(selectedAgent ? { agentID: selectedAgent } : {}),
       })
       setSessions((prev) => {
@@ -513,6 +519,7 @@ export function useOpendora(): UseOpendoraResult {
     async (text: string, options?: { model?: { providerID: string; modelID: string }; agent?: string }) => {
       const session = selectedSessionRef.current
       if (!session) return
+      if (statusRef.current !== "ready") return
       setStatus("submitted")
       setError(null)
       try {
@@ -604,7 +611,10 @@ export function useOpendora(): UseOpendoraResult {
           (currentSession.agentID === agentID && currentSession.sessionType === "role")
         if (shouldNavigate) {
           setSelectedSessionId(sessionID)
-          router.push(buildDashboardUrl(sessionID, null), { scroll: false })
+          // Defer router navigation to prevent setState during render
+          setTimeout(() => {
+            router.push(buildDashboardUrl(sessionID, null), { scroll: false })
+          }, 0)
         }
       }
       return prev
@@ -620,7 +630,10 @@ export function useOpendora(): UseOpendoraResult {
     const applySession = (session: Session | null | undefined) => {
       if (session?.id) {
         setSelectedSessionId(session.id)
-        router.push(buildDashboardUrl(session.id, null), { scroll: false })
+        // Defer router navigation to prevent setState during render
+        setTimeout(() => {
+          router.push(buildDashboardUrl(session.id, null), { scroll: false })
+        }, 0)
         selectedSessionRef.current = session
         rememberSessionForAgent(session)
       } else {

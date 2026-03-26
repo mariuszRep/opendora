@@ -173,11 +173,14 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
   }
 
   async function handlePromoteToMain() {
-    if (!session || !agentID || agentID === "__none__") return
+    if (!session) return
+    const targetAgentID = agentID === "__none__" ? session.agentID : agentID
+    if (!targetAgentID) return
+    
     setSaving(true)
     setError(null)
     try {
-      await setAgentMainSession(agentID === "__none__" ? (session.agentID ?? "") : agentID, session.id)
+      await setAgentMainSession(targetAgentID, session.id)
       onOpenChange(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to promote session")

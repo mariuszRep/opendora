@@ -20,6 +20,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { getAgentColor } from "@/lib/agent-colors"
 import { ModeToggle } from "@/components/mode-toggle"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -38,7 +39,7 @@ function formatSessionTitle(session: { title?: string; time: { created: number }
 }
 
 export function Header() {
-  const { selectedAgent, selectAgent, selectedSession, agentSessions, selectSession, agents, isChatCentered, toggleChatLayout } =
+  const { selectedAgent, selectAgent, selectedSession, agentSessions, selectSession, agents, status, isChatCentered, toggleChatLayout } =
     useOpendoraContext()
 
   const [sessionOpen, setSessionOpen] = useState(false)
@@ -52,6 +53,8 @@ export function Header() {
   const visibleAgents = agents.filter((a) => !a.hidden)
   const selectedAgentObj = agents.find((a) => (a as any)._id === selectedAgent)
   const selectedAgentName = selectedAgentObj?.name || selectedAgent
+  const agentColor = getAgentColor((selectedAgentObj as any)?.color).hex
+  const isWorking = status === "submitted" || status === "streaming"
 
   return (
     <header className="border-b bg-background sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
@@ -66,7 +69,20 @@ export function Header() {
               {mounted ? (
                 <DropdownMenu open={agentOpen} onOpenChange={setAgentOpen}>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-1 text-sm font-medium hover:text-foreground transition-colors">
+                    <button className="flex items-center gap-1.5 text-sm font-medium hover:text-foreground transition-colors">
+                      <div className="relative size-4 shrink-0 flex items-center justify-center">
+                        {isWorking && (
+                          <div
+                            className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
+                            style={{ borderTopColor: agentColor }}
+                            aria-hidden="true"
+                          />
+                        )}
+                        <div
+                          className="size-2 rounded-full"
+                          style={{ backgroundColor: agentColor }}
+                        />
+                      </div>
                       <span className="capitalize">{selectedAgentName}</span>
                       <ChevronDownIcon className="size-3 opacity-50" />
                     </button>
