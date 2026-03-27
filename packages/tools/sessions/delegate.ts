@@ -25,12 +25,12 @@ const parameters = z
     description: z.string().describe("Short label for this delegation (appears in logs and UI). Optional but helpful for tracking.").optional(),
     wait: z
       .boolean()
-      .describe("Wait for the agent to reply. Default: false. Only set to true for quick factual questions where you need the answer immediately. Use false for complex tasks, multi-agent work, or anything involving user interaction.")
+      .describe("Wait for immediate response (synchronous). Default: false. true=block until agent replies (quick questions only). false=fire-and-forget with automatic reply routing to your caller.")
       .optional(),
     reply_to: z
       .string()
       .describe(
-        "Session ID the receiving agent should reply to when done, using the reply tool (silent — does NOT trigger the LLM there). Omit for fire-and-forget.",
+        "Override reply destination. By default, replies go to whoever delegated to you. Use this to redirect replies elsewhere (e.g., forward delegation to another agent but have them reply to the original requester). Only specify when you need to change the default routing.",
       )
       .optional(),
   })
@@ -86,6 +86,17 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
     const resolvePromptParts = h.resolvePromptParts
     if (!resolvePromptParts) throw new Error("resolvePromptParts service not available")
 
+    // Get current session to determine reply routing
+    const currentSession = await sessionSvc.get(ctx.sessionID)
+    
+    // Determine reply_to: explicit param > parent session (who delegated to me) > current session
+    let replyToSessionID: string | undefined = params.reply_to
+    if (!replyToSessionID && !wait) {
+      // Default: reply to whoever delegated to this session (parentSessionID)
+      // If no parent (root session), reply to current session
+      replyToSessionID = currentSession.parentSessionID || ctx.sessionID
+    }
+
     let targetSession: any
     let targetAgentName: string | undefined
     let lookedUpAgent: any = undefined
@@ -116,7 +127,7 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
           ownerID: ctx.agent,
           ownerKind: "agent",
           parentSessionID: ctx.sessionID,
-          ...(params.reply_to ? { replyToSessionID: params.reply_to } : {}),
+          ...(replyToSessionID ? { replyToSessionID } : {}),
         })
         created = true
         route = "new_session"
@@ -128,8 +139,8 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
     }
 
     // Store reply_to on existing/main sessions (new sessions already get it at create time)
-    if (params.reply_to && !created && sessionSvc.setReplyToSessionID) {
-      await sessionSvc.setReplyToSessionID({ sessionID: targetSession.id, replyToSessionID: params.reply_to })
+    if (replyToSessionID && !created && sessionSvc.setReplyToSessionID) {
+      await sessionSvc.setReplyToSessionID({ sessionID: targetSession.id, replyToSessionID })
     }
 
     // Enforce caller's allowed-agent list if configured
@@ -184,11 +195,7 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
         metadata: {
           sessionId: targetSession.id,
           agent: targetAgentName,
-          route,
-          created,
-          replied: false,
           messageId: result.info.id,
-          replyTo: params.reply_to,
         },
         output: [
           `session_id: ${targetSession.id}`,
@@ -206,11 +213,7 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
       metadata: {
         sessionId: targetSession.id,
         agent: targetAgentName,
-        route,
-        created,
-        replied: true,
         messageId: result.info.id,
-        replyTo: params.reply_to,
       },
       output: [
         `session_id: ${targetSession.id}`,

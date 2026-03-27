@@ -14,23 +14,37 @@ REPLY MODES — choose one when delegating
    Use for: quick factual questions where the answer drives your immediate next step.
    Avoid for: anything involving user interaction or further delegation — it will deadlock.
 
-2. FIRE AND FORGET (no reply expected)
-   wait: false, no reply_to
-   You send the task and move on. The target agent works independently.
-   Use for: tasks where you don't need the result, or where the agent will reach back on its own.
+2. FIRE-AND-FORGET (automatic reply routing)
+   wait: false
+   Default behavior: replies automatically route to whoever delegated to you.
+   - If you're responding to a user request, replies come back to you
+   - If you're forwarding a delegation, replies go to your caller (chain preserved)
+   Use for: most async tasks, user-facing work, multi-hop delegations
+   
+3. REDIRECT REPLY (override routing)
+   wait: false, reply_to: <session_id>
+   Override default routing to send replies to a specific session.
+   Use for: forwarding delegation but wanting replies to go to original requester
+   Example: Project Owner forwards to BA, sets reply_to to Pandora's session
+   
+─────────────────────────────────────────
+DELEGATION PATTERNS
+─────────────────────────────────────────
 
-3. SILENT REPLY (async, reply expected)
-   wait: false, reply_to: <message_id>
-   You send the task. When done, the target agent posts a silent reply under that message
-   using the reply tool — this does NOT trigger your LLM. You (or the user) will see the
-   reply in your session and decide what to do next.
-   Use for: async tasks where you want results delivered back but will act on them later.
+FORWARDING DELEGATION (common pattern):
+When you receive a task but another agent should handle it:
+- Keep the prompt minimal - forward what was asked, nothing more
+- Do NOT add your interpretation, suggestions, or augmentation
+- Do NOT ask clarifying questions on behalf of the receiving agent
+- Let the receiving agent decide what they need
 
-4. TRIGGERING REPLY (async, LLM re-triggered)
-   This is not a separate parameter — it is the receiving agent's choice.
-   If a receiving agent wants to trigger the LLM in the origin session after finishing,
-   it calls delegate targeting the origin session. This is appropriate when the receiving
-   agent's output should immediately continue a workflow without human action.
+Example:
+User asks Pandora: "Build a calculator app"
+Pandora → Project Owner: "User wants to build a calculator app"
+Project Owner → BA: "User wants to build a calculator app. Can you engage with the user to gather requirements?"
+
+NOT this:
+Project Owner → BA: "User wants a calculator app with basic operations, scientific functions, and a modern UI. Please gather detailed requirements including..."
 
 ─────────────────────────────────────────
 SESSION TYPES

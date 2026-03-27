@@ -338,14 +338,51 @@ export const Chatbot = () => {
   useEffect(() => {
     const targetId = scrollToMessageIdRef.current
     if (!targetId || !messages.length) return
-    const el = document.getElementById(`msg-${targetId}`)
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" })
-      if (selectedSession?.id) {
-        router.replace(buildDashboardUrl(selectedSession.id, null), { scroll: false })
+    
+    // Try to find and scroll to the target message
+    const attemptScroll = () => {
+      const el = document.getElementById(`msg-${targetId}`)
+      if (!el) {
+        console.log(`[Scroll] Element msg-${targetId} not found yet`)
+        return false
       }
+      
+      console.log(`[Scroll] Found element msg-${targetId}, scrolling...`)
+      // Use instant scroll to override StickToBottom's smooth scroll
+      el.scrollIntoView({ behavior: "instant", block: "center" })
+      console.log(`[Scroll] Scrolled to msg-${targetId}`)
+      
+      // Clean up URL after a delay
+      setTimeout(() => {
+        if (selectedSession?.id) {
+          router.replace(buildDashboardUrl(selectedSession.id, null), { scroll: false })
+        }
+      }, 500)
+      
       scrollToMessageIdRef.current = null
+      return true
     }
+    
+    // Wait longer to let StickToBottom finish its scroll first, then override it
+    const initialDelay = 300
+    let attempts = 0
+    const maxAttempts = 8
+    const retryDelay = 250
+    
+    const tryScroll = () => {
+      if (attemptScroll()) return
+      
+      attempts++
+      if (attempts < maxAttempts) {
+        setTimeout(tryScroll, retryDelay)
+      } else {
+        console.log(`[Scroll] Failed to find msg-${targetId} after ${maxAttempts} attempts`)
+        scrollToMessageIdRef.current = null
+      }
+    }
+    
+    // Start trying after initial delay to let StickToBottom settle
+    setTimeout(tryScroll, initialDelay)
   }, [messages, router, buildDashboardUrl, selectedSession?.id])
 
   const handleSubmit = useCallback(
@@ -515,7 +552,7 @@ export const Chatbot = () => {
           </Suggestions>
         </div>
       ) : (
-        <Conversation>
+        <Conversation key={selectedSession.id}>
           <ConversationContent className={cn(isChatCentered && "max-w-3xl mx-auto w-full")}>
             {messages.map(({ info, parts }, msgIndex) => {
               const content = getMessageText(parts)
@@ -613,17 +650,24 @@ export const Chatbot = () => {
                             </MessageContent>
                             <MessageActions className="mt-1 justify-start" data-message-actions>
                               {msgParentSessionID && (
-                                <MessageAction
-                                  label="Source"
-                                  onClick={() => handleGoToMessage(
-                                    msgParentSessionID,
-                                    msgParentMessageID ?? ""
+                                <>
+                                  <MessageAction
+                                    label="Source"
+                                    onClick={() => handleGoToMessage(
+                                      msgParentSessionID,
+                                      msgParentMessageID ?? ""
+                                    )}
+                                    tooltip="Back to delegation tool"
+                                    variant="outline"
+                                  >
+                                    <Link2Icon className="size-4" />
+                                  </MessageAction>
+                                  {parentAgent && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {parentAgent.name}
+                                    </span>
                                   )}
-                                  tooltip="Back to delegation tool"
-                                  variant="outline"
-                                >
-                                  <Link2Icon className="size-4" />
-                                </MessageAction>
+                                </>
                               )}
                             </MessageActions>
                           </div>
@@ -924,30 +968,44 @@ export const Chatbot = () => {
                               </MessageAction>
                             )}
                             {info.role === "assistant" && hasLinkedParentMessage && msgParentSessionID && (
-                              <MessageAction
-                                label="Source"
-                                onClick={() => handleGoToMessage(
-                                  msgParentSessionID,
-                                  msgParentMessageID ?? ""
+                              <>
+                                <MessageAction
+                                  label="Source"
+                                  onClick={() => handleGoToMessage(
+                                    msgParentSessionID,
+                                    msgParentMessageID ?? ""
+                                  )}
+                                  tooltip="Open originating tool call"
+                                  variant="outline"
+                                >
+                                  <Link2Icon className="size-4" />
+                                </MessageAction>
+                                {parentAgent && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {parentAgent.name}
+                                  </span>
                                 )}
-                                tooltip="Open originating tool call"
-                                variant="outline"
-                              >
-                                <Link2Icon className="size-4" />
-                              </MessageAction>
+                              </>
                             )}
                             {info.role === "user" && hasLinkedParentMessage && msgParentSessionID && (
-                              <MessageAction
-                                label="Source"
-                                onClick={() => handleGoToMessage(
-                                  msgParentSessionID,
-                                  msgParentMessageID ?? ""
+                              <>
+                                <MessageAction
+                                  label="Source"
+                                  onClick={() => handleGoToMessage(
+                                    msgParentSessionID,
+                                    msgParentMessageID ?? ""
+                                  )}
+                                  tooltip="Back to delegation tool"
+                                  variant="outline"
+                                >
+                                  <Link2Icon className="size-4" />
+                                </MessageAction>
+                                {parentAgent && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {parentAgent.name}
+                                  </span>
                                 )}
-                                tooltip="Back to delegation tool"
-                                variant="outline"
-                              >
-                                <Link2Icon className="size-4" />
-                              </MessageAction>
+                              </>
                             )}
                           </MessageActions>
                         ) : null}

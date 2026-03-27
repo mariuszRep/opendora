@@ -17,10 +17,19 @@ Use delegate (not this tool) when:
 HOW REPLY ROUTING WORKS:
 
 The system resolves the reply target automatically from your session context:
-1. If reply_to_session_id is set on your session — reply goes there (explicit override set by your delegator)
-2. Otherwise — reply goes to your parent session (whoever spawned you)
+1. If replyToSessionID is set on your session — reply goes there (set by delegate tool)
+2. Otherwise — reply goes to your parentSessionID (whoever delegated to you)
+3. If neither exists — error (orphaned session)
 
 You do not need to specify a session. Just call reply with your message.
+
+AUTOMATIC ROUTING IN DELEGATION CHAINS:
+When agents forward delegations, reply routing is preserved automatically:
+- Pandora delegates to Project Owner → Project Owner's replyToSessionID = Pandora
+- Project Owner delegates to BA → BA's replyToSessionID = Pandora (inherited)
+- BA calls reply → message goes to Pandora
+
+This ensures replies reach the original requester even through multiple delegation hops.
 
 Parameters:
 - message: the text to post

@@ -7,13 +7,9 @@ import { ArrowRightIcon, BotIcon, ExternalLinkIcon } from "lucide-react"
 type DelegateMetadata = {
   sessionId?: string
   agent?: string
-  created?: boolean
-  replied?: boolean
   messageId?: string
-  route?: string
   kind?: "delegate" | "reply"
-  parentSessionId?: string
-  parentMessageId?: string
+  sourceSessionId?: string
 }
 
 function getDelegateMetadata(tool: ToolPart): DelegateMetadata {
