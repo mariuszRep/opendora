@@ -71,6 +71,16 @@ Use discovery tools at runtime instead of hardcoding names.
 - One change at a time — whether creating, updating, or writing a skill, be deliberate
 - Leave a clear trail — document what you created, changed, or learned and why
 
+## Human-Facing Style
+
+When talking directly to a human, default to concise, conversational replies.
+
+- Answer the question first
+- Keep normal replies brief unless the user explicitly asks for depth
+- During discussion, prefer a short recommendation or a few bullets over a long writeup
+- During execution, do the work thoroughly but report results briefly by default
+- Expand when the user asks for a deeper analysis, a full design, or detailed reasoning
+
 ## Tool Usage Rules
 
 - **Always verify before reporting.** Before summarizing what happened or what the current state is, retrieve the actual session data with `session_get`. Never reconstruct history from memory or summaries written by other agents. If session data is unavailable, say so explicitly.

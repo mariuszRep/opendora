@@ -119,6 +119,12 @@ export function useOpendora(): UseOpendoraResult {
   const suppressUrlSyncRef = useRef(false)
   const lastSessionByAgentRef = useRef<Record<string, string>>(lastSessionByAgent)
   const initialRequestedSessionIdRef = useRef<string | null>(searchParams.get("session"))
+  // Stable refs so callbacks don't need state in their dependency arrays
+  const sessionsRef = useRef<Session[]>([])
+  const activeSessionsRef = useRef<Set<string>>(new Set())
+  const messagesRef = useRef<MessageWithParts[]>([])
+  // Per-session message cache: serve stale-while-revalidate on session switch
+  const messageCacheRef = useRef<Map<string, MessageWithParts[]>>(new Map())
 
   const buildDashboardUrl = useCallback((sessionID?: string | null, messageID?: string | null) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -174,6 +180,10 @@ export function useOpendora(): UseOpendoraResult {
   useEffect(() => {
     lastSessionByAgentRef.current = lastSessionByAgent
   }, [lastSessionByAgent])
+
+  useEffect(() => { sessionsRef.current = sessions }, [sessions])
+  useEffect(() => { activeSessionsRef.current = activeSessions }, [activeSessions])
+  useEffect(() => { messagesRef.current = messages }, [messages])
 
   const rememberSessionForAgent = useCallback((session: Session | null | undefined) => {
     if (!session?.agentID) return
@@ -282,15 +292,24 @@ export function useOpendora(): UseOpendoraResult {
     return () => window.removeEventListener("focus", handleFocus)
   }, [refreshProviders])
 
-  // Load messages when session changes
+  // Load messages when session changes (stale-while-revalidate via cache)
   useEffect(() => {
     if (!selectedSessionId) {
       setMessages([])
       return
     }
+    const cached = messageCacheRef.current.get(selectedSessionId)
+    if (cached) {
+      setMessages(cached)
+    } else {
+      setMessages([])
+    }
     let cancelled = false
     opendora.session.messages(selectedSessionId).then((msgs) => {
-      if (!cancelled) setMessages(msgs)
+      if (!cancelled) {
+        messageCacheRef.current.set(selectedSessionId, msgs)
+        setMessages(msgs)
+      }
     }).catch(() => { })
     return () => { cancelled = true }
   }, [selectedSessionId])
@@ -475,6 +494,10 @@ export function useOpendora(): UseOpendoraResult {
   }, [])
 
   const selectSession = useCallback((id: string) => {
+    // Save current session messages to cache before switching away
+    if (selectedSessionRef.current?.id) {
+      messageCacheRef.current.set(selectedSessionRef.current.id, messagesRef.current)
+    }
     setSelectedSessionId(id)
     setStatus("ready")
     setError(null)
@@ -621,60 +644,35 @@ export function useOpendora(): UseOpendoraResult {
     })
   }, [router, buildDashboardUrl])
 
-  const selectAgent = useCallback(async (agentId: string) => {
+  const selectAgent = useCallback((agentId: string) => {
+    // Save current session messages to cache before switching away
+    if (selectedSessionRef.current?.id) {
+      messageCacheRef.current.set(selectedSessionRef.current.id, messagesRef.current)
+    }
+
     setSelectedAgent(agentId)
-    setMessages([])
     setStatus("ready")
     setError(null)
 
-    const applySession = (session: Session | null | undefined) => {
-      if (session?.id) {
-        setSelectedSessionId(session.id)
-        // Defer router navigation to prevent setState during render
-        setTimeout(() => {
-          router.push(buildDashboardUrl(session.id, null), { scroll: false })
-        }, 0)
-        selectedSessionRef.current = session
-        rememberSessionForAgent(session)
-      } else {
-        setSelectedSessionId(null)
-        selectedSessionRef.current = null
-      }
-    }
+    // Use stable refs — no async API call needed.
+    // sortSessionsForAgent already puts the "role" (main) session first.
+    const sorted = sortSessionsForAgent(agentId, sessionsRef.current)
+    const active = sorted.filter((s) => activeSessionsRef.current.has(s.id))
+    const remembered = lastSessionByAgentRef.current[agentId]
+      ? sorted.find((s) => s.id === lastSessionByAgentRef.current[agentId]) ?? null
+      : null
+    const session = active[0] ?? remembered ?? sorted[0] ?? null
 
-    const fallbackFromLocal = () => {
-      setSessions((prev) => {
-        const sortedForAgent = sortSessionsForAgent(agentId, prev)
-        const activeForAgent = sortedForAgent.filter((s) => activeSessions.has(s.id))
-        const remembered = lastSessionByAgentRef.current[agentId]
-          ? sortedForAgent.find((s) => s.id === lastSessionByAgentRef.current[agentId]) ?? null
-          : null
-        const fallback = activeForAgent[0]
-          ?? remembered
-          ?? sortedForAgent[0]
-          ?? null
-        applySession(fallback)
-        return prev
-      })
+    if (session?.id) {
+      setSelectedSessionId(session.id)
+      router.replace(buildDashboardUrl(session.id, null), { scroll: false })
+      selectedSessionRef.current = session
+      rememberSessionForAgent(session)
+    } else {
+      setSelectedSessionId(null)
+      selectedSessionRef.current = null
     }
-
-    try {
-      const mainSession = await opendora.agent.mainSession(agentId)
-      const localSorted = sortSessionsForAgent(agentId, sessions)
-      const activeForAgent = localSorted.filter((s) => activeSessions.has(s.id))
-      const remembered = lastSessionByAgentRef.current[agentId]
-        ? localSorted.find((s) => s.id === lastSessionByAgentRef.current[agentId]) ?? null
-        : null
-      if (activeForAgent[0] || remembered || mainSession?.id) {
-        applySession(activeForAgent[0] ?? remembered ?? mainSession)
-      } else {
-        fallbackFromLocal()
-      }
-    } catch (err) {
-      console.warn("Failed to fetch main session for agent", agentId, err)
-      fallbackFromLocal()
-    }
-  }, [activeSessions, buildDashboardUrl, rememberSessionForAgent, router, sessions, sortSessionsForAgent])
+  }, [buildDashboardUrl, rememberSessionForAgent, router, sortSessionsForAgent])
 
   const setDefaultAgent = useCallback((agentId: string) => {
     storeDefaultAgent(agentId)

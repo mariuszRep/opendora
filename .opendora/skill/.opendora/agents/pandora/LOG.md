@@ -23,3 +23,10 @@ Pandora delegated with wait: false (fire and forget) and didn't set up reply tra
 _Context: ses_2e179f3aaffemt9fyidvyofnW0_
 
 ---
+### 2026-03-26 19:09:10 UTC [ERROR]
+
+Delegation run failed with ProviderModelNotFoundError before taking action. Updating Pandora model from invalid/unavailable fallback model to fallback/minimax-m2.5 restored execution for experiment routing.
+
+_Context: ses_2d47bff79ffeC9G3eKUobE0uuA_
+
+---

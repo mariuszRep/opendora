@@ -959,6 +959,25 @@ export const Chatbot = () => {
                 </div>
               )
           })}
+          {status === "submitted" && (
+            <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3 w-full">
+              <div className="relative size-4 mt-[3px]">
+                <div
+                  className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  style={{ backgroundColor: agentDotColor }}
+                />
+              </div>
+              <div className="flex items-center gap-1 h-5">
+                {[0, 150, 300].map((delay) => (
+                  <span
+                    key={delay}
+                    className="size-1.5 rounded-full animate-bounce"
+                    style={{ backgroundColor: agentDotColor, animationDelay: `${delay}ms` }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>

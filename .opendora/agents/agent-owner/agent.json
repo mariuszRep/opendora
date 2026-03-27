@@ -3,8 +3,8 @@
   "description": "Agent owner — the go-to authority for all agent-related decisions: knows every agent's capabilities, creates bespoke agents on demand, advises on delegation, and improves agents over time",
   "mode": "primary",
   "model": {
-    "modelID": "minimax-m2.5",
-    "providerID": "fallback"
+    "modelID": "gpt-5.4",
+    "providerID": "openai-codex"
   },
   "temperature": 0.7,
   "steps": 80,

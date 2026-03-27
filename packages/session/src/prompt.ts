@@ -1139,10 +1139,6 @@ export namespace SessionPrompt {
       format: input.format,
       variant,
     }
-    // Write cross-session parent to SQL column via updateMessage (not in JSON data)
-    if (input.parentMessageID) {
-      ;(info as any).parentMessageID = input.parentMessageID
-    }
     using _3 = defer(() => InstructionPrompt.clear(info.id))
 
     type Draft<T> = T extends MessageV2.Part ? Omit<T, "id"> & { id?: string } : never
@@ -1467,7 +1463,7 @@ export namespace SessionPrompt {
       },
     )
 
-    await Session.updateMessage(info)
+    await Session.updateMessage(info, input.parentMessageID)
     for (const part of parts) {
       await Session.updatePart(part)
     }

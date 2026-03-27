@@ -6,5 +6,5 @@
     "opencode": "free",
     "openrouter": "free"
   },
-  "model": "fallback/nemotron-3-super"
+  "model": "fallback/trinity-large"
 }

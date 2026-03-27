@@ -171,6 +171,7 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
       sessionID: targetSession.id,
       ...(targetAgentName ? { agent: targetAgentName } : {}),
       noWait: !wait,
+      parentMessageID: ctx.messageID,
       parts: await resolvePromptParts(params.prompt),
     })
 

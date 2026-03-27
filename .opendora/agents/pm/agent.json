@@ -3,8 +3,8 @@
   "description": "Project Manager agent specialized in orchestrating end-to-end feature implementation through coordinated sub-sessions",
   "mode": "worker",
   "model": {
-    "modelID": "minimax-m2.5-free",
-    "providerID": "opencode"
+    "modelID": "minimax-m2.5",
+    "providerID": "fallback"
   },
   "temperature": 0.7,
   "steps": 50,

@@ -46,6 +46,10 @@ export type UserMessage = {
   time: { created: number }
   agent: string
   model: { providerID: string; modelID: string }
+  /** ID of the tool-call message in the parent session that delegated this prompt */
+  parentMessageID?: string
+  /** ID of the session that delegated this prompt (derived from parentMessageID's session) */
+  parentSessionID?: string
 }
 
 export type AssistantMessage = {
@@ -59,6 +63,10 @@ export type AssistantMessage = {
   /** Name/ID of the agent that produced this message */
   agent?: string
   error?: { name: string; data: Record<string, unknown> }
+  /** ID of the tool-call message in the parent session that triggered this reply */
+  parentMessageID?: string
+  /** ID of the session whose tool call this message is replying to */
+  parentSessionID?: string
 }
 
 export type Message = UserMessage | AssistantMessage

@@ -748,8 +748,30 @@ export namespace MessageV2 {
         }
       }
 
+      // Batch-resolve parentSessionID for messages that have a cross-session parent_message_id
+      const parentMsgIds = rows
+        .map((r: any) => r.parent_message_id)
+        .filter(Boolean) as string[]
+      const parentSessionByMsgId = new Map<string, string>()
+      if (parentMsgIds.length > 0) {
+        const parentRows = db
+          .select({ id: MessageTable.id, session_id: MessageTable.session_id })
+          .from(MessageTable)
+          .where(inArray(MessageTable.id, parentMsgIds))
+          .all()
+        for (const pr of parentRows) {
+          parentSessionByMsgId.set(pr.id, pr.session_id)
+        }
+      }
+
       for (const row of rows) {
         const info = { ...row.data, id: row.id, sessionID: row.session_id } as MessageV2.Info
+        const parentMsgId = (row as any).parent_message_id
+        if (parentMsgId) {
+          ;(info as any).parentMessageID = parentMsgId
+          const parentSessionID = parentSessionByMsgId.get(parentMsgId)
+          if (parentSessionID) ;(info as any).parentSessionID = parentSessionID
+        }
         yield {
           info,
           parts: partsByMessage.get(row.id) ?? [],
@@ -779,6 +801,16 @@ export namespace MessageV2 {
     const row = db.select().from(MessageTable).where(eq(MessageTable.id, input.messageID)).get()
     if (!row) throw new Error(`Message not found: ${input.messageID}`)
     const info = { ...row.data, id: row.id, sessionID: row.session_id } as MessageV2.Info
+    const parentMsgId = (row as any).parent_message_id
+    if (parentMsgId) {
+      ;(info as any).parentMessageID = parentMsgId
+      const parentRow = db
+        .select({ session_id: MessageTable.session_id })
+        .from(MessageTable)
+        .where(eq(MessageTable.id, parentMsgId))
+        .get()
+      if (parentRow) ;(info as any).parentSessionID = parentRow.session_id
+    }
     return {
       info,
       parts: await parts(input.messageID),

@@ -221,27 +221,39 @@ export class OpenDoraStorageAdapter implements StorageAdapter {
   async getMessages(sessionId: string): Promise<Message[]> {
     const db = getConfig().db
     const rows = db.select().from(MessageTable).where(eq(MessageTable.session_id, sessionId)).all()
-    return rows.map((row: any) => ({
-      id: row.id,
-      sessionId,
-      parent: (row.data as any).parentID ? { messageId: (row.data as any).parentID } : null,
-      from: (row.data as any).from ?? { kind: (row.data as any).role === "user" ? "user" : "agent", id: "opencode" },
-      kind: (row.data as any).role === "user" ? "ping" : ("pong" as any),
-      parts: [],
-      timestamp: row.time_created,
-    }))
+    return rows.map((row: any) => {
+      // For user (ping) messages, the cross-session parent lives in the SQL column.
+      // For assistant (pong) messages, the within-session parent is in JSON as parentID.
+      const isUser = (row.data as any).role === "user"
+      const parentMessageId = isUser
+        ? (row.parent_message_id ?? null)
+        : ((row.data as any).parentID ?? null)
+      return {
+        id: row.id,
+        sessionId,
+        parent: parentMessageId ? { messageId: parentMessageId } : null,
+        from: (row.data as any).from ?? { kind: isUser ? "user" : "agent", id: "opencode" },
+        kind: isUser ? "ping" : ("pong" as any),
+        parts: [],
+        timestamp: row.time_created,
+      }
+    })
   }
 
   async getMessage(id: string): Promise<Message | null> {
     const db = getConfig().db
     const row = db.select().from(MessageTable).where(eq(MessageTable.id, id)).get()
     if (!row) return null
+    const isUser = (row.data as any).role === "user"
+    const parentMessageId = isUser
+      ? ((row as any).parent_message_id ?? null)
+      : ((row.data as any).parentID ?? null)
     return {
       id: row.id,
       sessionId: row.session_id,
-      parent: (row.data as any).parentID ? { messageId: (row.data as any).parentID } : null,
-      from: (row.data as any).from ?? { kind: (row.data as any).role === "user" ? "user" : "agent", id: "opencode" },
-      kind: (row.data as any).role === "user" ? "ping" : ("pong" as any),
+      parent: parentMessageId ? { messageId: parentMessageId } : null,
+      from: (row.data as any).from ?? { kind: isUser ? "user" : "agent", id: "opencode" },
+      kind: isUser ? "ping" : ("pong" as any),
       parts: [],
       timestamp: row.time_created,
     }

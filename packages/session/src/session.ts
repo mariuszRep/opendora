@@ -639,7 +639,7 @@ export namespace Session {
       conditions.push(eq(SessionTable.directory, input.directory))
     }
     if (input?.roots) {
-      conditions.push(isNull(SessionTable.parent_id))
+      conditions.push(isNull(SessionTable.parent_session_id))
     }
     if (input?.start) {
       conditions.push(gte(SessionTable.time_updated, input.start))
@@ -679,7 +679,7 @@ export namespace Session {
       conditions.push(eq(SessionTable.directory, input.directory))
     }
     if (input?.roots) {
-      conditions.push(isNull(SessionTable.parent_id))
+      conditions.push(isNull(SessionTable.parent_session_id))
     }
     if (input?.start) {
       conditions.push(gte(SessionTable.time_updated, input.start))
@@ -973,7 +973,7 @@ export namespace Session {
             eq(SessionTable.project_id, project.id),
             eq(SessionTable.session_type, "role"),
             eq(SessionTable.agent_id, agentID),
-            isNull(SessionTable.parent_id),
+            isNull(SessionTable.parent_session_id),
           ),
         )
         .get()
@@ -1052,28 +1052,40 @@ export namespace Session {
     },
   )
 
-  export const updateMessage = fn(MessageV2.Info, async (msg) => {
+  export async function updateMessage(msg: MessageV2.Info, parentMessageID?: string): Promise<MessageV2.Info> {
     const cfg = getConfig()
     const db = cfg.db
-    const time_created = msg.time.created
     const { id, sessionID, ...data } = msg
-    // Extract parent_message_id for the SQL column (cross-session parent message reference)
-    const parent_message_id = (msg as any).parentMessageID ?? null
-    // Strip parentSessionID and parentMessageID from JSON data — now tracked as SQL columns on the session
-    const { parentSessionID: _ps, parentMessageID: _pm, ...cleanData } = data as any
+    const time_created = msg.time.created
+    const parent_message_id = parentMessageID ?? null
     db.insert(MessageTable)
       .values({
         id,
         session_id: sessionID,
         time_created,
         parent_message_id,
-        data: cleanData,
+        data,
       })
-      .onConflictDoUpdate({ target: MessageTable.id, set: { data: cleanData } })
+      .onConflictDoUpdate({ target: MessageTable.id, set: { data } })
       .run()
-    cfg.bus?.publish(MessageV2.Event.Updated, { info: msg })
+    // Re-attach parentMessageID and parentSessionID for SSE consumers so the UI can show
+    // delegation attribution and the "Back to source" link without a round-trip.
+    let infoForBus: MessageV2.Info = msg
+    if (parent_message_id) {
+      const parentRow = db
+        .select({ session_id: MessageTable.session_id })
+        .from(MessageTable)
+        .where(eq(MessageTable.id, parent_message_id))
+        .get()
+      infoForBus = {
+        ...msg,
+        parentMessageID: parent_message_id,
+        ...(parentRow ? { parentSessionID: parentRow.session_id } : {}),
+      } as MessageV2.Info
+    }
+    cfg.bus?.publish(MessageV2.Event.Updated, { info: infoForBus })
     return msg
-  })
+  }
 
   export const removeMessage = fn(
     z.object({

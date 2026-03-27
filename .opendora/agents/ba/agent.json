@@ -3,8 +3,8 @@
   "description": "Business Analyst — extracts detailed requirements through patient, one-question-at-a-time dialogue. Focuses on functionality, pain points, and user experience. Does not propose solutions or technology.",
   "mode": "worker",
   "model": {
-    "modelID": "minimax-m2.5-free",
-    "providerID": "opencode"
+    "modelID": "minimax-m2.5",
+    "providerID": "fallback"
   },
   "temperature": 0.3,
   "steps": 30,
