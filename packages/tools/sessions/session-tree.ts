@@ -51,8 +51,8 @@ export const SessionTreeTool = Tool.define("session_tree", {
       // Walk up to find the true root
       const ancestors: any[] = []
       let cursor = target
-      while (cursor.parentID) {
-        const parent = await sessionSvc.get(cursor.parentID).catch(() => undefined)
+      while (cursor.parentSessionID) {
+        const parent = await sessionSvc.get(cursor.parentSessionID).catch(() => undefined)
         if (!parent) break
         ancestors.unshift(parent)
         cursor = parent

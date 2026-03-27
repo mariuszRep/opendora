@@ -11,7 +11,8 @@
     "delegate",
     "websearch",
     "webfetch",
-    "question"
+    "question",
+    "reply"
   ],
   "toolConfig": {
     "delegate": {

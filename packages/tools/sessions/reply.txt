@@ -1,18 +1,35 @@
-Post a message silently into another session. This does NOT trigger the LLM there. The message appears in that session and waits — the human or agent in that session must decide what to do next.
+Post a message silently into another session. This does NOT trigger the LLM there. The message appears in that session and is VISIBLE to the user or agent there.
 
-Use this tool when you are done with a task and need to report back. The caller's session will show your message with no automatic follow-up.
+CRITICAL: If you were delegated a task with reply_to specified, you MUST use this tool.
+Your session context will show "Reply expected: silent" if a reply is required.
 
-WHEN TO USE reply vs delegate:
+WHAT reply DOES:
+- Posts a USER-VISIBLE message in the target session
+- Includes navigation back to YOUR session (user can click to find you)
+- Does NOT trigger the target agent's LLM (message just appears)
+- Surfaces your delegated session to the requester
+
+WHEN TO USE reply:
 
 Use reply (this tool) when:
-- You were delegated a task and need to report the result back
-- You are reporting a result, summary, or status back to the originating session
-- You do NOT want to automatically trigger the caller's LLM
+- You were delegated a task with reply_to parameter
+- You need to send ANY user-facing message back to the upstream visible conversation
+- You need the requester to find and join your session for interaction
+- You are posting results, status updates, or asking for clarification
+- You want to surface your delegated sub-session to the user
+
+IMPORTANT TIMING:
+- Use reply for your FIRST message if you need the user to find you
+- Do NOT wait for the requester in your delegated sub-session before using reply
+- Surface yourself immediately so the user knows where to continue the conversation
+- If you need user input, use reply first to make your session visible, then wait
 
 Use delegate (not this tool) when:
 - You want to actively trigger the LLM in the target session
 - You need the target agent to respond and continue working
-- You are initiating new work in another session, not closing out a task
+- You are initiating new work in another session, not reporting back
+
+IMPORTANT: reply is NOT optional for async delegations. The delegating agent expects your response.
 
 HOW REPLY ROUTING WORKS:
 
@@ -23,13 +40,18 @@ The system resolves the reply target automatically from your session context:
 
 You do not need to specify a session. Just call reply with your message.
 
-AUTOMATIC ROUTING IN DELEGATION CHAINS:
-When agents forward delegations, reply routing is preserved automatically:
-- Pandora delegates to Project Owner → Project Owner's replyToSessionID = Pandora
-- Project Owner delegates to BA → BA's replyToSessionID = Pandora (inherited)
-- BA calls reply → message goes to Pandora
+ROUTING IN DELEGATION CHAINS:
+Replies go to the session ID specified in the delegate tool's reply_to parameter:
+- Minds delegates to Pandora with reply_to=ses_minds → Pandora gets replyToSessionID = ses_minds
+- Pandora delegates to PO with reply_to=ses_pandora → PO gets replyToSessionID = ses_pandora
+- PO calls reply → message goes to Pandora
 
-This ensures replies reach the original requester even through multiple delegation hops.
+To forward replies to the original requester:
+- Project Owner must pass the upstream reply_to when delegating
+- Example: delegate({ agent: "BA", reply_to: "ses_pandora" })
+- BA calls reply → message goes to Pandora (forwarded)
+
+Your session context shows the reply target. You don't need to specify it - just call reply.
 
 Parameters:
 - message: the text to post

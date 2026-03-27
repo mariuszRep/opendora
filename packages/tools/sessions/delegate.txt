@@ -5,27 +5,67 @@ This is the tool for starting work elsewhere. The target agent receives your mes
 If you only need to post a message without triggering the LLM, use reply instead.
 
 ─────────────────────────────────────────
-REPLY MODES — choose one when delegating
+CRITICAL: WHEN TO USE reply_to
 ─────────────────────────────────────────
 
-1. WAIT (synchronous)
-   wait: true
-   You block until the target agent finishes. You receive the result inline.
-   Use for: quick factual questions where the answer drives your immediate next step.
-   Avoid for: anything involving user interaction or further delegation — it will deadlock.
+Delegation has TWO modes controlled by the reply_to parameter:
 
-2. FIRE-AND-FORGET (automatic reply routing)
-   wait: false
-   Default behavior: replies automatically route to whoever delegated to you.
-   - If you're responding to a user request, replies come back to you
-   - If you're forwarding a delegation, replies go to your caller (chain preserved)
-   Use for: most async tasks, user-facing work, multi-hop delegations
+1. WAIT FOR REPLY (no reply_to)
+   - Omit reply_to parameter
+   - You BLOCK until the target agent finishes
+   - You receive the result inline immediately
+   - Use ONLY for: quick factual questions where you need the answer right now
+   - AVOID for: anything involving user interaction, complex tasks, or further delegation
+   - Example: delegate({ agent: "BA", prompt: "What is 2+2?" })
+
+2. ASYNC - EXPECT REPLY LATER (with reply_to)
+   - Provide a session ID in reply_to
+   - You do NOT block - you can continue with other tasks
+   - The delegated agent will use reply tool to send messages back
+   - The reply is USER-VISIBLE in the target session with navigation back to the delegated session
+   - Use for: ALL other cases - user-facing work, complex tasks, multi-step work
    
-3. REDIRECT REPLY (override routing)
-   wait: false, reply_to: <session_id>
-   Override default routing to send replies to a specific session.
-   Use for: forwarding delegation but wanting replies to go to original requester
-   Example: Project Owner forwards to BA, sets reply_to to Pandora's session
+   WHAT THE DELEGATED AGENT WILL DO:
+   - They will see "Reply expected: silent" in their session context
+   - They MUST use reply tool to send ANY user-facing messages back
+   - The reply makes their session visible and navigable to the requester
+   - They should use reply FIRST if they need user interaction (don't wait in their session)
+   - The reply does NOT trigger your LLM - message just appears for you to see
+   
+   TWO SUB-MODES:
+   
+   a) REPLY TO ME (reply_to: your_session_id)
+      - Provide YOUR OWN session ID (check your session context for Session ID)
+      - Results come back to you
+      - Example: delegate({ agent: "BA", prompt: "...", reply_to: "ses_project_owner" })
+   
+   b) FORWARD CHAIN (reply_to: upstream_session_id)
+      - Provide a DIFFERENT session ID (e.g., who delegated to you)
+      - Results skip you and go to the specified session
+      - Use when: you're forwarding a delegation and don't need to see the reply
+      - Check your session context for "Reply to session ID" to get the upstream session
+      - Example: delegate({ agent: "BA", prompt: "...", reply_to: "ses_pandora" })
+
+─────────────────────────────────────────
+FOR MIDDLE AGENTS (forwarding delegations)
+─────────────────────────────────────────
+
+If you receive a task and need to delegate it to another agent:
+
+OPTION 1: You want the reply to come back to YOU
+- Use reply_to with YOUR session ID
+- You will see the reply and can act on it
+- Example: delegate({ agent: "BA", prompt: "...", reply_to: "ses_project_owner" })
+
+OPTION 2: You want the reply to go to the ORIGINAL REQUESTER
+- Use reply_to with the UPSTREAM session ID
+- Check your session context for "Reply to session ID: ses_xxx"
+- Pass that session ID in reply_to
+- The reply skips you and goes directly to the original requester
+- Example: delegate({ agent: "BA", prompt: "...", reply_to: "ses_pandora" })
+
+IMPORTANT: If your session shows "Reply expected: silent", you are in a chain.
+You can either handle the reply yourself (use your session ID) or forward it (use the upstream session ID).
    
 ─────────────────────────────────────────
 DELEGATION PATTERNS

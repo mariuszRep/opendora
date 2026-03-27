@@ -23,14 +23,10 @@ const parameters = z
       .optional(),
     prompt: z.string().describe("Message to send to the target session. Be clear and specific about what you want the agent to do."),
     description: z.string().describe("Short label for this delegation (appears in logs and UI). Optional but helpful for tracking.").optional(),
-    wait: z
-      .boolean()
-      .describe("Wait for immediate response (synchronous). Default: false. true=block until agent replies (quick questions only). false=fire-and-forget with automatic reply routing to your caller.")
-      .optional(),
     reply_to: z
       .string()
       .describe(
-        "Override reply destination. By default, replies go to whoever delegated to you. Use this to redirect replies elsewhere (e.g., forward delegation to another agent but have them reply to the original requester). Only specify when you need to change the default routing.",
+        "Session ID where replies should be sent. REQUIRED for async delegations (most cases). Omit ONLY for synchronous blocking (quick questions). Use YOUR session ID (check session context) to get replies back to you. Use UPSTREAM session ID (check 'Reply to session ID' in context) to forward replies to original requester. Agent will use reply tool to send results to this session.",
       )
       .optional(),
   })
@@ -77,8 +73,6 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
   parameters,
   async execute(params, ctx) {
     const h = host(ctx)
-    const wait = params.wait ?? false
-
     const sessionSvc = h.session as any
     if (!sessionSvc) throw new Error("session service not available")
     const promptFn = h.prompt as any
@@ -86,16 +80,11 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
     const resolvePromptParts = h.resolvePromptParts
     if (!resolvePromptParts) throw new Error("resolvePromptParts service not available")
 
-    // Get current session to determine reply routing
-    const currentSession = await sessionSvc.get(ctx.sessionID)
+    // Determine mode: reply_to present = async, absent = sync
+    const replyToSessionID: string | undefined = params.reply_to
+    const wait = !replyToSessionID  // synchronous if no reply_to specified
     
-    // Determine reply_to: explicit param > parent session (who delegated to me) > current session
-    let replyToSessionID: string | undefined = params.reply_to
-    if (!replyToSessionID && !wait) {
-      // Default: reply to whoever delegated to this session (parentSessionID)
-      // If no parent (root session), reply to current session
-      replyToSessionID = currentSession.parentSessionID || ctx.sessionID
-    }
+    console.log(`[DELEGATE] reply_to=${replyToSessionID}, wait=${wait}, noWait=${!wait}`)
 
     let targetSession: any
     let targetAgentName: string | undefined
