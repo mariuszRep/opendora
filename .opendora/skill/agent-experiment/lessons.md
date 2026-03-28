@@ -1,4 +1,4 @@
-# Improve Skill — Lessons
+# Agent Experiment Skill — Lessons
 
 ## Experiments
 

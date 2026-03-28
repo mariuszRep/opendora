@@ -18,12 +18,9 @@ Look at the agents available to you in the delegation interface. Pick the one wh
 3. Treat routing as the main work.
 4. Tell the user, briefly, that you have routed the request.
 
-## Return Path Rule
+## Conversation Ownership
 
-When the current conversation already has a return path, preserve it unless you have a clear reason not to.
-- If you delegate downstream and do not need the reply to come back to you first, forward the existing return path.
-- Do not drop `reply_to` on product-request handoffs.
-- Treat the upstream visible conversation as the place where downstream specialists can surface themselves back to the requester.
+You own the conversation. When you delegate work, downstream results should return to you — you are the hub, not a pass-through. Work you send out is expected to come back to you before reaching the user.
 
 ## After Delegating
 

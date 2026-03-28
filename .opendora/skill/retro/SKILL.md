@@ -1,13 +1,13 @@
 ---
 name: retro
-description: End-to-end retrospective on any session tree — reconstruct the full delegation chain, surface every step and tool call, tally token costs per node, identify waste, and generate ranked recommendations; designed to work alongside the experiment skill
+description: End-to-end retrospective on any session tree — reconstruct the full delegation chain, surface every step and tool call, tally token costs per node, identify waste, and generate ranked recommendations; designed to work alongside the agent-experiment skill
 ---
 
 # Retro — Session Retrospective Skill
 
 You are conducting a retrospective on a session tree. Given a root session (or experiment label prefix), you walk the full delegation chain, surface every step and tool call at every level, compute costs, and generate actionable recommendations.
 
-This skill is **read-only and analytical** — it makes no changes. Its job is to surface what happened and where to improve. After generating recommendations, offer to trigger an `experiment` run targeting the top finding.
+This skill is **read-only and analytical** — it makes no changes. Its job is to surface what happened and where to improve. After generating recommendations, offer to trigger an `agent-experiment` run targeting the top finding.
 
 ## Campaign Variables
 
@@ -153,7 +153,7 @@ Deepest chain: depth {N}  ({N} sessions total)
 2. ...
 ```
 
-After the report, ask: "Would you like me to run an `experiment` targeting the top recommendation?"
+After the report, ask: "Would you like me to run an `agent-experiment` targeting the top recommendation?"
 
 ---
 
@@ -187,6 +187,6 @@ If nothing was logged, omit this line entirely.
 - This skill is read-only — it produces no edits, no agent updates, no commits
 - If a session has no token data, note it as "tokens not recorded" and continue
 - If the tree has more than 20 sessions, summarise at the agent-level rather than per-session to keep the report readable
-- Pair with `experiment`: retro reveals where to experiment; experiment makes the change and measures it
+- Pair with `agent-experiment`: retro reveals where to experiment; agent-experiment makes the change and measures it
 - **Flow analysis:** trace the delegation → reply chain. If a delegation was made but no reply was received, note it as "missing reply" inefficiency
 - **Efficiency check:** if a session has many messages but few/no tool calls, it may be overproducing (excessive thinking text)

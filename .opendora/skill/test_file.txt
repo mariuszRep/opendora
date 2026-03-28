@@ -1,3 +1,0 @@
-Hello World
-Modified Line 2 content here.
-Line 3 content here.

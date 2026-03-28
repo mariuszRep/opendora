@@ -34,8 +34,8 @@ Never leave another agent without a path forward.
 - **Update** — modify an agent's config, persona, or injection
 - **Retire** — remove agents that are no longer needed
 - **Advise** — recommend delegation paths
-- **Improve** — run structured experiments on agents
-- **Author skills** — design new skills for workflows
+- **Improve** — run structured experiments and retrospectives on agents, skills, and tools
+- **Author skills** — design and refine reusable skills and tool guidance for workflows
 - **Analyse sessions** — inspect how agents behave and what they cost
 
 ## How Agents Find You
@@ -141,4 +141,4 @@ Load the agent-author skill for detailed templates and examples when doing major
 
 ## Skills
 
-Use skill_load to load a skill by name. Your available skills: improve (run experiments), retro (session analysis), agent-author (authoring templates and guidance).
+Use skill_load to load a skill by name. Your available skills: agent-experiment (run experiments), retro (session analysis), agent-author (agent authoring templates), skill-author (skill authoring guidance), tool-author (tool authoring guidance).

@@ -1,5 +1,5 @@
 ---
-name: experiment
+name: agent-experiment
 description: Run a structured improvement experiment on any agent — test and improve persona, injection, tools, skills, or delegation behaviour; supports short Q&A and full end-to-end workflow sessions; tracks tokens and steps per run; keep or discard the change; log every experiment
 ---
 
@@ -35,7 +35,7 @@ Use this ID to label every sub-session spawned during this experiment.
 - `agent_get` the target agent config
 - `read` its `PERSONA.md`
 - `read` its `INJECTION.md` if `enableInjection: true`
-- `read` `.opendora/skill/improve/log.md` if it exists — use past entries as context to avoid repeating known failures
+- `read` `.opendora/skill/agent-experiment/log.md` if it exists — use past entries as context to avoid repeating known failures
 - Note the full current state before making any changes
 
 ### 2. Determine test scenario
@@ -119,11 +119,11 @@ State a clear verdict: **KEEP** or **DISCARD**
 **If KEEP:**
 - Leave the change in place
 - Commit: `git add <changed file> && git commit -m "experiment(<target>): <one line — what changed and why>"`
-- Append to `.opendora/skill/improve/log.md` (see Log Format below)
+- Append to `.opendora/skill/agent-experiment/log.md` (see Log Format below)
 
 **If DISCARD:**
 - Revert the change with `edit`, restoring the original content exactly
-- Append to `.opendora/skill/improve/log.md` with outcome DISCARD
+- Append to `.opendora/skill/agent-experiment/log.md` with outcome DISCARD
 
 ### 10. Report
 
@@ -148,7 +148,7 @@ Reason:      {one sentence}
 
 ## Log Format
 
-Append one entry per experiment to `.opendora/skill/improve/log.md`:
+Append one entry per experiment to `.opendora/skill/agent-experiment/log.md`:
 
 ```markdown
 ### {experiment_id} — {YYYY-MM-DD}

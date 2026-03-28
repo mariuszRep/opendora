@@ -66,6 +66,7 @@ import { useTextToSpeech } from "@/hooks/use-text-to-speech"
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder"
 import { usePushToTalk } from "@/hooks/use-push-to-talk"
 import { DelegateToolContent, isDelegateTool, getDelegateToolTitle } from "@/components/ai-elements/delegate-tool"
+import { TodoToolContent, isTodoTool, getTodoToolTitle } from "@/components/ai-elements/todo-tool"
 import { getAgentColor } from "@/lib/agent-colors"
 import { CheckIcon, CopyIcon, Link2Icon, Volume2Icon, VolumeXIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
@@ -217,6 +218,7 @@ export const Chatbot = () => {
   const [selectedModelID, setSelectedModelID] = useState<string | null>(null)
   const [questionViewModes, setQuestionViewModes] = useState<Record<string, "code" | "view">>({})
   const [delegateViewModes, setDelegateViewModes] = useState<Record<string, "code" | "view">>({})
+  const [todoViewModes, setTodoViewModes] = useState<Record<string, "code" | "view">>({})
 
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -755,18 +757,23 @@ export const Chatbot = () => {
                                       const handleDelegateViewModeChange = (mode: "code" | "view") => {
                                         setDelegateViewModes(prev => ({ ...prev, [tool.id]: mode }))
                                       }
+                                      const isTodoToolCall = isTodoTool(tool.tool)
+                                      const currentTodoViewMode = todoViewModes[tool.id] ?? "view"
+                                      const handleTodoViewModeChange = (mode: "code" | "view") => {
+                                        setTodoViewModes(prev => ({ ...prev, [tool.id]: mode }))
+                                      }
 
                                       return (
-                                        <Tool defaultOpen={isDelegateToolCall}>
+                                        <Tool defaultOpen={isDelegateToolCall || isTodoToolCall}>
                                           <ToolHeader
                                             state={state}
-                                            title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : tool.tool}
+                                            title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : tool.tool}
                                             centerTitle={!!questionRequest}
                                             toolName={tool.tool}
                                             type="dynamic-tool"
-                                            viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : undefined}
-                                            onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : undefined}
-                                            hasView={!!questionRequest || isDelegateToolCall}
+                                            viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : undefined}
+                                            onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : undefined}
+                                            hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall}
                                           />
                                           <ToolContent>
                                             {questionRequest ? (
@@ -788,10 +795,14 @@ export const Chatbot = () => {
                                                   onGoToMessage={handleGoToMessage}
                                                 />
                                               )
+                                            ) : isTodoToolCall ? (
+                                              currentTodoViewMode === "code" ? toolInput : (
+                                                <TodoToolContent tool={tool} />
+                                              )
                                             ) : (
                                               toolInput
                                             )}
-                                            {!isDelegateToolCall && !questionRequest && (output || error) ? (
+                                            {!isDelegateToolCall && !isTodoToolCall && !questionRequest && (output || error) ? (
                                               <ToolOutput errorText={error} output={output} />
                                             ) : null}
                                           </ToolContent>
@@ -869,20 +880,25 @@ export const Chatbot = () => {
                                   const handleDelegateViewModeChange = (mode: "code" | "view") => {
                                     setDelegateViewModes(prev => ({ ...prev, [tool.id]: mode }))
                                   }
+                                  const isTodoToolCall = isTodoTool(tool.tool)
+                                  const currentTodoViewMode = todoViewModes[tool.id] ?? "view"
+                                  const handleTodoViewModeChange = (mode: "code" | "view") => {
+                                    setTodoViewModes(prev => ({ ...prev, [tool.id]: mode }))
+                                  }
                                   return (
                                     <Tool
-                                      defaultOpen={isDelegateToolCall}
+                                      defaultOpen={isDelegateToolCall || isTodoToolCall}
                                       key={tool.id}
                                     >
                                       <ToolHeader
                                         state={state}
-                                        title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : tool.tool}
+                                        title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : tool.tool}
                                         centerTitle={!!questionRequest}
                                         toolName={tool.tool}
                                         type="dynamic-tool"
-                                        viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : undefined}
-                                        onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : undefined}
-                                        hasView={!!questionRequest || isDelegateToolCall}
+                                        viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : undefined}
+                                        onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : undefined}
+                                        hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall}
                                       />
                                       <ToolContent>
                                         {questionRequest ? (
@@ -904,10 +920,14 @@ export const Chatbot = () => {
                                               onGoToMessage={handleGoToMessage}
                                             />
                                           )
+                                        ) : isTodoToolCall ? (
+                                          currentTodoViewMode === "code" ? toolInput : (
+                                            <TodoToolContent tool={tool} />
+                                          )
                                         ) : (
                                           toolInput
                                         )}
-                                        {!isDelegateToolCall && !questionRequest && (output || error) ? (
+                                        {!isDelegateToolCall && !isTodoToolCall && !questionRequest && (output || error) ? (
                                           <ToolOutput errorText={error} output={output} />
                                         ) : null}
                                       </ToolContent>

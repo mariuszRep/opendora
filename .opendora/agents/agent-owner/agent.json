@@ -1,6 +1,6 @@
 {
   "name": "Minds",
-  "description": "Agent owner — the go-to authority for all agent-related decisions: knows every agent's capabilities, creates bespoke agents on demand, advises on delegation, and improves agents over time",
+  "description": "Agent owner — the authority for agent, skill, and tool decisions: knows capabilities, creates bespoke assets on demand, advises on delegation, and improves the system over time",
   "mode": "primary",
   "model": {
     "modelID": "gpt-5.4",
@@ -33,9 +33,11 @@
     "apply_patch"
   ],
   "skills": [
-    "improve",
+    "agent-experiment",
     "retro",
-    "agent-author"
+    "agent-author",
+    "skill-author",
+    "tool-author"
   ],
   "filesystemConfig": {
     "enabledTools": [
@@ -49,7 +51,8 @@
     ],
     "allowedPaths": [
       "/home/ubuntu/projects/opendora/.opendora/skill",
-      "/home/ubuntu/projects/opendora/.opendora/agents"
+      "/home/ubuntu/projects/opendora/.opendora/agents",
+      "/home/ubuntu/projects/opensource/autoresearch"
     ]
   }
 }

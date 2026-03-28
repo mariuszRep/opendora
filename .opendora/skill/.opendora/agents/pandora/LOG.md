@@ -30,3 +30,17 @@ Delegation run failed with ProviderModelNotFoundError before taking action. Upda
 _Context: ses_2d47bff79ffeC9G3eKUobE0uuA_
 
 ---
+### 2026-03-28 09:32:17 UTC [FAILED]
+
+Tried adding an injection rule to always set reply_to on delegation so downstream questions return to the current session. In varied vague-app tests, Pandora still omitted reply_to in some delegate calls, so the chain remained inconsistent. The behavior appears to need stronger tool-level guidance or a more direct instruction than the current injection phrasing.
+
+_Context: exp-pandora-20260328-2_
+
+---
+### 2026-03-28 09:32:20 UTC [ADVISORY]
+
+Pandora's persona still says to send a brief confirmation after delegating, while the delegate tool contract says the turn is complete after async delegation. This conflict correlates with duplicate or mixed user-facing updates in delegation-chain tests.
+
+_Context: exp-pandora-20260328-2_
+
+---

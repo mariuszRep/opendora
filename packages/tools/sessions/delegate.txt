@@ -1,98 +1,99 @@
 Send a task to another agent session. Always triggers the LLM in the target session.
 
-This is the tool for starting work elsewhere. The target agent receives your message, runs, and produces a response. Use delegate when you want another agent to do something — not just to post a message.
-
+Use delegate when you want another agent to do something — not just to post a message.
 If you only need to post a message without triggering the LLM, use reply instead.
 
 ─────────────────────────────────────────
-CRITICAL: WHEN TO USE reply_to
+BEFORE YOU DELEGATE — REASONING ORDER
 ─────────────────────────────────────────
 
-Delegation has TWO modes controlled by the reply_to parameter:
+Before calling delegate, reason in this order:
+
+1. What is the request?
+2. Did it come from the user directly, or was it delegated to you from upstream?
+3. Is there a better-suited available agent for this work?
+4. If yes — delegate rather than doing the work yourself.
+5. If delegating — do you need the result back yourself to make your own next decision?
+6. If NO — preserve and forward the current return path (the upstream reply_to) rather
+   than replacing it with your own session ID.
+7. If the downstream work involves interacting with the requester — route it so the
+   downstream agent can surface directly into the upstream visible conversation.
+
+─────────────────────────────────────────
+CHOOSING reply_to — THE ROUTING CONTRACT
+─────────────────────────────────────────
+
+reply_to decides where user-facing results and questions will surface.
+Choosing reply_to is part of the delegation decision, not an afterthought.
+
+DEFAULT — forward the upstream return path:
+- If you received this task with a reply_to in your session context, and you are
+  only forwarding it to a better-suited agent, pass that same upstream session ID
+  as reply_to.
+- The downstream agent will surface directly into the visible conversation that
+  originally requested the work.
+- Check your session context for "Reply to session ID: ses_xxx" — that is the value to forward.
+
+EXCEPTION — route to yourself:
+- Only set reply_to to your own session ID if you genuinely need the result back
+  before you can make your next decision.
+- Do not route to yourself by default. Routing results through yourself when you
+  do not need them adds unnecessary hops and breaks visibility.
+
+TWO MODES controlled by whether reply_to is provided:
 
 1. WAIT FOR REPLY (no reply_to)
-   - Omit reply_to parameter
-   - You BLOCK until the target agent finishes
-   - You receive the result inline immediately
-   - Use ONLY for: quick factual questions where you need the answer right now
-   - AVOID for: anything involving user interaction, complex tasks, or further delegation
-   - Example: delegate({ agent: "BA", prompt: "What is 2+2?" })
+   - You BLOCK until the target agent finishes and receive the result inline.
+   - Use ONLY for quick factual lookups where you need the answer right now.
+   - AVOID for anything involving user interaction, complex tasks, or further delegation.
 
-2. ASYNC - EXPECT REPLY LATER (with reply_to)
-   - Provide a session ID in reply_to
-   - You do NOT block - you can continue with other tasks
-   - The delegated agent will use reply tool to send messages back
-   - The reply is USER-VISIBLE in the target session with navigation back to the delegated session
-   - Use for: ALL other cases - user-facing work, complex tasks, multi-step work
-   
-   WHAT THE DELEGATED AGENT WILL DO:
-   - They will see "Reply expected: silent" in their session context
-   - They MUST use reply tool to send ANY user-facing messages back
-   - The reply makes their session visible and navigable to the requester
-   - They should use reply FIRST if they need user interaction (don't wait in their session)
-   - The reply does NOT trigger your LLM - message just appears for you to see
-   
-   TWO SUB-MODES:
-   
-   a) REPLY TO ME (reply_to: your_session_id)
-      - Provide YOUR OWN session ID (check your session context for Session ID)
-      - Results come back to you
-      - Example: delegate({ agent: "BA", prompt: "...", reply_to: "ses_project_owner" })
-   
-   b) FORWARD CHAIN (reply_to: upstream_session_id)
-      - Provide a DIFFERENT session ID (e.g., who delegated to you)
-      - Results skip you and go to the specified session
-      - Use when: you're forwarding a delegation and don't need to see the reply
-      - Check your session context for "Reply to session ID" to get the upstream session
-      - Example: delegate({ agent: "BA", prompt: "...", reply_to: "ses_pandora" })
+2. ASYNC WITH RETURN PATH (with reply_to)
+   - You do NOT block. The delegated agent uses reply to send messages back.
+   - The reply is USER-VISIBLE in the reply_to session with navigation back to the
+     delegated session.
+   - Use for ALL other cases — user-facing work, interactive tasks, multi-step work.
+   - The delegated agent will see "Reply expected: silent" in their session context
+     and MUST use reply for any user-facing message.
 
 ─────────────────────────────────────────
-FOR MIDDLE AGENTS (forwarding delegations)
+WRITING THE DELEGATION PROMPT
 ─────────────────────────────────────────
 
-If you receive a task and need to delegate it to another agent:
+Delegation prompts must be minimal and role-respecting:
 
-OPTION 1: You want the reply to come back to YOU
-- Use reply_to with YOUR session ID
-- You will see the reply and can act on it
-- Example: delegate({ agent: "BA", prompt: "...", reply_to: "ses_project_owner" })
+- Pass the request and any essential context.
+- Do NOT tell the receiving specialist how to perform their specialty.
+- Do NOT add step-by-step instructions for how they should do their job.
+- Do NOT ask clarifying questions on behalf of the receiving agent.
+- Let the receiving agent decide how to perform their role.
 
-OPTION 2: You want the reply to go to the ORIGINAL REQUESTER
-- Use reply_to with the UPSTREAM session ID
-- Check your session context for "Reply to session ID: ses_xxx"
-- Pass that session ID in reply_to
-- The reply skips you and goes directly to the original requester
-- Example: delegate({ agent: "BA", prompt: "...", reply_to: "ses_pandora" })
+GOOD:
+  "The user wants to build a calculator app. Please engage with the user to gather requirements."
 
-IMPORTANT: If your session shows "Reply expected: silent", you are in a chain.
-You can either handle the reply yourself (use your session ID) or forward it (use the upstream session ID).
-   
-─────────────────────────────────────────
-DELEGATION PATTERNS
-─────────────────────────────────────────
+BAD:
+  "The user wants a calculator app. Please gather detailed requirements. Ask one question at a
+   time. Focus on calculator type, platform, features, UI, and technical constraints."
+  (The BA knows how to gather requirements — do not instruct them on their own method.)
 
-FORWARDING DELEGATION (common pattern):
-When you receive a task but another agent should handle it:
-- Keep the prompt minimal - forward what was asked, nothing more
-- Do NOT add your interpretation, suggestions, or augmentation
-- Do NOT ask clarifying questions on behalf of the receiving agent
-- Let the receiving agent decide what they need
+GOOD (reply_to routing):
+  Project Owner receives a task from Pandora (reply_to: ses_pandora).
+  Project Owner delegates to BA and forwards the upstream return path:
+  delegate({ agent: "BA", prompt: "...", reply_to: "ses_pandora" })
+  → BA surfaces replies directly into Pandora's conversation.
 
-Example:
-User asks Pandora: "Build a calculator app"
-Pandora → Project Owner: "User wants to build a calculator app"
-Project Owner → BA: "User wants to build a calculator app. Can you engage with the user to gather requirements?"
-
-NOT this:
-Project Owner → BA: "User wants a calculator app with basic operations, scientific functions, and a modern UI. Please gather detailed requirements including..."
+BAD (reply_to routing):
+  Project Owner replaces the upstream reply_to with their own session:
+  delegate({ agent: "BA", prompt: "...", reply_to: "ses_project_owner" })
+  → BA replies to Project Owner instead of the original visible conversation.
+  → The requester cannot see the BA's questions or results without Project Owner relaying them.
 
 ─────────────────────────────────────────
 SESSION TYPES
 ─────────────────────────────────────────
 
-worker   — short-lived, one task, auto-closes when done (max 500 messages)
-scope    — project-anchored, preserves context, auto-archives when done
-role     — persistent ongoing session for a specific agent role (BA, Architect, etc.)
+worker     — short-lived, one task, auto-closes when done (max 500 messages)
+scope      — project-anchored, preserves context, auto-archives when done
+role       — persistent ongoing session for a specific agent role (BA, Architect, etc.)
 scratchpad — throwaway, auto-deletes after 6h inactivity (max 100 messages)
 
 ─────────────────────────────────────────
@@ -108,8 +109,11 @@ RULES
 ─────────────────────────────────────────
 
 - Always provide a title when creating a new session.
-- After fire-and-forget (wait: false), your turn is complete. Do not poll or resend.
+- After async delegation (reply_to provided), your turn is complete. Do not poll or resend.
 - Do not delegate to your own session.
-- reply_to is for silent reply only. If you want the origin LLM triggered, the receiving
-  agent must call delegate back — you cannot force this from the calling side.
+- Delegation is task transfer AND return-path choice. Both decisions matter.
+- When forwarding a task, forward the upstream reply_to by default.
+  Only override it with your own session ID if you need the result for your next step.
+- reply_to delivers a silent message. To trigger the recipient's LLM, they must call
+  delegate back — you cannot force this from the calling side.
 - Each agent only delegates to agents it knows about. Do not invent agent names.
