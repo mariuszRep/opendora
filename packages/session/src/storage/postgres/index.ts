@@ -55,17 +55,19 @@ const MIGRATION_SQL = `
   ALTER TABLE sessions ADD COLUMN IF NOT EXISTS filesystem_config JSONB;
 
   CREATE TABLE IF NOT EXISTS messages (
-    id          TEXT    PRIMARY KEY,
-    session_id  TEXT    NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
-    kind        TEXT    NOT NULL,
-    sender      JSONB   NOT NULL,
-    parent      JSONB,
-    parts       JSONB   NOT NULL,
-    provenance  TEXT,
-    token_count BIGINT,
-    created_at  BIGINT  NOT NULL
+    id                TEXT    PRIMARY KEY,
+    session_id        TEXT    NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    kind              TEXT    NOT NULL,
+    sender            JSONB   NOT NULL,
+    parent            JSONB,
+    parts             JSONB   NOT NULL,
+    provenance        TEXT,
+    token_count       BIGINT,
+    created_at        BIGINT  NOT NULL,
+    parent_message_id TEXT
   );
   CREATE INDEX IF NOT EXISTS messages_session_idx ON messages(session_id);
+  ALTER TABLE messages ADD COLUMN IF NOT EXISTS parent_message_id TEXT;
 `
 
 // ─── Row → domain mappers ────────────────────────────────────────────────────

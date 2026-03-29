@@ -108,7 +108,7 @@ export function useOpendora(): UseOpendoraResult {
   const [fallbackActiveSlots, setFallbackActiveSlots] = useState<Record<string, { providerID: string; modelID: string }>>({})
   const [modelFilters, setModelFilters] = useState<Record<string, "all" | "free" | "none">>({})
   const [allAgents, setAllAgents] = useState<(Agent & { _id: string })[]>([])
-  const [selectedAgent, setSelectedAgent] = useState<string>("build")
+  const [selectedAgent, setSelectedAgent] = useState<string>("")
   const [isChatCentered, setIsChatCentered] = useState(false)
   const [activeSessions, setActiveSessions] = useState<Set<string>>(new Set())
   const [defaultAgentId, setDefaultAgentId] = useState<string | null>(() => getStoredDefaultAgent())
@@ -126,15 +126,6 @@ export function useOpendora(): UseOpendoraResult {
   // Per-session message cache: serve stale-while-revalidate on session switch
   const messageCacheRef = useRef<Map<string, MessageWithParts[]>>(new Map())
 
-  const buildDashboardUrl = useCallback((sessionID?: string | null, messageID?: string | null) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (sessionID) params.set("session", sessionID)
-    else params.delete("session")
-    if (messageID) params.set("message", messageID)
-    else params.delete("message")
-    const query = params.toString()
-    return query ? `${pathname}?${query}` : pathname
-  }, [pathname, searchParams])
 
   const getAgentId = useCallback((agent: Agent & { id?: string }) => agent.id ?? agent.name, [])
 
@@ -246,7 +237,7 @@ export function useOpendora(): UseOpendoraResult {
         // Navigate to the requested session first; otherwise fall back to the default agent's main session.
         const storedDefault = getStoredDefaultAgent()
         const targetAgentId = requestedSession?.agentID
-          ?? ((storedDefault && agentsWithId.some((a) => a._id === storedDefault))
+          ?? ((storedDefault && visibleAgents.some((a) => a._id === storedDefault))
             ? storedDefault
             : visibleAgents[0]?._id ?? null)
         if (targetAgentId) {
@@ -275,6 +266,7 @@ export function useOpendora(): UseOpendoraResult {
         )
       } catch (err) {
         if (cancelled) return
+        console.error("[init] bootstrap failed", err)
         setError(err instanceof Error ? err.message : String(err))
       }
     }
@@ -294,24 +286,27 @@ export function useOpendora(): UseOpendoraResult {
 
   // Load messages when session changes (stale-while-revalidate via cache)
   useEffect(() => {
+    console.log("[messages] effect fired, selectedSessionId=", selectedSessionId)
     if (!selectedSessionId) {
       setMessages([])
       return
     }
     const cached = messageCacheRef.current.get(selectedSessionId)
     if (cached) {
+      console.log("[messages] using cache, count=", cached.length)
       setMessages(cached)
     } else {
       setMessages([])
     }
     let cancelled = false
     opendora.session.messages(selectedSessionId).then((msgs) => {
+      console.log("[messages] fetch done, count=", msgs.length, "cancelled=", cancelled)
       if (!cancelled) {
         messageCacheRef.current.set(selectedSessionId, msgs)
         setMessages(msgs)
       }
-    }).catch(() => { })
-    return () => { cancelled = true }
+    }).catch((err) => { console.error("[messages] fetch failed", selectedSessionId, err) })
+    return () => { console.log("[messages] cleanup, cancelled for", selectedSessionId); cancelled = true }
   }, [selectedSessionId])
 
   useEffect(() => {
@@ -332,14 +327,15 @@ export function useOpendora(): UseOpendoraResult {
 
   useEffect(() => {
     if (!selectedSessionId) return
+    if (pathname !== "/dashboard") return
     if (suppressUrlSyncRef.current) {
       suppressUrlSyncRef.current = false
       return
     }
     const requestedSessionID = searchParams.get("session")
     if (requestedSessionID === selectedSessionId) return
-    router.replace(buildDashboardUrl(selectedSessionId, null), { scroll: false })
-  }, [selectedSessionId, searchParams, router, buildDashboardUrl])
+    router.replace(`/dashboard?session=${selectedSessionId}`, { scroll: false })
+  }, [selectedSessionId, searchParams, pathname, router])
 
   // SSE events
   useEffect(() => {
@@ -498,20 +494,20 @@ export function useOpendora(): UseOpendoraResult {
     if (selectedSessionRef.current?.id) {
       messageCacheRef.current.set(selectedSessionRef.current.id, messagesRef.current)
     }
+    // Update ref immediately so the URL sync effect doesn't fire an extra router.replace
+    const session = sessionsRef.current.find((s) => s.id === id) ?? null
+    selectedSessionRef.current = session
     setSelectedSessionId(id)
     setStatus("ready")
     setError(null)
-    router.push(buildDashboardUrl(id, null), { scroll: false })
-    // Sync the selected agent to match the session's assigned agent
-    setSessions((prev) => {
-      const session = prev.find((s) => s.id === id)
-      if (session?.agentID) {
-        setSelectedAgent(session.agentID)
-      }
-      rememberSessionForAgent(session)
-      return prev
-    })
-  }, [buildDashboardUrl, rememberSessionForAgent, router])
+    if (session?.agentID) setSelectedAgent(session.agentID)
+    rememberSessionForAgent(session)
+    // Only navigate to /dashboard when not already there; the URL sync effect
+    // handles updating the ?session= param when already on /dashboard.
+    if (pathname !== "/dashboard") {
+      router.push(`/dashboard?session=${id}`, { scroll: false })
+    }
+  }, [rememberSessionForAgent, router, pathname])
 
   const createSession = useCallback(async (sessionType?: SessionType): Promise<string> => {
     try {
@@ -525,7 +521,7 @@ export function useOpendora(): UseOpendoraResult {
         return [session, ...prev]
       })
       setSelectedSessionId(session.id)
-      router.push(buildDashboardUrl(session.id, null), { scroll: false })
+      router.push(`/dashboard?session=${session.id}`, { scroll: false })
       // Update ref immediately to avoid race condition
       selectedSessionRef.current = session
       setMessages([])
@@ -536,7 +532,7 @@ export function useOpendora(): UseOpendoraResult {
       setError(err instanceof Error ? err.message : String(err))
       throw err
     }
-  }, [selectedAgent, router, buildDashboardUrl])
+  }, [selectedAgent, router])
 
   const sendMessage = useCallback(
     async (text: string, options?: { model?: { providerID: string; modelID: string }; agent?: string }) => {
@@ -588,9 +584,12 @@ export function useOpendora(): UseOpendoraResult {
     await opendora.agent.remove(id)
     // Optimistically remove from local list — match by _id slug
     setAllAgents((prev) => prev.filter((a) => a._id !== id))
-    setAgents((prev) => prev.filter((a) => a._id !== id))
-    // If the deleted agent was selected, fall back to "build"
-    setSelectedAgent((prev) => (prev === id ? "build" : prev))
+    setAgents((prev) => {
+      const remaining = prev.filter((a) => a._id !== id)
+      // If the deleted agent was selected, fall back to the first remaining visible agent
+      setSelectedAgent((current) => current === id ? (remaining[0]?._id ?? "") : current)
+      return remaining
+    })
   }, [])
 
   const getAgentPersona = useCallback((id: string): Promise<string> => {
@@ -636,13 +635,13 @@ export function useOpendora(): UseOpendoraResult {
           setSelectedSessionId(sessionID)
           // Defer router navigation to prevent setState during render
           setTimeout(() => {
-            router.push(buildDashboardUrl(sessionID, null), { scroll: false })
+            router.push(`/dashboard?session=${sessionID}`, { scroll: false })
           }, 0)
         }
       }
       return prev
     })
-  }, [router, buildDashboardUrl])
+  }, [router])
 
   const selectAgent = useCallback((agentId: string) => {
     // Save current session messages to cache before switching away
@@ -665,14 +664,14 @@ export function useOpendora(): UseOpendoraResult {
 
     if (session?.id) {
       setSelectedSessionId(session.id)
-      router.replace(buildDashboardUrl(session.id, null), { scroll: false })
+      router.replace(`/dashboard?session=${session.id}`, { scroll: false })
       selectedSessionRef.current = session
       rememberSessionForAgent(session)
     } else {
       setSelectedSessionId(null)
       selectedSessionRef.current = null
     }
-  }, [buildDashboardUrl, rememberSessionForAgent, router, sortSessionsForAgent])
+  }, [rememberSessionForAgent, router, sortSessionsForAgent])
 
   const setDefaultAgent = useCallback((agentId: string) => {
     storeDefaultAgent(agentId)

@@ -45,15 +45,16 @@ const MIGRATION = `
   -- SQLite does not support IF NOT EXISTS for ADD COLUMN, so this is handled below.
 
   CREATE TABLE IF NOT EXISTS messages (
-    id          TEXT    PRIMARY KEY,
-    session_id  TEXT    NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
-    kind        TEXT    NOT NULL,
-    sender      TEXT    NOT NULL,
-    parent      TEXT,
-    parts       TEXT    NOT NULL,
-    provenance  TEXT,
-    token_count INTEGER,
-    created_at  INTEGER NOT NULL
+    id                TEXT    PRIMARY KEY,
+    session_id        TEXT    NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    kind              TEXT    NOT NULL,
+    sender            TEXT    NOT NULL,
+    parent            TEXT,
+    parts             TEXT    NOT NULL,
+    provenance        TEXT,
+    token_count       INTEGER,
+    created_at        INTEGER NOT NULL,
+    parent_message_id TEXT
   );
   CREATE INDEX IF NOT EXISTS messages_session_idx ON messages(session_id);
 `
@@ -114,9 +115,14 @@ export class SqliteAdapter implements StorageAdapter {
     client.pragma("foreign_keys = ON")
     client.exec(MIGRATION)
     // Add filesystem_config column to existing DBs (SQLite doesn't support IF NOT EXISTS on ADD COLUMN)
-    const cols = client.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>
-    if (!cols.some((c) => c.name === "filesystem_config")) {
+    const sessionCols = client.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>
+    if (!sessionCols.some((c) => c.name === "filesystem_config")) {
       client.exec("ALTER TABLE sessions ADD COLUMN filesystem_config TEXT")
+    }
+    // Add parent_message_id column to existing messages table
+    const messageCols = client.prepare("PRAGMA table_info(messages)").all() as Array<{ name: string }>
+    if (!messageCols.some((c) => c.name === "parent_message_id")) {
+      client.exec("ALTER TABLE messages ADD COLUMN parent_message_id TEXT")
     }
     this.db = drizzle(client, { schema })
   }

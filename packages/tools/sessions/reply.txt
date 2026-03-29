@@ -2,17 +2,21 @@ Post a message silently into another session. This does NOT trigger the LLM ther
 The message appears in that session and is VISIBLE to the user or agent there.
 
 reply is the mechanism that fulfills the return-path contract created by reply_to.
-When a delegating agent sets reply_to, they are declaring where results and questions
-must surface. reply is how you honor that contract.
+When a delegating agent sets reply_to, they established a binding contract declaring
+where results and questions must surface. reply is how you honor that contract.
 
 ─────────────────────────────────────────
-HARD RULE
+HARD RULE — BINDING CONTRACT
 ─────────────────────────────────────────
 
-If you are working on a delegated task and reply_to was provided (your session context
-shows "Reply expected: silent"), any user-facing message about that task MUST use reply.
+If your session context shows "Reply expected: silent" and "Reply to session ID: ses_xxx",
+a return-path contract exists. You MUST use reply for ANY user-facing message.
 
-This is unconditional. There are no exceptions.
+This is unconditional. There are no exceptions. No workarounds.
+
+The upstream agent (or user) is expecting your messages to appear in session ses_xxx.
+If you do not use reply, they will never see your work. Your session is invisible to
+them until you surface yourself with reply.
 
 User-facing messages include:
 - status updates and progress reports
@@ -75,13 +79,21 @@ The system resolves the reply target automatically from your session context:
 
 You do not need to specify a session. Just call reply with your message.
 
-Chain example:
+Chain example (return path preserved correctly):
 - Pandora delegates to Project Owner with reply_to=ses_pandora
   → Project Owner gets replyToSessionID = ses_pandora
 - Project Owner delegates to BA and forwards: reply_to=ses_pandora
   → BA gets replyToSessionID = ses_pandora
 - BA calls reply → message surfaces in Pandora's session
-- Requester sees BA's message in the original visible conversation
+- Pandora sees BA's message in the original visible conversation
+✓ Contract honored: BA's work is visible to the original requester
+
+What happens if the contract is violated:
+- If Project Owner drops reply_to when delegating to BA:
+  → BA has no replyToSessionID
+  → BA cannot use reply (no target)
+  → BA's work is invisible to Pandora
+  ✗ Contract broken: Pandora never sees BA's questions or results
 
 Parameters:
 - message: the text to post

@@ -84,6 +84,37 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
     const replyToSessionID: string | undefined = params.reply_to
     const wait = !replyToSessionID  // synchronous if no reply_to specified
     
+    // ── GUARDRAIL: Check for return-path contract violations ──
+    const currentSession = await sessionSvc.get(ctx.sessionID)
+    const upstreamReturnPath = currentSession?.replyToSessionID
+    
+    if (upstreamReturnPath && !replyToSessionID && !wait) {
+      // Agent has an upstream return path but is delegating async without preserving it
+      console.warn(
+        `[DELEGATE] ⚠️  RETURN-PATH CONTRACT VIOLATION DETECTED\n` +
+        `  Current session: ${ctx.sessionID}\n` +
+        `  Upstream return path exists: ${upstreamReturnPath}\n` +
+        `  Delegating to: ${params.agent}\n` +
+        `  Problem: reply_to was NOT provided - downstream agent will be orphaned\n` +
+        `  Fix: Add reply_to: "${upstreamReturnPath}" to preserve the return path\n` +
+        `  See delegate.txt "CHOOSING reply_to — THE ROUTING CONTRACT" for details`
+      )
+    }
+    
+    if (upstreamReturnPath && replyToSessionID && replyToSessionID !== upstreamReturnPath && replyToSessionID === ctx.sessionID) {
+      // Agent is intercepting the return path (routing to self instead of upstream)
+      console.warn(
+        `[DELEGATE] ⚠️  RETURN-PATH INTERCEPTION DETECTED\n` +
+        `  Current session: ${ctx.sessionID}\n` +
+        `  Upstream return path: ${upstreamReturnPath}\n` +
+        `  Delegating to: ${params.agent}\n` +
+        `  reply_to provided: ${replyToSessionID} (your own session)\n` +
+        `  Warning: You are intercepting the return path instead of forwarding it\n` +
+        `  This breaks visibility unless you genuinely need the result back\n` +
+        `  If you are only forwarding work, use reply_to: "${upstreamReturnPath}" instead`
+      )
+    }
+    
     console.log(`[DELEGATE] reply_to=${replyToSessionID}, wait=${wait}, noWait=${!wait}`)
 
     let targetSession: any

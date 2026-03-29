@@ -534,6 +534,7 @@ export const Chatbot = () => {
     }
   }, [])
 
+  console.log("[chatbot] render", { selectedSession: selectedSession?.id, messages: messages.length, status })
   return (
     <div className="relative flex size-full flex-col divide-y overflow-hidden">
       {error && (

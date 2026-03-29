@@ -150,7 +150,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     >
                       <SidebarMenuButton
                         isActive={isActive}
-                        onClick={() => { selectAgent(agent._id); router.push("/dashboard") }}
+                        onClick={() => selectAgent(agent._id)}
                         tooltip={agent.description ?? agent.name}
                         className={cn(
                           "pr-2 group-has-data-[sidebar=menu-action]/menu-item:pr-2",
@@ -310,7 +310,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     >
                       <SidebarMenuButton
                         isActive={isActive}
-                        onClick={() => { selectSession(session.id); router.push("/dashboard") }}
+                        onClick={() => selectSession(session.id)}
                         tooltip={`${formatSessionTitle(session)}${isMain ? " (main)" : ""}${isWorking ? " - active" : ""}`}
                         className={cn(
                           "pr-2 group-has-data-[sidebar=menu-action]/menu-item:pr-2",

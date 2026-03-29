@@ -23,22 +23,35 @@ Before calling delegate, reason in this order:
 CHOOSING reply_to — THE ROUTING CONTRACT
 ─────────────────────────────────────────
 
-reply_to decides where user-facing results and questions will surface.
-Choosing reply_to is part of the delegation decision, not an afterthought.
+reply_to establishes where user-facing results and questions will surface.
+This is a binding contract that must be preserved through delegation chains.
 
-DEFAULT — forward the upstream return path:
-- If you received this task with a reply_to in your session context, and you are
-  only forwarding it to a better-suited agent, pass that same upstream session ID
-  as reply_to.
-- The downstream agent will surface directly into the visible conversation that
-  originally requested the work.
-- Check your session context for "Reply to session ID: ses_xxx" — that is the value to forward.
+CRITICAL RULE — PRESERVE THE UPSTREAM RETURN PATH:
 
-EXCEPTION — route to yourself:
-- Only set reply_to to your own session ID if you genuinely need the result back
-  before you can make your next decision.
-- Do not route to yourself by default. Routing results through yourself when you
-  do not need them adds unnecessary hops and breaks visibility.
+If your session context shows "Reply to session ID: ses_xxx", that is the UPSTREAM
+RETURN PATH. You have exactly TWO valid choices:
+
+1. RESPOND DIRECTLY to that upstream session using the reply tool
+2. DELEGATE FURTHER while PRESERVING that same reply_to value
+
+You MUST NOT:
+- Drop the reply_to parameter when delegating (this orphans the downstream agent)
+- Replace it with your own session ID unless you meet the exception below
+- Assume the downstream agent will figure out where to reply
+
+When forwarding work to a better-suited agent:
+✓ CORRECT:   delegate({ agent: "X", prompt: "...", reply_to: "ses_upstream" })
+✗ WRONG:     delegate({ agent: "X", prompt: "..." })  // drops return path
+✗ WRONG:     delegate({ agent: "X", prompt: "...", reply_to: "ses_your_session" })  // breaks visibility
+
+EXCEPTION — Intercept the return path (rare):
+Only set reply_to to YOUR OWN session ID if ALL of these are true:
+- You need the downstream result back before you can proceed
+- You will process that result and make a decision based on it
+- You will then send your own reply to the upstream session
+
+If you are only coordinating or forwarding, you do NOT need the result back.
+Preserve the upstream return path so the specialist can surface directly.
 
 TWO MODES controlled by whether reply_to is provided:
 
@@ -75,17 +88,31 @@ BAD:
    time. Focus on calculator type, platform, features, UI, and technical constraints."
   (The BA knows how to gather requirements — do not instruct them on their own method.)
 
-GOOD (reply_to routing):
-  Project Owner receives a task from Pandora (reply_to: ses_pandora).
-  Project Owner delegates to BA and forwards the upstream return path:
-  delegate({ agent: "BA", prompt: "...", reply_to: "ses_pandora" })
-  → BA surfaces replies directly into Pandora's conversation.
+EXAMPLE — Preserving the return path (CORRECT):
+  Pandora delegates to Project Owner with reply_to: ses_pandora
+  → Project Owner's session context shows: "Reply to session ID: ses_pandora"
+  → Project Owner determines BA is better suited for requirements gathering
+  → Project Owner delegates: delegate({ agent: "BA", prompt: "...", reply_to: "ses_pandora" })
+  → BA's session context shows: "Reply to session ID: ses_pandora"
+  → BA uses reply tool → message appears in Pandora's session
+  → Pandora sees BA's questions and can respond directly
+  ✓ Return path preserved through the chain: Pandora → Project Owner → BA → Pandora
 
-BAD (reply_to routing):
-  Project Owner replaces the upstream reply_to with their own session:
-  delegate({ agent: "BA", prompt: "...", reply_to: "ses_project_owner" })
-  → BA replies to Project Owner instead of the original visible conversation.
-  → The requester cannot see the BA's questions or results without Project Owner relaying them.
+EXAMPLE — Dropping the return path (WRONG):
+  Pandora delegates to Project Owner with reply_to: ses_pandora
+  → Project Owner delegates: delegate({ agent: "BA", prompt: "..." })  // NO reply_to!
+  → BA's session has no replyToSessionID set
+  → BA cannot use reply tool (no target)
+  → BA's work is invisible to Pandora
+  ✗ CONTRACT VIOLATION: Upstream return path was dropped
+
+EXAMPLE — Intercepting the return path (WRONG unless exception applies):
+  Pandora delegates to Project Owner with reply_to: ses_pandora
+  → Project Owner delegates: delegate({ agent: "BA", prompt: "...", reply_to: "ses_project_owner" })
+  → BA replies to Project Owner's session (not visible to Pandora)
+  → Project Owner must manually relay everything to Pandora
+  → Pandora cannot interact directly with BA
+  ✗ CONTRACT VIOLATION: Return path was replaced, breaking visibility
 
 ─────────────────────────────────────────
 SESSION TYPES
@@ -111,9 +138,15 @@ RULES
 - Always provide a title when creating a new session.
 - After async delegation (reply_to provided), your turn is complete. Do not poll or resend.
 - Do not delegate to your own session.
-- Delegation is task transfer AND return-path choice. Both decisions matter.
-- When forwarding a task, forward the upstream reply_to by default.
-  Only override it with your own session ID if you need the result for your next step.
+- Each agent only delegates to agents it knows about. Do not invent agent names.
+
+RETURN-PATH CONTRACT (CRITICAL):
+- If your session context shows "Reply to session ID: ses_xxx", you MUST either:
+  1. Use reply to respond to that session, OR
+  2. Pass that same ses_xxx as reply_to when delegating further
+- Dropping reply_to during forwarding is a CONTRACT VIOLATION.
+- Replacing reply_to with your own session breaks visibility and is WRONG unless you
+  genuinely need the result back to make your own next decision.
+- When in doubt: preserve and forward the upstream return path.
 - reply_to delivers a silent message. To trigger the recipient's LLM, they must call
   delegate back — you cannot force this from the calling side.
-- Each agent only delegates to agents it knows about. Do not invent agent names.
