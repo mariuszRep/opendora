@@ -20,6 +20,9 @@
         "Minds",
         "Project Owner"
       ]
+    },
+    "reply": {
+      "stopAfterReply": true
     }
   },
   "enableInjection": true

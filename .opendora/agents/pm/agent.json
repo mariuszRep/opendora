@@ -1,24 +1,27 @@
 {
   "name": "Project Manager",
-  "description": "Project Manager agent specialized in orchestrating end-to-end feature implementation through coordinated sub-sessions",
+  "description": "Project Manager agent specialized in orchestrating project initiation and feature delivery through coordinated specialist sessions",
   "mode": "worker",
   "model": {
     "modelID": "minimax-m2.5",
     "providerID": "fallback"
   },
   "temperature": 0.7,
-  "steps": 50,
+  "steps": 60,
   "color": "violet",
   "tools": [
-    "skill",
     "session_search",
     "session_tree",
+    "session_get",
     "todowrite",
     "skill_discover",
     "skill_load",
-    "delegate"
+    "delegate",
+    "reply"
   ],
   "skills": [
+    "feature-workflow",
+    "project-initiation",
     "pm-feature-workflow"
   ]
 }

@@ -1039,7 +1039,7 @@ export namespace Session {
         },
       }
 
-      await updateMessage(msg)
+      await updateMessage(msg, input.parentMessageID)
       await updatePart({
         type: "text",
         id: Identifier.ascending("part"),

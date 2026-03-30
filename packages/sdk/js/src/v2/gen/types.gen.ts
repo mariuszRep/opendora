@@ -267,6 +267,7 @@ export type TextPart = {
   type: "text"
   text: string
   synthetic?: boolean
+  hidden?: boolean
   ignored?: boolean
   time?: {
     start: number

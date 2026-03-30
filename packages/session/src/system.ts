@@ -41,15 +41,6 @@ export namespace SystemPrompt {
         if (session.parentSessionID) {
           sessionContext.push(`  Parent session: ${session.parentSessionID}`)
         }
-        if (session.replyToSessionID) {
-          sessionContext.push(`  Reply expected: silent`)
-          sessionContext.push(`  Reply to session ID: ${session.replyToSessionID}`)
-          sessionContext.push(`  When your task is complete, use the reply tool (not delegate) to post your result.`)
-          sessionContext.push(`  reply posts silently — it does NOT trigger the LLM in the target session.`)
-          sessionContext.push(`  The caller will see your message and decide what to do next.`)
-        } else if (session.parentSessionID) {
-          sessionContext.push(`  When done, use the reply tool to post your result back to the parent session.`)
-        }
         sessionContext.push(`</session>`)
       }
     }

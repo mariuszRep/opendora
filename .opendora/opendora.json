@@ -6,5 +6,5 @@
     "opencode": "free",
     "openrouter": "free"
   },
-  "model": "fallback/trinity-large"
+  "model": "fallback/minimax-m2.5"
 }

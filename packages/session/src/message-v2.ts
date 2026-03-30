@@ -142,6 +142,7 @@ export namespace MessageV2 {
     type: z.literal("text"),
     text: z.string(),
     synthetic: z.boolean().optional(),
+    hidden: z.boolean().optional(),
     ignored: z.boolean().optional(),
     time: z
       .object({

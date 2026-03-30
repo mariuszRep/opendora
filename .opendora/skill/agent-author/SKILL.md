@@ -7,6 +7,13 @@ description: Templates and guidance for writing high-quality agent personas, inj
 
 Use this skill when creating a new agent or doing a full rewrite of an existing one.
 
+## No-Regression Rule
+
+- Preserve important existing behavior unless the prompt explicitly requires changing it
+- Prefer additive edits over replacing or deleting established guidance
+- Before changing current behavior, identify what is changing, why it must change, and how it will be validated
+- Keep a visible comparison between the previous state and the proposed state so behavior drift is easy to spot
+
 ## Variables
 
 - `{{agent_id}}` — the agent's filesystem ID (e.g. `project-owner`)
@@ -69,6 +76,22 @@ The following agents are available for delegation:
 - Do not put personality or behaviour here — that's PERSONA
 - Do not hardcode agent names — use `{{delegate_agents}}` which is populated at runtime
 - Keep it short — injection is prepended to every message
+
+## Prompt Assembly Order
+
+When assembling or reviewing an agent prompt, preserve this order unless there is a strong, validated reason to change it:
+
+1. Base config
+2. Persona
+3. Skills
+4. Tools
+5. Injection
+
+**Ordering rules:**
+- Keep persona before skills and tools so identity, scope, and decision rules are established first
+- Keep skills before tools when skills are meant to shape workflow before raw capabilities are listed
+- Keep tools as explicit inventory, not hidden inside persona text
+- Keep injection last and runtime-only so current context does not overwrite core identity
 
 ---
 
@@ -136,15 +159,19 @@ Before saving any agent:
 - [ ] Steps budget is reasonable for the expected task complexity
 - [ ] Mode is correct: `primary` or `worker`
 - [ ] Description is one clear sentence explaining when to use this agent
+- [ ] Important existing behavior is preserved unless a deliberate change is documented
+- [ ] Any prompt-order change is intentional, justified, and validated
+- [ ] A representative task is used to validate the updated agent before treating the rewrite as final
 
 ---
 
 ## Steps
 
 1. Gather: what does this agent own? What decisions does it make? What tools will it call?
-2. Draft PERSONA.md using the template — focus on identity and capabilities
-3. Draft INJECTION.md if the agent needs runtime context (most workers don't)
-4. Set agent.json — start with minimal tools, correct mode and steps budget
-5. Run `agent_create` or `agent_update` with all three
-6. Test with a representative task — observe step count and tool usage
-7. Adjust steps budget and tools based on observed behaviour
+2. If the agent already exists, read the current state and list the behavior that must be preserved
+3. Draft PERSONA.md using the template — focus on identity and capabilities
+4. Draft INJECTION.md if the agent needs runtime context (most workers don't)
+5. Set agent.json — start with minimal tools, correct mode and steps budget
+6. Run `agent_create` or `agent_update` with all three
+7. Test with a representative task — observe step count and tool usage
+8. Adjust steps budget and tools based on observed behaviour

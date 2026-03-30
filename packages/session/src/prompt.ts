@@ -557,6 +557,12 @@ export namespace SessionPrompt {
           } satisfies MessageV2.TextPart)
         }
 
+        // Check if the tool result has stopAfterReply flag set
+        if (result?.metadata?.stopAfterReply === true) {
+          log.info("stopAfterReply detected, breaking loop", { agent: task.agent, tool: task.tool })
+          break
+        }
+
         continue
       }
 

@@ -11,6 +11,7 @@ export namespace Tool {
     config?: {
       toolConfig?: {
         delegate?: { allowedAgents?: string[] }
+        reply?: { stopAfterReply?: boolean }
       }
       filesystemConfig?: {
         enabledTools?: string[]

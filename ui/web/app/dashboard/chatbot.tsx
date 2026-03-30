@@ -68,7 +68,7 @@ import { usePushToTalk } from "@/hooks/use-push-to-talk"
 import { DelegateToolContent, isDelegateTool, getDelegateToolTitle } from "@/components/ai-elements/delegate-tool"
 import { TodoToolContent, isTodoTool, getTodoToolTitle } from "@/components/ai-elements/todo-tool"
 import { getAgentColor } from "@/lib/agent-colors"
-import { CheckIcon, CopyIcon, Link2Icon, Volume2Icon, VolumeXIcon } from "lucide-react"
+import { CheckIcon, CopyIcon, EyeIcon, EyeOffIcon, Link2Icon, Volume2Icon, VolumeXIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
@@ -83,7 +83,11 @@ const suggestions = [
 ]
 
 function getTextParts(parts: Part[]): TextPart[] {
-  return parts.filter((p): p is TextPart => p.type === "text")
+  return parts.filter((p): p is TextPart => p.type === "text" && !p.synthetic && !p.hidden)
+}
+
+function getHiddenParts(parts: Part[]): TextPart[] {
+  return parts.filter((p): p is TextPart => p.type === "text" && !!p.hidden)
 }
 
 function getReasoningPart(parts: Part[]): ReasoningPart | undefined {
@@ -219,6 +223,7 @@ export const Chatbot = () => {
   const [questionViewModes, setQuestionViewModes] = useState<Record<string, "code" | "view">>({})
   const [delegateViewModes, setDelegateViewModes] = useState<Record<string, "code" | "view">>({})
   const [todoViewModes, setTodoViewModes] = useState<Record<string, "code" | "view">>({})
+  const [expandedContractParts, setExpandedContractParts] = useState<Record<string, boolean>>({})
 
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -672,7 +677,25 @@ export const Chatbot = () => {
                                   )}
                                 </>
                               )}
+                              {getHiddenParts(parts).length > 0 && (
+                                <MessageAction
+                                  label="Contract"
+                                  onClick={() => setExpandedContractParts(prev => ({ ...prev, [info.id]: !prev[info.id] }))}
+                                  tooltip={expandedContractParts[info.id] ? "Hide delegation contract" : "Show delegation contract"}
+                                  variant="outline"
+                                >
+                                  {expandedContractParts[info.id]
+                                    ? <EyeOffIcon className="size-4" />
+                                    : <EyeIcon className="size-4" />
+                                  }
+                                </MessageAction>
+                              )}
                             </MessageActions>
+                            {expandedContractParts[info.id] && getHiddenParts(parts).length > 0 && (
+                              <div className="rounded border border-dashed bg-muted/30 px-3 py-2 font-mono text-xs text-muted-foreground whitespace-pre-wrap">
+                                {getHiddenParts(parts).map(p => p.text).join("\n")}
+                              </div>
+                            )}
                           </div>
                         </div>
                       ) : (

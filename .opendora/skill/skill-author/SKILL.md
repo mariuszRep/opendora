@@ -7,6 +7,13 @@ description: Guidance and templates for creating, rewriting, and improving reusa
 
 Use this skill when creating a new skill, rewriting an existing skill, or tightening a skill that is too vague, too procedural, or too brittle.
 
+## No-Regression Rule
+
+- Preserve important existing workflow and constraints unless the prompt explicitly calls for changing them
+- Prefer additive guidance over deleting established instructions
+- If a current behavior must change, identify the old behavior, the new behavior, and the validation needed before keeping the change
+- Treat the existing skill text as a baseline to compare against, not just a draft to overwrite
+
 ## Variables
 
 - `{{skill_name}}` - filesystem and registry name for the skill
@@ -100,6 +107,13 @@ Use this skill when [clear trigger condition].
 - Add stop conditions for missing inputs or already-correct baselines
 - Prevent known failure modes with concise rules
 
+### Preservation And Validation
+
+- Keep existing high-value rules unless they are redundant, incorrect, or explicitly replaced
+- When improving a skill, mark which parts are preserved and which parts change behavior
+- Favor focused additions over broad rewrites when the current skill already works
+- Validate changed behavior on at least one representative task before treating the new text as final
+
 ---
 
 ## Improvement Checklist
@@ -113,6 +127,8 @@ Before saving a skill:
 - [ ] Rules prevent likely failure patterns
 - [ ] The output or final report shape is clear when structure matters
 - [ ] The text is concise enough to be loaded repeatedly without waste
+- [ ] Important existing behavior has been preserved or deliberately replaced with justification
+- [ ] Any behavior change has a simple validation plan
 
 ---
 
@@ -131,8 +147,9 @@ When refining a skill over time:
 ## Steps
 
 1. Clarify whether you are creating, rewriting, or improving the skill
-2. Define the trigger, objective, variables, and expected output
-3. Draft or revise `SKILL.md` with the recommended structure
-4. Remove noise, redundant wording, and over-prescriptive instructions
-5. Verify the skill is reusable and focused
-6. If requested, pair the change with retrospective review and an improvement experiment
+2. If the skill already exists, read it first and list the behavior that must be preserved
+3. Define the trigger, objective, variables, and expected output
+4. Draft or revise `SKILL.md` with the recommended structure
+5. Remove noise, redundant wording, and over-prescriptive instructions
+6. Verify the skill is reusable, focused, and does not accidentally remove established constraints
+7. If requested, pair the change with retrospective review and an improvement experiment

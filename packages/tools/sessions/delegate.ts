@@ -198,12 +198,21 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
       )
     }
 
+    const promptParts = await resolvePromptParts(params.prompt)
+    if (replyToSessionID) {
+      promptParts.push({
+        type: "text",
+        text: `Return path: ${replyToSessionID}\nUse the reply tool for all messages.`,
+        hidden: true,
+      } as any)
+    }
+
     const result = await promptFn({
       sessionID: targetSession.id,
       ...(targetAgentName ? { agent: targetAgentName } : {}),
       noWait: !wait,
       parentMessageID: ctx.messageID,
-      parts: await resolvePromptParts(params.prompt),
+      parts: promptParts,
     })
 
     const text = result.parts.findLast((part: any) => part.type === "text")?.text ?? ""

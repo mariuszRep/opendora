@@ -7,6 +7,12 @@ description: Guidance and templates for designing or refining tools so they have
 
 Use this skill when defining a new tool, improving an existing tool contract, or tightening tool behavior so agents can use it reliably.
 
+## No-Regression Rule
+
+- Preserve important existing contract guarantees unless the prompt explicitly requires changing them
+- Prefer additive clarification over changing the meaning of an existing parameter or output shape
+- If a contract change is necessary, document the old behavior, the new behavior, and the validation or migration impact
+
 ## Variables
 
 - `{{tool_name}}` - tool identifier
@@ -101,6 +107,13 @@ Errors:
 - Design outputs so the next action is obvious
 - Prefer predictable, stable formats over cleverness
 
+### Contract Stability
+
+- Avoid changing existing parameter semantics unless there is a clear correctness or safety reason
+- Keep output shape stable when downstream agents may rely on it
+- Separate true contract changes from documentation improvements
+- Validate changed behavior with a concrete workflow before declaring the tool update complete
+
 ---
 
 ## Retrospective And Experiment Use
@@ -118,8 +131,9 @@ When improving a tool:
 ## Steps
 
 1. Define the tool's single responsibility
-2. Draft or review the contract: inputs, behavior, outputs, errors
-3. Remove ambiguity and unsafe defaults
-4. Ensure the tool is easy for agents to call correctly
-5. Verify the contract supports retrospective analysis and targeted experiments
-6. If requested, pair the change with a concrete test workflow
+2. If the tool already exists, read the current contract and list the guarantees that must be preserved
+3. Draft or review the contract: inputs, behavior, outputs, errors
+4. Remove ambiguity and unsafe defaults
+5. Ensure the tool is easy for agents to call correctly without breaking stable expectations
+6. Verify the contract supports retrospective analysis and targeted experiments
+7. If requested, pair the change with a concrete test workflow

@@ -20,6 +20,9 @@
         "Project Owner",
         "Project Manager"
       ]
+    },
+    "reply": {
+      "stopAfterReply": true
     }
   }
 }

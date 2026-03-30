@@ -73,9 +73,12 @@ export namespace LLM {
       }
     }
 
-    // Build delegate restriction notice
+    // Build delegate restriction notice — only shown when the agent actually has the delegate tool
     let delegateNotice = ""
-    const allowedAgentNames: string[] | undefined = input.agent.config?.toolConfig?.delegate?.allowedAgents
+    const hasDelegateTool = (input.agent.tools as string[] | undefined)?.includes("delegate")
+    const allowedAgentNames: string[] | undefined = hasDelegateTool
+      ? input.agent.config?.toolConfig?.delegate?.allowedAgents
+      : undefined
     if (allowedAgentNames && allowedAgentNames.length > 0) {
       const allAgents = await cfg.agent?.list?.() ?? []
       const entries = (allAgents as any[])

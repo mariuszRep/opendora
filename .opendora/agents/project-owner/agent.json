@@ -23,6 +23,9 @@
         "BA",
         "Project Manager"
       ]
+    },
+    "reply": {
+      "stopAfterReply": true
     }
   },
   "enableInjection": true,

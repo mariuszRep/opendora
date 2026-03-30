@@ -30,7 +30,9 @@
     "glob",
     "grep",
     "codesearch",
-    "apply_patch"
+    "apply_patch",
+    "webfetch",
+    "websearch"
   ],
   "skills": [
     "agent-experiment",

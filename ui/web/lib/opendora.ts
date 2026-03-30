@@ -77,6 +77,8 @@ export type TextPart = {
   messageID: string
   type: "text"
   text: string
+  synthetic?: boolean
+  hidden?: boolean
 }
 
 export type ReasoningPart = {
