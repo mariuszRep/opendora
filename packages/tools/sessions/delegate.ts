@@ -202,7 +202,11 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
     if (replyToSessionID) {
       promptParts.push({
         type: "text",
-        text: `Return path: ${replyToSessionID}\nUse the reply tool for all messages.`,
+        text: [
+          `Return path: ${replyToSessionID}`,
+          `When you complete this task, use the reply tool to send your results back to the requesting session.`,
+          `If the user engages with you directly in this session, respond to them here instead of using reply.`,
+        ].join("\n"),
         hidden: true,
       } as any)
     }

@@ -109,6 +109,7 @@ export default function AgentSettingsPage() {
   const [availableTools, setAvailableTools] = useState<string[]>([])
   const [expandedGroup, setExpandedGroup] = useState<"filesystem" | "shell" | "web" | "sessions" | "agents" | "skills" | "others" | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
+  const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
   const [fsAllowedPaths, setFsAllowedPaths] = useState<string[]>([])
   const [newPathInput, setNewPathInput] = useState("")
   const [persona, setPersona] = useState("")
@@ -175,6 +176,7 @@ export default function AgentSettingsPage() {
     setFallbackModel(agent.fallback_model ?? undefined)
     setSelectedTools(agent.tools ?? [])
     setDelegateAllowedAgents((agent as any).config?.toolConfig?.delegate?.allowedAgents ?? agent.toolConfig?.delegate?.allowedAgents ?? [])
+    setReplyStopAfterReply((agent as any).config?.toolConfig?.reply?.stopAfterReply ?? agent.toolConfig?.reply?.stopAfterReply ?? false)
     setFsAllowedPaths((agent as any).config?.filesystemConfig?.allowedPaths ?? (agent as any).filesystemConfig?.allowedPaths ?? [])
     setNewPathInput("")
     setEnableInjection((agent as any).enableInjection ?? false)
@@ -238,9 +240,16 @@ export default function AgentSettingsPage() {
         model,
         fallback_model: fallbackModel,
         tools: selectedTools.length > 0 ? selectedTools : undefined,
-        toolConfig: delegateAllowedAgents.length > 0
-          ? { delegate: { allowedAgents: delegateAllowedAgents } }
-          : undefined,
+        toolConfig: (() => {
+          const config: any = {}
+          if (delegateAllowedAgents.length > 0) {
+            config.delegate = { allowedAgents: delegateAllowedAgents }
+          }
+          if (selectedTools.includes("reply")) {
+            config.reply = { stopAfterReply: replyStopAfterReply }
+          }
+          return Object.keys(config).length > 0 ? config : undefined
+        })(),
         enableInjection: enableInjection || undefined,
         filesystemConfig: (() => {
           const fsSelectedTools = selectedTools.filter((id) => FILESYSTEM_TOOLS.has(id))
@@ -251,6 +260,9 @@ export default function AgentSettingsPage() {
           }
         })(),
       }
+      console.log('[DEBUG] Saving agent config:', JSON.stringify(config, null, 2))
+      console.log('[DEBUG] toolConfig:', config.toolConfig)
+      console.log('[DEBUG] replyStopAfterReply state:', replyStopAfterReply)
       await updateAgent(agentId, config, persona, enableInjection ? injection : undefined)
       router.push("/dashboard")
     } catch (err) {
@@ -696,6 +708,23 @@ export default function AgentSettingsPage() {
                               Clear allowed agents
                             </Button>
                           )}
+                        </div>
+                      )}
+
+                      {group === "sessions" && selectedTools.includes("reply") && (
+                        <div className="mt-3 border-t pt-3">
+                          <Label className="flex cursor-pointer items-center gap-2 font-normal">
+                            <Checkbox
+                              checked={replyStopAfterReply}
+                              onCheckedChange={(checked) => setReplyStopAfterReply(checked === true)}
+                            />
+                            <div>
+                              <p className="text-xs font-medium">Stop after reply</p>
+                              <p className="text-xs text-muted-foreground">
+                                Agent stops processing immediately after using the reply tool, waiting for user response.
+                              </p>
+                            </div>
+                          </Label>
                         </div>
                       )}
 

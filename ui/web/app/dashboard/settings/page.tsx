@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,11 +13,13 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { BotIcon, MessageSquareIcon, SettingsIcon, ChevronRightIcon, PlugIcon, Volume2Icon, CalendarClockIcon } from "lucide-react"
+import { useUserProfile } from "@/hooks/use-user-profile"
+import { BotIcon, MessageSquareIcon, SettingsIcon, ChevronRightIcon, PlugIcon, UserIcon, Volume2Icon, CalendarClockIcon } from "lucide-react"
 
 export default function SettingsPage() {
   const router = useRouter()
   const { agents, sessions, connectedProviders } = useOpendoraContext()
+  const { userName, setUserName } = useUserProfile()
 
   const settingsCards = [
     {
@@ -88,6 +92,26 @@ export default function SettingsPage() {
             <p className="text-muted-foreground text-lg">
               Manage your OpenDora configuration and preferences
             </p>
+          </div>
+
+          {/* Profile */}
+          <div className="mb-8 max-w-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <UserIcon className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">Profile</h2>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="user-name">Your name</Label>
+              <Input
+                id="user-name"
+                placeholder="e.g. Alex"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Agents will see <code className="font-mono">user: {userName || "your name"}</code> at the start of every message you send.
+              </p>
+            </div>
           </div>
 
           {/* Settings Cards */}

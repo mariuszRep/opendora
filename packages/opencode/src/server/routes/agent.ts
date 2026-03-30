@@ -25,6 +25,9 @@ const AgentConfigPatch = z.object({
     delegate: z.object({
       allowedAgents: z.array(z.string()).optional(),
     }).optional(),
+    reply: z.object({
+      stopAfterReply: z.boolean().optional(),
+    }).optional(),
   }).optional(),
   enableInjection: z.boolean().optional(),
   filesystemConfig: z.object({

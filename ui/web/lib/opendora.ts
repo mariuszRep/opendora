@@ -176,7 +176,10 @@ export type Agent = {
   model?: { modelID: string; providerID: string }
   fallback_model?: { modelID: string; providerID: string }
   tools?: string[]
-  toolConfig?: { delegate?: { allowedAgents?: string[] } }
+  toolConfig?: { 
+    delegate?: { allowedAgents?: string[] }
+    reply?: { stopAfterReply?: boolean }
+  }
   filesystemConfig?: {
     enabledTools?: string[]
     allowedPaths?: string[]
@@ -197,7 +200,10 @@ export type AgentConfig = {
   hidden?: boolean
   tools?: string[]
   skills?: string[]
-  toolConfig?: { delegate?: { allowedAgents?: string[] } }
+  toolConfig?: { 
+    delegate?: { allowedAgents?: string[] }
+    reply?: { stopAfterReply?: boolean }
+  }
   enableInjection?: boolean
   filesystemConfig?: {
     enabledTools?: string[]

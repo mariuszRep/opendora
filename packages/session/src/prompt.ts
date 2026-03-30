@@ -1131,6 +1131,17 @@ export namespace SessionPrompt {
         : undefined
     const variant = input.variant ?? (agent.variant && full?.variants?.[agent.variant] ? agent.variant : undefined)
 
+    // ── DELEGATION ATTRIBUTION ──
+    // If this message has a parentMessageID (cross-session delegation), look up the parent
+    // to get the delegating agent's ID and set from.kind='agent' so [agent:name] prefix appears
+    let from: MessageV2.Actor | undefined
+    if (input.parentMessageID) {
+      const parentMsg = await Session.getMessage(input.parentMessageID)
+      if (parentMsg && parentMsg.role === "assistant" && parentMsg.from) {
+        from = parentMsg.from
+      }
+    }
+
     const info: MessageV2.Info = {
       id: input.messageID ?? Identifier.ascending("message"),
       role: "user",
@@ -1138,6 +1149,7 @@ export namespace SessionPrompt {
       time: {
         created: Date.now(),
       },
+      ...(from ? { from } : {}),
       tools: input.tools,
       agent: agent.id,
       model,

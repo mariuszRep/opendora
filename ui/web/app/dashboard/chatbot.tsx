@@ -61,6 +61,7 @@ import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 
 import { QuestionTool } from "@/components/questions/question-tool"
 import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart } from "@/lib/opendora"
+import { useUserProfile } from "@/hooks/use-user-profile"
 import { useVoiceSettings, formatHotkey } from "@/hooks/use-voice-settings"
 import { useTextToSpeech } from "@/hooks/use-text-to-speech"
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder"
@@ -205,6 +206,7 @@ export const Chatbot = () => {
     sessions,
   } = useOpendoraContext()
 
+  const { userName } = useUserProfile()
   const { settings } = useVoiceSettings()
   const { speak, playingId, isLoading: isTtsLoading, isEnabled: isTtsEnabled, error: ttsError } = useTextToSpeech()
 
@@ -401,7 +403,7 @@ export const Chatbot = () => {
       const model = selectedModel
         ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
         : undefined
-      const content = message.text
+      const content = userName ? `user: ${userName}\n\n${message.text}` : message.text
       setText("")
       const doSend = () => sendMessage(content, { model, agent: selectedAgent })
       if (!selectedSession) {
@@ -410,7 +412,7 @@ export const Chatbot = () => {
         doSend()
       }
     },
-    [sendMessage, selectedModel, selectedAgent, selectedSession, createSession],
+    [sendMessage, selectedModel, selectedAgent, selectedSession, createSession, userName],
   )
 
   const handleSuggestionClick = useCallback(
@@ -470,8 +472,9 @@ export const Chatbot = () => {
         : undefined
       
       // We'll identify the next assistant message by its position
+      const attributed = userName ? `user: ${userName}\n\n${transcription}` : transcription
       const doSend = () => {
-        sendMessage(transcription, { model, agent: selectedAgent })
+        sendMessage(attributed, { model, agent: selectedAgent })
         // The next assistant message will be at position currentMessageCount + 1
         // We'll track this in the useEffect below
       }
@@ -482,7 +485,7 @@ export const Chatbot = () => {
         doSend()
       }
     }
-  }, [stopRecording, sendMessage, selectedModel, selectedAgent, selectedSession, createSession, messages.length])
+  }, [stopRecording, sendMessage, selectedModel, selectedAgent, selectedSession, createSession, messages.length, userName])
 
   // Set up push-to-talk
   usePushToTalk({
@@ -656,7 +659,11 @@ export const Chatbot = () => {
                             <MessageContent className="!ml-0">
                               {content ? <MessageResponse>{content}</MessageResponse> : null}
                             </MessageContent>
-                            <MessageActions className="mt-1 justify-start" data-message-actions>
+                            <MessageActions
+                              className="relative mt-1 justify-start"
+                              style={{ opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
+                              data-message-actions
+                            >
                               {msgParentSessionID && (
                                 <>
                                   <MessageAction
@@ -690,6 +697,9 @@ export const Chatbot = () => {
                                   }
                                 </MessageAction>
                               )}
+                              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground">
+                                user{userName ? `: ${userName}` : ""}
+                              </span>
                             </MessageActions>
                             {expandedContractParts[info.id] && getHiddenParts(parts).length > 0 && (
                               <div className="rounded border border-dashed bg-muted/30 px-3 py-2 font-mono text-xs text-muted-foreground whitespace-pre-wrap">
@@ -963,10 +973,10 @@ export const Chatbot = () => {
                             )}
                           </>
                         )}
-                        {(info.role === "assistant" && content) || hasLinkedParentMessage ? (
+                        {info.role === "assistant" ? (
                           <MessageActions
-                            className={cn("relative mt-1 justify-start transition-opacity", hasLinkedParentMessage ? "" : "pointer-events-none invisible opacity-0")}
-                            style={hasLinkedParentMessage ? undefined : { opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
+                            className="relative mt-1 justify-start"
+                            style={{ opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
                             data-message-actions
                           >
                             {content && (
@@ -996,11 +1006,14 @@ export const Chatbot = () => {
                                 )}
                               </MessageAction>
                             )}
-                            {isAssistantContribution && (assistantAuthor?.name ?? assistantAuthorId ?? assistantAgentId) ? (
-                              <AssistantContributionBadge
-                                agentName={assistantAuthor?.name ?? assistantAuthorId ?? assistantAgentId ?? ""}
-                              />
-                            ) : null}
+                            {(() => {
+                              const displayName = assistantAuthor?.name ?? assistantAgent?.name ?? assistantAuthorId ?? assistantAgentId
+                              return displayName ? (
+                                <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground">
+                                  agent: {displayName}
+                                </span>
+                              ) : null
+                            })()}
                             {info.role === "assistant" && selectedSession?.id && (
                               <MessageAction
                                 label="Link"
@@ -1020,26 +1033,6 @@ export const Chatbot = () => {
                                     msgParentMessageID ?? ""
                                   )}
                                   tooltip="Open originating tool call"
-                                  variant="outline"
-                                >
-                                  <Link2Icon className="size-4" />
-                                </MessageAction>
-                                {parentAgent && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {parentAgent.name}
-                                  </span>
-                                )}
-                              </>
-                            )}
-                            {info.role === "user" && hasLinkedParentMessage && msgParentSessionID && (
-                              <>
-                                <MessageAction
-                                  label="Source"
-                                  onClick={() => handleGoToMessage(
-                                    msgParentSessionID,
-                                    msgParentMessageID ?? ""
-                                  )}
-                                  tooltip="Back to delegation tool"
                                   variant="outline"
                                 >
                                   <Link2Icon className="size-4" />

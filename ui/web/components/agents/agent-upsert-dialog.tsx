@@ -115,6 +115,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [availableTools, setAvailableTools] = useState<string[]>([])
   const [expandedGroup, setExpandedGroup] = useState<"filesystem" | "shell" | "web" | "sessions" | "agents" | "skills" | "others" | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
+  const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
   const [fsAllowedPaths, setFsAllowedPaths] = useState<string[]>([])
   const [newPathInput, setNewPathInput] = useState("")
   const [persona, setPersona] = useState("")
@@ -147,6 +148,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setFallbackModel(modelToValue(a.fallback_model))
       setSelectedTools(a.tools ?? [])
       setDelegateAllowedAgents((a as any).config?.toolConfig?.delegate?.allowedAgents ?? a.toolConfig?.delegate?.allowedAgents ?? [])
+      setReplyStopAfterReply((a as any).config?.toolConfig?.reply?.stopAfterReply ?? a.toolConfig?.reply?.stopAfterReply ?? false)
       setPersona("")
       setFsAllowedPaths((a as any).config?.filesystemConfig?.allowedPaths ?? (a as any).filesystemConfig?.allowedPaths ?? [])
       setError(null)
@@ -163,6 +165,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setFallbackModel(NONE)
       setSelectedTools([])
       setDelegateAllowedAgents([])
+      setReplyStopAfterReply(false)
       setPersona("")
       setFsAllowedPaths([])
       setNewPathInput("")
@@ -219,9 +222,16 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
         model: valueToModel(model),
         fallback_model: valueToModel(fallbackModel),
         tools: selectedTools.length > 0 ? selectedTools : undefined,
-        toolConfig: delegateAllowedAgents.length > 0
-          ? { delegate: { allowedAgents: delegateAllowedAgents } }
-          : undefined,
+        toolConfig: (() => {
+          const config: any = {}
+          if (delegateAllowedAgents.length > 0) {
+            config.delegate = { allowedAgents: delegateAllowedAgents }
+          }
+          if (selectedTools.includes("reply")) {
+            config.reply = { stopAfterReply: replyStopAfterReply }
+          }
+          return Object.keys(config).length > 0 ? config : undefined
+        })(),
         filesystemConfig: (() => {
           const fsSelectedTools = selectedTools.filter((id) => FILESYSTEM_TOOLS.has(id))
           if (fsSelectedTools.length === 0 && fsAllowedPaths.length === 0) return undefined
@@ -599,6 +609,23 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                                 Clear allowed agents
                               </Button>
                             )}
+                          </div>
+                        )}
+
+                        {group === "sessions" && selectedTools.includes("reply") && (
+                          <div className="mt-3 border-t pt-3">
+                            <Label className="flex cursor-pointer items-center gap-2 font-normal">
+                              <Checkbox
+                                checked={replyStopAfterReply}
+                                onCheckedChange={(checked) => setReplyStopAfterReply(checked === true)}
+                              />
+                              <div>
+                                <p className="text-xs font-medium">Stop after reply</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Agent stops processing immediately after using the reply tool, waiting for user response.
+                                </p>
+                              </div>
+                            </Label>
                           </div>
                         )}
                       </CardContent>
