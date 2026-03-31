@@ -30,6 +30,10 @@ import { PrCommand } from "./cli/cmd/pr"
 import { SessionCommand } from "./cli/cmd/session"
 import { DbCommand } from "./cli/cmd/db"
 import { HelloCommand } from "./cli/cmd/hello"
+import { StartCommand } from "./cli/cmd/start"
+import { StopCommand } from "./cli/cmd/stop"
+import { RestartCommand } from "./cli/cmd/restart"
+import { StatusCommand } from "./cli/cmd/status"
 import path from "path"
 import { Global } from "./global"
 import { JsonMigration } from "./storage/json-migration"
@@ -144,6 +148,10 @@ let cli = yargs(hideBin(process.argv))
   .command(SessionCommand)
   .command(DbCommand)
   .command(HelloCommand)
+  .command(StartCommand)
+  .command(StopCommand)
+  .command(RestartCommand)
+  .command(StatusCommand)
 
 if (Installation.isLocal()) {
   cli = cli.command(WorkspaceServeCommand)
