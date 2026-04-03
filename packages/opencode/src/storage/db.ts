@@ -7,7 +7,7 @@ import { Context } from "../util/context"
 import { lazy } from "../util/lazy"
 import { Global } from "../global"
 import { Log } from "../util/log"
-import { NamedError } from "@opencode-ai/util/error"
+import { NamedError } from "@opendora/util/error"
 import z from "zod"
 import path from "path"
 import { readFileSync, readdirSync, existsSync } from "fs"
@@ -59,8 +59,17 @@ export namespace Database {
       .map((name) => {
         const file = path.join(dir, name, "migration.sql")
         if (!existsSync(file)) return
+        const raw = readFileSync(file, "utf-8")
+        // Split into individual statements so drizzle executes each one.
+        // Drizzle splits by '--> statement-breakpoint'; without this, only
+        // the first statement in a multi-statement file would run.
+        const statements = raw
+          .split(/;\s*\n/)
+          .map((s) => s.trim())
+          .filter((s) => s && !s.startsWith("--"))
+        const joined = statements.join(";\n--> statement-breakpoint\n") + ";"
         return {
-          sql: readFileSync(file, "utf-8"),
+          sql: joined,
           timestamp: time(name),
         }
       })

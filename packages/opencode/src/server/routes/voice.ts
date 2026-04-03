@@ -4,7 +4,7 @@ import z from "zod"
 import { Auth } from "../../auth"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
-import { NamedError } from "@opencode-ai/util/error"
+import { NamedError } from "@opendora/util/error"
 
 export const VoiceRoutes = lazy(() =>
   new Hono()
