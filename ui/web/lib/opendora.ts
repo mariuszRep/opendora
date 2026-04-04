@@ -1,4 +1,4 @@
-const OPENDORA_URL = process.env.NEXT_PUBLIC_OPENDORA_URL ?? "http://localhost:4096"
+const OPENDORA_URL = process.env.NEXT_PUBLIC_OPENDORA_URL ?? "http://localhost:4097"
 
 export type SessionType = "role" | "scope" | "worker" | "scratchpad"
 
