@@ -3,8 +3,8 @@
   "description": "Project Manager agent specialized in orchestrating project initiation and feature delivery through coordinated specialist sessions",
   "mode": "worker",
   "model": {
-    "modelID": "minimax-m2.5",
-    "providerID": "fallback"
+    "modelID": "gpt-5.4",
+    "providerID": "openai-codex"
   },
   "temperature": 0.7,
   "steps": 60,
@@ -23,5 +23,10 @@
     "feature-workflow",
     "project-initiation",
     "pm-feature-workflow"
-  ]
+  ],
+  "toolConfig": {
+    "reply": {
+      "stopAfterReply": false
+    }
+  }
 }

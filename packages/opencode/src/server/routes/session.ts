@@ -317,9 +317,6 @@ export const SessionRoutes = lazy(() =>
         if (updates.sendPolicy !== undefined) {
           session = await Session.setSendPolicy({ sessionID, policy: updates.sendPolicy })
         }
-        if (updates.model !== undefined) {
-          session = await Session.setModel({ sessionID, model: updates.model })
-        }
         if (updates.toolPolicy !== undefined) {
           session = await Session.setToolPolicy({ sessionID, tools: updates.toolPolicy })
         }

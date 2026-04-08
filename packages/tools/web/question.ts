@@ -27,22 +27,16 @@ export const QuestionTool = Tool.define("question", {
       throw new Error("Question tool is not available in this context")
     }
 
-    // Post questions without waiting for answers (non-blocking)
-    const questionPost = await ask({
+    const answers = await ask({
       sessionID: ctx.sessionID,
       questions: params.questions,
       tool: ctx.callID ? { messageID: ctx.messageID, callID: ctx.callID } : undefined,
-      blocking: false, // New flag to indicate non-blocking behavior
     })
 
     return {
-      title: `Posted ${params.questions.length} question${params.questions.length > 1 ? "s" : ""}`,
-      output: `Questions posted to user. Session will continue when answers are provided.`,
-      metadata: {
-        questionPost,
-        waiting: true,
-        questionCount: params.questions.length,
-      },
+      title: `${params.questions.length} question${params.questions.length > 1 ? "s" : ""} answered`,
+      output: answers.map((a, i) => `Q${i + 1}: ${a.join(", ")}`).join("\n"),
+      metadata: { answers },
     }
   },
 })

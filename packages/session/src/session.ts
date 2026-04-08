@@ -857,17 +857,6 @@ export namespace Session {
     },
   )
 
-  export const setModel = fn(
-    z.object({ sessionID: Identifier.schema("session"), model: z.string() }),
-    async (input) => {
-      await sessionManager.update(input.sessionID, { model: input.model })
-      const db = getConfig().db
-      const row = db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get()
-      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
-      return fromRow(row)
-    },
-  )
-
   export const setToolPolicy = fn(
     z.object({ sessionID: Identifier.schema("session"), tools: z.array(z.string()) }),
     async (input) => {

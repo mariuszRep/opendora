@@ -130,7 +130,6 @@ export type SessionMeta = {
   retention: RetentionPolicy
   sendPolicy?: SendPolicy
   agentId?: string                // agent assigned to handle pings in this session
-  model?: string                  // dynamic model for this session
   toolPolicy?: string[]           // allowed tool names; agent enforces intersection with its own list
   systemPrompt?: string           // boundary prompt prepended to all agent system prompts
   filesystemConfig?: {
@@ -157,7 +156,6 @@ export type CreateSessionOptions = {
   retention?: Partial<RetentionPolicy>
   sendPolicy?: SendPolicy
   agentId?: string
-  model?: string
   toolPolicy?: string[]
   systemPrompt?: string
   filesystemConfig?: {

@@ -70,19 +70,6 @@ export function Header() {
                 <DropdownMenu open={agentOpen} onOpenChange={setAgentOpen}>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-1.5 text-sm font-medium hover:text-foreground transition-colors">
-                      <div className="relative size-4 shrink-0 flex items-center justify-center">
-                        {isWorking && (
-                          <div
-                            className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
-                            style={{ borderTopColor: agentColor }}
-                            aria-hidden="true"
-                          />
-                        )}
-                        <div
-                          className="size-2 rounded-full"
-                          style={{ backgroundColor: agentColor }}
-                        />
-                      </div>
                       <span className="capitalize">{selectedAgentName}</span>
                       <ChevronDownIcon className="size-3 opacity-50" />
                     </button>

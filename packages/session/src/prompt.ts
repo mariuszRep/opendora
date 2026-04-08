@@ -346,7 +346,7 @@ export namespace SessionPrompt {
 
       step++
       if (step === 1)
-        ensureTitle({
+        await ensureTitle({
           session,
           modelID: lastUser.model.modelID,
           providerID: lastUser.model.providerID,
@@ -1974,18 +1974,32 @@ export namespace SessionPrompt {
     modelID: string
   }) {
     const cfg = getConfig()
-    if (input.session.parentSessionID) return
-    if (!Session.isDefaultTitle(input.session.title)) return
+    log.info("ensureTitle called", { sessionID: input.session.id, title: input.session.title })
+    
+    if (input.session.parentSessionID) {
+      log.info("ensureTitle: skipping child session", { sessionID: input.session.id })
+      return
+    }
+    if (!Session.isDefaultTitle(input.session.title)) {
+      log.info("ensureTitle: title already set", { sessionID: input.session.id, title: input.session.title })
+      return
+    }
 
     const firstRealUserIdx = input.history.findIndex(
       (m) => m.info.role === "user" && !m.parts.every((p) => "synthetic" in p && p.synthetic),
     )
-    if (firstRealUserIdx === -1) return
+    if (firstRealUserIdx === -1) {
+      log.info("ensureTitle: no real user message found", { sessionID: input.session.id })
+      return
+    }
 
     const isFirst =
       input.history.filter((m) => m.info.role === "user" && !m.parts.every((p) => "synthetic" in p && p.synthetic))
         .length === 1
-    if (!isFirst) return
+    if (!isFirst) {
+      log.info("ensureTitle: not first message", { sessionID: input.session.id })
+      return
+    }
 
     const contextMessages = input.history.slice(0, firstRealUserIdx + 1)
     const firstRealUser = contextMessages[firstRealUserIdx]
@@ -1994,7 +2008,11 @@ export namespace SessionPrompt {
     const hasOnlySubtaskParts = subtaskParts.length > 0 && firstRealUser.parts.every((p) => p.type === "subtask")
 
     const agent = await cfg.agent?.get?.("title")
-    if (!agent) return
+    if (!agent) {
+      log.warn("ensureTitle: title agent not found", { sessionID: input.session.id })
+      return
+    }
+    log.info("ensureTitle: title agent found", { sessionID: input.session.id, agentModel: agent.model })
     const model = await iife(async () => {
       if (agent.model) return await cfg.provider?.getModel(agent.model.providerID, agent.model.modelID)
       return (
@@ -2022,17 +2040,31 @@ export namespace SessionPrompt {
           : MessageV2.toModelMessages(contextMessages, model)),
       ],
     })
-    const text = await result.text.catch((err: any) => log.error("failed to generate title", { error: err }))
+    const text = await result.text.catch((err: any) => {
+      log.error("failed to generate title", { sessionID: input.session.id, error: err })
+      return null
+    })
+    
     if (text) {
+      log.info("ensureTitle: generated text", { sessionID: input.session.id, text })
       const cleaned = text
         .replace(/<think>[\s\S]*?<\/think>\s*/g, "")
         .split("\n")
         .map((line: string) => line.trim())
         .find((line: string) => line.length > 0)
-      if (!cleaned) return
+      
+      if (!cleaned) {
+        log.warn("ensureTitle: no cleaned title found", { sessionID: input.session.id })
+        return
+      }
 
       const title = cleaned.length > 100 ? cleaned.substring(0, 97) + "..." : cleaned
-      return Session.setTitle({ sessionID: input.session.id, title })
+      log.info("ensureTitle: setting title", { sessionID: input.session.id, title })
+      const result = await Session.setTitle({ sessionID: input.session.id, title })
+      log.info("ensureTitle: title set successfully", { sessionID: input.session.id, title })
+      return result
+    } else {
+      log.warn("ensureTitle: no text generated", { sessionID: input.session.id })
     }
   }
 }

@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils"
 import type { Session, SessionType } from "@/lib/opendora"
 import { getAgentColor } from "@/lib/agent-colors"
 import { useUserProfile } from "@/hooks/use-user-profile"
-import { BotIcon, CheckIcon, MessageSquareIcon, PencilIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, UserIcon } from "lucide-react"
+import { BellIcon, BotIcon, CheckIcon, MessageSquareIcon, PencilIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, UserIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type React from "react"
 import { useRef, useState } from "react"
@@ -52,11 +52,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     selectAgent,
     defaultAgent,
     setDefaultAgent,
-    status,
     sessions,
     activeSessions,
     abortSession,
     setAgentMainSession,
+    allQuestionRequests,
   } = useOpendoraContext()
 
   const visibleAgents = agents.filter((a) => !a.hidden)
@@ -308,6 +308,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   // Only role sessions can be main, and only one should show star
                   const isMain = session.sessionType === "role"
                   const isWorking = activeSessions.has(session.id)
+                  const hasPendingQuestion = (allQuestionRequests[session.id]?.length ?? 0) > 0
                   return (
                     <SidebarMenuItem
                       key={session.id}
@@ -352,6 +353,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           )} />
                         </div>
                       </SidebarMenuButton>
+
+                      {/* Bell — slot 0, shown when session is waiting for user input */}
+                      <SidebarMenuAction
+                        className="group-data-[collapsible=icon]:hidden transition-opacity"
+                        style={{ opacity: hasPendingQuestion && !isWorking ? 1 : 0, right: actionRight(0), pointerEvents: 'none' }}
+                        title="Waiting for your answer"
+                      >
+                        <BellIcon className="size-3.5 text-amber-400" />
+                        <span className="sr-only">Waiting for answer in {formatSessionTitle(session)}</span>
+                      </SidebarMenuAction>
 
                       {/* Stop — slot 0, only shown when session is working */}
                       <SidebarMenuAction

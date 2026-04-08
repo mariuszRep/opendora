@@ -3,8 +3,8 @@
   "description": "Responsible for all software products, applications, and projects — new or existing. Covers everything from early ideas and requirements through to bugs, features, and ongoing development.",
   "mode": "primary",
   "model": {
-    "modelID": "minimax-m2.5",
-    "providerID": "fallback"
+    "modelID": "gpt-5.4",
+    "providerID": "openai-codex"
   },
   "temperature": 0.4,
   "steps": 15,
@@ -32,9 +32,6 @@
   "filesystemConfig": {
     "enabledTools": [
       "list"
-    ],
-    "allowedPaths": [
-      "/home/ubuntu/projects"
     ]
   }
 }

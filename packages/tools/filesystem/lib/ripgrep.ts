@@ -5,7 +5,7 @@ import z from "zod"
 import { lazy } from "./lazy.ts"
 import { $ } from "bun"
 import { Filesystem } from "./primitives.ts"
-import { Process } from "./process.ts"
+import { Process } from "../../lib/process.ts"
 import { text } from "node:stream/consumers"
 import { ZipReader, BlobReader, BlobWriter } from "@zip.js/zip.js"
 
@@ -155,7 +155,7 @@ export namespace Ripgrep {
       if (!response.ok) throw new DownloadFailedError({ url, status: response.status })
 
       const arrayBuffer = await response.arrayBuffer()
-      const archivePath = path.join(Global.Path.bin, filename)
+      const archivePath = path.join(binaryPath!, filename)
       await Filesystem.write(archivePath, Buffer.from(arrayBuffer))
       if (config.extension === "tar.gz") {
         const args = ["tar", "-xzf", archivePath, "--strip-components=1"]
@@ -164,7 +164,7 @@ export namespace Ripgrep {
         if (platformKey.endsWith("-linux")) args.push("--wildcards", "*/rg")
 
         const proc = Process.spawn(args, {
-          cwd: Global.Path.bin,
+          cwd: binaryPath!,
           stderr: "pipe",
           stdout: "pipe",
         })

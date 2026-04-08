@@ -54,6 +54,7 @@ export type UseOpendoraResult = {
   // Messages
   messages: MessageWithParts[]
   questionRequests: QuestionRequest[]
+  allQuestionRequests: Record<string, QuestionRequest[]>
   replyQuestion: (requestID: string, answers: QuestionAnswer[]) => Promise<void>
   rejectQuestion: (requestID: string) => Promise<void>
   status: ChatStatus
@@ -511,9 +512,8 @@ export function useOpendora(): UseOpendoraResult {
 
   const createSession = useCallback(async (sessionType?: SessionType): Promise<string> => {
     try {
-      // Always create as "scope" first, user can promote to "role" by clicking star
       const session = await opendora.session.create({
-        sessionType: "scope",
+        sessionType: sessionType ?? "scope",
         ...(selectedAgent ? { agentID: selectedAgent } : {}),
       })
       setSessions((prev) => {
@@ -703,6 +703,7 @@ export function useOpendora(): UseOpendoraResult {
     setAgentMainSession,
     messages,
     questionRequests: selectedSession ? (questionRequests[selectedSession.id] ?? []) : [],
+    allQuestionRequests: questionRequests,
     replyQuestion,
     rejectQuestion,
     status,

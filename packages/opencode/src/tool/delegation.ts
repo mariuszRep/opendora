@@ -1,2 +1,1 @@
-export type { DelegationRoute } from "@opendora/tools/task-management"
-export { resolveAgentName, askDelegationPermission, resolveDelegationTarget, postDelegatedPrompt } from "@opendora/tools/task-management"
+// Delegation utilities removed - unused and duplicated in sessions/delegate.ts

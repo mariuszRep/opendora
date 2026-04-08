@@ -3,8 +3,8 @@
   "description": "Agent owner — the authority for agent, skill, and tool decisions: knows capabilities, creates bespoke assets on demand, advises on delegation, and improves the system over time",
   "mode": "primary",
   "model": {
-    "modelID": "minimax-m2.5-free",
-    "providerID": "opencode"
+    "modelID": "gpt-5.4",
+    "providerID": "openai-codex"
   },
   "temperature": 0.7,
   "steps": 80,
@@ -41,6 +41,11 @@
     "skill-author",
     "tool-author"
   ],
+  "toolConfig": {
+    "reply": {
+      "stopAfterReply": false
+    }
+  },
   "filesystemConfig": {
     "enabledTools": [
       "read",

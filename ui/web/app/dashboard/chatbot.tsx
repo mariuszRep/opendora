@@ -69,7 +69,7 @@ import { usePushToTalk } from "@/hooks/use-push-to-talk"
 import { DelegateToolContent, isDelegateTool, getDelegateToolTitle } from "@/components/ai-elements/delegate-tool"
 import { TodoToolContent, isTodoTool, getTodoToolTitle } from "@/components/ai-elements/todo-tool"
 import { getAgentColor } from "@/lib/agent-colors"
-import { CheckIcon, CopyIcon, EyeIcon, EyeOffIcon, Link2Icon, Volume2Icon, VolumeXIcon } from "lucide-react"
+import { BellIcon, CheckIcon, CopyIcon, EyeIcon, EyeOffIcon, Link2Icon, Volume2Icon, VolumeXIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
@@ -1062,14 +1062,18 @@ export const Chatbot = () => {
                   style={{ backgroundColor: agentDotColor }}
                 />
               </div>
-              <div className="flex items-center gap-1 h-5">
-                {[0, 150, 300].map((delay) => (
-                  <span
-                    key={delay}
-                    className="size-1.5 rounded-full animate-bounce"
-                    style={{ backgroundColor: agentDotColor, animationDelay: `${delay}ms` }}
+              <div className="flex items-center h-5">
+                <div className="relative size-4">
+                  <div
+                    className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
+                    style={{ borderTopColor: agentDotColor }}
+                    aria-hidden="true"
                   />
-                ))}
+                  <div
+                    className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    style={{ backgroundColor: agentDotColor }}
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -1084,6 +1088,12 @@ export const Chatbot = () => {
             <PromptInputHeader>
               <AttachmentsDisplay />
             </PromptInputHeader>
+            {questionRequests.length > 0 && (
+              <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-amber-400 border-b border-border">
+                <BellIcon className="size-3 shrink-0" />
+                Answer the question above to continue
+              </div>
+            )}
             <PromptInputBody>
               <PromptInputTextarea
                 ref={inputRef}
