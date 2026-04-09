@@ -72,30 +72,30 @@ describe("session.started event", () => {
   })
 })
 
-describe("session default path inheritance", () => {
-  test("session allowedPaths[0] beats agent allowedPaths[0] and child inherits parent effective path", async () => {
+describe("session path inheritance", () => {
+  test("session.path beats agent.defaultPaths[0] and child inherits parent path", async () => {
     await Instance.provide({
       directory: projectRoot,
       fn: async () => {
         await Agent.create("path-agent", {
           name: "path-agent",
           mode: "primary",
-          filesystemConfig: { allowedPaths: ["/tmp/agent-default"] },
+          defaultPaths: ["/tmp/agent-default"],
         })
 
         const root = await Session.create({
           agentID: "path-agent",
         })
-        // Manually set filesystem config on the root session to override agent path
-        await Session.setFilesystemConfig({ sessionID: root.id, filesystemConfig: { allowedPaths: ["/tmp/session-override"] } })
+        // Manually set path on the root session to override agent default
+        await Session.setPath({ sessionID: root.id, path: "/tmp/session-override" })
         const rootUpdated = await Session.get(root.id)
         const child = await Session.create({
           agentID: "path-agent",
           parentSessionID: root.id,
         })
 
-        expect(await Session.effectiveDefaultPath(rootUpdated)).toBe("/tmp/session-override")
-        expect(await Session.effectiveDefaultPath(child.id)).toBe("/tmp/session-override")
+        expect(rootUpdated.path).toBe("/tmp/session-override")
+        expect(child.path).toBe("/tmp/session-override")
 
         await Session.remove(root.id)
         await Agent.remove("path-agent")
@@ -103,19 +103,19 @@ describe("session default path inheritance", () => {
     })
   })
 
-  test("main session directory uses agent allowedPaths[0] when set", async () => {
+  test("main session uses agent.defaultPaths[0] when set", async () => {
     await Instance.provide({
       directory: projectRoot,
       fn: async () => {
         await Agent.create("agent-main-path", {
           name: "agent-main-path",
           mode: "primary",
-          filesystemConfig: { allowedPaths: ["/tmp/main-agent-default"] },
+          defaultPaths: ["/tmp/main-agent-default"],
         })
 
         const session = await Session.ensureMainSession("agent-main-path")
 
-        expect(await Session.effectiveDefaultPath(session.id)).toBe("/tmp/main-agent-default")
+        expect(session.path).toBe("/tmp/main-agent-default")
 
         await Session.remove(session.id)
         await Agent.remove("agent-main-path")

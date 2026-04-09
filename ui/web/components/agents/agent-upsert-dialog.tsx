@@ -116,7 +116,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [expandedGroup, setExpandedGroup] = useState<"filesystem" | "shell" | "web" | "sessions" | "agents" | "skills" | "others" | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
-  const [fsAllowedPaths, setFsAllowedPaths] = useState<string[]>([])
+  const [defaultPaths, setDefaultPaths] = useState<string[]>([])
   const [newPathInput, setNewPathInput] = useState("")
   const [persona, setPersona] = useState("")
   const [saving, setSaving] = useState(false)
@@ -150,7 +150,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setDelegateAllowedAgents((a as any).config?.toolConfig?.delegate?.allowedAgents ?? a.toolConfig?.delegate?.allowedAgents ?? [])
       setReplyStopAfterReply((a as any).config?.toolConfig?.reply?.stopAfterReply ?? a.toolConfig?.reply?.stopAfterReply ?? false)
       setPersona("")
-      setFsAllowedPaths((a as any).config?.filesystemConfig?.allowedPaths ?? (a as any).filesystemConfig?.allowedPaths ?? [])
+      setDefaultPaths((a as any).config?.defaultPaths ?? (a as any).defaultPaths ?? [])
       setError(null)
       if (agentId) getAgentPersona(agentId).then(setPersona).catch(() => {})
     } else {
@@ -167,7 +167,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setDelegateAllowedAgents([])
       setReplyStopAfterReply(false)
       setPersona("")
-      setFsAllowedPaths([])
+      setDefaultPaths([])
       setNewPathInput("")
       setError(null)
     }
@@ -232,14 +232,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
           }
           return Object.keys(config).length > 0 ? config : undefined
         })(),
-        filesystemConfig: (() => {
-          const fsSelectedTools = selectedTools.filter((id) => FILESYSTEM_TOOLS.has(id))
-          if (fsSelectedTools.length === 0 && fsAllowedPaths.length === 0) return undefined
-          return {
-            enabledTools: fsSelectedTools.length > 0 ? fsSelectedTools : undefined,
-            allowedPaths: fsAllowedPaths.length > 0 ? fsAllowedPaths : undefined,
-          }
-        })(),
+        defaultPaths: defaultPaths.length > 0 ? defaultPaths : undefined,
       }
       if (isEdit && agentId) {
         await updateAgent(agentId, config, persona)
@@ -520,11 +513,11 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
 
                         {group === "filesystem" && isExpanded && (
                           <div className="mt-3 border-t pt-3">
-                            <p className="mb-0.5 text-xs font-medium">Allowed paths</p>
+                            <p className="mb-0.5 text-xs font-medium">Default paths</p>
                             <p className="mb-2 text-xs text-muted-foreground">
-                              Leave empty to allow all paths. Add absolute paths to restrict this agent.
+                              Suggested starting directories for root sessions. First path is used as default.
                             </p>
-                            {fsAllowedPaths.map((p) => (
+                            {defaultPaths.map((p) => (
                               <div key={p} className="mb-1 flex items-center gap-2">
                                 <span className="flex-1 truncate font-mono text-xs">{p}</span>
                                 <Button
@@ -532,7 +525,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                                   variant="ghost"
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    setFsAllowedPaths((prev) => prev.filter((x) => x !== p))
+                                    setDefaultPaths((prev) => prev.filter((x) => x !== p))
                                   }}
                                 >
                                   <XIcon className="size-3" />
@@ -548,8 +541,8 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                                   if (e.key === "Enter") {
                                     e.preventDefault()
                                     const p = newPathInput.trim()
-                                    if (p && !fsAllowedPaths.includes(p)) {
-                                      setFsAllowedPaths((prev) => [...prev, p])
+                                    if (p && !defaultPaths.includes(p)) {
+                                      setDefaultPaths((prev) => [...prev, p])
                                       setNewPathInput("")
                                     }
                                   }
@@ -564,8 +557,8 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   const p = newPathInput.trim()
-                                  if (p && !fsAllowedPaths.includes(p)) {
-                                    setFsAllowedPaths((prev) => [...prev, p])
+                                  if (p && !defaultPaths.includes(p)) {
+                                    setDefaultPaths((prev) => [...prev, p])
                                     setNewPathInput("")
                                   }
                                 }}

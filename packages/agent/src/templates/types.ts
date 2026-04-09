@@ -24,10 +24,8 @@ export const AgentConfig = z.object({
     }).optional(),
   }).optional(),
   enableInjection: z.boolean().optional(),
-  filesystemConfig: z.object({
-    enabledTools: z.array(z.string()).optional(),
-    allowedPaths: z.array(z.string()).optional(),
-  }).optional(),
+  defaultPaths: z.array(z.string()).optional(),
+  sandbox: z.boolean().optional(),
 })
 
 export type AgentConfig = z.infer<typeof AgentConfig>

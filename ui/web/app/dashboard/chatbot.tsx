@@ -566,7 +566,11 @@ export const Chatbot = () => {
         <Conversation key={selectedSession.id}>
           <ConversationContent className={cn(isChatCentered && "max-w-3xl mx-auto w-full")}>
             {messages.map(({ info, parts }, msgIndex) => {
-              const content = getMessageText(parts)
+              const rawContent = getMessageText(parts)
+              // Strip the "user: NAME\n\n" attribution prefix added before sending so it doesn't leak into the bubble
+              const content = info.role === "user"
+                ? rawContent.replace(/^user: [^\n]+\n\n/, "")
+                : rawContent
               const reasoning = getReasoningPart(parts)
               const tools = getToolParts(parts)
               const hasTools = tools.length > 0
@@ -660,29 +664,46 @@ export const Chatbot = () => {
                               {content ? <MessageResponse>{content}</MessageResponse> : null}
                             </MessageContent>
                             <MessageActions
-                              className="relative mt-1 justify-start"
+                              className="relative mt-1 w-full"
                               style={{ opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
                               data-message-actions
                             >
-                              {msgParentSessionID && (
-                                <>
-                                  <MessageAction
-                                    label="Source"
-                                    onClick={() => handleGoToMessage(
-                                      msgParentSessionID,
-                                      msgParentMessageID ?? ""
-                                    )}
-                                    tooltip="Back to delegation tool"
-                                    variant="outline"
-                                  >
-                                    <Link2Icon className="size-4" />
-                                  </MessageAction>
-                                  {parentAgent && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {parentAgent.name}
-                                    </span>
+                              {content && (
+                                <MessageAction
+                                  label="Copy"
+                                  onClick={() => handleCopy(content)}
+                                  tooltip="Copy to clipboard"
+                                  variant="outline"
+                                >
+                                  <CopyIcon className="size-4" />
+                                </MessageAction>
+                              )}
+                              {content && isTtsEnabled && (
+                                <MessageAction
+                                  label={playingId === info.id ? "Stop" : "Listen"}
+                                  onClick={() => handleSpeak(content, info.id)}
+                                  tooltip={playingId === info.id ? "Stop speaking" : "Read aloud"}
+                                  variant="outline"
+                                  disabled={isTtsLoading && playingId === info.id}
+                                >
+                                  {isTtsLoading && playingId === info.id ? (
+                                    <Spinner className="size-4" />
+                                  ) : playingId === info.id ? (
+                                    <VolumeXIcon className="size-4" />
+                                  ) : (
+                                    <Volume2Icon className="size-4" />
                                   )}
-                                </>
+                                </MessageAction>
+                              )}
+                              {msgParentSessionID && (
+                                <MessageAction
+                                  label="Source"
+                                  onClick={() => handleGoToMessage(msgParentSessionID, msgParentMessageID ?? "")}
+                                  tooltip="Back to source"
+                                  variant="outline"
+                                >
+                                  <Link2Icon className="size-4" />
+                                </MessageAction>
                               )}
                               {getHiddenParts(parts).length > 0 && (
                                 <MessageAction
@@ -697,7 +718,7 @@ export const Chatbot = () => {
                                   }
                                 </MessageAction>
                               )}
-                              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground">
+                              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground whitespace-nowrap">
                                 user{userName ? `: ${userName}` : ""}
                               </span>
                             </MessageActions>
@@ -975,7 +996,7 @@ export const Chatbot = () => {
                         )}
                         {info.role === "assistant" ? (
                           <MessageActions
-                            className="relative mt-1 justify-start"
+                            className="relative mt-1 w-full"
                             style={{ opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
                             data-message-actions
                           >
@@ -1006,44 +1027,22 @@ export const Chatbot = () => {
                                 )}
                               </MessageAction>
                             )}
-                            {(() => {
-                              const displayName = assistantAuthor?.name ?? assistantAgent?.name ?? assistantAuthorId ?? assistantAgentId
-                              return displayName ? (
-                                <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground">
-                                  agent: {displayName}
-                                </span>
-                              ) : null
-                            })()}
-                            {info.role === "assistant" && selectedSession?.id && (
+                            {msgParentSessionID && (
                               <MessageAction
-                                label="Link"
-                                onClick={() => router.push(buildDashboardUrl(selectedSession.id, info.id), { scroll: false })}
-                                tooltip="Open link to this reply"
+                                label="Source"
+                                onClick={() => handleGoToMessage(msgParentSessionID, msgParentMessageID ?? "")}
+                                tooltip="Back to source"
                                 variant="outline"
                               >
                                 <Link2Icon className="size-4" />
                               </MessageAction>
                             )}
-                            {info.role === "assistant" && hasLinkedParentMessage && msgParentSessionID && (
-                              <>
-                                <MessageAction
-                                  label="Source"
-                                  onClick={() => handleGoToMessage(
-                                    msgParentSessionID,
-                                    msgParentMessageID ?? ""
-                                  )}
-                                  tooltip="Open originating tool call"
-                                  variant="outline"
-                                >
-                                  <Link2Icon className="size-4" />
-                                </MessageAction>
-                                {parentAgent && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {parentAgent.name}
-                                  </span>
-                                )}
-                              </>
-                            )}
+                            <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground whitespace-nowrap">
+                              {(() => {
+                                const displayName = assistantAuthor?.name ?? assistantAgent?.name ?? assistantAuthorId ?? assistantAgentId
+                                return `agent${displayName ? `: ${displayName}` : ""}`
+                              })()}
+                            </span>
                           </MessageActions>
                         ) : null}
                       </div>

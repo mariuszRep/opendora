@@ -29,8 +29,9 @@ export class SessionManager {
       retention: { ...DEFAULT_RETENTION[opts.type], ...opts.retention },
       ...(opts.sendPolicy   !== undefined && { sendPolicy:   opts.sendPolicy }),
       ...(opts.agentId      !== undefined && { agentId:      opts.agentId }),
-      ...(opts.toolPolicy   !== undefined && { toolPolicy:   opts.toolPolicy }),
       ...(opts.systemPrompt !== undefined && { systemPrompt: opts.systemPrompt }),
+      ...(opts.path         !== undefined && { path:         opts.path }),
+      ...(opts.readPath     !== undefined && { readPath:     opts.readPath }),
       createdAt: Date.now(),
       updatedAt: Date.now(),
     }

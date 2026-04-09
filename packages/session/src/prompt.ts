@@ -844,17 +844,8 @@ export namespace SessionPrompt {
           directories: () => cfg.config?.directories(),
         },
         containsPath: (p: string) => cfg.instance?.containsPath?.(p),
-        allowedPaths: (() => {
-          const agentPaths = input.agent.config?.filesystemConfig?.allowedPaths
-          const sessionPaths = (input.session as any).filesystemConfig?.allowedPaths as string[] | undefined
-          if (!agentPaths && !sessionPaths) return undefined
-          if (!agentPaths) return sessionPaths
-          if (!sessionPaths) return agentPaths
-          // Intersection: keep only session paths that fall within agent paths
-          return sessionPaths.filter((sp) =>
-            agentPaths.some((ap) => sp === ap || sp.startsWith(ap + path.sep)),
-          )
-        })(),
+        allowedPaths: (input.session as any).path ? [(input.session as any).path as string] : undefined,
+        readPath: (input.session as any).readPath as string | undefined,
         session: {
           list: (filter?: any) => Session.list(filter),
           children: (id: string) => Session.children(id),
@@ -1060,29 +1051,6 @@ export namespace SessionPrompt {
           if (id !== "invalid") {
             delete tools[id]
           }
-        }
-      }
-    }
-
-    // Filter filesystem tools by the effective enabledTools (agent ∩ session)
-    const FILESYSTEM_TOOLS = new Set([
-      "read", "write", "edit", "list", "glob", "grep",
-      "apply_patch", "multiedit", "codesearch",
-    ])
-    const agentFsTools = input.agent.config?.filesystemConfig?.enabledTools
-    const sessionFsTools = (input.session as any).filesystemConfig?.enabledTools as string[] | undefined
-    const effectiveFsTools: Set<string> | undefined = (() => {
-      if (!agentFsTools && !sessionFsTools) return undefined
-      const agentSet = agentFsTools ? new Set(agentFsTools) : undefined
-      const sessionSet = sessionFsTools ? new Set(sessionFsTools) : undefined
-      if (!agentSet) return sessionSet
-      if (!sessionSet) return agentSet
-      return new Set([...sessionSet].filter((id) => agentSet.has(id)))
-    })()
-    if (effectiveFsTools !== undefined) {
-      for (const id of Object.keys(tools)) {
-        if (FILESYSTEM_TOOLS.has(id) && !effectiveFsTools.has(id)) {
-          delete tools[id]
         }
       }
     }
@@ -1319,7 +1287,7 @@ export namespace SessionPrompt {
                     const readCtx: any = {
                       sessionID: input.sessionID,
                       abort: new AbortController().signal,
-                      agent: input.agent!,
+                      agent: input.agent?.name ?? input.agent,
                       messageID: info.id,
                       extra: { bypassCwdCheck: true, model: model2 },
                       messages: [],
@@ -1378,7 +1346,7 @@ export namespace SessionPrompt {
                 const listCtx: any = {
                   sessionID: input.sessionID,
                   abort: new AbortController().signal,
-                  agent: input.agent!,
+                  agent: input.agent?.name ?? input.agent,
                   messageID: info.id,
                   extra: { bypassCwdCheck: true },
                   messages: [],

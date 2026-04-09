@@ -35,9 +35,8 @@ const MIGRATION_SQL = `
     retention         JSONB       NOT NULL,
     send_policy       JSONB,
     agent_id          TEXT,
-    default_path      TEXT,
-    tool_policy       JSONB,
-    filesystem_config JSONB,
+    path              TEXT,
+    read_path         TEXT,
     system_prompt     TEXT,
     share_url         TEXT,
     compaction_count  BIGINT,
@@ -52,7 +51,8 @@ const MIGRATION_SQL = `
   );
   CREATE INDEX IF NOT EXISTS sessions_status_idx ON sessions(status);
   CREATE INDEX IF NOT EXISTS sessions_parent_idx ON sessions(parent_session_id);
-  ALTER TABLE sessions ADD COLUMN IF NOT EXISTS filesystem_config JSONB;
+  ALTER TABLE sessions ADD COLUMN IF NOT EXISTS path TEXT;
+  ALTER TABLE sessions ADD COLUMN IF NOT EXISTS read_path TEXT;
 
   CREATE TABLE IF NOT EXISTS messages (
     id                TEXT    PRIMARY KEY,
@@ -85,8 +85,8 @@ function rowToMeta(row: typeof S.$inferSelect): SessionMeta {
     retention:       row.retention,
     sendPolicy:      row.sendPolicy      ?? undefined,
     agentId:         row.agentId         ?? undefined,
-    toolPolicy:      (row.toolPolicy as string[] | null) ?? undefined,
-    filesystemConfig: (row.filesystemConfig as { enabledTools?: string[]; allowedPaths?: string[] } | null) ?? undefined,
+    path:            (row.path as string | null) ?? undefined,
+    readPath:        (row.readPath as string | null) ?? undefined,
     systemPrompt:    row.systemPrompt    ?? undefined,
     share:           row.shareUrl        ? { url: row.shareUrl } : undefined,
     compactionCount:  row.compactionCount  != null ? Number(row.compactionCount)  : undefined,
@@ -148,8 +148,8 @@ export class PostgresAdapter implements StorageAdapter {
       retention:       meta.retention,
       sendPolicy:      meta.sendPolicy,
       agentId:         meta.agentId,
-      toolPolicy:      meta.toolPolicy,
-      filesystemConfig: meta.filesystemConfig,
+      path:            meta.path,
+      readPath:        meta.readPath,
       systemPrompt:    meta.systemPrompt,
       shareUrl:        meta.share?.url,
       compactionCount:  meta.compactionCount,
@@ -177,7 +177,8 @@ export class PostgresAdapter implements StorageAdapter {
     if (patch.label           !== undefined) update.label           = patch.label
     if (patch.retention       !== undefined) update.retention       = patch.retention
     if (patch.sendPolicy      !== undefined) update.sendPolicy      = patch.sendPolicy
-    if ("filesystemConfig" in patch)        update.filesystemConfig = patch.filesystemConfig ?? null
+    if (patch.path          !== undefined) update.path          = patch.path          ?? null
+    if (patch.readPath      !== undefined) update.readPath      = patch.readPath      ?? null
     if (patch.archivedAt      !== undefined) update.archivedAt      = patch.archivedAt
     if (patch.spawnDepth      !== undefined) update.spawnDepth      = patch.spawnDepth
     if (patch.compactionCount  !== undefined) update.compactionCount  = patch.compactionCount

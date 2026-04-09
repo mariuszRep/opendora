@@ -13,10 +13,8 @@ export namespace Tool {
         delegate?: { allowedAgents?: string[] }
         reply?: { stopAfterReply?: boolean }
       }
-      filesystemConfig?: {
-        enabledTools?: string[]
-        allowedPaths?: string[]
-      }
+      defaultPaths?: string[]
+      sandbox?: boolean
     }
     /** Resolved agent entries for the delegate tool's allowed list */
     delegateAgents?: Array<{ name: string; description?: string }>

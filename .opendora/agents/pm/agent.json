@@ -17,7 +17,10 @@
     "skill_discover",
     "skill_load",
     "delegate",
-    "reply"
+    "reply",
+    "glob",
+    "grep",
+    "read"
   ],
   "skills": [
     "feature-workflow",
@@ -25,8 +28,21 @@
     "pm-feature-workflow"
   ],
   "toolConfig": {
+    "delegate": {
+      "allowedAgents": [
+        "build",
+        "Project Owner",
+        "BA",
+        "plan",
+        "explore",
+        "Test"
+      ]
+    },
     "reply": {
       "stopAfterReply": false
     }
-  }
+  },
+  "defaultPaths": [
+    "/home/mariu/projects/"
+  ]
 }

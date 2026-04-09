@@ -30,7 +30,8 @@ export type SessionInfo = {
   allowedAgents?: string[]
   sendPolicy?: SendPolicy
   retention?: RetentionPolicy
-  filesystemConfig?: { enabledTools?: string[]; allowedPaths?: string[] }
+  path?: string
+  readPath?: string
   spawnDepth?: number
   parentSessionID?: string
   replyToSessionID?: string
@@ -76,9 +77,8 @@ export function fromRow(row: SessionRow): SessionInfo {
     allowedAgents: row.allowed_agents ? (JSON.parse(row.allowed_agents) as string[]) : undefined,
     sendPolicy: row.send_policy ? (JSON.parse(row.send_policy) as SendPolicy) : undefined,
     retention: row.retention ? (JSON.parse(row.retention) as RetentionPolicy) : undefined,
-    filesystemConfig: row.filesystem_config
-      ? (JSON.parse(row.filesystem_config) as { enabledTools?: string[]; allowedPaths?: string[] })
-      : undefined,
+    path: row.path ?? undefined,
+    readPath: row.read_path ?? undefined,
     spawnDepth: row.spawn_depth ?? undefined,
     parentSessionID: row.parent_session_id ?? undefined,
     replyToSessionID: row.reply_to_session_id ?? undefined,

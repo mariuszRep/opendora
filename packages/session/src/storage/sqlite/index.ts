@@ -23,9 +23,8 @@ const MIGRATION = `
     retention         TEXT    NOT NULL,
     send_policy       TEXT,
     agent_id          TEXT,
-    default_path      TEXT,
-    tool_policy       TEXT,
-    filesystem_config TEXT,
+    path              TEXT,
+    read_path         TEXT,
     system_prompt     TEXT,
     share_url         TEXT,
     compaction_count  INTEGER,
@@ -40,9 +39,6 @@ const MIGRATION = `
   );
   CREATE INDEX IF NOT EXISTS sessions_status_idx ON sessions(status);
   CREATE INDEX IF NOT EXISTS sessions_parent_idx ON sessions(parent_session_id);
-
-  -- Migration: add filesystem_config if it doesn't exist (for existing DBs)
-  -- SQLite does not support IF NOT EXISTS for ADD COLUMN, so this is handled below.
 
   CREATE TABLE IF NOT EXISTS messages (
     id                TEXT    PRIMARY KEY,
@@ -74,8 +70,8 @@ function rowToMeta(row: typeof S.$inferSelect): SessionMeta {
     retention:       row.retention       as ReturnType<typeof rowToMeta>["retention"],
     sendPolicy:      row.sendPolicy      ?? undefined,
     agentId:         row.agentId         ?? undefined,
-    toolPolicy:      row.toolPolicy      ?? undefined,
-    filesystemConfig: row.filesystemConfig ?? undefined,
+    path:            row.path            ?? undefined,
+    readPath:        row.readPath        ?? undefined,
     systemPrompt:    row.systemPrompt    ?? undefined,
     share:           row.shareUrl        ? { url: row.shareUrl } : undefined,
     compactionCount:  row.compactionCount  ?? undefined,
@@ -114,10 +110,13 @@ export class SqliteAdapter implements StorageAdapter {
     client.pragma("journal_mode = WAL")
     client.pragma("foreign_keys = ON")
     client.exec(MIGRATION)
-    // Add filesystem_config column to existing DBs (SQLite doesn't support IF NOT EXISTS on ADD COLUMN)
+    // Runtime migrations for columns not in the original DDL (SQLite doesn't support IF NOT EXISTS on ADD COLUMN)
     const sessionCols = client.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>
-    if (!sessionCols.some((c) => c.name === "filesystem_config")) {
-      client.exec("ALTER TABLE sessions ADD COLUMN filesystem_config TEXT")
+    if (!sessionCols.some((c) => c.name === "path")) {
+      client.exec("ALTER TABLE sessions ADD COLUMN path TEXT")
+    }
+    if (!sessionCols.some((c) => c.name === "read_path")) {
+      client.exec("ALTER TABLE sessions ADD COLUMN read_path TEXT")
     }
     // Add parent_message_id column to existing messages table
     const messageCols = client.prepare("PRAGMA table_info(messages)").all() as Array<{ name: string }>
@@ -141,8 +140,8 @@ export class SqliteAdapter implements StorageAdapter {
       retention:       meta.retention,
       sendPolicy:      meta.sendPolicy,
       agentId:         meta.agentId,
-      toolPolicy:      meta.toolPolicy,
-      filesystemConfig: meta.filesystemConfig,
+      path:            meta.path,
+      readPath:        meta.readPath,
       systemPrompt:    meta.systemPrompt,
       shareUrl:        meta.share?.url,
       compactionCount:  meta.compactionCount,
@@ -168,7 +167,8 @@ export class SqliteAdapter implements StorageAdapter {
     if (patch.label           !== undefined) values.label           = patch.label
     if (patch.retention       !== undefined) values.retention       = patch.retention
     if (patch.sendPolicy      !== undefined) values.sendPolicy      = patch.sendPolicy
-    if ("filesystemConfig" in patch)        values.filesystemConfig = patch.filesystemConfig ?? null
+    if (patch.path          !== undefined) values.path          = patch.path          ?? null
+    if (patch.readPath      !== undefined) values.readPath      = patch.readPath      ?? null
     if (patch.archivedAt      !== undefined) values.archivedAt      = patch.archivedAt
     if (patch.spawnDepth      !== undefined) values.spawnDepth      = patch.spawnDepth
     if (patch.compactionCount  !== undefined) values.compactionCount  = patch.compactionCount

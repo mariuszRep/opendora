@@ -29,9 +29,7 @@
     }
   },
   "enableInjection": true,
-  "filesystemConfig": {
-    "enabledTools": [
-      "list"
-    ]
-  }
+  "defaultPaths": [
+    "/home/mariu/projects"
+  ]
 }

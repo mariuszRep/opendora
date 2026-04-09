@@ -39,6 +39,7 @@ async function enrichAgent(agent: any): Promise<any> {
   const all = await Agent.list()
   const delegateAgents = all
     .filter((a) => allowedAgents.includes(a.name))
+    .filter((a) => a.mode !== "system")
     .map((a) => ({ name: a.name, description: a.description }))
   return { ...agent, delegateAgents }
 }

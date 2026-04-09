@@ -130,12 +130,9 @@ export type SessionMeta = {
   retention: RetentionPolicy
   sendPolicy?: SendPolicy
   agentId?: string                // agent assigned to handle pings in this session
-  toolPolicy?: string[]           // allowed tool names; agent enforces intersection with its own list
   systemPrompt?: string           // boundary prompt prepended to all agent system prompts
-  filesystemConfig?: {
-    enabledTools?: string[]       // filesystem tool IDs allowed in this session
-    allowedPaths?: string[]       // absolute paths the agent may access in this session
-  }
+  path?: string                   // write boundary — hard enforced; inherited by child sessions
+  readPath?: string               // read boundary — soft enforced (approval outside this); inherited by child sessions
   share?: { url: string }         // set when session is shared publicly
   compactionCount?: number        // incremented each time context is compacted
   compactingAt?: number           // set while compaction is running, cleared on completion
@@ -156,12 +153,9 @@ export type CreateSessionOptions = {
   retention?: Partial<RetentionPolicy>
   sendPolicy?: SendPolicy
   agentId?: string
-  toolPolicy?: string[]
   systemPrompt?: string
-  filesystemConfig?: {
-    enabledTools?: string[]
-    allowedPaths?: string[]
-  }
+  path?: string
+  readPath?: string
 }
 
 export type SessionFilter = {

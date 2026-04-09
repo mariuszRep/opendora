@@ -46,9 +46,8 @@ export function rowToMeta(row: SessionRow): SessionMeta {
     retention: row.retention ? (JSON.parse(row.retention) as RetentionPolicy) : { onExpire: "archive" },
     sendPolicy: row.send_policy ? (JSON.parse(row.send_policy) as SendPolicy) : undefined,
     agentId: row.agent_id ?? undefined,
-    filesystemConfig: row.filesystem_config
-      ? (JSON.parse(row.filesystem_config) as { enabledTools?: string[]; allowedPaths?: string[] })
-      : undefined,
+    path: row.path ?? undefined,
+    readPath: row.read_path ?? undefined,
     share: row.share_url ? { url: row.share_url } : undefined,
     compactionCount: row.compaction_count ?? undefined,
     inputTokens: row.input_tokens ?? undefined,
@@ -73,8 +72,8 @@ function patchToColumns(patch: Partial<SessionMeta>): Partial<typeof SessionTabl
   if (patch.archivedAt !== undefined) cols.time_archived = patch.archivedAt
   if (patch.label !== undefined) cols.title = patch.label
   if (patch.agentId !== undefined) cols.agent_id = patch.agentId
-  if ("filesystemConfig" in patch)
-    cols.filesystem_config = patch.filesystemConfig ? JSON.stringify(patch.filesystemConfig) : null as any
+  if (patch.path !== undefined) cols.path = patch.path ?? null as any
+  if (patch.readPath !== undefined) cols.read_path = patch.readPath ?? null as any
   if (patch.sendPolicy !== undefined) cols.send_policy = patch.sendPolicy ? JSON.stringify(patch.sendPolicy) : null as any
   if (patch.retention !== undefined) cols.retention = patch.retention ? JSON.stringify(patch.retention) : null as any
   if ("share" in patch) cols.share_url = patch.share?.url ?? null
@@ -137,7 +136,8 @@ export class OpenDoraStorageAdapter implements StorageAdapter {
         allowed_agents: null,
         send_policy: meta.sendPolicy ? JSON.stringify(meta.sendPolicy) : null,
         retention: meta.retention ? JSON.stringify(meta.retention) : null,
-        filesystem_config: meta.filesystemConfig ? JSON.stringify(meta.filesystemConfig) : null,
+        path: meta.path ?? null,
+        read_path: meta.readPath ?? null,
         spawn_depth: meta.spawnDepth ?? null,
         parent_session_id: meta.parent?.sessionId ?? null,
         input_tokens: 0,

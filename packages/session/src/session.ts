@@ -57,13 +57,12 @@ export namespace Session {
   async function resolveAgentDefaultPath(agentID?: string): Promise<string | undefined> {
     if (!agentID) return undefined
     const agent = await getConfig().agent?.get?.(agentID)
-    return agent?.config?.filesystemConfig?.allowedPaths?.[0] ?? undefined
+    return agent?.config?.defaultPaths?.[0] ?? undefined
   }
 
   export async function effectiveDefaultPath(session: string | Info, seen = new Set<string>()): Promise<string> {
     const info = typeof session === "string" ? await get(session) : session
-    const sessionPath = info.filesystemConfig?.allowedPaths?.[0]
-    if (sessionPath) return sessionPath
+    if (info.path) return info.path
     if (seen.has(info.id)) return info.directory
     seen.add(info.id)
 
@@ -74,6 +73,52 @@ export namespace Session {
     }
 
     return (await resolveAgentDefaultPath(info.agentID)) ?? info.directory
+  }
+
+  /**
+   * Resolve the path and readPath a new child session should inherit from its parent.
+   * The parent's stored values are already the effective (narrowed) values,
+   * so children simply copy them. Any caller-supplied narrowing is validated
+   * to be a sub-path of the parent's value before being used.
+   */
+  async function resolveInheritedPaths(
+    parentSessionID: string | undefined,
+    agentID: string | undefined,
+    requestedPath: string | undefined,
+    requestedReadPath: string | undefined,
+  ): Promise<{ path: string | undefined; readPath: string | undefined }> {
+    let basePath: string | undefined
+    let baseReadPath: string | undefined
+
+    if (parentSessionID) {
+      const parent = await get(parentSessionID).catch(() => undefined)
+      basePath = parent?.path
+      baseReadPath = parent?.readPath
+    } else if (agentID) {
+      const agent = await getConfig().agent?.get?.(agentID)
+      basePath = agent?.config?.defaultPaths?.[0]
+    }
+
+    const isSubPath = (candidate: string, base: string) =>
+      candidate === base || candidate.startsWith(base + path.sep)
+
+    const resolvedPath = (() => {
+      if (!requestedPath) return basePath
+      if (!basePath) return requestedPath
+      if (!isSubPath(requestedPath, basePath))
+        throw new Error(`Requested path "${requestedPath}" is outside the parent scope "${basePath}"`)
+      return requestedPath
+    })()
+
+    const resolvedReadPath = (() => {
+      if (!requestedReadPath) return baseReadPath
+      if (!baseReadPath) return requestedReadPath
+      if (!isSubPath(requestedReadPath, baseReadPath))
+        throw new Error(`Requested readPath "${requestedReadPath}" is outside the parent readPath "${baseReadPath}"`)
+      return requestedReadPath
+    })()
+
+    return { path: resolvedPath, readPath: resolvedReadPath }
   }
 
   export function toRow(info: Info) {
@@ -104,7 +149,8 @@ export namespace Session {
       allowed_agents: info.allowedAgents ? JSON.stringify(info.allowedAgents) : undefined,
       send_policy: info.sendPolicy ? JSON.stringify(info.sendPolicy) : undefined,
       retention: info.retention ? JSON.stringify(info.retention) : undefined,
-      filesystem_config: info.filesystemConfig ? JSON.stringify(info.filesystemConfig) : undefined,
+      path: info.path ?? undefined,
+      read_path: info.readPath ?? undefined,
       spawn_depth: info.spawnDepth,
       parent_session_id: info.parentSessionID,
       reply_to_session_id: info.replyToSessionID,
@@ -183,10 +229,8 @@ export namespace Session {
           onExpire: z.enum(["archive", "close", "delete"]).optional(),
         })
         .optional(),
-      filesystemConfig: z.object({
-        enabledTools: z.array(z.string()).optional(),
-        allowedPaths: z.array(z.string()).optional(),
-      }).optional(),
+      path: z.string().optional(),
+      readPath: z.string().optional(),
       spawnDepth: z.number().optional(),
       parentSessionID: z.string().optional(),
       replyToSessionID: z.string().optional(),
@@ -240,12 +284,21 @@ export namespace Session {
         spawnDepth: Info.shape.spawnDepth,
         parentSessionID: Info.shape.parentSessionID,
         replyToSessionID: Info.shape.replyToSessionID,
+        path: Info.shape.path,
+        readPath: Info.shape.readPath,
       })
       .optional(),
     async (input) => {
       const cfg = getConfig()
+      const { path: resolvedPath, readPath: resolvedReadPath } = await resolveInheritedPaths(
+        input?.parentSessionID,
+        input?.agentID,
+        input?.path,
+        input?.readPath,
+      )
+      const directory = resolvedPath ?? cfg.instance?.directory ?? process.cwd()
       return createNext({
-        directory: cfg.instance?.directory ?? process.cwd(),
+        directory,
         title: input?.title,
         permission: input?.permission,
         sessionType: input?.sessionType,
@@ -257,6 +310,8 @@ export namespace Session {
         spawnDepth: input?.spawnDepth,
         parentSessionID: input?.parentSessionID,
         replyToSessionID: input?.replyToSessionID,
+        path: resolvedPath,
+        readPath: resolvedReadPath,
       })
     },
   )
@@ -270,9 +325,8 @@ export namespace Session {
       const original = await get(input.sessionID)
       if (!original) throw new Error("session not found")
       const title = getForkedTitle(original.title)
-      const cfg = getConfig()
       const session = await createNext({
-        directory: cfg.instance?.directory ?? process.cwd(),
+        directory: await effectiveDefaultPath(original).catch(() => original.directory),
         title,
       })
       const msgs = await messages({ sessionID: input.sessionID })
@@ -322,6 +376,8 @@ export namespace Session {
     spawnDepth?: number
     parentSessionID?: string
     replyToSessionID?: string
+    path?: string
+    readPath?: string
   }) {
     const cfg = getConfig()
     const id = Identifier.descending("session", input.id)
@@ -348,6 +404,8 @@ export namespace Session {
       ...(input.parentSessionID && {
         parent: { sessionId: input.parentSessionID },
       }),
+      path: input.path,
+      readPath: input.readPath,
     }
 
     await sessionManager.create(id, ppOpts)
@@ -857,17 +915,6 @@ export namespace Session {
     },
   )
 
-  export const setToolPolicy = fn(
-    z.object({ sessionID: Identifier.schema("session"), tools: z.array(z.string()) }),
-    async (input) => {
-      await sessionManager.update(input.sessionID, { toolPolicy: input.tools })
-      const db = getConfig().db
-      const row = db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get()
-      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
-      return fromRow(row)
-    },
-  )
-
   export const setSystemPrompt = fn(
     z.object({ sessionID: Identifier.schema("session"), systemPrompt: z.string() }),
     async (input) => {
@@ -879,18 +926,21 @@ export namespace Session {
     },
   )
 
-  export const setFilesystemConfig = fn(
-    z.object({
-      sessionID: Identifier.schema("session"),
-      filesystemConfig: z.object({
-        enabledTools: z.array(z.string()).optional(),
-        allowedPaths: z.array(z.string()).optional(),
-      }).nullable(),
-    }),
+  export const setPath = fn(
+    z.object({ sessionID: Identifier.schema("session"), path: z.string().nullable() }),
     async (input) => {
-      await sessionManager.update(input.sessionID, {
-        filesystemConfig: input.filesystemConfig ?? undefined,
-      })
+      await sessionManager.update(input.sessionID, { path: input.path ?? undefined })
+      const db = getConfig().db
+      const row = db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get()
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      return fromRow(row)
+    },
+  )
+
+  export const setReadPath = fn(
+    z.object({ sessionID: Identifier.schema("session"), readPath: z.string().nullable() }),
+    async (input) => {
+      await sessionManager.update(input.sessionID, { readPath: input.readPath ?? undefined })
       const db = getConfig().db
       const row = db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get()
       if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })

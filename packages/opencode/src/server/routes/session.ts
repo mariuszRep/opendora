@@ -284,12 +284,9 @@ export const SessionRoutes = lazy(() =>
             })
             .optional(),
           model: z.string().optional(),
-          toolPolicy: z.array(z.string()).optional(),
           systemPrompt: z.string().optional(),
-          filesystemConfig: z.object({
-            enabledTools: z.array(z.string()).optional(),
-            allowedPaths: z.array(z.string()).optional(),
-          }).nullable().optional(),
+          path: z.string().nullable().optional(),
+          readPath: z.string().nullable().optional(),
           time: z
             .object({
               archived: z.number().optional(),
@@ -317,14 +314,14 @@ export const SessionRoutes = lazy(() =>
         if (updates.sendPolicy !== undefined) {
           session = await Session.setSendPolicy({ sessionID, policy: updates.sendPolicy })
         }
-        if (updates.toolPolicy !== undefined) {
-          session = await Session.setToolPolicy({ sessionID, tools: updates.toolPolicy })
-        }
         if (updates.systemPrompt !== undefined) {
           session = await Session.setSystemPrompt({ sessionID, systemPrompt: updates.systemPrompt })
         }
-        if (updates.filesystemConfig !== undefined) {
-          session = await Session.setFilesystemConfig({ sessionID, filesystemConfig: updates.filesystemConfig })
+        if (updates.path !== undefined) {
+          session = await Session.setPath({ sessionID, path: updates.path })
+        }
+        if (updates.readPath !== undefined) {
+          session = await Session.setReadPath({ sessionID, readPath: updates.readPath })
         }
         if (updates.time?.archived !== undefined) {
           session = await Session.setArchived({ sessionID, time: updates.time.archived })

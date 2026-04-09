@@ -26,12 +26,9 @@ export type Session = {
   retention?: RetentionPolicy
   sendPolicy?: SendPolicy
   model?: string
-  toolPolicy?: string[]
   systemPrompt?: string
-  filesystemConfig?: {
-    enabledTools?: string[]
-    allowedPaths?: string[]
-  }
+  path?: string
+  readPath?: string
   time: { created: number; updated: number }
   /** Session that spawned this one (via delegate tool) */
   parentSessionID?: string
@@ -180,10 +177,8 @@ export type Agent = {
     delegate?: { allowedAgents?: string[] }
     reply?: { stopAfterReply?: boolean }
   }
-  filesystemConfig?: {
-    enabledTools?: string[]
-    allowedPaths?: string[]
-  }
+  defaultPaths?: string[]
+  sandbox?: boolean
   native?: boolean
 }
 
@@ -205,10 +200,8 @@ export type AgentConfig = {
     reply?: { stopAfterReply?: boolean }
   }
   enableInjection?: boolean
-  filesystemConfig?: {
-    enabledTools?: string[]
-    allowedPaths?: string[]
-  }
+  defaultPaths?: string[]
+  sandbox?: boolean
 }
 
 /** What the backend returns from create / update */
@@ -283,12 +276,9 @@ export const opendora = {
         retention?: Partial<RetentionPolicy>
         sendPolicy?: SendPolicy
         model?: string
-        toolPolicy?: string[]
         systemPrompt?: string
-        filesystemConfig?: {
-          enabledTools?: string[]
-          allowedPaths?: string[]
-        } | null
+        path?: string | null
+        readPath?: string | null
       },
     ) => req<Session>(`/session/${sessionID}`, { method: "PATCH", body: JSON.stringify(updates) }),
     delete: (sessionID: string) => req<boolean>(`/session/${sessionID}`, { method: "DELETE" }),

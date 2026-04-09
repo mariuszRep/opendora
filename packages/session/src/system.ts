@@ -26,7 +26,15 @@ export namespace SystemPrompt {
   export async function environment(model: any, sessionID?: string) {
     const cfg = getConfig()
     const project = cfg.instance?.project
-    const cwd = sessionID ? await Session.effectiveDefaultPath(sessionID).catch(() => cfg.instance?.directory ?? process.cwd()) : cfg.instance?.directory ?? process.cwd()
+    
+    // Use session.path (the actual working boundary) instead of daemon's cwd
+    let cwd: string
+    if (sessionID) {
+      const session = await Session.get(sessionID).catch(() => undefined)
+      cwd = session?.path ?? await Session.effectiveDefaultPath(sessionID).catch(() => process.cwd())
+    } else {
+      cwd = process.cwd()
+    }
 
     const sessionContext: string[] = []
     if (sessionID) {

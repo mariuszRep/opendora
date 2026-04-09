@@ -30,10 +30,8 @@ const AgentConfigPatch = z.object({
     }).optional(),
   }).optional(),
   enableInjection: z.boolean().optional(),
-  filesystemConfig: z.object({
-    enabledTools: z.array(z.string()).optional(),
-    allowedPaths: z.array(z.string()).optional(),
-  }).nullable().optional(),
+  defaultPaths: z.array(z.string()).nullable().optional(),
+  sandbox: z.boolean().optional(),
 })
 
 export const AgentRoutes = lazy(() =>

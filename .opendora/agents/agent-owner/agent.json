@@ -46,20 +46,9 @@
       "stopAfterReply": false
     }
   },
-  "filesystemConfig": {
-    "enabledTools": [
-      "read",
-      "write",
-      "edit",
-      "glob",
-      "grep",
-      "codesearch",
-      "apply_patch"
-    ],
-    "allowedPaths": [
-      "/home/ubuntu/projects/opendora/.opendora/skill",
-      "/home/ubuntu/projects/opendora/.opendora/agents",
-      "/home/ubuntu/projects/opensource/autoresearch"
-    ]
-  }
+  "defaultPaths": [
+    "/home/ubuntu/projects/opendora/.opendora/skill",
+    "/home/ubuntu/projects/opendora/.opendora/agents",
+    "/home/ubuntu/projects/opensource/autoresearch"
+  ]
 }

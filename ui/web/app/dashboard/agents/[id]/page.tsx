@@ -110,7 +110,7 @@ export default function AgentSettingsPage() {
   const [expandedGroup, setExpandedGroup] = useState<"filesystem" | "shell" | "web" | "sessions" | "agents" | "skills" | "others" | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
-  const [fsAllowedPaths, setFsAllowedPaths] = useState<string[]>([])
+  const [defaultPaths, setDefaultPaths] = useState<string[]>([])
   const [newPathInput, setNewPathInput] = useState("")
   const [persona, setPersona] = useState("")
   const [enableInjection, setEnableInjection] = useState(false)
@@ -177,7 +177,7 @@ export default function AgentSettingsPage() {
     setSelectedTools(agent.tools ?? [])
     setDelegateAllowedAgents((agent as any).config?.toolConfig?.delegate?.allowedAgents ?? agent.toolConfig?.delegate?.allowedAgents ?? [])
     setReplyStopAfterReply((agent as any).config?.toolConfig?.reply?.stopAfterReply ?? agent.toolConfig?.reply?.stopAfterReply ?? false)
-    setFsAllowedPaths((agent as any).config?.filesystemConfig?.allowedPaths ?? (agent as any).filesystemConfig?.allowedPaths ?? [])
+    setDefaultPaths((agent as any).config?.defaultPaths ?? (agent as any).defaultPaths ?? [])
     setNewPathInput("")
     setEnableInjection((agent as any).enableInjection ?? false)
     setInjection((agent as any).injection ?? "")
@@ -251,14 +251,7 @@ export default function AgentSettingsPage() {
           return Object.keys(config).length > 0 ? config : undefined
         })(),
         enableInjection: enableInjection || undefined,
-        filesystemConfig: (() => {
-          const fsSelectedTools = selectedTools.filter((id) => FILESYSTEM_TOOLS.has(id))
-          if (fsSelectedTools.length === 0 && fsAllowedPaths.length === 0) return undefined
-          return {
-            enabledTools: fsSelectedTools.length > 0 ? fsSelectedTools : undefined,
-            allowedPaths: fsAllowedPaths.length > 0 ? fsAllowedPaths : undefined,
-          }
-        })(),
+        defaultPaths: defaultPaths.length > 0 ? defaultPaths : undefined,
       }
       console.log('[DEBUG] Saving agent config:', JSON.stringify(config, null, 2))
       console.log('[DEBUG] toolConfig:', config.toolConfig)
@@ -732,25 +725,23 @@ export default function AgentSettingsPage() {
                         <div className="mt-3 border-t pt-3" onClick={(e) => e.stopPropagation()}>
                           <p className="mb-0.5 text-xs font-medium">Allowed paths</p>
                           <p className="mb-2 text-xs text-muted-foreground">
-                            Agent can only access files within these paths. Leave empty to allow all paths.
+                            Suggested starting directories for root sessions. First path is used as default.
                           </p>
-                          {fsAllowedPaths.map((p) => (
+                          {defaultPaths.map((p) => (
                             <div key={p} className="mb-1.5 flex items-center gap-2">
                               <span className="flex-1 truncate font-mono text-xs">{p}</span>
                               <Button
-                                type="button"
                                 variant="ghost"
                                 size="sm"
                                 className="h-6 px-2 text-xs text-muted-foreground"
-                                onClick={() => setFsAllowedPaths((prev) => prev.filter((x) => x !== p))}
+                                onClick={() => setDefaultPaths((prev) => prev.filter((x) => x !== p))}
                               >
                                 Remove
                               </Button>
                             </div>
                           ))}
-                          <div className="mt-1 flex gap-2">
+                          <div className="mt-2 flex gap-2">
                             <Input
-                              className="h-7 font-mono text-xs"
                               placeholder="/absolute/path"
                               value={newPathInput}
                               onChange={(e) => setNewPathInput(e.target.value)}
@@ -758,12 +749,13 @@ export default function AgentSettingsPage() {
                                 if (e.key === "Enter") {
                                   e.preventDefault()
                                   const val = newPathInput.trim()
-                                  if (val && !fsAllowedPaths.includes(val)) {
-                                    setFsAllowedPaths((prev) => [...prev, val])
+                                  if (val && !defaultPaths.includes(val)) {
+                                    setDefaultPaths((prev) => [...prev, val])
                                     setNewPathInput("")
                                   }
                                 }
                               }}
+                              className="h-7 text-xs"
                             />
                             <Button
                               type="button"
@@ -772,8 +764,8 @@ export default function AgentSettingsPage() {
                               className="h-7 text-xs"
                               onClick={() => {
                                 const val = newPathInput.trim()
-                                if (val && !fsAllowedPaths.includes(val)) {
-                                  setFsAllowedPaths((prev) => [...prev, val])
+                                if (val && !defaultPaths.includes(val)) {
+                                  setDefaultPaths((prev) => [...prev, val])
                                   setNewPathInput("")
                                 }
                               }}
