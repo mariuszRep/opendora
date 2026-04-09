@@ -60,6 +60,7 @@ import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 
 import { QuestionTool } from "@/components/questions/question-tool"
+import { PermissionTool } from "@/components/permissions/permission-tool"
 import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart } from "@/lib/opendora"
 import { useUserProfile } from "@/hooks/use-user-profile"
 import { useVoiceSettings, formatHotkey } from "@/hooks/use-voice-settings"
@@ -113,12 +114,12 @@ function formatToolPayload(value: unknown): string {
   }
 }
 
-function toToolState(status: ToolPart["state"]["status"]) {
+function toToolState(status: ToolPart["state"]["status"], hasPermissionRequest?: boolean) {
   switch (status) {
     case "pending":
       return "input-streaming"
     case "running":
-      return "input-available"
+      return hasPermissionRequest ? "approval-requested" : "input-available"
     case "completed":
       return "output-available"
     case "error":
@@ -187,6 +188,8 @@ export const Chatbot = () => {
     questionRequests,
     replyQuestion,
     rejectQuestion,
+    permissionRequests,
+    replyPermission,
     status,
     sendMessage,
     abort,
@@ -782,7 +785,6 @@ export const Chatbot = () => {
                                       const input = "input" in tool.state ? tool.state.input : undefined
                                       const output = "output" in tool.state ? formatToolPayload(tool.state.output) : undefined
                                       const error = "error" in tool.state ? formatToolPayload(tool.state.error) : undefined
-                                      const state = toToolState(tool.state.status)
                                       const answered =
                                         "metadata" in tool.state && Array.isArray(tool.state.metadata?.answers)
                                           ? (tool.state.metadata.answers as string[][])
@@ -802,6 +804,12 @@ export const Chatbot = () => {
                                               : undefined
                                           )
                                         : undefined
+                                      
+                                      const permissionRequest = permissionRequests.find((request) => request.tool?.callID === tool.callID)
+                                      const hasPermissionRequest = !!permissionRequest
+                                      const isPermissionTool = tool.state.status === "approval-requested" || hasPermissionRequest
+                                      const permissionResponded = tool.state.status === "approval-responded"
+                                      const state = toToolState(tool.state.status, hasPermissionRequest)
                                       const toolInput = <ToolInput input={input ?? {}} />
                                       const currentViewMode = questionViewModes[tool.id] ?? "view"
                                       const handleViewModeChange = (mode: "code" | "view") => {
@@ -840,6 +848,12 @@ export const Chatbot = () => {
                                                 request={questionRequest}
                                                 viewMode={currentViewMode}
                                                 onViewModeChange={handleViewModeChange}
+                                              />
+                                            ) : isPermissionTool && permissionRequest ? (
+                                              <PermissionTool
+                                                request={permissionRequest}
+                                                onReply={replyPermission}
+                                                responded={permissionResponded}
                                               />
                                             ) : isDelegateToolCall ? (
                                               currentDelegateViewMode === "code" ? toolInput : (
@@ -905,7 +919,6 @@ export const Chatbot = () => {
                                   const input = "input" in tool.state ? tool.state.input : undefined
                                   const output = "output" in tool.state ? formatToolPayload(tool.state.output) : undefined
                                   const error = "error" in tool.state ? formatToolPayload(tool.state.error) : undefined
-                                  const state = toToolState(tool.state.status)
                                   const answered =
                                     "metadata" in tool.state && Array.isArray(tool.state.metadata?.answers)
                                       ? (tool.state.metadata.answers as string[][])
@@ -925,6 +938,12 @@ export const Chatbot = () => {
                                           : undefined
                                       )
                                     : undefined
+                                  
+                                  const permissionRequest = permissionRequests.find((request) => request.tool?.callID === tool.callID)
+                                  const hasPermissionRequest = !!permissionRequest
+                                  const isPermissionTool = tool.state.status === "approval-requested" || hasPermissionRequest
+                                  const permissionResponded = tool.state.status === "approval-responded"
+                                  const state = toToolState(tool.state.status, hasPermissionRequest)
                                   const toolInput = <ToolInput input={input ?? {}} />
                                   const currentViewMode = questionViewModes[tool.id] ?? "view"
                                   const handleViewModeChange = (mode: "code" | "view") => {
@@ -966,6 +985,12 @@ export const Chatbot = () => {
                                             viewMode={currentViewMode}
                                             onViewModeChange={handleViewModeChange}
                                           />
+                                        ) : isPermissionTool && permissionRequest ? (
+                                          <PermissionTool
+                                            request={permissionRequest}
+                                            onReply={replyPermission}
+                                            responded={permissionResponded}
+                                          />
                                         ) : isDelegateToolCall ? (
                                           currentDelegateViewMode === "code" ? toolInput : (
                                             <DelegateToolContent
@@ -982,7 +1007,7 @@ export const Chatbot = () => {
                                         ) : (
                                           toolInput
                                         )}
-                                        {!isDelegateToolCall && !isTodoToolCall && !questionRequest && (output || error) ? (
+                                        {!isDelegateToolCall && !isTodoToolCall && !questionRequest && !isPermissionTool && (output || error) ? (
                                           <ToolOutput errorText={error} output={output} />
                                         ) : null}
                                       </ToolContent>
@@ -1087,10 +1112,10 @@ export const Chatbot = () => {
             <PromptInputHeader>
               <AttachmentsDisplay />
             </PromptInputHeader>
-            {questionRequests.length > 0 && (
+            {(questionRequests.length > 0 || permissionRequests.length > 0) && (
               <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-amber-400 border-b border-border">
                 <BellIcon className="size-3 shrink-0" />
-                Answer the question above to continue
+                {questionRequests.length > 0 ? "Answer the question above to continue" : "Approve or reject the permission request above to continue"}
               </div>
             )}
             <PromptInputBody>
@@ -1191,7 +1216,7 @@ export const Chatbot = () => {
                 )}
 
               </PromptInputTools>
-              <PromptInputSubmit status={status} onStop={abort} disabled={questionRequests.length > 0} />
+              <PromptInputSubmit status={status} onStop={abort} disabled={questionRequests.length > 0 || permissionRequests.length > 0} />
             </PromptInputFooter>
           </PromptInput>
           

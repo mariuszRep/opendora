@@ -106,7 +106,13 @@ export namespace Agent {
     // - tools: ["bash", "read"] -> only bash and read
     // - tools: [] -> NO tools
     // - tools: undefined -> NO OVERRIDE, use default permissions
+    
+    // Merge agent-specific permissions with defaults
+    // Agent permissions take precedence (they come last in merge)
     let permission = defaults
+    if (entry.config.permission && Array.isArray(entry.config.permission)) {
+      permission = PermissionNext.merge(defaults, entry.config.permission as PermissionNext.Ruleset)
+    }
 
     return {
       id: entry.id,

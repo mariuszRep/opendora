@@ -150,11 +150,20 @@ export type QuestionRequest = {
   id: string
   sessionID: string
   questions: QuestionInfo[]
-  tool?: {
-    messageID: string
-    callID: string
-  }
+  tool?: { messageID: string; callID: string }
 }
+
+export type PermissionRequest = {
+  id: string
+  sessionID: string
+  permission: string
+  patterns: string[]
+  metadata: Record<string, any>
+  always: string[]
+  tool?: { messageID: string; callID: string }
+}
+
+export type PermissionReply = "once" | "always" | "reject"
 
 export type Provider = {
   id: string
@@ -234,6 +243,8 @@ export type Event =
   | { type: "question.asked"; properties: QuestionRequest }
   | { type: "question.replied"; properties: { sessionID: string; requestID: string; answers: QuestionAnswer[] } }
   | { type: "question.rejected"; properties: { sessionID: string; requestID: string } }
+  | { type: "permission.asked"; properties: PermissionRequest }
+  | { type: "permission.replied"; properties: { sessionID: string; requestID: string; reply: PermissionReply } }
   | { type: "session.created"; properties: { info: Session } }
   | { type: "session.updated"; properties: { info: Session } }
   | { type: "session.deleted"; properties: { sessionID: string } }
@@ -335,6 +346,14 @@ export const opendora = {
       req<boolean>(`/question/${requestID}/reject`, {
         method: "POST",
         body: JSON.stringify({}),
+      }),
+  },
+  permission: {
+    list: () => req<PermissionRequest[]>("/permission"),
+    reply: (requestID: string, reply: PermissionReply, message?: string) =>
+      req<boolean>(`/permission/${requestID}/reply`, {
+        method: "POST",
+        body: JSON.stringify({ reply, message }),
       }),
   },
   auth: {

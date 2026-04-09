@@ -12,6 +12,8 @@ import {
   type Message,
   type MessageWithParts,
   type Part,
+  type PermissionReply,
+  type PermissionRequest,
   type Provider,
   type QuestionAnswer,
   type QuestionRequest,
@@ -57,6 +59,9 @@ export type UseOpendoraResult = {
   allQuestionRequests: Record<string, QuestionRequest[]>
   replyQuestion: (requestID: string, answers: QuestionAnswer[]) => Promise<void>
   rejectQuestion: (requestID: string) => Promise<void>
+  permissionRequests: PermissionRequest[]
+  allPermissionRequests: Record<string, PermissionRequest[]>
+  replyPermission: (requestID: string, reply: PermissionReply) => Promise<void>
   status: ChatStatus
   sendMessage: (text: string, options?: { model?: { providerID: string; modelID: string }; agent?: string }) => Promise<void>
   abort: () => void
@@ -100,6 +105,7 @@ export function useOpendora(): UseOpendoraResult {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [messages, setMessages] = useState<MessageWithParts[]>([])
   const [questionRequests, setQuestionRequests] = useState<Record<string, QuestionRequest[]>>({})
+  const [permissionRequests, setPermissionRequests] = useState<Record<string, PermissionRequest[]>>({})
   const [status, setStatus] = useState<ChatStatus>("ready")
   const [error, setError] = useState<string | null>(null)
   const [providers, setProviders] = useState<Provider[]>([])
@@ -454,6 +460,29 @@ export function useOpendora(): UseOpendoraResult {
           })
           break
         }
+        case "permission.asked": {
+          const request = event.properties as PermissionRequest
+          setPermissionRequests((prev) => {
+            const existing = prev[request.sessionID] ?? []
+            const idx = existing.findIndex((item) => item.id === request.id)
+            const next = idx === -1
+              ? [...existing, request]
+              : existing.map((item, index) => (index === idx ? request : item))
+            return { ...prev, [request.sessionID]: next }
+          })
+          break
+        }
+        case "permission.replied": {
+          const { sessionID, requestID } = event.properties as { sessionID: string; requestID: string }
+          setPermissionRequests((prev) => {
+            const existing = prev[sessionID] ?? []
+            return {
+              ...prev,
+              [sessionID]: existing.filter((item) => item.id !== requestID),
+            }
+          })
+          break
+        }
       }
     }, () => {
       // SSE reconnected — reset stuck status and navigate back to the default agent's main session
@@ -701,11 +730,17 @@ export function useOpendora(): UseOpendoraResult {
     createSession,
     setSessionAgent,
     setAgentMainSession,
+    activeSessions: activeSessionsRef.current,
     messages,
-    questionRequests: selectedSession ? (questionRequests[selectedSession.id] ?? []) : [],
+    questionRequests: questionRequests[selectedSessionId ?? ""] ?? [],
     allQuestionRequests: questionRequests,
     replyQuestion,
     rejectQuestion,
+    permissionRequests: permissionRequests[selectedSessionId ?? ""] ?? [],
+    allPermissionRequests: permissionRequests,
+    replyPermission: async (requestID: string, reply: PermissionReply) => {
+      await opendora.permission.reply(requestID, reply)
+    },
     status,
     sendMessage,
     abort,
@@ -716,7 +751,6 @@ export function useOpendora(): UseOpendoraResult {
     selectAgent,
     defaultAgent: defaultAgentId,
     setDefaultAgent,
-    activeSessions,
     createAgent,
     updateAgent,
     deleteAgent,

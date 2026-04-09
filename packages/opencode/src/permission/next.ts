@@ -9,6 +9,7 @@ import { Log } from "@/util/log"
 import z from "zod"
 import { Wildcard } from "@/util/wildcard"
 import { Permission } from "@opendora/permission"
+import { Plugin } from "@/plugin"
 
 export namespace PermissionNext {
   const log = Log.create({ service: "permission" })
@@ -100,11 +101,26 @@ export namespace PermissionNext {
           throw new DeniedError(ruleset.filter((r) => Wildcard.match(request.permission, r.permission)))
         if (rule.action === "ask") {
           const id = input.id ?? Identifier.ascending("permission")
+          const info: Request = {
+            id,
+            ...request,
+          }
+          
+          // Allow plugins to intercept and auto-approve before blocking
+          const pluginResult = await Plugin.trigger("permission.ask", info, {
+            status: "ask" as "ask" | "allow" | "deny",
+          })
+          
+          // If a plugin changed the status, respect it
+          if (pluginResult.status === "deny") {
+            throw new DeniedError(ruleset.filter((r) => Wildcard.match(request.permission, r.permission)))
+          }
+          if (pluginResult.status === "allow") {
+            continue
+          }
+          
+          // Status is still "ask" - create blocking promise for user approval
           return new Promise<void>((resolve, reject) => {
-            const info: Request = {
-              id,
-              ...request,
-            }
             s.pending[id] = {
               info,
               resolve,

@@ -178,12 +178,8 @@ export function configureSessionCore() {
       async tree(opts: { cwd: string; limit: number }) {
         return Ripgrep.tree(opts)
       },
-      async search(args: string[], options?: { cwd?: string }) {
-        return Ripgrep.search({
-          cwd: options?.cwd || Instance.directory,
-          pattern: args.find(arg => !arg.startsWith('-')) || '',
-          glob: args.includes('--glob') ? [args[args.indexOf('--glob') + 1]] : undefined,
-        })
+      async search(input: { cwd: string; pattern: string; glob?: string[]; limit?: number; follow?: boolean }) {
+        return Ripgrep.search(input)
       },
       async glob(pattern: string, options?: { cwd?: string; include?: "file" | "dir" | "all"; absolute?: boolean; dot?: boolean }) {
         const results: string[] = []
