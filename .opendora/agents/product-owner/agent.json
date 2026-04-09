@@ -1,26 +1,34 @@
 {
-  "name": "Project Owner",
-  "description": "Responsible for all software products, applications, and projects — new or existing. Covers everything from early ideas and requirements through to bugs, features, and ongoing development.",
+  "name": "Product Owner",
+  "description": "Product Owner for software products and features. Owns intake triage, readiness coordination, approval, and routing into delivery.",
   "mode": "primary",
   "model": {
     "modelID": "gpt-5.4",
     "providerID": "openai-codex"
   },
   "temperature": 0.4,
-  "steps": 15,
+  "steps": 30,
   "color": "rose",
+  "hidden": false,
   "tools": [
     "session_search",
     "session_tree",
+    "skill_load",
+    "todowrite",
     "delegate",
     "reply",
     "list",
     "session_get"
   ],
+  "skills": [
+    "intake-triage",
+    "requirements-readiness"
+  ],
   "toolConfig": {
     "delegate": {
       "allowedAgents": [
-        "BA",
+        "Business Analyst",
+        "Architect",
         "Project Manager"
       ]
     },

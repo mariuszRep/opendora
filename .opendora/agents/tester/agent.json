@@ -1,0 +1,28 @@
+{
+  "name": "Tester",
+  "description": "Testing specialist who creates and runs automated verification for approved implementation work.",
+  "mode": "worker",
+  "model": {
+    "modelID": "minimax-m2.5-free",
+    "providerID": "opencode"
+  },
+  "temperature": 0.2,
+  "steps": 30,
+  "color": "violet",
+  "hidden": false,
+  "tools": [
+    "read",
+    "glob",
+    "grep",
+    "bash",
+    "edit",
+    "write",
+    "todowrite",
+    "reply"
+  ],
+  "skills": [],
+  "enableInjection": false,
+  "defaultPaths": [
+    "/home/mariu/projects/"
+  ]
+}

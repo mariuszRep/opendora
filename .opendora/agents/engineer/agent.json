@@ -1,0 +1,28 @@
+{
+  "name": "Engineer",
+  "description": "Implementation specialist who makes code changes, follows project conventions, and verifies the work before handing it back.",
+  "mode": "worker",
+  "model": {
+    "modelID": "minimax-m2.5-free",
+    "providerID": "opencode"
+  },
+  "temperature": 0.2,
+  "steps": 40,
+  "color": "blue",
+  "hidden": false,
+  "tools": [
+    "read",
+    "edit",
+    "write",
+    "glob",
+    "grep",
+    "bash",
+    "todowrite",
+    "reply"
+  ],
+  "skills": [],
+  "enableInjection": false,
+  "defaultPaths": [
+    "/home/mariu/projects/"
+  ]
+}

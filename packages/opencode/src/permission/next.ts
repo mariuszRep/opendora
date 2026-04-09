@@ -179,6 +179,22 @@ export namespace PermissionNext {
           })
         }
 
+        // Persist approved permissions to database
+        const projectID = Instance.project.id
+        Database.use((db) => {
+          const existing = db.select().from(PermissionTable).where(eq(PermissionTable.project_id, projectID)).get()
+          if (existing) {
+            db.update(PermissionTable)
+              .set({ data: s.approved, updated_at: Date.now() })
+              .where(eq(PermissionTable.project_id, projectID))
+              .run()
+          } else {
+            db.insert(PermissionTable)
+              .values({ project_id: projectID, data: s.approved, created_at: Date.now(), updated_at: Date.now() })
+              .run()
+          }
+        })
+
         existing.resolve()
 
         const sessionID = existing.info.sessionID

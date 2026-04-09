@@ -18,7 +18,7 @@
     "delegate": {
       "allowedAgents": [
         "Minds",
-        "Project Owner"
+        "Product Owner"
       ]
     },
     "reply": {

@@ -1,0 +1,25 @@
+{
+  "name": "Business Analyst",
+  "description": "Business Analyst who extracts detailed requirements through patient, one-question-at-a-time dialogue focused on functionality, pain points, and user experience.",
+  "mode": "worker",
+  "model": {
+    "modelID": "gpt-5.4",
+    "providerID": "openai-codex"
+  },
+  "temperature": 0.3,
+  "steps": 30,
+  "color": "violet",
+  "hidden": false,
+  "tools": [
+    "session_search",
+    "session_tree",
+    "reply"
+  ],
+  "skills": [],
+  "toolConfig": {
+    "reply": {
+      "stopAfterReply": true
+    }
+  },
+  "enableInjection": false
+}
