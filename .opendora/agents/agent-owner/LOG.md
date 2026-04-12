@@ -11,7 +11,7 @@ _Context: ses_2c1dc1464ffe7ktWOjQo2UhGVu_
 ---
 ### 2026-03-30 10:18:40 UTC [BUG]
 
-Skill registry appears stale. After creating `/home/ubuntu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md` and `/home/ubuntu/projects/opendora/.opendora/skill/project-initiation/SKILL.md`, `skill_discover` still reports only `pm-feature-workflow`, `skill_load("feature-workflow")` fails as not found, and `agent_get` reports PM skills as none even though `.opendora/agents/pm/agent.json` contains `feature-workflow` and `project-initiation` in `skills`.
+Skill registry appears stale. After creating `/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md` and `/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md`, `skill_discover` still reports only `pm-feature-workflow`, `skill_load("feature-workflow")` fails as not found, and `agent_get` reports PM skills as none even though `.opendora/agents/pm/agent.json` contains `feature-workflow` and `project-initiation` in `skills`.
 
 _Context: ses_2c1cb6727ffeUlbU89d1LbZmrM_
 

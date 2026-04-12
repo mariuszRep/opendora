@@ -7,8 +7,8 @@ Repository-wide instructions for agents working in `opendora`.
 Before changing code in any scope, read:
 
 1. This root `AGENTS.md`
-2. [`VISION.md`](/home/ubuntu/projects/opendora/VISION.md) — target architecture, human-owned, never edit during migration
-3. [`MIGRATION.md`](/home/ubuntu/projects/opendora/MIGRATION.md) — current migration progress, update as work happens
+2. [`VISION.md`](/home/mariu/projects/opendora/VISION.md) — target architecture, human-owned, never edit during migration
+3. [`MIGRATION.md`](/home/mariu/projects/opendora/MIGRATION.md) — current migration progress, update as work happens
 4. The nearest nested `AGENTS.md` for the package or app you are editing
 
 Nested files inherit parent context by default. Treat nested files as stricter or more specific.

@@ -48,7 +48,6 @@
   },
   "defaultPaths": [
     "/home/mariu/projects/opendora/.opendora/skill",
-    "/home/mariu/projects/opendora/.opendora/agents",
-    "/home/mariu/projects/opensource/autoresearch"
+    "/home/mariu/projects/opendora/.opendora/agents"
   ]
 }

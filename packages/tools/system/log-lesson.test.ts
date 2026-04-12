@@ -2,7 +2,7 @@
  * Smoke test for the log tool.
  *
  * Run with:
- *   cd /home/ubuntu/projects/opendora
+ *   cd /home/mariu/projects/opendora
  *   bun packages/tools/system/log-lesson.test.ts
  */
 
@@ -49,6 +49,8 @@ function assert(condition: boolean, msg: string) {
 // Tests
 // ---------------------------------------------------------------------------
 const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "log-tool-test-"))
+// Pre-create .opendora so findOpendoraRoot anchors here even before any log is written
+await fs.mkdir(path.join(tmpRoot, ".opendora"), { recursive: true })
 
 const tool = await LogLessonTool.init()
 
@@ -131,6 +133,26 @@ await run("all kind values produce correct labels in file", async () => {
   for (const label of ["[ERROR]", "[BUG]", "[FAILED]", "[ADVISORY]"]) {
     assert(content.includes(label), `missing label ${label}`)
   }
+})
+
+// 6. Session directory is a subdirectory — log still goes to project root
+await run("log resolves to project root when session dir is a subdirectory", async () => {
+  // Simulate an agent whose defaultPaths[0] is .opendora/skill (agent-owner pattern)
+  const subDir = path.join(tmpRoot, ".opendora", "skill")
+  await fs.mkdir(subDir, { recursive: true })
+  const ctx = makeCtx(subDir)
+  await tool.execute(
+    { target_type: "agent", target_id: "agent-owner", kind: "advisory", message: "Rooted from subdir" },
+    ctx as any,
+  )
+  // Must land at tmpRoot/.opendora/agents/agent-owner/LOG.md — NOT subDir/.opendora/...
+  const correct = path.join(tmpRoot, ".opendora", "agents", "agent-owner", "LOG.md")
+  const wrong = path.join(subDir, ".opendora", "agents", "agent-owner", "LOG.md")
+  const content = await fs.readFile(correct, "utf8")
+  assert(content.includes("Rooted from subdir"), "entry missing from correct path")
+  let wrongExists = false
+  try { await fs.access(wrong); wrongExists = true } catch { /* expected */ }
+  assert(!wrongExists, "log was incorrectly written to subDir/.opendora/")
 })
 
 // Cleanup

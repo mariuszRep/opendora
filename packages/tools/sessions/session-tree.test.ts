@@ -2,7 +2,7 @@
  * Smoke tests for session-tree tool.
  *
  * Run with:
- *   cd /home/ubuntu/projects/opendora
+ *   cd /home/mariu/projects/opendora
  *   bun packages/tools/sessions/session-tree.test.ts
  */
 

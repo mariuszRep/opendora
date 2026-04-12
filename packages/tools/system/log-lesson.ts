@@ -4,6 +4,28 @@ import z from "zod"
 import { Tool } from "../tool.ts"
 import { directory } from "../host.ts"
 
+/**
+ * Walk up from `start` to find the nearest ancestor directory that contains
+ * a `.opendora` subdirectory. Falls back to `start` if none is found.
+ * This prevents mis-rooted paths when a session's working directory is a
+ * subdirectory of the project (e.g. `.opendora/skill/`).
+ */
+async function findOpendoraRoot(start: string): Promise<string> {
+  let current = start
+  while (true) {
+    try {
+      await fs.access(path.join(current, ".opendora"))
+      return current
+    } catch {
+      // not found here, go up
+    }
+    const parent = path.dirname(current)
+    if (parent === current) break
+    current = parent
+  }
+  return start
+}
+
 const KIND_LABEL: Record<string, string> = {
   error: "ERROR",
   bug: "BUG",
@@ -68,7 +90,7 @@ export const LogLessonTool = Tool.define(
     }),
 
     async execute(args, ctx) {
-      const root = directory(ctx)
+      const root = await findOpendoraRoot(directory(ctx))
       const logPath = resolveLogPath(root, args.target_type, args.target_id)
 
       await fs.mkdir(path.dirname(logPath), { recursive: true })

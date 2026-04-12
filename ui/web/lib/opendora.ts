@@ -11,6 +11,34 @@ export type RetentionPolicy = {
   onExpire?: "archive" | "close" | "delete"
 }
 
+/**
+ * A single filesystem boundary granted to an agent or session.
+ * edit: true  = read + write access
+ * edit: false = read / explore only
+ *
+ * Inheritance rule: child can only narrow (sub-path) or downgrade (edit→explore).
+ * A child never gains access that its parent does not have.
+ */
+export type PathEntry = {
+  path: string
+  edit: boolean
+}
+
+export type FileNode = {
+  name: string
+  path: string
+  absolute: string
+  type: "file" | "directory"
+  ignored: boolean
+}
+
+export type FileContent = {
+  type: "text" | "binary"
+  content: string
+  encoding?: "base64"
+  mimeType?: string
+}
+
 export type SendPolicy = {
   allow: string[]
   deny: string[]
@@ -27,7 +55,11 @@ export type Session = {
   sendPolicy?: SendPolicy
   model?: string
   systemPrompt?: string
+  /** New unified path entries. Replaces path + readPath. */
+  paths?: PathEntry[]
+  /** @deprecated Use paths instead. Kept for backward compat. */
   path?: string
+  /** @deprecated Use paths instead. Kept for backward compat. */
   readPath?: string
   time: { created: number; updated: number }
   /** Session that spawned this one (via delegate tool) */
@@ -182,10 +214,13 @@ export type Agent = {
   model?: { modelID: string; providerID: string }
   fallback_model?: { modelID: string; providerID: string }
   tools?: string[]
-  toolConfig?: { 
+  toolConfig?: {
     delegate?: { allowedAgents?: string[] }
     reply?: { stopAfterReply?: boolean }
   }
+  /** New unified path entries. Replaces defaultPaths. */
+  paths?: PathEntry[]
+  /** @deprecated Use paths instead. */
   defaultPaths?: string[]
   sandbox?: boolean
   native?: boolean
@@ -204,11 +239,14 @@ export type AgentConfig = {
   hidden?: boolean
   tools?: string[]
   skills?: string[]
-  toolConfig?: { 
+  toolConfig?: {
     delegate?: { allowedAgents?: string[] }
     reply?: { stopAfterReply?: boolean }
   }
   enableInjection?: boolean
+  /** New unified path entries. Replaces defaultPaths. */
+  paths?: PathEntry[]
+  /** @deprecated Use paths instead. */
   defaultPaths?: string[]
   sandbox?: boolean
 }
@@ -425,6 +463,10 @@ export const opendora = {
       }
       return res.blob()
     },
+  },
+  file: {
+    list: (path: string) => req<FileNode[]>(`/file?path=${encodeURIComponent(path)}`),
+    content: (path: string) => req<FileContent>(`/file/content?path=${encodeURIComponent(path)}`),
   },
   config: {
     get: () => req<{ model_filters?: Record<string, "all" | "free" | "none">; [k: string]: unknown }>("/config"),

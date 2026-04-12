@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils"
 import type { Session, SessionType } from "@/lib/opendora"
 import { getAgentColor } from "@/lib/agent-colors"
 import { useUserProfile } from "@/hooks/use-user-profile"
-import { BellIcon, BotIcon, CheckIcon, MessageSquareIcon, PencilIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, UserIcon } from "lucide-react"
+import { BellIcon, BotIcon, CheckIcon, FolderTreeIcon, MessageSquareIcon, PencilIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, UserIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type React from "react"
 import { useRef, useState } from "react"
@@ -57,6 +57,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     abortSession,
     setAgentMainSession,
     allQuestionRequests,
+    fileTreeOpen,
+    toggleFileTree,
   } = useOpendoraContext()
 
   const visibleAgents = agents.filter((a) => !a.hidden)
@@ -456,6 +458,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </span>
                 </SidebarMenuButton>
               )}
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={toggleFileTree}
+                tooltip={fileTreeOpen ? "Hide file tree" : "Show file tree"}
+                isActive={fileTreeOpen}
+              >
+                <FolderTreeIcon className="size-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden">Files</span>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton

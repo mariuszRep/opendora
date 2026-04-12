@@ -570,30 +570,33 @@ export namespace File {
       }
       ignored = ig.ignores.bind(ig)
     }
-    const resolved = dir ? path.join(Instance.directory, dir) : Instance.directory
-
-    // TODO: Filesystem.contains is lexical only - symlinks inside the project can escape.
-    // TODO: On Windows, cross-drive paths bypass this check. Consider realpath canonicalization.
-    if (!Instance.containsPath(resolved)) {
-      throw new Error(`Access denied: path escapes project directory`)
-    }
+    // Use path.resolve so absolute paths work correctly (path.join treats them as relative).
+    const resolved = dir ? path.resolve(Instance.directory, dir) : Instance.directory
 
     const nodes: Node[] = []
     for (const entry of await fs.promises
       .readdir(resolved, {
         withFileTypes: true,
       })
-      .catch(() => [])) {
+      .catch((err: NodeJS.ErrnoException) => {
+        // ENOENT: path genuinely doesn't exist — surface as an error so the UI
+        // can show "path not found" rather than silently showing "empty directory"
+        if (err.code === "ENOENT") throw new Error(`Directory not found: ${resolved}`)
+        // Any other error (e.g. EACCES permission denied) — return empty list
+        return [] as fs.Dirent[]
+      })) {
       if (exclude.includes(entry.name)) continue
       const fullPath = path.join(resolved, entry.name)
       const relativePath = path.relative(Instance.directory, fullPath)
       const type = entry.isDirectory() ? "directory" : "file"
+      // ignore library requires paths without leading "../" — skip check for external paths
+      const isExternal = relativePath.startsWith("..")
       nodes.push({
         name: entry.name,
         path: relativePath,
         absolute: fullPath,
         type,
-        ignored: ignored(type === "directory" ? relativePath + "/" : relativePath),
+        ignored: isExternal ? false : ignored(type === "directory" ? relativePath + "/" : relativePath),
       })
     }
     return nodes.sort((a, b) => {

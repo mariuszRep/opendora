@@ -1,5 +1,6 @@
 import { AppSidebar } from '@/components/app-sidebar'
 import { OpendoraProvider } from './opendora-context'
+import { DashboardShell } from './dashboard-shell'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -8,7 +9,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset className="flex flex-col min-h-0 overflow-hidden">
-          {children}
+          <DashboardShell>
+            {children}
+          </DashboardShell>
         </SidebarInset>
       </SidebarProvider>
     </OpendoraProvider>

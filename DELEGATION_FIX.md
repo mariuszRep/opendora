@@ -17,12 +17,12 @@ When a user directly engaged in a delegated session (e.g., `ses_2c0ef19e8ffebm8N
    - `Please do X` (direct user engagement)
 3. Agent treated all messages as if they needed the reply tool
 
-The attribution system at `@/home/ubuntu/projects/opendora/packages/session/src/message-v2.ts:543-548` only adds `[agent:name]` prefix when `from.kind === "agent"`, but delegated messages had no `from` field set.
+The attribution system at `@/home/mariu/projects/opendora/packages/session/src/message-v2.ts:543-548` only adds `[agent:name]` prefix when `from.kind === "agent"`, but delegated messages had no `from` field set.
 
 ## The Fix
 
 ### 1. Proper Message Attribution
-**File**: `@/home/ubuntu/projects/opendora/packages/session/src/prompt.ts:1134-1143`
+**File**: `@/home/mariu/projects/opendora/packages/session/src/prompt.ts:1134-1143`
 
 When `parentMessageID` is provided (cross-session delegation), look up the parent message to get the delegating agent's ID and set `from: { kind: "agent", id: agentId }`:
 
@@ -47,7 +47,7 @@ const info: MessageV2.Info = {
 
 ### 2. Conditional Delegation Injection (Supporting Change)
 
-**File**: `@/home/ubuntu/projects/opendora/packages/tools/sessions/delegate.ts:202-212`
+**File**: `@/home/mariu/projects/opendora/packages/tools/sessions/delegate.ts:202-212`
 
 Also updated the delegation injection text to be more helpful:
 
