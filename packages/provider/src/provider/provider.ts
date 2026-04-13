@@ -973,7 +973,9 @@ export namespace Provider {
       if (auth) {
         const options = await plugin.auth.loader(() => Auth.get(providerID) as any, database[plugin.auth.provider])
         const opts = options ?? {}
-        const patch: Partial<Info> = providers[providerID] ? { options: opts } : { source: "custom", options: opts }
+        const patch: Partial<Info> = providers[providerID] 
+          ? { options: opts } 
+          : { source: "custom", options: opts, models: database[plugin.auth.provider]?.models ?? {} }
         mergeProvider(providerID, patch)
       }
 

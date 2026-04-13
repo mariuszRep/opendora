@@ -6,11 +6,89 @@ function iife<T>(fn: () => T): T {
   return fn()
 }
 
+// Google API type URLs for structured error details
+const GOOGLE_RPC_RETRY_INFO = "type.googleapis.com/google.rpc.RetryInfo"
+const GOOGLE_RPC_ERROR_INFO = "type.googleapis.com/google.rpc.ErrorInfo"
+
+const CLOUDCODE_DOMAINS = [
+  "cloudcode-pa.googleapis.com",
+  "staging-cloudcode-pa.googleapis.com",
+  "autopush-cloudcode-pa.googleapis.com",
+]
+
+interface GoogleErrorDetail {
+  "@type": string
+  [key: string]: unknown
+}
+
+interface RetryInfoDetail extends GoogleErrorDetail {
+  "@type": typeof GOOGLE_RPC_RETRY_INFO
+  retryDelay?: string // e.g. "34.074824224s", "900ms"
+}
+
+interface ErrorInfoDetail extends GoogleErrorDetail {
+  "@type": typeof GOOGLE_RPC_ERROR_INFO
+  reason?: string
+  domain?: string
+}
+
+/**
+ * Parses a protobuf duration string (e.g. "34.074824224s", "900ms") to milliseconds.
+ */
+function parseDurationMs(duration: string): number | null {
+  if (duration.endsWith("ms")) {
+    const ms = parseFloat(duration.slice(0, -2))
+    return isNaN(ms) ? null : ms
+  }
+  if (duration.endsWith("s")) {
+    const s = parseFloat(duration.slice(0, -1))
+    return isNaN(s) ? null : s * 1000
+  }
+  return null
+}
+
+/**
+ * Parses the Google API error details array from a raw response body string.
+ * Returns null if the body is not a well-formed Google API error.
+ */
+function parseGoogleErrorDetails(responseBody: string | undefined): GoogleErrorDetail[] | null {
+  if (!responseBody) return null
+  try {
+    const parsed = JSON.parse(responseBody)
+    const details = parsed?.error?.details
+    if (Array.isArray(details) && details.length > 0) return details
+  } catch {}
+  return null
+}
+
+/**
+ * Checks if a domain belongs to the Google Cloud Code API.
+ * Sanitizes stray characters that SSE stream parsing can inject.
+ */
+function isCloudCodeDomain(domain: string): boolean {
+  const sanitized = domain.replace(/[^a-zA-Z0-9.-]/g, "")
+  return CLOUDCODE_DOMAINS.includes(sanitized)
+}
+
+/**
+ * Checks if this is a terminal (non-retryable) quota error from the CloudCode API.
+ * QUOTA_EXHAUSTED means a hard limit (daily/total), not a per-minute rate limit.
+ */
+export function isTerminalQuotaError(responseBody: string | undefined): boolean {
+  const details = parseGoogleErrorDetails(responseBody)
+  if (!details) return false
+  const errorInfo = details.find((d): d is ErrorInfoDetail => d["@type"] === GOOGLE_RPC_ERROR_INFO)
+  if (!errorInfo?.domain || !isCloudCodeDomain(errorInfo.domain)) return false
+  return errorInfo.reason === "QUOTA_EXHAUSTED"
+}
+
 export namespace SessionRetry {
   export const RETRY_INITIAL_DELAY = 2000
   export const RETRY_BACKOFF_FACTOR = 2
   export const RETRY_MAX_DELAY_NO_HEADERS = 30_000 // 30 seconds
   export const RETRY_MAX_DELAY = 2_147_483_647 // max 32-bit signed integer for setTimeout
+  // Matches Gemini CLI: delays longer than 5 min are treated as terminal
+  export const MAX_RETRYABLE_DELAY_MS = 300_000
 
   export async function sleep(ms: number, signal: AbortSignal): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -32,27 +110,64 @@ export namespace SessionRetry {
   export function delay(attempt: number, error?: MessageV2.APIError) {
     if (error) {
       const headers = error.data.responseHeaders
+
+      // 1. Standard HTTP retry-after headers
       if (headers) {
         const retryAfterMs = headers["retry-after-ms"]
         if (retryAfterMs) {
           const parsedMs = Number.parseFloat(retryAfterMs)
-          if (!Number.isNaN(parsedMs)) {
-            return parsedMs
-          }
+          if (!Number.isNaN(parsedMs)) return parsedMs
         }
 
         const retryAfter = headers["retry-after"]
         if (retryAfter) {
           const parsedSeconds = Number.parseFloat(retryAfter)
-          if (!Number.isNaN(parsedSeconds)) {
-            return Math.ceil(parsedSeconds * 1000)
-          }
+          if (!Number.isNaN(parsedSeconds)) return Math.ceil(parsedSeconds * 1000)
           const parsed = Date.parse(retryAfter) - Date.now()
-          if (!Number.isNaN(parsed) && parsed > 0) {
-            return Math.ceil(parsed)
-          }
+          if (!Number.isNaN(parsed) && parsed > 0) return Math.ceil(parsed)
+        }
+      }
+
+      // 2. Google structured error details: RetryInfo.retryDelay (protobuf duration string)
+      //    This is the canonical source used by the Gemini CLI.
+      const details = parseGoogleErrorDetails(error.data.responseBody)
+      if (details) {
+        const retryInfo = details.find((d): d is RetryInfoDetail => d["@type"] === GOOGLE_RPC_RETRY_INFO)
+        if (retryInfo?.retryDelay) {
+          const ms = parseDurationMs(retryInfo.retryDelay)
+          if (ms !== null) return ms + 1000 // +1s buffer
         }
 
+        // 3. CloudCode RATE_LIMIT_EXCEEDED with no RetryInfo: default to 10s (matches Gemini CLI)
+        const errorInfo = details.find((d): d is ErrorInfoDetail => d["@type"] === GOOGLE_RPC_ERROR_INFO)
+        if (errorInfo?.domain && isCloudCodeDomain(errorInfo.domain) && errorInfo.reason === "RATE_LIMIT_EXCEEDED") {
+          // 4. But first try to parse "reset after Ns" from the message — more precise than 10s default
+          const msgMatch = (error.data.message ?? "").match(/reset after (\d+(?:\.\d+)?)s/i)
+          if (msgMatch) {
+            const ms = parseFloat(msgMatch[1]) * 1000
+            if (!isNaN(ms)) return Math.ceil(ms) + 1000 // +1s buffer
+          }
+          return 10_000
+        }
+      }
+
+      // 5. Fallback message parse for non-structured responses: "Please retry in Xs" (Gemini CLI pattern)
+      //    and "reset after Ns" (CloudCode free-tier pattern)
+      const message = error.data.message ?? ""
+      const retryInMatch = message.match(/Please retry in ([0-9.]+(?:ms|s))/i)
+      if (retryInMatch?.[1]) {
+        const ms = parseDurationMs(retryInMatch[1])
+        if (ms !== null) return Math.ceil(ms) + 1000
+      }
+
+      const resetMatch = message.match(/reset after (\d+(?:\.\d+)?)s/i)
+      if (resetMatch) {
+        const ms = parseFloat(resetMatch[1]) * 1000
+        if (!isNaN(ms)) return Math.ceil(ms) + 1000
+      }
+
+      // 6. Exponential backoff if we had headers but nothing matched
+      if (headers) {
         return RETRY_INITIAL_DELAY * Math.pow(RETRY_BACKOFF_FACTOR, attempt - 1)
       }
     }
@@ -64,6 +179,8 @@ export namespace SessionRetry {
     if (MessageV2.ContextOverflowError.isInstance(error)) return undefined
     if (MessageV2.APIError.isInstance(error)) {
       if (!error.data.isRetryable) return undefined
+      // QUOTA_EXHAUSTED from CloudCode is a hard limit — not retryable
+      if (isTerminalQuotaError(error.data.responseBody)) return undefined
       if (error.data.responseBody?.includes("FreeUsageLimitError"))
         return `Free usage exceeded, add credits https://opencode.ai/zen`
       return error.data.message.includes("Overloaded") ? "Provider is overloaded" : error.data.message

@@ -6,8 +6,9 @@ const BROWSER_URL = "http://localhost:8338"
 const BrowserSchema = z.object({
   action: z.enum([
     "status",
-    "start", 
+    "start",
     "stop",
+    "browse",
     "open",
     "navigate",
     "snapshot",
@@ -21,23 +22,32 @@ const BrowserSchema = z.object({
 })
 
 export const BrowserTool = Tool.define("browser", {
-  description: `Control a web browser to navigate, interact with web pages, and capture content.
+  description: `Control a web browser to navigate web pages and read their content.
 
-Actions:
-- status: Check if browser is running
-- start: Start the browser
-- stop: Stop the browser  
-- open: Open a URL in new tab
-- navigate: Navigate current/specific tab to URL
-- snapshot: Get page content as text
-- screenshot: Capture screenshot
-- close: Close a tab
-- tabs: List all open tabs
+## PREFERRED WORKFLOW
+Use \`browse\` whenever you want to open AND read a page — it does both in one step and is the most reliable action.
 
-Examples:
-- Open Google: {"action": "open", "url": "https://google.com"}
-- Navigate: {"action": "navigate", "url": "https://example.com"}
-- Get page content: {"action": "snapshot"}`,
+\`\`\`
+{"action": "browse", "url": "https://news.google.com/search?q=OpenAI"}
+\`\`\`
+
+The response includes \`targetId\`, \`url\`, \`title\`, and \`snapshot\` (cleaned HTML).
+
+## OTHER ACTIONS
+- \`status\`    — check if the browser is running and list open tabs
+- \`start\`     — start the browser
+- \`stop\`      — stop the browser
+- \`open\`      — open a URL in a new tab (returns \`targetId\`, does NOT return page content)
+- \`navigate\`  — navigate an existing tab to a new URL; pass \`targetId\` to target a specific tab
+- \`snapshot\`  — read page content; pass the \`targetId\` returned by open/navigate/browse
+- \`screenshot\`— save a screenshot to /tmp; pass \`targetId\` to target a specific tab
+- \`close\`     — close a tab by \`targetId\`
+- \`tabs\`      — list all open tabs
+
+## IMPORTANT
+- Always pass \`targetId\` from a previous open/navigate/browse call when using snapshot/screenshot/navigate/close.
+- If snapshot returns an error, call \`browse\` with the URL again rather than retrying snapshot.
+- Avoid opening multiple tabs for the same URL — check \`tabs\` first.`,
   
   parameters: BrowserSchema,
   
@@ -158,6 +168,28 @@ Examples:
           }
         }
 
+        case "browse": {
+          if (!url) throw new Error("url is required for browse action")
+          const res = await fetch(`${BROWSER_URL}/browse`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url }),
+          })
+          const data = await res.json() as any
+          if (data.error) {
+            return {
+              title: `Browse failed: ${url}`,
+              output: `Error: ${data.error}\n\nTry a different URL or check the page is accessible.`,
+              metadata: data,
+            }
+          }
+          return {
+            title: `Browsed: ${data.title || url}`,
+            output: `URL: ${data.url}\nTitle: ${data.title}\ntargetId: ${data.targetId}\n\n${data.snapshot}`,
+            metadata: { targetId: data.targetId, url: data.url, title: data.title },
+          }
+        }
+
         case "open": {
           if (!url) throw new Error("url is required for open action")
           const res = await fetch(`${BROWSER_URL}/tabs/open`, {
@@ -165,11 +197,11 @@ Examples:
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url }),
           })
-          const data = await res.json()
+          const data = await res.json() as any
           return {
             title: `Opened ${url}`,
-            output: JSON.stringify(data, null, 2),
-            metadata: data as any,
+            output: `Tab opened.\ntargetId: ${data.targetId}\nfinalUrl: ${data.url}\n\nUse snapshot with this targetId to read the page content.`,
+            metadata: data,
           }
         }
 
@@ -198,11 +230,18 @@ Examples:
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ targetId }),
           })
-          const data = await res.json()
+          const data = await res.json() as any
+          if (data.error) {
+            return {
+              title: "Snapshot failed",
+              output: `Error: ${data.error}\n\nUse browse action with the URL to reload the page.`,
+              metadata: data,
+            }
+          }
           return {
-            title: "Page Snapshot",
-            output: (data as any).snapshot || JSON.stringify(data, null, 2),
-            metadata: data as any,
+            title: `Snapshot: ${data.title || data.url}`,
+            output: `URL: ${data.url}\nTitle: ${data.title}\ntargetId: ${data.targetId}\n\n${data.snapshot}`,
+            metadata: { targetId: data.targetId, url: data.url, title: data.title },
           }
         }
 

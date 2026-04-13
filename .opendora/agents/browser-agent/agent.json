@@ -3,8 +3,8 @@
   "description": "Agent with browser capabilities for web research, fetching pages, and interactive browsing tasks",
   "mode": "worker",
   "model": {
-    "modelID": "minimax-m2.5-free",
-    "providerID": "opencode"
+    "modelID": "gpt-5.4",
+    "providerID": "openai-codex"
   },
   "temperature": 0.7,
   "steps": 100,

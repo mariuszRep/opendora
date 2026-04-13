@@ -17,8 +17,21 @@ async function loadProjectId(accessToken: string): Promise<string | undefined> {
       body: JSON.stringify({ metadata: { ideType: "IDE_UNSPECIFIED", platform: "PLATFORM_UNSPECIFIED", pluginType: "GEMINI" } }),
     })
     if (res.ok) {
-      const data = (await res.json()) as { cloudaicompanionProject?: string }
+      const data = (await res.json()) as {
+        cloudaicompanionProject?: string
+        currentTier?: { id?: string; name?: string }
+        allowedTiers?: { id?: string; name?: string }[]
+        paidTier?: { id?: string; name?: string; availableCredits?: { creditType: string; creditAmount: string }[] }
+      }
       cachedProjectId = data.cloudaicompanionProject ?? ""
+      console.log("[gemini-cli-loader] loadCodeAssist response:", JSON.stringify({
+        cloudaicompanionProject: cachedProjectId || "(none)",
+        currentTier: data.currentTier ?? "(none)",
+        allowedTiers: data.allowedTiers ?? [],
+        paidTier: data.paidTier ?? "(none)",
+      }, null, 2))
+    } else {
+      console.warn("[gemini-cli-loader] loadCodeAssist failed:", res.status, await res.text())
     }
   } catch {
     // project ID is optional; free-tier users may not need it
@@ -30,8 +43,22 @@ function patchGenerationConfig(gc: Record<string, any>, modelId: string) {
   if (gc?.thinkingConfig === undefined) return
   if (NON_REASONING_MODELS.has(modelId)) {
     delete gc.thinkingConfig
+    return
+  }
+  
+  // gemini-3 models use thinkingLevel, not thinkingBudget
+  // The API doesn't support both parameters together
+  if (modelId.includes("gemini-3")) {
+    // Remove thinkingBudget if present, as gemini-3 only supports thinkingLevel
+    if (gc.thinkingConfig.thinkingBudget !== undefined) {
+      delete gc.thinkingConfig.thinkingBudget
+    }
+    // Ensure thinkingLevel is set if not already present
+    if (gc.thinkingConfig.includeThoughts && gc.thinkingConfig.thinkingLevel === undefined) {
+      gc.thinkingConfig.thinkingLevel = "HIGH"
+    }
   } else if (gc.thinkingConfig.includeThoughts && gc.thinkingConfig.thinkingBudget === undefined) {
-    // Vertex API requires thinkingBudget when includeThoughts is set
+    // Vertex API requires thinkingBudget when includeThoughts is set for gemini-2.5 models
     gc.thinkingConfig.thinkingBudget = -1 // -1 = dynamic
   }
 }
@@ -103,7 +130,7 @@ async function getAccessToken(): Promise<string> {
       type: "oauth",
       access: refreshed.access_token,
       refresh: auth.refresh,
-      expires: refreshed.expiry_date,
+      expires: refreshed.expiry_date ?? Date.now() + 3600 * 1000,
       accountId: auth.accountId,
     })
     return refreshed.access_token
@@ -116,10 +143,46 @@ export async function createGeminiCliLoader() {
   const auth = await Auth.get("google-gemini-cli")
   if (auth?.type !== "oauth") return { autoload: false }
 
+  // Validate that the OAuth credentials are actually valid before auto-loading
+  // This prevents stale/invalid credentials from causing the provider to load
+  try {
+    // Check if token is expired and needs refresh
+    if (auth.expires && Date.now() >= auth.expires - 60_000) {
+      if (!auth.refresh) {
+        // Token expired and no refresh token - credentials are invalid
+        return { autoload: false }
+      }
+      // Try to refresh the token to validate credentials
+      try {
+        const refreshed = await GoogleOAuth.refreshAccessToken(auth.refresh)
+        await Auth.set("google-gemini-cli", {
+          type: "oauth",
+          access: refreshed.access_token,
+          refresh: auth.refresh,
+          expires: refreshed.expiry_date ?? Date.now() + 3600 * 1000,
+          accountId: auth.accountId,
+        })
+      } catch {
+        // Refresh failed - credentials are invalid
+        return { autoload: false }
+      }
+    } else {
+      // Token not expired, validate it's still valid
+      const isValid = await GoogleOAuth.validateToken(auth.access)
+      if (!isValid) {
+        // Token is invalid, don't auto-load
+        return { autoload: false }
+      }
+    }
+  } catch {
+    // Any validation error means credentials are invalid
+    return { autoload: false }
+  }
+
   return {
     autoload: true,
     options: {
-      fetch: async (requestInput: RequestInfo | URL, init?: RequestInit) => {
+      fetch: async (requestInput: string | URL, init?: RequestInit) => {
         const accessToken = await getAccessToken()
 
         const headers = new Headers(init?.headers)
@@ -146,6 +209,7 @@ export async function createGeminiCliLoader() {
               project: projectId || undefined,
               user_prompt_id: crypto.randomUUID(),
               request: sdkBody,
+              enabled_credit_types: ["GOOGLE_ONE_AI"],
             })
           } catch {
             body = init.body as string
