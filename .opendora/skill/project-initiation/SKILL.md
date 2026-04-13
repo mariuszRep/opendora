@@ -36,6 +36,15 @@ Tailor the list to the project, but typically confirm:
 - Core project metadata and baseline tooling are present
 - The project has a clear starting point for first feature delivery
 
+## Git Setup (if new repository)
+
+If this is a new project repository, use the provided scripts:
+
+1. Run `init-repo.sh` - initializes git, creates main branch, optional remote
+2. Run `verify-clean.sh` - ensures clean working state before proceeding
+
+Scripts are in the `scripts/` folder alongside this skill.
+
 ## Delegation Defaults
 
 - Use synchronous handoffs for setup steps because you usually need each result before deciding the next one.

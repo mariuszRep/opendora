@@ -2883,3 +2883,1442 @@ INFO  2026-04-13T14:24:57 +3ms service=server status=completed duration=3 method
 INFO  2026-04-13T14:24:57 +3ms service=server method=GET path=/file request
 INFO  2026-04-13T14:24:57 +0ms service=server status=started method=GET path=/file request
 INFO  2026-04-13T14:24:57 +2ms service=server status=completed duration=2 method=GET path=/file request
+INFO  2026-04-13T14:27:32 +155075ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-13T14:27:32 +0ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-13T14:27:32 +1ms service=server status=completed duration=1 method=OPTIONS path=/provider request
+INFO  2026-04-13T14:27:32 +3ms service=server method=GET path=/provider request
+INFO  2026-04-13T14:27:32 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-04-13T14:27:32 +90ms service=server status=completed duration=90 method=GET path=/provider request
+INFO  2026-04-13T14:28:12 +40024ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-13T14:28:12 +1ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-13T14:28:12 +3ms service=server status=completed duration=3 method=OPTIONS path=/provider request
+INFO  2026-04-13T14:28:12 +16ms service=server method=GET path=/provider request
+INFO  2026-04-13T14:28:12 +1ms service=server status=started method=GET path=/provider request
+INFO  2026-04-13T14:28:12 +82ms service=server status=completed duration=82 method=GET path=/provider request
+INFO  2026-04-13T14:28:23 +11542ms service=server method=OPTIONS path=/file request
+INFO  2026-04-13T14:28:23 +0ms service=server status=started method=OPTIONS path=/file request
+INFO  2026-04-13T14:28:23 +1ms service=server status=completed duration=1 method=OPTIONS path=/file request
+INFO  2026-04-13T14:28:23 +6ms service=server method=OPTIONS path=/session/ses_278ccf4a5ffevckVepZ2iqodN5/message request
+INFO  2026-04-13T14:28:23 +0ms service=server status=started method=OPTIONS path=/session/ses_278ccf4a5ffevckVepZ2iqodN5/message request
+INFO  2026-04-13T14:28:23 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_278ccf4a5ffevckVepZ2iqodN5/message request
+INFO  2026-04-13T14:28:23 +3ms service=server method=GET path=/file request
+INFO  2026-04-13T14:28:23 +0ms service=server status=started method=GET path=/file request
+INFO  2026-04-13T14:28:23 +6ms service=server status=completed duration=6 method=GET path=/file request
+INFO  2026-04-13T14:28:23 +11ms service=server method=GET path=/session/ses_278ccf4a5ffevckVepZ2iqodN5/message request
+INFO  2026-04-13T14:28:23 +0ms service=server status=started method=GET path=/session/ses_278ccf4a5ffevckVepZ2iqodN5/message request
+INFO  2026-04-13T14:28:23 +10ms service=server status=completed duration=10 method=GET path=/session/ses_278ccf4a5ffevckVepZ2iqodN5/message request
+INFO  2026-04-13T14:28:23 +19ms service=server method=GET path=/file request
+INFO  2026-04-13T14:28:23 +0ms service=server status=started method=GET path=/file request
+INFO  2026-04-13T14:28:23 +11ms service=server status=completed duration=11 method=GET path=/file request
+INFO  2026-04-13T14:34:25 +361671ms service=server method=OPTIONS path=/file request
+INFO  2026-04-13T14:34:25 +0ms service=server status=started method=OPTIONS path=/file request
+INFO  2026-04-13T14:34:25 +0ms service=server status=completed duration=0 method=OPTIONS path=/file request
+INFO  2026-04-13T14:34:25 +3ms service=server method=OPTIONS path=/session/ses_2799f56f2ffeqHdq187WX5PNIE/message request
+INFO  2026-04-13T14:34:25 +0ms service=server status=started method=OPTIONS path=/session/ses_2799f56f2ffeqHdq187WX5PNIE/message request
+INFO  2026-04-13T14:34:25 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_2799f56f2ffeqHdq187WX5PNIE/message request
+INFO  2026-04-13T14:34:25 +2ms service=server method=OPTIONS path=/file request
+INFO  2026-04-13T14:34:25 +0ms service=server status=started method=OPTIONS path=/file request
+INFO  2026-04-13T14:34:25 +0ms service=server status=completed duration=0 method=OPTIONS path=/file request
+INFO  2026-04-13T14:34:25 +3ms service=server method=GET path=/file request
+INFO  2026-04-13T14:34:25 +0ms service=server status=started method=GET path=/file request
+INFO  2026-04-13T14:34:25 +1ms service=server method=GET path=/session/ses_2799f56f2ffeqHdq187WX5PNIE/message request
+INFO  2026-04-13T14:34:25 +0ms service=server status=started method=GET path=/session/ses_2799f56f2ffeqHdq187WX5PNIE/message request
+INFO  2026-04-13T14:34:25 +3ms service=server status=completed duration=3 method=GET path=/session/ses_2799f56f2ffeqHdq187WX5PNIE/message request
+INFO  2026-04-13T14:34:25 +2ms service=server status=completed duration=6 method=GET path=/file request
+INFO  2026-04-13T14:34:25 +10ms service=server method=GET path=/file request
+INFO  2026-04-13T14:34:25 +0ms service=server status=started method=GET path=/file request
+INFO  2026-04-13T14:34:25 +18ms service=server status=completed duration=18 method=GET path=/file request
+INFO  2026-04-13T14:34:30 +4668ms service=server method=OPTIONS path=/session request
+INFO  2026-04-13T14:34:30 +0ms service=server status=started method=OPTIONS path=/session request
+INFO  2026-04-13T14:34:30 +0ms service=server status=completed duration=0 method=OPTIONS path=/session request
+INFO  2026-04-13T14:34:30 +5ms service=server method=POST path=/session request
+INFO  2026-04-13T14:34:30 +0ms service=server status=started method=POST path=/session request
+INFO  2026-04-13T14:34:30 +13ms service=bus type=session.created publishing
+INFO  2026-04-13T14:34:30 +4ms service=server status=completed duration=17 method=POST path=/session request
+INFO  2026-04-13T14:34:30 +311ms service=server method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/message request
+INFO  2026-04-13T14:34:30 +0ms service=server status=started method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/message request
+INFO  2026-04-13T14:34:30 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/message request
+INFO  2026-04-13T14:34:30 +5ms service=server method=GET path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/message request
+INFO  2026-04-13T14:34:30 +0ms service=server status=started method=GET path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/message request
+INFO  2026-04-13T14:34:30 +2ms service=server status=completed duration=2 method=GET path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/message request
+INFO  2026-04-13T14:34:42 +11666ms service=server method=POST path=/voice/stt request
+INFO  2026-04-13T14:34:42 +1ms service=server status=started method=POST path=/voice/stt request
+INFO  2026-04-13T14:34:44 +2298ms service=server status=completed duration=2298 method=POST path=/voice/stt request
+INFO  2026-04-13T14:34:44 +31ms service=server method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:34:44 +0ms service=server status=started method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:34:44 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:34:44 +21ms service=server method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:34:44 +0ms service=server status=started method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:34:44 +6ms service=server status=completed duration=6 method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:34:44 +17ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:34:44 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:34:44 +2ms service=bus type=session.updated publishing
+INFO  2026-04-13T14:34:44 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:34:44 +13ms service=provider status=started providerID=opencode getSDK
+INFO  2026-04-13T14:34:44 +0ms service=provider providerID=opencode pkg=@ai-sdk/openai using bundled provider
+INFO  2026-04-13T14:34:44 +1ms service=provider status=completed duration=1 providerID=opencode getSDK
+INFO  2026-04-13T14:34:46 +1606ms service=bus type=session.updated publishing
+INFO  2026-04-13T14:34:46 +14ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:34:46 +73ms service=bus type=session.status publishing
+INFO  2026-04-13T14:34:51 +4809ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:34:51 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:34:52 +1502ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:34:52 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:34:54 +1579ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:34:55 +1550ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:34:57 +1532ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:34:57 +443ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:34:57 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:34:57 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:34:57 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:34:57 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:34:57 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:34:57 +160ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:34:57 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:34:57 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:34:58 +450ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:34:58 +37ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:34:58 +42ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:34:58 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:34:58 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:34:58 +21ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:34:58 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:34:58 +14ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:34:58 +26ms service=bus type=session.status publishing
+INFO  2026-04-13T14:34:59 +839ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:34:59 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:35:00 +1585ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:35:00 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:35:04 +3478ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:35:05 +531ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:35:06 +1550ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:35:06 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:35:06 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:35:06 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:35:08 +1526ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:35:09 +1486ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:35:09 +236ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:35:09 +13ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:35:09 +73ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:35:09 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:35:09 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:35:09 +27ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:35:09 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:35:09 +3ms service=bus type=session.status publishing
+INFO  2026-04-13T14:35:09 +0ms service=bus type=session.idle publishing
+INFO  2026-04-13T14:35:10 +287ms service=server method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:35:10 +0ms service=server status=started method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:35:10 +1ms service=server status=completed duration=1 method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:35:10 +5ms service=server method=POST path=/voice/tts request
+INFO  2026-04-13T14:35:10 +0ms service=server status=started method=POST path=/voice/tts request
+INFO  2026-04-13T14:35:11 +1202ms service=server status=completed duration=1202 method=POST path=/voice/tts request
+INFO  2026-04-13T14:36:50 +98637ms service=server method=POST path=/voice/stt request
+INFO  2026-04-13T14:36:50 +0ms service=server status=started method=POST path=/voice/stt request
+INFO  2026-04-13T14:36:51 +1805ms service=server status=completed duration=1805 method=POST path=/voice/stt request
+INFO  2026-04-13T14:36:51 +8ms service=server method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:36:51 +1ms service=server status=started method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:36:51 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:36:51 +5ms service=server method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:36:51 +0ms service=server status=started method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:36:51 +4ms service=server status=completed duration=4 method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:36:51 +30ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:36:51 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:36:51 +2ms service=bus type=session.updated publishing
+INFO  2026-04-13T14:36:51 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:36:51 +14ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:36:51 +25ms service=bus type=session.status publishing
+INFO  2026-04-13T14:36:52 +921ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:36:52 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:36:54 +1503ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:36:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:36:55 +630ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:36:55 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:36:55 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:36:55 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:36:55 +461ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:36:55 +32ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:36:55 +31ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:36:55 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:36:55 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:36:55 +27ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:36:55 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:36:55 +4ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:36:55 +20ms service=bus type=session.status publishing
+INFO  2026-04-13T14:36:56 +1022ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:36:56 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:36:58 +1510ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:36:58 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:36:59 +1557ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:37:01 +1517ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:37:02 +1507ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:37:04 +1503ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:37:05 +1528ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:37:07 +1544ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:37:08 +1540ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:37:10 +1561ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:37:11 +1481ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:37:13 +1518ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:37:13 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:37:13 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:37:13 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:37:14 +1418ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:37:14 +9ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:37:14 +68ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:37:14 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:37:14 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:37:14 +30ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:37:14 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:37:14 +3ms service=bus type=session.status publishing
+INFO  2026-04-13T14:37:14 +0ms service=bus type=session.idle publishing
+INFO  2026-04-13T14:37:15 +307ms service=server method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:37:15 +0ms service=server status=started method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:37:15 +1ms service=server status=completed duration=1 method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:37:15 +8ms service=server method=POST path=/voice/tts request
+INFO  2026-04-13T14:37:15 +0ms service=server status=started method=POST path=/voice/tts request
+INFO  2026-04-13T14:37:16 +1576ms service=server status=completed duration=1576 method=POST path=/voice/tts request
+INFO  2026-04-13T14:38:36 +79420ms service=server method=POST path=/voice/stt request
+INFO  2026-04-13T14:38:36 +0ms service=server status=started method=POST path=/voice/stt request
+INFO  2026-04-13T14:38:38 +2599ms service=server status=completed duration=2599 method=POST path=/voice/stt request
+INFO  2026-04-13T14:38:38 +10ms service=server method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:38:38 +0ms service=server status=started method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:38:38 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:38:38 +4ms service=server method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:38:38 +0ms service=server status=started method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:38:38 +2ms service=server status=completed duration=2 method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:38:38 +11ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:38:38 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:38:38 +1ms service=bus type=session.updated publishing
+INFO  2026-04-13T14:38:38 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:38:38 +13ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:38:38 +24ms service=bus type=session.status publishing
+INFO  2026-04-13T14:38:44 +5304ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:38:44 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:38:45 +1542ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:38:45 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:38:47 +1514ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:38:48 +899ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:38:48 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:38:48 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:38:48 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:38:49 +913ms service=permission permission=read pattern=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md action={"permission":"read","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:38:49 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:38:49 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:38:49 +5ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:38:51 +2898ms service=permission permission=read pattern=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md action={"permission":"read","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:38:51 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:38:51 +19ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:38:52 +51ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:38:52 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:38:52 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:38:52 +30ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:38:52 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:38:52 +5ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:38:52 +23ms service=bus type=session.status publishing
+INFO  2026-04-13T14:38:54 +2509ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:38:54 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:38:56 +1539ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:38:56 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:38:57 +1509ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:38:58 +1121ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:39:00 +1589ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:39:00 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:39:00 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:39:00 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:39:01 +1290ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:39:01 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:39:01 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:39:08 +7020ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:39:08 +8ms service=permission permission=edit pattern=.opendora/skill/project-initiation/SKILL.md action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:39:08 +30ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:39:08 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:39:08 +27ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:39:08 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:39:08 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:39:08 +18ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:39:08 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:39:08 +16ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:39:08 +27ms service=bus type=session.status publishing
+INFO  2026-04-13T14:39:10 +1413ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:39:10 +10ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:39:11 +1296ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:39:11 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:39:11 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:39:11 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:39:11 +6ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:39:15 +3989ms service=server method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/abort request
+INFO  2026-04-13T14:39:15 +1ms service=server status=started method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/abort request
+INFO  2026-04-13T14:39:15 +0ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/abort request
+INFO  2026-04-13T14:39:15 +4ms service=server method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/abort request
+INFO  2026-04-13T14:39:15 +0ms service=server status=started method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/abort request
+INFO  2026-04-13T14:39:15 +2ms service=bus type=session.status publishing
+INFO  2026-04-13T14:39:15 +0ms service=bus type=session.idle publishing
+INFO  2026-04-13T14:39:15 +0ms service=server status=completed duration=2 method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/abort request
+INFO  2026-04-13T14:39:15 +6ms service=bus type=session.error publishing
+INFO  2026-04-13T14:39:15 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:39:15 +0ms service=bus type=session.idle publishing
+INFO  2026-04-13T14:39:15 +31ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:39:15 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:39:15 +3ms service=bus type=session.status publishing
+INFO  2026-04-13T14:39:15 +0ms service=bus type=session.idle publishing
+INFO  2026-04-13T14:40:26 +71195ms service=server method=POST path=/voice/stt request
+INFO  2026-04-13T14:40:26 +0ms service=server status=started method=POST path=/voice/stt request
+INFO  2026-04-13T14:40:31 +4514ms service=server status=completed duration=4514 method=POST path=/voice/stt request
+INFO  2026-04-13T14:40:31 +10ms service=server method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:40:31 +1ms service=server status=started method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:40:31 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:40:31 +4ms service=server method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:40:31 +1ms service=server status=started method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:40:31 +43ms service=server status=completed duration=43 method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:40:31 +4ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:40:31 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:40:31 +1ms service=bus type=session.updated publishing
+INFO  2026-04-13T14:40:31 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:40:31 +6ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:40:31 +24ms service=bus type=session.status publishing
+INFO  2026-04-13T14:40:32 +1533ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:40:32 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:40:34 +1577ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:40:34 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:40:35 +1494ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:40:37 +1519ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:40:39 +1507ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:40:40 +1342ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:40:41 +1553ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:40:41 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:40:41 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:40:41 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:40:43 +1512ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:40:44 +1553ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:40:46 +1508ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:40:46 +440ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:40:46 +10ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:40:47 +66ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:40:47 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:40:47 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:40:47 +20ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:40:47 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:40:47 +4ms service=bus type=session.status publishing
+INFO  2026-04-13T14:40:47 +0ms service=bus type=session.idle publishing
+INFO  2026-04-13T14:40:47 +325ms service=server method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:40:47 +1ms service=server status=started method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:40:47 +0ms service=server status=completed duration=1 method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:40:47 +6ms service=server method=POST path=/voice/tts request
+INFO  2026-04-13T14:40:47 +0ms service=server status=started method=POST path=/voice/tts request
+INFO  2026-04-13T14:40:48 +970ms service=server status=completed duration=970 method=POST path=/voice/tts request
+INFO  2026-04-13T14:42:10 +82454ms service=server method=POST path=/voice/stt request
+INFO  2026-04-13T14:42:10 +0ms service=server status=started method=POST path=/voice/stt request
+INFO  2026-04-13T14:42:11 +999ms service=server status=completed duration=999 method=POST path=/voice/stt request
+INFO  2026-04-13T14:42:11 +12ms service=server method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:42:11 +0ms service=server status=started method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:42:11 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:42:11 +36ms service=server method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:42:11 +1ms service=server status=started method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:42:11 +3ms service=server status=completed duration=3 method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:42:11 +31ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:42:11 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:42:11 +1ms service=bus type=session.updated publishing
+INFO  2026-04-13T14:42:11 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:42:11 +18ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:42:11 +24ms service=bus type=session.status publishing
+INFO  2026-04-13T14:42:12 +843ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:42:12 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:42:14 +1484ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:42:14 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:42:15 +1506ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:42:17 +1543ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:42:18 +1549ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:42:20 +1233ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:42:21 +1519ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:42:21 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:42:21 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:42:21 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:42:23 +1555ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:42:24 +1521ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:42:25 +1054ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:42:25 +10ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:42:25 +69ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:42:25 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:42:25 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:42:25 +17ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:42:25 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:42:25 +4ms service=bus type=session.status publishing
+INFO  2026-04-13T14:42:25 +0ms service=bus type=session.idle publishing
+INFO  2026-04-13T14:42:26 +329ms service=server method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:42:26 +0ms service=server status=started method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:42:26 +1ms service=server status=completed duration=1 method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:42:26 +5ms service=server method=POST path=/voice/tts request
+INFO  2026-04-13T14:42:26 +1ms service=server status=started method=POST path=/voice/tts request
+INFO  2026-04-13T14:42:27 +928ms service=server status=completed duration=928 method=POST path=/voice/tts request
+INFO  2026-04-13T14:43:52 +85540ms service=server method=POST path=/voice/stt request
+INFO  2026-04-13T14:43:52 +1ms service=server status=started method=POST path=/voice/stt request
+INFO  2026-04-13T14:43:54 +1595ms service=server status=completed duration=1595 method=POST path=/voice/stt request
+INFO  2026-04-13T14:43:54 +8ms service=server method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:43:54 +1ms service=server status=started method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:43:54 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:43:54 +3ms service=server method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:43:54 +1ms service=server status=started method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:43:54 +4ms service=server status=completed duration=4 method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:43:54 +17ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:43:54 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:43:54 +1ms service=bus type=session.updated publishing
+INFO  2026-04-13T14:43:54 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:43:54 +15ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:43:54 +36ms service=bus type=session.status publishing
+INFO  2026-04-13T14:43:55 +891ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:43:55 +25ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:43:56 +1537ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:43:56 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:43:57 +364ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:43:57 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:43:57 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:43:57 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:43:57 +518ms service=permission permission=glob pattern=.opendora/skill/project-initiation/**/* action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:43:57 +10ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:43:57 +18ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:43:57 +43ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:43:57 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:43:57 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:43:57 +20ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:43:57 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:43:57 +17ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:43:57 +23ms service=bus type=session.status publishing
+INFO  2026-04-13T14:43:58 +793ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:43:58 +40ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:43:59 +1084ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:43:59 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:43:59 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:43:59 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:43:59 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:00 +398ms service=permission permission=glob pattern=.opendora/skill/**/* action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:44:00 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:00 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:00 +59ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:00 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:00 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:00 +20ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:00 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:00 +13ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:00 +33ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:01 +848ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:01 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:02 +975ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:02 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:02 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:02 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:02 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:02 +463ms service=permission permission=glob pattern=**/project-initiation/** action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:44:02 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:02 +45ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:02 +36ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:02 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:02 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:02 +25ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:02 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:02 +5ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:02 +25ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:03 +872ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:03 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:04 +894ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:04 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:04 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:04 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:04 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:04 +386ms service=permission permission=glob pattern=.opendora/skill/** action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:44:04 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:04 +20ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:04 +55ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:04 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:04 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:04 +18ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:04 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:04 +16ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:04 +23ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:05 +872ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:05 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:06 +849ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:06 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:06 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:06 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:06 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:07 +804ms service=permission permission=glob pattern=project-initiation/* action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:44:07 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:07 +37ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:07 +43ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:07 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:07 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:07 +19ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:07 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:07 +15ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:07 +24ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:08 +775ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:08 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:08 +531ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:08 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:08 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:08 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:08 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:09 +601ms service=permission permission=glob pattern=* action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:44:09 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:09 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:09 +68ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:09 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:09 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:09 +18ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:09 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:09 +17ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:09 +27ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:10 +791ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:10 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:12 +1550ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:12 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:12 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:12 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:12 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:12 +643ms service=permission permission=read pattern=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md action={"permission":"read","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:44:12 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:12 +32ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:12 +45ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:12 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:12 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:12 +17ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:12 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:12 +15ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:12 +31ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:13 +814ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:13 +12ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:15 +1507ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:15 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:16 +1106ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:16 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:16 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:16 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:20 +4614ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:20 +3ms service=permission permission=edit pattern=.opendora/skill/project-initiation/SKILL.md action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:44:20 +13ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:20 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:20 +58ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:20 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:20 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:20 +20ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:20 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:21 +12ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:21 +26ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:21 +798ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:21 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:22 +315ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:22 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:22 +300ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:22 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:22 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:22 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:22 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:22 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:32 +10046ms service=permission permission=edit pattern=.opendora/skill/project-initiation/scripts/init-repo.sh action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:44:32 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:32 +16ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:32 +29ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:32 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:32 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:32 +18ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:32 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:32 +19ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:32 +24ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:34 +1438ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:34 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:34 +246ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:34 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:34 +39ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:34 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:34 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:45 +11556ms service=permission permission=edit pattern=.opendora/skill/project-initiation/scripts/verify-clean.sh action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:44:45 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:45 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:45 +67ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:45 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:45 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:45 +19ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:45 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:45 +14ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:46 +23ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:48 +2435ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:48 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:48 +435ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:48 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:48 +77ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:48 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:48 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:49 +728ms service=permission permission=glob pattern=**/* action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:44:49 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:49 +17ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:49 +57ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:49 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:49 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:49 +20ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:49 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:49 +14ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:49 +22ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:50 +806ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:50 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:51 +1050ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:51 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:51 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:51 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:51 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:52 +947ms service=permission permission=glob pattern=project-initiation/**/* action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:44:52 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:52 +22ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:52 +61ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:52 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:52 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:52 +18ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:52 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:52 +16ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:52 +23ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:55 +2454ms service=server method=OPTIONS path=/schedule request
+INFO  2026-04-13T14:44:55 +0ms service=server status=started method=OPTIONS path=/schedule request
+INFO  2026-04-13T14:44:55 +2ms service=server status=completed duration=1 method=OPTIONS path=/schedule request
+INFO  2026-04-13T14:44:55 +5ms service=server method=GET path=/schedule request
+INFO  2026-04-13T14:44:55 +1ms service=server status=started method=GET path=/schedule request
+INFO  2026-04-13T14:44:55 +2ms service=server status=completed duration=2 method=GET path=/schedule request
+INFO  2026-04-13T14:44:55 +741ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:55 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:57 +1129ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:57 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:57 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:44:57 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:57 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:57 +81ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:57 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:57 +72ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:44:57 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:44:57 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:57 +27ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:57 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:44:57 +28ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:44:57 +48ms service=bus type=session.status publishing
+INFO  2026-04-13T14:45:01 +4308ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:45:01 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:45:03 +1457ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:45:03 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:45:04 +1525ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:45:06 +1569ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:45:07 +1528ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:45:09 +1546ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:45:10 +1552ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:45:12 +1566ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:45:12 +271ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:45:14 +1546ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:45:14 +5ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:45:14 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:45:14 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:45:15 +1540ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:45:16 +1129ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:45:16 +11ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:45:17 +74ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:45:17 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:45:17 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:45:17 +29ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:45:17 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:45:17 +6ms service=bus type=session.status publishing
+INFO  2026-04-13T14:45:17 +0ms service=bus type=session.idle publishing
+INFO  2026-04-13T14:45:17 +330ms service=server method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:45:17 +0ms service=server status=started method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:45:17 +0ms service=server status=completed duration=0 method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:45:17 +3ms service=server method=POST path=/voice/tts request
+INFO  2026-04-13T14:45:17 +0ms service=server status=started method=POST path=/voice/tts request
+INFO  2026-04-13T14:45:18 +1572ms service=server status=completed duration=1572 method=POST path=/voice/tts request
+INFO  2026-04-13T14:45:33 +15015ms service=server method=OPTIONS path=/agent/tools request
+INFO  2026-04-13T14:45:33 +1ms service=server status=started method=OPTIONS path=/agent/tools request
+INFO  2026-04-13T14:45:33 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/tools request
+INFO  2026-04-13T14:45:33 +1ms service=server method=OPTIONS path=/agent/agent-owner/persona request
+INFO  2026-04-13T14:45:33 +0ms service=server status=started method=OPTIONS path=/agent/agent-owner/persona request
+INFO  2026-04-13T14:45:33 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/agent-owner/persona request
+INFO  2026-04-13T14:45:33 +3ms service=server method=OPTIONS path=/agent/agent-owner/injection request
+INFO  2026-04-13T14:45:33 +0ms service=server status=started method=OPTIONS path=/agent/agent-owner/injection request
+INFO  2026-04-13T14:45:33 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/agent-owner/injection request
+INFO  2026-04-13T14:45:33 +0ms service=server method=OPTIONS path=/agent/tools request
+INFO  2026-04-13T14:45:33 +0ms service=server status=started method=OPTIONS path=/agent/tools request
+INFO  2026-04-13T14:45:33 +1ms service=server status=completed duration=0 method=OPTIONS path=/agent/tools request
+INFO  2026-04-13T14:45:33 +1ms service=server method=OPTIONS path=/agent/agent-owner/persona request
+INFO  2026-04-13T14:45:33 +0ms service=server status=started method=OPTIONS path=/agent/agent-owner/persona request
+INFO  2026-04-13T14:45:33 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/agent-owner/persona request
+INFO  2026-04-13T14:45:33 +1ms service=server method=OPTIONS path=/agent/agent-owner/injection request
+INFO  2026-04-13T14:45:33 +0ms service=server status=started method=OPTIONS path=/agent/agent-owner/injection request
+INFO  2026-04-13T14:45:33 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/agent-owner/injection request
+INFO  2026-04-13T14:45:33 +1ms service=server method=GET path=/agent/tools request
+INFO  2026-04-13T14:45:33 +0ms service=server status=started method=GET path=/agent/tools request
+INFO  2026-04-13T14:45:33 +1ms service=server status=completed duration=1 method=GET path=/agent/tools request
+INFO  2026-04-13T14:45:33 +0ms service=server method=GET path=/agent/agent-owner/persona request
+INFO  2026-04-13T14:45:33 +0ms service=server status=started method=GET path=/agent/agent-owner/persona request
+INFO  2026-04-13T14:45:33 +2ms service=server status=completed duration=2 method=GET path=/agent/agent-owner/persona request
+INFO  2026-04-13T14:45:33 +0ms service=server method=GET path=/agent/agent-owner/injection request
+INFO  2026-04-13T14:45:33 +0ms service=server status=started method=GET path=/agent/agent-owner/injection request
+INFO  2026-04-13T14:45:33 +2ms service=server status=completed duration=2 method=GET path=/agent/agent-owner/injection request
+INFO  2026-04-13T14:45:33 +1ms service=server method=GET path=/agent/tools request
+INFO  2026-04-13T14:45:33 +0ms service=server status=started method=GET path=/agent/tools request
+INFO  2026-04-13T14:45:33 +0ms service=server status=completed duration=0 method=GET path=/agent/tools request
+INFO  2026-04-13T14:45:33 +3ms service=server method=GET path=/agent/agent-owner/persona request
+INFO  2026-04-13T14:45:33 +0ms service=server status=started method=GET path=/agent/agent-owner/persona request
+INFO  2026-04-13T14:45:33 +1ms service=server method=GET path=/agent/agent-owner/injection request
+INFO  2026-04-13T14:45:33 +0ms service=server status=started method=GET path=/agent/agent-owner/injection request
+INFO  2026-04-13T14:45:33 +7ms service=server status=completed duration=8 method=GET path=/agent/agent-owner/persona request
+INFO  2026-04-13T14:45:33 +1ms service=server status=completed duration=8 method=GET path=/agent/agent-owner/injection request
+INFO  2026-04-13T14:46:01 +27046ms service=server method=OPTIONS path=/agent/agent-owner request
+INFO  2026-04-13T14:46:01 +0ms service=server status=started method=OPTIONS path=/agent/agent-owner request
+INFO  2026-04-13T14:46:01 +1ms service=server status=completed duration=1 method=OPTIONS path=/agent/agent-owner request
+INFO  2026-04-13T14:46:01 +4ms service=server method=PATCH path=/agent/agent-owner request
+INFO  2026-04-13T14:46:01 +1ms service=server status=started method=PATCH path=/agent/agent-owner request
+INFO  2026-04-13T14:46:01 +69ms service=server status=completed duration=69 method=PATCH path=/agent/agent-owner request
+INFO  2026-04-13T14:46:01 +35ms service=server method=OPTIONS path=/agent request
+INFO  2026-04-13T14:46:01 +1ms service=server status=started method=OPTIONS path=/agent request
+INFO  2026-04-13T14:46:01 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent request
+INFO  2026-04-13T14:46:01 +3ms service=server method=GET path=/agent request
+INFO  2026-04-13T14:46:01 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-04-13T14:46:01 +65ms service=server status=completed duration=65 method=GET path=/agent request
+INFO  2026-04-13T14:46:18 +16900ms service=server method=POST path=/voice/stt request
+INFO  2026-04-13T14:46:18 +0ms service=server status=started method=POST path=/voice/stt request
+INFO  2026-04-13T14:46:19 +938ms service=server status=completed duration=938 method=POST path=/voice/stt request
+INFO  2026-04-13T14:46:19 +10ms service=server method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:46:19 +0ms service=server status=started method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:46:19 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:46:19 +5ms service=server method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:46:19 +1ms service=server status=started method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:46:19 +4ms service=server status=completed duration=4 method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:46:19 +36ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:46:19 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:19 +2ms service=bus type=session.updated publishing
+INFO  2026-04-13T14:46:19 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:46:19 +16ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:46:19 +30ms service=bus type=session.status publishing
+INFO  2026-04-13T14:46:21 +2735ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:46:21 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:23 +1532ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:23 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:24 +1524ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:26 +1575ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:28 +1504ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:29 +1517ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:31 +1556ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:32 +1506ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:33 +567ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:33 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:33 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:33 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:38 +5300ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:38 +42ms service=bus type=session.created publishing
+INFO  2026-04-13T14:46:38 +11ms service=permission permission=task pattern=engineer action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:46:38 +4ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:46:38 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:38 +1ms service=bus type=session.updated publishing
+INFO  2026-04-13T14:46:38 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:46:38 +17ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:46:38 +21ms service=bus type=session.status publishing
+INFO  2026-04-13T14:46:41 +2436ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:46:41 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:42 +1484ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:42 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:43 +709ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:43 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:43 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:43 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:43 +465ms service=permission permission=glob pattern=**/*project-initiation* action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:46:43 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:43 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:43 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:44 +1119ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:44 +154ms service=permission permission=bash pattern=ls -la action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:46:44 +6ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:44 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:44 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:45 +29ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:46:45 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:45 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:46:45 +32ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:46:45 +2ms service=bus type=session.status publishing
+INFO  2026-04-13T14:46:45 +28ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:46:45 +34ms service=bus type=session.status publishing
+INFO  2026-04-13T14:46:46 +1868ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-13T14:46:46 +0ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-13T14:46:46 +1ms service=server status=completed duration=1 method=OPTIONS path=/provider request
+INFO  2026-04-13T14:46:46 +7ms service=server method=GET path=/provider request
+INFO  2026-04-13T14:46:46 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-04-13T14:46:47 +106ms service=server status=completed duration=106 method=GET path=/provider request
+INFO  2026-04-13T14:46:50 +3268ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:46:50 +6ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:51 +904ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:51 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:51 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:51 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:51 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:52 +1006ms service=permission permission=bash pattern=ls -la action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:46:52 +5ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:52 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:52 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:52 +75ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:46:52 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:52 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:46:52 +43ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:46:52 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:46:52 +18ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:46:52 +48ms service=bus type=session.status publishing
+INFO  2026-04-13T14:46:54 +1636ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:46:54 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:54 +482ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:54 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:54 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:55 +727ms service=permission permission=read pattern=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md action={"permission":"read","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:46:55 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:55 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:55 +12ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:56 +1032ms service=permission permission=bash pattern=ls -la action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:46:56 +5ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:56 +29ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:56 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:56 +54ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:46:56 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:56 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:46:56 +19ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:46:56 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:46:56 +15ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:46:56 +24ms service=bus type=session.status publishing
+INFO  2026-04-13T14:46:57 +1264ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:46:57 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:59 +1632ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:59 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:59 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:46:59 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:46:59 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:00 +749ms service=permission permission=read pattern=/home/mariu/projects/opendora/.opendora/skill/project-initiation/scripts/init-repo.sh action={"permission":"read","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:47:00 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:00 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:00 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:00 +735ms service=permission permission=read pattern=/home/mariu/projects/opendora/.opendora/skill/project-initiation/scripts/verify-clean.sh action={"permission":"read","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:47:00 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:00 +19ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:00 +54ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:00 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:00 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:01 +28ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:01 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:01 +5ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:01 +26ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:01 +900ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:01 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:03 +1553ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:03 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:05 +1565ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:05 +140ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:05 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:05 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:08 +2917ms service=permission permission=todowrite pattern=* action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:47:08 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:08 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:08 +59ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:08 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:08 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:08 +31ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:08 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:08 +5ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:08 +31ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:09 +787ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:09 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:09 +705ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:09 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:10 +323ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:10 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:10 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:10 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:10 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:10 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:11 +1320ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:11 +20ms service=permission permission=bash pattern=mkdir -p todoist-app action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:47:11 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:11 +11ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:11 +42ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:11 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:11 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:11 +20ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:11 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:11 +5ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:11 +23ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:12 +885ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:12 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:13 +830ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:13 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:13 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:13 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:13 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:16 +2766ms service=permission permission=todowrite pattern=* action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:47:16 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:16 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:16 +74ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:16 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:16 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:16 +58ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:16 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:16 +6ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:16 +13ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:18 +1927ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:18 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:18 +848ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:18 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:18 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:18 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:18 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:20 +1426ms service=permission permission=bash pattern=bash /home/mariu/projects/opendora/.opendora/skill/project-initiation/scripts/init-repo.sh action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:47:20 +6ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:20 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:20 +27ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:20 +14ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:20 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:20 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:20 +29ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:20 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:20 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:20 +25ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:20 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:20 +32ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:20 +33ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:21 +823ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:21 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:22 +832ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:22 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:22 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:22 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:22 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:25 +2893ms service=permission permission=todowrite pattern=* action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:47:25 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:25 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:25 +69ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:25 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:25 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:25 +32ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:25 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:25 +16ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:25 +31ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:27 +1941ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:27 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:27 +397ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:27 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:27 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:27 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:27 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:28 +1379ms service=permission permission=bash pattern=bash /home/mariu/projects/opendora/.opendora/skill/project-initiation/scripts/verify-clean.sh action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:47:28 +7ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:29 +28ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:29 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:29 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:29 +111ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:29 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:29 +2ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:29 +54ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:29 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:29 +20ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:29 +44ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:30 +904ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:30 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:31 +1362ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:31 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:31 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:31 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:31 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:34 +2870ms service=permission permission=todowrite pattern=* action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:47:34 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:34 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:34 +73ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:34 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:34 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:34 +50ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:34 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:34 +5ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:34 +19ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:35 +972ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:35 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:37 +1509ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:37 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:37 +125ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:37 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:37 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:37 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:40 +3118ms service=permission permission=edit pattern=.opendora/skill/todoist-app/package.json action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:47:40 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:40 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:40 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:43 +3603ms service=permission permission=edit pattern=.opendora/skill/todoist-app/README.md action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:47:43 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:43 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:43 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:44 +991ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:44 +2ms service=permission permission=bash pattern=mkdir -p src action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:47:44 +5ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:44 +13ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:44 +66ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:44 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:44 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:44 +25ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:44 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:44 +6ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:45 +26ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:48 +3137ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:48 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:48 +497ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:48 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:48 +49ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:47:48 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:48 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:54 +5910ms service=permission permission=edit pattern=.opendora/skill/todoist-app/src/index.js action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:47:54 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:54 +11ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:54 +62ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:47:54 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:47:54 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:54 +31ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:54 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:47:54 +16ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:47:54 +38ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:00 +6044ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:00 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:02 +1551ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:02 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:02 +297ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:02 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:02 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:02 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:05 +2848ms service=permission permission=todowrite pattern=* action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:48:05 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:05 +6ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:05 +76ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:05 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:05 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:05 +25ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:05 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:05 +6ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:05 +30ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:09 +3870ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:09 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:10 +726ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:10 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:10 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:10 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:10 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:11 +1065ms service=permission permission=bash pattern=git status action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:48:11 +6ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:11 +24ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:11 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:11 +67ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:11 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:11 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:11 +32ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:11 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:11 +14ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:11 +44ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:14 +2825ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:14 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:14 +468ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:14 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:14 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:14 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:14 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:16 +1401ms service=permission permission=bash pattern=git add -A action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:48:16 +0ms service=permission permission=bash pattern=git commit -m "Initial commit - project scaffold" action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:48:16 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:16 +30ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:16 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:16 +59ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:16 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:16 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:16 +22ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:16 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:16 +32ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:16 +43ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:17 +1335ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:17 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:18 +987ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:18 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:18 +91ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:18 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:18 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:20 +1689ms service=permission permission=bash pattern=bash /home/mariu/projects/opendora/.opendora/skill/project-initiation/scripts/verify-clean.sh action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:48:20 +5ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:20 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:20 +15ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:20 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:20 +64ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:20 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:20 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:20 +34ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:20 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:20 +22ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:20 +38ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:22 +2227ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:22 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:23 +590ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:23 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:23 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:23 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:23 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:26 +2935ms service=permission permission=todowrite pattern=* action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:48:26 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:26 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:26 +93ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:26 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:26 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:26 +32ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:26 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:26 +18ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:26 +28ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:28 +1376ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:28 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:28 +917ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:28 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:28 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:28 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:28 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:30 +1415ms service=permission permission=bash pattern=ls -la action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:48:30 +0ms service=permission permission=bash pattern=echo "--- src/ ---" action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:48:30 +0ms service=permission permission=bash pattern=ls -la src/ action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:48:30 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:30 +21ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:30 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:30 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:30 +68ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:30 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:30 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:30 +26ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:30 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:30 +20ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:30 +35ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:31 +873ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:31 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:31 +478ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:31 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:33 +1527ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:33 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:33 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:33 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:34 +1564ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:36 +1517ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:38 +1547ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:38 +723ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:38 +13ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:38 +74ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:38 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:38 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:38 +33ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:38 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:38 +10ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:38 +0ms service=bus type=session.idle publishing
+INFO  2026-04-13T14:48:38 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:38 +32ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:38 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:38 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:38 +27ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:38 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:38 +8ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:39 +36ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:40 +1047ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:40 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:40 +805ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:40 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:40 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:40 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:40 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:41 +770ms service=permission permission=glob pattern=**/* action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:48:41 +5ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:41 +47ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:41 +45ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:41 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:41 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:41 +22ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:41 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:41 +19ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:41 +31ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:42 +825ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:42 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:44 +1586ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:44 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:45 +1509ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:46 +1090ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:46 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:46 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:46 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:47 +951ms service=permission permission=glob pattern=*.{js,json,md} action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:48:47 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:47 +31ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:47 +46ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:47 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:47 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:47 +18ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:47 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:47 +6ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:47 +37ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:48 +826ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:48 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:49 +893ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:49 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:49 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:49 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:49 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:50 +692ms service=permission permission=read pattern=/home/mariu/projects/opendora/.opendora/skill/todoist-app/README.md action={"permission":"read","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:48:50 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:50 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:50 +7ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:51 +706ms service=permission permission=read pattern=/home/mariu/projects/opendora/.opendora/skill/todoist-app/package.json action={"permission":"read","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T14:48:51 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:51 +46ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:51 +45ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:51 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:51 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:51 +19ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:51 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:51 +16ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:48:51 +27ms service=bus type=session.status publishing
+INFO  2026-04-13T14:48:52 +1269ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:48:52 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:54 +1611ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:55 +1551ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:56 +705ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:57 +1521ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:57 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:57 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:48:57 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:48:59 +1548ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:49:01 +1577ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:49:01 +223ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:49:01 +11ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:49:01 +106ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:49:01 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:49:01 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:49:01 +30ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:49:01 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:49:01 +8ms service=bus type=session.status publishing
+INFO  2026-04-13T14:49:01 +1ms service=bus type=session.idle publishing
+INFO  2026-04-13T14:49:02 +819ms service=server method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:49:02 +0ms service=server status=started method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:49:02 +1ms service=server status=completed duration=1 method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:49:02 +7ms service=server method=POST path=/voice/tts request
+INFO  2026-04-13T14:49:02 +0ms service=server status=started method=POST path=/voice/tts request
+INFO  2026-04-13T14:49:04 +2247ms service=server status=completed duration=2247 method=POST path=/voice/tts request
+INFO  2026-04-13T14:49:15 +11014ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-13T14:49:15 +0ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-13T14:49:15 +1ms service=server status=completed duration=1 method=OPTIONS path=/provider request
+INFO  2026-04-13T14:49:15 +5ms service=server method=GET path=/provider request
+INFO  2026-04-13T14:49:15 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-04-13T14:49:15 +110ms service=server status=completed duration=110 method=GET path=/provider request
+INFO  2026-04-13T14:49:48 +32433ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-13T14:49:48 +1ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-13T14:49:48 +1ms service=server status=completed duration=1 method=OPTIONS path=/provider request
+INFO  2026-04-13T14:49:48 +9ms service=server method=GET path=/provider request
+INFO  2026-04-13T14:49:48 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-04-13T14:49:48 +80ms service=server status=completed duration=80 method=GET path=/provider request
+INFO  2026-04-13T14:49:59 +10892ms service=server method=POST path=/voice/stt request
+INFO  2026-04-13T14:49:59 +0ms service=server status=started method=POST path=/voice/stt request
+INFO  2026-04-13T14:49:59 +619ms service=server status=completed duration=619 method=POST path=/voice/stt request
+INFO  2026-04-13T14:49:59 +11ms service=server method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:49:59 +1ms service=server status=started method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:49:59 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:49:59 +19ms service=server method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:49:59 +0ms service=server status=started method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:49:59 +3ms service=server status=completed duration=3 method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/prompt_async request
+INFO  2026-04-13T14:49:59 +13ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:49:59 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:49:59 +2ms service=bus type=session.updated publishing
+INFO  2026-04-13T14:49:59 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T14:49:59 +16ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:49:59 +32ms service=bus type=session.status publishing
+INFO  2026-04-13T14:50:00 +948ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:50:00 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:50:02 +1503ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:50:02 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:50:02 +199ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:50:02 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:50:02 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:50:02 +102ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:50:03 +1381ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:50:03 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:50:03 +72ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:50:03 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:50:03 +0ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:50:03 +20ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:50:03 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:50:03 +19ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:50:04 +25ms service=bus type=session.status publishing
+INFO  2026-04-13T14:50:05 +1711ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:50:05 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:50:07 +1548ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:50:07 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:50:08 +1519ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:50:10 +1565ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:50:12 +1655ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:50:13 +1531ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:50:14 +485ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:50:15 +1514ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:50:15 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:50:15 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:50:15 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:50:16 +799ms service=server method=OPTIONS path=/session/ses_278b0f13dffeFEFidbvrUSVepf/message request
+INFO  2026-04-13T14:50:16 +0ms service=server status=started method=OPTIONS path=/session/ses_278b0f13dffeFEFidbvrUSVepf/message request
+INFO  2026-04-13T14:50:16 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_278b0f13dffeFEFidbvrUSVepf/message request
+INFO  2026-04-13T14:50:16 +12ms service=server method=GET path=/session/ses_278b0f13dffeFEFidbvrUSVepf/message request
+INFO  2026-04-13T14:50:16 +0ms service=server status=started method=GET path=/session/ses_278b0f13dffeFEFidbvrUSVepf/message request
+INFO  2026-04-13T14:50:16 +4ms service=server status=completed duration=4 method=GET path=/session/ses_278b0f13dffeFEFidbvrUSVepf/message request
+INFO  2026-04-13T14:50:16 +321ms service=server method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:50:16 +0ms service=server status=started method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:50:16 +1ms service=server status=completed duration=0 method=OPTIONS path=/voice/tts request
+INFO  2026-04-13T14:50:16 +3ms service=server method=POST path=/voice/tts request
+INFO  2026-04-13T14:50:16 +0ms service=server status=started method=POST path=/voice/tts request
+INFO  2026-04-13T14:50:17 +409ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:50:17 +573ms service=server status=completed duration=982 method=POST path=/voice/tts request
+INFO  2026-04-13T14:50:18 +916ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:50:19 +1412ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T14:50:20 +9ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:50:20 +98ms service=snapshot hash=5c3d61cd2a46bc81babf056486f3e06c244f1a2b
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-13T14:50:20 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T14:50:20 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:50:20 +30ms service=bus type=message.updated publishing
+INFO  2026-04-13T14:50:20 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T14:50:20 +9ms service=bus type=session.status publishing
+INFO  2026-04-13T14:50:20 +1ms service=bus type=session.idle publishing
+INFO  2026-04-13T14:50:43 +23661ms service=server method=OPTIONS path=/schedule request
+INFO  2026-04-13T14:50:43 +0ms service=server status=started method=OPTIONS path=/schedule request
+INFO  2026-04-13T14:50:43 +1ms service=server status=completed duration=1 method=OPTIONS path=/schedule request
+INFO  2026-04-13T14:50:43 +4ms service=server method=GET path=/schedule request
+INFO  2026-04-13T14:50:43 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-04-13T14:50:43 +2ms service=server status=completed duration=2 method=GET path=/schedule request
+INFO  2026-04-13T14:57:37 +413246ms service=scheduler id=snapshot.cleanup run
+INFO  2026-04-13T14:57:37 +1ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-04-13T14:57:37 +129ms service=snapshot prune=7.days cleanup
+INFO  2026-04-13T14:58:34 +57443ms service=bus type=session.deleted publishing
+ERROR 2026-04-13T14:58:34 +2ms service=default e=No context found for instance rejection
+INFO  2026-04-13T15:14:34 +960136ms service=bus type=session.deleted publishing
+ERROR 2026-04-13T15:14:34 +1ms service=default e=No context found for instance rejection
+INFO  2026-04-13T15:15:50 +76026ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-13T15:15:50 +0ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-13T15:15:50 +1ms service=server status=completed duration=1 method=OPTIONS path=/provider request
+INFO  2026-04-13T15:15:50 +5ms service=server method=GET path=/provider request
+INFO  2026-04-13T15:15:50 +1ms service=server status=started method=GET path=/provider request
+INFO  2026-04-13T15:15:50 +3ms service=server method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/abort request
+INFO  2026-04-13T15:15:50 +0ms service=server status=started method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/abort request
+INFO  2026-04-13T15:15:50 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/abort request
+INFO  2026-04-13T15:15:50 +4ms service=server method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/abort request
+INFO  2026-04-13T15:15:50 +0ms service=server status=started method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/abort request
+INFO  2026-04-13T15:15:50 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T15:15:50 +0ms service=bus type=session.idle publishing
+INFO  2026-04-13T15:15:50 +1ms service=server status=completed duration=2 method=POST path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/abort request
+INFO  2026-04-13T15:15:50 +114ms service=server status=completed duration=123 method=GET path=/provider request
+INFO  2026-04-13T15:15:59 +8542ms service=server method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/message request
+INFO  2026-04-13T15:15:59 +1ms service=server status=started method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/message request
+INFO  2026-04-13T15:15:59 +0ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/message request
+INFO  2026-04-13T15:15:59 +5ms service=server method=GET path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/message request
+INFO  2026-04-13T15:15:59 +0ms service=server status=started method=GET path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/message request
+INFO  2026-04-13T15:15:59 +11ms service=server status=completed duration=11 method=GET path=/session/ses_278bc0dd5ffeIBkNvMo7t0G3oz/message request
+INFO  2026-04-13T15:17:12 +73375ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-13T15:17:12 +1ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-13T15:17:12 +0ms service=server status=completed duration=0 method=OPTIONS path=/provider request
+INFO  2026-04-13T15:17:12 +4ms service=server method=GET path=/provider request
+INFO  2026-04-13T15:17:12 +1ms service=server status=started method=GET path=/provider request
+INFO  2026-04-13T15:17:12 +80ms service=server status=completed duration=80 method=GET path=/provider request
+INFO  2026-04-13T15:18:59 +106865ms service=bus type=* unsubscribing
+INFO  2026-04-13T15:18:59 +1ms service=server event disconnected
