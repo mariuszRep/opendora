@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "cooldowns": {},
+  "rotations": {
+    "minimax-m2.5": {
+      "slotIndex": 0,
+      "activeSince": 1775628463772,
+      "lastUsed": 1775628463772
+    }
+  }
+}

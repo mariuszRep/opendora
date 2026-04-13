@@ -7,8 +7,8 @@
  */
 
 import { readFile, writeFile, mkdir } from "fs/promises"
-import { join } from "path"
-import { homedir } from "os"
+import { join, dirname } from "path"
+import { getConfig } from "./config.ts"
 
 export namespace FallbackManager {
   export type Slot = {
@@ -99,7 +99,9 @@ export namespace FallbackManager {
   // --- State persistence ---
 
   function statePath(): string {
-    return join(homedir(), ".local", "share", "opencode", "fallback-state.json")
+    const cfg = getConfig()
+    const base = cfg.providersPath ?? cfg.dataPath
+    return join(base, "fallback-state.json")
   }
 
   let _state: State | null = null
@@ -118,7 +120,7 @@ export namespace FallbackManager {
   async function saveState(s: State): Promise<void> {
     _state = s
     const path = statePath()
-    await mkdir(join(homedir(), ".local", "share", "opencode"), { recursive: true })
+    await mkdir(dirname(path), { recursive: true })
     await writeFile(path, JSON.stringify(s, null, 2), "utf-8")
   }
 

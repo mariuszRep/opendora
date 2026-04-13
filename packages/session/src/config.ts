@@ -8,6 +8,8 @@ export interface SessionCoreConfig {
   db: any
   /** Global data path (equivalent to Global.Path.data) */
   dataPath: string
+  /** Providers path — auth.json, mcp-auth.json, fallback-state.json */
+  providersPath?: string
   /** Config service */
   config?: {
     get(): Promise<any>
@@ -164,6 +166,11 @@ export interface SessionCoreConfig {
   skill?: {
     get?(id: string): Promise<any>
     all?(): Promise<any[]>
+    search?(query: string, registries?: string[]): Promise<any[]>
+    install?(source: string, options?: any): Promise<void>
+    update?(name: string): Promise<void>
+    uninstall?(name: string): Promise<void>
+    list?(): Promise<any[]>
   }
   /** Session service (for compaction.create, injected to avoid circular dep) */
   session?: {

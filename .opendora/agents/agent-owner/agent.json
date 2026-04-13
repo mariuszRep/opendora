@@ -32,7 +32,10 @@
     "codesearch",
     "apply_patch",
     "webfetch",
-    "websearch"
+    "websearch",
+    "skill_search",
+    "skill_list",
+    "skill_install"
   ],
   "skills": [
     "agent-experiment",

@@ -28,6 +28,12 @@ export namespace State {
     }
   }
 
+  export function reset(root: () => string, init: Function) {
+    const key = root()
+    const entries = recordsByKey.get(key)
+    if (entries) entries.delete(init)
+  }
+
   export async function dispose(key: string) {
     const entries = recordsByKey.get(key)
     if (!entries) return

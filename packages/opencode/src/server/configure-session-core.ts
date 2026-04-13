@@ -56,6 +56,7 @@ export function configureSessionCore() {
       return Database.Client()
     },
     dataPath: Global.Path.data,
+    providersPath: Global.Path.providers,
     globalConfigPath: Global.Path.config,
     installationVersion: Installation.VERSION,
     opencodeBus: {
@@ -339,6 +340,15 @@ export function configureSessionCore() {
       },
       async all() {
         return Skill.all()
+      },
+      async search(query: string, registries?: string[]) {
+        return Skill.search(query, registries)
+      },
+      async install(source: string, options?: any) {
+        return Skill.install(source, options)
+      },
+      async list() {
+        return Skill.list()
       },
     },
     // Wire session methods so compaction.create can call them without circular dep

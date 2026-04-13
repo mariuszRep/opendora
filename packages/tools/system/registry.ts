@@ -18,7 +18,7 @@ import { WebFetchTool } from "../web/webfetch.ts"
 import { WebSearchTool } from "../web/websearch.ts"
 import { InvalidTool } from "./invalid.ts"
 import { LspTool } from "./lsp.ts"
-import { SkillTool, SkillDiscoverTool, SkillLoadTool } from "../skills/index.ts"
+import { SkillTool, SkillDiscoverTool, SkillLoadTool, SkillSearchTool, SkillInstallTool, SkillListTool } from "../skills/index.ts"
 import { LogLessonTool } from "./log-lesson.ts"
 import { AgentCreateTool } from "../agents/agent-create.ts"
 import { AgentUpdateTool } from "../agents/agent-update.ts"
@@ -137,6 +137,9 @@ export namespace ToolRegistry {
       CodeSearchTool,
       SkillDiscoverTool,
       SkillLoadTool,
+      SkillSearchTool,
+      SkillInstallTool,
+      SkillListTool,
       LogLessonTool,
       ApplyPatchTool,
       AgentCreateTool,

@@ -77,7 +77,7 @@ const AGENT_TOOLS = new Set([
   "agent_create", "agent_delete", "agent_get", "agent_list", "agent_update",
 ])
 
-const SKILL_TOOLS = new Set(["skill_discover", "skill_load"])
+const SKILL_TOOLS = new Set(["skill_discover", "skill_load", "skill_search", "skill_install", "skill_list"])
 
 type ModelValue = { providerID: string; modelID: string } | undefined
 

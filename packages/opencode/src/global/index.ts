@@ -1,15 +1,31 @@
 import fs from "fs/promises"
-import { xdgData, xdgCache, xdgConfig, xdgState } from "xdg-basedir"
 import path from "path"
 import os from "os"
 import { Filesystem } from "../util/filesystem"
 
-const app = "opendora"
+// Determine the OpenDora root directory:
+//   1. OPENCODE_CONFIG_DIR env var (set by dev script to $PWD/.opendora)
+//   2. Walk up from cwd to find the nearest .opendora directory (dev monorepo)
+//   3. ~/.opendora (installed via npm/pnpm/bun)
+const home = process.env.OPENCODE_TEST_HOME || os.homedir()
 
-const data = path.join(xdgData!, app)
-const cache = path.join(xdgCache!, app)
-const config = path.join(xdgConfig!, app)
-const state = path.join(xdgState!, app)
+async function findRoot(): Promise<string> {
+  if (process.env.OPENCODE_CONFIG_DIR) return process.env.OPENCODE_CONFIG_DIR
+
+  // Walk up from cwd looking for a .opendora directory
+  let dir = process.cwd()
+  while (true) {
+    const candidate = path.join(dir, ".opendora")
+    if (await fs.access(candidate).then(() => true).catch(() => false)) return candidate
+    const parent = path.dirname(dir)
+    if (parent === dir) break
+    dir = parent
+  }
+
+  return path.join(home, ".opendora")
+}
+
+const root = await findRoot()
 
 export namespace Global {
   export const Path = {
@@ -17,12 +33,20 @@ export namespace Global {
     get home() {
       return process.env.OPENCODE_TEST_HOME || os.homedir()
     },
-    data,
-    bin: path.join(data, "bin"),
-    log: path.join(data, "log"),
-    cache,
-    config,
-    state,
+    // Primary data/storage directory (DB, sessions, snapshots, auth)
+    data: path.join(root, "storage"),
+    // Binaries (ripgrep, etc.)
+    bin: path.join(root, "bin"),
+    // Logs
+    log: path.join(root, "log"),
+    // Cache
+    cache: path.join(root, "cache"),
+    // Config root — agents, skills, tools are subfolders here
+    config: root,
+    // State
+    state: path.join(root, "state"),
+    // Provider config — auth tokens, MCP auth, fallback state
+    providers: path.join(root, "providers"),
   }
 }
 
@@ -37,7 +61,9 @@ await Promise.all([
   fs.mkdir(Global.Path.state, { recursive: true }),
   fs.mkdir(Global.Path.log, { recursive: true }),
   fs.mkdir(Global.Path.bin, { recursive: true }),
+  fs.mkdir(Global.Path.providers, { recursive: true }),
 ])
+
 
 const CACHE_VERSION = "21"
 

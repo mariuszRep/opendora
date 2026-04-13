@@ -830,6 +830,11 @@ export namespace SessionPrompt {
         skills: {
           all: () => cfg.skill?.all?.(),
           get: (name: string) => cfg.skill?.get?.(name),
+          search: (query: string, registries?: string[]) => cfg.skill?.search?.(query, registries),
+          install: (source: string, options?: any) => cfg.skill?.install?.(source, options),
+          update: (name: string) => cfg.skill?.update?.(name),
+          uninstall: (name: string) => cfg.skill?.uninstall?.(name),
+          list: () => cfg.skill?.list?.(),
         },
         agents: {
           list: () => cfg.agent?.list?.(),
