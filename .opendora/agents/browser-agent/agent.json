@@ -1,0 +1,14 @@
+{
+  "name": "Browser Agent",
+  "description": "Agent with browser capabilities for web research, fetching pages, and interactive browsing tasks",
+  "mode": "worker",
+  "model": {
+    "modelID": "minimax-m2.5-free",
+    "providerID": "opencode"
+  },
+  "temperature": 0.7,
+  "steps": 100,
+  "tools": [
+    "browser"
+  ]
+}

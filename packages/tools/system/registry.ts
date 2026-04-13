@@ -16,6 +16,7 @@ import { DelegateTool, SessionSearchTool, SessionGetTool, SessionTreeTool, Reply
 import { TodoWriteTool, TodoReadTool } from "../task-management/todo.ts"
 import { WebFetchTool } from "../web/webfetch.ts"
 import { WebSearchTool } from "../web/websearch.ts"
+import { BrowserTool } from "../browser/simple-browser.ts"
 import { InvalidTool } from "./invalid.ts"
 import { LspTool } from "./lsp.ts"
 import { SkillLoadTool, SkillListTool, SkillSearchTool, SkillInstallTool, SkillCreateTool, SkillRemoveTool } from "../skills/index.ts"
@@ -134,6 +135,7 @@ export namespace ToolRegistry {
       TodoWriteTool,
       // TodoReadTool,
       WebSearchTool,
+      BrowserTool,
       CodeSearchTool,
       SkillListTool,
       SkillLoadTool,

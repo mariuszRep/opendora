@@ -28,6 +28,7 @@ import { FileRoutes } from "./routes/file"
 import { ConfigRoutes } from "./routes/config"
 import { ExperimentalRoutes } from "./routes/experimental"
 import { ProviderRoutes } from "./routes/provider"
+import { startBrowserControlServiceFromConfig, stopBrowserControlService } from "@opendora/tools/browser"
 import { AgentRoutes } from "./routes/agent"
 import { ScheduleRoutes } from "./routes/schedule"
 import { CronScheduler, type ScheduleDispatchFn } from "@opendora/schedule/cron-scheduler"
@@ -774,6 +775,11 @@ export namespace Server {
     // Start Cron Scheduler Loop
     const cronManager = new CronScheduler(Database.Client(), cronDispatch)
     cronManager.start()
+
+    // Start Browser Control Server
+    startBrowserControlServiceFromConfig()
+      .then(() => log.info("Browser control server started"))
+      .catch((error) => log.warn(`Failed to start browser control server: ${error}`))
 
     const shouldPublishMDNS =
       opts.mdns &&

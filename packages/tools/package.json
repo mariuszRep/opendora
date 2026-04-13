@@ -17,6 +17,7 @@
     "./task-management": "./task-management/index.ts",
     "./communication": "./communication/index.ts",
     "./execution": "./execution/index.ts",
+    "./browser": "./browser/index.ts",
     "./tool": "./tool.ts",
     "./truncation": "./truncation.ts"
   },
@@ -27,6 +28,7 @@
     "typescript": "catalog:"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
     "@zip.js/zip.js": "2.7.62",
     "diff": "catalog:",
     "fuzzysort": "3.1.0",
@@ -34,6 +36,7 @@
     "ignore": "7.0.5",
     "mime-types": "3.0.2",
     "minimatch": "10.0.3",
+    "playwright-core": "1.59.1",
     "tree-sitter-bash": "0.25.0",
     "turndown": "7.2.0",
     "web-tree-sitter": "0.25.10",

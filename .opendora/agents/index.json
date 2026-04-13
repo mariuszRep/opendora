@@ -85,6 +85,11 @@
       "id": "temp-spruce-orbit-613",
       "name": "Temp Spruce Orbit",
       "mode": "worker"
+    },
+    {
+      "id": "browser-agent",
+      "name": "Browser Agent",
+      "mode": "worker"
     }
   ]
 }

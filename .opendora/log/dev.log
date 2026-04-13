@@ -1,1052 +1,315 @@
-INFO  2026-04-13T09:54:48 +632ms service=default version=local args=["serve","--port","4097"] opencode
-INFO  2026-04-13T09:54:48 +1ms service=config path=/home/mariu/projects/opendora/.opendora/config.json loading
-INFO  2026-04-13T09:54:48 +2ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.json loading
-INFO  2026-04-13T09:54:48 +2ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.jsonc loading
-INFO  2026-04-13T09:54:48 +54ms service=db path=/home/mariu/projects/opendora/.opendora/storage/opendora.db opening database
-INFO  2026-04-13T09:54:48 +19ms service=db count=12 mode=dev applying migrations
-INFO  2026-04-13T09:54:55 +7162ms service=server method=OPTIONS path=/provider request
-INFO  2026-04-13T09:54:55 +0ms service=server status=started method=OPTIONS path=/provider request
-INFO  2026-04-13T09:54:55 +1ms service=server status=completed duration=1 method=OPTIONS path=/provider request
-INFO  2026-04-13T09:54:55 +1ms service=server method=OPTIONS path=/agent request
-INFO  2026-04-13T09:54:55 +0ms service=server status=started method=OPTIONS path=/agent request
-INFO  2026-04-13T09:54:55 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent request
-INFO  2026-04-13T09:54:55 +0ms service=server method=OPTIONS path=/session request
-INFO  2026-04-13T09:54:55 +0ms service=server status=started method=OPTIONS path=/session request
-INFO  2026-04-13T09:54:55 +0ms service=server status=completed duration=0 method=OPTIONS path=/session request
-INFO  2026-04-13T09:54:55 +0ms service=server method=OPTIONS path=/question request
-INFO  2026-04-13T09:54:55 +0ms service=server status=started method=OPTIONS path=/question request
-INFO  2026-04-13T09:54:55 +0ms service=server status=completed duration=0 method=OPTIONS path=/question request
-INFO  2026-04-13T09:54:55 +1ms service=server method=OPTIONS path=/config request
-INFO  2026-04-13T09:54:55 +0ms service=server status=started method=OPTIONS path=/config request
-INFO  2026-04-13T09:54:55 +0ms service=server status=completed duration=0 method=OPTIONS path=/config request
-INFO  2026-04-13T09:54:55 +1ms service=server method=GET path=/event request
-INFO  2026-04-13T09:54:55 +0ms service=server status=started method=GET path=/event request
-INFO  2026-04-13T09:54:55 +1ms service=default directory=/home/mariu/projects/opendora/packages/opencode creating instance
-INFO  2026-04-13T09:54:55 +0ms service=project directory=/home/mariu/projects/opendora/packages/opencode fromDirectory
-INFO  2026-04-13T09:54:55 +12ms service=server method=GET path=/provider request
-INFO  2026-04-13T09:54:55 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-04-13T09:54:55 +1ms service=server method=GET path=/session request
-INFO  2026-04-13T09:54:55 +0ms service=server status=started method=GET path=/session request
-INFO  2026-04-13T09:54:55 +0ms service=server method=GET path=/agent request
-INFO  2026-04-13T09:54:55 +0ms service=server status=started method=GET path=/agent request
-INFO  2026-04-13T09:54:55 +0ms service=server method=GET path=/question request
-INFO  2026-04-13T09:54:55 +0ms service=server status=started method=GET path=/question request
-INFO  2026-04-13T09:54:55 +26ms service=default directory=/home/mariu/projects/opendora/packages/opencode bootstrapping
-DEBUG 2026-04-13T09:54:55 +21ms service=config path=/home/mariu/projects/opendora/.opendora loading config from OPENCODE_CONFIG_DIR
-DEBUG 2026-04-13T09:54:55 +1ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.jsonc
-INFO  2026-04-13T09:54:55 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.jsonc loading
-DEBUG 2026-04-13T09:54:55 +0ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.json
-INFO  2026-04-13T09:54:55 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.json loading
-INFO  2026-04-13T09:54:55 +7ms service=server method=GET path=/config request
-INFO  2026-04-13T09:54:55 +0ms service=server status=started method=GET path=/config request
-DEBUG 2026-04-13T09:54:56 +63ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
-INFO  2026-04-13T09:54:56 +1ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
-DEBUG 2026-04-13T09:54:56 +0ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
-INFO  2026-04-13T09:54:56 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
-INFO  2026-04-13T09:54:56 +17ms service=plugin name=CodexAuthPlugin loading internal plugin
-INFO  2026-04-13T09:54:56 +0ms service=plugin name=CopilotAuthPlugin loading internal plugin
-INFO  2026-04-13T09:54:56 +1ms service=plugin name=gitlabAuthPlugin loading internal plugin
-INFO  2026-04-13T09:54:56 +0ms service=plugin name=googleOAuthPlugin loading internal plugin
-INFO  2026-04-13T09:54:56 +0ms service=plugin path=opencode-anthropic-auth@0.0.13 loading plugin
-INFO  2026-04-13T09:54:56 +32ms service=bus type=* subscribing
-INFO  2026-04-13T09:54:56 +0ms service=bus type=session.updated subscribing
-INFO  2026-04-13T09:54:56 +0ms service=bus type=message.updated subscribing
-INFO  2026-04-13T09:54:56 +0ms service=bus type=message.part.updated subscribing
-INFO  2026-04-13T09:54:56 +0ms service=bus type=session.diff subscribing
-INFO  2026-04-13T09:54:56 +1ms service=format init
-INFO  2026-04-13T09:54:56 +0ms service=bus type=file.edited subscribing
-INFO  2026-04-13T09:54:56 +0ms service=lsp serverIds=deno, typescript, vue, eslint, oxlint, biome, gopls, ruby-lsp, pyright, elixir-ls, zls, csharp, fsharp, sourcekit-lsp, rust, clangd, svelte, astro, jdtls, kotlin-ls, yaml-ls, lua-ls, php intelephense, prisma, dart, ocaml-lsp, bash, terraform, texlab, dockerfile, gleam, clojure-lsp, nixd, tinymist, haskell-language-server, julials enabled LSP servers
-INFO  2026-04-13T09:54:56 +1ms service=file.watcher init
-INFO  2026-04-13T09:54:56 +138ms service=scheduler id=snapshot.cleanup run
-INFO  2026-04-13T09:54:56 +1ms service=scheduler id=tool.truncation.cleanup run
-INFO  2026-04-13T09:54:56 +2ms service=bus type=command.executed subscribing
-INFO  2026-04-13T09:54:56 +2ms service=file.watcher platform=linux backend=inotify watcher backend
-ERROR 2026-04-13T09:54:56 +1ms service=file.watcher error=OPENCODE_LIBC is not defined failed to load watcher binding
-INFO  2026-04-13T09:54:56 +2ms service=server event connected
-INFO  2026-04-13T09:54:56 +5ms service=bus type=* subscribing
-INFO  2026-04-13T09:54:56 +14ms service=server status=completed duration=350 method=GET path=/event request
-INFO  2026-04-13T09:54:56 +0ms service=server status=completed duration=336 method=GET path=/question request
-INFO  2026-04-13T09:54:56 +0ms service=server status=completed duration=281 method=GET path=/config request
-INFO  2026-04-13T09:54:56 +2ms service=server status=completed duration=338 method=GET path=/session request
-INFO  2026-04-13T09:54:56 +31ms service=provider status=started state
-INFO  2026-04-13T09:54:56 +49ms service=provider init
-INFO  2026-04-13T09:54:56 +11ms service=vcs branch=ui initialized
-INFO  2026-04-13T09:54:56 +0ms service=bus type=file.watcher.updated subscribing
-INFO  2026-04-13T09:54:56 +36ms service=snapshot prune=7.days cleanup
-WARN  2026-04-13T09:54:56 +105ms service=skill name=retro existing=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +17ms service=skill name=project-initiation existing=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +10ms service=skill name=agent-experiment existing=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +2ms service=skill name=requirements-readiness existing=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +1ms service=skill name=intake-triage existing=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +1ms service=skill name=feature-workflow existing=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +1ms service=skill name=skill-author existing=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +1ms service=skill name=skill-creator existing=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +9ms service=skill name=agent-author existing=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +1ms service=skill name=tool-author existing=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +4ms service=skill name=retro existing=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +1ms service=skill name=tool-author existing=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +1ms service=skill name=agent-experiment existing=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +11ms service=skill name=skill-creator existing=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +1ms service=skill name=agent-author existing=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +1ms service=skill name=intake-triage existing=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +1ms service=skill name=project-initiation existing=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +1ms service=skill name=feature-workflow existing=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +1ms service=skill name=requirements-readiness existing=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate skill name
-WARN  2026-04-13T09:54:56 +9ms service=skill name=skill-author existing=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate skill name
-INFO  2026-04-13T09:54:56 +5ms service=server status=completed duration=649 method=GET path=/agent request
-WARN  2026-04-13T09:54:56 +416ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
-INFO  2026-04-13T09:54:57 +6ms service=provider providerID=openai found
-INFO  2026-04-13T09:54:57 +0ms service=provider providerID=kilo found
-INFO  2026-04-13T09:54:57 +1ms service=provider providerID=openrouter found
-INFO  2026-04-13T09:54:57 +0ms service=provider providerID=openai-codex found
-INFO  2026-04-13T09:54:57 +0ms service=provider providerID=opencode found
-INFO  2026-04-13T09:54:57 +0ms service=provider status=completed duration=703 state
-INFO  2026-04-13T09:54:57 +97ms service=server status=completed duration=1170 method=GET path=/provider request
-WARN  2026-04-13T09:54:57 +4ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
-INFO  2026-04-13T09:54:57 +211ms service=server method=OPTIONS path=/session/ses_279cda64affen5kUD0R1Hzkt4o/message request
-INFO  2026-04-13T09:54:57 +0ms service=server status=started method=OPTIONS path=/session/ses_279cda64affen5kUD0R1Hzkt4o/message request
-INFO  2026-04-13T09:54:57 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_279cda64affen5kUD0R1Hzkt4o/message request
-INFO  2026-04-13T09:54:57 +4ms service=server method=GET path=/session/ses_279cda64affen5kUD0R1Hzkt4o/message request
-INFO  2026-04-13T09:54:57 +0ms service=server status=started method=GET path=/session/ses_279cda64affen5kUD0R1Hzkt4o/message request
-INFO  2026-04-13T09:54:57 +8ms service=server status=completed duration=8 method=GET path=/session/ses_279cda64affen5kUD0R1Hzkt4o/message request
-INFO  2026-04-13T09:55:03 +6646ms service=server method=OPTIONS path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:55:03 +0ms service=server status=started method=OPTIONS path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:55:03 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:55:03 +7ms service=server method=GET path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:55:03 +0ms service=server status=started method=GET path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:55:03 +3ms service=server status=completed duration=3 method=GET path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:55:06 +2524ms service=server method=OPTIONS path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:55:06 +0ms service=server status=started method=OPTIONS path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:55:06 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:55:06 +8ms service=server method=GET path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:55:06 +1ms service=server status=started method=GET path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:55:06 +6ms service=server status=completed duration=5 method=GET path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:55:19 +13312ms service=server method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:55:19 +0ms service=server status=started method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:55:19 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:55:19 +0ms service=server method=OPTIONS path=/agent/compaction/persona request
-INFO  2026-04-13T09:55:19 +1ms service=server status=started method=OPTIONS path=/agent/compaction/persona request
-INFO  2026-04-13T09:55:19 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/compaction/persona request
-INFO  2026-04-13T09:55:19 +0ms service=server method=OPTIONS path=/agent/compaction/injection request
-INFO  2026-04-13T09:55:19 +0ms service=server status=started method=OPTIONS path=/agent/compaction/injection request
-INFO  2026-04-13T09:55:19 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/compaction/injection request
-INFO  2026-04-13T09:55:19 +3ms service=server method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:55:19 +0ms service=server status=started method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:55:19 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:55:19 +1ms service=server method=OPTIONS path=/agent/compaction/injection request
-INFO  2026-04-13T09:55:19 +0ms service=server status=started method=OPTIONS path=/agent/compaction/injection request
-INFO  2026-04-13T09:55:19 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/compaction/injection request
-INFO  2026-04-13T09:55:19 +1ms service=server method=OPTIONS path=/agent/compaction/persona request
-INFO  2026-04-13T09:55:19 +0ms service=server status=started method=OPTIONS path=/agent/compaction/persona request
-INFO  2026-04-13T09:55:19 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/compaction/persona request
-INFO  2026-04-13T09:55:19 +2ms service=server method=GET path=/agent/tools request
-INFO  2026-04-13T09:55:19 +0ms service=server status=started method=GET path=/agent/tools request
-INFO  2026-04-13T09:55:19 +2ms service=server status=completed duration=2 method=GET path=/agent/tools request
-INFO  2026-04-13T09:55:19 +1ms service=server method=GET path=/agent/compaction/persona request
-INFO  2026-04-13T09:55:19 +0ms service=server status=started method=GET path=/agent/compaction/persona request
-INFO  2026-04-13T09:55:19 +3ms service=server method=GET path=/agent/compaction/injection request
-INFO  2026-04-13T09:55:19 +0ms service=server status=started method=GET path=/agent/compaction/injection request
-INFO  2026-04-13T09:55:19 +11ms service=server method=GET path=/agent/tools request
-INFO  2026-04-13T09:55:19 +0ms service=server status=started method=GET path=/agent/tools request
-INFO  2026-04-13T09:55:19 +1ms service=server status=completed duration=1 method=GET path=/agent/tools request
-INFO  2026-04-13T09:55:19 +13ms service=server status=completed duration=28 method=GET path=/agent/compaction/persona request
-INFO  2026-04-13T09:55:19 +1ms service=server status=completed duration=26 method=GET path=/agent/compaction/injection request
-INFO  2026-04-13T09:55:19 +1ms service=server method=GET path=/agent/compaction/persona request
-INFO  2026-04-13T09:55:19 +0ms service=server status=started method=GET path=/agent/compaction/persona request
-INFO  2026-04-13T09:55:19 +2ms service=server method=GET path=/agent/compaction/injection request
-INFO  2026-04-13T09:55:19 +0ms service=server status=started method=GET path=/agent/compaction/injection request
-INFO  2026-04-13T09:55:19 +1ms service=server status=completed duration=3 method=GET path=/agent/compaction/persona request
-INFO  2026-04-13T09:55:19 +14ms service=server status=completed duration=15 method=GET path=/agent/compaction/injection request
-INFO  2026-04-13T09:55:36 +16386ms service=server method=OPTIONS path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf/message request
-INFO  2026-04-13T09:55:36 +0ms service=server status=started method=OPTIONS path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf/message request
-INFO  2026-04-13T09:55:36 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf/message request
-INFO  2026-04-13T09:55:36 +4ms service=server method=GET path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf/message request
-INFO  2026-04-13T09:55:36 +0ms service=server status=started method=GET path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf/message request
-INFO  2026-04-13T09:55:36 +11ms service=server status=completed duration=11 method=GET path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf/message request
-INFO  2026-04-13T09:55:37 +1090ms service=server method=OPTIONS path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:55:37 +0ms service=server status=started method=OPTIONS path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:55:37 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:55:37 +7ms service=server method=GET path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:55:37 +0ms service=server status=started method=GET path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:55:37 +3ms service=server status=completed duration=3 method=GET path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:55:41 +4189ms service=server method=OPTIONS path=/provider/auth request
-INFO  2026-04-13T09:55:41 +0ms service=server status=started method=OPTIONS path=/provider/auth request
-INFO  2026-04-13T09:55:41 +1ms service=server status=completed duration=1 method=OPTIONS path=/provider/auth request
-INFO  2026-04-13T09:55:41 +12ms service=server method=OPTIONS path=/config request
-INFO  2026-04-13T09:55:41 +0ms service=server status=started method=OPTIONS path=/config request
-INFO  2026-04-13T09:55:41 +0ms service=server status=completed duration=0 method=OPTIONS path=/config request
-INFO  2026-04-13T09:55:41 +1ms service=server method=OPTIONS path=/provider/auth request
-INFO  2026-04-13T09:55:41 +0ms service=server status=started method=OPTIONS path=/provider/auth request
-INFO  2026-04-13T09:55:41 +0ms service=server status=completed duration=0 method=OPTIONS path=/provider/auth request
-INFO  2026-04-13T09:55:41 +0ms service=server method=OPTIONS path=/config request
-INFO  2026-04-13T09:55:41 +1ms service=server status=started method=OPTIONS path=/config request
-INFO  2026-04-13T09:55:41 +0ms service=server status=completed duration=0 method=OPTIONS path=/config request
-INFO  2026-04-13T09:55:41 +29ms service=server method=GET path=/provider/auth request
-INFO  2026-04-13T09:55:41 +0ms service=server status=started method=GET path=/provider/auth request
-INFO  2026-04-13T09:55:41 +2ms service=server status=completed duration=2 method=GET path=/provider/auth request
-INFO  2026-04-13T09:55:41 +0ms service=server method=GET path=/config request
-INFO  2026-04-13T09:55:41 +0ms service=server status=started method=GET path=/config request
-INFO  2026-04-13T09:55:41 +3ms service=server status=completed duration=3 method=GET path=/config request
-INFO  2026-04-13T09:55:41 +1ms service=server method=GET path=/provider/auth request
-INFO  2026-04-13T09:55:41 +0ms service=server status=started method=GET path=/provider/auth request
-INFO  2026-04-13T09:55:41 +1ms service=server status=completed duration=1 method=GET path=/provider/auth request
-INFO  2026-04-13T09:55:41 +11ms service=server method=GET path=/config request
-INFO  2026-04-13T09:55:41 +0ms service=server status=started method=GET path=/config request
-INFO  2026-04-13T09:55:41 +1ms service=server status=completed duration=1 method=GET path=/config request
-INFO  2026-04-13T09:55:43 +2226ms service=server method=PATCH path=/config request
-INFO  2026-04-13T09:55:43 +0ms service=server status=started method=PATCH path=/config request
-INFO  2026-04-13T09:55:43 +3ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.json loading
-INFO  2026-04-13T09:55:43 +3ms service=default directory=/home/mariu/projects/opendora/packages/opencode disposing instance
-INFO  2026-04-13T09:55:43 +1ms service=state key=/home/mariu/projects/opendora/packages/opencode waiting for state disposal to complete
-INFO  2026-04-13T09:55:43 +1ms service=bus type=file.watcher.updated unsubscribing
-INFO  2026-04-13T09:55:43 +0ms service=state key=/home/mariu/projects/opendora/packages/opencode state disposal completed
-INFO  2026-04-13T09:55:43 +2ms service=server status=completed duration=10 method=PATCH path=/config request
-INFO  2026-04-13T09:55:43 +89ms service=server method=OPTIONS path=/provider request
-INFO  2026-04-13T09:55:43 +0ms service=server status=started method=OPTIONS path=/provider request
-INFO  2026-04-13T09:55:43 +1ms service=server status=completed duration=1 method=OPTIONS path=/provider request
-INFO  2026-04-13T09:55:43 +1ms service=server method=GET path=/config request
-INFO  2026-04-13T09:55:43 +0ms service=server status=started method=GET path=/config request
-INFO  2026-04-13T09:55:43 +0ms service=default directory=/home/mariu/projects/opendora/packages/opencode creating instance
-INFO  2026-04-13T09:55:43 +0ms service=project directory=/home/mariu/projects/opendora/packages/opencode fromDirectory
-INFO  2026-04-13T09:55:43 +6ms service=server method=GET path=/provider request
-INFO  2026-04-13T09:55:43 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-04-13T09:55:43 +12ms service=default directory=/home/mariu/projects/opendora/packages/opencode bootstrapping
-DEBUG 2026-04-13T09:55:44 +15ms service=config path=/home/mariu/projects/opendora/.opendora loading config from OPENCODE_CONFIG_DIR
-DEBUG 2026-04-13T09:55:44 +0ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.jsonc
-INFO  2026-04-13T09:55:44 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.jsonc loading
-DEBUG 2026-04-13T09:55:44 +0ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.json
-INFO  2026-04-13T09:55:44 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.json loading
-DEBUG 2026-04-13T09:55:44 +77ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
-INFO  2026-04-13T09:55:44 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
-DEBUG 2026-04-13T09:55:44 +1ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
-INFO  2026-04-13T09:55:44 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
-INFO  2026-04-13T09:55:44 +22ms service=plugin name=CodexAuthPlugin loading internal plugin
-INFO  2026-04-13T09:55:44 +1ms service=plugin name=CopilotAuthPlugin loading internal plugin
-INFO  2026-04-13T09:55:44 +0ms service=plugin name=gitlabAuthPlugin loading internal plugin
-INFO  2026-04-13T09:55:44 +0ms service=plugin name=googleOAuthPlugin loading internal plugin
-INFO  2026-04-13T09:55:44 +0ms service=plugin path=opencode-anthropic-auth@0.0.13 loading plugin
-INFO  2026-04-13T09:55:44 +9ms service=bus type=* subscribing
-INFO  2026-04-13T09:55:44 +0ms service=bus type=session.updated subscribing
-INFO  2026-04-13T09:55:44 +0ms service=bus type=message.updated subscribing
-INFO  2026-04-13T09:55:44 +0ms service=bus type=message.part.updated subscribing
-INFO  2026-04-13T09:55:44 +0ms service=bus type=session.diff subscribing
-INFO  2026-04-13T09:55:44 +0ms service=format init
-INFO  2026-04-13T09:55:44 +0ms service=bus type=file.edited subscribing
-INFO  2026-04-13T09:55:44 +1ms service=lsp serverIds=deno, typescript, vue, eslint, oxlint, biome, gopls, ruby-lsp, pyright, elixir-ls, zls, csharp, fsharp, sourcekit-lsp, rust, clangd, svelte, astro, jdtls, kotlin-ls, yaml-ls, lua-ls, php intelephense, prisma, dart, ocaml-lsp, bash, terraform, texlab, dockerfile, gleam, clojure-lsp, nixd, tinymist, haskell-language-server, julials enabled LSP servers
-INFO  2026-04-13T09:55:44 +0ms service=file.watcher init
-INFO  2026-04-13T09:55:44 +0ms service=scheduler id=snapshot.cleanup run
-INFO  2026-04-13T09:55:44 +0ms service=bus type=command.executed subscribing
-INFO  2026-04-13T09:55:44 +1ms service=file.watcher platform=linux backend=inotify watcher backend
-INFO  2026-04-13T09:55:44 +3ms service=provider status=started state
-INFO  2026-04-13T09:55:44 +21ms service=provider init
-INFO  2026-04-13T09:55:44 +1ms service=server status=completed duration=170 method=GET path=/config request
-INFO  2026-04-13T09:55:44 +4ms service=vcs branch=ui initialized
-INFO  2026-04-13T09:55:44 +0ms service=bus type=file.watcher.updated subscribing
-INFO  2026-04-13T09:55:44 +107ms service=snapshot prune=7.days cleanup
-INFO  2026-04-13T09:55:44 +166ms service=provider providerID=openai found
-INFO  2026-04-13T09:55:44 +1ms service=provider providerID=kilo found
-INFO  2026-04-13T09:55:44 +1ms service=provider providerID=openrouter found
-INFO  2026-04-13T09:55:44 +0ms service=provider providerID=openai-codex found
-INFO  2026-04-13T09:55:44 +0ms service=provider providerID=opencode found
-INFO  2026-04-13T09:55:44 +0ms service=provider status=completed duration=301 state
-INFO  2026-04-13T09:55:44 +118ms service=server status=completed duration=560 method=GET path=/provider request
-WARN  2026-04-13T09:55:45 +913ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
-WARN  2026-04-13T09:55:45 +58ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
-INFO  2026-04-13T09:55:46 +1457ms service=server method=GET path=/event request
-INFO  2026-04-13T09:55:46 +0ms service=server status=started method=GET path=/event request
-INFO  2026-04-13T09:55:46 +0ms service=server event connected
-INFO  2026-04-13T09:55:46 +2ms service=bus type=* subscribing
-INFO  2026-04-13T09:55:46 +1ms service=server status=completed duration=2 method=GET path=/event request
-INFO  2026-04-13T09:55:46 +6ms service=server method=OPTIONS path=/agent/pandora/main-session request
-INFO  2026-04-13T09:55:46 +0ms service=server status=started method=OPTIONS path=/agent/pandora/main-session request
-INFO  2026-04-13T09:55:46 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/pandora/main-session request
-INFO  2026-04-13T09:55:46 +4ms service=server method=GET path=/agent/pandora/main-session request
-INFO  2026-04-13T09:55:46 +0ms service=server status=started method=GET path=/agent/pandora/main-session request
-WARN  2026-04-13T09:55:47 +117ms service=skill name=retro existing=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +1ms service=skill name=agent-experiment existing=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +1ms service=skill name=requirements-readiness existing=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +1ms service=skill name=feature-workflow existing=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +1ms service=skill name=project-initiation existing=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +1ms service=skill name=skill-author existing=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +1ms service=skill name=agent-author existing=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +8ms service=skill name=intake-triage existing=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +1ms service=skill name=skill-creator existing=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +1ms service=skill name=tool-author existing=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +4ms service=skill name=retro existing=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +1ms service=skill name=project-initiation existing=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +0ms service=skill name=intake-triage existing=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +1ms service=skill name=agent-author existing=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +11ms service=skill name=agent-experiment existing=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +1ms service=skill name=requirements-readiness existing=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +0ms service=skill name=feature-workflow existing=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +1ms service=skill name=skill-author existing=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +1ms service=skill name=skill-creator existing=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate skill name
-WARN  2026-04-13T09:55:47 +0ms service=skill name=tool-author existing=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate skill name
-INFO  2026-04-13T09:55:47 +3ms service=server status=completed duration=156 method=GET path=/agent/pandora/main-session request
-INFO  2026-04-13T09:55:47 +187ms service=server method=OPTIONS path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:55:47 +0ms service=server status=started method=OPTIONS path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:55:47 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:55:47 +4ms service=server method=GET path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:55:47 +0ms service=server status=started method=GET path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:55:47 +5ms service=server status=completed duration=4 method=GET path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:56:00 +13207ms service=server method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:56:00 +0ms service=server status=started method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:56:00 +1ms service=server status=completed duration=1 method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:56:00 +1ms service=server method=OPTIONS path=/agent/compaction/persona request
-INFO  2026-04-13T09:56:00 +0ms service=server status=started method=OPTIONS path=/agent/compaction/persona request
-INFO  2026-04-13T09:56:00 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/compaction/persona request
-INFO  2026-04-13T09:56:00 +1ms service=server method=OPTIONS path=/agent/compaction/injection request
-INFO  2026-04-13T09:56:00 +0ms service=server status=started method=OPTIONS path=/agent/compaction/injection request
-INFO  2026-04-13T09:56:00 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/compaction/injection request
-INFO  2026-04-13T09:56:00 +1ms service=server method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:56:00 +1ms service=server status=started method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:56:00 +0ms service=server status=completed duration=1 method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:56:00 +0ms service=server method=OPTIONS path=/agent/compaction/persona request
-INFO  2026-04-13T09:56:00 +0ms service=server status=started method=OPTIONS path=/agent/compaction/persona request
-INFO  2026-04-13T09:56:00 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/compaction/persona request
-INFO  2026-04-13T09:56:00 +3ms service=server method=OPTIONS path=/agent/compaction/injection request
-INFO  2026-04-13T09:56:00 +0ms service=server status=started method=OPTIONS path=/agent/compaction/injection request
-INFO  2026-04-13T09:56:00 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/compaction/injection request
-INFO  2026-04-13T09:56:00 +1ms service=server method=GET path=/agent/tools request
-INFO  2026-04-13T09:56:00 +0ms service=server status=started method=GET path=/agent/tools request
-INFO  2026-04-13T09:56:00 +1ms service=server status=completed duration=1 method=GET path=/agent/tools request
-INFO  2026-04-13T09:56:00 +1ms service=server method=GET path=/agent/compaction/persona request
-INFO  2026-04-13T09:56:00 +0ms service=server status=started method=GET path=/agent/compaction/persona request
-INFO  2026-04-13T09:56:00 +3ms service=server method=GET path=/agent/compaction/injection request
-INFO  2026-04-13T09:56:00 +0ms service=server status=started method=GET path=/agent/compaction/injection request
-INFO  2026-04-13T09:56:00 +1ms service=server method=GET path=/agent/tools request
-INFO  2026-04-13T09:56:00 +0ms service=server status=started method=GET path=/agent/tools request
-INFO  2026-04-13T09:56:00 +1ms service=server status=completed duration=1 method=GET path=/agent/tools request
-INFO  2026-04-13T09:56:00 +0ms service=server status=completed duration=5 method=GET path=/agent/compaction/persona request
-INFO  2026-04-13T09:56:00 +1ms service=server status=completed duration=3 method=GET path=/agent/compaction/injection request
-INFO  2026-04-13T09:56:00 +10ms service=server method=GET path=/agent/compaction/persona request
-INFO  2026-04-13T09:56:00 +0ms service=server status=started method=GET path=/agent/compaction/persona request
-INFO  2026-04-13T09:56:00 +1ms service=server method=GET path=/agent/compaction/injection request
-INFO  2026-04-13T09:56:00 +0ms service=server status=started method=GET path=/agent/compaction/injection request
-INFO  2026-04-13T09:56:00 +1ms service=server status=completed duration=2 method=GET path=/agent/compaction/persona request
-INFO  2026-04-13T09:56:00 +1ms service=server status=completed duration=2 method=GET path=/agent/compaction/injection request
-INFO  2026-04-13T09:56:08 +7734ms service=server method=OPTIONS path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:56:08 +1ms service=server status=started method=OPTIONS path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:56:08 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:56:08 +5ms service=server method=GET path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:56:08 +0ms service=server status=started method=GET path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:56:08 +3ms service=server status=completed duration=3 method=GET path=/session/ses_279cdff6fffeXDwFvqBF5YB8da/message request
-INFO  2026-04-13T09:56:09 +1086ms service=server method=OPTIONS path=/schedule request
-INFO  2026-04-13T09:56:09 +0ms service=server status=started method=OPTIONS path=/schedule request
-INFO  2026-04-13T09:56:09 +1ms service=server status=completed duration=1 method=OPTIONS path=/schedule request
-INFO  2026-04-13T09:56:09 +3ms service=server method=GET path=/schedule request
-INFO  2026-04-13T09:56:09 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-04-13T09:56:09 +3ms service=server status=completed duration=3 method=GET path=/schedule request
-INFO  2026-04-13T09:56:12 +2743ms service=server method=OPTIONS path=/session/ses_279cdff6fffeXDwFvqBF5YB8da request
-INFO  2026-04-13T09:56:12 +0ms service=server status=started method=OPTIONS path=/session/ses_279cdff6fffeXDwFvqBF5YB8da request
-INFO  2026-04-13T09:56:12 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_279cdff6fffeXDwFvqBF5YB8da request
-INFO  2026-04-13T09:56:12 +5ms service=server method=DELETE path=/session/ses_279cdff6fffeXDwFvqBF5YB8da request
-INFO  2026-04-13T09:56:12 +0ms service=server status=started method=DELETE path=/session/ses_279cdff6fffeXDwFvqBF5YB8da request
-INFO  2026-04-13T09:56:12 +10ms service=bus type=session.updated publishing
-INFO  2026-04-13T09:56:12 +5ms service=bus type=session.deleted publishing
-INFO  2026-04-13T09:56:12 +2ms service=server status=completed duration=17 method=DELETE path=/session/ses_279cdff6fffeXDwFvqBF5YB8da request
-INFO  2026-04-13T09:56:12 +629ms service=bus type=* unsubscribing
-INFO  2026-04-13T09:56:12 +0ms service=server event disconnected
-INFO  2026-04-13T09:56:16 +3362ms service=server method=OPTIONS path=/provider request
-INFO  2026-04-13T09:56:16 +0ms service=server status=started method=OPTIONS path=/provider request
-INFO  2026-04-13T09:56:16 +0ms service=server status=completed duration=0 method=OPTIONS path=/provider request
-INFO  2026-04-13T09:56:16 +1ms service=server method=OPTIONS path=/session request
-INFO  2026-04-13T09:56:16 +0ms service=server status=started method=OPTIONS path=/session request
-INFO  2026-04-13T09:56:16 +0ms service=server status=completed duration=0 method=OPTIONS path=/session request
-INFO  2026-04-13T09:56:16 +0ms service=server method=OPTIONS path=/agent request
-INFO  2026-04-13T09:56:16 +0ms service=server status=started method=OPTIONS path=/agent request
-INFO  2026-04-13T09:56:16 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent request
-INFO  2026-04-13T09:56:16 +1ms service=server method=OPTIONS path=/question request
-INFO  2026-04-13T09:56:16 +0ms service=server status=started method=OPTIONS path=/question request
-INFO  2026-04-13T09:56:16 +0ms service=server status=completed duration=0 method=OPTIONS path=/question request
-INFO  2026-04-13T09:56:16 +0ms service=server method=OPTIONS path=/config request
-INFO  2026-04-13T09:56:16 +0ms service=server status=started method=OPTIONS path=/config request
-INFO  2026-04-13T09:56:16 +0ms service=server status=completed duration=0 method=OPTIONS path=/config request
-INFO  2026-04-13T09:56:16 +9ms service=server method=GET path=/provider request
-INFO  2026-04-13T09:56:16 +1ms service=server status=started method=GET path=/provider request
-INFO  2026-04-13T09:56:16 +33ms service=server method=GET path=/session request
-INFO  2026-04-13T09:56:16 +0ms service=server status=started method=GET path=/session request
-INFO  2026-04-13T09:56:16 +3ms service=server status=completed duration=3 method=GET path=/session request
-INFO  2026-04-13T09:56:16 +0ms service=server method=GET path=/agent request
-INFO  2026-04-13T09:56:16 +0ms service=server status=started method=GET path=/agent request
-INFO  2026-04-13T09:56:16 +1ms service=server method=GET path=/question request
-INFO  2026-04-13T09:56:16 +0ms service=server status=started method=GET path=/question request
-INFO  2026-04-13T09:56:16 +1ms service=server status=completed duration=1 method=GET path=/question request
-INFO  2026-04-13T09:56:16 +0ms service=server method=GET path=/config request
-INFO  2026-04-13T09:56:16 +0ms service=server status=started method=GET path=/config request
-INFO  2026-04-13T09:56:16 +1ms service=server status=completed duration=1 method=GET path=/config request
-INFO  2026-04-13T09:56:16 +85ms service=server status=completed duration=124 method=GET path=/provider request
-INFO  2026-04-13T09:56:16 +1ms service=server method=GET path=/event request
-INFO  2026-04-13T09:56:16 +1ms service=server status=started method=GET path=/event request
-INFO  2026-04-13T09:56:16 +0ms service=server event connected
-INFO  2026-04-13T09:56:16 +0ms service=bus type=* subscribing
-INFO  2026-04-13T09:56:16 +0ms service=server status=completed duration=0 method=GET path=/event request
-INFO  2026-04-13T09:56:16 +67ms service=server status=completed duration=157 method=GET path=/agent request
-INFO  2026-04-13T09:56:16 +138ms service=server method=OPTIONS path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:56:16 +1ms service=server status=started method=OPTIONS path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:56:16 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:56:16 +6ms service=server method=GET path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:56:16 +0ms service=server status=started method=GET path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:56:16 +4ms service=server status=completed duration=4 method=GET path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:56:17 +1476ms service=server method=OPTIONS path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf/message request
-INFO  2026-04-13T09:56:17 +1ms service=server status=started method=OPTIONS path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf/message request
-INFO  2026-04-13T09:56:17 +0ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf/message request
-INFO  2026-04-13T09:56:18 +6ms service=server method=GET path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf/message request
-INFO  2026-04-13T09:56:18 +0ms service=server status=started method=GET path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf/message request
-INFO  2026-04-13T09:56:18 +7ms service=server status=completed duration=7 method=GET path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf/message request
-INFO  2026-04-13T09:56:19 +1590ms service=server method=OPTIONS path=/schedule request
-INFO  2026-04-13T09:56:19 +0ms service=server status=started method=OPTIONS path=/schedule request
-INFO  2026-04-13T09:56:19 +1ms service=server status=completed duration=1 method=OPTIONS path=/schedule request
-INFO  2026-04-13T09:56:19 +4ms service=server method=GET path=/schedule request
-INFO  2026-04-13T09:56:19 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-04-13T09:56:19 +2ms service=server status=completed duration=2 method=GET path=/schedule request
-INFO  2026-04-13T09:56:21 +2258ms service=server method=OPTIONS path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf request
-INFO  2026-04-13T09:56:21 +0ms service=server status=started method=OPTIONS path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf request
-INFO  2026-04-13T09:56:21 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf request
-INFO  2026-04-13T09:56:21 +3ms service=server method=DELETE path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf request
-INFO  2026-04-13T09:56:21 +0ms service=server status=started method=DELETE path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf request
-INFO  2026-04-13T09:56:21 +7ms service=bus type=session.updated publishing
-INFO  2026-04-13T09:56:21 +7ms service=bus type=session.deleted publishing
-INFO  2026-04-13T09:56:21 +1ms service=server status=completed duration=15 method=DELETE path=/session/ses_279e027a1ffeKa09E0LXS4Vdbf request
-INFO  2026-04-13T09:56:22 +753ms service=bus type=* unsubscribing
-INFO  2026-04-13T09:56:22 +0ms service=server event disconnected
-INFO  2026-04-13T09:56:26 +3966ms service=server method=OPTIONS path=/provider request
-INFO  2026-04-13T09:56:26 +0ms service=server status=started method=OPTIONS path=/provider request
-INFO  2026-04-13T09:56:26 +1ms service=server status=completed duration=0 method=OPTIONS path=/provider request
-INFO  2026-04-13T09:56:26 +0ms service=server method=OPTIONS path=/agent request
-INFO  2026-04-13T09:56:26 +0ms service=server status=started method=OPTIONS path=/agent request
-INFO  2026-04-13T09:56:26 +1ms service=server status=completed duration=1 method=OPTIONS path=/agent request
-INFO  2026-04-13T09:56:26 +0ms service=server method=OPTIONS path=/session request
-INFO  2026-04-13T09:56:26 +0ms service=server status=started method=OPTIONS path=/session request
-INFO  2026-04-13T09:56:26 +0ms service=server status=completed duration=0 method=OPTIONS path=/session request
-INFO  2026-04-13T09:56:26 +1ms service=server method=OPTIONS path=/question request
-INFO  2026-04-13T09:56:26 +0ms service=server status=started method=OPTIONS path=/question request
-INFO  2026-04-13T09:56:26 +0ms service=server status=completed duration=0 method=OPTIONS path=/question request
-INFO  2026-04-13T09:56:26 +2ms service=server method=OPTIONS path=/config request
-INFO  2026-04-13T09:56:26 +0ms service=server status=started method=OPTIONS path=/config request
-INFO  2026-04-13T09:56:26 +0ms service=server status=completed duration=0 method=OPTIONS path=/config request
-INFO  2026-04-13T09:56:26 +6ms service=server method=GET path=/provider request
-INFO  2026-04-13T09:56:26 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-04-13T09:56:26 +36ms service=server method=GET path=/agent request
-INFO  2026-04-13T09:56:26 +0ms service=server status=started method=GET path=/agent request
-INFO  2026-04-13T09:56:26 +1ms service=server method=GET path=/session request
-INFO  2026-04-13T09:56:26 +0ms service=server status=started method=GET path=/session request
-INFO  2026-04-13T09:56:26 +4ms service=server status=completed duration=4 method=GET path=/session request
-INFO  2026-04-13T09:56:26 +0ms service=server method=GET path=/question request
-INFO  2026-04-13T09:56:26 +0ms service=server status=started method=GET path=/question request
-INFO  2026-04-13T09:56:26 +1ms service=server status=completed duration=1 method=GET path=/question request
-INFO  2026-04-13T09:56:26 +105ms service=server status=completed duration=147 method=GET path=/provider request
-INFO  2026-04-13T09:56:26 +2ms service=server method=GET path=/config request
-INFO  2026-04-13T09:56:26 +0ms service=server status=started method=GET path=/config request
-INFO  2026-04-13T09:56:26 +1ms service=server status=completed duration=1 method=GET path=/config request
-INFO  2026-04-13T09:56:26 +0ms service=server method=GET path=/event request
-INFO  2026-04-13T09:56:26 +0ms service=server status=started method=GET path=/event request
-INFO  2026-04-13T09:56:26 +1ms service=server event connected
-INFO  2026-04-13T09:56:26 +0ms service=bus type=* subscribing
-INFO  2026-04-13T09:56:26 +1ms service=server status=completed duration=2 method=GET path=/event request
-INFO  2026-04-13T09:56:26 +106ms service=server status=completed duration=222 method=GET path=/agent request
-INFO  2026-04-13T09:56:26 +66ms service=server method=OPTIONS path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:56:26 +0ms service=server status=started method=OPTIONS path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:56:26 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:56:26 +5ms service=server method=GET path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:56:26 +1ms service=server status=started method=GET path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:56:26 +8ms service=server status=completed duration=8 method=GET path=/session/ses_2921c5090ffeZ6gC78WZc1jWMb/message request
-INFO  2026-04-13T09:56:28 +1678ms service=server method=OPTIONS path=/session/ses_279cda64affen5kUD0R1Hzkt4o/message request
-INFO  2026-04-13T09:56:28 +0ms service=server status=started method=OPTIONS path=/session/ses_279cda64affen5kUD0R1Hzkt4o/message request
-INFO  2026-04-13T09:56:28 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_279cda64affen5kUD0R1Hzkt4o/message request
-INFO  2026-04-13T09:56:28 +5ms service=server method=GET path=/session/ses_279cda64affen5kUD0R1Hzkt4o/message request
-INFO  2026-04-13T09:56:28 +0ms service=server status=started method=GET path=/session/ses_279cda64affen5kUD0R1Hzkt4o/message request
-INFO  2026-04-13T09:56:28 +3ms service=server status=completed duration=3 method=GET path=/session/ses_279cda64affen5kUD0R1Hzkt4o/message request
-INFO  2026-04-13T09:56:32 +3562ms service=server method=OPTIONS path=/session request
-INFO  2026-04-13T09:56:32 +0ms service=server status=started method=OPTIONS path=/session request
-INFO  2026-04-13T09:56:32 +1ms service=server status=completed duration=1 method=OPTIONS path=/session request
-INFO  2026-04-13T09:56:32 +5ms service=server method=POST path=/session request
-INFO  2026-04-13T09:56:32 +0ms service=server status=started method=POST path=/session request
-INFO  2026-04-13T09:56:32 +33ms service=bus type=session.created publishing
-INFO  2026-04-13T09:56:32 +4ms service=server status=completed duration=37 method=POST path=/session request
-INFO  2026-04-13T09:56:32 +315ms service=server method=OPTIONS path=/session/ses_279ba8a92ffefm2nQtz14xenmr/message request
-INFO  2026-04-13T09:56:32 +0ms service=server status=started method=OPTIONS path=/session/ses_279ba8a92ffefm2nQtz14xenmr/message request
-INFO  2026-04-13T09:56:32 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_279ba8a92ffefm2nQtz14xenmr/message request
-INFO  2026-04-13T09:56:32 +5ms service=server method=GET path=/session/ses_279ba8a92ffefm2nQtz14xenmr/message request
-INFO  2026-04-13T09:56:32 +0ms service=server status=started method=GET path=/session/ses_279ba8a92ffefm2nQtz14xenmr/message request
-INFO  2026-04-13T09:56:32 +1ms service=server status=completed duration=1 method=GET path=/session/ses_279ba8a92ffefm2nQtz14xenmr/message request
-INFO  2026-04-13T09:56:49 +17426ms service=server method=POST path=/voice/stt request
-INFO  2026-04-13T09:56:49 +0ms service=server status=started method=POST path=/voice/stt request
-INFO  2026-04-13T09:56:51 +1467ms service=server status=completed duration=1467 method=POST path=/voice/stt request
-INFO  2026-04-13T09:56:51 +10ms service=server method=OPTIONS path=/session/ses_279ba8a92ffefm2nQtz14xenmr/prompt_async request
-INFO  2026-04-13T09:56:51 +0ms service=server status=started method=OPTIONS path=/session/ses_279ba8a92ffefm2nQtz14xenmr/prompt_async request
-INFO  2026-04-13T09:56:51 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_279ba8a92ffefm2nQtz14xenmr/prompt_async request
-INFO  2026-04-13T09:56:51 +3ms service=server method=POST path=/session/ses_279ba8a92ffefm2nQtz14xenmr/prompt_async request
-INFO  2026-04-13T09:56:51 +0ms service=server status=started method=POST path=/session/ses_279ba8a92ffefm2nQtz14xenmr/prompt_async request
-INFO  2026-04-13T09:56:51 +15ms service=server status=completed duration=14 method=POST path=/session/ses_279ba8a92ffefm2nQtz14xenmr/prompt_async request
-INFO  2026-04-13T09:56:51 +31ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:56:51 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:56:51 +4ms service=bus type=session.updated publishing
-INFO  2026-04-13T09:56:51 +8ms service=bus type=session.status publishing
-INFO  2026-04-13T09:56:51 +21ms service=provider status=started providerID=opencode getSDK
-INFO  2026-04-13T09:56:51 +0ms service=provider providerID=opencode pkg=@ai-sdk/openai using bundled provider
-INFO  2026-04-13T09:56:51 +0ms service=provider status=completed duration=0 providerID=opencode getSDK
-INFO  2026-04-13T09:56:52 +713ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:56:52 +79ms service=provider status=started providerID=opencode getSDK
-INFO  2026-04-13T09:56:52 +0ms service=provider providerID=opencode pkg=@ai-sdk/anthropic using bundled provider
-INFO  2026-04-13T09:56:52 +0ms service=provider status=completed duration=1 providerID=opencode getSDK
-INFO  2026-04-13T09:56:52 +7ms service=bus type=session.status publishing
-INFO  2026-04-13T09:56:54 +1940ms service=server method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:56:54 +0ms service=server status=started method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:56:54 +1ms service=server status=completed duration=1 method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:56:54 +1ms service=server method=OPTIONS path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:56:54 +0ms service=server status=started method=OPTIONS path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:56:54 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:56:54 +5ms service=server method=OPTIONS path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:56:54 +0ms service=server status=started method=OPTIONS path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:56:54 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:56:54 +3ms service=server method=GET path=/agent/tools request
-INFO  2026-04-13T09:56:54 +0ms service=server status=started method=GET path=/agent/tools request
-INFO  2026-04-13T09:56:54 +1ms service=server status=completed duration=1 method=GET path=/agent/tools request
-INFO  2026-04-13T09:56:54 +1ms service=server method=GET path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:56:54 +0ms service=server status=started method=GET path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:56:54 +1ms service=server status=completed duration=1 method=GET path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:56:54 +1ms service=server method=OPTIONS path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:56:54 +0ms service=server status=started method=OPTIONS path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:56:54 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:56:54 +14ms service=server method=GET path=/agent/tools request
-INFO  2026-04-13T09:56:54 +0ms service=server status=started method=GET path=/agent/tools request
-INFO  2026-04-13T09:56:54 +1ms service=server status=completed duration=1 method=GET path=/agent/tools request
-INFO  2026-04-13T09:56:54 +0ms service=server method=GET path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:56:54 +0ms service=server status=started method=GET path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:56:54 +2ms service=server status=completed duration=1 method=GET path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:56:54 +3ms service=server method=GET path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:56:54 +0ms service=server status=started method=GET path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:56:54 +10ms service=server method=GET path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:56:54 +0ms service=server status=started method=GET path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:56:54 +1ms service=server status=completed duration=11 method=GET path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:56:54 +1ms service=server status=completed duration=2 method=GET path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:57:05 +10941ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:04:14 +517ms service=default version=local args=["serve","--port","4097"] opencode
+INFO  2026-04-13T11:04:14 +2ms service=config path=/home/mariu/projects/opendora/.opendora/config.json loading
+INFO  2026-04-13T11:04:14 +1ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.json loading
+INFO  2026-04-13T11:04:14 +1ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.jsonc loading
+INFO  2026-04-13T11:04:15 +118ms service=db path=/home/mariu/projects/opendora/.opendora/storage/opendora.db opening database
+INFO  2026-04-13T11:04:15 +19ms service=db count=12 mode=dev applying migrations
+INFO  2026-04-13T11:04:15 +15ms service=server Browser control server started
+INFO  2026-04-13T11:04:29 +13965ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-13T11:04:29 +1ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-13T11:04:29 +2ms service=server status=completed duration=2 method=OPTIONS path=/provider request
+INFO  2026-04-13T11:04:29 +1ms service=server method=OPTIONS path=/agent request
+INFO  2026-04-13T11:04:29 +0ms service=server status=started method=OPTIONS path=/agent request
+INFO  2026-04-13T11:04:29 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent request
+INFO  2026-04-13T11:04:29 +1ms service=server method=OPTIONS path=/session request
+INFO  2026-04-13T11:04:29 +0ms service=server status=started method=OPTIONS path=/session request
+INFO  2026-04-13T11:04:29 +0ms service=server status=completed duration=0 method=OPTIONS path=/session request
+INFO  2026-04-13T11:04:29 +0ms service=server method=OPTIONS path=/question request
+INFO  2026-04-13T11:04:29 +0ms service=server status=started method=OPTIONS path=/question request
+INFO  2026-04-13T11:04:29 +1ms service=server status=completed duration=0 method=OPTIONS path=/question request
+INFO  2026-04-13T11:04:29 +0ms service=server method=OPTIONS path=/config request
+INFO  2026-04-13T11:04:29 +0ms service=server status=started method=OPTIONS path=/config request
+INFO  2026-04-13T11:04:29 +0ms service=server status=completed duration=0 method=OPTIONS path=/config request
+INFO  2026-04-13T11:04:29 +4ms service=server method=GET path=/event request
+INFO  2026-04-13T11:04:29 +0ms service=server status=started method=GET path=/event request
+INFO  2026-04-13T11:04:29 +2ms service=default directory=/home/mariu/projects/opendora/packages/opencode creating instance
+INFO  2026-04-13T11:04:29 +1ms service=project directory=/home/mariu/projects/opendora/packages/opencode fromDirectory
+INFO  2026-04-13T11:04:29 +2ms service=server method=GET path=/provider request
+INFO  2026-04-13T11:04:29 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-04-13T11:04:29 +0ms service=server method=GET path=/agent request
+INFO  2026-04-13T11:04:29 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-04-13T11:04:29 +0ms service=server method=GET path=/session request
+INFO  2026-04-13T11:04:29 +0ms service=server status=started method=GET path=/session request
+INFO  2026-04-13T11:04:29 +0ms service=server method=GET path=/question request
+INFO  2026-04-13T11:04:29 +1ms service=server status=started method=GET path=/question request
+INFO  2026-04-13T11:04:29 +44ms service=default directory=/home/mariu/projects/opendora/packages/opencode bootstrapping
+DEBUG 2026-04-13T11:04:29 +9ms service=config path=/home/mariu/projects/opendora/.opendora loading config from OPENCODE_CONFIG_DIR
+DEBUG 2026-04-13T11:04:29 +1ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.jsonc
+INFO  2026-04-13T11:04:29 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.jsonc loading
+INFO  2026-04-13T11:04:29 +1ms service=server method=GET path=/config request
+INFO  2026-04-13T11:04:29 +0ms service=server status=started method=GET path=/config request
+DEBUG 2026-04-13T11:04:29 +1ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.json
+INFO  2026-04-13T11:04:29 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.json loading
+DEBUG 2026-04-13T11:04:29 +114ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-13T11:04:29 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-13T11:04:29 +0ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-13T11:04:29 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+INFO  2026-04-13T11:04:29 +23ms service=plugin name=CodexAuthPlugin loading internal plugin
+INFO  2026-04-13T11:04:29 +2ms service=plugin name=CopilotAuthPlugin loading internal plugin
+INFO  2026-04-13T11:04:29 +0ms service=plugin name=gitlabAuthPlugin loading internal plugin
+INFO  2026-04-13T11:04:29 +1ms service=plugin name=googleOAuthPlugin loading internal plugin
+INFO  2026-04-13T11:04:29 +0ms service=plugin path=opencode-anthropic-auth@0.0.13 loading plugin
+INFO  2026-04-13T11:04:29 +31ms service=bus type=* subscribing
+INFO  2026-04-13T11:04:29 +1ms service=bus type=session.updated subscribing
+INFO  2026-04-13T11:04:29 +0ms service=bus type=message.updated subscribing
+INFO  2026-04-13T11:04:29 +0ms service=bus type=message.part.updated subscribing
+INFO  2026-04-13T11:04:29 +0ms service=bus type=session.diff subscribing
+INFO  2026-04-13T11:04:29 +0ms service=format init
+INFO  2026-04-13T11:04:29 +0ms service=bus type=file.edited subscribing
+INFO  2026-04-13T11:04:29 +1ms service=lsp serverIds=deno, typescript, vue, eslint, oxlint, biome, gopls, ruby-lsp, pyright, elixir-ls, zls, csharp, fsharp, sourcekit-lsp, rust, clangd, svelte, astro, jdtls, kotlin-ls, yaml-ls, lua-ls, php intelephense, prisma, dart, ocaml-lsp, bash, terraform, texlab, dockerfile, gleam, clojure-lsp, nixd, tinymist, haskell-language-server, julials enabled LSP servers
+INFO  2026-04-13T11:04:29 +1ms service=file.watcher init
+INFO  2026-04-13T11:04:29 +125ms service=scheduler id=snapshot.cleanup run
+INFO  2026-04-13T11:04:29 +0ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-04-13T11:04:29 +2ms service=bus type=command.executed subscribing
+INFO  2026-04-13T11:04:29 +1ms service=file.watcher platform=linux backend=inotify watcher backend
+ERROR 2026-04-13T11:04:29 +1ms service=file.watcher error=OPENCODE_LIBC is not defined failed to load watcher binding
+INFO  2026-04-13T11:04:29 +3ms service=server event connected
+INFO  2026-04-13T11:04:29 +6ms service=bus type=* subscribing
+INFO  2026-04-13T11:04:29 +13ms service=server status=completed duration=387 method=GET path=/event request
+INFO  2026-04-13T11:04:29 +0ms service=server status=completed duration=382 method=GET path=/question request
+INFO  2026-04-13T11:04:29 +0ms service=server status=completed duration=326 method=GET path=/config request
+INFO  2026-04-13T11:04:29 +2ms service=server status=completed duration=384 method=GET path=/session request
+INFO  2026-04-13T11:04:29 +36ms service=provider status=started state
+INFO  2026-04-13T11:04:29 +50ms service=provider init
+INFO  2026-04-13T11:04:29 +13ms service=vcs branch=ui initialized
+INFO  2026-04-13T11:04:29 +0ms service=bus type=file.watcher.updated subscribing
+INFO  2026-04-13T11:04:29 +50ms service=snapshot prune=7.days cleanup
+INFO  2026-04-13T11:04:29 +223ms service=server status=completed duration=756 method=GET path=/agent request
+INFO  2026-04-13T11:04:30 +195ms service=provider providerID=openai found
+INFO  2026-04-13T11:04:30 +1ms service=provider providerID=kilo found
+INFO  2026-04-13T11:04:30 +1ms service=provider providerID=openrouter found
+INFO  2026-04-13T11:04:30 +0ms service=provider providerID=openai-codex found
+INFO  2026-04-13T11:04:30 +1ms service=provider providerID=opencode found
+INFO  2026-04-13T11:04:30 +0ms service=provider status=completed duration=534 state
+INFO  2026-04-13T11:04:30 +193ms service=server status=completed duration=1147 method=GET path=/provider request
+INFO  2026-04-13T11:04:30 +318ms service=server method=OPTIONS path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/message request
+INFO  2026-04-13T11:04:30 +0ms service=server status=started method=OPTIONS path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/message request
+INFO  2026-04-13T11:04:30 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/message request
+INFO  2026-04-13T11:04:30 +5ms service=server method=GET path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/message request
+INFO  2026-04-13T11:04:30 +0ms service=server status=started method=GET path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/message request
+INFO  2026-04-13T11:04:30 +10ms service=server status=completed duration=10 method=GET path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/message request
+WARN  2026-04-13T11:04:30 +39ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
+WARN  2026-04-13T11:04:30 +112ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
+INFO  2026-04-13T11:04:53 +22507ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-13T11:04:53 +1ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-13T11:04:53 +0ms service=server status=completed duration=0 method=OPTIONS path=/provider request
+INFO  2026-04-13T11:04:53 +11ms service=server method=GET path=/provider request
+INFO  2026-04-13T11:04:53 +1ms service=server status=started method=GET path=/provider request
+INFO  2026-04-13T11:04:53 +89ms service=server status=completed duration=89 method=GET path=/provider request
+INFO  2026-04-13T11:04:54 +897ms service=server method=OPTIONS path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:04:54 +0ms service=server status=started method=OPTIONS path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:04:54 +1ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:04:54 +5ms service=server method=POST path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:04:54 +0ms service=server status=started method=POST path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:04:54 +22ms service=server status=completed duration=22 method=POST path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:04:54 +36ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:04:54 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:04:54 +3ms service=bus type=session.updated publishing
+INFO  2026-04-13T11:04:54 +6ms service=bus type=session.status publishing
+INFO  2026-04-13T11:04:54 +37ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:04:54 +91ms service=provider status=started providerID=opencode getSDK
+INFO  2026-04-13T11:04:54 +1ms service=provider providerID=opencode pkg=@ai-sdk/anthropic using bundled provider
+INFO  2026-04-13T11:04:54 +0ms service=provider status=completed duration=1 providerID=opencode getSDK
+INFO  2026-04-13T11:04:54 +21ms service=bus type=session.status publishing
+INFO  2026-04-13T11:04:55 +838ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:57:05 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:57:06 +1467ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:57:06 +4ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:57:08 +1869ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:57:14 +6291ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:57:15 +87ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:57:15 +82ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:04:55 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:04:55 +138ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:04:55 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:04:55 +313ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:04:55 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:04:55 +9ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:04:55 +30ms service=permission permission=browser pattern=open action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T11:04:55 +6ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:04:55 +57ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:04:55 +38ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:57:15 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:57:15 +0ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:57:15 +34ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:57:15 +1ms service=bus type=session.status publishing
-INFO  2026-04-13T09:57:15 +3ms service=bus type=session.status publishing
-INFO  2026-04-13T09:57:15 +0ms service=bus type=session.idle publishing
-INFO  2026-04-13T09:58:14 +59015ms service=server method=OPTIONS path=/provider request
-INFO  2026-04-13T09:58:14 +0ms service=server status=started method=OPTIONS path=/provider request
-INFO  2026-04-13T09:58:14 +0ms service=server status=completed duration=0 method=OPTIONS path=/provider request
-INFO  2026-04-13T09:58:14 +4ms service=server method=GET path=/provider request
-INFO  2026-04-13T09:58:14 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-04-13T09:58:14 +98ms service=server status=completed duration=98 method=GET path=/provider request
-INFO  2026-04-13T09:58:27 +13713ms service=server method=OPTIONS path=/session/ses_279ba8a92ffefm2nQtz14xenmr/prompt_async request
-INFO  2026-04-13T09:58:27 +1ms service=server status=started method=OPTIONS path=/session/ses_279ba8a92ffefm2nQtz14xenmr/prompt_async request
-INFO  2026-04-13T09:58:27 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_279ba8a92ffefm2nQtz14xenmr/prompt_async request
-INFO  2026-04-13T09:58:27 +4ms service=server method=POST path=/session/ses_279ba8a92ffefm2nQtz14xenmr/prompt_async request
-INFO  2026-04-13T09:58:27 +1ms service=server status=started method=POST path=/session/ses_279ba8a92ffefm2nQtz14xenmr/prompt_async request
-INFO  2026-04-13T09:58:27 +4ms service=server status=completed duration=4 method=POST path=/session/ses_279ba8a92ffefm2nQtz14xenmr/prompt_async request
-INFO  2026-04-13T09:58:27 +4ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:27 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:27 +3ms service=bus type=session.updated publishing
-INFO  2026-04-13T09:58:27 +1ms service=bus type=session.status publishing
-INFO  2026-04-13T09:58:27 +21ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:28 +52ms service=bus type=session.status publishing
-INFO  2026-04-13T09:58:29 +1508ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:04:55 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:04:55 +2ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:04:55 +35ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:04:55 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T11:04:55 +46ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:04:56 +98ms service=bus type=session.status publishing
+INFO  2026-04-13T11:04:59 +3630ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:58:29 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:31 +1535ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:31 +2ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:32 +1708ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:33 +780ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:34 +503ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:34 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:34 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:34 +0ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:34 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:34 +4ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:34 +86ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:34 +5ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:34 +64ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:04:59 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:04:59 +178ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:04:59 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:04:59 +20ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:04:59 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:04:59 +18ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:04:59 +5ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:04:59 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:05:00 +79ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:58:34 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:34 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:34 +46ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:34 +0ms service=bus type=session.status publishing
-INFO  2026-04-13T09:58:34 +33ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:34 +54ms service=bus type=session.status publishing
-INFO  2026-04-13T09:58:35 +918ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:05:00 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:05:00 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:05:00 +30ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:05:00 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T11:05:00 +21ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:05:00 +70ms service=bus type=session.status publishing
+INFO  2026-04-13T11:05:00 +565ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:58:35 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:36 +1677ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:36 +0ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:38 +1674ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:40 +1506ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:40 +328ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:41 +532ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:41 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:41 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:41 +2ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:41 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:41 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:41 +34ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:42 +986ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:42 +51ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:05:00 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:05:00 +57ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:05:00 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:05:00 +117ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:05:00 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:05:00 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:05:00 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:05:00 +8ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:05:00 +58ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:58:42 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:42 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:42 +34ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:42 +0ms service=bus type=session.status publishing
-INFO  2026-04-13T09:58:42 +22ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:42 +45ms service=bus type=session.status publishing
-INFO  2026-04-13T09:58:49 +7188ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:05:00 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:05:00 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:05:01 +38ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:05:01 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T11:05:01 +4ms service=bus type=session.status publishing
+INFO  2026-04-13T11:05:01 +0ms service=bus type=session.idle publishing
+INFO  2026-04-13T11:06:10 +69433ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-13T11:06:10 +2ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-13T11:06:10 +3ms service=server status=completed duration=4 method=OPTIONS path=/provider request
+INFO  2026-04-13T11:06:10 +14ms service=server method=GET path=/provider request
+INFO  2026-04-13T11:06:10 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-04-13T11:06:10 +268ms service=server status=completed duration=268 method=GET path=/provider request
+INFO  2026-04-13T11:08:10 +119616ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-13T11:08:10 +1ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-13T11:08:10 +0ms service=server status=completed duration=0 method=OPTIONS path=/provider request
+INFO  2026-04-13T11:08:10 +8ms service=server method=GET path=/provider request
+INFO  2026-04-13T11:08:10 +1ms service=server status=started method=GET path=/provider request
+INFO  2026-04-13T11:08:10 +106ms service=server status=completed duration=106 method=GET path=/provider request
+INFO  2026-04-13T11:08:16 +5651ms service=server method=OPTIONS path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:08:16 +0ms service=server status=started method=OPTIONS path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:08:16 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:08:16 +5ms service=server method=POST path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:08:16 +0ms service=server status=started method=POST path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:08:16 +7ms service=server status=completed duration=7 method=POST path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:08:16 +20ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:08:16 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:08:16 +3ms service=bus type=session.updated publishing
+INFO  2026-04-13T11:08:16 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T11:08:16 +38ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:08:16 +85ms service=bus type=session.status publishing
+INFO  2026-04-13T11:08:16 +575ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:58:49 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:49 +105ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:49 +1ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:49 +25ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:49 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:49 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:49 +68ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:50 +516ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:50 +48ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:08:16 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:08:17 +232ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:08:17 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:08:17 +113ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:08:17 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:08:17 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:08:17 +21ms service=permission permission=browser pattern=open action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T11:08:17 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:08:17 +87ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:08:17 +32ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:58:50 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:50 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:50 +55ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:50 +1ms service=bus type=session.status publishing
-INFO  2026-04-13T09:58:50 +40ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:50 +61ms service=bus type=session.status publishing
-INFO  2026-04-13T09:58:52 +1950ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:08:17 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:08:17 +2ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:08:17 +39ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:08:17 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T11:08:17 +38ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:08:17 +74ms service=bus type=session.status publishing
+INFO  2026-04-13T11:08:18 +851ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:58:52 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:52 +626ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:52 +1ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:53 +309ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:53 +5ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:53 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:53 +3ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:53 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:53 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:53 +14ms service=permission permission=skill pattern=agent-author action={"permission":"*","pattern":"*","action":"allow"} evaluated
-INFO  2026-04-13T09:58:53 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:53 +7ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:53 +53ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:08:18 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:08:18 +228ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:08:18 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:08:19 +954ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:08:19 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:08:19 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:08:19 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:08:19 +13ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:08:19 +64ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:58:53 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:53 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:53 +35ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:53 +1ms service=bus type=session.status publishing
-INFO  2026-04-13T09:58:53 +35ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:53 +43ms service=bus type=session.status publishing
-INFO  2026-04-13T09:58:54 +1246ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:08:19 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:08:19 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:08:19 +45ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:08:19 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T11:08:19 +6ms service=bus type=session.status publishing
+INFO  2026-04-13T11:08:19 +0ms service=bus type=session.idle publishing
+INFO  2026-04-13T11:10:42 +142832ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-13T11:10:42 +0ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-13T11:10:42 +7ms service=server status=completed duration=6 method=OPTIONS path=/provider request
+INFO  2026-04-13T11:10:42 +8ms service=server method=GET path=/provider request
+INFO  2026-04-13T11:10:42 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-04-13T11:10:42 +97ms service=server status=completed duration=97 method=GET path=/provider request
+INFO  2026-04-13T11:10:43 +905ms service=server method=OPTIONS path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:10:43 +0ms service=server status=started method=OPTIONS path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:10:43 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:10:43 +6ms service=server method=POST path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:10:43 +0ms service=server status=started method=POST path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:10:43 +4ms service=server status=completed duration=4 method=POST path=/session/ses_2798f0d39ffeipfSN9ENMAgypo/prompt_async request
+INFO  2026-04-13T11:10:43 +5ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:10:43 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:43 +2ms service=bus type=session.updated publishing
+INFO  2026-04-13T11:10:43 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T11:10:43 +31ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:10:43 +48ms service=bus type=session.status publishing
+INFO  2026-04-13T11:10:47 +4231ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:58:54 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:55 +645ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:55 +0ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:55 +520ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:55 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:55 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:55 +2ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:55 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:55 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:55 +10ms service=permission permission=skill_install pattern=openclaw/filesystem action={"permission":"*","pattern":"*","action":"allow"} evaluated
-INFO  2026-04-13T09:58:55 +5ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:56 +284ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:56 +16ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:10:47 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:48 +199ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:48 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:10:48 +193ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:10:48 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:48 +5ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:48 +64ms service=permission permission=browser pattern=open action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T11:10:48 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:51 +2860ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:51 +93ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:58:56 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:56 +0ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:56 +36ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:56 +0ms service=bus type=session.status publishing
-INFO  2026-04-13T09:58:56 +40ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:56 +45ms service=bus type=session.status publishing
-INFO  2026-04-13T09:58:57 +1488ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:10:51 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:51 +3ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:10:51 +75ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:10:51 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T11:10:51 +54ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:10:51 +80ms service=bus type=session.status publishing
+INFO  2026-04-13T11:10:52 +845ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:58:57 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:58 +272ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:58 +0ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:58 +288ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:58:58 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:58 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:58 +9ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:58 +210ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:58 +61ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:10:52 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:52 +162ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:52 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:10:52 +39ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:10:52 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:52 +0ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:52 +16ms service=permission permission=browser pattern=snapshot action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-13T11:10:52 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:52 +98ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:52 +37ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:58:58 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:58:58 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:58 +37ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:58 +1ms service=bus type=session.status publishing
-INFO  2026-04-13T09:58:58 +38ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:58:58 +57ms service=bus type=session.status publishing
-INFO  2026-04-13T09:59:37 +39060ms service=server method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:59:37 +0ms service=server status=started method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:59:37 +5ms service=server status=completed duration=5 method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:59:37 +5ms service=server method=OPTIONS path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:59:37 +0ms service=server status=started method=OPTIONS path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:59:37 +1ms service=server status=completed duration=1 method=OPTIONS path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:59:37 +2ms service=server method=OPTIONS path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:59:37 +0ms service=server status=started method=OPTIONS path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:59:37 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:59:37 +2ms service=server method=OPTIONS path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:59:37 +0ms service=server status=started method=OPTIONS path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:59:37 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:59:37 +3ms service=server method=OPTIONS path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:59:37 +0ms service=server status=started method=OPTIONS path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:59:37 +2ms service=server status=completed duration=2 method=OPTIONS path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:59:37 +2ms service=server method=GET path=/agent/tools request
-INFO  2026-04-13T09:59:37 +0ms service=server status=started method=GET path=/agent/tools request
-INFO  2026-04-13T09:59:37 +2ms service=server status=completed duration=2 method=GET path=/agent/tools request
-INFO  2026-04-13T09:59:37 +1ms service=server method=GET path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:59:37 +0ms service=server status=started method=GET path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:59:37 +1ms service=server method=GET path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:59:37 +0ms service=server status=started method=GET path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:59:37 +11ms service=server status=completed duration=12 method=GET path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:59:37 +1ms service=server status=completed duration=12 method=GET path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:59:37 +1ms service=server method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:59:37 +0ms service=server status=started method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:59:37 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/tools request
-INFO  2026-04-13T09:59:37 +1ms service=server method=GET path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:59:37 +0ms service=server status=started method=GET path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:59:37 +8ms service=server method=GET path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:59:37 +0ms service=server status=started method=GET path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:59:37 +1ms service=server method=GET path=/agent/tools request
-INFO  2026-04-13T09:59:37 +0ms service=server status=started method=GET path=/agent/tools request
-INFO  2026-04-13T09:59:37 +1ms service=server status=completed duration=1 method=GET path=/agent/tools request
-INFO  2026-04-13T09:59:37 +11ms service=server status=completed duration=21 method=GET path=/agent/agent-owner/persona request
-INFO  2026-04-13T09:59:37 +0ms service=server status=completed duration=13 method=GET path=/agent/agent-owner/injection request
-INFO  2026-04-13T09:59:44 +6946ms service=server method=OPTIONS path=/agent/agent-owner request
-INFO  2026-04-13T09:59:44 +0ms service=server status=started method=OPTIONS path=/agent/agent-owner request
-INFO  2026-04-13T09:59:44 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent/agent-owner request
-INFO  2026-04-13T09:59:44 +6ms service=server method=PATCH path=/agent/agent-owner request
-INFO  2026-04-13T09:59:44 +0ms service=server status=started method=PATCH path=/agent/agent-owner request
-INFO  2026-04-13T09:59:44 +61ms service=server status=completed duration=61 method=PATCH path=/agent/agent-owner request
-INFO  2026-04-13T09:59:44 +33ms service=server method=OPTIONS path=/agent request
-INFO  2026-04-13T09:59:44 +0ms service=server status=started method=OPTIONS path=/agent request
-INFO  2026-04-13T09:59:44 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent request
-INFO  2026-04-13T09:59:44 +8ms service=server method=GET path=/agent request
-INFO  2026-04-13T09:59:44 +0ms service=server status=started method=GET path=/agent request
-INFO  2026-04-13T09:59:44 +38ms service=server status=completed duration=38 method=GET path=/agent request
-INFO  2026-04-13T09:59:49 +4200ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:10:52 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:10:52 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:10:52 +29ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:10:52 +0ms service=bus type=session.status publishing
+INFO  2026-04-13T11:10:52 +34ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:10:52 +49ms service=bus type=session.status publishing
+INFO  2026-04-13T11:10:59 +6311ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-13T11:10:59 +0ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-13T11:10:59 +1ms service=server status=completed duration=1 method=OPTIONS path=/provider request
+INFO  2026-04-13T11:10:59 +5ms service=server method=GET path=/provider request
+INFO  2026-04-13T11:10:59 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-04-13T11:10:59 +77ms service=server status=completed duration=77 method=GET path=/provider request
+INFO  2026-04-13T11:11:08 +8830ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:59:49 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:50 +1488ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:50 +1ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:59:51 +895ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:59:51 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:51 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:51 +67ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:52 +500ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:52 +19ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
+INFO  2026-04-13T11:11:08 +13ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:11:08 +177ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:11:08 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:11:08 +517ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:11:08 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:11:08 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:11:08 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-13T11:11:08 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:11:08 +91ms service=snapshot hash=7b0804db73bc2d36b12f053dee4d14e58783b811
  cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:59:52 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:52 +2ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:59:52 +36ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:59:52 +1ms service=bus type=session.status publishing
-INFO  2026-04-13T09:59:52 +16ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:59:52 +51ms service=bus type=session.status publishing
-INFO  2026-04-13T09:59:53 +1074ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:59:53 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:54 +795ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:54 +2ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:59:54 +0ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:59:54 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:54 +6ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:54 +456ms service=permission permission=skill_install pattern=skills/frontend-design action={"permission":"*","pattern":"*","action":"allow"} evaluated
-INFO  2026-04-13T09:59:54 +1ms service=skill registry=anthropic owner=anthropics repo=skills fullPath=skills/frontend-design ref=main fetching skill from github registry
-INFO  2026-04-13T09:59:54 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:55 +423ms service=skill skillName=frontend-design files=1 skillDir=/home/mariu/projects/opendora/.opendora/skill/frontend-design installed skill
-WARN  2026-04-13T09:59:55 +1ms service=skill skillDir=/home/mariu/projects/opendora/.opendora/skill/frontend-design origin=anthropic could not inject origin into SKILL.md
-INFO  2026-04-13T09:59:55 +7ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:55 +43ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:59:55 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:55 +2ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:59:55 +33ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:59:55 +1ms service=bus type=session.status publishing
-WARN  2026-04-13T09:59:55 +122ms service=skill name=retro existing=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +13ms service=skill name=feature-workflow existing=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +1ms service=skill name=agent-author existing=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +1ms service=skill name=skill-creator existing=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +1ms service=skill name=intake-triage existing=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +13ms service=skill name=tool-author existing=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +1ms service=skill name=project-initiation existing=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +1ms service=skill name=requirements-readiness existing=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +1ms service=skill name=agent-experiment existing=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +10ms service=skill name=skill-author existing=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +7ms service=skill name=retro existing=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +14ms service=skill name=skill-author existing=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +1ms service=skill name=requirements-readiness existing=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +1ms service=skill name=agent-author existing=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +16ms service=skill name=intake-triage existing=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +1ms service=skill name=project-initiation existing=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +14ms service=skill name=agent-experiment existing=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +1ms service=skill name=skill-creator existing=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +0ms service=skill name=feature-workflow existing=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate skill name
-WARN  2026-04-13T09:59:55 +1ms service=skill name=tool-author existing=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate skill name
-INFO  2026-04-13T09:59:55 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T09:59:55 +66ms service=bus type=session.status publishing
-INFO  2026-04-13T09:59:58 +3026ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T09:59:58 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:58 +296ms service=server method=OPTIONS path=/provider request
-INFO  2026-04-13T09:59:58 +1ms service=server status=started method=OPTIONS path=/provider request
-INFO  2026-04-13T09:59:58 +0ms service=server status=completed duration=0 method=OPTIONS path=/provider request
-INFO  2026-04-13T09:59:58 +5ms service=server method=GET path=/provider request
-INFO  2026-04-13T09:59:58 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-04-13T09:59:58 +98ms service=server status=completed duration=98 method=GET path=/provider request
-INFO  2026-04-13T09:59:59 +354ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:59 +1ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:59:59 +1ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T09:59:59 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T09:59:59 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:01 +2647ms service=permission permission=skill_create pattern=test-skill action={"permission":"*","pattern":"*","action":"allow"} evaluated
-INFO  2026-04-13T10:00:01 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:01 +30ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:01 +35ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:01 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:01 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:01 +33ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:01 +0ms service=bus type=session.status publishing
-WARN  2026-04-13T10:00:01 +83ms service=skill name=retro existing=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +1ms service=skill name=skill-author existing=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +0ms service=skill name=test-skill existing=/home/mariu/projects/opendora/.opendora/skill/test-skill/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/test-skill/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +1ms service=skill name=requirements-readiness existing=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +0ms service=skill name=agent-author existing=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +1ms service=skill name=intake-triage existing=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +12ms service=skill name=project-initiation existing=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +1ms service=skill name=feature-workflow existing=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +1ms service=skill name=agent-experiment existing=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +1ms service=skill name=skill-creator existing=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +0ms service=skill name=tool-author existing=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +12ms service=skill name=retro existing=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +1ms service=skill name=intake-triage existing=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +0ms service=skill name=test-skill existing=/home/mariu/projects/opendora/.opendora/skill/test-skill/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/test-skill/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +1ms service=skill name=project-initiation existing=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +1ms service=skill name=agent-experiment existing=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +0ms service=skill name=skill-author existing=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +1ms service=skill name=agent-author existing=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +0ms service=skill name=requirements-readiness existing=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +1ms service=skill name=feature-workflow existing=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +0ms service=skill name=tool-author existing=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:02 +11ms service=skill name=skill-creator existing=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate skill name
-INFO  2026-04-13T10:00:02 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:02 +47ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:05 +3270ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:05 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:05 +473ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:05 +2ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:05 +1ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:05 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:05 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:06 +450ms service=permission permission=glob pattern=.opendora/skill/test-skill/** action={"permission":"*","pattern":"*","action":"allow"} evaluated
-INFO  2026-04-13T10:00:06 +4ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:06 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:06 +63ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:06 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:06 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:06 +30ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:06 +0ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:06 +22ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:06 +34ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:07 +1133ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:07 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:07 +290ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:07 +1ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:07 +0ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:07 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:07 +0ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:08 +366ms service=permission permission=glob pattern=**/test-skill/** action={"permission":"*","pattern":"*","action":"allow"} evaluated
-INFO  2026-04-13T10:00:08 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:08 +31ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:08 +48ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:08 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:08 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:08 +33ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:08 +0ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:08 +17ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:08 +38ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:10 +2032ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:10 +0ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:11 +822ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:11 +1ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:11 +0ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:11 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:11 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:11 +355ms service=permission permission=skill pattern=test-skill action={"permission":"*","pattern":"*","action":"allow"} evaluated
-INFO  2026-04-13T10:00:11 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:11 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:11 +55ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:11 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:11 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:11 +23ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:11 +0ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:11 +18ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:11 +33ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:14 +2621ms service=server method=OPTIONS path=/provider request
-INFO  2026-04-13T10:00:14 +0ms service=server status=started method=OPTIONS path=/provider request
-INFO  2026-04-13T10:00:14 +1ms service=server status=completed duration=1 method=OPTIONS path=/provider request
-INFO  2026-04-13T10:00:14 +7ms service=server method=GET path=/provider request
-INFO  2026-04-13T10:00:14 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-04-13T10:00:14 +149ms service=server status=completed duration=149 method=GET path=/provider request
-INFO  2026-04-13T10:00:14 +313ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:14 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:15 +717ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:15 +2ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:15 +1ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:15 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:15 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:15 +273ms service=permission permission=skill_remove pattern=test-skill action={"permission":"*","pattern":"*","action":"allow"} evaluated
-INFO  2026-04-13T10:00:15 +4ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:15 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:15 +63ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:15 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:15 +2ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:15 +34ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:15 +1ms service=bus type=session.status publishing
-WARN  2026-04-13T10:00:16 +65ms service=skill name=retro existing=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +1ms service=skill name=agent-experiment existing=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +1ms service=skill name=project-initiation existing=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +1ms service=skill name=intake-triage existing=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +0ms service=skill name=agent-author existing=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +1ms service=skill name=skill-author existing=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +11ms service=skill name=skill-creator existing=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +1ms service=skill name=tool-author existing=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +1ms service=skill name=feature-workflow existing=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +0ms service=skill name=requirements-readiness existing=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +16ms service=skill name=retro existing=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/retro/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +1ms service=skill name=project-initiation existing=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/project-initiation/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +0ms service=skill name=agent-experiment existing=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-experiment/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +1ms service=skill name=skill-author existing=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-author/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +1ms service=skill name=intake-triage existing=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/intake-triage/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +0ms service=skill name=requirements-readiness existing=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/requirements-readiness/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +10ms service=skill name=skill-creator existing=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/skill-creator/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +1ms service=skill name=agent-author existing=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/agent-author/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +1ms service=skill name=tool-author existing=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/tool-author/SKILL.md duplicate skill name
-WARN  2026-04-13T10:00:16 +2ms service=skill name=feature-workflow existing=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate=/home/mariu/projects/opendora/.opendora/skill/feature-workflow/SKILL.md duplicate skill name
-INFO  2026-04-13T10:00:16 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:16 +31ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:17 +1040ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:17 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:17 +366ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:17 +1ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:17 +72ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:17 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:17 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:17 +87ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:17 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:17 +69ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:17 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:17 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:17 +21ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:17 +0ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:17 +36ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:17 +29ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:18 +1158ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:18 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:19 +581ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:19 +1ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:19 +65ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:19 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:19 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:20 +421ms service=permission permission=glob pattern=**/test-skill/** action={"permission":"*","pattern":"*","action":"allow"} evaluated
-INFO  2026-04-13T10:00:20 +3ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:20 +6ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:20 +60ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:20 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:20 +0ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:20 +31ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:20 +0ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:20 +18ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:20 +39ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:20 +750ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:20 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:22 +1572ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:22 +1ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:23 +533ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:23 +0ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:23 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:23 +4ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:23 +77ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:23 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:23 +71ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:23 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:23 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:23 +33ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:23 +0ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:23 +23ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:23 +37ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:24 +756ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:24 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:25 +1534ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:25 +1ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:25 +56ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:25 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:25 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:26 +682ms service=permission permission=skill_install pattern=skills/frontend-design action={"permission":"*","pattern":"*","action":"allow"} evaluated
-INFO  2026-04-13T10:00:26 +0ms service=skill registry=anthropic owner=anthropics repo=skills fullPath=skills/frontend-design ref=main fetching skill from github registry
-INFO  2026-04-13T10:00:26 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:26 +94ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:26 +49ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:26 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:26 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:26 +16ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:26 +1ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:26 +19ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:26 +47ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:27 +1100ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:27 +1ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:29 +1600ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:29 +0ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:30 +1505ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:32 +1527ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:33 +1559ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:34 +297ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:35 +1557ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:35 +4ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:35 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:35 +0ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:37 +1502ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:38 +1580ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:40 +1519ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:40 +82ms service=bus type=message.part.delta publishing
-INFO  2026-04-13T10:00:40 +11ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:40 +59ms service=snapshot hash=785072b30ad7bb18c1478943eee27bfcf0342d6f
- cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-04-13T10:00:40 +2ms service=bus type=message.part.updated publishing
-INFO  2026-04-13T10:00:40 +1ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:40 +33ms service=bus type=message.updated publishing
-INFO  2026-04-13T10:00:40 +1ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:40 +7ms service=bus type=session.status publishing
-INFO  2026-04-13T10:00:40 +0ms service=bus type=session.idle publishing
-INFO  2026-04-13T10:02:03 +82744ms service=server method=OPTIONS path=/provider request
-INFO  2026-04-13T10:02:03 +1ms service=server status=started method=OPTIONS path=/provider request
-INFO  2026-04-13T10:02:03 +1ms service=server status=completed duration=2 method=OPTIONS path=/provider request
-INFO  2026-04-13T10:02:03 +11ms service=server method=GET path=/provider request
-INFO  2026-04-13T10:02:03 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-04-13T10:02:03 +95ms service=server status=completed duration=95 method=GET path=/provider request
-INFO  2026-04-13T10:05:45 +222150ms service=server method=GET path=/agent request
-INFO  2026-04-13T10:05:45 +0ms service=server status=started method=GET path=/agent request
-INFO  2026-04-13T10:05:45 +43ms service=server status=completed duration=43 method=GET path=/agent request
+INFO  2026-04-13T11:11:08 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-13T11:11:08 +1ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:11:08 +51ms service=bus type=message.updated publishing
+INFO  2026-04-13T11:11:08 +1ms service=bus type=session.status publishing
+INFO  2026-04-13T11:11:08 +23ms service=bus type=session.status publishing
+INFO  2026-04-13T11:11:08 +0ms service=bus type=session.idle publishing
+INFO  2026-04-13T11:12:20 +71404ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-13T11:12:20 +1ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-13T11:12:20 +1ms service=server status=completed duration=1 method=OPTIONS path=/provider request
+INFO  2026-04-13T11:12:20 +7ms service=server method=GET path=/provider request
+INFO  2026-04-13T11:12:20 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-04-13T11:12:20 +120ms service=server status=completed duration=120 method=GET path=/provider request
