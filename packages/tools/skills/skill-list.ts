@@ -1,10 +1,11 @@
+import { pathToFileURL } from "url"
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 
 export const SkillListTool = Tool.define("skill_list", async (_initCtx) => {
   const description =
-    "List all installed skills with their metadata (source, version, registry). Shows skills from the lock file."
+    "List all available skills — both locally created (origin: opendora) and installed from external registries (origin: anthropic, vercel, clawhub, github). Use skill_search to find new skills in external registries."
 
   const parameters = z.object({})
 
@@ -13,30 +14,35 @@ export const SkillListTool = Tool.define("skill_list", async (_initCtx) => {
     parameters,
     async execute(_params: z.infer<typeof parameters>, ctx) {
       const skills = host(ctx).skills
-      if (!skills?.list) {
-        throw new Error("Skill listing is not available in this context")
+      if (!skills) {
+        throw new Error("Skill service is not available in this context")
       }
 
-      const installed = await skills.list()
+      const all = await skills.all()
 
       return {
-        title: "Installed Skills",
+        title: "Available Skills",
         metadata: {
-          count: installed.length,
+          count: all.length,
+          skills: all.map((s) => s.name),
         },
         output: [
-          "<installed_skills>",
-          ...installed.flatMap((skill) => [
+          "<skills>",
+          ...all.flatMap((skill) => [
             `  <skill>`,
             `    <name>${skill.name}</name>`,
-            `    <version>${skill.version}</version>`,
-            `    <source>${skill.source}</source>`,
-            `    <sourceType>${skill.sourceType}</sourceType>`,
+            `    <description>${skill.description}</description>`,
+            `    <origin>${skill.origin ?? "unknown"}</origin>`,
+            `    <location>${pathToFileURL(skill.location).href}</location>`,
             `  </skill>`,
           ]),
-          "</installed_skills>",
+          "</skills>",
           "",
-          `Total: ${installed.length} installed skill(s)`,
+          `Total: ${all.length} skill(s)`,
+          "",
+          "To load a skill, use the skill_load tool with the skill name.",
+          "To install a skill from an external registry, use skill_install.",
+          "To create a new local skill, use skill_create.",
         ].join("\n"),
       }
     },

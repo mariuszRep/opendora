@@ -68,7 +68,7 @@ const AGENT_TOOLS = new Set([
   "agent_create", "agent_delete", "agent_get", "agent_list", "agent_update",
 ])
 
-const SKILL_TOOLS = new Set(["skill_discover", "skill_load", "skill_search", "skill_install", "skill_list"])
+const SKILL_TOOLS = new Set(["skill_list", "skill_load", "skill_search", "skill_install", "skill_create", "skill_remove"])
 
 const NONE = "__none__"
 

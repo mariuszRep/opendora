@@ -347,6 +347,12 @@ export function configureSessionCore() {
       async install(source: string, options?: any) {
         return Skill.install(source, options)
       },
+      async create(params: any) {
+        return Skill.create(params)
+      },
+      async remove(name: string) {
+        return Skill.remove(name)
+      },
       async list() {
         return Skill.list()
       },

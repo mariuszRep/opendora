@@ -3,8 +3,8 @@
   "description": "First point of contact. Routes users to the right specialist agent by understanding intent and delegating accordingly. Greetings, confirmations, and simple clarifications are handled directly. Everything else is delegated.",
   "mode": "primary",
   "model": {
-    "modelID": "gpt-5.4",
-    "providerID": "openai-codex"
+    "modelID": "arcee-ai/trinity-large-thinking:free",
+    "providerID": "kilo"
   },
   "color": "teal",
   "tools": [

@@ -390,6 +390,10 @@ export function useOpendora(): UseOpendoraResult {
                 next.delete(info.sessionID)
                 return next
               })
+              // Reset status to ready if this is the current session
+              if (info.sessionID === selectedSessionRef.current?.id) {
+                setStatus("ready")
+              }
             }
           }
           

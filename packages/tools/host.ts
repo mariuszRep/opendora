@@ -80,10 +80,12 @@ export interface HostServices {
   }
   skills?: {
     run(name: string, prompt: string, context: unknown): Promise<string>
-    all(): Promise<Array<{ name: string; description: string; location: string; content: string }>>
-    get(name: string): Promise<{ name: string; description: string; location: string; content: string } | undefined>
+    all(): Promise<Array<{ name: string; description: string; location: string; content: string; origin?: string }>>
+    get(name: string): Promise<{ name: string; description: string; location: string; content: string; origin?: string } | undefined>
     search?(query: string, registries?: string[]): Promise<Array<{ name: string; description: string; source: string; sourceType: string; registry: string }>>
     install?(source: string, options?: { registry?: string; version?: string; force?: boolean }): Promise<void>
+    create?(params: { name: string; description: string; tools?: string[]; content?: string }): Promise<{ dir: string }>
+    remove?(name: string): Promise<void>
     update?(name: string): Promise<void>
     uninstall?(name: string): Promise<void>
     list?(): Promise<Array<{ name: string; version: string; source: string; sourceType: string }>>

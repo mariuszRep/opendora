@@ -23,6 +23,7 @@ export namespace Skill {
     description: z.string(),
     location: z.string(),
     content: z.string(),
+    origin: z.string().optional(),
   })
   export type Info = z.infer<typeof Info>
 
@@ -86,6 +87,7 @@ export namespace Skill {
         description: parsed.data.description,
         location: match,
         content: md.content,
+        origin: typeof md.data?.origin === "string" ? md.data.origin : undefined,
       }
     }
 
@@ -403,6 +405,7 @@ export namespace Skill {
         await fs.writeFile(dest, content, "utf-8")
       }
       log.info("installed skill", { skillName, files: files.size, skillDir })
+      await injectOrigin(skillDir, registry ?? "github")
       reload()
       return
     }
@@ -430,6 +433,7 @@ export namespace Skill {
         await fs.writeFile(dest, content, "utf-8")
       }
       log.info("installed skill from github", { skillName, files: files.size, skillDir })
+      await injectOrigin(skillDir, "github")
       reload()
       return
     }
@@ -464,6 +468,7 @@ export namespace Skill {
         await fs.writeFile(path.join(skillDir, "SKILL.md"), content, "utf-8")
       }
       log.info("installed skill from clawhub", { skillName, skillDir })
+      await injectOrigin(skillDir, "clawhub")
       reload()
       return
     }
@@ -480,6 +485,70 @@ export namespace Skill {
   }
 
   export async function list() {
-    return []
+    return all()
+  }
+
+  /** Inject or overwrite the `origin:` field in an installed skill's SKILL.md */
+  async function injectOrigin(skillDir: string, origin: string) {
+    const skillMdPath = path.join(skillDir, "SKILL.md")
+    try {
+      const raw = await fs.readFile(skillMdPath, "utf-8")
+      let updated: string
+      if (/^---\r?\n/.test(raw)) {
+        // Has frontmatter — add/replace origin field
+        updated = raw.replace(/^---\r?\n([\s\S]*?)\r?\n---/, (_, fm) => {
+          const cleaned = fm.replace(/^origin:.*$/m, "").replace(/\n{2,}/g, "\n").trim()
+          return `---\n${cleaned}\norigin: ${origin}\n---`
+        })
+      } else {
+        // No frontmatter — prepend minimal one (shouldn't normally happen)
+        updated = `---\norigin: ${origin}\n---\n\n${raw}`
+      }
+      await fs.writeFile(skillMdPath, updated, "utf-8")
+    } catch {
+      // Not critical — skill still works without origin
+      log.warn("could not inject origin into SKILL.md", { skillDir, origin })
+    }
+  }
+
+  /** Create a new local skill under the first .opendora/skill/ directory */
+  export async function create(params: {
+    name: string
+    description: string
+    tools?: string[]
+    content?: string
+  }): Promise<{ dir: string }> {
+    const dirs = await Config.directories()
+    const installBase = dirs.length > 0
+      ? path.join(dirs[0], "skill")
+      : path.join(Instance.directory, ".opendora", "skill")
+
+    const skillDir = path.join(installBase, params.name)
+    await fs.mkdir(skillDir, { recursive: true })
+
+    const fmLines: string[] = [
+      `name: ${params.name}`,
+      `description: ${params.description}`,
+      `origin: opendora`,
+    ]
+    if (params.tools && params.tools.length > 0) {
+      fmLines.push("tools:")
+      for (const t of params.tools) fmLines.push(`  - ${t}`)
+    }
+
+    const skillMd = `---\n${fmLines.join("\n")}\n---\n\n${params.content ?? ""}`
+    await fs.writeFile(path.join(skillDir, "SKILL.md"), skillMd, "utf-8")
+
+    reload()
+    return { dir: skillDir }
+  }
+
+  /** Remove a local skill by name */
+  export async function remove(name: string): Promise<void> {
+    const skill = await get(name)
+    if (!skill) throw new Error(`Skill "${name}" not found`)
+    const dir = path.dirname(skill.location)
+    await fs.rm(dir, { recursive: true, force: true })
+    reload()
   }
 }

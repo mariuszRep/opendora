@@ -48,7 +48,7 @@ export const SkillInstallTool = Tool.define("skill_install", async (_initCtx) =>
           params.version ? `Version: ${params.version}` : "Version: latest",
           params.registry ? `Registry: ${params.registry}` : "Registry: auto-detected",
           "",
-          "The skill is now available. Use skill_discover to see all available skills.",
+          "The skill is now available. Use skill_list to see all available skills.",
         ].join("\n"),
       }
     },

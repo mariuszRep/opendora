@@ -832,6 +832,8 @@ export namespace SessionPrompt {
           get: (name: string) => cfg.skill?.get?.(name),
           search: (query: string, registries?: string[]) => cfg.skill?.search?.(query, registries),
           install: (source: string, options?: any) => cfg.skill?.install?.(source, options),
+          create: (params: any) => cfg.skill?.create?.(params),
+          remove: (name: string) => cfg.skill?.remove?.(name),
           update: (name: string) => cfg.skill?.update?.(name),
           uninstall: (name: string) => cfg.skill?.uninstall?.(name),
           list: () => cfg.skill?.list?.(),
