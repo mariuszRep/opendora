@@ -14,6 +14,18 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SESSION_TYPE_CONFIG } from "./session-create-dialog"
+import { type SessionTreeNode } from "./session-tree-view"
+
+function sessionToTreeNode(session: Session, children: SessionNode[]): SessionTreeNode {
+  return {
+    id: session.id,
+    title: session.title || null,
+    type: session.sessionType || null,
+    status: null,
+    agentId: session.agentID || null,
+    children: children.map(child => sessionToTreeNode(child.session, child.children))
+  }
+}
 
 type SessionNode = {
   session: Session
@@ -21,6 +33,7 @@ type SessionNode = {
   expanded: boolean
   loaded: boolean
   loading: boolean
+  hasChildren?: boolean
 }
 
 type Store = {
@@ -63,68 +76,65 @@ function TreeRow({
   const node = store.nodes[sessionId]
   if (!node) return null
 
-  const { session, children, expanded, loading } = node
-  const hasChildren = children.length > 0
+  const { session, children, expanded, loading, hasChildren } = node
+  const showChildren = hasChildren || children.length > 0
   const isSelected = selectedSessionId === sessionId
   const isActive = activeSessions.has(sessionId)
 
-  const sessionType = session.sessionType || "scope"
+  const sessionType = (session.sessionType || "scope") as keyof typeof SESSION_TYPE_CONFIG
   const Icon = SESSION_TYPE_CONFIG[sessionType]?.icon || MessageSquareIcon
 
   return (
     <>
       <div className="relative">
-        {/* Tree lines */}
+        {/* Tree lines - matching SessionTreeView exactly */}
         {depth > 0 && (
           <>
             {/* Vertical line from parent */}
             <div 
               className="absolute top-0 bottom-0 w-px bg-border"
-              style={{ left: depth * 16 - 8 }}
+              style={{ left: depth * 20 - 10 }}
             />
             {/* Horizontal line to item */}
             <div 
               className="absolute top-1/2 h-px bg-border"
               style={{ 
-                left: depth * 16 - 8,
-                width: '12px'
+                left: depth * 20 - 10,
+                width: '14px'
               }}
             />
           </>
         )}
 
-        <button
-          type="button"
-          title={`${formatSessionTitle(session)}${isActive ? " - active" : ""}`}
+        <div
           onClick={() => onSessionClick(session)}
-          onDoubleClick={() => hasChildren && onToggle(sessionId)}
           className={cn(
-            "flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-xs transition-colors relative",
-            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            "flex items-center gap-2 py-1.5 px-2 rounded text-sm transition-colors cursor-pointer",
+            "hover:bg-muted/50",
             isSelected && "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
           )}
-          style={{ paddingLeft: depth * 16 + 8 }}
+          style={{ paddingLeft: depth * 20 + 8 }}
         >
-          {hasChildren ? (
+          {showChildren ? (
             <button
               onClick={(e) => {
                 e.stopPropagation()
                 onToggle(sessionId)
               }}
-              className="shrink-0 hover:bg-sidebar-accent-foreground/10 rounded p-0.5 -m-0.5"
+              className="shrink-0 hover:bg-muted rounded p-0.5 -m-0.5"
             >
               <ChevronRightIcon
                 className={cn(
-                  "size-3 text-muted-foreground transition-transform",
+                  "size-3.5 text-muted-foreground transition-transform",
                   expanded && "rotate-90",
                 )}
               />
             </button>
           ) : (
-            <span className="size-3 shrink-0" />
+            <span className="size-3.5 shrink-0" />
           )}
 
-          <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+          <Icon className="size-4 shrink-0 text-muted-foreground" />
 
           <span className="truncate flex-1">{formatSessionTitle(session)}</span>
 
@@ -135,20 +145,20 @@ function TreeRow({
           {loading && (
             <RefreshCwIcon className="ml-auto size-3 shrink-0 animate-spin text-muted-foreground" />
           )}
-        </button>
+        </div>
       </div>
 
-      {hasChildren && expanded && (
+      {showChildren && expanded && (
         <div className="relative">
           {children.map((childNode, idx) => {
             const isLast = idx === children.length - 1
             return (
               <div key={childNode.session.id} className="relative">
                 {/* Shorten vertical line for last child */}
-                {isLast && depth >= 0 && (
+                {isLast && (
                   <div 
-                    className="absolute top-0 h-1/2 w-px bg-sidebar"
-                    style={{ left: (depth + 1) * 16 - 8 }}
+                    className="absolute top-0 h-1/2 w-px bg-background"
+                    style={{ left: (depth + 1) * 20 - 10 }}
                   />
                 )}
                 <TreeRow
@@ -209,13 +219,26 @@ export function SessionTreePanel({
 
       setStore(() => {
         const nodes: Record<string, SessionNode> = {}
+        
+        // Build a map of parent -> children to know which sessions have children
+        const childrenMap = new Map<string, Session[]>()
+        for (const session of sessions) {
+          if (session.parentSessionID) {
+            const existing = childrenMap.get(session.parentSessionID) || []
+            existing.push(session)
+            childrenMap.set(session.parentSessionID, existing)
+          }
+        }
+        
         for (const session of roots) {
+          const hasChildren = childrenMap.has(session.id)
           nodes[session.id] = {
             session,
             children: [],
             expanded: false,
             loaded: false,
             loading: false,
+            hasChildren, // Track if this session has children
           }
         }
         return { nodes }
@@ -242,12 +265,25 @@ export function SessionTreePanel({
       if (!current) return
 
       if (current.expanded) {
-        // Collapse
+        // Collapse - recursively collapse all descendants
+        const collapseDescendants = (nodeId: string, nodes: Record<string, SessionNode>): Record<string, SessionNode> => {
+          const node = nodes[nodeId]
+          if (!node) return nodes
+          
+          const updatedNodes = {
+            ...nodes,
+            [nodeId]: { ...node, expanded: false }
+          }
+          
+          for (const child of node.children) {
+            Object.assign(updatedNodes, collapseDescendants(child.session.id, updatedNodes))
+          }
+          
+          return updatedNodes
+        }
+
         setStore((prev) => ({
-          nodes: {
-            ...prev.nodes,
-            [sessionId]: { ...prev.nodes[sessionId]!, expanded: false },
-          },
+          nodes: collapseDescendants(sessionId, prev.nodes)
         }))
         return
       }
@@ -277,11 +313,23 @@ export function SessionTreePanel({
         // Sort children by creation time
         children.sort((a: Session, b: Session) => a.time.created - b.time.created)
 
+        // Check which children have their own children
+        const childrenWithGrandchildren = await Promise.all(
+          children.map(async (child) => {
+            try {
+              const grandchildren = await opendora.session.children(child.id)
+              return { child, hasChildren: grandchildren.length > 0 }
+            } catch {
+              return { child, hasChildren: false }
+            }
+          })
+        )
+
         setStore((prev) => {
           const nodes = { ...prev.nodes }
           const childNodes: SessionNode[] = []
 
-          for (const child of children) {
+          for (const { child, hasChildren } of childrenWithGrandchildren) {
             if (!nodes[child.id]) {
               nodes[child.id] = {
                 session: child,
@@ -289,6 +337,7 @@ export function SessionTreePanel({
                 expanded: false,
                 loaded: false,
                 loading: false,
+                hasChildren,
               }
             }
             childNodes.push(nodes[child.id]!)
