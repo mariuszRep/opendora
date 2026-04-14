@@ -21,10 +21,15 @@ Use this skill when a new project has approved requirements and needs delivery s
 ## Steps
 
 1. Confirm the project is approved for delivery setup. If approval or requirements are incomplete, return it to the product authority.
-2. Identify the minimum foundation needed to begin implementation.
-3. Delegate discovery or implementation work needed to establish that foundation.
-4. Verify that the core project structure is in place.
-5. Report readiness and hand off future feature work to the feature-delivery workflow.
+2. Determine if this is a NEW project or an EXISTING project:
+   - NEW: The request implies creating a fresh project directory (e.g., "create a Todoist app", "start a new project")
+   - EXISTING: The request references an existing codebase or repository (e.g., "work on packages/opencode", "continue the X project")
+3. For NEW projects: Create the project directory and initialize it using the Git Setup scripts if applicable.
+4. For EXISTING projects: Verify the existing repository structure is usable.
+5. Identify the minimum foundation needed to begin implementation.
+6. Delegate discovery or implementation work needed to establish that foundation.
+7. Verify that the core project structure is in place.
+8. Report readiness and hand off future feature work to the feature-delivery workflow.
 
 ## Foundation Checklist
 

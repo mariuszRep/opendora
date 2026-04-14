@@ -37,7 +37,8 @@
     "skill_list",
     "skill_install",
     "skill_create",
-    "skill_remove"
+    "skill_remove",
+    "question"
   ],
   "skills": [
     "agent-experiment",

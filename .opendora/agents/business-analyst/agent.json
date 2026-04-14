@@ -13,7 +13,8 @@
   "tools": [
     "session_search",
     "session_tree",
-    "reply"
+    "reply",
+    "question"
   ],
   "skills": [],
   "toolConfig": {

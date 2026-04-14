@@ -111,3 +111,7 @@ INFO  2026-04-14T15:24:18 +1ms service=server status=completed duration=1 method
 ERROR 2026-04-14T15:24:18 +0ms service=default TypeError: undefined is not an object (evaluating 'x.data.id')
 INFO  2026-04-14T15:34:01 +3600108ms service=scheduler id=snapshot.cleanup run
 INFO  2026-04-14T15:34:01 +12ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-04-14T16:00:49 +3600219ms service=scheduler id=snapshot.cleanup run
+INFO  2026-04-14T16:00:49 +2ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-04-14T16:02:14 +2275311ms service=scheduler id=snapshot.cleanup run
+INFO  2026-04-14T16:02:14 +5ms service=scheduler id=tool.truncation.cleanup run
