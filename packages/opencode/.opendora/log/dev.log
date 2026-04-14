@@ -1,0 +1,113 @@
+INFO  2026-04-14T14:02:13 +439ms service=server method=GET path=/event request
+INFO  2026-04-14T14:02:13 +1ms service=server status=started method=GET path=/event request
+INFO  2026-04-14T14:02:13 +1ms service=default directory=/home/mariu/projects/opendora/packages/opencode creating instance
+INFO  2026-04-14T14:02:13 +0ms service=project directory=/home/mariu/projects/opendora/packages/opencode fromDirectory
+INFO  2026-04-14T14:02:13 +13ms service=server method=GET path=/session request
+INFO  2026-04-14T14:02:13 +0ms service=server status=started method=GET path=/session request
+INFO  2026-04-14T14:02:13 +0ms service=server method=GET path=/config/providers request
+INFO  2026-04-14T14:02:13 +0ms service=server status=started method=GET path=/config/providers request
+INFO  2026-04-14T14:02:13 +0ms service=server method=GET path=/provider request
+INFO  2026-04-14T14:02:13 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-04-14T14:02:13 +0ms service=server method=GET path=/agent request
+INFO  2026-04-14T14:02:13 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-04-14T14:02:13 +1ms service=server method=GET path=/config request
+INFO  2026-04-14T14:02:13 +0ms service=server status=started method=GET path=/config request
+INFO  2026-04-14T14:02:13 +49ms service=db path=/home/mariu/projects/opendora/packages/opencode/.opendora/storage/opendora.db opening database
+INFO  2026-04-14T14:02:13 +15ms service=db count=12 mode=dev applying migrations
+INFO  2026-04-14T14:02:13 +17ms service=default directory=/home/mariu/projects/opendora/packages/opencode bootstrapping
+INFO  2026-04-14T14:02:13 +5ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/config.json loading
+INFO  2026-04-14T14:02:13 +11ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opencode.json loading
+INFO  2026-04-14T14:02:13 +1ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opencode.jsonc loading
+DEBUG 2026-04-14T14:02:13 +2ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-14T14:02:13 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-14T14:02:13 +1ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-14T14:02:13 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+DEBUG 2026-04-14T14:02:13 +40ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.jsonc
+INFO  2026-04-14T14:02:13 +1ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.jsonc loading
+DEBUG 2026-04-14T14:02:13 +0ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.json
+INFO  2026-04-14T14:02:13 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.json loading
+INFO  2026-04-14T14:02:13 +52ms service=plugin name=CodexAuthPlugin loading internal plugin
+INFO  2026-04-14T14:02:13 +1ms service=plugin name=CopilotAuthPlugin loading internal plugin
+INFO  2026-04-14T14:02:13 +0ms service=plugin name=gitlabAuthPlugin loading internal plugin
+INFO  2026-04-14T14:02:13 +1ms service=plugin name=googleOAuthPlugin loading internal plugin
+INFO  2026-04-14T14:02:13 +0ms service=plugin path=opencode-anthropic-auth@0.0.13 loading plugin
+INFO  2026-04-14T14:02:13 +20ms service=bus type=* subscribing
+INFO  2026-04-14T14:02:13 +1ms service=bus type=session.updated subscribing
+INFO  2026-04-14T14:02:13 +0ms service=bus type=message.updated subscribing
+INFO  2026-04-14T14:02:13 +0ms service=bus type=message.part.updated subscribing
+INFO  2026-04-14T14:02:13 +0ms service=bus type=session.diff subscribing
+INFO  2026-04-14T14:02:13 +0ms service=format init
+INFO  2026-04-14T14:02:13 +0ms service=bus type=file.edited subscribing
+INFO  2026-04-14T14:02:13 +1ms service=lsp serverIds=deno, typescript, vue, eslint, oxlint, biome, gopls, ruby-lsp, pyright, elixir-ls, zls, csharp, fsharp, sourcekit-lsp, rust, clangd, svelte, astro, jdtls, kotlin-ls, yaml-ls, lua-ls, php intelephense, prisma, dart, ocaml-lsp, bash, terraform, texlab, dockerfile, gleam, clojure-lsp, nixd, tinymist, haskell-language-server, julials enabled LSP servers
+INFO  2026-04-14T14:02:13 +1ms service=file.watcher init
+INFO  2026-04-14T14:02:14 +111ms service=scheduler id=snapshot.cleanup run
+INFO  2026-04-14T14:02:14 +0ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-04-14T14:02:14 +2ms service=bus type=command.executed subscribing
+INFO  2026-04-14T14:02:14 +1ms service=file.watcher platform=linux backend=inotify watcher backend
+ERROR 2026-04-14T14:02:14 +1ms service=file.watcher error=OPENCODE_LIBC is not defined failed to load watcher binding
+INFO  2026-04-14T14:02:14 +2ms service=server event connected
+INFO  2026-04-14T14:02:14 +5ms service=bus type=* subscribing
+INFO  2026-04-14T14:02:14 +4ms service=server status=started providers
+INFO  2026-04-14T14:02:14 +3ms service=provider status=started state
+ERROR 2026-04-14T14:02:14 +6ms service=server error=@opendora/session not configured — call configure() first failed
+INFO  2026-04-14T14:02:14 +2ms service=server status=completed duration=371 method=GET path=/event request
+INFO  2026-04-14T14:02:14 +0ms service=server status=completed duration=356 method=GET path=/config request
+INFO  2026-04-14T14:02:14 +2ms service=server status=completed duration=359 method=GET path=/session request
+INFO  2026-04-14T14:02:14 +72ms service=provider init
+INFO  2026-04-14T14:02:14 +8ms service=vcs branch=ui initialized
+INFO  2026-04-14T14:02:14 +0ms service=bus type=file.watcher.updated subscribing
+INFO  2026-04-14T14:02:14 +43ms service=provider providerID=opencode found
+INFO  2026-04-14T14:02:14 +1ms service=provider status=completed duration=134 state
+INFO  2026-04-14T14:02:14 +29ms service=server status=completed duration=166 providers
+INFO  2026-04-14T14:02:14 +1ms service=server status=completed duration=513 method=GET path=/config/providers request
+INFO  2026-04-14T14:02:14 +102ms service=server status=completed duration=615 method=GET path=/provider request
+INFO  2026-04-14T14:02:14 +139ms service=server status=completed duration=754 method=GET path=/agent request
+INFO  2026-04-14T14:02:14 +205ms service=server method=GET path=/command request
+INFO  2026-04-14T14:02:14 +1ms service=server status=started method=GET path=/command request
+INFO  2026-04-14T14:02:14 +4ms service=server status=completed duration=4 method=GET path=/command request
+INFO  2026-04-14T14:02:14 +2ms service=server method=GET path=/lsp request
+INFO  2026-04-14T14:02:14 +0ms service=server status=started method=GET path=/lsp request
+INFO  2026-04-14T14:02:14 +1ms service=server status=completed duration=1 method=GET path=/lsp request
+INFO  2026-04-14T14:02:14 +0ms service=server method=GET path=/mcp request
+INFO  2026-04-14T14:02:14 +1ms service=server status=started method=GET path=/mcp request
+INFO  2026-04-14T14:02:14 +0ms service=server status=completed duration=0 method=GET path=/mcp request
+INFO  2026-04-14T14:02:14 +1ms service=server method=GET path=/experimental/resource request
+INFO  2026-04-14T14:02:14 +0ms service=server status=started method=GET path=/experimental/resource request
+INFO  2026-04-14T14:02:14 +1ms service=server status=completed duration=1 method=GET path=/experimental/resource request
+INFO  2026-04-14T14:02:14 +0ms service=server method=GET path=/formatter request
+INFO  2026-04-14T14:02:14 +0ms service=server status=started method=GET path=/formatter request
+INFO  2026-04-14T14:02:16 +1322ms service=server method=GET path=/session/status request
+INFO  2026-04-14T14:02:16 +0ms service=server status=started method=GET path=/session/status request
+INFO  2026-04-14T14:02:16 +1ms service=server status=completed duration=1 method=GET path=/session/status request
+INFO  2026-04-14T14:02:16 +0ms service=server method=GET path=/provider/auth request
+INFO  2026-04-14T14:02:16 +0ms service=server status=started method=GET path=/provider/auth request
+INFO  2026-04-14T14:02:16 +1ms service=server status=completed duration=1 method=GET path=/provider/auth request
+INFO  2026-04-14T14:02:16 +0ms service=server method=GET path=/vcs request
+INFO  2026-04-14T14:02:16 +0ms service=server status=started method=GET path=/vcs request
+INFO  2026-04-14T14:02:16 +0ms service=server status=completed duration=0 method=GET path=/vcs request
+INFO  2026-04-14T14:02:16 +1ms service=server method=GET path=/path request
+INFO  2026-04-14T14:02:16 +0ms service=server status=started method=GET path=/path request
+INFO  2026-04-14T14:02:16 +0ms service=server status=completed duration=0 method=GET path=/path request
+WARN  2026-04-14T14:02:16 +8ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
+WARN  2026-04-14T14:02:16 +509ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
+INFO  2026-04-14T14:02:17 +1066ms service=server status=completed duration=2908 method=GET path=/formatter request
+INFO  2026-04-14T14:34:01 +3599504ms service=scheduler id=snapshot.cleanup run
+INFO  2026-04-14T14:34:01 +9ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-04-14T15:00:49 +3576454ms service=scheduler id=snapshot.cleanup run
+INFO  2026-04-14T15:00:49 +3ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-04-14T15:02:14 +3596450ms service=scheduler id=snapshot.cleanup run
+INFO  2026-04-14T15:02:14 +2ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-04-14T15:22:14 +1200565ms service=server method=POST path=/session request
+INFO  2026-04-14T15:22:14 +0ms service=server status=started method=POST path=/session request
+ERROR 2026-04-14T15:22:14 +4ms service=server error=@opendora/session not configured — call configure() first failed
+INFO  2026-04-14T15:22:14 +1ms service=server status=completed duration=5 method=POST path=/session request
+ERROR 2026-04-14T15:22:14 +4802648ms service=default e=undefined is not an object (evaluating 'x.data.id') rejection
+ERROR 2026-04-14T15:22:14 +2ms service=default TypeError: undefined is not an object (evaluating 'x.data.id')
+INFO  2026-04-14T15:24:18 +124238ms service=server method=POST path=/session request
+INFO  2026-04-14T15:24:18 +0ms service=server status=started method=POST path=/session request
+ERROR 2026-04-14T15:24:18 +0ms service=server error=@opendora/session not configured — call configure() first failed
+ERROR 2026-04-14T15:24:18 +124237ms service=default e=undefined is not an object (evaluating 'x.data.id') rejection
+INFO  2026-04-14T15:24:18 +1ms service=server status=completed duration=1 method=POST path=/session request
+ERROR 2026-04-14T15:24:18 +0ms service=default TypeError: undefined is not an object (evaluating 'x.data.id')
+INFO  2026-04-14T15:34:01 +3600108ms service=scheduler id=snapshot.cleanup run
+INFO  2026-04-14T15:34:01 +12ms service=scheduler id=tool.truncation.cleanup run

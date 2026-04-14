@@ -63,10 +63,19 @@ export namespace Database {
         // Split into individual statements so drizzle executes each one.
         // Drizzle splits by '--> statement-breakpoint'; without this, only
         // the first statement in a multi-statement file would run.
+        // Strip comment lines from each chunk before deciding whether to keep
+        // it — a chunk may start with comments that precede the actual SQL.
         const statements = raw
           .split(/;\s*\n/)
-          .map((s) => s.trim())
-          .filter((s) => s && !s.startsWith("--"))
+          .map((s) =>
+            s
+              .split("\n")
+              .filter((line) => !line.trim().startsWith("--"))
+              .join("\n")
+              .trim(),
+          )
+          .filter((s) => s.length > 0)
+        if (statements.length === 0) return
         const joined = statements.join(";\n--> statement-breakpoint\n") + ";"
         return {
           sql: joined,

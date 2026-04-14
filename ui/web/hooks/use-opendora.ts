@@ -97,6 +97,8 @@ export type UseOpendoraResult = {
   toggleChatLayout: () => void
   fileTreeOpen: boolean
   toggleFileTree: () => void
+  sessionTreeOpen: boolean
+  toggleSessionTree: () => void
 }
 
 export function useOpendora(): UseOpendoraResult {
@@ -120,6 +122,7 @@ export function useOpendora(): UseOpendoraResult {
   const [selectedAgent, setSelectedAgent] = useState<string>("")
   const [isChatCentered, setIsChatCentered] = useState(false)
   const [fileTreeOpen, setFileTreeOpen] = useState(false)
+  const [sessionTreeOpen, setSessionTreeOpen] = useState(false)
   const [activeSessions, setActiveSessions] = useState<Set<string>>(new Set())
   const [defaultAgentId, setDefaultAgentId] = useState<string | null>(() => getStoredDefaultAgent())
   const [lastSessionByAgent, setLastSessionByAgent] = useState<Record<string, string>>(() => getStoredLastSessionByAgent())
@@ -722,6 +725,10 @@ export function useOpendora(): UseOpendoraResult {
     setFileTreeOpen((prev) => !prev)
   }, [])
 
+  const toggleSessionTree = useCallback(() => {
+    setSessionTreeOpen((prev) => !prev)
+  }, [])
+
   const setModelFilter = useCallback(async (providerID: string, filter: "all" | "free" | "none") => {
     setModelFilters((prev) => {
       const next = { ...prev, [providerID]: filter }
@@ -780,5 +787,7 @@ export function useOpendora(): UseOpendoraResult {
     toggleChatLayout,
     fileTreeOpen,
     toggleFileTree,
+    sessionTreeOpen,
+    toggleSessionTree,
   }
 }

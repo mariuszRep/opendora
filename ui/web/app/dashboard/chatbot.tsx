@@ -69,6 +69,7 @@ import { useVoiceRecorder } from "@/hooks/use-voice-recorder"
 import { usePushToTalk } from "@/hooks/use-push-to-talk"
 import { DelegateToolContent, isDelegateTool, getDelegateToolTitle } from "@/components/ai-elements/delegate-tool"
 import { TodoToolContent, isTodoTool, getTodoToolTitle } from "@/components/ai-elements/todo-tool"
+import { SessionTreeToolContent, isSessionTreeTool, getSessionTreeToolTitle } from "@/components/ai-elements/session-tree-tool"
 import { getAgentColor } from "@/lib/agent-colors"
 import { BellIcon, CheckIcon, CopyIcon, EyeIcon, EyeOffIcon, Link2Icon, Volume2Icon, VolumeXIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
@@ -228,6 +229,7 @@ export const Chatbot = () => {
   const [questionViewModes, setQuestionViewModes] = useState<Record<string, "code" | "view">>({})
   const [delegateViewModes, setDelegateViewModes] = useState<Record<string, "code" | "view">>({})
   const [todoViewModes, setTodoViewModes] = useState<Record<string, "code" | "view">>({})
+  const [sessionTreeViewModes, setSessionTreeViewModes] = useState<Record<string, "code" | "view">>({})
   const [expandedContractParts, setExpandedContractParts] = useState<Record<string, boolean>>({})
 
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -825,18 +827,23 @@ export const Chatbot = () => {
                                       const handleTodoViewModeChange = (mode: "code" | "view") => {
                                         setTodoViewModes(prev => ({ ...prev, [tool.id]: mode }))
                                       }
+                                      const isSessionTreeToolCall = isSessionTreeTool(tool.tool)
+                                      const currentSessionTreeViewMode = sessionTreeViewModes[tool.id] ?? "view"
+                                      const handleSessionTreeViewModeChange = (mode: "code" | "view") => {
+                                        setSessionTreeViewModes(prev => ({ ...prev, [tool.id]: mode }))
+                                      }
 
                                       return (
-                                        <Tool defaultOpen={isDelegateToolCall || isTodoToolCall}>
+                                        <Tool defaultOpen={isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall}>
                                           <ToolHeader
                                             state={state}
-                                            title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : tool.tool}
+                                            title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : tool.tool}
                                             centerTitle={!!questionRequest}
                                             toolName={tool.tool}
                                             type="dynamic-tool"
-                                            viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : undefined}
-                                            onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : undefined}
-                                            hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall}
+                                            viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : undefined}
+                                            onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : isSessionTreeToolCall ? handleSessionTreeViewModeChange : undefined}
+                                            hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall}
                                           />
                                           <ToolContent>
                                             {questionRequest ? (
@@ -868,10 +875,14 @@ export const Chatbot = () => {
                                               currentTodoViewMode === "code" ? toolInput : (
                                                 <TodoToolContent tool={tool} />
                                               )
+                                            ) : isSessionTreeToolCall ? (
+                                              currentSessionTreeViewMode === "code" ? toolInput : (
+                                                <SessionTreeToolContent tool={tool} />
+                                              )
                                             ) : (
                                               toolInput
                                             )}
-                                            {!isDelegateToolCall && !isTodoToolCall && !questionRequest && (output || error) ? (
+                                            {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !questionRequest && (output || error) ? (
                                               <ToolOutput errorText={error} output={output} />
                                             ) : null}
                                           </ToolContent>
@@ -959,20 +970,25 @@ export const Chatbot = () => {
                                   const handleTodoViewModeChange = (mode: "code" | "view") => {
                                     setTodoViewModes(prev => ({ ...prev, [tool.id]: mode }))
                                   }
+                                  const isSessionTreeToolCall = isSessionTreeTool(tool.tool)
+                                  const currentSessionTreeViewMode = sessionTreeViewModes[tool.id] ?? "view"
+                                  const handleSessionTreeViewModeChange = (mode: "code" | "view") => {
+                                    setSessionTreeViewModes(prev => ({ ...prev, [tool.id]: mode }))
+                                  }
                                   return (
                                     <Tool
-                                      defaultOpen={isDelegateToolCall || isTodoToolCall}
+                                      defaultOpen={isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall}
                                       key={tool.id}
                                     >
                                       <ToolHeader
                                         state={state}
-                                        title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : tool.tool}
+                                        title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : tool.tool}
                                         centerTitle={!!questionRequest}
                                         toolName={tool.tool}
                                         type="dynamic-tool"
-                                        viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : undefined}
-                                        onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : undefined}
-                                        hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall}
+                                        viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : undefined}
+                                        onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : isSessionTreeToolCall ? handleSessionTreeViewModeChange : undefined}
+                                        hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall}
                                       />
                                       <ToolContent>
                                         {questionRequest ? (
@@ -1004,10 +1020,14 @@ export const Chatbot = () => {
                                           currentTodoViewMode === "code" ? toolInput : (
                                             <TodoToolContent tool={tool} />
                                           )
+                                        ) : isSessionTreeToolCall ? (
+                                          currentSessionTreeViewMode === "code" ? toolInput : (
+                                            <SessionTreeToolContent tool={tool} />
+                                          )
                                         ) : (
                                           toolInput
                                         )}
-                                        {!isDelegateToolCall && !isTodoToolCall && !questionRequest && !isPermissionTool && (output || error) ? (
+                                        {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !questionRequest && !isPermissionTool && (output || error) ? (
                                           <ToolOutput errorText={error} output={output} />
                                         ) : null}
                                       </ToolContent>
