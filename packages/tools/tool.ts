@@ -24,6 +24,7 @@ export namespace Tool {
 
   export interface InitContext {
     agent?: AgentInfo
+    model?: { providerID: string; modelID: string }
   }
 
   export interface AskInput {

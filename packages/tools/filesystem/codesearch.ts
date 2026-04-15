@@ -2,6 +2,7 @@ import z from "zod"
 import { Tool } from "../tool.ts"
 import DESCRIPTION from "./codesearch.txt"
 import { abortAfterAny } from "../lib/abort.ts"
+import { Config } from "@opendora/core/config/config"
 
 const API_CONFIG = {
   BASE_URL: "https://mcp.exa.ai",
@@ -9,6 +10,13 @@ const API_CONFIG = {
     CONTEXT: "/mcp",
   },
 } as const
+
+async function getExaApiKey(): Promise<string | undefined> {
+  const config = await Config.get()
+  const exa = config.tool_config?.exa
+  if (exa?.useApiKey && exa?.apiKey) return exa.apiKey
+  return undefined
+}
 
 interface McpCodeRequest {
   jsonrpc: string
@@ -33,7 +41,8 @@ interface McpCodeResponse {
   }
 }
 
-export const CodeSearchTool = Tool.define("codesearch", {
+export const CodeSearchTool = Tool.define("codesearch", async () => {
+  return {
   description: DESCRIPTION,
   parameters: z.object({
     query: z
@@ -77,9 +86,14 @@ export const CodeSearchTool = Tool.define("codesearch", {
     const { signal, clearTimeout } = abortAfterAny(30000, ctx.abort)
 
     try {
+      const apiKey = await getExaApiKey()
       const headers: Record<string, string> = {
         accept: "application/json, text/event-stream",
         "content-type": "application/json",
+      }
+
+      if (apiKey) {
+        headers["Authorization"] = `Bearer ${apiKey}`
       }
 
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CONTEXT}`, {
@@ -105,7 +119,7 @@ export const CodeSearchTool = Tool.define("codesearch", {
           const data: McpCodeResponse = JSON.parse(line.substring(6))
           if (data.result && data.result.content && data.result.content.length > 0) {
             return {
-              output: data.result.content[0].text,
+              output: data.result.content[0]?.text || "",
               title: `Code search: ${params.query}`,
               metadata: {},
             }
@@ -129,4 +143,5 @@ export const CodeSearchTool = Tool.define("codesearch", {
       throw error
     }
   },
+  }
 })

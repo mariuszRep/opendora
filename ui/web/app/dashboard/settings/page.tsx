@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { useUserProfile } from "@/hooks/use-user-profile"
-import { BotIcon, MessageSquareIcon, SettingsIcon, ChevronRightIcon, PlugIcon, UserIcon, Volume2Icon, CalendarClockIcon } from "lucide-react"
+import { BotIcon, MessageSquareIcon, SettingsIcon, ChevronRightIcon, PlugIcon, UserIcon, Volume2Icon, CalendarClockIcon, WrenchIcon } from "lucide-react"
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -45,6 +45,14 @@ export default function SettingsPage() {
       href: "/dashboard/settings/providers",
       count: connectedProviders.length,
       countLabel: "connected",
+    },
+    {
+      title: "Tools",
+      description: "Configure API keys for web search and code search",
+      icon: WrenchIcon,
+      href: "/dashboard/settings/tools",
+      count: null,
+      countLabel: null,
     },
     {
       title: "Voice",

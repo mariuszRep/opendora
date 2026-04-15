@@ -4,7 +4,14 @@
     "fallback": "all",
     "kilo": "free",
     "opencode": "free",
-    "openrouter": "free"
+    "openrouter": "free",
+    "zenmux": "none"
   },
-  "model": "openai-codex/gpt-5.4"
+  "model": "openai-codex/gpt-5.4",
+  "tool_config": {
+    "exa": {
+      "apiKey": "53054823-32d0-42d0-adb1-199f2cfc9e2d",
+      "useApiKey": false
+    }
+  }
 }

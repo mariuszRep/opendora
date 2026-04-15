@@ -980,6 +980,22 @@ export namespace Config {
     })
   export type Provider = z.infer<typeof Provider>
 
+  export const ToolConfig = z
+    .object({
+      exa: z
+        .object({
+          apiKey: z.string().optional().describe("EXA AI API key for increased rate limits"),
+          useApiKey: z.boolean().optional().describe("Whether to route requests through the configured API key"),
+        })
+        .strict()
+        .optional(),
+    })
+    .strict()
+    .meta({
+      ref: "ToolConfig",
+    })
+  export type ToolConfig = z.infer<typeof ToolConfig>
+
   export const Info = z
     .object({
       $schema: z.string().optional().describe("JSON schema reference for configuration validation"),
@@ -1131,7 +1147,8 @@ export namespace Config {
       instructions: z.array(z.string()).optional().describe("Additional instruction files or patterns to include"),
       layout: Layout.optional().describe("@deprecated Always uses stretch layout."),
       permission: Permission.optional(),
-      tools: z.record(z.string(), z.boolean()).optional(),
+      tools: z.record(z.string(), z.boolean()).optional().describe("@deprecated Use 'permission' field instead"),
+      tool_config: ToolConfig.optional().describe("Tool API key configurations (e.g., exa for websearch and codesearch)"),
       enterprise: z
         .object({
           url: z.string().optional().describe("Enterprise URL"),

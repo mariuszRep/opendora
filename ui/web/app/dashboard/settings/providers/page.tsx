@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2Icon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon, BrainIcon } from "lucide-react"
+import { CheckCircle2Icon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon, BrainIcon, WrenchIcon } from "lucide-react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -63,11 +63,6 @@ export default function ProvidersPage() {
 
   useEffect(() => {
     opendora.provider.authMethods().then(setAuthMethods).catch(() => {})
-  }, [])
-
-  // Load global config
-  useEffect(() => {
-    opendora.config.get().then(setGlobalConfig).catch(() => {})
   }, [])
 
   // Load default model from global config or provider defaults
@@ -166,6 +161,36 @@ export default function ProvidersPage() {
       router.refresh()
     } catch (err) {
       setApiKeyForm((f) => f && { ...f, saving: false, error: err instanceof Error ? err.message : "Failed to save" })
+    }
+  }
+
+  async function handleSaveToolApiKey() {
+    if (!toolApiKeyForm || !toolApiKeyForm.key.trim()) return
+    setToolApiKeyForm((f) => f && { ...f, saving: true, error: null })
+    try {
+      const currentToolConfig = globalConfig?.tool_config || {} as Record<string, { apiKey?: string }>
+      await opendora.config.update({
+        tool_config: {
+          ...currentToolConfig,
+          [toolApiKeyForm.toolID]: { apiKey: toolApiKeyForm.key.trim() },
+        },
+      })
+      setToolApiKeyForm(null)
+      // Refresh config
+      opendora.config.get().then(setGlobalConfig).catch(() => {})
+    } catch (err) {
+      setToolApiKeyForm((f) => f && { ...f, saving: false, error: err instanceof Error ? err.message : "Failed to save" })
+    }
+  }
+
+  async function handleRemoveToolApiKey(toolID: string) {
+    try {
+      const currentToolConfig = { ...(globalConfig?.tool_config || {}) } as Record<string, { apiKey?: string }>
+      delete currentToolConfig[toolID]
+      await opendora.config.update({ tool_config: currentToolConfig })
+      opendora.config.get().then(setGlobalConfig).catch(() => {})
+    } catch (err) {
+      console.error("Failed to remove tool API key:", err)
     }
   }
 
@@ -626,6 +651,31 @@ export default function ProvidersPage() {
           ))}
           </div>
         </div>
+
+        {/* Tools Card */}
+        <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => router.push("/dashboard/settings/tools")}>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <WrenchIcon className="size-5 text-muted-foreground" />
+              <CardTitle>Tools</CardTitle>
+            </div>
+            <CardDescription>Configure API keys for web search and code search tools</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                {globalConfig?.tool_config?.exa?.apiKey
+                  ? globalConfig?.tool_config?.exa?.useApiKey
+                    ? "EXA AI — using API key"
+                    : "EXA AI — API key configured"
+                  : "No API key configured"}
+              </span>
+              <Button size="sm" variant="outline">
+                Configure
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

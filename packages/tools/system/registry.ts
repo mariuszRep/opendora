@@ -169,9 +169,6 @@ export namespace ToolRegistry {
     const result = await Promise.all(
       tools
         .filter((t) => {
-          if (t.id === "codesearch" || t.id === "websearch") {
-            return model.providerID === "opencode" || _config.flags.enableExa
-          }
           const usePatch =
             model.modelID.includes("gpt-") &&
             !model.modelID.includes("oss") &&
@@ -181,7 +178,7 @@ export namespace ToolRegistry {
           return true
         })
         .map(async (t) => {
-          const tool = await t.init({ agent })
+          const tool = await t.init({ agent, model })
           const output = {
             description: tool.description,
             parameters: tool.parameters,

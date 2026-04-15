@@ -2,6 +2,7 @@ import z from "zod"
 import { Tool } from "../tool.ts"
 import DESCRIPTION from "./websearch.txt"
 import { abortAfterAny } from "../lib/abort.ts"
+import { Config } from "@opendora/core/config/config"
 
 const API_CONFIG = {
   BASE_URL: "https://mcp.exa.ai",
@@ -10,6 +11,13 @@ const API_CONFIG = {
   },
   DEFAULT_NUM_RESULTS: 8,
 } as const
+
+async function getExaApiKey(): Promise<string | undefined> {
+  const config = await Config.get()
+  const exa = config.tool_config?.exa
+  if (exa?.useApiKey && exa?.apiKey) return exa.apiKey
+  return undefined
+}
 
 interface McpSearchRequest {
   jsonrpc: string
@@ -95,9 +103,14 @@ export const WebSearchTool = Tool.define("websearch", async () => {
       const { signal, clearTimeout } = abortAfterAny(25000, ctx.abort)
 
       try {
+        const apiKey = await getExaApiKey()
         const headers: Record<string, string> = {
           accept: "application/json, text/event-stream",
           "content-type": "application/json",
+        }
+
+        if (apiKey) {
+          headers["Authorization"] = `Bearer ${apiKey}`
         }
 
         const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEARCH}`, {
