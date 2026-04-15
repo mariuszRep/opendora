@@ -116,3 +116,9 @@ INFO  2026-04-15T08:32:05 +119ms service=snapshot prune=7.days cleanup
 INFO  2026-04-15T08:34:13 +60194621ms service=scheduler id=snapshot.cleanup run
 INFO  2026-04-15T08:34:13 +35ms service=scheduler id=tool.truncation.cleanup run
 INFO  2026-04-15T08:34:13 +162ms service=snapshot prune=7.days cleanup
+INFO  2026-04-15T09:32:05 +3599685ms service=scheduler id=snapshot.cleanup run
+INFO  2026-04-15T09:32:05 +12ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-04-15T09:32:51 +46730ms service=snapshot prune=7.days cleanup
+INFO  2026-04-15T09:34:13 +3599626ms service=scheduler id=snapshot.cleanup run
+INFO  2026-04-15T09:34:13 +46ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-04-15T09:34:19 +5689ms service=snapshot prune=7.days cleanup

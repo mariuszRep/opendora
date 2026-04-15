@@ -996,3 +996,5 @@ INFO  2026-04-15T09:18:56 +12ms service=bus type=message.updated publishing
 INFO  2026-04-15T09:18:56 +0ms service=bus type=session.status publishing
 INFO  2026-04-15T09:18:56 +11ms service=bus type=session.status publishing
 INFO  2026-04-15T09:18:56 +0ms service=bus type=session.idle publishing
+INFO  2026-04-15T09:44:03 +3599858ms service=scheduler id=snapshot.cleanup run
+INFO  2026-04-15T09:44:03 +30ms service=scheduler id=tool.truncation.cleanup run
