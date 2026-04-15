@@ -250,9 +250,11 @@ export namespace SessionProcessor {
                     })
 
                     const permissionNext = getConfig().permissionNext
-                    if (permissionNext) {
+                    const question = getConfig().question
+                    if (permissionNext || question) {
                       if (
-                        value.error instanceof permissionNext.RejectedError ||
+                        (permissionNext && value.error instanceof permissionNext.RejectedError) ||
+                        (question && value.error instanceof question.RejectedError) ||
                         (value.error as any)?.name === "RejectedError" ||
                         (value.error as any)?.name === "QuestionRejectedError"
                       ) {

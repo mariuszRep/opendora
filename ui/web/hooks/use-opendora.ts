@@ -136,6 +136,9 @@ export function useOpendora(): UseOpendoraResult {
   const sessionsRef = useRef<Session[]>([])
   const activeSessionsRef = useRef<Set<string>>(new Set())
   const messagesRef = useRef<MessageWithParts[]>([])
+  const questionRequestsRef = useRef<Record<string, QuestionRequest[]>>({})
+  // Track sessions that recently completed to prevent re-adding them immediately
+  const recentlyCompletedRef = useRef<Record<string, number>>({})
   // Per-session message cache: serve stale-while-revalidate on session switch
   const messageCacheRef = useRef<Map<string, MessageWithParts[]>>(new Map())
 
@@ -270,13 +273,13 @@ export function useOpendora(): UseOpendoraResult {
           }
         }
 
-        setQuestionRequests(
-          questionData.reduce<Record<string, QuestionRequest[]>>((acc, request) => {
-            acc[request.sessionID] ??= []
-            acc[request.sessionID].push(request)
-            return acc
-          }, {}),
-        )
+        const initialRequests = questionData.reduce<Record<string, QuestionRequest[]>>((acc, request) => {
+          acc[request.sessionID] ??= []
+          acc[request.sessionID].push(request)
+          return acc
+        }, {})
+        questionRequestsRef.current = initialRequests
+        setQuestionRequests(initialRequests)
       } catch (err) {
         if (cancelled) return
         console.error("[init] bootstrap failed", err)
@@ -385,7 +388,12 @@ export function useOpendora(): UseOpendoraResult {
             const assistantInfo = info as { role: "assistant"; time: { created: number; completed?: number }; sessionID: string }
             if (!assistantInfo.time.completed) {
               // Assistant message started, mark session as active
-              setActiveSessions((prev) => new Set(prev).add(info.sessionID))
+              // But only if it wasn't recently completed (prevent race conditions)
+              const completedAt = recentlyCompletedRef.current[info.sessionID]
+              const isRecentlyCompleted = completedAt && (Date.now() - completedAt) < 2000
+              if (!isRecentlyCompleted) {
+                setActiveSessions((prev) => new Set(prev).add(info.sessionID))
+              }
             } else {
               // Assistant message completed, remove from active sessions
               setActiveSessions((prev) => {
@@ -393,6 +401,14 @@ export function useOpendora(): UseOpendoraResult {
                 next.delete(info.sessionID)
                 return next
               })
+              // Mark as recently completed to prevent immediate re-add
+              recentlyCompletedRef.current[info.sessionID] = Date.now()
+              // Clear question requests for this session as defensive measure
+              questionRequestsRef.current[info.sessionID] = []
+              setQuestionRequests((prev) => ({
+                ...prev,
+                [info.sessionID]: [],
+              }))
               // Reset status to ready if this is the current session
               if (info.sessionID === selectedSessionRef.current?.id) {
                 setStatus("ready")
@@ -419,6 +435,14 @@ export function useOpendora(): UseOpendoraResult {
             next.delete(sessionID)
             return next
           })
+          // Mark as recently completed to prevent immediate re-add
+          recentlyCompletedRef.current[sessionID] = Date.now()
+          // Clear question requests for this session as defensive measure
+          questionRequestsRef.current[sessionID] = []
+          setQuestionRequests((prev) => ({
+            ...prev,
+            [sessionID]: [],
+          }))
           if (selectedSessionRef.current?.id === sessionID) {
             setStatus("ready")
           }
@@ -454,6 +478,7 @@ export function useOpendora(): UseOpendoraResult {
             const next = idx === -1
               ? [...existing, request]
               : existing.map((item, index) => (index === idx ? request : item))
+            questionRequestsRef.current = { ...prev, [request.sessionID]: next }
             return { ...prev, [request.sessionID]: next }
           })
           break
@@ -463,9 +488,14 @@ export function useOpendora(): UseOpendoraResult {
           const { sessionID, requestID } = event.properties as { sessionID: string; requestID: string }
           setQuestionRequests((prev) => {
             const existing = prev[sessionID] ?? []
+            const filtered = existing.filter((item) => item.id !== requestID)
+            questionRequestsRef.current = {
+              ...prev,
+              [sessionID]: filtered,
+            }
             return {
               ...prev,
-              [sessionID]: existing.filter((item) => item.id !== requestID),
+              [sessionID]: filtered,
             }
           })
           break

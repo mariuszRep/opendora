@@ -181,6 +181,7 @@ export interface SessionCoreConfig {
   /** Question service — presents questions to the user via the UI */
   question?: {
     ask(params: any): Promise<any[]>
+    RejectedError?: any
   }
 }
 

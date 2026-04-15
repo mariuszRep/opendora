@@ -70,12 +70,6 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
               duration: 3000,
             })
           setAgentStore("current", name)
-          // Navigate to the agent's main session when switching agents
-          sdk.client.app.agentMainSession({ id: name }).then((result) => {
-            if (result.data) {
-              route.navigate({ type: "session", sessionID: result.data.id })
-            }
-          }).catch(() => {})
         },
         /** Update current agent without triggering session navigation (used when session drives the agent). */
         setWithoutNavigate(name: string) {
@@ -92,13 +86,6 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
             setAgentStore("current", value.name)
             nextName = value.name
           })
-          if (nextName) {
-            sdk.client.app.agentMainSession({ id: nextName }).then((result) => {
-              if (result.data) {
-                route.navigate({ type: "session", sessionID: result.data.id })
-              }
-            }).catch(() => {})
-          }
         },
         color(name: string) {
           const index = visibleAgents().findIndex((x) => x.name === name)
@@ -186,7 +173,9 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         }
 
         if (sync.data.config.model) {
-          const { providerID, modelID } = Provider.parseModel(sync.data.config.model)
+          const m = sync.data.config.model
+          const providerID = m.providerID
+          const modelID = m.id
           if (isModelValid({ providerID, modelID })) {
             return {
               providerID,

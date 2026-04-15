@@ -365,6 +365,9 @@ export function configureSessionCore() {
     },
     question: {
       ask: Question.ask,
+      get RejectedError() {
+        return Question.RejectedError
+      },
     },
     // Wire sessionPrompt so session.initialize can call it
     get sessionPrompt() {

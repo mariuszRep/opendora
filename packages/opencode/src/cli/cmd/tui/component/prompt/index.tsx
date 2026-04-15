@@ -545,7 +545,12 @@ export function Prompt(props: PromptProps) {
       sessionID = props.sessionID
     } else {
       // Create session and wait for it to complete
-      sessionID = await sdk.client.session.create({}).then((x) => x.data!.id)
+      const result = await sdk.client.session.create({})
+      if (!result.data?.id) {
+        toast.show({ variant: "error", message: "Failed to create session", duration: 3000 })
+        return
+      }
+      sessionID = result.data.id
     }
 
     const messageID = Identifier.ascending("message")
