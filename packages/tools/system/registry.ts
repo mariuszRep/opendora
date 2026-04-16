@@ -1,5 +1,4 @@
 import { PlanExitTool } from "../task-management/plan.ts"
-import { QuestionTool } from "../web/question.ts"
 import { BashTool } from "../shell/bash.ts"
 import { BatchTool } from "../shell/batch.ts"
 import { EditTool } from "../filesystem/edit.ts"
@@ -10,13 +9,10 @@ import { GlobTool } from "../filesystem/glob.ts"
 import { GrepTool } from "../filesystem/grep.ts"
 import { MultiEditTool } from "../filesystem/multiedit.ts"
 import { ApplyPatchTool } from "../filesystem/apply_patch.ts"
-import { CodeSearchTool } from "../filesystem/codesearch.ts"
 import { TaskTool } from "../task-management/task.ts"
 import { DelegateTool, SessionSearchTool, SessionGetTool, SessionTreeTool, ReplyTool } from "../sessions/index.ts"
 import { TodoWriteTool, TodoReadTool } from "../task-management/todo.ts"
-import { WebFetchTool } from "../web/webfetch.ts"
-import { WebSearchTool } from "../web/websearch.ts"
-import { BrowserTool } from "../browser/simple-browser.ts"
+import { WebFetchTool, WebSearchTool, BrowserTool, CodeSearchTool, QuestionTool } from "../browse-and-web/index.ts"
 import { InvalidTool } from "./invalid.ts"
 import { LspTool } from "./lsp.ts"
 import { SkillLoadTool, SkillListTool, SkillSearchTool, SkillInstallTool, SkillCreateTool, SkillRemoveTool } from "../skills/index.ts"
@@ -26,6 +22,7 @@ import { AgentUpdateTool } from "../agents/agent-update.ts"
 import { AgentDeleteTool } from "../agents/agent-delete.ts"
 import { AgentListTool } from "../agents/agent-list.ts"
 import { AgentGetTool } from "../agents/agent-get.ts"
+import { ScheduleListTool, ScheduleCreateTool, ScheduleUpdateTool, ScheduleDeleteTool, ScheduleGetTool, ScheduleRunTool } from "../schedule/index.ts"
 import type { Tool } from "../tool.ts"
 import path from "path"
 import { pathToFileURL } from "url"
@@ -150,6 +147,12 @@ export namespace ToolRegistry {
       AgentDeleteTool,
       AgentListTool,
       AgentGetTool,
+      ScheduleListTool,
+      ScheduleCreateTool,
+      ScheduleUpdateTool,
+      ScheduleDeleteTool,
+      ScheduleGetTool,
+      ScheduleRunTool,
       ...(cfg.flags.enableLspTool ? [LspTool] : []),
       ...(cfg.flags.enableBatchTool ? [BatchTool] : []),
       ...(cfg.flags.enablePlanMode && cfg.clientType === "cli" ? [PlanExitTool] : []),

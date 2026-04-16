@@ -32,6 +32,7 @@ import { Ripgrep } from "@/file/ripgrep"
 import { SessionPrompt } from "@opendora/session/prompt"
 import { Session } from "@opendora/session/session"
 import { Question } from "@/question"
+import { Schedule } from "@/schedule"
 
 async function enrichAgent(agent: any): Promise<any> {
   const allowedAgents: string[] | undefined = agent?.config?.toolConfig?.delegate?.allowedAgents
@@ -374,6 +375,27 @@ export function configureSessionCore() {
       return {
         command: SessionPrompt.command,
       }
+    },
+    schedule: {
+      list() {
+        return Promise.resolve(Schedule.list())
+      },
+      get(id: string) {
+        return Promise.resolve(Schedule.get(id))
+      },
+      run(id: string) {
+        return Schedule.run(id)
+      },
+      create(input: any) {
+        return Promise.resolve(Schedule.create(input))
+      },
+      update(id: string, patch: any) {
+        return Promise.resolve(Schedule.update(id, patch))
+      },
+      remove(id: string) {
+        Schedule.remove(id)
+        return Promise.resolve()
+      },
     },
   })
 }

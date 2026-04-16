@@ -62,6 +62,8 @@ type TreeRowProps = {
   onSessionClick: (session: Session) => void
   selectedSessionId?: string
   activeSessions: Set<string>
+  isLast?: boolean
+  activeLines?: boolean[]
 }
 
 function TreeRow({
@@ -72,6 +74,8 @@ function TreeRow({
   onSessionClick,
   selectedSessionId,
   activeSessions,
+  isLast = false,
+  activeLines = []
 }: TreeRowProps) {
   const node = store.nodes[sessionId]
   if (!node) return null
@@ -84,97 +88,98 @@ function TreeRow({
   const sessionType = (session.sessionType || "scope") as keyof typeof SESSION_TYPE_CONFIG
   const Icon = SESSION_TYPE_CONFIG[sessionType]?.icon || MessageSquareIcon
 
+  const childActiveLines = depth === 0 ? [] : [...activeLines, !isLast]
+
   return (
     <>
-      <div className="relative">
-        {/* Tree lines - matching SessionTreeView exactly */}
-        {depth > 0 && (
-          <>
-            {/* Vertical line from parent */}
-            <div 
-              className="absolute top-0 bottom-0 w-px bg-border"
-              style={{ left: depth * 20 - 10 }}
-            />
-            {/* Horizontal line to item */}
-            <div 
-              className="absolute top-1/2 h-px bg-border"
-              style={{ 
-                left: depth * 20 - 10,
-                width: '14px'
-              }}
-            />
-          </>
-        )}
-
+      <div className="relative flex w-full flex-col gap-0">
         <div
           onClick={() => onSessionClick(session)}
+          style={{ paddingLeft: `calc(0.5rem + ${depth * 1.25}rem)` }}
           className={cn(
-            "flex items-center gap-2 py-1.5 px-2 rounded text-sm transition-colors cursor-pointer",
-            "hover:bg-muted/50",
+            "group relative flex w-full items-center gap-1.5 rounded-md pr-2 py-1 text-sm outline-none transition-colors cursor-pointer select-none",
+            "hover:bg-accent hover:text-accent-foreground",
             isSelected && "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
           )}
-          style={{ paddingLeft: depth * 20 + 8 }}
         >
-          {showChildren ? (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onToggle(sessionId)
-              }}
-              className="shrink-0 hover:bg-muted rounded p-0.5 -m-0.5"
-            >
-              <ChevronRightIcon
-                className={cn(
-                  "size-3.5 text-muted-foreground transition-transform",
-                  expanded && "rotate-90",
-                )}
-              />
-            </button>
-          ) : (
-            <span className="size-3.5 shrink-0" />
-          )}
-
-          <Icon className="size-4 shrink-0 text-muted-foreground" />
-
-          <span className="truncate flex-1">{formatSessionTitle(session)}</span>
-
-          {isActive && (
-            <div className="size-2 rounded-full bg-green-500 shrink-0 animate-pulse" title="Active" />
-          )}
-
-          {loading && (
-            <RefreshCwIcon className="ml-auto size-3 shrink-0 animate-spin text-muted-foreground" />
-          )}
-        </div>
-      </div>
-
-      {showChildren && expanded && (
-        <div className="relative">
-          {children.map((childNode, idx) => {
-            const isLast = idx === children.length - 1
+          {/* Draw Ancestor vertical continuous lines */}
+          {activeLines.map((isActiveLine, i) => {
+            if (!isActiveLine) return null
             return (
-              <div key={childNode.session.id} className="relative">
-                {/* Shorten vertical line for last child */}
-                {isLast && (
-                  <div 
-                    className="absolute top-0 h-1/2 w-px bg-background"
-                    style={{ left: (depth + 1) * 20 - 10 }}
-                  />
-                )}
-                <TreeRow
-                  sessionId={childNode.session.id}
-                  depth={depth + 1}
-                  store={store}
-                  onToggle={onToggle}
-                  onSessionClick={onSessionClick}
-                  selectedSessionId={selectedSessionId}
-                  activeSessions={activeSessions}
-                />
-              </div>
+              <div
+                key={i}
+                className="absolute top-0 bottom-0 w-[1px] bg-muted-foreground/20 transition-colors pointer-events-none"
+                style={{ left: `calc(0.5rem + ${i * 1.25}rem + 0.625rem)` }}
+              />
             )
           })}
+
+          {/* Draw the L/T-connector for this specific node if it's not the root */}
+          {depth > 0 && (
+            <div className="absolute top-0 bottom-0 pointer-events-none" style={{ left: `calc(0.5rem + ${(depth - 1) * 1.25}rem + 0.625rem)` }}>
+              <div className="absolute top-0 w-[1px] bg-muted-foreground/20 transition-colors" style={{ height: isLast ? '50%' : '100%' }} />
+              <div 
+                className="absolute top-1/2 h-[1px] bg-muted-foreground/20 transition-colors" 
+                style={{ width: '1.25rem' }} 
+              />
+            </div>
+          )}
+
+          {/* Actual Node Interactive Content */}
+          <div className="relative z-10 flex flex-1 overflow-hidden items-center gap-1.5">
+            {showChildren ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggle(sessionId)
+                }}
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm hover:bg-muted/80 text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <ChevronRightIcon
+                  className={cn(
+                    "h-4 w-4 transition-transform duration-200",
+                    expanded && "rotate-90",
+                  )}
+                />
+              </button>
+            ) : (
+              <div className="h-5 w-5 shrink-0" />
+            )}
+
+            <Icon className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+
+            <span className="truncate flex-1">{formatSessionTitle(session)}</span>
+
+            {isActive && (
+              <div className="h-1.5 w-1.5 rounded-full bg-green-500 shrink-0 animate-pulse mx-1" title="Active" />
+            )}
+
+            {loading && (
+              <RefreshCwIcon className="ml-auto h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+            )}
+          </div>
         </div>
-      )}
+
+        {showChildren && expanded && (
+          <div className="w-full flex flex-col gap-0">
+            {children.map((childNode, idx) => (
+              <TreeRow
+                key={childNode.session.id}
+                sessionId={childNode.session.id}
+                depth={depth + 1}
+                isLast={idx === children.length - 1}
+                activeLines={childActiveLines}
+                store={store}
+                onToggle={onToggle}
+                onSessionClick={onSessionClick}
+                selectedSessionId={selectedSessionId}
+                activeSessions={activeSessions}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </>
   )
 }
@@ -436,11 +441,13 @@ export function SessionTreePanel({
         ) : rootSessions.length === 0 && !rootLoading ? (
           <p className="px-2 py-4 text-center text-xs text-muted-foreground">No sessions yet</p>
         ) : (
-          rootSessions.map((session) => (
+          rootSessions.map((session, idx) => (
             <TreeRow
               key={session.id}
               sessionId={session.id}
               depth={0}
+              isLast={idx === rootSessions.length - 1}
+              activeLines={[]}
               store={store}
               onToggle={handleToggle}
               onSessionClick={handleSessionClick}

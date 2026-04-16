@@ -76,16 +76,18 @@ export const SessionTreeTool = Tool.define("session_tree", {
       }
 
       // Recursively build JSON tree
-      async function buildNode(session: any): Promise<any> {
+      const MAX_DEPTH = 10
+      async function buildNode(session: any, depth: number = 0): Promise<any> {
+        const stats = await getStats(session)
+        if (depth >= MAX_DEPTH) {
+          return sessionNode(session, session.id === targetId, [], stats)
+        }
         const kids: any[] = await sessionSvc.children(session.id).catch(() => [])
-        const [children, stats] = await Promise.all([
-          Promise.all(kids.map(buildNode)),
-          getStats(session),
-        ])
+        const children = await Promise.all(kids.map((kid: any) => buildNode(kid, depth + 1)))
         return sessionNode(session, session.id === targetId, children, stats)
       }
 
-      const tree = await buildNode(treeRoot)
+      const tree = await buildNode(treeRoot, 0)
 
       const path = [...ancestors.map((s: any) => s.id), targetId]
 

@@ -32,6 +32,7 @@ import { startBrowserControlServiceFromConfig, stopBrowserControlService } from 
 import { AgentRoutes } from "./routes/agent"
 import { ScheduleRoutes } from "./routes/schedule"
 import { CronScheduler, type ScheduleDispatchFn } from "@opendora/schedule/cron-scheduler"
+import { Schedule } from "../schedule"
 import { Database } from "../storage/db"
 import { Agent } from "../agent"
 import { lazy } from "../util/lazy"
@@ -735,6 +736,7 @@ export namespace Server {
         parts: [{ type: "text", text: schedule.prompt }],
       })
     }
+    Schedule.setDispatch(_scheduleDispatch)
 
     const args = {
       hostname: opts.hostname,

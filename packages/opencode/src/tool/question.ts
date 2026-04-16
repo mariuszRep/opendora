@@ -1,1 +1,1 @@
-export { QuestionTool } from "@opendora/tools/web"
+export { QuestionTool } from "@opendora/tools/browse-and-web"

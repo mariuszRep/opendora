@@ -18,6 +18,10 @@
     "./communication": "./communication/index.ts",
     "./execution": "./execution/index.ts",
     "./browser": "./browser/index.ts",
+    "./browse-and-web": "./browse-and-web/index.ts",
+    "./browse-and-web/*": "./browse-and-web/*.ts",
+    "./schedule": "./schedule/index.ts",
+    "./schedule/*": "./schedule/*.ts",
     "./tool": "./tool.ts",
     "./truncation": "./truncation.ts"
   },

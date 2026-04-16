@@ -183,6 +183,30 @@ export interface SessionCoreConfig {
     ask(params: any): Promise<any[]>
     RejectedError?: any
   }
+  /** Schedule service — CRUD for cron-based schedules */
+  schedule?: {
+    list(): Promise<any[]>
+    get(id: string): Promise<any | undefined>
+    run(id: string): Promise<void>
+    create(input: {
+      prompt: string
+      cron_expression: string
+      agent_id?: string
+      session_id?: string
+      timezone?: string
+      action_type?: "message" | "tool"
+      tool_name?: string
+    }): Promise<any>
+    update(id: string, patch: {
+      is_active?: boolean
+      cron_expression?: string
+      prompt?: string
+      timezone?: string
+      action_type?: "message" | "tool"
+      tool_name?: string
+    }): Promise<any | undefined>
+    remove(id: string): Promise<void>
+  }
 }
 
 let _config: SessionCoreConfig | null = null

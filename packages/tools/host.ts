@@ -90,6 +90,29 @@ export interface HostServices {
     uninstall?(name: string): Promise<void>
     list?(): Promise<Array<{ name: string; version: string; source: string; sourceType: string }>>
   }
+  schedule?: {
+    list(): Promise<unknown[]>
+    get(id: string): Promise<unknown | undefined>
+    run(id: string): Promise<void>
+    create(input: {
+      prompt: string
+      cron_expression: string
+      agent_id?: string
+      session_id?: string
+      timezone?: string
+      action_type?: "message" | "tool"
+      tool_name?: string
+    }): Promise<unknown>
+    update(id: string, patch: {
+      is_active?: boolean
+      cron_expression?: string
+      prompt?: string
+      timezone?: string
+      action_type?: "message" | "tool"
+      tool_name?: string
+    }): Promise<unknown | undefined>
+    remove(id: string): Promise<void>
+  }
   config?: {
     get(): Promise<unknown>
     directories(): Promise<string[]>

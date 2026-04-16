@@ -62,12 +62,12 @@ const HIDDEN_TOOLS = new Set(["invalid", "plan_exit"])
 
 const FILESYSTEM_TOOLS = new Set([
   "read", "write", "edit", "list", "glob", "grep",
-  "apply_patch", "multiedit", "codesearch",
+  "apply_patch", "multiedit",
 ])
 
 const SHELL_TOOLS = new Set(["bash", "batch"])
 
-const WEB_TOOLS = new Set(["webfetch", "websearch"])
+const BROWSE_AND_WEB_TOOLS = new Set(["webfetch", "websearch", "browser", "codesearch"])
 
 const SESSION_TOOLS = new Set([
   "delegate", "reply", "session_get", "session_search", "session_tree",
@@ -78,6 +78,8 @@ const AGENT_TOOLS = new Set([
 ])
 
 const SKILL_TOOLS = new Set(["skill_list", "skill_load", "skill_search", "skill_install", "skill_create", "skill_remove"])
+
+const SCHEDULE_TOOLS = new Set(["schedule_list", "schedule_create", "schedule_update", "schedule_delete", "schedule_get", "schedule_run"])
 
 type ModelValue = { providerID: string; modelID: string } | undefined
 
@@ -107,7 +109,7 @@ export default function AgentSettingsPage() {
   const [fallbackModelOpen, setFallbackModelOpen] = useState(false)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const [availableTools, setAvailableTools] = useState<string[]>([])
-  const [expandedGroup, setExpandedGroup] = useState<"filesystem" | "shell" | "web" | "sessions" | "agents" | "skills" | "others" | null>(null)
+  const [expandedGroup, setExpandedGroup] = useState<"filesystem" | "shell" | "browse-and-web" | "sessions" | "agents" | "skills" | "schedule" | "others" | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
   const [defaultPaths, setDefaultPaths] = useState<string[]>([])
@@ -608,17 +610,18 @@ export default function AgentSettingsPage() {
               Leave all unchecked to allow all tools. Select specific tools to restrict this agent.
             </p>
 
-            {(["filesystem", "shell", "web", "sessions", "agents", "skills", "others"] as const).map((group) => {
+            {(["filesystem", "shell", "browse-and-web", "sessions", "agents", "skills", "schedule", "others"] as const).map((group) => {
               const groupTools = availableTools.filter((id) => {
                 if (group === "filesystem") return FILESYSTEM_TOOLS.has(id)
                 if (group === "shell") return SHELL_TOOLS.has(id)
-                if (group === "web") return WEB_TOOLS.has(id)
+                if (group === "browse-and-web") return BROWSE_AND_WEB_TOOLS.has(id)
                 if (group === "sessions") return SESSION_TOOLS.has(id)
                 if (group === "agents") return AGENT_TOOLS.has(id)
                 if (group === "skills") return SKILL_TOOLS.has(id)
+                if (group === "schedule") return SCHEDULE_TOOLS.has(id)
                 // others: everything not in any specific group
-                return !FILESYSTEM_TOOLS.has(id) && !SHELL_TOOLS.has(id) && !WEB_TOOLS.has(id) &&
-                       !SESSION_TOOLS.has(id) && !AGENT_TOOLS.has(id) && !SKILL_TOOLS.has(id)
+                return !FILESYSTEM_TOOLS.has(id) && !SHELL_TOOLS.has(id) && !BROWSE_AND_WEB_TOOLS.has(id) &&
+                       !SESSION_TOOLS.has(id) && !AGENT_TOOLS.has(id) && !SKILL_TOOLS.has(id) && !SCHEDULE_TOOLS.has(id)
               })
               const selectedCount = groupTools.filter((id) => selectedTools.includes(id)).length
               const isExpanded = expandedGroup === group

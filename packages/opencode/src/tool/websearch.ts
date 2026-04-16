@@ -1,1 +1,1 @@
-export { WebSearchTool } from "@opendora/tools/web"
+export { WebSearchTool } from "@opendora/tools/browse-and-web"

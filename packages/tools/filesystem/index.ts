@@ -1,6 +1,5 @@
 // Filesystem tools
 export { ApplyPatchTool } from "./apply_patch"
-export { CodeSearchTool } from "./codesearch"
 export { EditTool } from "./edit"
 export { GlobTool } from "./glob"
 export { GrepTool } from "./grep"

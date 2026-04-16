@@ -1,0 +1,25 @@
+{
+  "name": "Scheduler",
+  "description": "Manages daily schedules and cron jobs for OpenDora agents. Creates, lists, updates, and triggers scheduled tasks.",
+  "mode": "worker",
+  "model": {
+    "modelID": "minimax-m2.5-free",
+    "providerID": "opencode"
+  },
+  "temperature": 0.3,
+  "color": "#8B5CF6",
+  "tools": [
+    "read",
+    "session_search",
+    "session_get",
+    "agent_list",
+    "agent_get",
+    "session_tree",
+    "schedule_create",
+    "schedule_list",
+    "schedule_get",
+    "schedule_update",
+    "schedule_delete",
+    "schedule_run"
+  ]
+}
