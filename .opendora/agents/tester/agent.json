@@ -3,8 +3,8 @@
   "description": "Testing specialist who creates and runs automated verification for approved implementation work.",
   "mode": "worker",
   "model": {
-    "modelID": "minimax-m2.5-free",
-    "providerID": "opencode"
+    "modelID": "gpt-5.4",
+    "providerID": "openai-codex"
   },
   "temperature": 0.2,
   "steps": 30,

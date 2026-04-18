@@ -289,6 +289,13 @@ export type Event =
   | { type: "session.idle"; properties: { sessionID: string } }
   | { type: string; properties: unknown }
 
+export class SessionBusyError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "SessionBusyError"
+  }
+}
+
 async function req<T>(path: string, opts?: RequestInit): Promise<T> {
   const res = await fetch(`${OPENDORA_URL}${path}`, {
     ...opts,
@@ -299,6 +306,11 @@ async function req<T>(path: string, opts?: RequestInit): Promise<T> {
   })
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText)
+    if (res.status === 409) {
+      let message = "Session is busy, please wait for the current response to finish."
+      try { message = JSON.parse(text).message ?? message } catch { /* use default */ }
+      throw new SessionBusyError(message)
+    }
     throw new Error(`opendora ${path} ${res.status}: ${text}`)
   }
   if (res.status === 204 || res.headers.get("content-length") === "0") {

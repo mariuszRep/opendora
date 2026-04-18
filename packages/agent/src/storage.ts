@@ -16,6 +16,7 @@ export namespace AgentStorage {
 
   // ── Types ─────────────────────────────────────────────────────────────────
   export const Config = AgentConfig
+  export const ConfigSchema = AgentConfig
   export type Config = z.infer<typeof AgentConfig>
 
   export const IndexEntry = z.object({
@@ -149,7 +150,7 @@ export namespace AgentStorage {
 
   export async function load(baseDir: string, id: string): Promise<Entry> {
     const configRaw = await safeRead(baseDir, id, "agent.json")
-    const config = Config.parse(JSON.parse(configRaw))
+    const config = ConfigSchema.parse(JSON.parse(configRaw))
     const persona = await safeRead(baseDir, id, "PERSONA.md").catch(() => "")
     return { id, config, persona }
   }
@@ -188,7 +189,7 @@ export namespace AgentStorage {
     for (const key of Object.keys(patch) as Array<keyof Config>) {
       merged[key] = patch[key] as any
     }
-    const next = Config.parse(merged)
+    const next = ConfigSchema.parse(merged)
     const nextPersona = persona ?? existing.persona
 
     // Filesystem writes first

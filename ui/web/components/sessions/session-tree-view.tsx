@@ -74,7 +74,7 @@ function TreeNodeRow({
         return (
           <div
             key={i}
-            className="absolute top-0 bottom-0 w-[1px] bg-muted-foreground/20 transition-colors pointer-events-none"
+            className="absolute top-0 bottom-0 w-[1px] bg-muted-foreground transition-colors pointer-events-none"
             style={{ left: `calc(0.5rem + ${i * 1.25}rem + 0.625rem)` }}
           />
         )
@@ -83,9 +83,9 @@ function TreeNodeRow({
       {/* Draw the L/T-connector for this specific node if it's not the root */}
       {depth > 0 && (
         <div className="absolute top-0 bottom-0 pointer-events-none" style={{ left: `calc(0.5rem + ${(depth - 1) * 1.25}rem + 0.625rem)` }}>
-          <div className="absolute top-0 w-[1px] bg-muted-foreground/20 transition-colors" style={{ height: isLast ? '50%' : '100%' }} />
+          <div className="absolute top-0 w-[1px] bg-muted-foreground transition-colors" style={{ height: isLast ? '50%' : '100%' }} />
           <div 
-             className="absolute top-1/2 h-[1px] bg-muted-foreground/20 transition-colors" 
+             className="absolute top-1/2 h-[1px] bg-muted-foreground transition-colors" 
              style={{ width: '1.25rem' }} 
           />
         </div>

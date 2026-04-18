@@ -3,6 +3,22 @@ import z from "zod"
 import { NotFoundError } from "../storage/db"
 
 export const ERRORS = {
+  409: {
+    description: "Conflict",
+    content: {
+      "application/json": {
+        schema: resolver(
+          z
+            .object({
+              message: z.string(),
+            })
+            .meta({
+              ref: "ConflictError",
+            }),
+        ),
+      },
+    },
+  },
   400: {
     description: "Bad request",
     content: {

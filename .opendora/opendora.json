@@ -13,5 +13,21 @@
       "apiKey": "53054823-32d0-42d0-adb1-199f2cfc9e2d",
       "useApiKey": false
     }
+  },
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama (local)",
+      "options": {
+        "baseURL": "http://172.22.112.1:11434/v1"
+      },
+      "models": {
+        "gemma4:e4b": { "name": "Gemma 4 8B", "tool_call": false },
+        "dolphin3:8b": { "name": "Dolphin 3 8B", "tool_call": false },
+        "mistral:7b": { "name": "Mistral 7B", "tool_call": false },
+        "gemma3:4b": { "name": "Gemma 3 4B", "tool_call": false },
+        "deepseek-r1:8b": { "name": "DeepSeek R1 8B", "tool_call": false }
+      }
+    }
   }
 }

@@ -1104,7 +1104,7 @@ export namespace SessionPrompt {
   async function createUserMessage(input: PromptInput) {
     const cfg = getConfig()
     const agentName = input.agent ?? await cfg.agent?.defaultAgent?.()
-    const agent = await cfg.agent?.get?.(agentName)
+    const agent = await (cfg.agent?.getByIdOrName?.(agentName) ?? cfg.agent?.get?.(agentName))
     if (!agent) throw new Error(`Unknown agent: ${input.agent}`)
 
     const model = input.model ?? agent.model ?? (await lastModel(input.sessionID))
@@ -1580,7 +1580,7 @@ export namespace SessionPrompt {
     if (session.revert) {
       await SessionRevert.cleanup(session)
     }
-    const agent = await cfg.agent?.get?.(input.agent)
+    const agent = await (cfg.agent?.getByIdOrName?.(input.agent) ?? cfg.agent?.get?.(input.agent))
     if (!agent) throw new Error(`Unknown agent: ${input.agent}`)
     const model = input.model ?? agent.model ?? (await lastModel(input.sessionID))
     const userMsg: MessageV2.User = {
@@ -1884,7 +1884,7 @@ export namespace SessionPrompt {
       }
       throw e
     }
-    const agent = await cfg.agent?.get?.(agentName)
+    const agent = await (cfg.agent?.getByIdOrName?.(agentName) ?? cfg.agent?.get?.(agentName))
     if (!agent) {
       const available = await cfg.agent?.list?.().then((agents: any[]) => agents.filter((a) => !a.hidden).map((a: any) => a.name)) ?? []
       const hint = available.length ? ` Available agents: ${available.join(", ")}` : ""

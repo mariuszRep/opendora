@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { toast } from "sonner"
 import {
   opendora,
+  SessionBusyError,
   type Agent,
   type AgentConfig,
   type AgentEntry,
@@ -618,6 +620,11 @@ export function useOpendora(): UseOpendoraResult {
         })
         // Status transitions to "ready" via SSE session.idle event
       } catch (err) {
+        if (err instanceof SessionBusyError) {
+          setStatus("ready")
+          toast.warning("Session is busy — please wait for the current response to finish.")
+          return
+        }
         setError(err instanceof Error ? err.message : String(err))
         setStatus("error")
       }

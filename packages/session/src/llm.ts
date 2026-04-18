@@ -178,6 +178,16 @@ export namespace LLM {
 
     const tools = await resolveTools(input)
 
+    // Models that don't support tool calls (e.g. Ollama local models) must not
+    // receive any tools — otherwise they ignore them, return plain text with
+    // finish_reason "stop", and the agent loop never exits (Pandora waits for a
+    // `reply` tool call that never comes).
+    if (input.model.capabilities?.toolcall === false) {
+      for (const key of Object.keys(tools)) {
+        delete tools[key]
+      }
+    }
+
     // LiteLLM and some Anthropic proxies require the tools parameter to be present
     // when message history contains tool calls, even if no tools are being used.
     const isLiteLLMProxy =

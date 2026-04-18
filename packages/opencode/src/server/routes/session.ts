@@ -822,7 +822,7 @@ export const SessionRoutes = lazy(() =>
           204: {
             description: "Prompt accepted",
           },
-          ...errors(400, 404),
+          ...errors(400, 404, 409),
         },
       }),
       validator(
@@ -833,12 +833,18 @@ export const SessionRoutes = lazy(() =>
       ),
       validator("json", SessionPrompt.PromptInput.omit({ sessionID: true })),
       async (c) => {
+        const sessionID = c.req.valid("param").sessionID
+        const status = SessionStatus.get(sessionID)
+        if (status.type === "busy") {
+          return c.json({ message: "Session is busy, please wait for the current response to finish." }, 409)
+        }
         c.status(204)
         c.header("Content-Type", "application/json")
         return stream(c, async () => {
-          const sessionID = c.req.valid("param").sessionID
           const body = c.req.valid("json")
           await SessionPrompt.prompt({ ...body, sessionID })
+        }, async (err) => {
+          log.error("prompt_async stream error", { sessionID, err })
         })
       },
     )
