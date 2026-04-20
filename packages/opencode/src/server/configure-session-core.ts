@@ -154,6 +154,9 @@ export function configureSessionCore() {
       evaluate(permission: string, name: string, ruleset: any) {
         return PermissionNext.evaluate(permission, name, ruleset)
       },
+      extractPathBoundaries(ruleset: any) {
+        return PermissionNext.extractPathBoundaries(ruleset)
+      },
       // Expose error classes for instanceof checks in processor.ts
       get RejectedError() {
         return PermissionNext.RejectedError

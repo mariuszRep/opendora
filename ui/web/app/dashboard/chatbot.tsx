@@ -70,8 +70,10 @@ import { usePushToTalk } from "@/hooks/use-push-to-talk"
 import { DelegateToolContent, isDelegateTool, getDelegateToolTitle } from "@/components/ai-elements/delegate-tool"
 import { TodoToolContent, isTodoTool, getTodoToolTitle } from "@/components/ai-elements/todo-tool"
 import { SessionTreeToolContent, isSessionTreeTool, getSessionTreeToolTitle } from "@/components/ai-elements/session-tree-tool"
+import { WebFetchToolContent, isWebFetchTool, getWebFetchToolTitle, getWebFetchUrl } from "@/components/ai-elements/webfetch-tool"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BellIcon, CheckIcon, CopyIcon, EyeIcon, EyeOffIcon, Link2Icon, Volume2Icon, VolumeXIcon } from "lucide-react"
+import { BellIcon, CheckIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, Link2Icon, PanelRightIcon, Volume2Icon, VolumeXIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
@@ -208,6 +210,9 @@ export const Chatbot = () => {
     isChatCentered,
     selectSession,
     sessions,
+    webPreviewOpen,
+    toggleWebPreview,
+    setWebPreviewUrl,
   } = useOpendoraContext()
 
   const { userName } = useUserProfile()
@@ -230,6 +235,7 @@ export const Chatbot = () => {
   const [delegateViewModes, setDelegateViewModes] = useState<Record<string, "code" | "view">>({})
   const [todoViewModes, setTodoViewModes] = useState<Record<string, "code" | "view">>({})
   const [sessionTreeViewModes, setSessionTreeViewModes] = useState<Record<string, "code" | "view">>({})
+  const [webfetchViewModes, setWebfetchViewModes] = useState<Record<string, "code" | "view">>({})
   const [expandedContractParts, setExpandedContractParts] = useState<Record<string, boolean>>({})
 
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -832,18 +838,45 @@ export const Chatbot = () => {
                                       const handleSessionTreeViewModeChange = (mode: "code" | "view") => {
                                         setSessionTreeViewModes(prev => ({ ...prev, [tool.id]: mode }))
                                       }
+                                      const isWebFetchToolCall = isWebFetchTool(tool.tool)
+                                      const currentWebFetchViewMode = webfetchViewModes[tool.id] ?? "code"
+                                      const handleWebFetchViewModeChange = (mode: "code" | "view") => {
+                                        setWebfetchViewModes(prev => ({ ...prev, [tool.id]: mode }))
+                                      }
+                                      const webFetchToolUrl = isWebFetchToolCall ? getWebFetchUrl(tool) : undefined
+                                      const webFetchActions = isWebFetchToolCall ? (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); if (webFetchToolUrl) { if (!webPreviewOpen) setWebPreviewUrl(webFetchToolUrl); toggleWebPreview() } }}>
+                                                <PanelRightIcon className="size-4 text-muted-foreground" />
+                                              </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Open in Panel</TooltipContent>
+                                          </Tooltip>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); if (webFetchToolUrl) window.open(webFetchToolUrl, "_blank") }}>
+                                                <ExternalLinkIcon className="size-4 text-muted-foreground" />
+                                              </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Open</TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      ) : undefined
 
                                       return (
-                                        <Tool defaultOpen={isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall}>
+                                        <Tool defaultOpen={isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}>
                                           <ToolHeader
                                             state={state}
-                                            title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : tool.tool}
+                                            title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : tool.tool}
                                             centerTitle={!!questionRequest}
                                             toolName={tool.tool}
                                             type="dynamic-tool"
-                                            viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : undefined}
-                                            onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : isSessionTreeToolCall ? handleSessionTreeViewModeChange : undefined}
-                                            hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall}
+                                            viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : isWebFetchToolCall ? currentWebFetchViewMode : undefined}
+                                            onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : isSessionTreeToolCall ? handleSessionTreeViewModeChange : isWebFetchToolCall ? handleWebFetchViewModeChange : undefined}
+                                            hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}
+                                            actions={webFetchActions}
                                           />
                                           <ToolContent>
                                             {questionRequest ? (
@@ -879,10 +912,14 @@ export const Chatbot = () => {
                                               currentSessionTreeViewMode === "code" ? toolInput : (
                                                 <SessionTreeToolContent tool={tool} />
                                               )
+                                            ) : isWebFetchToolCall ? (
+                                              currentWebFetchViewMode === "code" ? toolInput : (
+                                                <WebFetchToolContent tool={tool} />
+                                              )
                                             ) : (
                                               toolInput
                                             )}
-                                            {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !questionRequest && (output || error) ? (
+                                            {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !questionRequest && (output || error) ? (
                                               <ToolOutput errorText={error} output={output} />
                                             ) : null}
                                           </ToolContent>
@@ -975,20 +1012,47 @@ export const Chatbot = () => {
                                   const handleSessionTreeViewModeChange = (mode: "code" | "view") => {
                                     setSessionTreeViewModes(prev => ({ ...prev, [tool.id]: mode }))
                                   }
+                                  const isWebFetchToolCall = isWebFetchTool(tool.tool)
+                                  const currentWebFetchViewMode = webfetchViewModes[tool.id] ?? "code"
+                                  const handleWebFetchViewModeChange = (mode: "code" | "view") => {
+                                    setWebfetchViewModes(prev => ({ ...prev, [tool.id]: mode }))
+                                  }
+                                  const webFetchToolUrl = isWebFetchToolCall ? getWebFetchUrl(tool) : undefined
+                                  const webFetchActions = isWebFetchToolCall ? (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); if (webFetchToolUrl) { if (!webPreviewOpen) setWebPreviewUrl(webFetchToolUrl); toggleWebPreview() } }}>
+                                            <PanelRightIcon className="size-4 text-muted-foreground" />
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Open in Panel</TooltipContent>
+                                      </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); if (webFetchToolUrl) window.open(webFetchToolUrl, "_blank") }}>
+                                            <ExternalLinkIcon className="size-4 text-muted-foreground" />
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Open</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  ) : undefined
                                   return (
                                     <Tool
-                                      defaultOpen={isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall}
+                                      defaultOpen={isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}
                                       key={tool.id}
                                     >
                                       <ToolHeader
                                         state={state}
-                                        title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : tool.tool}
+                                        title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : tool.tool}
                                         centerTitle={!!questionRequest}
                                         toolName={tool.tool}
                                         type="dynamic-tool"
-                                        viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : undefined}
-                                        onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : isSessionTreeToolCall ? handleSessionTreeViewModeChange : undefined}
-                                        hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall}
+                                        viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : isWebFetchToolCall ? currentWebFetchViewMode : undefined}
+                                        onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : isSessionTreeToolCall ? handleSessionTreeViewModeChange : isWebFetchToolCall ? handleWebFetchViewModeChange : undefined}
+                                        hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}
+                                        actions={webFetchActions}
                                       />
                                       <ToolContent>
                                         {questionRequest ? (
@@ -1024,10 +1088,14 @@ export const Chatbot = () => {
                                           currentSessionTreeViewMode === "code" ? toolInput : (
                                             <SessionTreeToolContent tool={tool} />
                                           )
+                                        ) : isWebFetchToolCall ? (
+                                          currentWebFetchViewMode === "code" ? toolInput : (
+                                            <WebFetchToolContent tool={tool} />
+                                          )
                                         ) : (
                                           toolInput
                                         )}
-                                        {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !questionRequest && !isPermissionTool && (output || error) ? (
+                                        {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !questionRequest && !isPermissionTool && (output || error) ? (
                                           <ToolOutput errorText={error} output={output} />
                                         ) : null}
                                       </ToolContent>

@@ -44,6 +44,7 @@ export type ToolHeaderProps = {
   viewMode?: "code" | "view";
   onViewChange?: (mode: "code" | "view") => void;
   hasView?: boolean;
+  actions?: ReactNode;
 } & (
   | { type: ToolUIPart["type"]; state: ToolUIPart["state"]; toolName?: never }
   | {
@@ -90,6 +91,7 @@ export const ToolHeader = ({
   viewMode,
   onViewChange,
   hasView,
+  actions,
   ...props
 }: ToolHeaderProps) => {
   const derivedName =
@@ -116,6 +118,7 @@ export const ToolHeader = ({
       )}
       <div className="flex items-center gap-2">
         {getStatusBadge(state)}
+        {actions}
         {hasView && onViewChange && viewMode && (
           <CodeViewToggle
             viewMode={viewMode}

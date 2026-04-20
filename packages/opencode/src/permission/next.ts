@@ -221,4 +221,35 @@ export namespace PermissionNext {
     const s = await state()
     return Object.values(s.pending).map((x) => x.info)
   }
+
+  /**
+   * Extract path boundary settings from a ruleset.
+   *
+   * Rules with permission "path.write" / "path.read" and action "allow" define
+   * the directories an agent is scoped to. The last matching allow rule wins
+   * (consistent with evaluate()). Deny rules remove a previously allowed path.
+   */
+  export function extractPathBoundaries(ruleset: Ruleset): {
+    writePaths: string[]
+    readPath: string | undefined
+  } {
+    const writePaths: string[] = []
+    const readPaths: string[] = []
+
+    for (const rule of ruleset) {
+      if (rule.permission === "path.write") {
+        if (rule.action === "allow") writePaths.push(rule.pattern)
+        else writePaths.splice(writePaths.indexOf(rule.pattern), 1)
+      }
+      if (rule.permission === "path.read") {
+        if (rule.action === "allow") readPaths.push(rule.pattern)
+        else readPaths.splice(readPaths.indexOf(rule.pattern), 1)
+      }
+    }
+
+    return {
+      writePaths,
+      readPath: readPaths[readPaths.length - 1],
+    }
+  }
 }

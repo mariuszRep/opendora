@@ -101,6 +101,10 @@ export type UseOpendoraResult = {
   toggleFileTree: () => void
   sessionTreeOpen: boolean
   toggleSessionTree: () => void
+  webPreviewOpen: boolean
+  toggleWebPreview: () => void
+  webPreviewUrl: string
+  setWebPreviewUrl: (url: string) => void
 }
 
 export function useOpendora(): UseOpendoraResult {
@@ -125,6 +129,8 @@ export function useOpendora(): UseOpendoraResult {
   const [isChatCentered, setIsChatCentered] = useState(false)
   const [fileTreeOpen, setFileTreeOpen] = useState(false)
   const [sessionTreeOpen, setSessionTreeOpen] = useState(false)
+  const [webPreviewOpen, setWebPreviewOpen] = useState(false)
+  const [webPreviewUrl, setWebPreviewUrl] = useState("")
   const [activeSessions, setActiveSessions] = useState<Set<string>>(new Set())
   const [defaultAgentId, setDefaultAgentId] = useState<string | null>(() => getStoredDefaultAgent())
   const [lastSessionByAgent, setLastSessionByAgent] = useState<Record<string, string>>(() => getStoredLastSessionByAgent())
@@ -766,6 +772,10 @@ export function useOpendora(): UseOpendoraResult {
     setSessionTreeOpen((prev) => !prev)
   }, [])
 
+  const toggleWebPreview = useCallback(() => {
+    setWebPreviewOpen((prev) => !prev)
+  }, [])
+
   const setModelFilter = useCallback(async (providerID: string, filter: "all" | "free" | "none") => {
     setModelFilters((prev) => {
       const next = { ...prev, [providerID]: filter }
@@ -826,5 +836,9 @@ export function useOpendora(): UseOpendoraResult {
     toggleFileTree,
     sessionTreeOpen,
     toggleSessionTree,
+    webPreviewOpen,
+    toggleWebPreview,
+    webPreviewUrl,
+    setWebPreviewUrl,
   }
 }

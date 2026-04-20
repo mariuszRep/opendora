@@ -93,11 +93,20 @@ async function getParser() {
 }
 
 // TODO: we may wanna rename this tool so it works better on other shells
-export const BashTool = Tool.define("bash", async () => {
+const MAX_LINES = 2000
+const MAX_BYTES_LABEL = "50KB"
+
+export const BashTool = Tool.define("bash", async (ctx) => {
   const shell = getAcceptableShell()
+  const agentDefaultDir = ctx?.agent?.config?.defaultPaths?.[0]
+  const dirLabel = agentDefaultDir ?? "the session's working directory"
+  const description = DESCRIPTION
+    .replace("${directory}", dirLabel)
+    .replace("${maxLines}", String(MAX_LINES))
+    .replace("${maxBytes}", MAX_BYTES_LABEL)
 
   return {
-    description: DESCRIPTION,
+    description,
     parameters: z.object({
       command: z.string().describe("The command to execute"),
       timeout: z.number().describe("Optional timeout in milliseconds").optional(),

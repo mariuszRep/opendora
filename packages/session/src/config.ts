@@ -98,6 +98,7 @@ export interface SessionCoreConfig {
     disabled(toolNames: string[], permission: any): Set<string>
     merge?(a: any, b: any): any
     evaluate?(permission: string, name: string, ruleset: any): { action: string }
+    extractPathBoundaries?(ruleset: any): { writePaths: string[]; readPath: string | undefined }
     RejectedError?: any
     Ruleset?: any
   }

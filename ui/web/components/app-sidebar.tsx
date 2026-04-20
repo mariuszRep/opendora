@@ -20,11 +20,10 @@ import {
 import { cn } from "@/lib/utils"
 import type { Session, SessionType } from "@/lib/opendora"
 import { getAgentColor } from "@/lib/agent-colors"
-import { useUserProfile } from "@/hooks/use-user-profile"
-import { BellIcon, BotIcon, CheckIcon, FolderTreeIcon, MessageSquareIcon, PencilIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, UserIcon, NetworkIcon } from "lucide-react"
+import { BellIcon, BotIcon, FolderTreeIcon, MessageSquareIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, NetworkIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type React from "react"
-import { useRef, useState } from "react"
+import { useState } from "react"
 
 function formatSessionTitle(session: { title?: string; time: { created: number } }): string {
   if (session.title && !session.title.startsWith("New session")) return session.title
@@ -79,23 +78,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   
   // Session create dialog state
   const [sessionCreateOpen, setSessionCreateOpen] = useState(false)
-
-  // User profile
-  const { userName, setUserName } = useUserProfile()
-  const [editingName, setEditingName] = useState(false)
-  const [nameInput, setNameInput] = useState("")
-  const nameInputRef = useRef<HTMLInputElement>(null)
-
-  const startEditName = () => {
-    setNameInput(userName)
-    setEditingName(true)
-    setTimeout(() => nameInputRef.current?.focus(), 0)
-  }
-
-  const commitName = () => {
-    setUserName(nameInput.trim())
-    setEditingName(false)
-  }
 
   return (
     <>
@@ -428,39 +410,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
         <SidebarFooter className="p-2">
           <SidebarMenu>
-            <SidebarMenuItem>
-              {editingName ? (
-                <div className="flex items-center gap-1 px-2 py-1 group-data-[collapsible=icon]:hidden">
-                  <UserIcon className="size-4 shrink-0 text-muted-foreground" />
-                  <input
-                    ref={nameInputRef}
-                    className="flex-1 min-w-0 bg-transparent text-sm outline-none border-b border-border"
-                    value={nameInput}
-                    onChange={(e) => setNameInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") commitName()
-                      if (e.key === "Escape") setEditingName(false)
-                    }}
-                    onBlur={commitName}
-                    placeholder="Your name"
-                  />
-                  <button onClick={commitName} className="shrink-0 text-muted-foreground hover:text-foreground">
-                    <CheckIcon className="size-3" />
-                  </button>
-                </div>
-              ) : (
-                <SidebarMenuButton onClick={startEditName} tooltip={userName ? `User: ${userName}` : "Set your name"}>
-                  <UserIcon className="size-4 shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden truncate">
-                    {userName ? (
-                      <span>user: <span className="font-medium">{userName}</span></span>
-                    ) : (
-                      <span className="text-muted-foreground">Set your name…</span>
-                    )}
-                  </span>
-                </SidebarMenuButton>
-              )}
-            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={toggleFileTree}

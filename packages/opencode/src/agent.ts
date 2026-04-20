@@ -114,6 +114,16 @@ export namespace Agent {
       permission = PermissionNext.merge(defaults, entry.config.permission as PermissionNext.Ruleset)
     }
 
+    // Auto-inject path.write / path.read rules from defaultPaths so that path
+    // boundaries are first-class permission rules rather than side-channel fields.
+    const projectPath = entry.config.defaultPaths?.[0]
+    if (projectPath) {
+      permission = PermissionNext.merge(permission, [
+        { permission: "path.write", pattern: projectPath, action: "allow" },
+        { permission: "path.read", pattern: projectPath, action: "allow" },
+      ])
+    }
+
     return {
       id: entry.id,
       name: entry.config.name,

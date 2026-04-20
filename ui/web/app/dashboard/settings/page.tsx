@@ -12,14 +12,29 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { useUserProfile } from "@/hooks/use-user-profile"
-import { BotIcon, MessageSquareIcon, SettingsIcon, ChevronRightIcon, PlugIcon, UserIcon, Volume2Icon, CalendarClockIcon, WrenchIcon } from "lucide-react"
+import { useTheme } from "next-themes"
+import { BotIcon, MessageSquareIcon, SettingsIcon, ChevronRightIcon, PlugIcon, UserIcon, Volume2Icon, CalendarClockIcon, WrenchIcon, SunIcon, MoonIcon, MonitorIcon } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export default function SettingsPage() {
   const router = useRouter()
   const { agents, sessions, connectedProviders } = useOpendoraContext()
   const { userName, setUserName } = useUserProfile()
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const settingsCards = [
     {
@@ -118,6 +133,47 @@ export default function SettingsPage() {
               />
               <p className="text-xs text-muted-foreground">
                 Agents will see <code className="font-mono">user: {userName || "your name"}</code> at the start of every message you send.
+              </p>
+            </div>
+          </div>
+
+          {/* Appearance */}
+          <div className="mb-8 max-w-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <SunIcon className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">Appearance</h2>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="theme">Theme</Label>
+              {mounted && (
+                <Select value={theme} onValueChange={setTheme}>
+                  <SelectTrigger id="theme">
+                    <SelectValue placeholder="Select theme" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">
+                      <div className="flex items-center gap-2">
+                        <SunIcon className="h-4 w-4" />
+                        <span>Light</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="dark">
+                      <div className="flex items-center gap-2">
+                        <MoonIcon className="h-4 w-4" />
+                        <span>Dark</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="system">
+                      <div className="flex items-center gap-2">
+                        <MonitorIcon className="h-4 w-4" />
+                        <span>System</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Select your preferred color scheme for the interface.
               </p>
             </div>
           </div>

@@ -274,6 +274,7 @@ export namespace Session {
     z
       .object({
         title: z.string().optional(),
+        directory: z.string().optional(),
         permission: Info.shape.permission,
         sessionType: Info.shape.sessionType,
         agentID: Info.shape.agentID,
@@ -296,7 +297,7 @@ export namespace Session {
         input?.path,
         input?.readPath,
       )
-      const directory = resolvedPath ?? cfg.instance?.directory ?? process.cwd()
+      const directory = input?.directory ?? resolvedPath ?? cfg.instance?.directory ?? process.cwd()
       return createNext({
         directory,
         title: input?.title,

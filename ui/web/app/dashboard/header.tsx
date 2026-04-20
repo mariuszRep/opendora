@@ -21,11 +21,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getAgentColor } from "@/lib/agent-colors"
-import { ModeToggle } from "@/components/mode-toggle"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { ChevronDownIcon, GalleryHorizontalIcon } from "lucide-react"
+import { ChevronDownIcon, GalleryHorizontalIcon, GlobeIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 
 function formatSessionTitle(session: { title?: string; time: { created: number } }): string {
@@ -39,7 +38,7 @@ function formatSessionTitle(session: { title?: string; time: { created: number }
 }
 
 export function Header() {
-  const { selectedAgent, selectAgent, selectedSession, agentSessions, selectSession, agents, status, isChatCentered, toggleChatLayout } =
+  const { selectedAgent, selectAgent, selectedSession, agentSessions, selectSession, agents, status, isChatCentered, toggleChatLayout, webPreviewOpen, toggleWebPreview } =
     useOpendoraContext()
 
   const [sessionOpen, setSessionOpen] = useState(false)
@@ -160,7 +159,15 @@ export function Header() {
           >
             <GalleryHorizontalIcon className="size-[1.2rem]" />
           </Button>
-          <ModeToggle />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleWebPreview}
+            title={webPreviewOpen ? "Close Web Preview" : "Open Web Preview"}
+            className={webPreviewOpen ? "bg-accent" : ""}
+          >
+            <GlobeIcon className="size-[1.2rem]" />
+          </Button>
         </div>
       </div>
     </header>
