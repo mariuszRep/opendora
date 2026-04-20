@@ -63,6 +63,7 @@ import { QuestionTool } from "@/components/questions/question-tool"
 import { PermissionTool } from "@/components/permissions/permission-tool"
 import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart } from "@/lib/opendora"
 import { useUserProfile } from "@/hooks/use-user-profile"
+import { ScheduleDialog } from "@/components/sessions/schedule-dialog"
 import { useVoiceSettings, formatHotkey } from "@/hooks/use-voice-settings"
 import { useTextToSpeech } from "@/hooks/use-text-to-speech"
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder"
@@ -90,6 +91,7 @@ const suggestions = [
 function getTextParts(parts: Part[]): TextPart[] {
   return parts.filter((p): p is TextPart => p.type === "text" && !p.synthetic && !p.hidden)
 }
+
 
 function getHiddenParts(parts: Part[]): TextPart[] {
   return parts.filter((p): p is TextPart => p.type === "text" && !!p.hidden)
@@ -188,6 +190,7 @@ export const Chatbot = () => {
   const {
     selectedSession,
     messages,
+    schedules,
     questionRequests,
     replyQuestion,
     rejectQuestion,
@@ -215,7 +218,7 @@ export const Chatbot = () => {
     setWebPreviewUrl,
   } = useOpendoraContext()
 
-  const { userName } = useUserProfile()
+  const { userName, userColor } = useUserProfile()
   const { settings } = useVoiceSettings()
   const { speak, playingId, isLoading: isTtsLoading, isEnabled: isTtsEnabled, error: ttsError } = useTextToSpeech()
 
@@ -229,6 +232,7 @@ export const Chatbot = () => {
 
   const [text, setText] = useState("")
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false)
+  const [openScheduleId, setOpenScheduleId] = useState<string | null>(null)
   const [selectedProviderID, setSelectedProviderID] = useState<string | null>(null)
   const [selectedModelID, setSelectedModelID] = useState<string | null>(null)
   const [questionViewModes, setQuestionViewModes] = useState<Record<string, "code" | "view">>({})
@@ -332,6 +336,9 @@ export const Chatbot = () => {
     return getAgentColor((agent as any)?.color).hex
   }, [agents, selectedAgent])
 
+  const userDotColor = useMemo(() => getAgentColor(userColor).hex, [userColor])
+
+
   const scrollToMessageIdRef = useRef<string | null>(null)
 
   const buildDashboardUrl = useCallback((sessionId: string, messageId?: string | null) => {
@@ -353,6 +360,11 @@ export const Chatbot = () => {
     const messageId = searchParams.get("message")
     if (!messageId) return
     scrollToMessageIdRef.current = messageId
+  }, [searchParams])
+
+  useEffect(() => {
+    const scheduleId = searchParams.get("openSchedule")
+    if (scheduleId) setOpenScheduleId(scheduleId)
   }, [searchParams])
 
   useEffect(() => {
@@ -609,6 +621,24 @@ export const Chatbot = () => {
               const msgDotColor = hasLinkedParentMessage
                 ? (parentAgent ? getAgentColor((parentAgent as any).color).hex : undefined)
                 : undefined
+              const msgScheduleId = info.role === "user"
+                ? (info as UserMessage).schedule_id
+                : info.role === "assistant"
+                  ? (info as AssistantMessage).schedule_id
+                  : undefined
+              const isSchedulerAssistant = info.role === "assistant" && (info as AssistantMessage).from?.kind === "scheduler"
+              // Fallback for messages created before schedule_id tracking: match by prompt text
+              // against schedules targeting this session.
+              const msgSchedule = msgScheduleId
+                ? schedules.find(s => s.id === msgScheduleId)
+                : info.role === "user"
+                  ? schedules.find(s => s.session_id === selectedSession?.id && s.prompt.trim() === content.trim())
+                  : isSchedulerAssistant
+                    ? schedules.find(s => s.session_id === selectedSession?.id)
+                    : undefined
+              const userRingColor = msgSchedule
+                ? getAgentColor(msgSchedule.color).hex
+                : msgDotColor ?? userDotColor
               const sessionAgentId = selectedSession?.agentID
               const assistantAuthorId = info.role === "assistant"
                 ? (info as AssistantMessage).from?.kind === "agent"
@@ -632,7 +662,10 @@ export const Chatbot = () => {
               const assistantContributionColor = assistantAuthor
                 ? getAgentColor((assistantAuthor as any).color).hex
                 : undefined
-              const assistantMessageColor = assistantContributionColor ?? agentDotColor
+              const schedulerColor = (isSchedulerAssistant && msgSchedule)
+                ? getAgentColor(msgSchedule.color).hex
+                : undefined
+              const assistantMessageColor = schedulerColor ?? assistantContributionColor ?? agentDotColor
               return (
                 <div key={info.id} id={`msg-${info.id}`} className={cn(hasTimeline && "w-full")}>
                 <MessageBranch defaultBranch={0}>
@@ -665,10 +698,21 @@ export const Chatbot = () => {
                       {info.role === "user" ? (
                         <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3">
                           <div className="relative self-stretch">
-                            <div
-                              className={cn("absolute left-1/2 top-[14px] size-2 -translate-x-1/2 rounded-full", !msgDotColor && "bg-muted-foreground/50")}
-                              style={msgDotColor ? { backgroundColor: msgDotColor } : undefined}
-                            />
+                            <button
+                              className="absolute left-1/2 top-[10px] size-4 -translate-x-1/2 rounded-full"
+                              style={{ outline: "none" }}
+                              title={msgSchedule ? `Scheduled: ${msgSchedule.cron_expression}` : undefined}
+                              onClick={msgSchedule ? () => setOpenScheduleId(msgSchedule.id) : undefined}
+                            >
+                              <div
+                                className="absolute inset-0 rounded-full border-2"
+                                style={{ borderColor: userRingColor }}
+                              />
+                              <div
+                                className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                                style={{ backgroundColor: userRingColor }}
+                              />
+                            </button>
                           </div>
                           <div className="flex flex-col gap-2">
                             <MessageContent className="!ml-0">
@@ -716,6 +760,16 @@ export const Chatbot = () => {
                                   <Link2Icon className="size-4" />
                                 </MessageAction>
                               )}
+                              {msgSchedule && (
+                                <MessageAction
+                                  label="Schedule"
+                                  onClick={() => setOpenScheduleId(msgSchedule.id)}
+                                  tooltip="View schedule settings"
+                                  variant="outline"
+                                >
+                                  <BellIcon className="size-4" />
+                                </MessageAction>
+                              )}
                               {getHiddenParts(parts).length > 0 && (
                                 <MessageAction
                                   label="Contract"
@@ -730,7 +784,7 @@ export const Chatbot = () => {
                                 </MessageAction>
                               )}
                               <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground whitespace-nowrap">
-                                user{userName ? `: ${userName}` : ""}
+                                {msgSchedule ? "scheduler" : "user"}{userName ? `: ${userName}` : ""}
                               </span>
                             </MessageActions>
                             {expandedContractParts[info.id] && getHiddenParts(parts).length > 0 && (
@@ -1151,10 +1205,13 @@ export const Chatbot = () => {
                               </MessageAction>
                             )}
                             <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground whitespace-nowrap">
-                              {(() => {
-                                const displayName = assistantAuthor?.name ?? assistantAgent?.name ?? assistantAuthorId ?? assistantAgentId
-                                return `agent${displayName ? `: ${displayName}` : ""}`
-                              })()}
+                              {isSchedulerAssistant
+                                ? `scheduler${userName ? `: ${userName}` : ""}`
+                                : (() => {
+                                    const displayName = assistantAuthor?.name ?? assistantAgent?.name ?? assistantAuthorId ?? assistantAgentId
+                                    return `agent${displayName ? `: ${displayName}` : ""}`
+                                  })()
+                              }
                             </span>
                           </MessageActions>
                         ) : null}
@@ -1316,6 +1373,12 @@ export const Chatbot = () => {
           )}
         </div>
       </div>
+
+      <ScheduleDialog
+        open={!!openScheduleId && schedules.some(s => s.id === openScheduleId)}
+        onOpenChange={(open) => { if (!open) setOpenScheduleId(null) }}
+        schedule={schedules.find(s => s.id === openScheduleId)}
+      />
     </div>
   )
 }

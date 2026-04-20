@@ -66,7 +66,8 @@ TWO MODES controlled by whether reply_to is provided:
      delegated session.
    - Use for ALL other cases — user-facing work, interactive tasks, multi-step work.
    - The delegated agent will see "Reply expected: silent" in their session context
-     and MUST use reply for any user-facing message.
+     and MUST use reply to report results or status back upstream.
+   - For live user input mid-task, the delegated agent uses question — not reply.
 
 ─────────────────────────────────────────
 WRITING THE DELEGATION PROMPT

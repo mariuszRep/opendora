@@ -16,6 +16,7 @@ import { opendora, type Schedule } from "@/lib/opendora"
 import { toast } from "sonner"
 import { Wrench, Pencil, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { AGENT_COLORS } from "@/lib/agent-colors"
 
 // ── Delegate params stored as JSON in prompt when action_type === "tool" ──
 interface DelegateParams {
@@ -202,12 +203,14 @@ export function ScheduleDialog({
   const [message, setMessage] = React.useState("")
   const [delegateParams, setDelegateParams] = React.useState<DelegateParams | null>(null)
   const [toolDialogOpen, setToolDialogOpen] = React.useState(false)
+  const [color, setColor] = React.useState("slate")
 
   // Populate from existing schedule
   React.useEffect(() => {
     if (!open) return
     if (schedule) {
       setCronExpr(schedule.cron_expression)
+      setColor(schedule.color ?? "slate")
       if (schedule.action_type === "tool") {
         setDelegateParams(parseDelegateParams(schedule.prompt))
         setMessage("")
@@ -219,6 +222,7 @@ export function ScheduleDialog({
       setCronExpr("0 9 * * 1")
       setMessage("")
       setDelegateParams(null)
+      setColor("slate")
     }
   }, [open, schedule])
 
@@ -240,6 +244,7 @@ export function ScheduleDialog({
         await opendora.schedule.update(schedule.id, {
           prompt, cron_expression: cronExpr, action_type,
           tool_name: delegateParams ? "delegate" : undefined,
+          color,
         })
         toast.success("Schedule updated!")
       } else {
@@ -248,6 +253,7 @@ export function ScheduleDialog({
           session_id: sessionIdProp,
           prompt, cron_expression: cronExpr, action_type,
           tool_name: delegateParams ? "delegate" : undefined,
+          color,
         })
         toast.success("Schedule created!")
       }
@@ -353,6 +359,27 @@ export function ScheduleDialog({
                   </Button>
                 </div>
               )}
+            </div>
+
+            {/* Color */}
+            <div className="flex flex-col gap-1.5">
+              <Label>Color</Label>
+              <div className="flex flex-wrap gap-2">
+                {AGENT_COLORS.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    title={c.label}
+                    onClick={() => setColor(c.id)}
+                    className="size-5 rounded-full transition-all"
+                    style={{
+                      backgroundColor: c.hex,
+                      outline: color === c.id ? `2px solid ${c.hex}` : undefined,
+                      outlineOffset: color === c.id ? "2px" : undefined,
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
 

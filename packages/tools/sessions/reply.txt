@@ -3,27 +3,39 @@ The message appears in that session and is VISIBLE to the user or agent there.
 
 reply is the mechanism that fulfills the return-path contract created by reply_to.
 When a delegating agent sets reply_to, they established a binding contract declaring
-where results and questions must surface. reply is how you honor that contract.
+where results and status must surface. reply is how you honor that contract.
+
+─────────────────────────────────────────
+WHAT reply IS FOR
+─────────────────────────────────────────
+
+reply is for reporting back upstream — not for interactive dialogue.
+
+Use reply when you have a result, summary, status update, or partial finding to
+surface into the upstream session. It posts a silent message there and does not
+block or trigger the recipient's LLM.
+
+Use reply for:
+- final results and requirement summaries
+- status updates and progress reports
+- partial findings worth surfacing
+- brief status when blocking or handing back
+
+Do NOT use reply to ask the user questions. If you need human input, use question.
+reply has no return path for the user's answer — it is a one-way post.
 
 ─────────────────────────────────────────
 HARD RULE — BINDING CONTRACT
 ─────────────────────────────────────────
 
 If your session context shows "Reply expected: silent" and "Reply to session ID: ses_xxx",
-a return-path contract exists. You MUST use reply for ANY user-facing message.
+a return-path contract exists. When your work is complete (or you have status to report),
+you MUST use reply to surface that output upstream.
 
 This is unconditional. There are no exceptions. No workarounds.
 
-The upstream agent (or user) is expecting your messages to appear in session ses_xxx.
-If you do not use reply, they will never see your work. Your session is invisible to
-them until you surface yourself with reply.
-
-User-facing messages include:
-- status updates and progress reports
-- clarifying questions
-- requirement-gathering questions
-- partial findings
-- final results
+The upstream agent (or user) is expecting your results to appear in session ses_xxx.
+If you do not use reply, they will never see your work.
 
 ─────────────────────────────────────────
 WHAT reply DOES
@@ -35,28 +47,11 @@ WHAT reply DOES
 - Surfaces your delegated session into the visible conversation
 
 ─────────────────────────────────────────
-INTERACTION PATTERN
-─────────────────────────────────────────
-
-When delegated to engage interactively with the requester:
-
-1. Do NOT start that interaction inside your delegated session.
-   The requester cannot see your session unless you surface yourself first.
-
-2. Use reply for your first user-facing message to surface into the upstream
-   visible conversation — then continue the interaction from there.
-
-3. If you need user input before you can proceed:
-   - Use reply to ask the question (this surfaces you and delivers the question upstream).
-   - Wait for the response.
-   - Do not wait silently inside your delegated session expecting the requester to arrive.
-
-─────────────────────────────────────────
 MUST NOT
 ─────────────────────────────────────────
 
-- Do NOT keep user-facing progress, questions, or results only inside your delegated session.
-- Do NOT wait for the requester to find your session — surface yourself with reply.
+- Do NOT use reply to ask the user for input — use question instead.
+- Do NOT keep results or status only inside your delegated session.
 - Do NOT assume the requester can see your session without a reply surfacing it.
 
 ─────────────────────────────────────────

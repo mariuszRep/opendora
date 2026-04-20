@@ -111,6 +111,7 @@ export namespace SessionPrompt {
     format: MessageV2.Format.optional(),
     system: z.string().optional(),
     variant: z.string().optional(),
+    schedule_id: z.string().optional(),
     parts: z.array(
       z.discriminatedUnion("type", [
         MessageV2.TextPart.omit({
@@ -1139,6 +1140,7 @@ export namespace SessionPrompt {
       system: input.system,
       format: input.format,
       variant,
+      ...(input.schedule_id ? { schedule_id: input.schedule_id } : {}),
     }
     using _3 = defer(() => InstructionPrompt.clear(info.id))
 

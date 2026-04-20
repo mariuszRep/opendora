@@ -19,6 +19,7 @@ import {
   type Provider,
   type QuestionAnswer,
   type QuestionRequest,
+  type Schedule,
   type Session,
   type SessionType,
 } from "@/lib/opendora"
@@ -105,6 +106,8 @@ export type UseOpendoraResult = {
   toggleWebPreview: () => void
   webPreviewUrl: string
   setWebPreviewUrl: (url: string) => void
+  schedules: Schedule[]
+  refreshSchedules: () => Promise<void>
 }
 
 export function useOpendora(): UseOpendoraResult {
@@ -131,6 +134,7 @@ export function useOpendora(): UseOpendoraResult {
   const [sessionTreeOpen, setSessionTreeOpen] = useState(false)
   const [webPreviewOpen, setWebPreviewOpen] = useState(false)
   const [webPreviewUrl, setWebPreviewUrl] = useState("")
+  const [schedules, setSchedules] = useState<Schedule[]>([])
   const [activeSessions, setActiveSessions] = useState<Set<string>>(new Set())
   const [defaultAgentId, setDefaultAgentId] = useState<string | null>(() => getStoredDefaultAgent())
   const [lastSessionByAgent, setLastSessionByAgent] = useState<Record<string, string>>(() => getStoredLastSessionByAgent())
@@ -184,6 +188,11 @@ export function useOpendora(): UseOpendoraResult {
     setDefaultModels(providerData.default)
   }, [])
 
+  const refreshSchedules = useCallback(async () => {
+    const data = await opendora.schedule.list()
+    setSchedules(data)
+  }, [])
+
   useEffect(() => {
     selectedSessionRef.current = selectedSession
   }, [selectedSession])
@@ -220,12 +229,13 @@ export function useOpendora(): UseOpendoraResult {
 
     async function init() {
       try {
-        const [providerData, agentData, sessionData, questionData, configData] = await Promise.all([
+        const [providerData, agentData, sessionData, questionData, configData, scheduleData] = await Promise.all([
           opendora.provider.list(),
           opendora.agent.list(),
           opendora.session.list(),
           opendora.question.list(),
           opendora.config.get(),
+          opendora.schedule.list(),
         ])
         if (cancelled) return
 
@@ -237,6 +247,8 @@ export function useOpendora(): UseOpendoraResult {
         if (configData.model_filters) {
           setModelFilters(configData.model_filters)
         }
+
+        setSchedules(scheduleData)
 
         // Attach _id (agent slug) so CRUD can match by id rather than display name
         // allAgents includes all agents (visible and hidden)
@@ -528,6 +540,15 @@ export function useOpendora(): UseOpendoraResult {
               ...prev,
               [sessionID]: existing.filter((item) => item.id !== requestID),
             }
+          })
+          break
+        }
+        case "provider.auth.expired": {
+          const { providerName } = (event as { type: string; properties: { providerID: string; providerName: string } }).properties
+          toast.error(`${providerName} authentication expired`, {
+            description: "Go to Settings → Providers to re-authenticate.",
+            duration: 10000,
+            action: { label: "Settings", onClick: () => router.push("/dashboard/settings/providers") },
           })
           break
         }
@@ -840,5 +861,7 @@ export function useOpendora(): UseOpendoraResult {
     toggleWebPreview,
     webPreviewUrl,
     setWebPreviewUrl,
+    schedules,
+    refreshSchedules,
   }
 }

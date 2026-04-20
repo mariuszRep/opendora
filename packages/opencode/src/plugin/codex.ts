@@ -5,6 +5,8 @@ import { Auth, OAUTH_DUMMY_KEY } from "../auth"
 import os from "os"
 import { Provider } from "@opendora/provider/provider"
 import { ProviderTransform } from "@opendora/provider/transform"
+import { Bus } from "@/bus"
+import { BusEvent } from "@/bus/bus-event"
 
 const log = Log.create({ service: "plugin.codex" })
 
@@ -138,6 +140,11 @@ async function fetchCodexCatalog(accessToken: string, accountId?: string): Promi
     headers,
     signal: AbortSignal.timeout(10_000),
   })
+  if (response.status === 401 || response.status === 403) {
+    const err = new Error(`Codex models request failed: ${response.status}`) as Error & { authExpired: true }
+    err.authExpired = true
+    throw err
+  }
   if (!response.ok) {
     throw new Error(`Codex models request failed: ${response.status}`)
   }
@@ -605,10 +612,14 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
           } else {
             log.warn("codex models endpoint returned no visible codex models")
           }
-        } catch (error) {
-          log.warn("failed to refresh codex models; falling back to bundled models", {
-            error,
-          })
+        } catch (error: any) {
+          log.warn("failed to refresh codex models; falling back to bundled models", { error })
+          if (error?.authExpired) {
+            Bus.publish(BusEvent.ProviderAuthExpired, {
+              providerID: "openai-codex",
+              providerName: "OpenAI Codex",
+            }).catch(() => {})
+          }
           for (const modelId of Object.keys(provider.models)) {
             if (!modelId.includes("codex")) delete provider.models[modelId]
           }

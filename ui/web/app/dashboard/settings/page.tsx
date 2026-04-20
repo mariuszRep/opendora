@@ -22,13 +22,14 @@ import {
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { useUserProfile } from "@/hooks/use-user-profile"
 import { useTheme } from "next-themes"
-import { BotIcon, MessageSquareIcon, SettingsIcon, ChevronRightIcon, PlugIcon, UserIcon, Volume2Icon, CalendarClockIcon, WrenchIcon, SunIcon, MoonIcon, MonitorIcon } from "lucide-react"
+import { BotIcon, MessageSquareIcon, SettingsIcon, ChevronRightIcon, PlugIcon, UserIcon, Volume2Icon, ClockPlusIcon, WrenchIcon, SunIcon, MoonIcon, MonitorIcon } from "lucide-react"
 import { useEffect, useState } from "react"
+import { AGENT_COLORS } from "@/lib/agent-colors"
 
 export default function SettingsPage() {
   const router = useRouter()
   const { agents, sessions, connectedProviders } = useOpendoraContext()
-  const { userName, setUserName } = useUserProfile()
+  const { userName, setUserName, userColor, setUserColor } = useUserProfile()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
@@ -80,7 +81,7 @@ export default function SettingsPage() {
     {
       title: "Schedules",
       description: "Manage background delegations",
-      icon: CalendarClockIcon,
+      icon: ClockPlusIcon,
       href: "/dashboard/settings/schedules",
       count: null,
       countLabel: null,
@@ -123,17 +124,38 @@ export default function SettingsPage() {
               <UserIcon className="h-5 w-5 text-muted-foreground" />
               <h2 className="text-lg font-semibold">Profile</h2>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="user-name">Your name</Label>
-              <Input
-                id="user-name"
-                placeholder="e.g. Alex"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Agents will see <code className="font-mono">user: {userName || "your name"}</code> at the start of every message you send.
-              </p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="user-name">Your name</Label>
+                <Input
+                  id="user-name"
+                  placeholder="e.g. Alex"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Agents will see <code className="font-mono">user: {userName || "your name"}</code> at the start of every message you send.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Your color</Label>
+                <div className="flex flex-wrap gap-2">
+                  {AGENT_COLORS.map((c) => (
+                    <button
+                      key={c.id}
+                      title={c.label}
+                      onClick={() => setUserColor(c.id)}
+                      className="size-6 rounded-full transition-all"
+                      style={{
+                        backgroundColor: c.hex,
+                        outline: userColor === c.id ? `2px solid ${c.hex}` : undefined,
+                        outlineOffset: userColor === c.id ? "2px" : undefined,
+                      }}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">Used as the ring color on your messages.</p>
+              </div>
             </div>
           </div>
 

@@ -646,11 +646,12 @@ export namespace Server {
           id: Identifier.ascending("message"),
           sessionID: sourceSessionID,
           role: "assistant",
-          from: { kind: "agent", id: resolvedAgentID ?? "schedule" },
+          from: { kind: "scheduler", id: resolvedAgentID ?? "schedule" },
           agent: resolvedAgentID ?? "schedule",
           mode: resolvedAgentID ?? "schedule",
           modelID: "schedule",
           providerID: "schedule",
+          schedule_id: schedule.id,
           cost: 0,
           tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
           path: { cwd, root: cwd },
@@ -731,10 +732,19 @@ export namespace Server {
         log.warn("schedule has no session or agent, skipping", { id: schedule.id })
         return
       }
-      await SessionPrompt.prompt({
-        sessionID,
-        parts: [{ type: "text", text: schedule.prompt }],
-      })
+      try {
+        await SessionPrompt.prompt({
+          sessionID,
+          schedule_id: schedule.id,
+          parts: [{ type: "text", text: schedule.prompt }],
+        })
+      } catch (err: any) {
+        if (err?.message?.includes("already running")) {
+          log.warn("schedule skipped: session busy", { id: schedule.id, sessionID })
+          return
+        }
+        throw err
+      }
     }
     Schedule.setDispatch(_scheduleDispatch)
 

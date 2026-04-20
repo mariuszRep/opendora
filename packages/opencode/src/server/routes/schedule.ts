@@ -46,6 +46,7 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
       cron_expression: z.string(),
       action_type: z.enum(["message", "tool"]).optional(),
       tool_name: z.string().optional(),
+      color: z.string().optional(),
     })),
     async (c) => {
       const input = c.req.valid("json")
@@ -60,6 +61,7 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
         timezone: "UTC",
         action_type: input.action_type ?? "message" as const,
         tool_name: input.tool_name || null,
+        color: input.color || null,
         time_created: Date.now(),
         time_updated: Date.now()
       }
@@ -85,18 +87,20 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
       prompt: z.string().optional(),
       action_type: z.enum(["message", "tool"]).optional(),
       tool_name: z.string().optional(),
+      color: z.string().optional(),
     })),
     async (c) => {
       const id = c.req.valid("param").id
       const updates = c.req.valid("json")
       const db = Database.Client()
-      
+
       const setBlock: any = { time_updated: Date.now() }
       if (updates.is_active !== undefined) setBlock.is_active = updates.is_active
       if (updates.cron_expression) setBlock.cron_expression = updates.cron_expression
       if (updates.prompt) setBlock.prompt = updates.prompt
       if (updates.action_type) setBlock.action_type = updates.action_type
       if (updates.tool_name !== undefined) setBlock.tool_name = updates.tool_name || null
+      if (updates.color !== undefined) setBlock.color = updates.color || null
 
       const result = await db.update(ScheduleTable).set(setBlock).where(eq(ScheduleTable.id, id)).returning().get()
       if (!result) return c.json({ error: "not found" }, 404)

@@ -51,7 +51,7 @@ type SystemError = Error & { code?: string; syscall?: string }
 export namespace MessageV2 {
   export const Actor = z
     .object({
-      kind: z.enum(["user", "agent", "service"]),
+      kind: z.enum(["user", "agent", "service", "scheduler"]),
       id: z.string(),
     })
     .meta({
@@ -284,7 +284,8 @@ export namespace MessageV2 {
   export const StepFinishPart = PartBase.extend({
     type: z.literal("step-finish"),
     reason: z.string(),
-    snapshot: z.string().optional(),
+    summary: z.boolean().optional(),
+    schedule_id: z.string().optional(),
     cost: z.number(),
     tokens: z.object({
       total: z.number().optional(),
@@ -407,6 +408,7 @@ export namespace MessageV2 {
     system: z.string().optional(),
     tools: z.record(z.string(), z.boolean()).optional(),
     variant: z.string().optional(),
+    schedule_id: z.string().optional(),
   }).meta({
     ref: "UserMessage",
   })
@@ -463,6 +465,7 @@ export namespace MessageV2 {
       root: z.string(),
     }),
     summary: z.boolean().optional(),
+    schedule_id: z.string().optional(),
     cost: z.number(),
     tokens: z.object({
       total: z.number().optional(),

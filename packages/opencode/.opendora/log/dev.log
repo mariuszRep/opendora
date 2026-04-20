@@ -1,0 +1,28 @@
+INFO  2026-04-20T15:23:16 +765ms service=default version=local args=["auth","login"] opencode
+INFO  2026-04-20T15:23:16 +1ms service=db path=/home/mariu/projects/opendora/packages/opencode/.opendora/storage/opendora.db opening database
+INFO  2026-04-20T15:23:16 +17ms service=db count=13 mode=dev applying migrations
+INFO  2026-04-20T15:23:16 +28ms service=json-migration storage directory does not exist, skipping migration
+INFO  2026-04-20T15:23:16 +0ms service=default directory=/home/mariu/projects/opendora/packages/opencode creating instance
+INFO  2026-04-20T15:23:16 +1ms service=project directory=/home/mariu/projects/opendora/packages/opencode fromDirectory
+INFO  2026-04-20T15:23:16 +182ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/config.json loading
+INFO  2026-04-20T15:23:16 +1ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opencode.json loading
+INFO  2026-04-20T15:23:16 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opencode.jsonc loading
+DEBUG 2026-04-20T15:23:16 +4ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-20T15:23:16 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-20T15:23:16 +0ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-20T15:23:16 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+DEBUG 2026-04-20T15:23:16 +42ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.jsonc
+INFO  2026-04-20T15:23:16 +1ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.jsonc loading
+DEBUG 2026-04-20T15:23:16 +0ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.json
+INFO  2026-04-20T15:23:16 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.json loading
+INFO  2026-04-20T15:23:16 +119ms service=plugin name=CodexAuthPlugin loading internal plugin
+INFO  2026-04-20T15:23:16 +1ms service=plugin name=CopilotAuthPlugin loading internal plugin
+INFO  2026-04-20T15:23:16 +0ms service=plugin name=gitlabAuthPlugin loading internal plugin
+INFO  2026-04-20T15:23:16 +0ms service=plugin name=googleOAuthPlugin loading internal plugin
+INFO  2026-04-20T15:23:16 +0ms service=plugin path=opencode-anthropic-auth@0.0.13 loading plugin
+INFO  2026-04-20T15:23:16 +15ms service=bun pkg=opencode-anthropic-auth version=0.0.13 installing package using Bun's default registry resolution
+INFO  2026-04-20T15:23:16 +1ms service=bun cmd=["/home/mariu/.bun/bin/bun","add","--force","--exact","--cwd","/home/mariu/projects/opendora/packages/opencode/.opendora/cache","opencode-anthropic-auth@0.0.13"] cwd=/home/mariu/projects/opendora/packages/opencode/.opendora/cache running
+WARN  2026-04-20T15:23:17 +563ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
+INFO  2026-04-20T15:23:17 +49ms service=bun code=0 stdout= stderr= done
+ERROR 2026-04-20T15:23:17 +76ms service=default e=EPIPE: broken pipe, write exception
+WARN  2026-04-20T15:23:17 +269ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached

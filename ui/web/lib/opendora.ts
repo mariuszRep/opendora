@@ -79,13 +79,15 @@ export type UserMessage = {
   parentMessageID?: string
   /** ID of the session that delegated this prompt (derived from parentMessageID's session) */
   parentSessionID?: string
+  /** ID of the schedule that created this message, if any */
+  schedule_id?: string
 }
 
 export type AssistantMessage = {
   id: string
   sessionID: string
   role: "assistant"
-  from?: { kind: "user" | "agent" | "service"; id: string }
+  from?: { kind: "user" | "agent" | "service" | "scheduler"; id: string }
   time: { created: number; completed?: number }
   providerID: string
   modelID: string
@@ -96,6 +98,8 @@ export type AssistantMessage = {
   parentMessageID?: string
   /** ID of the session whose tool call this message is replying to */
   parentSessionID?: string
+  /** ID of the schedule that created this message, if any */
+  schedule_id?: string
 }
 
 export type Message = UserMessage | AssistantMessage
@@ -176,6 +180,7 @@ export type Schedule = {
   last_executed?: number
   time_created: number
   time_updated: number
+  color?: string
 }
 
 export type QuestionRequest = {
@@ -415,9 +420,9 @@ export const opendora = {
   },
   schedule: {
     list: () => req<Schedule[]>("/schedule"),
-    create: (input: { agent_id?: string; prompt: string; cron_expression: string; session_id?: string; action_type?: "message" | "tool"; tool_name?: string }) =>
+    create: (input: { agent_id?: string; prompt: string; cron_expression: string; session_id?: string; action_type?: "message" | "tool"; tool_name?: string; color?: string }) =>
       req<Schedule>("/schedule", { method: "POST", body: JSON.stringify(input) }),
-    update: (id: string, input: { is_active?: boolean; cron_expression?: string; prompt?: string; action_type?: "message" | "tool"; tool_name?: string }) =>
+    update: (id: string, input: { is_active?: boolean; cron_expression?: string; prompt?: string; action_type?: "message" | "tool"; tool_name?: string; color?: string }) =>
       req<Schedule>(`/schedule/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
     remove: (id: string) => req<boolean>(`/schedule/${id}`, { method: "DELETE" }),
     run: (id: string) => req<boolean>(`/schedule/${id}/run`, { method: "POST" }),
