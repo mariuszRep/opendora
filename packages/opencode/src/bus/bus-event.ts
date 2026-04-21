@@ -3,11 +3,6 @@ import type { ZodType } from "zod"
 import { Log } from "../util/log"
 
 export namespace BusEvent {
-  export const ProviderAuthExpired = define(
-    "provider.auth.expired",
-    z.object({ providerID: z.string(), providerName: z.string() }),
-  )
-
   const log = Log.create({ service: "event" })
 
   export type Definition = ReturnType<typeof define>
@@ -22,6 +17,11 @@ export namespace BusEvent {
     registry.set(type, result)
     return result
   }
+
+  export const ProviderAuthExpired = define(
+    "provider.auth.expired",
+    z.object({ providerID: z.string(), providerName: z.string() }),
+  )
 
   export function payloads() {
     return z

@@ -38,7 +38,7 @@ function formatSessionTitle(session: { title?: string; time: { created: number }
 }
 
 export function Header() {
-  const { selectedAgent, selectAgent, selectedSession, agentSessions, selectSession, agents, status, isChatCentered, toggleChatLayout, webPreviewOpen, toggleWebPreview } =
+  const { selectedAgent, selectAgent, selectedSession, agentSessions, selectSession, agents, status } =
     useOpendoraContext()
 
   const [sessionOpen, setSessionOpen] = useState(false)
@@ -149,26 +149,6 @@ export function Header() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-
-        <div className="ml-auto flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleChatLayout}
-            title={isChatCentered ? "Stretched View" : "Centered View"}
-          >
-            <GalleryHorizontalIcon className="size-[1.2rem]" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleWebPreview}
-            title={webPreviewOpen ? "Close Web Preview" : "Open Web Preview"}
-            className={webPreviewOpen ? "bg-accent" : ""}
-          >
-            <GlobeIcon className="size-[1.2rem]" />
-          </Button>
-        </div>
       </div>
     </header>
   )

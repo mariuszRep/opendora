@@ -95,6 +95,11 @@
       "id": "scheduler",
       "name": "Scheduler",
       "mode": "worker"
+    },
+    {
+      "id": "web-researcher",
+      "name": "Weber",
+      "mode": "worker"
     }
   ]
 }

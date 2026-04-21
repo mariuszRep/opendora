@@ -1,0 +1,23 @@
+{
+  "name": "Weber",
+  "description": "General-purpose web research specialist for discovery, source verification, and concise synthesis from current web information.",
+  "mode": "worker",
+  "model": {
+    "modelID": "gpt-5.4",
+    "providerID": "openai-codex"
+  },
+  "temperature": 0.3,
+  "steps": 60,
+  "color": "#0F766E",
+  "tools": [
+    "delegate",
+    "websearch",
+    "webfetch",
+    "question",
+    "reply",
+    "todowrite"
+  ],
+  "skills": [
+    "ai-news-digest"
+  ]
+}

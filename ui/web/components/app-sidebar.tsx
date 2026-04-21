@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/utils"
 import type { Session, SessionType } from "@/lib/opendora"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BellIcon, BotIcon, FolderTreeIcon, MessageSquareIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, NetworkIcon } from "lucide-react"
+import { BellIcon, BotIcon, FolderTreeIcon, MessageSquareIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, NetworkIcon, GalleryHorizontalIcon, GlobeIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type React from "react"
 import { useState } from "react"
@@ -60,6 +60,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     toggleFileTree,
     sessionTreeOpen,
     toggleSessionTree,
+    isChatCentered,
+    toggleChatLayout,
+    webPreviewOpen,
+    toggleWebPreview,
   } = useOpendoraContext()
 
   const visibleAgents = agents.filter((a) => !a.hidden)
@@ -428,6 +432,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               >
                 <NetworkIcon className="size-4 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">Session Tree</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={toggleChatLayout}
+                tooltip={isChatCentered ? "Stretched View" : "Centered View"}
+                isActive={isChatCentered}
+              >
+                <GalleryHorizontalIcon className="size-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden">Layout</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={toggleWebPreview}
+                tooltip={webPreviewOpen ? "Close Web Preview" : "Open Web Preview"}
+                isActive={webPreviewOpen}
+              >
+                <GlobeIcon className="size-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden">Web Preview</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
