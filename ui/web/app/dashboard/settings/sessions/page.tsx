@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Table,
   TableBody,
@@ -13,9 +14,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { MessageSquareIcon, SearchIcon, CalendarIcon } from "lucide-react"
+import { opendora } from "@/lib/opendora"
+import { MessageSquareIcon, SearchIcon, CalendarIcon, Trash2Icon, Loader2Icon } from "lucide-react"
 
 function formatSessionTitle(session: { title?: string; time: { created: number } }): string {
   if (session.title && !session.title.startsWith("New session")) return session.title
@@ -31,6 +43,10 @@ export default function SettingsSessionsPage() {
   const router = useRouter()
   const { sessions, agents, selectSession } = useOpendoraContext()
   const [searchQuery, setSearchQuery] = useState("")
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const filteredSessions = useMemo(() => {
     if (!searchQuery) return sessions
@@ -52,6 +68,59 @@ export default function SettingsSessionsPage() {
     return agent?.color || "#6366f1"
   }
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const allVisibleSelected =
+    filteredSessions.length > 0 &&
+    filteredSessions.every((s) => s.id && selectedIds.has(s.id))
+  const someVisibleSelected =
+    filteredSessions.some((s) => s.id && selectedIds.has(s.id)) && !allVisibleSelected
+
+  const toggleSelectAll = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (allVisibleSelected) {
+        for (const s of filteredSessions) if (s.id) next.delete(s.id)
+      } else {
+        for (const s of filteredSessions) if (s.id) next.add(s.id)
+      }
+      return next
+    })
+  }
+
+  async function handleBulkDelete() {
+    setDeleting(true)
+    setDeleteError(null)
+    const ids = Array.from(selectedIds)
+    const failed: string[] = []
+    await Promise.all(
+      ids.map(async (id) => {
+        try {
+          await opendora.session.delete(id)
+        } catch {
+          failed.push(id)
+        }
+      }),
+    )
+    setDeleting(false)
+    if (failed.length > 0) {
+      setDeleteError(`Failed to delete ${failed.length} session(s)`)
+      setSelectedIds(new Set(failed))
+      setShowDeleteConfirm(false)
+      return
+    }
+    setSelectedIds(new Set())
+    setShowDeleteConfirm(false)
+    window.location.reload()
+  }
+
   return (
     <SettingsPageLayout title="Sessions">
       <div className="mb-6">
@@ -61,9 +130,9 @@ export default function SettingsSessionsPage() {
         </p>
       </div>
 
-          {/* Search */}
-          <div className="mb-6">
-            <div className="relative max-w-md">
+          {/* Search + bulk actions */}
+          <div className="mb-6 flex items-center gap-3">
+            <div className="relative max-w-md flex-1">
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search sessions by title or agent..."
@@ -72,7 +141,21 @@ export default function SettingsSessionsPage() {
                 className="pl-9"
               />
             </div>
+            {selectedIds.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={deleting}
+              >
+                <Trash2Icon className="mr-1.5 size-3.5" />
+                Delete {selectedIds.size} selected
+              </Button>
+            )}
           </div>
+          {deleteError && (
+            <div className="mb-4 text-sm text-destructive">{deleteError}</div>
+          )}
 
           {/* Sessions Table */}
           {filteredSessions.length === 0 ? (
@@ -92,6 +175,13 @@ export default function SettingsSessionsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={allVisibleSelected ? true : someVisibleSelected ? "indeterminate" : false}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
                     <TableHead className="w-12"></TableHead>
                     <TableHead>Title</TableHead>
                     <TableHead>Agent</TableHead>
@@ -108,7 +198,14 @@ export default function SettingsSessionsPage() {
                     const createdDate = new Date(session.time.created)
                     
                     return (
-                      <TableRow key={session.id} className="hover:bg-muted/50">
+                      <TableRow key={session.id} className="hover:bg-muted/50" data-state={session.id && selectedIds.has(session.id) ? "selected" : undefined}>
+                        <TableCell>
+                          <Checkbox
+                            checked={session.id ? selectedIds.has(session.id) : false}
+                            onCheckedChange={() => session.id && toggleSelect(session.id)}
+                            aria-label={`Select ${formatSessionTitle(session)}`}
+                          />
+                        </TableCell>
                         <TableCell>
                           <MessageSquareIcon className="h-4 w-4 text-muted-foreground" />
                         </TableCell>
@@ -176,8 +273,32 @@ export default function SettingsSessionsPage() {
       {filteredSessions.length > 0 && (
         <div className="mt-4 text-sm text-muted-foreground">
           Showing {filteredSessions.length} of {sessions.length} sessions
+          {selectedIds.size > 0 && ` • ${selectedIds.size} selected`}
         </div>
       )}
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} session(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the selected sessions and all their messages.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleBulkDelete() }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2Icon className="mr-1.5 size-3.5 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SettingsPageLayout>
   )
 }
