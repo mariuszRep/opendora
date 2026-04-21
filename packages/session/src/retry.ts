@@ -73,13 +73,14 @@ function isCloudCodeDomain(domain: string): boolean {
 /**
  * Checks if this is a terminal (non-retryable) quota error from the CloudCode API.
  * QUOTA_EXHAUSTED means a hard limit (daily/total), not a per-minute rate limit.
+ * MODEL_CAPACITY_EXHAUSTED is a server-side fleet capacity signal — retrying won't help.
  */
 export function isTerminalQuotaError(responseBody: string | undefined): boolean {
   const details = parseGoogleErrorDetails(responseBody)
   if (!details) return false
   const errorInfo = details.find((d): d is ErrorInfoDetail => d["@type"] === GOOGLE_RPC_ERROR_INFO)
   if (!errorInfo?.domain || !isCloudCodeDomain(errorInfo.domain)) return false
-  return errorInfo.reason === "QUOTA_EXHAUSTED"
+  return errorInfo.reason === "QUOTA_EXHAUSTED" || errorInfo.reason === "MODEL_CAPACITY_EXHAUSTED"
 }
 
 export namespace SessionRetry {

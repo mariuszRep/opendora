@@ -25,9 +25,9 @@ async function generateScheduleName(prompt: string): Promise<string | null> {
 
     const model = await Provider.getModel(providerID, modelID)
 
-    const fakeSessionID = Identifier.ascending("schedule-title")
+    const fakeSessionID = Identifier.ascending("session")
     const fakeUser: any = {
-      id: Identifier.ascending("msg"),
+      id: Identifier.ascending("message"),
       sessionID: fakeSessionID,
       role: "user",
       time: { created: Date.now() },
