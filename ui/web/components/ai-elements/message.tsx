@@ -378,6 +378,27 @@ const messageResponseComponents = {
     isValidElement(children)
       ? cloneElement(children, { "data-block": "true" })
       : children,
+  a: ({
+    children,
+    className,
+    href,
+    node: _node,
+    ...props
+  }: ComponentProps<"a"> & { node?: unknown }) => (
+    <a
+      className={cn(
+        "font-medium text-primary underline underline-offset-4",
+        className
+      )}
+      data-streamdown="link"
+      href={href}
+      rel="noreferrer"
+      target="_blank"
+      {...props}
+    >
+      {children}
+    </a>
+  ),
 };
 
 export const MessageResponse = memo(

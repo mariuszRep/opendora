@@ -106,6 +106,11 @@ export type UseOpendoraResult = {
   toggleWebPreview: () => void
   webPreviewUrl: string
   setWebPreviewUrl: (url: string) => void
+  filePreviewOpen: boolean
+  filePreviewPath: string
+  filePreviewDisplay: string
+  openFilePreview: (path: string, displayPath?: string) => void
+  closeFilePreview: () => void
   schedules: Schedule[]
   refreshSchedules: () => Promise<void>
 }
@@ -134,6 +139,9 @@ export function useOpendora(): UseOpendoraResult {
   const [sessionTreeOpen, setSessionTreeOpen] = useState(false)
   const [webPreviewOpen, setWebPreviewOpen] = useState(false)
   const [webPreviewUrl, setWebPreviewUrl] = useState("")
+  const [filePreviewOpen, setFilePreviewOpen] = useState(false)
+  const [filePreviewPath, setFilePreviewPath] = useState("")
+  const [filePreviewDisplay, setFilePreviewDisplay] = useState("")
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [activeSessions, setActiveSessions] = useState<Set<string>>(new Set())
   const [defaultAgentId, setDefaultAgentId] = useState<string | null>(() => getStoredDefaultAgent())
@@ -797,6 +805,22 @@ export function useOpendora(): UseOpendoraResult {
     setWebPreviewOpen((prev) => !prev)
   }, [])
 
+  const openFilePreview = useCallback((path: string, displayPath?: string) => {
+    // `path` is passed to the backend /file/content API.
+    // The backend does `path.join(Instance.directory, path)` which does NOT reset
+    // on absolute segments, so callers should pass a path relative to the project
+    // directory (e.g. FileNode.path) rather than FileNode.absolute.
+    setFilePreviewPath(path)
+    setFilePreviewDisplay(displayPath ?? path)
+    setFilePreviewOpen(true)
+    // Mutually exclusive with web preview — the right-side slot is shared.
+    setWebPreviewOpen(false)
+  }, [])
+
+  const closeFilePreview = useCallback(() => {
+    setFilePreviewOpen(false)
+  }, [])
+
   const setModelFilter = useCallback(async (providerID: string, filter: "all" | "free" | "none") => {
     setModelFilters((prev) => {
       const next = { ...prev, [providerID]: filter }
@@ -861,6 +885,11 @@ export function useOpendora(): UseOpendoraResult {
     toggleWebPreview,
     webPreviewUrl,
     setWebPreviewUrl,
+    filePreviewOpen,
+    filePreviewPath,
+    filePreviewDisplay,
+    openFilePreview,
+    closeFilePreview,
     schedules,
     refreshSchedules,
   }

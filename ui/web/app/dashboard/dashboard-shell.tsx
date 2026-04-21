@@ -6,7 +6,6 @@ import { FileTreePanel } from "@/components/file-tree/file-tree-panel"
 import { SessionTreePanel } from "@/components/sessions/session-tree-panel"
 import type { FileNode } from "@/lib/opendora"
 import { sessionOwnPaths, agentPaths, mergePaths } from "@/lib/paths"
-import { toast } from "sonner"
 import type { ReactNode } from "react"
 import { ChevronDownIcon, RefreshCwIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -39,7 +38,7 @@ const KIND_BADGE: Record<PathKind, { label: string; className: string }> = {
 }
 
 export function DashboardShell({ children }: DashboardShellProps) {
-  const { fileTreeOpen, sessionTreeOpen, selectedSession, agents, selectedAgent, activeSessions, selectSession } = useOpendoraContext()
+  const { fileTreeOpen, sessionTreeOpen, selectedSession, agents, selectedAgent, activeSessions, selectSession, openFilePreview } = useOpendoraContext()
 
   const currentAgent = agents.find((a) => a._id === selectedAgent)
 
@@ -73,10 +72,11 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const active = pathOptions[activeIdx]
 
   const handleFileClick = (node: FileNode) => {
-    navigator.clipboard
-      .writeText(node.absolute)
-      .then(() => toast.success(`Copied: ${node.name}`))
-      .catch(() => toast.info(node.absolute))
+    if (node.type === "file") {
+      // node.path is relative to Instance.directory (required by /file/content);
+      // node.absolute is shown in the preview header for the user.
+      openFilePreview(node.path, node.absolute)
+    }
   }
 
   return (

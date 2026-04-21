@@ -9,9 +9,19 @@ import {
   WebPreviewNavigation,
   WebPreviewUrl,
 } from "@/components/ai-elements/web-preview"
+import { FilePreview } from "@/components/ai-elements/file-preview"
 
 export default function Page() {
-  const { webPreviewOpen, webPreviewUrl } = useOpendoraContext()
+  const {
+    webPreviewOpen,
+    webPreviewUrl,
+    filePreviewOpen,
+    filePreviewPath,
+    filePreviewDisplay,
+    closeFilePreview,
+  } = useOpendoraContext()
+
+  const sidePanelOpen = webPreviewOpen || filePreviewOpen
 
   return (
     <>
@@ -22,16 +32,25 @@ export default function Page() {
           <Chatbot />
         </div>
 
-        {webPreviewOpen && (
+        {sidePanelOpen && (
           <>
             <div className="w-px bg-border shrink-0" />
             <div className="flex flex-col min-h-0 overflow-hidden w-1/2 shrink-0 bg-background">
-              <WebPreview key={webPreviewUrl} defaultUrl={webPreviewUrl}>
-                <WebPreviewNavigation>
-                  <WebPreviewUrl />
-                </WebPreviewNavigation>
-                <WebPreviewBody />
-              </WebPreview>
+              {filePreviewOpen ? (
+                <FilePreview
+                  key={filePreviewPath}
+                  path={filePreviewPath}
+                  displayPath={filePreviewDisplay}
+                  onClose={closeFilePreview}
+                />
+              ) : (
+                <WebPreview key={webPreviewUrl} defaultUrl={webPreviewUrl}>
+                  <WebPreviewNavigation>
+                    <WebPreviewUrl />
+                  </WebPreviewNavigation>
+                  <WebPreviewBody />
+                </WebPreview>
+              )}
             </div>
           </>
         )}
