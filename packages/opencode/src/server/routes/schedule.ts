@@ -8,29 +8,48 @@ import { eq } from "drizzle-orm"
 import { ulid } from "ulid"
 import { Agent } from "../../agent"
 import { Provider } from "@opendora/provider/provider"
-import { generateText } from "ai"
+import { LLM } from "@opendora/session/llm"
+import { Log } from "../../util/log"
+import { Identifier } from "@opendora/util/id"
+
+const log = Log.create({ service: "schedule-name" })
 
 async function generateScheduleName(prompt: string): Promise<string | null> {
   try {
     const titleAgent = await Agent.get("title")
-    if (!titleAgent) return null
+    if (!titleAgent) { log.warn("title agent not found"); return null }
 
     const { providerID, modelID } = titleAgent.model
       ? { providerID: titleAgent.model.providerID, modelID: titleAgent.model.modelID }
       : await Provider.defaultModel()
 
-    const languageModel = await Provider.getLanguage({ providerID, modelID } as any)
-    if (!languageModel) return null
+    const model = await Provider.getModel(providerID, modelID)
 
-    const system = titleAgent.prompt ?? ""
+    const fakeSessionID = Identifier.ascending("schedule-title")
+    const fakeUser: any = {
+      id: Identifier.ascending("msg"),
+      sessionID: fakeSessionID,
+      role: "user",
+      time: { created: Date.now() },
+      agent: titleAgent.name,
+      model: { providerID, modelID },
+    }
 
-    const { text } = await generateText({
-      model: languageModel,
-      system,
+    const result = await LLM.stream({
+      agent: titleAgent as any,
+      user: fakeUser,
+      system: [],
+      small: true,
+      tools: {},
+      model,
+      abort: new AbortController().signal,
+      sessionID: fakeSessionID,
+      retries: 1,
       messages: [
-        { role: "user", content: `Generate a short title (3-7 words) for a scheduled task with this prompt:\n\n${prompt}` },
+        { role: "user", content: `Generate a short title (3-7 words) for this scheduled task prompt:\n\n${prompt}` },
       ],
     })
+    const text = await result.text
     if (!text) return null
     const cleaned = text
       .replace(/<think>[\s\S]*?<\/think>\s*/g, "")
@@ -38,9 +57,33 @@ async function generateScheduleName(prompt: string): Promise<string | null> {
       .map((l: string) => l.trim())
       .find((l: string) => l.length > 0)
     if (!cleaned) return null
-    return cleaned.length > 80 ? cleaned.substring(0, 77) + "..." : cleaned
-  } catch {
+    const name = cleaned.replace(/^["']|["']$/g, "").trim()
+    log.info("generated schedule name", { name })
+    return name.length > 80 ? name.substring(0, 77) + "..." : name
+  } catch (err) {
+    log.error("failed to generate schedule name", { error: String(err) })
     return null
+  }
+}
+
+/** Backfill names for all schedules that currently have none. */
+export async function backfillScheduleNames(db: ReturnType<typeof Database.Client>) {
+  const all = db.select().from(ScheduleTable).all()
+  const nameless = (all as any[]).filter((r) => !r.name)
+  if (nameless.length === 0) return
+  log.info("backfilling schedule names", { count: nameless.length })
+  for (const row of nameless) {
+    const prompt = (() => {
+      if (row.action_type === "tool") {
+        try { const p = JSON.parse(row.prompt as string); return p.prompt ?? row.prompt } catch { return row.prompt }
+      }
+      return row.prompt
+    })()
+    const name = await generateScheduleName(prompt as string)
+    if (name) {
+      db.update(ScheduleTable).set({ name, time_updated: Date.now() }).where(eq(ScheduleTable.id, row.id)).run()
+      log.info("backfilled schedule name", { id: row.id, name })
+    }
   }
 }
 
@@ -62,7 +105,18 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
     }),
     async (c) => {
       const db = Database.Client()
-      const results = await db.select().from(ScheduleTable).all()
+      const results = db.select().from(ScheduleTable).all()
+      // Fire-and-forget backfill for any nameless schedules (runs inside request context)
+      const nameless = (results as any[]).filter((r) => !r.name)
+      if (nameless.length > 0) {
+        Promise.all(nameless.map(async (row: any) => {
+          const prompt = row.action_type === "tool"
+            ? (() => { try { const p = JSON.parse(row.prompt); return p.prompt ?? row.prompt } catch { return row.prompt } })()
+            : row.prompt
+          const name = await generateScheduleName(prompt)
+          if (name) db.update(ScheduleTable).set({ name, time_updated: Date.now() }).where(eq(ScheduleTable.id, row.id)).run()
+        })).catch(() => {})
+      }
       return c.json(results)
     }
   )
@@ -161,11 +215,12 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
       const result = await db.update(ScheduleTable).set(setBlock).where(eq(ScheduleTable.id, id)).returning().get()
       if (!result) return c.json({ error: "not found" }, 404)
 
-      // Regenerate name when prompt changes and no explicit name was set
-      if (updates.prompt && !updates.name) {
+      // Auto-generate name when: no explicit name given AND (prompt changed OR still no name)
+      if (!updates.name) {
         const currentName = (result as any).name
-        if (!currentName) {
-          generateScheduleName(updates.prompt).then((name) => {
+        const promptToUse = updates.prompt ?? (result as any).prompt
+        if (!currentName && promptToUse) {
+          generateScheduleName(promptToUse).then((name) => {
             if (name) db.update(ScheduleTable).set({ name, time_updated: Date.now() }).where(eq(ScheduleTable.id, id)).run()
           }).catch(() => {})
         }

@@ -7,14 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { SettingsIcon, PlusIcon, EditIcon, StarIcon, BotIcon, EyeIcon, EyeOffIcon } from "lucide-react"
 
@@ -109,40 +102,21 @@ export default function SettingsAgentsPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b px-6 py-3 shrink-0">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard/settings">Settings</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Agents</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
+    <SettingsPageLayout
+      title="Agents"
+      headerAction={
         <Button onClick={() => router.push("/dashboard/agents/new")}>
           <PlusIcon className="mr-2 h-4 w-4" />
           New Agent
         </Button>
+      }
+    >
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">Agents</h1>
+        <p className="text-muted-foreground">
+          Manage your AI agents and their configurations
+        </p>
       </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold mb-2">Agents</h1>
-            <p className="text-muted-foreground">
-              Manage your AI agents and their configurations
-            </p>
-          </div>
 
           {/* Search */}
           <div className="mb-6">
@@ -270,8 +244,6 @@ export default function SettingsAgentsPage() {
               )}
             </div>
           )}
-        </div>
-      </div>
-    </div>
+    </SettingsPageLayout>
   )
 }

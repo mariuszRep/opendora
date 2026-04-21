@@ -1,2 +1,2 @@
-INFO  2026-04-21T10:22:40 +593ms service=default version=local args=["serve","--port","4096"] opencode
-INFO  2026-04-21T10:22:40 +2ms service=config path=/home/mariu/projects/opendora/.opendora/config.json loading
+INFO  2026-04-21T11:26:15 +412ms service=default version=local args=["serve","--port","4096"] opencode
+INFO  2026-04-21T11:26:15 +1ms service=config path=/home/mariu/projects/opendora/.opendora/config.json loading

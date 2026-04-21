@@ -13,14 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { MessageSquareIcon, SearchIcon, CalendarIcon } from "lucide-react"
 
@@ -60,35 +53,13 @@ export default function SettingsSessionsPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b px-6 py-3 shrink-0">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard/settings">Settings</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Sessions</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+    <SettingsPageLayout title="Sessions">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">Sessions</h1>
+        <p className="text-muted-foreground">
+          View and manage all conversation sessions across agents
+        </p>
       </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold mb-2">Sessions</h1>
-            <p className="text-muted-foreground">
-              View and manage all conversation sessions across agents
-            </p>
-          </div>
 
           {/* Search */}
           <div className="mb-6">
@@ -201,14 +172,12 @@ export default function SettingsSessionsPage() {
             </div>
           )}
 
-          {/* Stats */}
-          {filteredSessions.length > 0 && (
-            <div className="mt-4 text-sm text-muted-foreground">
-              Showing {filteredSessions.length} of {sessions.length} sessions
-            </div>
-          )}
+      {/* Stats */}
+      {filteredSessions.length > 0 && (
+        <div className="mt-4 text-sm text-muted-foreground">
+          Showing {filteredSessions.length} of {sessions.length} sessions
         </div>
-      </div>
-    </div>
+      )}
+    </SettingsPageLayout>
   )
 }

@@ -151,7 +151,7 @@ export function ScheduleDialog({
           is_active: isActive,
           session_id: ownerSessionId,
           agent_id: ownerAgentId || null,
-          name: name.trim() || null,
+          ...(name.trim() ? { name: name.trim() } : {}),
         })
         toast.success("Schedule updated!")
       } else {

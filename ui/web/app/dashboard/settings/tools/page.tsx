@@ -2,14 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { CheckCircle2Icon, CircleIcon, Loader2Icon, Trash2Icon, WrenchIcon } from "lucide-react"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -77,27 +70,8 @@ export default function ToolsPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between border-b px-6 py-3 shrink-0">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard/settings">Settings</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Tools</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-2xl px-6 py-8 flex flex-col gap-6">
+    <SettingsPageLayout title="Tools" narrow>
+      <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -173,9 +147,8 @@ export default function ToolsPage() {
                 </div>
               )}
             </CardContent>
-          </Card>
-        </div>
+      </Card>
       </div>
-    </div>
+    </SettingsPageLayout>
   )
 }

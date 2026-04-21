@@ -2,14 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useVoiceSettings, formatHotkey, type HotkeyConfig } from "@/hooks/use-voice-settings"
@@ -152,24 +145,9 @@ export default function VoiceSettingsPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b px-6 py-3 shrink-0">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard/settings">Settings</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Voice</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+    <SettingsPageLayout
+      title="Voice"
+      headerAction={
         <Button
           variant="outline"
           size="sm"
@@ -181,22 +159,20 @@ export default function VoiceSettingsPage() {
           <RotateCcwIcon className="h-4 w-4 mr-2" />
           Reset to Defaults
         </Button>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-6 max-w-3xl">
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <Volume2Icon className="h-8 w-8 text-primary" />
-              <h1 className="text-3xl font-bold">Voice Settings</h1>
-            </div>
-            <p className="text-muted-foreground text-lg">
-              Configure speech-to-text and text-to-speech preferences
-            </p>
+      }
+    >
+      <div className="max-w-3xl">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Volume2Icon className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold">Voice Settings</h1>
           </div>
+          <p className="text-muted-foreground text-lg">
+            Configure speech-to-text and text-to-speech preferences
+          </p>
+        </div>
 
-          <div className="space-y-6">
+        <div className="space-y-6">
             {/* Speech-to-Text Settings */}
             <Card>
               <CardHeader>
@@ -546,8 +522,7 @@ export default function VoiceSettingsPage() {
               </CardContent>
             </Card>
           </div>
-        </div>
       </div>
-    </div>
+    </SettingsPageLayout>
   )
 }
