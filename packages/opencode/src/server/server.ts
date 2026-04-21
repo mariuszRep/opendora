@@ -623,9 +623,13 @@ export namespace Server {
           targetSession = await Session.get(params.session_id)
           if (!targetSession) { log.warn("schedule delegate: target session not found", { id: schedule.id }); return }
         } else if (resolvedAgentID && params.session_type) {
+          const runDate = new Date().toLocaleString(undefined, {
+            month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+          })
+          const scheduleLabel = (schedule as any).name || params.title || params.description || "Scheduled"
           targetSession = await Session.createNext({
             directory: process.cwd(),
-            title: params.title ?? params.description ?? `Scheduled (@${resolvedAgentID})`,
+            title: `${scheduleLabel} (${runDate})`,
             sessionType: params.session_type,
             agentID: resolvedAgentID,
             ownerKind: "service",

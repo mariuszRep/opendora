@@ -15,7 +15,9 @@
     "webfetch",
     "question",
     "reply",
-    "todowrite"
+    "todowrite",
+    "skill_load",
+    "skill_list"
   ],
   "skills": [
     "ai-news-digest"

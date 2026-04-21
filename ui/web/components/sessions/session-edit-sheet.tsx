@@ -1,14 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Loader2Icon, Trash2Icon, PlusIcon, PlayIcon, TrashIcon, BellRingIcon, CalendarClockIcon } from "lucide-react"
+import { Loader2Icon, Trash2Icon, PlusIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { ScheduleCard } from "./schedule-card"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,10 +45,11 @@ interface SessionEditSheetProps {
   session: Session | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  defaultTab?: "general" | "schedules"
 }
 
-export function SessionEditSheet({ session, open, onOpenChange }: SessionEditSheetProps) {
-  const { agents, setSessionAgent, setAgentMainSession } = useOpendoraContext()
+export function SessionEditSheet({ session, open, onOpenChange, defaultTab = "general" }: SessionEditSheetProps) {
+  const { agents, sessions, setSessionAgent, setAgentMainSession } = useOpendoraContext()
 
   const [title, setTitle] = useState("")
   const [agentID, setAgentID] = useState("")
@@ -180,35 +181,11 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
     }
   }
 
-  async function toggleSchedule(id: string, active: boolean) {
-    setSchedules((prev) => prev.map((s) => s.id === id ? { ...s, is_active: active } : s))
-    try {
-      await opendora.schedule.update(id, { is_active: active })
-    } catch (err) {
-      console.error(err)
-      setSchedules((prev) => prev.map((s) => s.id === id ? { ...s, is_active: !active } : s))
-    }
-  }
-
-  async function runScheduleNow(id: string) {
-    try {
-      await opendora.schedule.run(id)
-      toast.success("Schedule triggered!")
-    } catch (err: any) {
-      toast.error(err.message || "Failed to trigger schedule")
-    }
-  }
-
-  async function deleteSchedule(id: string) {
-    setSchedules((prev) => prev.filter((s) => s.id !== id))
-    try {
-      await opendora.schedule.remove(id)
-    } catch (err) {
-      console.error(err)
-      opendora.schedule.list()
-        .then((all) => setSchedules(all.filter((s) => s.session_id === session?.id)))
-        .catch(console.error)
-    }
+  function refreshSchedules() {
+    if (!session) return
+    opendora.schedule.list()
+      .then((all) => setSchedules(all.filter((s) => s.session_id === session.id)))
+      .catch(console.error)
   }
 
   const currentAgentID = agentID === "__none__" ? null : agentID
@@ -223,7 +200,7 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
             <SheetDescription className="sr-only">Edit session properties</SheetDescription>
           </SheetHeader>
 
-          <Tabs defaultValue="general" className="flex flex-col flex-1 min-h-0">
+          <Tabs defaultValue={defaultTab} className="flex flex-col flex-1 min-h-0">
             <TabsList className="mx-6 mb-2 shrink-0 w-[calc(100%-3rem)]">
               <TabsTrigger value="general" className="flex-1">General</TabsTrigger>
               <TabsTrigger value="schedules" className="flex-1">Schedules</TabsTrigger>
@@ -398,43 +375,11 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
                     </p>
                   )}
                   {schedules.map((schedule) => (
-                    <Card
+                    <ScheduleCard
                       key={schedule.id}
-                      className="flex flex-col cursor-pointer"
-                      onDoubleClick={() => { setEditingSchedule(schedule); setScheduleDialogOpen(true) }}
-                    >
-                      <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <div className="flex flex-col gap-1">
-                          <CardTitle className="text-sm flex items-center gap-1.5">
-                            <CalendarClockIcon className="size-3.5 text-muted-foreground" />
-                            {schedule.cron_expression}
-                          </CardTitle>
-                          {schedule.agent_id && (
-                            <CardDescription className="text-xs">@{schedule.agent_id}</CardDescription>
-                          )}
-                        </div>
-                        <Switch checked={schedule.is_active} onCheckedChange={(v) => toggleSchedule(schedule.id, v)} />
-                      </CardHeader>
-                      <CardContent className="pb-2">
-                        <div className="text-xs bg-muted/50 p-2 rounded-md line-clamp-2">
-                          {schedule.prompt}
-                        </div>
-                      </CardContent>
-                      <CardFooter className="flex items-center justify-between border-t pt-2">
-                        <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                          <BellRingIcon className={`size-3 ${schedule.is_active ? "text-emerald-500" : ""}`} />
-                          {schedule.is_active ? "Active" : "Paused"}
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="icon-sm" onClick={() => runScheduleNow(schedule.id)} title="Run now">
-                            <PlayIcon className="size-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="icon-sm" onClick={() => deleteSchedule(schedule.id)}>
-                            <TrashIcon className="size-3.5 text-destructive" />
-                          </Button>
-                        </div>
-                      </CardFooter>
-                    </Card>
+                      schedule={schedule}
+                      onEdit={(s) => { setEditingSchedule(s); setScheduleDialogOpen(true) }}
+                    />
                   ))}
                 </div>
               </div>
@@ -445,10 +390,14 @@ export function SessionEditSheet({ session, open, onOpenChange }: SessionEditShe
 
       <ScheduleDialog
         open={scheduleDialogOpen}
-        onOpenChange={(v) => { setScheduleDialogOpen(v); if (!v) setEditingSchedule(undefined) }}
+        onOpenChange={(v) => {
+          setScheduleDialogOpen(v)
+          if (!v) { setEditingSchedule(undefined); refreshSchedules() }
+        }}
         sessionId={session?.id}
         agentId={session?.agentID ?? undefined}
         schedule={editingSchedule}
+        onDeleted={() => { setScheduleDialogOpen(false); setEditingSchedule(undefined); refreshSchedules() }}
       />
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

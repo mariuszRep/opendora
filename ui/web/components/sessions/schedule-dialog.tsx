@@ -10,250 +10,156 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
 import { CronInput } from "@/components/ui/cron-input"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { opendora, type Schedule } from "@/lib/opendora"
+import { opendora, type Schedule, type Session } from "@/lib/opendora"
 import { toast } from "sonner"
-import { Wrench, Pencil, X } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { AGENT_COLORS } from "@/lib/agent-colors"
+import { PlayIcon, TrashIcon } from "lucide-react"
 
-// ── Delegate params stored as JSON in prompt when action_type === "tool" ──
-interface DelegateParams {
-  agent?: string
-  session_id?: string
-  session_type?: "worker" | "scope" | "scratchpad" | "role"
-  title?: string
-  prompt: string
-  description?: string
-  wait?: boolean
+type RunMode = "direct" | "sub-session"
+type SubTarget = "new" | "existing"
+type SubSessionType = "worker" | "scope" | "scratchpad"
+
+function formatSessionTitle(session: Session): string {
+  if (session.title && !session.title.startsWith("New session")) return session.title
+  return new Date(session.time.created).toLocaleString(undefined, {
+    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+  })
 }
 
-function parseDelegateParams(raw: string): DelegateParams {
-  try { return JSON.parse(raw) } catch { return { prompt: raw } }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Inner dialog for configuring the delegate tool
-// ─────────────────────────────────────────────────────────────
-function DelegateToolDialog({
-  open,
-  onOpenChange,
-  initial,
-  onSave,
-  agents,
-}: {
-  open: boolean
-  onOpenChange: (v: boolean) => void
-  initial?: DelegateParams
-  onSave: (p: DelegateParams) => void
-  agents: any[]
-}) {
-  const [agent, setAgent] = React.useState("")
-  const [sessionTarget, setSessionTarget] = React.useState<"none" | "existing" | "new">("none")
-  const [sessionId, setSessionId] = React.useState("")
-  const [sessionType, setSessionType] = React.useState<DelegateParams["session_type"]>("worker")
-  const [title, setTitle] = React.useState("")
-  const [prompt, setPrompt] = React.useState("")
-  const [description, setDescription] = React.useState("")
-  const [wait, setWait] = React.useState(false)
-
-  React.useEffect(() => {
-    if (!open) return
-    const p = initial ?? { prompt: "" }
-    setAgent(p.agent ?? "")
-    setTitle(p.title ?? "")
-    setPrompt(p.prompt ?? "")
-    setDescription(p.description ?? "")
-    setWait(p.wait ?? false)
-    if (p.session_id) { setSessionTarget("existing"); setSessionId(p.session_id) }
-    else if (p.session_type) { setSessionTarget("new"); setSessionType(p.session_type) }
-    else { setSessionTarget("none") }
-  }, [open, initial])
-
-  const handleSave = () => {
-    if (!agent && !sessionId) { toast.error("Select a target agent or session"); return }
-    if (!prompt.trim()) { toast.error("Prompt cannot be empty"); return }
-    const params: DelegateParams = { prompt: prompt.trim() }
-    if (agent) params.agent = agent
-    if (sessionTarget === "existing" && sessionId.trim()) params.session_id = sessionId.trim()
-    if (sessionTarget === "new") params.session_type = sessionType
-    if (title.trim()) params.title = title.trim()
-    if (description.trim()) params.description = description.trim()
-    if (wait) params.wait = true
-    onSave(params)
-    onOpenChange(false)
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Wrench className="h-4 w-4" /> Delegate Tool
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="flex flex-col gap-4 py-1">
-          {/* Title */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Session title <span className="text-muted-foreground font-normal text-xs">(optional)</span></Label>
-            <Input placeholder="e.g. Daily standup summary" value={title} onChange={e => setTitle(e.target.value)} />
-          </div>
-
-          {/* Agent */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Target agent <span className="text-destructive">*</span></Label>
-            <Select value={agent} onValueChange={setAgent}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="Select agent" /></SelectTrigger>
-              <SelectContent>
-                {agents.map((a) => (
-                  <SelectItem key={(a as any)._id ?? a.name} value={(a as any)._id ?? a.name}>
-                    <span className="capitalize">{a.name}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Session target */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Session target</Label>
-            <Select value={sessionTarget} onValueChange={v => setSessionTarget(v as typeof sessionTarget)}>
-              <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Agent default session</SelectItem>
-                <SelectItem value="existing">Existing session (by ID)</SelectItem>
-                <SelectItem value="new">Create new session</SelectItem>
-              </SelectContent>
-            </Select>
-            {sessionTarget === "existing" && (
-              <Input className="mt-1" placeholder="Session ID" value={sessionId} onChange={e => setSessionId(e.target.value)} />
-            )}
-            {sessionTarget === "new" && (
-              <Select value={sessionType} onValueChange={v => setSessionType(v as typeof sessionType)}>
-                <SelectTrigger className="w-full mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="worker">Worker — short-lived task</SelectItem>
-                  <SelectItem value="scope">Scope — project-based</SelectItem>
-                  <SelectItem value="scratchpad">Scratchpad — experimental</SelectItem>
-                  <SelectItem value="role">Role — ongoing</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-
-          {/* Prompt */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Prompt <span className="text-destructive">*</span></Label>
-            <Textarea
-              placeholder="Message to send to the target agent"
-              className="resize-none min-h-20"
-              value={prompt}
-              onChange={e => setPrompt(e.target.value)}
-            />
-          </div>
-
-          {/* Description */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Description <span className="text-muted-foreground font-normal text-xs">(optional)</span></Label>
-            <Input placeholder="Short label for logs and UI" value={description} onChange={e => setDescription(e.target.value)} />
-          </div>
-
-          {/* Wait */}
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-0.5">
-              <Label>Wait for reply</Label>
-              <p className="text-xs text-muted-foreground">Block until the agent responds.</p>
-            </div>
-            <Switch checked={wait} onCheckedChange={setWait} />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-          <Button onClick={handleSave}>Save tool</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────
-// Main schedule dialog
-// ─────────────────────────────────────────────────────────────
 export function ScheduleDialog({
   open,
   onOpenChange,
   sessionId: sessionIdProp,
   agentId: agentIdProp,
   schedule,
+  onDeleted,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   sessionId?: string
   agentId?: string
   schedule?: Schedule
+  onDeleted?: () => void
 }) {
   const isEdit = !!schedule
-  const { agents } = useOpendoraContext()
+  const { agents, sessions } = useOpendoraContext()
   const visibleAgents = agents.filter((a) => !a.hidden)
 
   const [cronExpr, setCronExpr] = React.useState("0 9 * * 1")
+  const [name, setName] = React.useState("")
   const [message, setMessage] = React.useState("")
-  const [delegateParams, setDelegateParams] = React.useState<DelegateParams | null>(null)
-  const [toolDialogOpen, setToolDialogOpen] = React.useState(false)
   const [color, setColor] = React.useState("slate")
+  const [isActive, setIsActive] = React.useState(true)
+  const [ownerSessionId, setOwnerSessionId] = React.useState<string>("")
+  const [runMode, setRunMode] = React.useState<RunMode>("direct")
+  const [subTarget, setSubTarget] = React.useState<SubTarget>("new")
+  const [subSessionType, setSubSessionType] = React.useState<SubSessionType>("worker")
+  const [subExistingSessionId, setSubExistingSessionId] = React.useState<string>("")
+  const [subAgentOverride, setSubAgentOverride] = React.useState<string>("")
 
-  // Populate from existing schedule
+  const ownerSession = sessions.find((s) => s.id === ownerSessionId) ?? null
+  const ownerAgentId = ownerSession?.agentID ?? agentIdProp ?? ""
+
   React.useEffect(() => {
     if (!open) return
     if (schedule) {
       setCronExpr(schedule.cron_expression)
+      setName(schedule.name ?? "")
       setColor(schedule.color ?? "slate")
+      setIsActive(schedule.is_active ?? true)
+      setOwnerSessionId(schedule.session_id ?? "")
       if (schedule.action_type === "tool") {
-        setDelegateParams(parseDelegateParams(schedule.prompt))
-        setMessage("")
+        try {
+          const p = JSON.parse(schedule.prompt)
+          setMessage(p.prompt ?? "")
+          setSubAgentOverride(p.agent ?? "")
+          setRunMode("sub-session")
+          if (p.session_id) {
+            setSubTarget("existing")
+            setSubExistingSessionId(p.session_id)
+            setSubSessionType("worker")
+          } else {
+            setSubTarget("new")
+            setSubSessionType((p.session_type as SubSessionType) ?? "worker")
+            setSubExistingSessionId("")
+          }
+        } catch {
+          setMessage(schedule.prompt)
+          setRunMode("direct")
+        }
       } else {
         setMessage(schedule.prompt)
-        setDelegateParams(null)
+        setRunMode("direct")
+        setSubTarget("new")
+        setSubSessionType("worker")
+        setSubExistingSessionId("")
+        setSubAgentOverride("")
       }
     } else {
       setCronExpr("0 9 * * 1")
+      setName("")
       setMessage("")
-      setDelegateParams(null)
       setColor("slate")
+      setIsActive(true)
+      setOwnerSessionId(sessionIdProp ?? "")
+      setRunMode("direct")
+      setSubTarget("new")
+      setSubSessionType("worker")
+      setSubExistingSessionId("")
+      setSubAgentOverride("")
     }
-  }, [open, schedule])
+  }, [open, schedule, sessionIdProp])
 
   const handleSubmit = async () => {
+    if (!message.trim()) { toast.error("Message cannot be empty"); return }
+    if (!ownerSessionId) { toast.error("Select a parent session"); return }
+
     let prompt: string
     let action_type: "message" | "tool"
+    let tool_name: string | undefined
 
-    if (delegateParams) {
+    if (runMode === "sub-session") {
+      const agentId = subAgentOverride || ownerAgentId
+      if (!agentId && subTarget === "new") {
+        toast.error("No agent available — select an agent override or attach to a session with an agent")
+        return
+      }
       action_type = "tool"
-      prompt = JSON.stringify(delegateParams)
+      tool_name = "delegate"
+      const params: Record<string, unknown> = { prompt: message.trim() }
+      if (agentId) params.agent = agentId
+      if (subTarget === "new") {
+        params.session_type = subSessionType
+      } else {
+        if (!subExistingSessionId) { toast.error("Select an existing target session"); return }
+        params.session_id = subExistingSessionId
+      }
+      prompt = JSON.stringify(params)
     } else {
-      if (!message.trim()) { toast.error("Message cannot be empty"); return }
       action_type = "message"
+      tool_name = undefined
       prompt = message.trim()
     }
 
     try {
       if (isEdit) {
         await opendora.schedule.update(schedule.id, {
-          prompt, cron_expression: cronExpr, action_type,
-          tool_name: delegateParams ? "delegate" : undefined,
-          color,
+          prompt, cron_expression: cronExpr, action_type, tool_name, color,
+          is_active: isActive,
+          session_id: ownerSessionId,
+          agent_id: ownerAgentId || null,
+          name: name.trim() || null,
         })
         toast.success("Schedule updated!")
       } else {
         await opendora.schedule.create({
-          agent_id: agentIdProp,
-          session_id: sessionIdProp,
-          prompt, cron_expression: cronExpr, action_type,
-          tool_name: delegateParams ? "delegate" : undefined,
-          color,
+          session_id: ownerSessionId,
+          agent_id: ownerAgentId || undefined,
+          prompt, cron_expression: cronExpr, action_type, tool_name, color,
+          name: name.trim() || undefined,
         })
         toast.success("Schedule created!")
       }
@@ -263,103 +169,97 @@ export function ScheduleDialog({
     }
   }
 
-  // Summary line for the delegate card
-  const delegateSummary = delegateParams
-    ? [
-        delegateParams.agent ? `→ ${delegateParams.agent}` : null,
-        delegateParams.session_type ? `(new ${delegateParams.session_type})` : null,
-        delegateParams.title ? `"${delegateParams.title}"` : null,
-      ].filter(Boolean).join(" ")
-    : ""
+  const handleRunNow = async () => {
+    if (!schedule) return
+    try {
+      await opendora.schedule.run(schedule.id)
+      toast.success("Schedule triggered!")
+    } catch (err: any) {
+      toast.error(err.message || "Failed to trigger schedule")
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!schedule) return
+    try {
+      await opendora.schedule.remove(schedule.id)
+      toast.success("Schedule deleted")
+      onDeleted ? onDeleted() : onOpenChange(false)
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete schedule")
+    }
+  }
 
   return (
-    <>
-      <DelegateToolDialog
-        open={toolDialogOpen}
-        onOpenChange={setToolDialogOpen}
-        initial={delegateParams ?? undefined}
-        onSave={setDelegateParams}
-        agents={visibleAgents}
-      />
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-full max-w-lg sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{isEdit ? "Edit Schedule" : "New Schedule"}</DialogTitle>
+        </DialogHeader>
 
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{isEdit ? "Edit Schedule" : "New Schedule"}</DialogTitle>
-          </DialogHeader>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 py-2 max-h-[75vh] overflow-y-auto pr-1">
 
-          <div className="flex flex-col gap-5 py-2">
+          {/* ── Left column ── */}
+          <div className="flex flex-col gap-5">
+
+            {/* Name */}
+            <div className="flex flex-col gap-1.5">
+              <Label>
+                Name
+                <span className="ml-1.5 text-xs font-normal text-muted-foreground">(auto-generated if left blank)</span>
+              </Label>
+              <Input
+                placeholder="e.g. Daily standup summary"
+                value={name}
+                onChange={e => setName(e.target.value)}
+              />
+            </div>
+
+            {/* Parent session */}
+            <div className="flex flex-col gap-1.5">
+              <Label>Parent session</Label>
+              <Select
+                value={ownerSessionId || "__none__"}
+                onValueChange={(v) => setOwnerSessionId(v === "__none__" ? "" : v)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a session…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— None (unattached) —</SelectItem>
+                  {sessions.map((s) => {
+                    const agent = agents.find((a) => (a as any)._id === s.agentID)
+                    return (
+                      <SelectItem key={s.id} value={s.id}>
+                        <span className="flex items-baseline gap-1.5">
+                          <span>{formatSessionTitle(s)}</span>
+                          {agent && (
+                            <span className="text-xs text-muted-foreground capitalize">@{agent.name}</span>
+                          )}
+                        </span>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Cron */}
             <div className="flex flex-col gap-1.5">
               <Label>Schedule (cron)</Label>
               <CronInput value={cronExpr} onChange={setCronExpr} />
             </div>
 
-            {/* Message / Tool card */}
-            <div className="flex flex-col gap-1.5">
-              <Label>{delegateParams ? "Delegate Tool" : "Message"}</Label>
-
-              {delegateParams ? (
-                /* ── Tool card ── */
-                <div
-                  className={cn(
-                    "relative rounded-md border border-border bg-muted/40 p-3 pr-16",
-                    "flex flex-col gap-1"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                    <Wrench className="h-3 w-3" />
-                    <span>Delegate</span>
-                    {delegateSummary && (
-                      <span className="text-muted-foreground/70">{delegateSummary}</span>
-                    )}
-                  </div>
-                  <p className="text-sm leading-snug line-clamp-3">{delegateParams.prompt}</p>
-
-                  {/* Action buttons */}
-                  <div className="absolute right-2 top-2 flex gap-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => setToolDialogOpen(true)}
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-destructive hover:text-destructive"
-                      onClick={() => setDelegateParams(null)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
+            {/* Active toggle — edit only */}
+            {isEdit && (
+              <div className="flex items-center justify-between rounded-md border px-3 py-2.5">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-medium">Active</span>
+                  <span className="text-xs text-muted-foreground">Enable or pause this schedule</span>
                 </div>
-              ) : (
-                /* ── Plain message textarea ── */
-                <div className="relative">
-                  <Textarea
-                    placeholder="Message to send to the agent on schedule"
-                    className="resize-none min-h-24 pr-10"
-                    value={message}
-                    onChange={e => setMessage(e.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute bottom-2 right-2 h-6 w-6 text-muted-foreground hover:text-foreground"
-                    title="Configure delegate tool"
-                    onClick={() => setToolDialogOpen(true)}
-                  >
-                    <Wrench className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              )}
-            </div>
+                <Switch checked={isActive} onCheckedChange={setIsActive} />
+              </div>
+            )}
 
             {/* Color */}
             <div className="flex flex-col gap-1.5">
@@ -383,14 +283,132 @@ export function ScheduleDialog({
             </div>
           </div>
 
-          <DialogFooter>
+          {/* ── Right column ── */}
+          <div className="flex flex-col gap-5">
+
+            {/* Run mode */}
+            <div className="flex flex-col gap-1.5">
+              <Label>Run in</Label>
+              <Select value={runMode} onValueChange={(v) => setRunMode(v as RunMode)}>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="direct">This session — send directly</SelectItem>
+                  <SelectItem value="sub-session">Delegate to another session</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {runMode === "sub-session" && (
+                <div className="flex flex-col gap-3 mt-1 pl-3 border-l-2 border-muted">
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs text-muted-foreground">Target session</Label>
+                    <Select value={subTarget} onValueChange={(v) => setSubTarget(v as SubTarget)}>
+                      <SelectTrigger className="w-full h-8 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="new">Create new sub-session each run</SelectItem>
+                        <SelectItem value="existing">Use an existing session</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {subTarget === "new" && (
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs text-muted-foreground">Sub-session type</Label>
+                      <Select value={subSessionType} onValueChange={(v) => setSubSessionType(v as SubSessionType)}>
+                        <SelectTrigger className="w-full h-8 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="worker">Worker — short-lived task</SelectItem>
+                          <SelectItem value="scope">Scope — project-based</SelectItem>
+                          <SelectItem value="scratchpad">Scratchpad — experimental</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {subTarget === "existing" && (
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs text-muted-foreground">Target session</Label>
+                      <Select
+                        value={subExistingSessionId || "__none__"}
+                        onValueChange={(v) => setSubExistingSessionId(v === "__none__" ? "" : v)}
+                      >
+                        <SelectTrigger className="w-full h-8 text-sm"><SelectValue placeholder="Pick session…" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— Select session —</SelectItem>
+                          {sessions.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {formatSessionTitle(s)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs text-muted-foreground">
+                      Agent override <span className="font-normal">(optional)</span>
+                    </Label>
+                    <Select
+                      value={subAgentOverride || "__inherit__"}
+                      onValueChange={(v) => setSubAgentOverride(v === "__inherit__" ? "" : v)}
+                    >
+                      <SelectTrigger className="w-full h-8 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__inherit__">Inherit from session</SelectItem>
+                        {visibleAgents.map((a) => (
+                          <SelectItem key={(a as any)._id} value={(a as any)._id}>
+                            <span className="capitalize">{a.name}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Message */}
+            <div className="flex flex-col gap-1.5 flex-1">
+              <Label>Message</Label>
+              <Textarea
+                placeholder="Message to send on schedule"
+                className="resize-none flex-1 min-h-32"
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Separator before footer on mobile keeps layout clean */}
+        <Separator className="mt-1" />
+
+        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-between">
+          {/* Destructive actions — left side (edit only) */}
+          {isEdit ? (
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleRunNow} className="gap-1.5">
+                <PlayIcon className="size-3.5" />
+                Run now
+              </Button>
+              <Button variant="destructive" size="sm" onClick={handleDelete} className="gap-1.5">
+                <TrashIcon className="size-3.5" />
+                Delete
+              </Button>
+            </div>
+          ) : (
+            <div />
+          )}
+
+          {/* Primary actions — right side */}
+          <div className="flex gap-2 justify-end">
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
             <Button onClick={handleSubmit}>{isEdit ? "Save changes" : "Create schedule"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

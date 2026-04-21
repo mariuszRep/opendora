@@ -15,4 +15,5 @@ export const ScheduleTable = sqliteTable("schedule", {
   time_updated: integer("time_updated").notNull(),
   last_executed: integer("last_executed"),
   color: text("color"),
+  name: text("name"),
 })

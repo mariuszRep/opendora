@@ -34,6 +34,8 @@ export namespace Schedule {
     time_created: number
     time_updated: number
     last_executed: number | null
+    color: string | null
+    name: string | null
   }
 
   export interface CreateInput {
@@ -44,6 +46,8 @@ export namespace Schedule {
     timezone?: string
     action_type?: "message" | "tool"
     tool_name?: string
+    color?: string
+    name?: string
   }
 
   export interface UpdateInput {
@@ -53,6 +57,10 @@ export namespace Schedule {
     timezone?: string
     action_type?: "message" | "tool"
     tool_name?: string
+    agent_id?: string | null
+    session_id?: string | null
+    color?: string
+    name?: string | null
   }
 
   export function list(): ScheduleRow[] {
@@ -79,6 +87,8 @@ export namespace Schedule {
       timezone: input.timezone ?? "UTC",
       action_type: (input.action_type ?? "message") as "message" | "tool",
       tool_name: input.tool_name ?? null,
+      color: input.color ?? null,
+      name: input.name ?? null,
       time_created: Date.now(),
       time_updated: Date.now(),
       last_executed: null,
@@ -95,6 +105,10 @@ export namespace Schedule {
     if (patch.timezone !== undefined) setBlock.timezone = patch.timezone
     if (patch.action_type !== undefined) setBlock.action_type = patch.action_type
     if (patch.tool_name !== undefined) setBlock.tool_name = patch.tool_name || null
+    if ("agent_id" in patch) setBlock.agent_id = patch.agent_id || null
+    if ("session_id" in patch) setBlock.session_id = patch.session_id || null
+    if (patch.color !== undefined) setBlock.color = patch.color || null
+    if ("name" in patch) setBlock.name = patch.name || null
 
     return Database.Client()
       .update(ScheduleTable)
