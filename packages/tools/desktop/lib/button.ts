@@ -1,7 +1,9 @@
+import { getNut } from "./nut.ts"
+
 export type ButtonName = "left" | "right" | "middle"
 
 export async function resolveButton(name: ButtonName | undefined) {
-  const { Button } = await import("@nut-tree-fork/nut-js")
+  const { Button } = await getNut()
   switch (name ?? "left") {
     case "left":
       return Button.LEFT

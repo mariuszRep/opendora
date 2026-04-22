@@ -1,0 +1,4 @@
+Move a window to the specified screen position.
+
+The window is matched by a case-insensitive substring of its title.
+`x` and `y` set the new position of the window's top-left corner in pixels.

@@ -1,0 +1,3 @@
+Bring a window to the foreground by matching its title (case-insensitive substring).
+
+Throws if no window title contains the given string.

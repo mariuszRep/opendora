@@ -23,6 +23,7 @@ import { AgentDeleteTool } from "../agents/agent-delete.ts"
 import { AgentListTool } from "../agents/agent-list.ts"
 import { AgentGetTool } from "../agents/agent-get.ts"
 import { ScheduleListTool, ScheduleCreateTool, ScheduleUpdateTool, ScheduleDeleteTool, ScheduleGetTool, ScheduleRunTool } from "../schedule/index.ts"
+import { DESKTOP_TOOLS } from "../desktop/index.ts"
 import type { Tool } from "../tool.ts"
 import path from "path"
 import { pathToFileURL } from "url"
@@ -156,6 +157,7 @@ export namespace ToolRegistry {
       ...(cfg.flags.enableLspTool ? [LspTool] : []),
       ...(cfg.flags.enableBatchTool ? [BatchTool] : []),
       ...(cfg.flags.enablePlanMode && cfg.clientType === "cli" ? [PlanExitTool] : []),
+      ...DESKTOP_TOOLS,
       ..._custom,
     ]
   }

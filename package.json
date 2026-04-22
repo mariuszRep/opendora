@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode --conditions=browser src/index.ts",
     "tui": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode --conditions=browser src/index.ts attach http://localhost:4097",
-    "serve": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode --conditions=browser src/index.ts serve --port 4097",
+    "serve": "LD_PRELOAD=$PWD/packages/tools/desktop/x11_nocrash.so OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode --conditions=browser src/index.ts serve --port 4097",
     "start": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode --conditions=browser src/index.ts start",
     "stop": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode --conditions=browser src/index.ts stop",
     "restart": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode --conditions=browser src/index.ts restart",

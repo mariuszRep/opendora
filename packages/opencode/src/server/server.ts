@@ -579,6 +579,12 @@ export namespace Server {
     cors?: string[]
   }) {
     configureSessionCore()
+    // Clear out any tool parts left in pending/running state by a previous
+    // process that was killed mid-stream — otherwise the UI shows them stuck
+    // at "Pending" forever with no way to approve, dismiss, or retry.
+    Session.reconcileInterruptedToolParts().catch((err) => {
+      log.warn("reconcileInterruptedToolParts failed", { error: err instanceof Error ? err.message : String(err) })
+    })
     _corsWhitelist = opts.cors ?? []
 
     // Define before App() is called so the route captures the real function, not the no-op.

@@ -1,0 +1,39 @@
+{
+  "name": "Desktop Agent",
+  "description": "Specialist for exercising desktop automation capabilities and reporting the outcome of live desktop tool tests.",
+  "mode": "worker",
+  "model": {
+    "modelID": "gpt-5.4",
+    "providerID": "openai-codex"
+  },
+  "temperature": 0.2,
+  "steps": 120,
+  "color": "pink",
+  "tools": [
+    "reply",
+    "desktop_mouse_move",
+    "desktop_mouse_click",
+    "desktop_mouse_drag",
+    "desktop_mouse_scroll",
+    "desktop_mouse_position",
+    "desktop_keyboard_type",
+    "desktop_keyboard_press",
+    "desktop_screen_capture",
+    "desktop_screen_find_image",
+    "desktop_screen_wait_for_image",
+    "desktop_screen_size",
+    "desktop_screen_read_pixel",
+    "desktop_window_list",
+    "desktop_window_active",
+    "desktop_window_focus",
+    "desktop_window_move",
+    "desktop_window_resize",
+    "desktop_clipboard_read",
+    "desktop_clipboard_write"
+  ],
+  "toolConfig": {
+    "reply": {
+      "stopAfterReply": false
+    }
+  }
+}

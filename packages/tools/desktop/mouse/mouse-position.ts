@@ -2,11 +2,12 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import DESCRIPTION from "./mouse-position.txt"
 
 export const DesktopMousePositionTool = Tool.define("desktop_mouse_position", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: "Return the current mouse cursor position as {x, y} screen coordinates.",
+    description: DESCRIPTION,
     parameters: z.object({}),
     async execute(_params, ctx) {
       assertNotSandbox(sandbox)

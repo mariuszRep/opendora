@@ -2,11 +2,12 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import DESCRIPTION from "./keyboard-type.txt"
 
 export const DesktopKeyboardTypeTool = Tool.define("desktop_keyboard_type", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: "Type a string of text using the keyboard, as if the user typed it.",
+    description: DESCRIPTION,
     parameters: z.object({
       text: z.string().min(1).describe("Text to type"),
       delay: z

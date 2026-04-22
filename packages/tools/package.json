@@ -22,6 +22,9 @@
     "./browse-and-web/*": "./browse-and-web/*.ts",
     "./schedule": "./schedule/index.ts",
     "./schedule/*": "./schedule/*.ts",
+    "./desktop": "./desktop/index.ts",
+    "./desktop/*": "./desktop/*.ts",
+    "./desktop/lib/*": "./desktop/lib/*.ts",
     "./tool": "./tool.ts",
     "./truncation": "./truncation.ts"
   },
@@ -45,6 +48,7 @@
     "tree-sitter-bash": "0.25.0",
     "turndown": "7.2.0",
     "web-tree-sitter": "0.25.10",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@nut-tree-fork/nut-js": "^4.2.0"
   }
 }

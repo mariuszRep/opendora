@@ -100,6 +100,11 @@
       "id": "web-researcher",
       "name": "Weber",
       "mode": "worker"
+    },
+    {
+      "id": "desktop-agent",
+      "name": "Desktop Agent",
+      "mode": "worker"
     }
   ]
 }

@@ -2,11 +2,12 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import DESCRIPTION from "./mouse-scroll.txt"
 
 export const DesktopMouseScrollTool = Tool.define("desktop_mouse_scroll", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: "Scroll the mouse wheel up, down, left, or right.",
+    description: DESCRIPTION,
     parameters: z.object({
       direction: z
         .enum(["up", "down", "left", "right"])

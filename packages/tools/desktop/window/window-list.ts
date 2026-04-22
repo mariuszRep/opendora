@@ -2,11 +2,12 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import DESCRIPTION from "./window-list.txt"
 
 export const DesktopWindowListTool = Tool.define("desktop_window_list", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: "List all visible windows with their titles and screen regions.",
+    description: DESCRIPTION,
     parameters: z.object({}),
     async execute(_params, ctx) {
       assertNotSandbox(sandbox)

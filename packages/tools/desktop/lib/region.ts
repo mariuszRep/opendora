@@ -1,3 +1,5 @@
+import { getNut } from "./nut.ts"
+
 export interface RegionInput {
   x: number
   y: number
@@ -6,6 +8,6 @@ export interface RegionInput {
 }
 
 export async function resolveRegion(input: RegionInput) {
-  const { Region } = await import("@nut-tree-fork/nut-js")
+  const { Region } = await getNut()
   return new Region(input.x, input.y, input.width, input.height)
 }

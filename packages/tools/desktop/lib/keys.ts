@@ -51,7 +51,8 @@ const KEY_MAP: KeyMap = {
 }
 
 export async function parseKeys(combo: string): Promise<NutKey[]> {
-  const { Key } = await import("@nut-tree-fork/nut-js")
+  const { getNut } = await import("./nut.ts")
+  const { Key } = await getNut()
 
   const parts = combo
     .toLowerCase()

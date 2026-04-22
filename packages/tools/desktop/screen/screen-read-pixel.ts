@@ -2,11 +2,13 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import { colorAt as nativeColorAt, nativeCapturePreferred } from "../lib/screen-native.ts"
+import DESCRIPTION from "./screen-read-pixel.txt"
 
 export const DesktopScreenReadPixelTool = Tool.define("desktop_screen_read_pixel", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: "Read the RGB color of a single pixel at the given screen coordinates.",
+    description: DESCRIPTION,
     parameters: z.object({
       x: z.number().int().describe("X coordinate in pixels"),
       y: z.number().int().describe("Y coordinate in pixels"),
@@ -21,11 +23,17 @@ export const DesktopScreenReadPixelTool = Tool.define("desktop_screen_read_pixel
         metadata: { kind: "screen", summary: `Read pixel at (${params.x}, ${params.y})` },
       })
 
-      const { screen } = await getNut()
-      const color = await screen.colorAt({ x: params.x, y: params.y })
-      const r = Math.round(color.red * 255)
-      const g = Math.round(color.green * 255)
-      const b = Math.round(color.blue * 255)
+      let r: number, g: number, b: number
+      if (nativeCapturePreferred()) {
+        const c = await nativeColorAt(params.x, params.y)
+        r = c.r; g = c.g; b = c.b
+      } else {
+        const { screen } = await getNut()
+        const color = await (screen as any).colorAt({ x: params.x, y: params.y })
+        r = Math.round(color.R ?? color.red * 255)
+        g = Math.round(color.G ?? color.green * 255)
+        b = Math.round(color.B ?? color.blue * 255)
+      }
 
       return {
         title: `Pixel (${params.x}, ${params.y}): rgb(${r}, ${g}, ${b})`,

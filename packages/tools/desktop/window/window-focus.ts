@@ -2,11 +2,12 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import DESCRIPTION from "./window-focus.txt"
 
 export const DesktopWindowFocusTool = Tool.define("desktop_window_focus", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: "Bring a window to the foreground by matching its title (case-insensitive substring).",
+    description: DESCRIPTION,
     parameters: z.object({
       title: z.string().min(1).describe("Window title or substring to match"),
     }),

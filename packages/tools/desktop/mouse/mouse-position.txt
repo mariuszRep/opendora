@@ -1,0 +1,1 @@
+Return the current mouse cursor position as `{x, y}` screen coordinates.

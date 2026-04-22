@@ -1188,6 +1188,78 @@ export namespace Session {
     return part
   })
 
+  /**
+   * Reconcile tool parts left in "pending" or "running" state from a prior
+   * process that was terminated mid-stream (server restart, crash, kill).
+   * These orphaned parts would otherwise block the UI indefinitely — the user
+   * sees a tool card stuck on "Pending" / "Running" with no way to approve,
+   * dismiss, or retry, because no stream is active to emit further events.
+   *
+   * Marks each orphaned tool part as "error" and publishes PartUpdated so any
+   * connected clients refresh their view. Idempotent: safe to call on every
+   * server start.
+   */
+  export async function reconcileInterruptedToolParts(): Promise<number> {
+    const cfg = getConfig()
+    const db = cfg.db
+    if (!db) return 0
+
+    // json_extract is SQLite-native; Drizzle exposes it through sql``.
+    const rows = db
+      .select()
+      .from(PartTable)
+      .where(
+        and(
+          sql`json_extract(${PartTable.data}, '$.type') = 'tool'`,
+          inArray(
+            sql`json_extract(${PartTable.data}, '$.state.status')`,
+            ["pending", "running"],
+          ),
+        ),
+      )
+      .all()
+
+    if (rows.length === 0) return 0
+
+    const now = Date.now()
+    let count = 0
+    for (const row of rows) {
+      const data = row.data as any
+      if (!data || data.type !== "tool") continue
+      const prevState = data.state ?? {}
+      const startTime =
+        (prevState.time && typeof prevState.time.start === "number")
+          ? prevState.time.start
+          : now
+      const next = {
+        id: row.id,
+        messageID: row.message_id,
+        sessionID: row.session_id,
+        type: "tool" as const,
+        callID: data.callID,
+        tool: data.tool,
+        metadata: data.metadata,
+        state: {
+          status: "error" as const,
+          input: prevState.input ?? {},
+          error: "Tool execution interrupted (server restarted)",
+          time: { start: startTime, end: now },
+        },
+      }
+      try {
+        await updatePart(next as any)
+        count++
+      } catch (err) {
+        log.warn("reconcileInterruptedToolParts: failed to update part", {
+          id: row.id,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      }
+    }
+    if (count > 0) log.info(`reconcileInterruptedToolParts: recovered ${count} orphaned tool part(s)`)
+    return count
+  }
+
   export const updatePartDelta = fn(
     z.object({
       sessionID: z.string(),

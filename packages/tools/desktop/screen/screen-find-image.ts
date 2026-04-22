@@ -5,6 +5,7 @@ import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
 import { resolveRegion } from "../lib/region.ts"
 import { assertExternalDirectory } from "../../system/external-directory.ts"
+import DESCRIPTION from "./screen-find-image.txt"
 
 const regionSchema = z.object({
   x: z.number().int(),
@@ -16,10 +17,7 @@ const regionSchema = z.object({
 export const DesktopScreenFindImageTool = Tool.define("desktop_screen_find_image", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description:
-      "Search the screen (or a region) for a template image. " +
-      "Returns all matches as [{x, y, width, height, score}]. " +
-      "Requires @nut-tree-fork/template-matcher to be installed.",
+    description: DESCRIPTION,
     parameters: z.object({
       templatePath: z
         .string()

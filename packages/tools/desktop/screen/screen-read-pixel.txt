@@ -1,0 +1,3 @@
+Read the RGB color of a single pixel at the given screen coordinates.
+
+Returns `{x, y, r, g, b}` where r/g/b are integers in the range 0–255.

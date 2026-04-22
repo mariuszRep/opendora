@@ -2,11 +2,12 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import DESCRIPTION from "./window-active.txt"
 
 export const DesktopWindowActiveTool = Tool.define("desktop_window_active", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: "Return the title and region of the currently focused window.",
+    description: DESCRIPTION,
     parameters: z.object({}),
     async execute(_params, ctx) {
       assertNotSandbox(sandbox)

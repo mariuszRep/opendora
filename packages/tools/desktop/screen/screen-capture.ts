@@ -6,7 +6,13 @@ import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
 import { resolveRegion } from "../lib/region.ts"
+import {
+  captureFull as nativeCaptureFull,
+  captureRegion as nativeCaptureRegion,
+  nativeCapturePreferred,
+} from "../lib/screen-native.ts"
 import { assertExternalDirectory } from "../../system/external-directory.ts"
+import DESCRIPTION from "./screen-capture.txt"
 
 const regionSchema = z.object({
   x: z.number().int(),
@@ -18,9 +24,7 @@ const regionSchema = z.object({
 export const DesktopScreenCaptureTool = Tool.define("desktop_screen_capture", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description:
-      "Capture a screenshot of the full screen or a region. " +
-      "Returns the saved file path and image dimensions.",
+    description: DESCRIPTION,
     parameters: z.object({
       region: regionSchema
         .optional()
@@ -46,22 +50,38 @@ export const DesktopScreenCaptureTool = Tool.define("desktop_screen_capture", as
 
       await fs.mkdir(path.dirname(destPath), { recursive: true })
 
-      const { screen, ImageFormat } = await getNut()
-
       let width: number
       let height: number
 
+      // libnut's XGetImage path fails under WSLg ("Failed to capture screen").
+      // Prefer a native binary (scrot/maim/import) there. Fall back to nut-js
+      // on other Linux/macOS/Windows environments.
+      const useNative = nativeCapturePreferred()
+
       if (params.region) {
-        const region = await resolveRegion(params.region)
-        const image = await screen.grabRegion(region)
-        await image.toFile(destPath)
+        if (useNative) {
+          await nativeCaptureRegion(params.region, destPath)
+        } else {
+          const region = await resolveRegion(params.region)
+          const { screen } = await getNut()
+          const image = await screen.grabRegion(region)
+          await (image as any).toFile(destPath)
+        }
         width = params.region.width
         height = params.region.height
       } else {
-        const image = await screen.grab()
-        await image.toFile(destPath)
-        width = await screen.width()
-        height = await screen.height()
+        if (useNative) {
+          await nativeCaptureFull(destPath)
+          const { screen } = await getNut()
+          width = await screen.width().catch(() => 0)
+          height = await screen.height().catch(() => 0)
+        } else {
+          const { screen } = await getNut()
+          const image = await screen.grab()
+          await (image as any).toFile(destPath)
+          width = await screen.width()
+          height = await screen.height()
+        }
       }
 
       return {

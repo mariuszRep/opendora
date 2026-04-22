@@ -1,0 +1,3 @@
+List all visible windows with their titles and screen regions.
+
+Returns an array of `{title, x, y, width, height}` objects.

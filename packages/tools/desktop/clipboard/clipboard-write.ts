@@ -2,11 +2,12 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import DESCRIPTION from "./clipboard-write.txt"
 
 export const DesktopClipboardWriteTool = Tool.define("desktop_clipboard_write", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: "Write text to the system clipboard.",
+    description: DESCRIPTION,
     parameters: z.object({
       text: z.string().describe("Text to place in the clipboard"),
     }),

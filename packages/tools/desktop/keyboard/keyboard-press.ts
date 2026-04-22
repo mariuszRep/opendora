@@ -3,16 +3,12 @@ import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
 import { parseKeys } from "../lib/keys.ts"
+import DESCRIPTION from "./keyboard-press.txt"
 
 export const DesktopKeyboardPressTool = Tool.define("desktop_keyboard_press", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description:
-      "Press a key or key combination such as 'ctrl+c', 'enter', or 'ctrl+shift+t'. " +
-      "Modifiers: ctrl, shift, alt, meta/cmd/win/super. " +
-      "Special: enter, esc, space, tab, backspace, delete, insert, " +
-      "up, down, left, right, home, end, pageup, pagedown. " +
-      "Letters a-z, digits 0-9, function keys f1-f12.",
+    description: DESCRIPTION,
     parameters: z.object({
       keys: z
         .string()

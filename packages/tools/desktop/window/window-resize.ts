@@ -2,11 +2,12 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import DESCRIPTION from "./window-resize.txt"
 
 export const DesktopWindowResizeTool = Tool.define("desktop_window_resize", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: "Resize a window (matched by title) to the specified width and height.",
+    description: DESCRIPTION,
     parameters: z.object({
       title: z.string().min(1).describe("Window title or substring to match"),
       width: z.number().int().positive().describe("New window width in pixels"),
