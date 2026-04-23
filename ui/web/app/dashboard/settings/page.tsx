@@ -22,7 +22,7 @@ import {
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { useUserProfile } from "@/hooks/use-user-profile"
 import { useTheme } from "next-themes"
-import { BotIcon, MessageSquareIcon, SettingsIcon, ChevronRightIcon, PlugIcon, UserIcon, Volume2Icon, ClockPlusIcon, WrenchIcon, SunIcon, MoonIcon, MonitorIcon } from "lucide-react"
+import { BotIcon, MessageSquareIcon, SettingsIcon, ChevronRightIcon, PlugIcon, UserIcon, Volume2Icon, ClockPlusIcon, WrenchIcon, SunIcon, MoonIcon, MonitorIcon, BookOpenIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { AGENT_COLORS } from "@/lib/agent-colors"
 
@@ -83,6 +83,14 @@ export default function SettingsPage() {
       description: "Manage background delegations",
       icon: ClockPlusIcon,
       href: "/dashboard/settings/schedules",
+      count: null,
+      countLabel: null,
+    },
+    {
+      title: "Skills",
+      description: "Browse and manage loaded skills",
+      icon: BookOpenIcon,
+      href: "/dashboard/settings/skills",
       count: null,
       countLabel: null,
     },
@@ -234,7 +242,7 @@ export default function SettingsPage() {
                       </div>
                     ) : (
                       <div className="text-sm text-muted-foreground">
-                        Manage voice settings
+                        {card.description}
                       </div>
                     )}
                   </CardContent>

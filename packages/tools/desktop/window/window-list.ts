@@ -2,6 +2,7 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import { nativeWindowsPreferred, listWindows as nativeList } from "../lib/window-native.ts"
 import DESCRIPTION from "./window-list.txt"
 
 export const DesktopWindowListTool = Tool.define("desktop_window_list", async (initCtx) => {
@@ -19,21 +20,46 @@ export const DesktopWindowListTool = Tool.define("desktop_window_list", async (i
         metadata: { kind: "window", summary: "List all windows" },
       })
 
-      const { getWindows } = await getNut()
-      const wins = await getWindows()
-      const windows = await Promise.all(
-        wins.map(async (w: any) => {
-          const title = await w.title
-          const region = await w.region
-          return {
-            title,
-            x: region.left ?? region.x,
-            y: region.top ?? region.y,
-            width: region.width,
-            height: region.height,
-          }
-        }),
-      )
+      let windows: Array<{
+        id?: number
+        title: string
+        wmClass?: string
+        pid?: number | null
+        x: number
+        y: number
+        width: number
+        height: number
+      }>
+
+      if (nativeWindowsPreferred()) {
+        const ws = await nativeList()
+        windows = ws.map((w) => ({
+          id: w.id,
+          title: w.title,
+          wmClass: w.wmClass,
+          pid: w.pid,
+          x: w.x,
+          y: w.y,
+          width: w.width,
+          height: w.height,
+        }))
+      } else {
+        const { getWindows } = await getNut()
+        const wins = await getWindows()
+        windows = await Promise.all(
+          wins.map(async (w: any) => {
+            const title = await w.title
+            const region = await w.region
+            return {
+              title,
+              x: region.left ?? region.x,
+              y: region.top ?? region.y,
+              width: region.width,
+              height: region.height,
+            }
+          }),
+        )
+      }
 
       return {
         title: `${windows.length} window${windows.length !== 1 ? "s" : ""}`,

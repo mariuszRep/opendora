@@ -2,6 +2,7 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import { nativeWindowsPreferred, findByTitle, focusWindow } from "../lib/window-native.ts"
 import DESCRIPTION from "./window-focus.txt"
 
 export const DesktopWindowFocusTool = Tool.define("desktop_window_focus", async (initCtx) => {
@@ -21,23 +22,39 @@ export const DesktopWindowFocusTool = Tool.define("desktop_window_focus", async 
         metadata: { kind: "window", summary: `Focus window matching "${params.title}"` },
       })
 
-      const { getWindows } = await getNut()
-      const wins = await getWindows()
-      const needle = params.title.toLowerCase()
+      let matchedTitle: string
+      let matchedId: number | null = null
 
-      for (const w of wins as any[]) {
-        const t: string = await w.title
-        if (t.toLowerCase().includes(needle)) {
-          await w.focus()
-          return {
-            title: `Focused "${t}"`,
-            metadata: { title: t },
-            output: JSON.stringify({ title: t }),
+      if (nativeWindowsPreferred()) {
+        const found = await findByTitle(params.title)
+        if (!found) throw new Error(`No window found with title matching "${params.title}"`)
+        await focusWindow(found.id)
+        matchedTitle = found.title
+        matchedId = found.id
+      } else {
+        const { getWindows } = await getNut()
+        const wins = await getWindows()
+        const needle = params.title.toLowerCase()
+        let hit: any = null
+        for (const w of wins as any[]) {
+          const t: string = await w.title
+          if (t.toLowerCase().includes(needle)) {
+            hit = w
+            matchedTitle = t
+            break
           }
         }
+        if (!hit) throw new Error(`No window found with title matching "${params.title}"`)
+        await hit.focus()
+        matchedTitle = matchedTitle!
       }
 
-      throw new Error(`No window found with title matching "${params.title}"`)
+      const result = { title: matchedTitle, id: matchedId }
+      return {
+        title: `Focused "${matchedTitle}"`,
+        metadata: result,
+        output: JSON.stringify(result),
+      }
     },
   }
 })

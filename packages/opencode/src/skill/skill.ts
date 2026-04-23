@@ -197,6 +197,11 @@ export namespace Skill {
     return state().then((x) => x.dirs)
   }
 
+  export async function save(location: string, content: string) {
+    await fs.writeFile(location, content, "utf-8")
+    reload()
+  }
+
   const ANTHROPIC_SKILLS_REPO = "anthropics/skills"
   const ANTHROPIC_SKILLS_PATH = "skills"
   const GITHUB_API = "https://api.github.com"

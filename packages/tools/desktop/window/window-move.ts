@@ -2,6 +2,7 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import { nativeWindowsPreferred, findByTitle, moveWindow } from "../lib/window-native.ts"
 import DESCRIPTION from "./window-move.txt"
 
 export const DesktopWindowMoveTool = Tool.define("desktop_window_move", async (initCtx) => {
@@ -26,23 +27,37 @@ export const DesktopWindowMoveTool = Tool.define("desktop_window_move", async (i
         },
       })
 
-      const { getWindows } = await getNut()
-      const wins = await getWindows()
-      const needle = params.title.toLowerCase()
+      let movedTitle: string
 
-      for (const w of wins as any[]) {
-        const t: string = await w.title
-        if (t.toLowerCase().includes(needle)) {
-          await w.move({ x: params.x, y: params.y })
-          return {
-            title: `Moved "${t}" to (${params.x}, ${params.y})`,
-            metadata: { title: t, x: params.x, y: params.y },
-            output: JSON.stringify({ title: t, x: params.x, y: params.y }),
+      if (nativeWindowsPreferred()) {
+        const found = await findByTitle(params.title)
+        if (!found) throw new Error(`No window found with title matching "${params.title}"`)
+        await moveWindow(found.id, params.x, params.y)
+        movedTitle = found.title
+      } else {
+        const { getWindows } = await getNut()
+        const wins = await getWindows()
+        const needle = params.title.toLowerCase()
+        let hit: any = null
+        for (const w of wins as any[]) {
+          const t: string = await w.title
+          if (t.toLowerCase().includes(needle)) {
+            hit = w
+            movedTitle = t
+            break
           }
         }
+        if (!hit) throw new Error(`No window found with title matching "${params.title}"`)
+        await hit.move({ x: params.x, y: params.y })
+        movedTitle = movedTitle!
       }
 
-      throw new Error(`No window found with title matching "${params.title}"`)
+      const result = { title: movedTitle, x: params.x, y: params.y }
+      return {
+        title: `Moved "${movedTitle}" to (${params.x}, ${params.y})`,
+        metadata: result,
+        output: JSON.stringify(result),
+      }
     },
   }
 })

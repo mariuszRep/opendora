@@ -54,7 +54,14 @@ export const DesktopScreenFindImageTool = Tool.define("desktop_screen_find_image
         screen.config.confidence = params.confidence
       }
 
-      const needle = await imageResource(templatePath)
+      // nut-js's `imageResource()` prepends `screen.config.resourceDirectory`
+      // via `path.join`. `path.join("./", "/tmp/foo.png")` strips the leading
+      // slash and yields `tmp/foo.png`, which then resolves relative to CWD
+      // (`packages/opencode/...`). Work around by splitting the absolute path
+      // into directory + filename and setting the resource directory
+      // explicitly before loading.
+      screen.config.resourceDirectory = path.dirname(templatePath)
+      const needle = await imageResource(path.basename(templatePath))
       let matches: Array<{ x: number; y: number; width: number; height: number; score?: number }>
 
       try {

@@ -115,6 +115,24 @@ export async function captureFull(destPath: string): Promise<void> {
   }
 }
 
+/**
+ * Capture a single X11 window (by numeric window ID) to the given PNG path.
+ * Works under WSLg where full-screen root capture returns a black image — each
+ * client window has its own composited pixmap that `XGetImage(window_id)` can
+ * read via ImageMagick `import -window <id>`.
+ */
+export async function captureWindow(windowId: number, destPath: string): Promise<void> {
+  // Prefer `import` — it accepts a raw window ID directly. scrot/maim don't.
+  const importPath = await which("import")
+  if (!importPath) {
+    throw new NativeScreenUnavailableError(
+      "Per-window capture needs ImageMagick's `import`. Install: `sudo apt install imagemagick`.",
+    )
+  }
+  await fs.mkdir(path.dirname(destPath), { recursive: true })
+  await run("import", ["-window", String(windowId), destPath])
+}
+
 /** Capture a rectangular region to the given PNG path. */
 export async function captureRegion(region: Region, destPath: string): Promise<void> {
   const tool = await resolveTool()

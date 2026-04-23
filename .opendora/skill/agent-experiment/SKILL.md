@@ -1,7 +1,3 @@
----
-name: agent-experiment
-description: Run a structured improvement experiment on any agent — test and improve persona, injection, tools, skills, or delegation behaviour; supports short Q&A and full end-to-end workflow sessions; tracks tokens and steps per run; keep or discard the change; log every experiment
----
 
 # Experiment — Agent Improvement Skill
 

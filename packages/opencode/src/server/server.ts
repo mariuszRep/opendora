@@ -438,6 +438,26 @@ export namespace Server {
             return c.json(skills)
           },
         )
+        .put(
+          "/skill",
+          describeRoute({
+            summary: "Save skill",
+            description: "Write updated content to a skill's SKILL.md file.",
+            operationId: "app.skill.save",
+            responses: {
+              200: {
+                description: "Saved",
+                content: { "application/json": { schema: resolver(z.boolean()) } },
+              },
+            },
+          }),
+          validator("json", z.object({ location: z.string(), content: z.string() })),
+          async (c) => {
+            const { location, content } = c.req.valid("json")
+            await Skill.save(location, content)
+            return c.json(true)
+          },
+        )
         .get(
           "/lsp",
           describeRoute({

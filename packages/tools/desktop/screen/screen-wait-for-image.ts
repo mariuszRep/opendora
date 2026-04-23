@@ -64,7 +64,9 @@ export const DesktopScreenWaitForImageTool = Tool.define(
         const { screen, imageResource } = await getNut()
         if (params.confidence !== undefined) screen.config.confidence = params.confidence
 
-        const needle = await imageResource(templatePath)
+        // See screen-find-image.ts for why this split is required.
+        screen.config.resourceDirectory = path.dirname(templatePath)
+        const needle = await imageResource(path.basename(templatePath))
         const timeout = params.timeoutMs ?? 5000
         const interval = params.intervalMs ?? 500
         const searchRegion = params.region ? await resolveRegion(params.region) : undefined

@@ -2,6 +2,7 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import { nativeWindowsPreferred, findByTitle, resizeWindow } from "../lib/window-native.ts"
 import DESCRIPTION from "./window-resize.txt"
 
 export const DesktopWindowResizeTool = Tool.define("desktop_window_resize", async (initCtx) => {
@@ -26,23 +27,37 @@ export const DesktopWindowResizeTool = Tool.define("desktop_window_resize", asyn
         },
       })
 
-      const { getWindows } = await getNut()
-      const wins = await getWindows()
-      const needle = params.title.toLowerCase()
+      let resizedTitle: string
 
-      for (const w of wins as any[]) {
-        const t: string = await w.title
-        if (t.toLowerCase().includes(needle)) {
-          await w.resize({ width: params.width, height: params.height })
-          return {
-            title: `Resized "${t}" to ${params.width}×${params.height}`,
-            metadata: { title: t, width: params.width, height: params.height },
-            output: JSON.stringify({ title: t, width: params.width, height: params.height }),
+      if (nativeWindowsPreferred()) {
+        const found = await findByTitle(params.title)
+        if (!found) throw new Error(`No window found with title matching "${params.title}"`)
+        await resizeWindow(found.id, params.width, params.height)
+        resizedTitle = found.title
+      } else {
+        const { getWindows } = await getNut()
+        const wins = await getWindows()
+        const needle = params.title.toLowerCase()
+        let hit: any = null
+        for (const w of wins as any[]) {
+          const t: string = await w.title
+          if (t.toLowerCase().includes(needle)) {
+            hit = w
+            resizedTitle = t
+            break
           }
         }
+        if (!hit) throw new Error(`No window found with title matching "${params.title}"`)
+        await hit.resize({ width: params.width, height: params.height })
+        resizedTitle = resizedTitle!
       }
 
-      throw new Error(`No window found with title matching "${params.title}"`)
+      const result = { title: resizedTitle, width: params.width, height: params.height }
+      return {
+        title: `Resized "${resizedTitle}" to ${params.width}×${params.height}`,
+        metadata: result,
+        output: JSON.stringify(result),
+      }
     },
   }
 })

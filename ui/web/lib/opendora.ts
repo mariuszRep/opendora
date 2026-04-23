@@ -492,6 +492,14 @@ export const opendora = {
     update: (updates: { model_filters?: Record<string, "all" | "free" | "none">; [k: string]: unknown }) =>
       req<boolean>("/config", { method: "PATCH", body: JSON.stringify(updates) }),
   },
+  skill: {
+    list: (directory?: string) =>
+      req<Array<{ name: string; description: string; location: string; content: string }>>(
+        directory ? `/skill?directory=${encodeURIComponent(directory)}` : "/skill"
+      ),
+    update: (location: string, content: string) =>
+      req<boolean>("/skill", { method: "PUT", body: JSON.stringify({ location, content }) }),
+  },
   events: {
     subscribe: (onEvent: (event: Event) => void, onReconnect?: () => void): () => void => {
       const es = new EventSource(`${OPENDORA_URL}/event`)

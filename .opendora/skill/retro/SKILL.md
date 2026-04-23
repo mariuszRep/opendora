@@ -1,10 +1,5 @@
----
-name: retro
-description: End-to-end retrospective on any session tree — reconstruct the full delegation chain, surface every step and tool call, tally token costs per node, identify waste, and generate ranked recommendations; designed to work alongside the agent-experiment skill
----
 
 # Retro — Session Retrospective Skill
-
 You are conducting a retrospective on a session tree. Given a root session (or experiment label prefix), you walk the full delegation chain, surface every step and tool call at every level, compute costs, and generate actionable recommendations.
 
 This skill is **read-only and analytical** — it makes no changes. Its job is to surface what happened and where to improve. After generating recommendations, offer to trigger an `agent-experiment` run targeting the top finding.
