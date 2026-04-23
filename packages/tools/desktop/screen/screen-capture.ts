@@ -84,11 +84,23 @@ export const DesktopScreenCaptureTool = Tool.define("desktop_screen_capture", as
         }
       }
 
+      // Build a data URL so the attachment is self-contained and matches the
+      // FilePart schema expected by session-core (type/mime/url/filename).
+      const pngBytes = await fs.readFile(destPath)
+      const dataUrl = `data:image/png;base64,${pngBytes.toString("base64")}`
+
       return {
         title: `Captured screen (${width}×${height}) → ${path.basename(destPath)}`,
         metadata: { path: destPath, width, height },
         output: JSON.stringify({ path: destPath, width, height }),
-        attachments: [{ kind: "image", path: destPath }],
+        attachments: [
+          {
+            type: "file",
+            mime: "image/png",
+            filename: path.basename(destPath),
+            url: dataUrl,
+          },
+        ],
       }
     },
   }

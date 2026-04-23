@@ -2,6 +2,7 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import { nativeClipboardPreferred, readText as nativeRead } from "../lib/clipboard-native.ts"
 import DESCRIPTION from "./clipboard-read.txt"
 
 export const DesktopClipboardReadTool = Tool.define("desktop_clipboard_read", async (initCtx) => {
@@ -19,8 +20,13 @@ export const DesktopClipboardReadTool = Tool.define("desktop_clipboard_read", as
         metadata: { kind: "clipboard", summary: "Read clipboard" },
       })
 
-      const { clipboard } = await getNut()
-      const text = await clipboard.getContent()
+      let text: string
+      if (nativeClipboardPreferred()) {
+        text = await nativeRead()
+      } else {
+        const { clipboard } = await getNut()
+        text = await clipboard.getContent()
+      }
 
       return {
         title: `Clipboard: ${text.length} characters`,

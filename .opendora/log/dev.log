@@ -1,2 +1,623 @@
-INFO  2026-04-22T15:45:45 +390ms service=default version=local args=["serve","--port","4096"] opencode
-INFO  2026-04-22T15:45:45 +1ms service=config path=/home/mariu/projects/opendora/.opendora/config.json loading
+INFO  2026-04-23T08:38:20 +550ms service=default version=local args=["serve","--port","4097"] opencode
+INFO  2026-04-23T08:38:20 +2ms service=config path=/home/mariu/projects/opendora/.opendora/config.json loading
+INFO  2026-04-23T08:38:20 +2ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.json loading
+INFO  2026-04-23T08:38:20 +1ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.jsonc loading
+INFO  2026-04-23T08:38:20 +5ms service=db path=/home/mariu/projects/opendora/.opendora/storage/opendora.db opening database
+INFO  2026-04-23T08:38:20 +4ms service=db count=14 mode=dev applying migrations
+WARN  2026-04-23T08:38:20 +135ms service=server Failed to start browser control server: Error: Failed to start server. Is port 8338 in use?
+INFO  2026-04-23T08:38:24 +3396ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-23T08:38:24 +1ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-23T08:38:24 +6ms service=server status=completed duration=6 method=OPTIONS path=/provider request
+INFO  2026-04-23T08:38:24 +0ms service=server method=OPTIONS path=/agent request
+INFO  2026-04-23T08:38:24 +0ms service=server status=started method=OPTIONS path=/agent request
+INFO  2026-04-23T08:38:24 +1ms service=server status=completed duration=1 method=OPTIONS path=/agent request
+INFO  2026-04-23T08:38:24 +0ms service=server method=OPTIONS path=/session request
+INFO  2026-04-23T08:38:24 +0ms service=server status=started method=OPTIONS path=/session request
+INFO  2026-04-23T08:38:24 +0ms service=server status=completed duration=0 method=OPTIONS path=/session request
+INFO  2026-04-23T08:38:24 +2ms service=server method=OPTIONS path=/question request
+INFO  2026-04-23T08:38:24 +0ms service=server status=started method=OPTIONS path=/question request
+INFO  2026-04-23T08:38:24 +1ms service=server status=completed duration=0 method=OPTIONS path=/question request
+INFO  2026-04-23T08:38:24 +0ms service=server method=OPTIONS path=/config request
+INFO  2026-04-23T08:38:24 +0ms service=server status=started method=OPTIONS path=/config request
+INFO  2026-04-23T08:38:24 +1ms service=server status=completed duration=1 method=OPTIONS path=/config request
+INFO  2026-04-23T08:38:24 +0ms service=server method=OPTIONS path=/schedule request
+INFO  2026-04-23T08:38:24 +0ms service=server status=started method=OPTIONS path=/schedule request
+INFO  2026-04-23T08:38:24 +1ms service=server status=completed duration=1 method=OPTIONS path=/schedule request
+INFO  2026-04-23T08:38:24 +2ms service=server method=GET path=/event request
+INFO  2026-04-23T08:38:24 +1ms service=server status=started method=GET path=/event request
+INFO  2026-04-23T08:38:24 +1ms service=default directory=/home/mariu/projects/opendora/packages/opencode creating instance
+INFO  2026-04-23T08:38:24 +2ms service=project directory=/home/mariu/projects/opendora/packages/opencode fromDirectory
+INFO  2026-04-23T08:38:24 +2ms service=server method=GET path=/provider request
+INFO  2026-04-23T08:38:24 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-04-23T08:38:24 +1ms service=server method=GET path=/agent request
+INFO  2026-04-23T08:38:24 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-04-23T08:38:24 +0ms service=server method=GET path=/session request
+INFO  2026-04-23T08:38:24 +0ms service=server status=started method=GET path=/session request
+INFO  2026-04-23T08:38:24 +0ms service=server method=GET path=/question request
+INFO  2026-04-23T08:38:24 +0ms service=server status=started method=GET path=/question request
+INFO  2026-04-23T08:38:24 +0ms service=server method=GET path=/config request
+INFO  2026-04-23T08:38:24 +0ms service=server status=started method=GET path=/config request
+INFO  2026-04-23T08:38:24 +33ms service=default directory=/home/mariu/projects/opendora/packages/opencode bootstrapping
+DEBUG 2026-04-23T08:38:24 +8ms service=config path=/home/mariu/projects/opendora/.opendora loading config from OPENCODE_CONFIG_DIR
+DEBUG 2026-04-23T08:38:24 +1ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.jsonc
+INFO  2026-04-23T08:38:24 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.jsonc loading
+DEBUG 2026-04-23T08:38:24 +0ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.json
+INFO  2026-04-23T08:38:24 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.json loading
+DEBUG 2026-04-23T08:38:24 +77ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-23T08:38:24 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-23T08:38:24 +0ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-23T08:38:24 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+INFO  2026-04-23T08:38:24 +21ms service=plugin name=CodexAuthPlugin loading internal plugin
+INFO  2026-04-23T08:38:24 +0ms service=plugin name=CopilotAuthPlugin loading internal plugin
+INFO  2026-04-23T08:38:24 +1ms service=plugin name=gitlabAuthPlugin loading internal plugin
+INFO  2026-04-23T08:38:24 +0ms service=plugin name=googleOAuthPlugin loading internal plugin
+INFO  2026-04-23T08:38:24 +0ms service=plugin path=opencode-anthropic-auth@0.0.13 loading plugin
+INFO  2026-04-23T08:38:24 +34ms service=bus type=* subscribing
+INFO  2026-04-23T08:38:24 +0ms service=bus type=session.updated subscribing
+INFO  2026-04-23T08:38:24 +0ms service=bus type=message.updated subscribing
+INFO  2026-04-23T08:38:24 +0ms service=bus type=message.part.updated subscribing
+INFO  2026-04-23T08:38:24 +0ms service=bus type=session.diff subscribing
+INFO  2026-04-23T08:38:24 +0ms service=format init
+INFO  2026-04-23T08:38:24 +0ms service=bus type=file.edited subscribing
+INFO  2026-04-23T08:38:24 +1ms service=lsp serverIds=deno, typescript, vue, eslint, oxlint, biome, gopls, ruby-lsp, pyright, elixir-ls, zls, csharp, fsharp, sourcekit-lsp, rust, clangd, svelte, astro, jdtls, kotlin-ls, yaml-ls, lua-ls, php intelephense, prisma, dart, ocaml-lsp, bash, terraform, texlab, dockerfile, gleam, clojure-lsp, nixd, tinymist, haskell-language-server, julials enabled LSP servers
+INFO  2026-04-23T08:38:24 +0ms service=file.watcher init
+INFO  2026-04-23T08:38:24 +253ms service=scheduler id=snapshot.cleanup run
+INFO  2026-04-23T08:38:24 +1ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-04-23T08:38:24 +1ms service=bus type=command.executed subscribing
+INFO  2026-04-23T08:38:24 +1ms service=file.watcher platform=linux backend=inotify watcher backend
+ERROR 2026-04-23T08:38:24 +1ms service=file.watcher error=OPENCODE_LIBC is not defined failed to load watcher binding
+INFO  2026-04-23T08:38:24 +2ms service=server event connected
+INFO  2026-04-23T08:38:24 +6ms service=bus type=* subscribing
+INFO  2026-04-23T08:38:24 +14ms service=server status=completed duration=461 method=GET path=/event request
+INFO  2026-04-23T08:38:24 +1ms service=server status=completed duration=456 method=GET path=/question request
+INFO  2026-04-23T08:38:24 +0ms service=server status=completed duration=456 method=GET path=/config request
+INFO  2026-04-23T08:38:24 +4ms service=server status=completed duration=460 method=GET path=/session request
+INFO  2026-04-23T08:38:24 +43ms service=provider status=started state
+INFO  2026-04-23T08:38:24 +43ms service=provider init
+INFO  2026-04-23T08:38:24 +15ms service=vcs branch=ui initialized
+INFO  2026-04-23T08:38:24 +0ms service=bus type=file.watcher.updated subscribing
+INFO  2026-04-23T08:38:24 +0ms service=server method=GET path=/schedule request
+INFO  2026-04-23T08:38:24 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-04-23T08:38:24 +19ms service=server status=completed duration=19 method=GET path=/schedule request
+INFO  2026-04-23T08:38:24 +13ms service=snapshot prune=7.days cleanup
+INFO  2026-04-23T08:38:25 +159ms service=server status=completed duration=752 method=GET path=/agent request
+WARN  2026-04-23T08:38:25 +331ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
+WARN  2026-04-23T08:38:25 +122ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
+INFO  2026-04-23T08:38:26 +517ms service=provider providerID=openai found
+INFO  2026-04-23T08:38:26 +4ms service=provider providerID=kilo found
+INFO  2026-04-23T08:38:26 +1ms service=provider providerID=openrouter found
+INFO  2026-04-23T08:38:26 +0ms service=provider providerID=openai-codex found
+INFO  2026-04-23T08:38:26 +1ms service=provider providerID=google-gemini-cli found
+INFO  2026-04-23T08:38:26 +0ms service=provider providerID=opencode found
+INFO  2026-04-23T08:38:26 +0ms service=provider providerID=ollama found
+INFO  2026-04-23T08:38:26 +0ms service=provider status=completed duration=1225 state
+INFO  2026-04-23T08:38:26 +95ms service=server status=completed duration=1824 method=GET path=/provider request
+INFO  2026-04-23T08:38:26 +179ms service=server method=OPTIONS path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/message request
+INFO  2026-04-23T08:38:26 +1ms service=server status=started method=OPTIONS path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/message request
+INFO  2026-04-23T08:38:26 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/message request
+INFO  2026-04-23T08:38:26 +12ms service=server method=GET path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/message request
+INFO  2026-04-23T08:38:26 +0ms service=server status=started method=GET path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/message request
+INFO  2026-04-23T08:38:26 +8ms service=server status=completed duration=8 method=GET path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/message request
+INFO  2026-04-23T08:38:33 +7632ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-23T08:38:33 +0ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-23T08:38:33 +2ms service=server status=completed duration=2 method=OPTIONS path=/provider request
+INFO  2026-04-23T08:38:33 +9ms service=server method=GET path=/provider request
+INFO  2026-04-23T08:38:33 +1ms service=server status=started method=GET path=/provider request
+INFO  2026-04-23T08:38:34 +92ms service=server status=completed duration=92 method=GET path=/provider request
+INFO  2026-04-23T08:38:40 +5986ms service=server method=OPTIONS path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/prompt_async request
+INFO  2026-04-23T08:38:40 +0ms service=server status=started method=OPTIONS path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/prompt_async request
+INFO  2026-04-23T08:38:40 +1ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/prompt_async request
+INFO  2026-04-23T08:38:40 +8ms service=server method=POST path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/prompt_async request
+INFO  2026-04-23T08:38:40 +1ms service=server status=started method=POST path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/prompt_async request
+INFO  2026-04-23T08:38:40 +16ms service=server status=completed duration=15 method=POST path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/prompt_async request
+INFO  2026-04-23T08:38:40 +59ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:38:40 +5ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:38:40 +3ms service=bus type=session.updated publishing
+INFO  2026-04-23T08:38:40 +5ms service=bus type=session.status publishing
+INFO  2026-04-23T08:38:40 +28ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:38:40 +127ms service=provider status=started providerID=google-gemini-cli getSDK
+INFO  2026-04-23T08:38:40 +1ms service=provider providerID=google-gemini-cli pkg=@ai-sdk/google using bundled provider
+INFO  2026-04-23T08:38:40 +0ms service=provider status=completed duration=1 providerID=google-gemini-cli getSDK
+INFO  2026-04-23T08:38:40 +48ms service=bus type=session.status publishing
+INFO  2026-04-23T08:38:46 +6064ms service=snapshot hash=6dfa6edade2d86159dbf388b643fcbc99cc66114
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-23T08:38:46 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:38:46 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:38:46 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:46 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:46 +195ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:38:46 +8ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:38:46 +19ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:38:46 +67ms service=bus type=session.updated publishing
+INFO  2026-04-23T08:38:46 +19ms service=permission permission=task pattern=product-owner action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-23T08:38:46 +20ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:38:46 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:38:46 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:38:46 +2ms service=bus type=session.updated publishing
+INFO  2026-04-23T08:38:46 +1ms service=bus type=session.status publishing
+INFO  2026-04-23T08:38:46 +7ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:38:46 +33ms service=snapshot hash=6dfa6edade2d86159dbf388b643fcbc99cc66114
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-23T08:38:46 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:38:46 +0ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:38:46 +12ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:38:46 +18ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:38:46 +1ms service=bus type=session.status publishing
+INFO  2026-04-23T08:38:46 +29ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:38:46 +84ms service=provider status=started providerID=openai-codex getSDK
+INFO  2026-04-23T08:38:46 +0ms service=provider providerID=openai-codex pkg=@ai-sdk/openai using bundled provider
+INFO  2026-04-23T08:38:46 +0ms service=provider status=completed duration=0 providerID=openai-codex getSDK
+INFO  2026-04-23T08:38:47 +80ms service=bus type=session.status publishing
+INFO  2026-04-23T08:38:47 +43ms service=bus type=session.status publishing
+INFO  2026-04-23T08:38:49 +2128ms service=bus type=session.status publishing
+INFO  2026-04-23T08:38:49 +412ms service=snapshot hash=6dfa6edade2d86159dbf388b643fcbc99cc66114
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-23T08:38:49 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:38:50 +567ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:38:53 +2864ms service=server method=OPTIONS path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/abort request
+INFO  2026-04-23T08:38:53 +0ms service=server status=started method=OPTIONS path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/abort request
+INFO  2026-04-23T08:38:53 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/abort request
+INFO  2026-04-23T08:38:53 +7ms service=server method=POST path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/abort request
+INFO  2026-04-23T08:38:53 +0ms service=server status=started method=POST path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/abort request
+INFO  2026-04-23T08:38:53 +1ms service=bus type=session.status publishing
+INFO  2026-04-23T08:38:53 +1ms service=bus type=session.idle publishing
+INFO  2026-04-23T08:38:53 +0ms service=server status=completed duration=2 method=POST path=/session/ses_2501e6348ffeQy1N88gxuOpLdT/abort request
+INFO  2026-04-23T08:38:53 +37ms service=bus type=session.error publishing
+INFO  2026-04-23T08:38:53 +0ms service=bus type=session.status publishing
+INFO  2026-04-23T08:38:53 +0ms service=bus type=session.idle publishing
+INFO  2026-04-23T08:38:53 +2ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:38:53 +4ms service=bus type=session.status publishing
+INFO  2026-04-23T08:38:53 +0ms service=bus type=session.idle publishing
+INFO  2026-04-23T08:38:53 +404ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +61ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +43ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +17ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +10ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +7ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +24ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +24ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +26ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +19ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +15ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +59ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +49ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +60ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:53 +30ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +54ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +60ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +9ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +31ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +8ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +9ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +20ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +30ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +18ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +99ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +80ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +39ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +16ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +20ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +11ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +69ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +5ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:38:57 +2563ms service=server method=OPTIONS path=/session/ses_24ac6ded0ffe4ZFjb7kM4FhGLO/abort request
+INFO  2026-04-23T08:38:57 +0ms service=server status=started method=OPTIONS path=/session/ses_24ac6ded0ffe4ZFjb7kM4FhGLO/abort request
+INFO  2026-04-23T08:38:57 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_24ac6ded0ffe4ZFjb7kM4FhGLO/abort request
+INFO  2026-04-23T08:38:57 +7ms service=server method=POST path=/session/ses_24ac6ded0ffe4ZFjb7kM4FhGLO/abort request
+INFO  2026-04-23T08:38:57 +1ms service=server status=started method=POST path=/session/ses_24ac6ded0ffe4ZFjb7kM4FhGLO/abort request
+INFO  2026-04-23T08:38:57 +0ms service=bus type=session.status publishing
+INFO  2026-04-23T08:38:57 +1ms service=bus type=session.idle publishing
+INFO  2026-04-23T08:38:57 +0ms service=server status=completed duration=1 method=POST path=/session/ses_24ac6ded0ffe4ZFjb7kM4FhGLO/abort request
+INFO  2026-04-23T08:38:57 +3ms service=bus type=session.error publishing
+INFO  2026-04-23T08:38:57 +0ms service=bus type=session.status publishing
+INFO  2026-04-23T08:38:57 +0ms service=bus type=session.idle publishing
+INFO  2026-04-23T08:38:57 +56ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:38:57 +3ms service=bus type=session.status publishing
+INFO  2026-04-23T08:38:57 +0ms service=bus type=session.idle publishing
+INFO  2026-04-23T08:39:06 +8922ms service=server method=OPTIONS path=/session/ses_250108b06ffeBJvMyptmnFUEsj/message request
+INFO  2026-04-23T08:39:06 +0ms service=server status=started method=OPTIONS path=/session/ses_250108b06ffeBJvMyptmnFUEsj/message request
+INFO  2026-04-23T08:39:06 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_250108b06ffeBJvMyptmnFUEsj/message request
+INFO  2026-04-23T08:39:06 +10ms service=server method=GET path=/session/ses_250108b06ffeBJvMyptmnFUEsj/message request
+INFO  2026-04-23T08:39:06 +0ms service=server status=started method=GET path=/session/ses_250108b06ffeBJvMyptmnFUEsj/message request
+INFO  2026-04-23T08:39:06 +16ms service=server status=completed duration=16 method=GET path=/session/ses_250108b06ffeBJvMyptmnFUEsj/message request
+INFO  2026-04-23T08:39:10 +3894ms service=server method=OPTIONS path=/session request
+INFO  2026-04-23T08:39:10 +0ms service=server status=started method=OPTIONS path=/session request
+INFO  2026-04-23T08:39:10 +1ms service=server status=completed duration=1 method=OPTIONS path=/session request
+INFO  2026-04-23T08:39:10 +8ms service=server method=POST path=/session request
+INFO  2026-04-23T08:39:10 +0ms service=server status=started method=POST path=/session request
+INFO  2026-04-23T08:39:10 +13ms service=bus type=session.created publishing
+INFO  2026-04-23T08:39:10 +2ms service=server status=completed duration=15 method=POST path=/session request
+INFO  2026-04-23T08:39:10 +272ms service=server method=GET path=/session/ses_250108b06ffeBJvMyptmnFUEsj/message request
+INFO  2026-04-23T08:39:10 +1ms service=server status=started method=GET path=/session/ses_250108b06ffeBJvMyptmnFUEsj/message request
+INFO  2026-04-23T08:39:10 +10ms service=server status=completed duration=10 method=GET path=/session/ses_250108b06ffeBJvMyptmnFUEsj/message request
+INFO  2026-04-23T08:39:10 +254ms service=server method=OPTIONS path=/session/ses_24681c7a1ffeesbsIh2eM6aPse/message request
+INFO  2026-04-23T08:39:10 +0ms service=server status=started method=OPTIONS path=/session/ses_24681c7a1ffeesbsIh2eM6aPse/message request
+INFO  2026-04-23T08:39:10 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_24681c7a1ffeesbsIh2eM6aPse/message request
+INFO  2026-04-23T08:39:10 +7ms service=server method=GET path=/session/ses_24681c7a1ffeesbsIh2eM6aPse/message request
+INFO  2026-04-23T08:39:10 +0ms service=server status=started method=GET path=/session/ses_24681c7a1ffeesbsIh2eM6aPse/message request
+INFO  2026-04-23T08:39:10 +1ms service=server status=completed duration=1 method=GET path=/session/ses_24681c7a1ffeesbsIh2eM6aPse/message request
+INFO  2026-04-23T08:39:24 +13709ms service=server method=POST path=/voice/stt request
+INFO  2026-04-23T08:39:24 +2ms service=server status=started method=POST path=/voice/stt request
+INFO  2026-04-23T08:39:27 +3390ms service=server status=completed duration=3390 method=POST path=/voice/stt request
+INFO  2026-04-23T08:39:30 +2518ms service=server method=OPTIONS path=/session/ses_24681c7a1ffeesbsIh2eM6aPse/prompt_async request
+INFO  2026-04-23T08:39:30 +1ms service=server status=started method=OPTIONS path=/session/ses_24681c7a1ffeesbsIh2eM6aPse/prompt_async request
+INFO  2026-04-23T08:39:30 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_24681c7a1ffeesbsIh2eM6aPse/prompt_async request
+INFO  2026-04-23T08:39:30 +6ms service=server method=POST path=/session/ses_24681c7a1ffeesbsIh2eM6aPse/prompt_async request
+INFO  2026-04-23T08:39:30 +0ms service=server status=started method=POST path=/session/ses_24681c7a1ffeesbsIh2eM6aPse/prompt_async request
+INFO  2026-04-23T08:39:30 +4ms service=server status=completed duration=4 method=POST path=/session/ses_24681c7a1ffeesbsIh2eM6aPse/prompt_async request
+INFO  2026-04-23T08:39:30 +4ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:39:30 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:30 +1ms service=bus type=session.updated publishing
+INFO  2026-04-23T08:39:30 +1ms service=bus type=session.status publishing
+INFO  2026-04-23T08:39:30 +15ms service=provider status=started providerID=opencode getSDK
+INFO  2026-04-23T08:39:30 +0ms service=provider providerID=opencode pkg=@ai-sdk/openai using bundled provider
+INFO  2026-04-23T08:39:30 +0ms service=provider status=completed duration=0 providerID=opencode getSDK
+INFO  2026-04-23T08:39:31 +1271ms service=bus type=session.updated publishing
+INFO  2026-04-23T08:39:31 +21ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:39:31 +86ms service=bus type=session.status publishing
+INFO  2026-04-23T08:39:32 +501ms service=snapshot hash=6dfa6edade2d86159dbf388b643fcbc99cc66114
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-23T08:39:32 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:34 +2293ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:48 +13518ms service=server method=OPTIONS path=/provider request
+INFO  2026-04-23T08:39:48 +0ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-04-23T08:39:48 +1ms service=server status=completed duration=1 method=OPTIONS path=/provider request
+INFO  2026-04-23T08:39:48 +10ms service=server method=GET path=/provider request
+INFO  2026-04-23T08:39:48 +1ms service=server status=started method=GET path=/provider request
+INFO  2026-04-23T08:39:48 +120ms service=server status=completed duration=120 method=GET path=/provider request
+INFO  2026-04-23T08:39:54 +6189ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +7ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +27ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +17ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +17ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +5ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +34ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +17ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +20ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +15ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +23ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +17ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +5ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +47ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +11ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +19ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +5ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +6ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +9ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +3ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +5ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +11ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +74ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +63ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:54 +33ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +55ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +6ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +7ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +187ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +7ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +21ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +15ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +349ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +8ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +41ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +28ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:55 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +489ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +60ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +28ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +49ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +34ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +130ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +11ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +3ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +231ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +3ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +10ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +34ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +11ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:56 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +104ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +3ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +341ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:57 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:57 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +24ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +9ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +15ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +3ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +15ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +29ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +20ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +18ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +7ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +8ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +9ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +15ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +10ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +18ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +55ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +8ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +3ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +20ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +5ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +5ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +16ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +11ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +10ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +8ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +20ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +11ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +21ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +17ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +45ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:57 +7ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +40ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +21ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +3ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +16ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +3ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +16ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +11ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +18ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +16ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +5ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +10ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +3ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +15ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +7ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +9ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +20ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +57ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +29ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +29ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +18ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +10ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:39:58 +520ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:58 +3ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:58 +39ms service=permission permission=desktop pattern=window action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-23T08:39:59 +179ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:59 +4ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:59 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:59 +2ms service=permission permission=desktop pattern=window action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-23T08:39:59 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:59 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:59 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:59 +1ms service=permission permission=desktop pattern=screen action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-23T08:39:59 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:59 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:59 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:59 +4ms service=permission permission=desktop pattern=mouse action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-23T08:39:59 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:59 +2ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:59 +39ms service=snapshot hash=6dfa6edade2d86159dbf388b643fcbc99cc66114
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-23T08:39:59 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:39:59 +0ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:39:59 +26ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:39:59 +1ms service=bus type=session.status publishing
+INFO  2026-04-23T08:39:59 +18ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:39:59 +56ms service=bus type=session.status publishing
+INFO  2026-04-23T08:40:00 +780ms service=snapshot hash=6dfa6edade2d86159dbf388b643fcbc99cc66114
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-23T08:40:00 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:40:00 +522ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:40:02 +1604ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +3ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +9ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +28ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +10ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +26ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +30ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +7ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +25ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +28ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +2ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +0ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +15ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +16ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +15ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +18ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +15ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +37ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +24ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +21ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +11ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +15ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +12ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +9ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +20ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +11ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +16ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +9ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +26ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +18ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +21ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +24ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +8ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +26ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +30ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +35ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +16ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:02 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +11ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +33ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +45ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +13ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +30ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +4ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +18ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +14ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +1ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +9ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +15ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +21ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +29ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +31ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +35ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +30ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +38ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +30ms service=bus type=message.part.delta publishing
+INFO  2026-04-23T08:40:03 +86ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:40:03 +12ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:40:03 +40ms service=permission permission=desktop pattern=screen action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-04-23T08:40:03 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:40:04 +1316ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:40:04 +34ms service=snapshot hash=6dfa6edade2d86159dbf388b643fcbc99cc66114
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-23T08:40:04 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:40:04 +0ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:40:04 +30ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:40:04 +0ms service=bus type=session.status publishing
+INFO  2026-04-23T08:40:04 +21ms service=bus type=message.updated publishing
+INFO  2026-04-23T08:40:05 +66ms service=bus type=session.status publishing
+INFO  2026-04-23T08:40:05 +635ms service=snapshot hash=6dfa6edade2d86159dbf388b643fcbc99cc66114
+ cwd=/home/mariu/projects/opendora/packages/opencode git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-04-23T08:40:05 +1ms service=bus type=message.part.updated publishing
+INFO  2026-04-23T08:40:06 +720ms service=bus type=message.part.updated publishing

@@ -2,6 +2,7 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
+import { nativeClipboardPreferred, writeText as nativeWrite } from "../lib/clipboard-native.ts"
 import DESCRIPTION from "./clipboard-write.txt"
 
 export const DesktopClipboardWriteTool = Tool.define("desktop_clipboard_write", async (initCtx) => {
@@ -21,8 +22,12 @@ export const DesktopClipboardWriteTool = Tool.define("desktop_clipboard_write", 
         metadata: { kind: "clipboard", summary: `Write ${params.text.length} characters to clipboard` },
       })
 
-      const { clipboard } = await getNut()
-      await clipboard.setContent(params.text)
+      if (nativeClipboardPreferred()) {
+        await nativeWrite(params.text)
+      } else {
+        const { clipboard } = await getNut()
+        await clipboard.setContent(params.text)
+      }
 
       return {
         title: `Wrote ${params.text.length} characters to clipboard`,

@@ -38,7 +38,6 @@ export const StartCommand = cmd({
           "run",
           "--cwd",
           projectRoot,
-          "--conditions=browser",
           path.join(opencodePath, "src/index.ts"),
           "serve",
           "--port",
