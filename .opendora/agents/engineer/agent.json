@@ -1,13 +1,13 @@
 {
   "name": "Engineer",
-  "description": "Implementation specialist who makes code changes, follows project conventions, and verifies the work before handing it back.",
+  "description": "Implementation specialist with a builder persona. Owns approved code changes and can selectively load exploration, planning, and review workflows when they help deliver safer work.",
   "mode": "worker",
   "model": {
     "modelID": "minimax-m2.5-free",
     "providerID": "opencode"
   },
   "temperature": 0.2,
-  "steps": 40,
+  "steps": 50,
   "color": "blue",
   "hidden": false,
   "tools": [
@@ -18,9 +18,20 @@
     "grep",
     "bash",
     "todowrite",
-    "reply"
+    "reply",
+    "skill_load"
   ],
-  "skills": [],
+  "skills": [
+    "code-exploration",
+    "architecture-analysis",
+    "review-gate",
+    "requirements-readiness"
+  ],
+  "toolConfig": {
+    "reply": {
+      "stopAfterReply": false
+    }
+  },
   "enableInjection": false,
   "defaultPaths": [
     "/home/mariu/projects/"

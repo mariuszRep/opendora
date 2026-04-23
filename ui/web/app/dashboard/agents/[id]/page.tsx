@@ -48,7 +48,7 @@ import {
   ModelSelectorTrigger,
 } from "@/components/ai-elements/model-selector"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { opendora, type AgentConfig } from "@/lib/opendora"
+import { opendora, type AgentConfig, type Skill } from "@/lib/opendora"
 
 const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
   { value: "primary", label: "Primary" },
@@ -117,6 +117,8 @@ export default function AgentSettingsPage() {
   const [fallbackModelOpen, setFallbackModelOpen] = useState(false)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const [availableTools, setAvailableTools] = useState<string[]>([])
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([])
+  const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
   const [expandedGroup, setExpandedGroup] = useState<"filesystem" | "shell" | "browse-and-web" | "sessions" | "agents" | "skills" | "schedule" | "desktop" | "others" | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
@@ -165,11 +167,12 @@ export default function AgentSettingsPage() {
     return groups
   }, [modelList])
 
-  // Load available tools
+  // Load available tools and skills
   useEffect(() => {
     opendora.agent.tools().then((ids) => {
       setAvailableTools(ids.filter((t) => !HIDDEN_TOOLS.has(t)))
     }).catch(() => { })
+    opendora.skill.list().then(setAvailableSkills).catch(() => { })
   }, [])
 
   // Load agent data — re-run when agent loads (agents list may arrive after mount)
@@ -185,6 +188,7 @@ export default function AgentSettingsPage() {
     setModel(agent.model ?? undefined)
     setFallbackModel(agent.fallback_model ?? undefined)
     setSelectedTools(agent.tools ?? [])
+    setSelectedSkills(agent.skills ?? (agent as any).config?.skills ?? [])
     setDelegateAllowedAgents((agent as any).config?.toolConfig?.delegate?.allowedAgents ?? agent.toolConfig?.delegate?.allowedAgents ?? [])
     setReplyStopAfterReply((agent as any).config?.toolConfig?.reply?.stopAfterReply ?? agent.toolConfig?.reply?.stopAfterReply ?? false)
     setDefaultPaths((agent as any).config?.defaultPaths ?? (agent as any).defaultPaths ?? [])
@@ -250,6 +254,7 @@ export default function AgentSettingsPage() {
         model,
         fallback_model: fallbackModel,
         tools: selectedTools.length > 0 ? selectedTools : undefined,
+        skills: selectedSkills.length > 0 ? selectedSkills : undefined,
         toolConfig: (() => {
           const config: any = {}
           if (delegateAllowedAgents.length > 0) {
@@ -402,6 +407,14 @@ export default function AgentSettingsPage() {
             {selectedTools.length > 0 && (
               <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                 {selectedTools.length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="skills">
+            Skills
+            {selectedSkills.length > 0 && (
+              <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+                {selectedSkills.length}
               </span>
             )}
           </TabsTrigger>
@@ -793,6 +806,59 @@ export default function AgentSettingsPage() {
                 </Card>
               )
             })}
+          </div>
+        </TabsContent>
+        {/* ── Skills tab ── */}
+        <TabsContent value="skills" className="flex-1 overflow-y-auto">
+          <div className="mx-auto flex max-w-2xl flex-col gap-4 px-6 py-8">
+            <p className="text-xs text-muted-foreground">
+              Attach skills to this agent. When a skill is loaded, its tools become available to the agent.
+            </p>
+            {availableSkills.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No skills found.</p>
+            ) : (
+              availableSkills.map((skill) => {
+                const checked = selectedSkills.includes(skill.name)
+                return (
+                  <Label
+                    key={skill.name}
+                    className="flex cursor-pointer items-start gap-3 rounded-md border px-4 py-3 font-normal hover:bg-muted/50"
+                  >
+                    <Checkbox
+                      className="mt-0.5"
+                      checked={checked}
+                      onCheckedChange={() =>
+                        setSelectedSkills((prev) =>
+                          checked ? prev.filter((s) => s !== skill.name) : [...prev, skill.name]
+                        )
+                      }
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-mono text-sm font-medium leading-none">{skill.name}</p>
+                      {skill.description && (
+                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{skill.description}</p>
+                      )}
+                      {skill.tools && skill.tools.length > 0 && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Tools: <span className="font-mono">{skill.tools.join(", ")}</span>
+                        </p>
+                      )}
+                    </div>
+                  </Label>
+                )
+              })
+            )}
+            {selectedSkills.length > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-auto self-start px-0 text-xs text-muted-foreground"
+                onClick={() => setSelectedSkills([])}
+              >
+                Clear all
+              </Button>
+            )}
           </div>
         </TabsContent>
       </Tabs>

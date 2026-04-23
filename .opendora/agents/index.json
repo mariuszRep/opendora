@@ -34,12 +34,6 @@
       "mode": "worker"
     },
     {
-      "id": "architect",
-      "name": "Architect",
-      "mode": "worker",
-      "hidden": false
-    },
-    {
       "id": "product-owner",
       "name": "Product Owner",
       "mode": "primary",
@@ -58,12 +52,6 @@
       "hidden": false
     },
     {
-      "id": "code-explorer",
-      "name": "Code Explorer",
-      "mode": "worker",
-      "hidden": false
-    },
-    {
       "id": "engineer",
       "name": "Engineer",
       "mode": "worker",
@@ -72,12 +60,6 @@
     {
       "id": "tester",
       "name": "Tester",
-      "mode": "worker",
-      "hidden": false
-    },
-    {
-      "id": "reviewer",
-      "name": "Reviewer",
       "mode": "worker",
       "hidden": false
     },

@@ -29,7 +29,8 @@
     "desktop_window_move",
     "desktop_window_resize",
     "desktop_clipboard_read",
-    "desktop_clipboard_write"
+    "desktop_clipboard_write",
+    "bash"
   ],
   "toolConfig": {
     "reply": {

@@ -517,18 +517,20 @@ export namespace Skill {
     const skillMdPath = path.join(skillDir, "SKILL.md")
     try {
       const raw = await fs.readFile(skillMdPath, "utf-8")
+      const fmPattern = /^---\r?\n([\s\S]*?)\r?\n---/
       let updated: string
-      if (/^---\r?\n/.test(raw)) {
-        // Has frontmatter — add/replace origin field
-        updated = raw.replace(/^---\r?\n([\s\S]*?)\r?\n---/, (_, fm) => {
+      if (fmPattern.test(raw)) {
+        updated = raw.replace(fmPattern, (_, fm) => {
           const cleaned = fm.replace(/^origin:.*$/m, "").replace(/\n{2,}/g, "\n").trim()
           return `---\n${cleaned}\norigin: ${origin}\n---`
         })
       } else {
-        // No frontmatter — prepend minimal one (shouldn't normally happen)
         updated = `---\norigin: ${origin}\n---\n\n${raw}`
       }
-      await fs.writeFile(skillMdPath, updated, "utf-8")
+      // Only write if something actually changed (makes this idempotent)
+      if (updated !== raw) {
+        await fs.writeFile(skillMdPath, updated, "utf-8")
+      }
     } catch {
       // Not critical — skill still works without origin
       log.warn("could not inject origin into SKILL.md", { skillDir, origin })

@@ -16,3 +16,10 @@ Skill registry appears stale. After creating `/home/mariu/projects/opendora/.ope
 _Context: ses_2c1cb6727ffeUlbU89d1LbZmrM_
 
 ---
+### 2026-04-23 15:35:21 UTC [ADVISORY]
+
+Observed a state mismatch after updating engineer skills: agent.json contains the new skills array, but agent_get(view=config) still reports 'Skills: none'. This may indicate cached or incomplete config rendering in agent_get output.
+
+_Context: ses_245331f71ffeKzV4vx5gLwasjh_
+
+---
