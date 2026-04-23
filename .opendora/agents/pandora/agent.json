@@ -3,8 +3,8 @@
   "description": "First point of contact. Routes users to the right specialist agent by understanding intent and delegating accordingly. Greetings, confirmations, and simple clarifications are handled directly. Everything else is delegated.",
   "mode": "primary",
   "model": {
-    "modelID": "gemini-2.5-flash-lite",
-    "providerID": "google-gemini-cli"
+    "modelID": "minimax-m2.5",
+    "providerID": "fallback"
   },
   "color": "teal",
   "tools": [

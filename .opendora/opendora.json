@@ -5,7 +5,8 @@
     "kilo": "free",
     "opencode": "free",
     "openrouter": "free",
-    "zenmux": "none"
+    "zenmux": "none",
+    "ollama": "none"
   },
   "model": "opencode/minimax-m2.5-free",
   "provider": {

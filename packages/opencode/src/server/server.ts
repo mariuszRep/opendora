@@ -438,10 +438,39 @@ export namespace Server {
             return c.json(skills)
           },
         )
+        .post(
+          "/skill",
+          describeRoute({
+            summary: "Create skill",
+            description: "Create a new local skill with a SKILL.md and skill.json.",
+            operationId: "app.skill.create",
+            responses: {
+              201: {
+                description: "Created",
+                content: { "application/json": { schema: resolver(Skill.Info) } },
+              },
+            },
+          }),
+          validator(
+            "json",
+            z.object({
+              name: z.string(),
+              description: z.string(),
+              tools: z.array(z.string()).optional(),
+              content: z.string().optional(),
+            }),
+          ),
+          async (c) => {
+            const body = c.req.valid("json")
+            await Skill.create(body)
+            const skill = await Skill.get(body.name)
+            return c.json(skill, 201)
+          },
+        )
         .put(
           "/skill",
           describeRoute({
-            summary: "Save skill",
+            summary: "Save skill content",
             description: "Write updated content to a skill's SKILL.md file.",
             operationId: "app.skill.save",
             responses: {
@@ -455,6 +484,54 @@ export namespace Server {
           async (c) => {
             const { location, content } = c.req.valid("json")
             await Skill.save(location, content)
+            return c.json(true)
+          },
+        )
+        .get(
+          "/skill/:name",
+          describeRoute({
+            summary: "Get skill",
+            description: "Get a single skill by name, including tools from skill.json.",
+            operationId: "app.skill.get",
+            responses: {
+              200: {
+                description: "Skill info",
+                content: { "application/json": { schema: resolver(Skill.Info) } },
+              },
+            },
+          }),
+          validator("param", z.object({ name: z.string() })),
+          async (c) => {
+            const { name } = c.req.valid("param")
+            const skill = await Skill.get(name)
+            if (!skill) return c.json({ error: `skill "${name}" not found` }, 404)
+            return c.json(skill)
+          },
+        )
+        .patch(
+          "/skill/:name/config",
+          describeRoute({
+            summary: "Update skill config",
+            description: "Update skill.json for a skill (tools, description).",
+            operationId: "app.skill.config.update",
+            responses: {
+              200: {
+                description: "Updated",
+                content: { "application/json": { schema: resolver(z.boolean()) } },
+              },
+            },
+          }),
+          validator("param", z.object({ name: z.string() })),
+          validator(
+            "json",
+            z.object({
+              tools: z.array(z.string()).optional(),
+            }),
+          ),
+          async (c) => {
+            const { name } = c.req.valid("param")
+            const patch = c.req.valid("json")
+            await Skill.saveConfig(name, patch)
             return c.json(true)
           },
         )

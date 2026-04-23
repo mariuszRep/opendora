@@ -18,12 +18,19 @@ import { State } from "../project/state"
 
 export namespace Skill {
   const log = Log.create({ service: "skill" })
+
+  export const JsonConfig = z.object({
+    tools: z.array(z.string()).optional(),
+  })
+  export type JsonConfig = z.infer<typeof JsonConfig>
+
   export const Info = z.object({
     name: z.string(),
     description: z.string(),
     location: z.string(),
     content: z.string(),
     origin: z.string().optional(),
+    tools: z.array(z.string()).optional(),
   })
   export type Info = z.infer<typeof Info>
 
@@ -82,12 +89,24 @@ export namespace Skill {
 
       dirs.add(path.dirname(match))
 
+      // Read skill.json from same directory for tools and extra config
+      const skillJsonPath = path.join(path.dirname(match), "skill.json")
+      let skillConfig: JsonConfig | undefined
+      try {
+        const raw = await fs.readFile(skillJsonPath, "utf-8")
+        const result = JsonConfig.safeParse(JSON.parse(raw))
+        if (result.success) skillConfig = result.data
+      } catch {
+        // skill.json is optional
+      }
+
       skills[parsed.data.name] = {
         name: parsed.data.name,
         description: parsed.data.description,
         location: match,
         content: md.content,
         origin: typeof md.data?.origin === "string" ? md.data.origin : undefined,
+        tools: skillConfig?.tools,
       }
     }
 
@@ -536,16 +555,39 @@ export namespace Skill {
       `description: ${params.description}`,
       `origin: opendora`,
     ]
-    if (params.tools && params.tools.length > 0) {
-      fmLines.push("tools:")
-      for (const t of params.tools) fmLines.push(`  - ${t}`)
-    }
 
     const skillMd = `---\n${fmLines.join("\n")}\n---\n\n${params.content ?? ""}`
     await fs.writeFile(path.join(skillDir, "SKILL.md"), skillMd, "utf-8")
 
+    // Write skill.json only if there are tools to store
+    if (params.tools && params.tools.length > 0) {
+      const config: JsonConfig = { tools: params.tools }
+      await fs.writeFile(path.join(skillDir, "skill.json"), JSON.stringify(config, null, 2), "utf-8")
+    }
+
     reload()
     return { dir: skillDir }
+  }
+
+  /** Write or update the skill.json config for a skill */
+  export async function saveConfig(name: string, patch: Partial<JsonConfig>): Promise<void> {
+    const skill = await get(name)
+    if (!skill) throw new Error(`Skill "${name}" not found`)
+    const skillDir = path.dirname(skill.location)
+    const skillJsonPath = path.join(skillDir, "skill.json")
+
+    let existing: JsonConfig = {}
+    try {
+      const raw = await fs.readFile(skillJsonPath, "utf-8")
+      const result = JsonConfig.safeParse(JSON.parse(raw))
+      if (result.success) existing = result.data
+    } catch {
+      // start fresh
+    }
+
+    const updated: JsonConfig = { ...existing, ...patch }
+    await fs.writeFile(skillJsonPath, JSON.stringify(updated, null, 2), "utf-8")
+    reload()
   }
 
   /** Remove a local skill by name */

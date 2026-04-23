@@ -209,6 +209,15 @@ export type Provider = {
   models: Record<string, { id: string; name: string; [k: string]: unknown }>
 }
 
+export type Skill = {
+  name: string
+  description: string
+  location: string
+  content: string
+  origin?: string
+  tools?: string[]
+}
+
 export type Agent = {
   name: string
   description?: string
@@ -220,6 +229,7 @@ export type Agent = {
   model?: { modelID: string; providerID: string }
   fallback_model?: { modelID: string; providerID: string }
   tools?: string[]
+  skills?: string[]
   toolConfig?: {
     delegate?: { allowedAgents?: string[] }
     reply?: { stopAfterReply?: boolean }
@@ -494,11 +504,17 @@ export const opendora = {
   },
   skill: {
     list: (directory?: string) =>
-      req<Array<{ name: string; description: string; location: string; content: string }>>(
+      req<Skill[]>(
         directory ? `/skill?directory=${encodeURIComponent(directory)}` : "/skill"
       ),
+    get: (name: string) =>
+      req<Skill>(`/skill/${encodeURIComponent(name)}`),
+    create: (input: { name: string; description: string; tools?: string[]; content?: string }) =>
+      req<Skill>("/skill", { method: "POST", body: JSON.stringify(input) }),
     update: (location: string, content: string) =>
       req<boolean>("/skill", { method: "PUT", body: JSON.stringify({ location, content }) }),
+    updateConfig: (name: string, patch: { tools?: string[] }) =>
+      req<boolean>(`/skill/${encodeURIComponent(name)}/config`, { method: "PATCH", body: JSON.stringify(patch) }),
   },
   events: {
     subscribe: (onEvent: (event: Event) => void, onReconnect?: () => void): () => void => {

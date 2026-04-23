@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { opendora, type Agent, type AgentConfig, type Provider } from "@/lib/opendora"
+import { opendora, type Agent, type AgentConfig, type Provider, type Skill } from "@/lib/opendora"
 
 type Props = {
   open: boolean
@@ -123,6 +123,8 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [fallbackModel, setFallbackModel] = useState<string>(NONE)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const [availableTools, setAvailableTools] = useState<string[]>([])
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([])
+  const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
   const [expandedGroup, setExpandedGroup] = useState<"filesystem" | "shell" | "browse-and-web" | "sessions" | "agents" | "skills" | "schedule" | "desktop" | "others" | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
@@ -135,11 +137,12 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
 
   const modelOptions = buildModelOptions(providers, connectedProviders)
 
-  // Load available tools once
+  // Load available tools and skills once
   useEffect(() => {
     opendora.agent.tools().then((ids) => {
       setAvailableTools(ids.filter((id) => !HIDDEN_TOOLS.has(id)))
     }).catch(() => {})
+    opendora.skill.list().then(setAvailableSkills).catch(() => {})
   }, [])
 
   // Pre-fill on open
@@ -157,6 +160,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setModel(modelToValue(a.model))
       setFallbackModel(modelToValue(a.fallback_model))
       setSelectedTools(a.tools ?? [])
+      setSelectedSkills(a.skills ?? (a as any).config?.skills ?? [])
       setDelegateAllowedAgents((a as any).config?.toolConfig?.delegate?.allowedAgents ?? a.toolConfig?.delegate?.allowedAgents ?? [])
       setReplyStopAfterReply((a as any).config?.toolConfig?.reply?.stopAfterReply ?? a.toolConfig?.reply?.stopAfterReply ?? false)
       setPersona("")
@@ -174,6 +178,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setModel(NONE)
       setFallbackModel(NONE)
       setSelectedTools([])
+      setSelectedSkills([])
       setDelegateAllowedAgents([])
       setReplyStopAfterReply(false)
       setPersona("")
@@ -192,6 +197,12 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   function toggleTool(id: string) {
     setSelectedTools((prev) =>
       prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
+    )
+  }
+
+  function toggleSkill(name: string) {
+    setSelectedSkills((prev) =>
+      prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name],
     )
   }
 
@@ -232,6 +243,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
         model: valueToModel(model),
         fallback_model: valueToModel(fallbackModel),
         tools: selectedTools.length > 0 ? selectedTools : undefined,
+        skills: selectedSkills.length > 0 ? selectedSkills : undefined,
         toolConfig: (() => {
           const config: any = {}
           if (delegateAllowedAgents.length > 0) {
@@ -273,6 +285,14 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
               {selectedTools.length > 0 && (
                 <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                   {selectedTools.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="skills">
+              Skills
+              {selectedSkills.length > 0 && (
+                <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+                  {selectedSkills.length}
                 </span>
               )}
             </TabsTrigger>
@@ -639,6 +659,54 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                   </Card>
                 )
               })}
+            </div>
+          </TabsContent>
+          {/* ── Skills tab ── */}
+          <TabsContent value="skills" className="flex-1 overflow-y-auto pr-1">
+            <div className="flex flex-col gap-3 pb-2 pt-3">
+              <p className="text-xs text-muted-foreground">
+                Attach skills to this agent. When a skill is loaded, its tools become available to the agent.
+              </p>
+              {availableSkills.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No skills found.</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {availableSkills.map((skill) => (
+                    <Label
+                      key={skill.name}
+                      className="flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2.5 font-normal hover:bg-muted/50"
+                    >
+                      <Checkbox
+                        className="mt-0.5"
+                        checked={selectedSkills.includes(skill.name)}
+                        onCheckedChange={() => toggleSkill(skill.name)}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-mono text-sm font-medium leading-none">{skill.name}</p>
+                        {skill.description && (
+                          <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{skill.description}</p>
+                        )}
+                        {skill.tools && skill.tools.length > 0 && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Tools: <span className="font-mono">{skill.tools.join(", ")}</span>
+                          </p>
+                        )}
+                      </div>
+                    </Label>
+                  ))}
+                </div>
+              )}
+              {selectedSkills.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto self-start px-0 text-xs text-muted-foreground"
+                  onClick={() => setSelectedSkills([])}
+                >
+                  Clear all
+                </Button>
+              )}
             </div>
           </TabsContent>
         </Tabs>

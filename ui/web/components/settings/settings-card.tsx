@@ -1,0 +1,58 @@
+"use client"
+
+import { LucideIcon } from "lucide-react"
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+
+export interface SettingsCardProps {
+  title: string | React.ReactNode
+  description?: string
+  icon?: LucideIcon
+  footer?: React.ReactNode
+  onDoubleClick?: () => void
+  onClick?: () => void
+  className?: string
+  children?: React.ReactNode
+}
+
+export function SettingsCard({
+  title,
+  description,
+  icon: Icon,
+  footer,
+  onDoubleClick,
+  onClick,
+  className,
+  children,
+}: SettingsCardProps) {
+  return (
+    <Card
+      className={`hover:shadow-md hover:border-primary/50 transition-all cursor-pointer ${className || ""}`}
+      onDoubleClick={onDoubleClick}
+      onClick={onClick}
+    >
+      <CardHeader className="pb-2">
+        <div className="flex items-start gap-2">
+          {Icon && (
+            <div className="shrink-0">
+              <Icon className="h-5 w-5 text-muted-foreground" />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <CardTitle className="text-base leading-tight">{title}</CardTitle>
+            {description && (
+              <CardDescription className="text-sm line-clamp-2 mt-1">
+                {description}
+              </CardDescription>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      {children}
+      {footer && (
+        <CardFooter className="border-t bg-muted/30 pt-3">
+          {footer}
+        </CardFooter>
+      )}
+    </Card>
+  )
+}

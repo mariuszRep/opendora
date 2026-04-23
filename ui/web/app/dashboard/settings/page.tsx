@@ -1,9 +1,9 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { SettingsCard } from "@/components/settings/settings-card"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,6 +13,12 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -21,9 +27,12 @@ import {
 } from "@/components/ui/select"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { useUserProfile } from "@/hooks/use-user-profile"
+import { useVoiceSettings, formatHotkey, type HotkeyConfig } from "@/hooks/use-voice-settings"
 import { useTheme } from "next-themes"
-import { BotIcon, MessageSquareIcon, SettingsIcon, ChevronRightIcon, PlugIcon, UserIcon, Volume2Icon, ClockPlusIcon, WrenchIcon, SunIcon, MoonIcon, MonitorIcon, BookOpenIcon } from "lucide-react"
-import { useEffect, useState } from "react"
+import { BotIcon, MessageSquareIcon, SettingsIcon, PlugIcon, UserIcon, ClockPlusIcon, WrenchIcon, SunIcon, MoonIcon, MonitorIcon, BookOpenIcon, MicIcon, Volume2Icon, KeyboardIcon } from "lucide-react"
+import { useEffect, useState, useRef } from "react"
+import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import { AGENT_COLORS } from "@/lib/agent-colors"
 
 export default function SettingsPage() {
@@ -31,13 +40,71 @@ export default function SettingsPage() {
   const { agents, sessions, connectedProviders } = useOpendoraContext()
   const { userName, setUserName, userColor, setUserColor } = useUserProfile()
   const { theme, setTheme } = useTheme()
+  const { settings: voiceSettings, updateSettings: updateVoiceSettings, isLoaded: voiceLoaded } = useVoiceSettings()
   const [mounted, setMounted] = useState(false)
+  const [userDialogOpen, setUserDialogOpen] = useState(false)
+  const [generalDialogOpen, setGeneralDialogOpen] = useState(false)
+  const [recordingHotkey, setRecordingHotkey] = useState(false)
+  const [recordingKeys, setRecordingKeys] = useState<string[]>([])
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  // Hotkey recording effect
+  useEffect(() => {
+    if (!recordingHotkey) return
+    const keysPressed = new Set<string>()
+    let modifiers = { ctrlKey: false, shiftKey: false, altKey: false, metaKey: false }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (e.key === "Escape") { setRecordingHotkey(false); keysPressed.clear(); setRecordingKeys([]); return }
+      if (e.ctrlKey) modifiers.ctrlKey = true
+      if (e.shiftKey) modifiers.shiftKey = true
+      if (e.altKey) modifiers.altKey = true
+      if (e.metaKey) modifiers.metaKey = true
+      if (!['Control','Shift','Alt','Meta'].includes(e.key)) keysPressed.add(e.key)
+
+      const currentKeys: string[] = []
+      if (modifiers.ctrlKey) currentKeys.push('Ctrl')
+      if (modifiers.shiftKey) currentKeys.push('Shift')
+      if (modifiers.altKey) currentKeys.push('Alt')
+      if (modifiers.metaKey) currentKeys.push('Meta')
+      let displayKey = e.key
+      switch (e.key) { case ' ': displayKey='Space'; break; case 'Tab': displayKey='Tab'; break; case 'Enter': displayKey='Enter'; break; case 'ArrowUp': displayKey='↑'; break; case 'ArrowDown': displayKey='↓'; break; case 'ArrowLeft': displayKey='←'; break; case 'ArrowRight': displayKey='→'; break; default: if (!['Control','Shift','Alt','Meta'].includes(e.key)) displayKey = e.key.toUpperCase() }
+      if (!['Control','Shift','Alt','Meta'].includes(e.key)) currentKeys.push(displayKey)
+      setRecordingKeys(currentKeys)
+
+      const totalKeys = keysPressed.size + (modifiers.ctrlKey?1:0) + (modifiers.shiftKey?1:0) + (modifiers.altKey?1:0) + (modifiers.metaKey?1:0)
+      if (totalKeys >= 1 && totalKeys <= 3 && keysPressed.size > 0) {
+        const mainKey = Array.from(keysPressed)[0] || ' '
+        const hotkey: HotkeyConfig = { key: mainKey, ctrlKey: modifiers.ctrlKey, shiftKey: modifiers.shiftKey, altKey: modifiers.altKey, metaKey: modifiers.metaKey }
+        updateVoiceSettings({ pushToTalk: { ...voiceSettings.pushToTalk, hotkey } })
+        setRecordingHotkey(false)
+        keysPressed.clear()
+        modifiers = { ctrlKey:false, shiftKey:false, altKey:false, metaKey:false }
+        setRecordingKeys([])
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [recordingHotkey, voiceSettings.pushToTalk, updateVoiceSettings])
+
   const settingsCards = [
+    {
+      title: "User",
+      description: "Your name and message color",
+      icon: UserIcon,
+      onClick: () => setUserDialogOpen(true),
+    },
+    {
+      title: "General",
+      description: "Theme and voice settings",
+      icon: SunIcon,
+      onClick: () => setGeneralDialogOpen(true),
+    },
     {
       title: "Agents",
       description: "Manage your AI agents and their configurations",
@@ -71,14 +138,6 @@ export default function SettingsPage() {
       countLabel: null,
     },
     {
-      title: "Voice",
-      description: "Configure speech-to-text and text-to-speech",
-      icon: Volume2Icon,
-      href: "/dashboard/settings/voice",
-      count: null,
-      countLabel: null,
-    },
-    {
       title: "Schedules",
       description: "Manage background delegations",
       icon: ClockPlusIcon,
@@ -98,7 +157,6 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="flex items-center justify-between border-b px-6 py-3 shrink-0">
         <Breadcrumb>
           <BreadcrumbList>
@@ -112,8 +170,6 @@ export default function SettingsPage() {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-
-      {/* Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-6">
           <div className="mb-8">
@@ -126,58 +182,91 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          {/* Profile */}
-          <div className="mb-8 max-w-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <UserIcon className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Profile</h2>
-            </div>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="user-name">Your name</Label>
-                <Input
-                  id="user-name"
-                  placeholder="e.g. Alex"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 max-w-6xl">
+            {settingsCards.map((card) => {
+              const Icon = card.icon
+              const handleClick = 'href' in card ? () => router.push(card.href) : card.onClick
+              return (
+                <SettingsCard
+                  key={card.title}
+                  title={card.title}
+                  description={card.description}
+                  icon={Icon}
+                  onClick={handleClick}
+                  footer={
+                    'count' in card && card.count !== null && card.countLabel !== null ? (
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-bold text-primary">
+                          {card.count}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {card.countLabel}
+                        </span>
+                      </div>
+                    ) : null
+                  }
                 />
-                <p className="text-xs text-muted-foreground">
-                  Agents will see <code className="font-mono">user: {userName || "your name"}</code> at the start of every message you send.
-                </p>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* User Dialog */}
+      <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>User Settings</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="user-name">Your name</Label>
+              <Input
+                id="user-name"
+                placeholder="e.g. Alex"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Agents will see <code className="font-mono">user: {userName || "your name"}</code> at the start of every message you send.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Your color</Label>
+              <div className="flex flex-wrap gap-2">
+                {AGENT_COLORS.map((c) => (
+                  <button
+                    key={c.id}
+                    title={c.label}
+                    onClick={() => setUserColor(c.id)}
+                    className="size-6 rounded-full transition-all"
+                    style={{
+                      backgroundColor: c.hex,
+                      outline: userColor === c.id ? `2px solid ${c.hex}` : undefined,
+                      outlineOffset: userColor === c.id ? "2px" : undefined,
+                    }}
+                  />
+                ))}
               </div>
-              <div className="space-y-2">
-                <Label>Your color</Label>
-                <div className="flex flex-wrap gap-2">
-                  {AGENT_COLORS.map((c) => (
-                    <button
-                      key={c.id}
-                      title={c.label}
-                      onClick={() => setUserColor(c.id)}
-                      className="size-6 rounded-full transition-all"
-                      style={{
-                        backgroundColor: c.hex,
-                        outline: userColor === c.id ? `2px solid ${c.hex}` : undefined,
-                        outlineOffset: userColor === c.id ? "2px" : undefined,
-                      }}
-                    />
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">Used as the ring color on your messages.</p>
-              </div>
+              <p className="text-xs text-muted-foreground">Used as the ring color on your messages.</p>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
 
-          {/* Appearance */}
-          <div className="mb-8 max-w-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <SunIcon className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Appearance</h2>
-            </div>
+      {/* General Dialog */}
+      <Dialog open={generalDialogOpen} onOpenChange={setGeneralDialogOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>General Settings</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-2">
+            {/* Theme */}
             <div className="space-y-2">
               <Label htmlFor="theme">Theme</Label>
               {mounted && (
                 <Select value={theme} onValueChange={setTheme}>
-                  <SelectTrigger id="theme">
+                  <SelectTrigger id="theme" className="w-full">
                     <SelectValue placeholder="Select theme" />
                   </SelectTrigger>
                   <SelectContent>
@@ -206,52 +295,147 @@ export default function SettingsPage() {
                 Select your preferred color scheme for the interface.
               </p>
             </div>
-          </div>
 
-          {/* Settings Cards */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl">
-            {settingsCards.map((card) => {
-              const Icon = card.icon
-              return (
-                <Card
-                  key={card.href}
-                  className="hover:shadow-lg transition-all cursor-pointer group border-2 hover:border-primary/50"
-                  onClick={() => router.push(card.href)}
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="p-3 rounded-lg bg-primary/10 text-primary">
-                        <Icon className="h-6 w-6" />
+            {/* Voice Settings */}
+            {voiceLoaded && (
+              <>
+                <div className="border-t pt-4 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <MicIcon className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold">Speech-to-Text</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Provider</Label>
+                    <Select
+                      value={voiceSettings.stt.provider}
+                      onValueChange={(v: any) => updateVoiceSettings({ stt: { ...voiceSettings.stt, provider: v } })}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="openai-whisper">OpenAI Whisper</SelectItem>
+                        <SelectItem value="browser-native">Browser Native</SelectItem>
+                        <SelectItem value="disabled">Disabled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Volume2Icon className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold">Text-to-Speech</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Provider</Label>
+                    <Select
+                      value={voiceSettings.tts.provider}
+                      onValueChange={(v: any) => updateVoiceSettings({ tts: { ...voiceSettings.tts, provider: v } })}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="openai">OpenAI TTS</SelectItem>
+                        <SelectItem value="disabled">Disabled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {voiceSettings.tts.provider === "openai" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Voice</Label>
+                        <Select
+                          value={voiceSettings.tts.voice}
+                          onValueChange={(v: any) => updateVoiceSettings({ tts: { ...voiceSettings.tts, voice: v } })}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="alloy">Alloy (Neutral)</SelectItem>
+                            <SelectItem value="echo">Echo (Male)</SelectItem>
+                            <SelectItem value="fable">Fable (British Male)</SelectItem>
+                            <SelectItem value="onyx">Onyx (Deep Male)</SelectItem>
+                            <SelectItem value="nova">Nova (Female)</SelectItem>
+                            <SelectItem value="shimmer">Shimmer (Warm Female)</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <ChevronRightIcon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <div className="space-y-2">
+                        <Label>Speed: {voiceSettings.tts.speed?.toFixed(2)}x</Label>
+                        <input
+                          type="range"
+                          min="0.25"
+                          max="4.0"
+                          step="0.05"
+                          value={voiceSettings.tts.speed ?? 1.0}
+                          onChange={(e) => updateVoiceSettings({ tts: { ...voiceSettings.tts, speed: parseFloat(e.target.value) } })}
+                          className="w-full"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="border-t pt-4 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <KeyboardIcon className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold">Push-to-Talk</h3>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Enable Push-to-Talk</Label>
+                      <p className="text-xs text-muted-foreground">Hold hotkey to record voice</p>
                     </div>
-                    <CardTitle className="text-xl">{card.title}</CardTitle>
-                    <CardDescription className="text-sm">
-                      {card.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {card.count !== null && card.countLabel !== null ? (
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold text-primary">
-                          {card.count}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {card.countLabel}
-                        </span>
+                    <Switch
+                      checked={voiceSettings.pushToTalk.enabled}
+                      onCheckedChange={(checked) => updateVoiceSettings({ pushToTalk: { ...voiceSettings.pushToTalk, enabled: checked } })}
+                    />
+                  </div>
+                  {voiceSettings.pushToTalk.enabled && (
+                    <div className="space-y-2">
+                      <Label>Hotkey</Label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 px-3 py-2 rounded-md border border-input bg-muted/30 min-h-[36px] flex items-center justify-center text-sm font-mono">
+                          {recordingHotkey ? (
+                            <span className="text-primary">
+                              {recordingKeys.length > 0 ? recordingKeys.join(' + ') : 'Press keys...'}
+                            </span>
+                          ) : (
+                            <span>
+                              {formatHotkey(voiceSettings.pushToTalk.hotkey)}
+                            </span>
+                          )}
+                        </div>
+                        {!recordingHotkey && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => { setRecordingHotkey(true); setRecordingKeys([]) }}
+                          >
+                            {voiceSettings.pushToTalk.hotkey ? 'Change' : 'Set'}
+                          </Button>
+                        )}
+                        {recordingHotkey && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => { setRecordingHotkey(false); setRecordingKeys([]) }}
+                          >
+                            Cancel
+                          </Button>
+                        )}
                       </div>
-                    ) : (
-                      <div className="text-sm text-muted-foreground">
-                        {card.description}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )
-            })}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
