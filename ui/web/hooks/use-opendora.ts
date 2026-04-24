@@ -840,7 +840,7 @@ export function useOpendora(): UseOpendoraResult {
     createSession,
     setSessionAgent,
     setAgentMainSession,
-    activeSessions: activeSessionsRef.current,
+    activeSessions,
     messages,
     questionRequests: questionRequests[selectedSessionId ?? ""] ?? [],
     allQuestionRequests: questionRequests,
