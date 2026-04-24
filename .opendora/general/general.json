@@ -1,0 +1,25 @@
+{
+  "theme": "system",
+  "voice": {
+    "stt": {
+      "provider": "openai-whisper",
+      "openaiModel": "whisper-1"
+    },
+    "tts": {
+      "provider": "openai",
+      "openaiModel": "tts-1",
+      "voice": "shimmer",
+      "speed": 1
+    },
+    "pushToTalk": {
+      "enabled": true,
+      "hotkey": {
+        "key": "m",
+        "ctrlKey": true,
+        "shiftKey": false,
+        "altKey": false,
+        "metaKey": false
+      }
+    }
+  }
+}

@@ -74,6 +74,11 @@ export const SessionTable = sqliteTable(
     cache_read_tokens: integer(),
     cache_write_tokens: integer(),
     compaction_count: integer(),
+    // Vendor import — origin of sessions that were brought in from other agents
+    // (Claude Code, Codex, Antigravity, Windsurf). NULL on opendora-native sessions.
+    vendor: text().$type<"claude" | "codex" | "antigravity" | "windsurf">(),
+    native_id: text(),
+    vendor_raw_header: text({ mode: "json" }).$type<unknown>(),
   },
   (table) => [
     index("session_project_idx").on(table.project_id),
@@ -81,6 +86,7 @@ export const SessionTable = sqliteTable(
     index("session_type_idx").on(table.session_type),
     index("session_agent_idx").on(table.agent_id),
     index("session_owner_idx").on(table.owner_id),
+    index("session_vendor_native_idx").on(table.vendor, table.native_id),
   ],
 )
 
@@ -94,8 +100,16 @@ export const MessageTable = sqliteTable(
     ...Timestamps,
     parent_message_id: text(),
     data: text({ mode: "json" }).notNull().$type<InfoData>(),
+    // Vendor import — native id of the source record (Claude uuid, Codex item id, etc.)
+    // and the raw source line preserved verbatim for lossless round-trip.
+    native_id: text(),
+    vendor_raw: text({ mode: "json" }).$type<unknown>(),
   },
-  (table) => [index("message_session_idx").on(table.session_id), index("message_parent_message_idx").on(table.parent_message_id)],
+  (table) => [
+    index("message_session_idx").on(table.session_id),
+    index("message_parent_message_idx").on(table.parent_message_id),
+    index("message_native_idx").on(table.native_id),
+  ],
 )
 
 export const PartTable = sqliteTable(
@@ -108,8 +122,16 @@ export const PartTable = sqliteTable(
     session_id: text().notNull(),
     ...Timestamps,
     data: text({ mode: "json" }).notNull().$type<PartData>(),
+    // Vendor import — native id of the source fragment (e.g. Claude tool_use.id,
+    // Codex function_call.id) and the raw source fragment preserved verbatim.
+    native_id: text(),
+    vendor_raw: text({ mode: "json" }).$type<unknown>(),
   },
-  (table) => [index("part_message_idx").on(table.message_id), index("part_session_idx").on(table.session_id)],
+  (table) => [
+    index("part_message_idx").on(table.message_id),
+    index("part_session_idx").on(table.session_id),
+    index("part_native_idx").on(table.native_id),
+  ],
 )
 
 export const TodoTable = sqliteTable(

@@ -47,6 +47,8 @@ import { PermissionRoutes } from "./routes/permission"
 import { GlobalRoutes } from "./routes/global"
 import { VoiceRoutes } from "./routes/voice"
 import { AuthRoutes } from "./routes/auth"
+import { UserRoutes } from "./routes/user"
+import { GeneralRoutes } from "./routes/general"
 import { MDNS } from "./mdns"
 import { BusBridge } from "@opendora/session/bus-bridge"
 import { retentionDaemon, sessionManager } from "@opendora/session/session"
@@ -251,6 +253,8 @@ export namespace Server {
         .route("/provider", ProviderRoutes())
         .route("/schedule", ScheduleRoutes(_scheduleDispatch))
         .route("/voice", VoiceRoutes())
+        .route("/user", UserRoutes())
+        .route("/general", GeneralRoutes())
         .route("/", FileRoutes())
         .route("/mcp", McpRoutes())
         .route("/tui", TuiRoutes())

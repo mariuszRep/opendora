@@ -1,8 +1,0 @@
-INFO  2026-04-21T16:39:50 +442ms service=default version=local args=[] opencode
-INFO  2026-04-21T16:39:50 +4ms service=default directory=/home/mariu/projects/opendora/packages/opencode creating instance
-INFO  2026-04-21T16:39:50 +1ms service=project directory=/home/mariu/projects/opendora/packages/opencode fromDirectory
-INFO  2026-04-21T16:39:50 +25ms service=db path=/home/mariu/projects/opendora/packages/opencode/.opendora/storage/opendora.db opening database
-INFO  2026-04-21T16:39:50 +57ms service=db count=14 mode=dev applying migrations
-INFO  2026-04-21T16:39:50 +42ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/config.json loading
-INFO  2026-04-21T16:39:50 +6ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opencode.json loading
-INFO  2026-04-21T16:39:50 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opencode.jsonc loading

@@ -162,7 +162,7 @@ export function QuestionTool(props: {
           {props.request.questions.map((question, index) => {
             const value = submittedAnswers?.[index] ?? []
             const customValue =
-              value.find((item) => !question.options.some((option) => option.label === item)) ?? ""
+              value.find((item) => !(question.options ?? []).some((option) => option.label === item)) ?? ""
             return (
               <QuestionStep
                 customValue={customValue}

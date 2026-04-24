@@ -69,10 +69,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const visibleAgents = agents.filter((a) => !a.hidden)
   
   // Track which agents are currently working based on active sessions
+  // Sessions waiting for user question input are excluded — they're paused, not working
   const workingAgents = new Set<string>()
   sessions.forEach((session) => {
     if (session.agentID && activeSessions.has(session.id)) {
-      workingAgents.add(session.agentID)
+      const sessionHasPendingQuestion = (allQuestionRequests[session.id]?.length ?? 0) > 0
+      if (!sessionHasPendingQuestion) {
+        workingAgents.add(session.agentID)
+      }
     }
   })
 
@@ -297,8 +301,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   const isActive = session.id === selectedSession?.id
                   // Only role sessions can be main, and only one should show star
                   const isMain = session.sessionType === "role"
-                  const isWorking = activeSessions.has(session.id)
                   const hasPendingQuestion = (allQuestionRequests[session.id]?.length ?? 0) > 0
+                  // Session is "working" only when actively processing — not when paused waiting for question input
+                  const isWorking = activeSessions.has(session.id) && !hasPendingQuestion
                   return (
                     <SidebarMenuItem
                       key={session.id}

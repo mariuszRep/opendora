@@ -13,9 +13,8 @@ import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { SettingsIcon, PlusIcon, BotIcon, EyeOffIcon } from "lucide-react"
 
 // AgentCard component for displaying individual agents
-function AgentCard({ agent, sessionCount, router }: {
+function AgentCard({ agent, router }: {
   agent: any
-  sessionCount: number
   router: any
 }) {
   return (
@@ -30,19 +29,8 @@ function AgentCard({ agent, sessionCount, router }: {
         </div>
       }
       description={agent.description}
-      onDoubleClick={() =>
+      onClick={() =>
         router.push(`/dashboard/agents/${(agent as any)._id || agent.name}`)
-      }
-      footer={
-        <div className="flex items-center justify-between w-full">
-          <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5">
-            {agent.mode || "all"}
-          </Badge>
-          <div className="flex items-center gap-2">
-            {agent.hidden && <EyeOffIcon className="h-3 w-3 text-muted-foreground" />}
-            <span className="text-xs text-muted-foreground">{sessionCount} sessions</span>
-          </div>
-        </div>
       }
     />
   )
@@ -139,12 +127,11 @@ export default function SettingsAgentsPage() {
                     <h2 className="text-lg font-semibold">Primary Agents</h2>
                     <Badge variant="secondary">{agentsByMode.primary.length}</Badge>
                   </div>
-                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                     {agentsByMode.primary.map((agent) => (
                       <AgentCard
                         key={agent.name}
                         agent={agent}
-                        sessionCount={getSessionCount((agent as any)._id || agent.name)}
                         router={router}
                       />
                     ))}
@@ -163,12 +150,11 @@ export default function SettingsAgentsPage() {
                     <h2 className="text-lg font-semibold">Workers</h2>
                     <Badge variant="secondary">{agentsByMode.worker.length}</Badge>
                   </div>
-                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                     {agentsByMode.worker.map((agent) => (
                       <AgentCard
                         key={agent.name}
                         agent={agent}
-                        sessionCount={getSessionCount((agent as any)._id || agent.name)}
                         router={router}
                       />
                     ))}
@@ -187,12 +173,11 @@ export default function SettingsAgentsPage() {
                     <h2 className="text-lg font-semibold">System Agents</h2>
                     <Badge variant="secondary">{agentsByMode.system.length}</Badge>
                   </div>
-                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                     {agentsByMode.system.map((agent) => (
                       <AgentCard
                         key={agent.name}
                         agent={agent}
-                        sessionCount={getSessionCount((agent as any)._id || agent.name)}
                         router={router}
                       />
                     ))}
@@ -211,12 +196,11 @@ export default function SettingsAgentsPage() {
                     <h2 className="text-lg font-semibold">All Mode Agents</h2>
                     <Badge variant="secondary">{agentsByMode.all.length}</Badge>
                   </div>
-                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                     {agentsByMode.all.map((agent) => (
                       <AgentCard
                         key={agent.name}
                         agent={agent}
-                        sessionCount={getSessionCount((agent as any)._id || agent.name)}
                         router={router}
                       />
                     ))}

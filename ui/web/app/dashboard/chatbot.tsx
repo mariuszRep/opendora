@@ -871,7 +871,9 @@ export const Chatbot = () => {
                                       const hasPermissionRequest = !!permissionRequest
                                       const isPermissionTool = tool.state.status === "approval-requested" || hasPermissionRequest
                                       const permissionResponded = tool.state.status === "approval-responded"
-                                      const state = toToolState(tool.state.status, hasPermissionRequest)
+                                      // Question tools waiting for user input should show "Awaiting Approval" not "Running"
+                                      const isQuestionWaiting = !!questionRequest && tool.state.status === "running"
+                                      const state = toToolState(tool.state.status, hasPermissionRequest || isQuestionWaiting)
                                       const toolInput = <ToolInput input={input ?? {}} />
                                       const currentViewMode = questionViewModes[tool.id] ?? "view"
                                       const handleViewModeChange = (mode: "code" | "view") => {

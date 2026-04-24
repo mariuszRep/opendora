@@ -516,6 +516,36 @@ export const opendora = {
     updateConfig: (name: string, patch: { tools?: string[] }) =>
       req<boolean>(`/skill/${encodeURIComponent(name)}/config`, { method: "PATCH", body: JSON.stringify(patch) }),
   },
+  user: {
+    get: () => req<{ name: string; color: string }>("/user"),
+    update: (patch: { name?: string; color?: string }) =>
+      req<{ name: string; color: string }>("/user", { method: "PATCH", body: JSON.stringify(patch) }),
+  },
+  general: {
+    get: () =>
+      req<{
+        theme?: string
+        voice?: {
+          stt: { provider: string; openaiModel?: string }
+          tts: { provider: string; openaiModel?: string; voice?: string; speed?: number }
+          pushToTalk: {
+            enabled: boolean
+            hotkey: { key: string; ctrlKey: boolean; shiftKey: boolean; altKey: boolean; metaKey: boolean } | null
+          }
+        }
+      }>("/general"),
+    update: (patch: {
+      theme?: string
+      voice?: {
+        stt?: { provider?: string; openaiModel?: string }
+        tts?: { provider?: string; openaiModel?: string; voice?: string; speed?: number }
+        pushToTalk?: {
+          enabled?: boolean
+          hotkey?: { key: string; ctrlKey: boolean; shiftKey: boolean; altKey: boolean; metaKey: boolean } | null
+        }
+      }
+    }) => req<Record<string, unknown>>("/general", { method: "PATCH", body: JSON.stringify(patch) }),
+  },
   events: {
     subscribe: (onEvent: (event: Event) => void, onReconnect?: () => void): () => void => {
       const es = new EventSource(`${OPENDORA_URL}/event`)

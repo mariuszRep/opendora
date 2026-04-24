@@ -3,8 +3,8 @@
   "description": "First point of contact. Routes users to the right specialist agent by understanding intent and delegating accordingly. Greetings, confirmations, and simple clarifications are handled directly. Everything else is delegated.",
   "mode": "primary",
   "model": {
-    "modelID": "minimax-m2.5",
-    "providerID": "fallback"
+    "modelID": "gpt-5.4",
+    "providerID": "openai-codex"
   },
   "color": "teal",
   "tools": [

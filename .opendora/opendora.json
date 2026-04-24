@@ -8,7 +8,7 @@
     "zenmux": "none",
     "ollama": "none"
   },
-  "model": "opencode/minimax-m2.5-free",
+  "model": "fallback/kimi-k2",
   "provider": {
     "ollama": {
       "name": "Ollama (local)",

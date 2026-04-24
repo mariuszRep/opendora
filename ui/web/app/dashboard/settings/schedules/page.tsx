@@ -9,6 +9,16 @@ import { SettingsCard } from "@/components/settings/settings-card"
 import { opendora, type Schedule } from "@/lib/opendora"
 import { ScheduleDialog } from "@/components/sessions/schedule-dialog"
 
+function displayPromptFor(schedule: Schedule): string {
+  if (schedule.action_type === "tool") {
+    try {
+      const p = JSON.parse(schedule.prompt)
+      if (typeof p === "object" && p !== null && typeof p.prompt === "string") return p.prompt
+    } catch {}
+  }
+  return schedule.prompt
+}
+
 export default function SchedulesSettingsPage() {
 
   const [schedules, setSchedules] = React.useState<Schedule[]>([])
@@ -82,21 +92,18 @@ export default function SchedulesSettingsPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 max-w-6xl">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {filteredSchedules.map(schedule => (
             <SettingsCard
               key={schedule.id}
               title={schedule.name || schedule.cron_expression}
-              description={schedule.prompt}
-              onDoubleClick={() => { setEditSchedule(schedule); setDialogOpen(true) }}
+              description={displayPromptFor(schedule)}
+              onClick={() => { setEditSchedule(schedule); setDialogOpen(true) }}
               footer={
-                <div className="flex items-center justify-between w-full">
+                <div className="flex items-center w-full">
                   <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <ClockPlusIcon className="size-3 shrink-0" />
                     {schedule.cron_expression}
-                  </span>
-                  <span className={`text-xs flex items-center gap-1 ${schedule.is_active ? "text-emerald-500" : "text-muted-foreground"}`}>
-                    {schedule.is_active ? "Active" : "Paused"}
                   </span>
                 </div>
               }

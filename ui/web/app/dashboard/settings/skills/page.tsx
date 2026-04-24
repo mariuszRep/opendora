@@ -479,7 +479,7 @@ export default function SkillsPage() {
             {search ? "No skills match your search." : "No skills found."}
           </div>
         ) : (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {filtered.map((skill) => {
               const origin = originFromLocation(skill.location)
               const colorClass = ORIGIN_COLORS[origin] ?? ORIGIN_COLORS.local
@@ -488,26 +488,7 @@ export default function SkillsPage() {
                   key={skill.name}
                   title={skill.name}
                   description={skill.description || "No description"}
-                  onDoubleClick={() => setSelected(skill)}
-                  footer={
-                    <div className="flex flex-col gap-1.5 w-full">
-                      <div className="flex items-center justify-between w-full">
-                        <Badge variant="secondary" className={`text-xs ${colorClass}`}>
-                          {origin}
-                        </Badge>
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
-                          <MapPinIcon className="h-3 w-3 shrink-0" />
-                          <span className="truncate font-mono">{skill.location}</span>
-                        </div>
-                      </div>
-                      {skill.tools && skill.tools.length > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <WrenchIcon className="h-3 w-3 shrink-0" />
-                          <span className="font-mono truncate">{skill.tools.join(", ")}</span>
-                        </div>
-                      )}
-                    </div>
-                  }
+                  onClick={() => setSelected(skill)}
                 />
               )
             })}

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { opendora } from "@/lib/opendora"
 
 export interface VoiceSettings {
   stt: {
@@ -50,28 +51,26 @@ const DEFAULT_SETTINGS: VoiceSettings = {
   },
 }
 
-const STORAGE_KEY = "opendora-voice-settings"
+function mergeSettings(stored: Partial<VoiceSettings>): VoiceSettings {
+  return {
+    ...DEFAULT_SETTINGS,
+    ...stored,
+    stt: { ...DEFAULT_SETTINGS.stt, ...(stored.stt ?? {}) },
+    tts: { ...DEFAULT_SETTINGS.tts, ...(stored.tts ?? {}) },
+    pushToTalk: { ...DEFAULT_SETTINGS.pushToTalk, ...(stored.pushToTalk ?? {}) },
+  }
+}
 
 export function useVoiceSettings() {
   const [settings, setSettingsState] = useState<VoiceSettings>(DEFAULT_SETTINGS)
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // Load settings from localStorage on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        setSettingsState({ ...DEFAULT_SETTINGS, ...parsed })
-      }
-    } catch (error) {
-      console.error("Failed to load voice settings:", error)
-    } finally {
-      setIsLoaded(true)
-    }
+    opendora.general.get().then((data) => {
+      if (data.voice) setSettingsState(mergeSettings(data.voice as Partial<VoiceSettings>))
+    }).catch(() => {}).finally(() => setIsLoaded(true))
   }, [])
 
-  // Save settings to localStorage
   const updateSettings = (newSettings: Partial<VoiceSettings>) => {
     const updated = {
       ...settings,
@@ -81,20 +80,12 @@ export function useVoiceSettings() {
       pushToTalk: { ...settings.pushToTalk, ...newSettings.pushToTalk },
     }
     setSettingsState(updated)
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-    } catch (error) {
-      console.error("Failed to save voice settings:", error)
-    }
+    opendora.general.update({ voice: updated }).catch(() => {})
   }
 
   const resetSettings = () => {
     setSettingsState(DEFAULT_SETTINGS)
-    try {
-      localStorage.removeItem(STORAGE_KEY)
-    } catch (error) {
-      console.error("Failed to reset voice settings:", error)
-    }
+    opendora.general.update({ voice: DEFAULT_SETTINGS }).catch(() => {})
   }
 
   return {
@@ -115,8 +106,7 @@ export function formatHotkey(hotkey: HotkeyConfig | null): string {
   if (hotkey.metaKey) parts.push("Meta")
 
   let keyName = hotkey.key
-  
-  // Handle special key display names
+
   switch (hotkey.key) {
     case " ": keyName = "Space"; break
     case "Tab": keyName = "Tab"; break

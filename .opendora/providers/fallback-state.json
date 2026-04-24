@@ -3,9 +3,9 @@
   "cooldowns": {},
   "rotations": {
     "minimax-m2.5": {
-      "slotIndex": 0,
-      "activeSince": 1775628463772,
-      "lastUsed": 1776952925072
+      "slotIndex": 1,
+      "activeSince": 1777041599463,
+      "lastUsed": 1777043566241
     },
     "trinity-large": {
       "slotIndex": 0,

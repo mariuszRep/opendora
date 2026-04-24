@@ -1,13 +1,13 @@
 {
   "name": "Engineer",
-  "description": "Implementation specialist with a builder persona. Owns approved code changes and can selectively load exploration, planning, and review workflows when they help deliver safer work.",
+  "description": "Implementation and testing specialist with a builder persona. Owns approved code changes, automated verification, and can selectively load exploration, planning, and review workflows when they help deliver safer work.",
   "mode": "worker",
   "model": {
     "modelID": "minimax-m2.5-free",
     "providerID": "opencode"
   },
   "temperature": 0.2,
-  "steps": 50,
+  "steps": 60,
   "color": "blue",
   "hidden": false,
   "tools": [

@@ -34,6 +34,7 @@ import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { AGENT_COLORS } from "@/lib/agent-colors"
+import { opendora } from "@/lib/opendora"
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -50,6 +51,19 @@ export default function SettingsPage() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Sync theme from general.json on first open
+  useEffect(() => {
+    if (!mounted) return
+    opendora.general.get().then((data) => {
+      if (data.theme && data.theme !== theme) setTheme(data.theme)
+    }).catch(() => {})
+  }, [mounted])
+
+  const handleSetTheme = (newTheme: string) => {
+    setTheme(newTheme)
+    opendora.general.update({ theme: newTheme }).catch(() => {})
+  }
 
   // Hotkey recording effect
   useEffect(() => {
@@ -182,7 +196,7 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 max-w-6xl">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {settingsCards.map((card) => {
               const Icon = card.icon
               const handleClick = 'href' in card ? () => router.push(card.href) : card.onClick
@@ -193,18 +207,6 @@ export default function SettingsPage() {
                   description={card.description}
                   icon={Icon}
                   onClick={handleClick}
-                  footer={
-                    'count' in card && card.count !== null && card.countLabel !== null ? (
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-primary">
-                          {card.count}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {card.countLabel}
-                        </span>
-                      </div>
-                    ) : null
-                  }
                 />
               )
             })}
@@ -265,7 +267,7 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="theme">Theme</Label>
               {mounted && (
-                <Select value={theme} onValueChange={setTheme}>
+                <Select value={theme} onValueChange={handleSetTheme}>
                   <SelectTrigger id="theme" className="w-full">
                     <SelectValue placeholder="Select theme" />
                   </SelectTrigger>

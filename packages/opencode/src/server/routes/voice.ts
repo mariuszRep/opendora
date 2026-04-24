@@ -39,6 +39,15 @@ export const VoiceRoutes = lazy(() =>
             return c.json({ error: "Audio file is required" }, { status: 400 })
           }
 
+          // Whisper rejects empty or trivially short uploads with an opaque 400.
+          // Reject them here so the client gets a clear reason instead.
+          if (audio.size < 1024) {
+            return c.json(
+              { error: `Recording too short (${audio.size} bytes). Please record at least half a second of audio.` },
+              { status: 400 },
+            )
+          }
+
           // Get OpenAI credentials from auth system
           // Voice APIs (Whisper/TTS) ONLY work with API key, NOT OAuth Codex tokens
           const auth = await Auth.get("openai")
