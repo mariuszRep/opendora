@@ -99,11 +99,18 @@ export const MessageAction = ({
   children,
   label,
   variant = "ghost",
-  size = "icon-sm",
+  size = "icon-xs",
+  className,
   ...props
 }: MessageActionProps) => {
   const button = (
-    <Button size={size} type="button" variant={variant} {...props}>
+    <Button 
+      size={size} 
+      type="button" 
+      variant={variant} 
+      className={cn("!border-0 focus-visible:!border-0 focus-visible:!ring-0 !shadow-none", className)}
+      {...props}
+    >
       {children}
       <span className="sr-only">{label || tooltip}</span>
     </Button>
