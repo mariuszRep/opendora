@@ -129,6 +129,8 @@ function toToolState(status: ToolPart["state"]["status"], hasPermissionRequest?:
       return "output-available"
     case "error":
       return "output-error"
+    default:
+      return "output-available"
   }
 }
 
@@ -208,6 +210,8 @@ export const Chatbot = () => {
     refreshProviders,
     fallbackActiveSlots,
     modelFilters,
+    modelGroups,
+    refreshModelGroups,
     createSession,
     updateAgent,
     isChatCentered,
@@ -235,6 +239,7 @@ export const Chatbot = () => {
   const [openScheduleId, setOpenScheduleId] = useState<string | null>(null)
   const [selectedProviderID, setSelectedProviderID] = useState<string | null>(null)
   const [selectedModelID, setSelectedModelID] = useState<string | null>(null)
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
   const [questionViewModes, setQuestionViewModes] = useState<Record<string, "code" | "view">>({})
   const [delegateViewModes, setDelegateViewModes] = useState<Record<string, "code" | "view">>({})
   const [todoViewModes, setTodoViewModes] = useState<Record<string, "code" | "view">>({})
@@ -313,14 +318,24 @@ export const Chatbot = () => {
     return [...real, ...fallback]
   }, [providers, connectedProviders, modelFilters])
 
+  const selectedGroup = useMemo(
+    () => (selectedGroupId ? modelGroups.find((g) => g.id === selectedGroupId) : null),
+    [selectedGroupId, modelGroups],
+  )
+
   const selectedModel = useMemo(() => {
+    if (selectedGroupId) {
+      const group = modelGroups.find((g) => g.id === selectedGroupId)
+      const first = group?.models[0]
+      if (first) return modelList.find((m) => m.providerID === first.providerID && m.modelID === first.modelID)
+    }
     if (selectedProviderID && selectedModelID)
       return modelList.find((m) => m.providerID === selectedProviderID && m.modelID === selectedModelID)
     const firstConnected = connectedProviders[0]
     if (!firstConnected) return undefined
     const defaultModel = defaultModels[firstConnected]
     return modelList.find((m) => m.providerID === firstConnected && m.modelID === defaultModel) ?? modelList[0]
-  }, [selectedProviderID, selectedModelID, modelList, connectedProviders, defaultModels])
+  }, [selectedGroupId, selectedProviderID, selectedModelID, modelList, connectedProviders, defaultModels, modelGroups])
 
   const modelsByProvider = useMemo(() => {
     const groups = new Map<string, typeof modelList>()
@@ -423,38 +438,37 @@ export const Chatbot = () => {
       if (message.files?.length) {
         toast.info(`${message.files.length} file(s) attached`)
       }
-      const model = selectedModel
+      const model = selectedModel && !selectedGroupId
         ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
         : undefined
+      const fallbackGroupID = selectedGroupId ?? undefined
       const content = userName ? `user: ${userName}\n\n${message.text}` : message.text
       setText("")
-      const doSend = () => sendMessage(content, { model, agent: selectedAgent })
+      const doSend = () => sendMessage(content, { model, fallbackGroupID, agent: selectedAgent })
       if (!selectedSession) {
         createSession().then(doSend)
       } else {
         doSend()
       }
     },
-    [sendMessage, selectedModel, selectedAgent, selectedSession, createSession, userName],
+    [sendMessage, selectedModel, selectedGroupId, selectedAgent, selectedSession, createSession, userName],
   )
 
   const handleSuggestionClick = useCallback(
     (suggestion: string) => {
+      const model = selectedModel && !selectedGroupId
+        ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
+        : undefined
+      const fallbackGroupID = selectedGroupId ?? undefined
       if (!selectedSession) {
         createSession().then(() => {
-          const model = selectedModel
-            ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
-            : undefined
-          sendMessage(suggestion, { model, agent: selectedAgent })
+          sendMessage(suggestion, { model, fallbackGroupID, agent: selectedAgent })
         })
         return
       }
-      const model = selectedModel
-        ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
-        : undefined
-      sendMessage(suggestion, { model, agent: selectedAgent })
+      sendMessage(suggestion, { model, fallbackGroupID, agent: selectedAgent })
     },
-    [sendMessage, selectedModel, selectedAgent, selectedSession, createSession],
+    [sendMessage, selectedModel, selectedGroupId, selectedAgent, selectedSession, createSession],
   )
 
   const handleCopy = useCallback((content: string) => {
@@ -490,25 +504,26 @@ export const Chatbot = () => {
       const currentMessageCount = messages.length
       
       // Submit the transcribed message
-      const model = selectedModel
+      const model = selectedModel && !selectedGroupId
         ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
         : undefined
-      
+      const fallbackGroupID = selectedGroupId ?? undefined
+
       // We'll identify the next assistant message by its position
       const attributed = userName ? `user: ${userName}\n\n${transcription}` : transcription
       const doSend = () => {
-        sendMessage(attributed, { model, agent: selectedAgent })
+        sendMessage(attributed, { model, fallbackGroupID, agent: selectedAgent })
         // The next assistant message will be at position currentMessageCount + 1
         // We'll track this in the useEffect below
       }
-      
+
       if (!selectedSession) {
         createSession().then(() => doSend())
       } else {
         doSend()
       }
     }
-  }, [stopRecording, sendMessage, selectedModel, selectedAgent, selectedSession, createSession, messages.length, userName])
+  }, [stopRecording, sendMessage, selectedModel, selectedGroupId, selectedAgent, selectedSession, createSession, messages.length, userName])
 
   // Set up push-to-talk
   usePushToTalk({
@@ -565,7 +580,6 @@ export const Chatbot = () => {
     }
   }, [])
 
-  console.log("[chatbot] render", { selectedSession: selectedSession?.id, messages: messages.length, status })
   return (
     <div className="relative flex size-full flex-col divide-y overflow-hidden">
       {error && (
@@ -1304,13 +1318,16 @@ export const Chatbot = () => {
                       setModelSelectorOpen(open)
                       if (open) {
                         refreshProviders().catch(() => {})
+                        refreshModelGroups().catch(() => {})
                       }
                     }}
                     open={modelSelectorOpen}
                   >
                     <ModelSelectorTrigger asChild>
                       <PromptInputButton>
-                        {selectedModel?.isFallback
+                        {selectedGroup ? (
+                          <ModelSelectorName>{selectedGroup.name}</ModelSelectorName>
+                        ) : selectedModel?.isFallback
                           ? (() => {
                               const activeSlot = fallbackActiveSlots[selectedModel.modelID]
                               const iconProvider = activeSlot?.providerID ?? "opencode"
@@ -1318,17 +1335,40 @@ export const Chatbot = () => {
                             })()
                           : selectedModel?.providerID && <ModelSelectorLogo provider={selectedModel.providerID} />
                         }
-                        {selectedModel?.modelName && <ModelSelectorName>{selectedModel.modelName}</ModelSelectorName>}
+                        {!selectedGroup && selectedModel?.modelName && <ModelSelectorName>{selectedModel.modelName}</ModelSelectorName>}
                       </PromptInputButton>
                     </ModelSelectorTrigger>
                     <ModelSelectorContent>
                       <ModelSelectorInput placeholder="Search models…" />
                       <ModelSelectorList>
                         <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
+                        {modelGroups.length > 0 && (
+                          <ModelSelectorGroup heading="Fallback Groups">
+                            {modelGroups.map((g) => {
+                              const active = selectedGroupId === g.id
+                              return (
+                                <ModelSelectorItem
+                                  key={`group:${g.id}`}
+                                  value={`group:${g.name} ${g.id}`}
+                                  onSelect={() => {
+                                    setSelectedGroupId(g.id)
+                                    setSelectedProviderID(null)
+                                    setSelectedModelID(null)
+                                    setModelSelectorOpen(false)
+                                  }}
+                                >
+                                  <ModelSelectorName>{g.name}</ModelSelectorName>
+                                  {active ? <CheckIcon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}
+                                </ModelSelectorItem>
+                              )
+                            })}
+                          </ModelSelectorGroup>
+                        )}
                         {[...modelsByProvider.entries()].map(([providerName, models]) => (
                           <ModelSelectorGroup heading={providerName} key={providerName}>
                             {models.map((m) => {
                               const active =
+                                !selectedGroupId &&
                                 selectedModel?.providerID === m.providerID &&
                                 selectedModel?.modelID === m.modelID
                               return (
@@ -1337,8 +1377,8 @@ export const Chatbot = () => {
                                   onSelect={() => {
                                     setSelectedProviderID(m.providerID)
                                     setSelectedModelID(m.modelID)
+                                    setSelectedGroupId(null)
                                     setModelSelectorOpen(false)
-                                    // Sync model change back to agent's preferred model
                                     updateAgentModel(m.providerID, m.modelID)
                                   }}
                                   value={`${m.providerID}:${m.modelID}`}

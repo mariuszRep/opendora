@@ -10,6 +10,10 @@ import { FallbackManager } from "@opendora/session/fallback"
 import { mapValues } from "remeda"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
+import { Log } from "../../util/log"
+import { Installation } from "../../installation"
+
+const log = Log.create({ service: "provider.routes" })
 
 export const ProviderRoutes = lazy(() =>
   new Hono()
@@ -38,6 +42,17 @@ export const ProviderRoutes = lazy(() =>
       }),
       async (c) => {
         const config = await Config.get()
+
+        if (config.model_groups?.length) {
+          FallbackManager.setCustomGroups(
+            config.model_groups.map((g) => ({
+              id: g.id,
+              displayName: g.name,
+              slots: g.models,
+            })),
+          )
+        }
+
         const disabled = new Set(config.disabled_providers ?? [])
         const enabled = config.enabled_providers ? new Set(config.enabled_providers) : undefined
 
@@ -54,6 +69,77 @@ export const ProviderRoutes = lazy(() =>
           mapValues(filteredProviders, (x) => Provider.fromModelsDevProvider(x)),
           connected,
         )
+
+        // Fetch fresh Codex models if authenticated
+        async function fetchCodexModels() {
+          const auth = await Auth.get("openai-codex")
+          if (!auth || auth.type !== "oauth") return null
+
+          const CODEX_MODELS_ENDPOINT = "https://chatgpt.com/backend-api/codex/models"
+          const headers = new Headers({
+            authorization: `Bearer ${auth.access}`,
+            "User-Agent": Installation.USER_AGENT,
+          })
+          if (auth.accountId) {
+            headers.set("ChatGPT-Account-Id", auth.accountId)
+          }
+
+          const url = new URL(CODEX_MODELS_ENDPOINT)
+          const version = Installation.VERSION
+          url.searchParams.set(
+            "client_version",
+            /^\d+\.\d+\.\d+/.test(version) ? version : "0.0.0",
+          )
+
+          try {
+            const response = await fetch(url, {
+              headers,
+              signal: AbortSignal.timeout(10_000),
+            })
+            if (!response.ok) {
+              log.warn("codex models fetch failed", { status: response.status })
+              return null
+            }
+
+            const payload = await response.json() as { models: Array<{ slug: string; display_name: string; context_window?: number; visibility?: string; supported_in_api?: boolean }> }
+            const models: Record<string, any> = {}
+            for (const model of payload.models ?? []) {
+              if (model.visibility === "hide" || model.supported_in_api === false) continue
+              models[model.slug] = {
+                id: model.slug,
+                name: model.display_name || model.slug,
+                providerID: "openai-codex",
+                api: { id: model.slug, url: "https://chatgpt.com/backend-api/codex", npm: "@ai-sdk/openai" },
+                cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+                limit: {
+                  context: model.context_window ?? 400_000,
+                  input: Math.floor((model.context_window ?? 400_000) * 0.68),
+                  output: Math.min(128_000, Math.floor((model.context_window ?? 400_000) * 0.32)),
+                },
+                capabilities: { temperature: false, reasoning: true, attachment: false, toolcall: true },
+                status: "active",
+                options: {},
+                headers: {},
+                release_date: "",
+                variants: {},
+              }
+            }
+            log.info("codex models fetched", { count: Object.keys(models).length })
+            return models
+          } catch (error) {
+            log.warn("codex models fetch failed", { error })
+            return null
+          }
+        }
+
+        // Refresh Codex models if authenticated
+        if (providers["openai-codex"]) {
+          const freshModels = await fetchCodexModels()
+          if (freshModels && Object.keys(freshModels).length > 0) {
+            providers["openai-codex"].models = freshModels
+            log.info("codex models updated in provider list response")
+          }
+        }
 
         // Inject synthetic provider entries for plugins with auth methods not yet in the list
         const authMethodMap = await ProviderAuth.methods()

@@ -66,7 +66,7 @@ export type UseOpendoraResult = {
   allPermissionRequests: Record<string, PermissionRequest[]>
   replyPermission: (requestID: string, reply: PermissionReply) => Promise<void>
   status: ChatStatus
-  sendMessage: (text: string, options?: { model?: { providerID: string; modelID: string }; agent?: string }) => Promise<void>
+  sendMessage: (text: string, options?: { model?: { providerID: string; modelID: string }; fallbackGroupID?: string; agent?: string }) => Promise<void>
   abort: () => void
   abortSession: (sessionID: string) => void
   // Agents — read
@@ -93,6 +93,9 @@ export type UseOpendoraResult = {
   // Per-provider model filter: "all" | "free" | "none"
   modelFilters: Record<string, "all" | "free" | "none">
   setModelFilter: (providerID: string, filter: "all" | "free" | "none") => void
+  // Fallback groups
+  modelGroups: { id: string; name: string; models: { providerID: string; modelID: string }[] }[]
+  refreshModelGroups: () => Promise<void>
   // Error
   error: string | null
   // UI Layout
@@ -132,6 +135,7 @@ export function useOpendora(): UseOpendoraResult {
   const [agents, setAgents] = useState<(Agent & { _id: string })[]>([])
   const [fallbackActiveSlots, setFallbackActiveSlots] = useState<Record<string, { providerID: string; modelID: string }>>({})
   const [modelFilters, setModelFilters] = useState<Record<string, "all" | "free" | "none">>({})
+  const [modelGroups, setModelGroups] = useState<{ id: string; name: string; models: { providerID: string; modelID: string }[] }[]>([])
   const [allAgents, setAllAgents] = useState<(Agent & { _id: string })[]>([])
   const [selectedAgent, setSelectedAgent] = useState<string>("")
   const [isChatCentered, setIsChatCentered] = useState(false)
@@ -231,6 +235,14 @@ export function useOpendora(): UseOpendoraResult {
     rememberSessionForAgent(selectedSession)
   }, [selectedSession, rememberSessionForAgent])
 
+  // Periodically refresh providers every hour to get fresh model lists
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshProviders().catch(() => {})
+    }, 60 * 60 * 1000) // 1 hour
+    return () => clearInterval(interval)
+  }, [refreshProviders])
+
   // Bootstrap: load providers, agents, sessions
   useEffect(() => {
     let cancelled = false
@@ -250,10 +262,13 @@ export function useOpendora(): UseOpendoraResult {
         setProviders(providerData.all)
         setConnectedProviders(providerData.connected)
         setDefaultModels(providerData.default)
-        
+
         // Load model filters from backend config
         if (configData.model_filters) {
           setModelFilters(configData.model_filters)
+        }
+        if (configData.model_groups) {
+          setModelGroups(configData.model_groups as { id: string; name: string; models: { providerID: string; modelID: string }[] }[])
         }
 
         setSchedules(scheduleData)
@@ -265,7 +280,7 @@ export function useOpendora(): UseOpendoraResult {
           return { ...a, _id: id, id }
         })
         setAllAgents(agentsWithId)
-        
+
         // agents only includes visible agents (for sidebar)
         const visibleAgents = agentsWithId.filter((a) => !a.hidden)
         setAgents(visibleAgents)
@@ -330,27 +345,24 @@ export function useOpendora(): UseOpendoraResult {
 
   // Load messages when session changes (stale-while-revalidate via cache)
   useEffect(() => {
-    console.log("[messages] effect fired, selectedSessionId=", selectedSessionId)
     if (!selectedSessionId) {
       setMessages([])
       return
     }
     const cached = messageCacheRef.current.get(selectedSessionId)
     if (cached) {
-      console.log("[messages] using cache, count=", cached.length)
       setMessages(cached)
     } else {
       setMessages([])
     }
     let cancelled = false
     opendora.session.messages(selectedSessionId).then((msgs) => {
-      console.log("[messages] fetch done, count=", msgs.length, "cancelled=", cancelled)
       if (!cancelled) {
         messageCacheRef.current.set(selectedSessionId, msgs)
         setMessages(msgs)
       }
     }).catch((err) => { console.error("[messages] fetch failed", selectedSessionId, err) })
-    return () => { console.log("[messages] cleanup, cancelled for", selectedSessionId); cancelled = true }
+    return () => { cancelled = true }
   }, [selectedSessionId])
 
   useEffect(() => {
@@ -562,19 +574,21 @@ export function useOpendora(): UseOpendoraResult {
         }
       }
     }, () => {
-      // SSE reconnected — reset stuck status and navigate back to the default agent's main session
+      // SSE reconnected — reset stuck status only; preserve the user's current session.
+      // Only navigate to the default agent if nothing is selected (cold start / first open).
       setStatus((prev) => (prev === "streaming" || prev === "submitted" ? "ready" : prev))
+      if (selectedSessionRef.current) return
       const defaultId = getStoredDefaultAgent()
       if (defaultId) {
         setSelectedAgent(defaultId)
-        setMessages([])
         opendora.agent.mainSession(defaultId).then((session) => {
-          if (session?.id) {
+          if (session?.id && !selectedSessionRef.current) {
+            setMessages([])
             setSelectedSessionId(session.id)
             selectedSessionRef.current = session
           }
         }).catch(() => {
-          // If API fails, fall back to local sessions
+          if (selectedSessionRef.current) return
           setSessions((prev) => {
             const fallback = prev.find((s) => s.agentID === defaultId && s.sessionType === "role")
               ?? prev.find((s) => s.agentID === defaultId)
@@ -641,7 +655,7 @@ export function useOpendora(): UseOpendoraResult {
   }, [selectedAgent, router])
 
   const sendMessage = useCallback(
-    async (text: string, options?: { model?: { providerID: string; modelID: string }; agent?: string }) => {
+    async (text: string, options?: { model?: { providerID: string; modelID: string }; fallbackGroupID?: string; agent?: string }) => {
       const session = selectedSessionRef.current
       if (!session) return
       if (statusRef.current !== "ready") return
@@ -651,6 +665,7 @@ export function useOpendora(): UseOpendoraResult {
         await opendora.session.promptAsync(session.id, {
           parts: [{ type: "text", text }],
           ...(options?.model ? { model: options.model } : {}),
+          ...(options?.fallbackGroupID ? { fallbackGroupID: options.fallbackGroupID } : {}),
           agent: options?.agent ?? selectedAgent,
         })
         // Status transitions to "ready" via SSE session.idle event
@@ -821,6 +836,15 @@ export function useOpendora(): UseOpendoraResult {
     setFilePreviewOpen(false)
   }, [])
 
+  const refreshModelGroups = useCallback(async () => {
+    const configData = await opendora.config.get()
+    if (configData.model_groups) {
+      setModelGroups(configData.model_groups as { id: string; name: string; models: { providerID: string; modelID: string }[] }[])
+    } else {
+      setModelGroups([])
+    }
+  }, [])
+
   const setModelFilter = useCallback(async (providerID: string, filter: "all" | "free" | "none") => {
     setModelFilters((prev) => {
       const next = { ...prev, [providerID]: filter }
@@ -874,6 +898,8 @@ export function useOpendora(): UseOpendoraResult {
     fallbackActiveSlots,
     modelFilters,
     setModelFilter,
+    modelGroups,
+    refreshModelGroups,
     error,
     isChatCentered,
     toggleChatLayout,

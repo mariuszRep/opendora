@@ -379,6 +379,7 @@ export const opendora = {
       input: {
         parts: Array<{ type: "text"; text: string } | { type: string; [k: string]: unknown }>
         model?: { providerID: string; modelID: string }
+        fallbackGroupID?: string
         agent?: string
       },
     ) =>

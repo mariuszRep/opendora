@@ -26,7 +26,10 @@ import { XIcon } from "lucide-react"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
@@ -82,6 +85,19 @@ const DESKTOP_TOOLS = new Set([
 
 const NONE = "__none__"
 
+function resolveModelLabel(
+  value: string,
+  modelOptions: { value: string; label: string }[],
+  modelGroups: { id: string; name: string }[],
+): string | null {
+  if (value === NONE) return null
+  if (value.startsWith("group::")) {
+    const id = value.slice("group::".length)
+    return modelGroups.find((g) => g.id === id)?.name ?? "Group"
+  }
+  return modelOptions.find((o) => o.value === value)?.label ?? value
+}
+
 function buildModelOptions(providers: Provider[], connected: string[]) {
   return connected.flatMap((pid) => {
     const provider = providers.find((p) => p.id === pid)
@@ -101,12 +117,13 @@ function modelToValue(m?: { providerID: string; modelID: string }) {
 
 function valueToModel(v: string) {
   if (v === NONE) return undefined
+  if (v.startsWith("group::")) return undefined
   const [providerID, modelID] = v.split("::")
   return { providerID, modelID }
 }
 
 export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props) {
-  const { createAgent, updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, refreshProviders, allAgents } =
+  const { createAgent, updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, refreshProviders, allAgents, modelGroups, refreshModelGroups } =
     useOpendoraContext()
 
   const isEdit = !!agent
@@ -405,19 +422,43 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                   value={model}
                   onValueChange={setModel}
                   onOpenChange={(open) => {
-                    if (open) refreshProviders().catch(() => {})
+                    if (open) {
+                      refreshProviders().catch(() => {})
+                      refreshModelGroups().catch(() => {})
+                    }
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Use default" />
+                    <span className="flex-1 truncate text-left">
+                      {resolveModelLabel(model, modelOptions, modelGroups) ?? (
+                        <span className="text-muted-foreground">Use default</span>
+                      )}
+                    </span>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NONE}>Use default</SelectItem>
-                    {modelOptions.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>
-                        {o.label}
-                      </SelectItem>
-                    ))}
+                    {modelGroups.length > 0 && (
+                      <>
+                        <SelectSeparator />
+                        <SelectGroup>
+                          <SelectLabel>Fallback groups</SelectLabel>
+                          {modelGroups.map((g) => (
+                            <SelectItem key={`group::${g.id}`} value={`group::${g.id}`}>
+                              {g.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                        <SelectSeparator />
+                      </>
+                    )}
+                    <SelectGroup>
+                      <SelectLabel>Models</SelectLabel>
+                      {modelOptions.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </div>
@@ -429,19 +470,43 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                   value={fallbackModel}
                   onValueChange={setFallbackModel}
                   onOpenChange={(open) => {
-                    if (open) refreshProviders().catch(() => {})
+                    if (open) {
+                      refreshProviders().catch(() => {})
+                      refreshModelGroups().catch(() => {})
+                    }
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="None" />
+                    <span className="flex-1 truncate text-left">
+                      {resolveModelLabel(fallbackModel, modelOptions, modelGroups) ?? (
+                        <span className="text-muted-foreground">None</span>
+                      )}
+                    </span>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NONE}>None</SelectItem>
-                    {modelOptions.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>
-                        {o.label}
-                      </SelectItem>
-                    ))}
+                    {modelGroups.length > 0 && (
+                      <>
+                        <SelectSeparator />
+                        <SelectGroup>
+                          <SelectLabel>Fallback groups</SelectLabel>
+                          {modelGroups.map((g) => (
+                            <SelectItem key={`group::${g.id}`} value={`group::${g.id}`}>
+                              {g.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                        <SelectSeparator />
+                      </>
+                    )}
+                    <SelectGroup>
+                      <SelectLabel>Models</SelectLabel>
+                      {modelOptions.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </div>

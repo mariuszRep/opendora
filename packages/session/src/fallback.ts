@@ -126,12 +126,19 @@ export namespace FallbackManager {
 
   // --- Group registry ---
 
-  let _groups: Group[] | null = null
+  let _customGroups: Group[] = []
+
+  /**
+   * Register user-defined fallback groups from config (model_groups).
+   * Called from the provider list route after reading config so these
+   * are available to resolve() / reportError() in the session processor.
+   */
+  export function setCustomGroups(groups: Group[]): void {
+    _customGroups = groups.map((g) => ({ ...g }))
+  }
 
   export function allGroups(): Group[] {
-    if (_groups) return _groups
-    _groups = BUILTIN_GROUPS
-    return _groups
+    return [...BUILTIN_GROUPS, ..._customGroups]
   }
 
   export function getGroup(id: string): Group | undefined {

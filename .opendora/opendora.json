@@ -6,8 +6,43 @@
     "opencode": "free",
     "openrouter": "free",
     "zenmux": "none",
-    "ollama": "none"
+    "ollama": "none",
+    "openai-codex": "all"
   },
+  "model_groups": [
+    {
+      "id": "e2daea63-4ca4-4817-9978-14baecf5612d",
+      "name": "Test",
+      "models": [
+        {
+          "providerID": "openrouter",
+          "modelID": "minimax/minimax-m2.5:free"
+        },
+        {
+          "providerID": "opencode",
+          "modelID": "minimax-m2.5-free"
+        }
+      ]
+    },
+    {
+      "id": "a103f2b7-43fc-4ce3-9e8d-7dce786c0c31",
+      "name": "Auto Router",
+      "models": [
+        {
+          "providerID": "openrouter",
+          "modelID": "openrouter/free"
+        },
+        {
+          "providerID": "kilo",
+          "modelID": "kilo-auto/free"
+        },
+        {
+          "providerID": "kilo",
+          "modelID": "openrouter/free"
+        }
+      ]
+    }
+  ],
   "model": "fallback/kimi-k2",
   "provider": {
     "ollama": {

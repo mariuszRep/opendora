@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2Icon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon, BrainIcon, WrenchIcon } from "lucide-react"
+import { CheckCircle2Icon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon, BrainIcon, WrenchIcon, PlusIcon, LayersIcon } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +20,7 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
 } from "@/components/ai-elements/model-selector"
+import { GroupBuilderDialog, type ModelGroup } from "@/components/providers/group-builder-dialog"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { opendora, type AuthMethod, type Provider } from "@/lib/opendora"
 import { cn } from "@/lib/utils"
@@ -41,7 +42,7 @@ type ApiKeyFormState = {
 
 export default function ProvidersPage() {
   const router = useRouter()
-  const { providers, connectedProviders, modelFilters, setModelFilter, defaultModels, refreshProviders } = useOpendoraContext()
+  const { providers, connectedProviders, modelFilters, setModelFilter, defaultModels, refreshProviders, modelGroups, refreshModelGroups } = useOpendoraContext()
   const [authMethods, setAuthMethods] = useState<Record<string, AuthMethod[]>>({})
   const [apiKeyForm, setApiKeyForm] = useState<ApiKeyFormState | null>(null)
   const [removing, setRemoving] = useState<string | null>(null)
@@ -53,9 +54,11 @@ export default function ProvidersPage() {
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [globalConfig, setGlobalConfig] = useState<{ model?: string; model_filters?: Record<string, "all" | "free" | "none">; [k: string]: unknown } | null>(null)
+  const [groupDialogOpen, setGroupDialogOpen] = useState(false)
 
   useEffect(() => {
     opendora.provider.authMethods().then(setAuthMethods).catch(() => {})
+    opendora.config.get().then(setGlobalConfig).catch(() => {})
   }, [])
 
   // Load default model from global config or provider defaults
@@ -79,6 +82,19 @@ export default function ProvidersPage() {
       }
     }
   }, [globalConfig, connectedProviders, defaultModels])
+
+  async function handleSaveGroup(group: Omit<ModelGroup, "id">) {
+    const newGroup: ModelGroup = { ...group, id: crypto.randomUUID() }
+    const updated = [...modelGroups, newGroup]
+    await opendora.config.update({ model_groups: updated })
+    await refreshModelGroups()
+  }
+
+  async function handleDeleteGroup(id: string) {
+    const updated = modelGroups.filter((g) => g.id !== id)
+    await opendora.config.update({ model_groups: updated })
+    await refreshModelGroups()
+  }
 
   const modelList = useMemo(() => {
     const isFreeModel = (m: { id: string; [k: string]: unknown }) => {
@@ -240,7 +256,26 @@ export default function ProvidersPage() {
   }
 
   return (
-    <SettingsPageLayout title="Providers" narrow>
+    <SettingsPageLayout
+      title="Providers"
+      narrow
+      headerAction={
+        <>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setGroupDialogOpen(true)}>
+            <PlusIcon className="size-3.5" />
+            New group
+          </Button>
+          <GroupBuilderDialog
+            open={groupDialogOpen}
+            onOpenChange={setGroupDialogOpen}
+            providers={providers}
+            connectedProviders={connectedProviders}
+            modelFilters={modelFilters}
+            onSave={handleSaveGroup}
+          />
+        </>
+      }
+    >
       <div className="flex flex-col gap-6">
           {/* Default Model Configuration */}
           <Card>
@@ -267,7 +302,7 @@ export default function ProvidersPage() {
                     }}
                   >
                     <ModelSelectorTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start font-normal">
+                      <Button variant="outline" className="w-full justify-start font-normal" suppressHydrationWarning>
                         {defaultModel ? (
                           (() => {
                             const selected = modelList.find((m) => m.providerID === defaultModel.providerID && m.modelID === defaultModel.modelID)
@@ -351,6 +386,55 @@ export default function ProvidersPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Fallback groups */}
+          {modelGroups.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <LayersIcon className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Fallback Groups</CardTitle>
+                </div>
+                <CardDescription>
+                  Ordered model chains — if one model fails, the next is tried automatically.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                {modelGroups.map((group) => (
+                  <div key={group.id} className="rounded-md border p-3 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{group.name}</span>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDeleteGroup(group.id)}
+                        title="Delete group"
+                      >
+                        <Trash2Icon className="size-3.5" />
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {group.models.map((m, idx) => {
+                        const provider = providers.find((p) => p.id === m.providerID)
+                        const modelObj = provider?.models[m.modelID]
+                        const modelName = (modelObj as { name?: string } | undefined)?.name ?? m.modelID
+                        return (
+                          <div key={`${m.providerID}:${m.modelID}`} className="flex items-center gap-1">
+                            {idx > 0 && <span className="text-xs text-muted-foreground">→</span>}
+                            <span className="flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs">
+                              <ModelSelectorLogo provider={m.providerID} />
+                              {modelName}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           <div className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">

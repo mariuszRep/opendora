@@ -559,39 +559,32 @@ const REFRESH_MARGIN_MS = 5 * 60 * 1000 // refresh 5 min before expiry
 function scheduleTokenRefresh(getAuth: () => Promise<{ type: string; refresh?: string; expires?: number }>, setAuth: (tokens: TokenResponse, accountId?: string) => Promise<void>) {
   if (backgroundRefreshActive) return
   backgroundRefreshActive = true
-  ;(async () => {
+
+  const refresh = async () => {
     try {
-      while (true) {
-        const auth = await getAuth().catch(() => null)
-        if (!auth || auth.type !== "oauth" || !auth.refresh || !auth.expires) return
-        const msUntilExpiry = auth.expires - Date.now()
-        // Refresh 5 min before expiry; no hard minimum so an already-expired token is
-        // addressed on the next iteration immediately (after a short anti-hammer pause).
-        const delay = msUntilExpiry > REFRESH_MARGIN_MS ? msUntilExpiry - REFRESH_MARGIN_MS : 0
-        if (delay > 0) {
-          await new Promise((resolve) => setTimeout(resolve, delay).unref())
-        }
-        const current = await getAuth().catch(() => null)
-        if (!current || current.type !== "oauth" || !current.refresh) return
-        const tokens = await refreshAccessToken(current.refresh).catch((e) => {
-          log.warn("background codex token refresh failed", { error: e })
-          return null
-        })
-        if (tokens) {
-          const claims = parseJwtClaims(tokens.id_token)
-          const accountId = claims ? extractAccountIdFromClaims(claims) : undefined
-          await setAuth(tokens, accountId).catch((e) => log.warn("failed to persist refreshed codex token", { error: e }))
-          invalidateAuthCache()
-          log.info("codex token refreshed in background")
-        } else {
-          // Brief pause before retrying after a failed refresh to avoid hammering the auth server
-          await new Promise((resolve) => setTimeout(resolve, 30_000).unref())
-        }
+      const auth = await getAuth().catch(() => null)
+      if (!auth || auth.type !== "oauth" || !auth.refresh) return
+
+      const now = Date.now()
+      const expiresAt = auth.expires ?? now + 3600 * 1000
+      const timeUntilExpiry = expiresAt - now
+
+      // If token is already expired or will expire soon, refresh immediately
+      if (timeUntilExpiry < REFRESH_MARGIN_MS) {
+        const tokens = await refreshAccessToken(auth.refresh)
+        await setAuth(tokens, (auth as any).accountId)
+      } else {
+        // Otherwise, schedule refresh for just before expiry
+        const delay = Math.max(0, timeUntilExpiry - REFRESH_MARGIN_MS)
+        setTimeout(refresh, delay).unref()
       }
-    } finally {
+    } catch (error: any) {
+      log.warn("token refresh failed, will retry on next access", { error })
       backgroundRefreshActive = false
     }
-  })()
+  }
+
+  refresh().catch(() => {})
 }
 
 export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {

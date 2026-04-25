@@ -1038,6 +1038,16 @@ export namespace Config {
         .record(z.string(), z.enum(["all", "free", "none"]))
         .optional()
         .describe("Per-provider model filter: 'all' shows all models, 'free' shows only free models, 'none' hides all models"),
+      model_groups: z
+        .array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            models: z.array(z.object({ providerID: z.string(), modelID: z.string() })),
+          }),
+        )
+        .optional()
+        .describe("Fallback groups: ordered model chains for automatic failover"),
       model: ModelId.describe("Model to use in the format of provider/model, eg anthropic/claude-2").optional(),
       small_model: ModelId.describe(
         "Small model to use for tasks like title generation in the format of provider/model",
