@@ -13,12 +13,14 @@
   "tools": [
     "session_search",
     "session_tree",
+    "session_get",
     "skill_load",
     "todowrite",
     "delegate",
     "reply",
-    "list",
-    "session_get"
+    "read",
+    "glob",
+    "grep"
   ],
   "skills": [
     "intake-triage",

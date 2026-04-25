@@ -1,3 +1,4 @@
+
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "opendora",
@@ -6,13 +7,13 @@
   "type": "module",
   "packageManager": "bun@1.3.10",
   "scripts": {
-    "dev": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode --conditions=browser src/index.ts",
-    "tui": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode --conditions=browser src/index.ts attach http://localhost:4097",
-    "serve": "LD_PRELOAD=$PWD/packages/tools/desktop/x11_nocrash.so OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode src/index.ts serve --port 4097",
-    "start": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode src/index.ts start",
-    "stop": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode src/index.ts stop",
-    "restart": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode src/index.ts restart",
-    "status": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run --cwd packages/opencode src/index.ts status",
+    "dev": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run packages/opencode src/index.ts",
+    "tui": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run packages/opencode src/index.ts attach http://localhost:4097",
+    "serve": "LD_PRELOAD=$PWD/packages/tools/desktop/x11_nocrash.so OPENCODE_CONFIG_DIR=$PWD/.opendora bun run packages/opencode src/index.ts serve --port 4097",
+    "start": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run packages/opencode src/index.ts start",
+    "stop": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run packages/opencode src/index.ts stop",
+    "restart": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run packages/opencode src/index.ts restart",
+    "status": "OPENCODE_CONFIG_DIR=$PWD/.opendora bun run packages/opencode src/index.ts status",
     "dev:ui": "bash ./scripts/dev-ui.sh",
     "typecheck": "bun turbo typecheck",
     "test": "echo 'do not run tests from root' && exit 1"
