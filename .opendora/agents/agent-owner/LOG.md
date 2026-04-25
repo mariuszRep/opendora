@@ -23,3 +23,10 @@ Observed a state mismatch after updating engineer skills: agent.json contains th
 _Context: ses_245331f71ffeKzV4vx5gLwasjh_
 
 ---
+### 2026-04-25 19:23:02 UTC [BUG]
+
+agent_update accepted skills:['architecture-analysis'] for product-owner but reported no configuration changes and agent_get still shows Skills: none. Impact: cannot confirm skill assignment through config despite skill existing in registry.
+
+_Context: product-owner architecture skill assignment_
+
+---

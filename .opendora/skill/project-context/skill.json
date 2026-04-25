@@ -1,0 +1,10 @@
+{
+  "tools": [
+    "read",
+    "glob",
+    "grep",
+    "apply_patch",
+    "session_search",
+    "session_get"
+  ]
+}

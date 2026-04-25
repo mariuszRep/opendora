@@ -23,8 +23,8 @@
     "grep"
   ],
   "skills": [
-    "intake-triage",
-    "requirements-readiness"
+    "project-context",
+    "architecture-analysis"
   ],
   "toolConfig": {
     "delegate": {
