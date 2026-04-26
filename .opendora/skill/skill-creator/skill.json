@@ -1,0 +1,3 @@
+{
+  "tools": ["read", "write", "glob", "bash", "delegate", "websearch"]
+}

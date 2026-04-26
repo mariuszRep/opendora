@@ -6,6 +6,7 @@ import { Skill } from "../skill"
 import { PermissionNext } from "../permission/next"
 import { Ripgrep } from "../file/ripgrep"
 import { iife } from "@/util/iife"
+import { addSkillTools } from "../session-skill-tools"
 
 // Tool to load and use a specific skill
 export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
@@ -59,6 +60,10 @@ export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
         always: [params.name],
         metadata: {},
       })
+
+      if (skill.tools?.length) {
+        addSkillTools(ctx.sessionID, skill.tools)
+      }
 
       const dir = path.dirname(skill.location)
       const base = pathToFileURL(dir).href

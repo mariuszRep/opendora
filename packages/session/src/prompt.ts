@@ -718,6 +718,26 @@ export namespace SessionPrompt {
 
       // Build system prompt
       const system = [...(await SystemPrompt.environment(model, sessionID)), ...(await InstructionPrompt.system())]
+
+      // Inject available skills block — visible immediately so agent knows what it can load
+      const agentSkills: string[] = agent.config?.skills ?? []
+      if (agentSkills.length > 0) {
+        const skillLines: string[] = []
+        for (const skillName of agentSkills) {
+          const skill = await cfg.skill?.get?.(skillName)
+          skillLines.push(skill ? `- ${skill.name}: ${skill.description}` : `- ${skillName}`)
+        }
+        system.push(
+          [
+            "# Available Skills",
+            "",
+            "You have the following skills available. Load any with skill_load to unlock its full instructions and tools.",
+            "",
+            ...skillLines,
+          ].join("\n"),
+        )
+      }
+
       const format = lastUser.format ?? { type: "text" }
       if (format.type === "json_schema") {
         system.push(STRUCTURED_OUTPUT_SYSTEM_PROMPT)
@@ -1052,17 +1072,19 @@ export namespace SessionPrompt {
       tools[key] = item
     }
 
-    // Filter by agent tools allowlist
+    // Filter by agent tools allowlist, expanded by any tools unlocked via skill_load
     if (input.agent.tools) {
-      if (input.agent.tools.length > 0) {
-        const allowed = new Set(input.agent.tools)
+      const skillUnlocked = cfg.skillTools?.get(input.session.id) ?? new Set<string>()
+      const base: string[] = input.agent.tools
+      if (base.length > 0 || skillUnlocked.size > 0) {
+        const allowed = new Set([...base, ...skillUnlocked])
         for (const id of Object.keys(tools)) {
           if (id !== "invalid" && !allowed.has(id)) {
             delete tools[id]
           }
         }
       } else {
-        // Empty tools array means no tools allowed (except "invalid")
+        // Empty tools array and no skill tools means no tools (except "invalid")
         for (const id of Object.keys(tools)) {
           if (id !== "invalid") {
             delete tools[id]

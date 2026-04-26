@@ -1,7 +1,3 @@
 {
-  "tools": [
-    "question",
-    "bash",
-    "read"
-  ]
+  "tools": ["read", "write", "glob", "question"]
 }

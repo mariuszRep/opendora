@@ -1,0 +1,3 @@
+{
+  "tools": ["delegate", "read", "write", "question"]
+}

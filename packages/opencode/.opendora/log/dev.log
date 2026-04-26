@@ -1,0 +1,88 @@
+INFO  2026-04-26T08:29:11 +1291ms service=default directory=/tmp/opencode-test-0tz13qz0ty5o creating instance
+INFO  2026-04-26T08:29:11 +1ms service=project directory=/tmp/opencode-test-0tz13qz0ty5o fromDirectory
+INFO  2026-04-26T08:29:11 +26ms service=db path=/home/mariu/projects/opendora/packages/opencode/.opendora/storage/opendora.db opening database
+INFO  2026-04-26T08:29:11 +4ms service=db count=15 mode=dev applying migrations
+INFO  2026-04-26T08:29:11 +27ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/config.json loading
+INFO  2026-04-26T08:29:12 +1ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opencode.json loading
+INFO  2026-04-26T08:29:12 +1ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opencode.jsonc loading
+DEBUG 2026-04-26T08:29:12 +4ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-26T08:29:12 +1ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-26T08:29:12 +0ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-26T08:29:12 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+INFO  2026-04-26T08:29:12 +117ms service=default directory=/tmp/opencode-test-z8cs16yvo1m creating instance
+INFO  2026-04-26T08:29:12 +0ms service=project directory=/tmp/opencode-test-z8cs16yvo1m fromDirectory
+DEBUG 2026-04-26T08:29:12 +22ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-26T08:29:12 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-26T08:29:12 +0ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-26T08:29:12 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+INFO  2026-04-26T08:29:12 +62ms service=default directory=/tmp/opencode-test-fr6m4ob25mw creating instance
+INFO  2026-04-26T08:29:12 +0ms service=project directory=/tmp/opencode-test-fr6m4ob25mw fromDirectory
+DEBUG 2026-04-26T08:29:12 +67ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-26T08:29:12 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-26T08:29:12 +14ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-26T08:29:12 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+INFO  2026-04-26T08:29:12 +110ms service=default directory=/tmp/opencode-test-qr08i1vtca creating instance
+INFO  2026-04-26T08:29:12 +1ms service=project directory=/tmp/opencode-test-qr08i1vtca fromDirectory
+DEBUG 2026-04-26T08:29:12 +72ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-26T08:29:12 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-26T08:29:12 +1ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-26T08:29:12 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+INFO  2026-04-26T08:29:12 +143ms service=default directory=/tmp/opencode-test-00twh4c3ogmve creating instance
+INFO  2026-04-26T08:29:12 +1ms service=project directory=/tmp/opencode-test-00twh4c3ogmve fromDirectory
+DEBUG 2026-04-26T08:29:12 +181ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-26T08:29:12 +1ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-26T08:29:12 +1ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-26T08:29:12 +1ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+INFO  2026-04-26T08:29:12 +141ms service=default directory=/tmp/opencode-test-0ukstq6uz8ai creating instance
+INFO  2026-04-26T08:29:12 +1ms service=project directory=/tmp/opencode-test-0ukstq6uz8ai fromDirectory
+WARN  2026-04-26T08:29:13 +171ms service=skill name=global-test-skill existing=/tmp/opencode-test-0ukstq6uz8ai/.claude/skills/global-test-skill/SKILL.md duplicate=/tmp/opencode-test-0ukstq6uz8ai/.claude/skills/global-test-skill/SKILL.md duplicate skill name
+DEBUG 2026-04-26T08:29:13 +19ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-26T08:29:13 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-26T08:29:13 +12ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-26T08:29:13 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+INFO  2026-04-26T08:29:13 +192ms service=default directory=/tmp/opencode-test-oows1exx39h creating instance
+INFO  2026-04-26T08:29:13 +1ms service=project directory=/tmp/opencode-test-oows1exx39h fromDirectory
+DEBUG 2026-04-26T08:29:13 +183ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-26T08:29:13 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-26T08:29:13 +1ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-26T08:29:13 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+INFO  2026-04-26T08:29:13 +143ms service=default directory=/tmp/opencode-test-j1u9lg6n9se creating instance
+INFO  2026-04-26T08:29:13 +0ms service=project directory=/tmp/opencode-test-j1u9lg6n9se fromDirectory
+DEBUG 2026-04-26T08:29:13 +109ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-26T08:29:13 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-26T08:29:13 +10ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-26T08:29:13 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+INFO  2026-04-26T08:29:13 +150ms service=default directory=/tmp/opencode-test-ba2fzii8c3p creating instance
+INFO  2026-04-26T08:29:13 +1ms service=project directory=/tmp/opencode-test-ba2fzii8c3p fromDirectory
+WARN  2026-04-26T08:29:14 +131ms service=skill name=global-agent-skill existing=/tmp/opencode-test-ba2fzii8c3p/.agents/skills/global-agent-skill/SKILL.md duplicate=/tmp/opencode-test-ba2fzii8c3p/.agents/skills/global-agent-skill/SKILL.md duplicate skill name
+DEBUG 2026-04-26T08:29:14 +26ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-26T08:29:14 +1ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-26T08:29:14 +0ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-26T08:29:14 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+INFO  2026-04-26T08:29:14 +204ms service=default directory=/tmp/opencode-test-47dag69nsmc creating instance
+INFO  2026-04-26T08:29:14 +1ms service=project directory=/tmp/opencode-test-47dag69nsmc fromDirectory
+DEBUG 2026-04-26T08:29:14 +229ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-26T08:29:14 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-26T08:29:14 +1ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-26T08:29:14 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+WARN  2026-04-26T08:29:14 +86ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
+INFO  2026-04-26T08:29:14 +71ms service=default directory=/tmp/opencode-test-xl068vao17 creating instance
+INFO  2026-04-26T08:29:14 +1ms service=project directory=/tmp/opencode-test-xl068vao17 fromDirectory
+WARN  2026-04-26T08:29:14 +2ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
+DEBUG 2026-04-26T08:29:14 +198ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
+INFO  2026-04-26T08:29:14 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
+DEBUG 2026-04-26T08:29:14 +5ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
+INFO  2026-04-26T08:29:14 +20ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
+INFO  2026-04-26T08:29:15 +115ms service=skill-discovery url=http://localhost:43819/.well-known/skills/index.json fetching index
+WARN  2026-04-26T08:29:15 +74ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
+INFO  2026-04-26T08:29:15 +16ms service=skill-discovery url=http://localhost:43819/.well-known/skills/index.json fetching index
+INFO  2026-04-26T08:29:15 +16ms service=skill-discovery url=http://localhost:43819/invalid-url/index.json fetching index
+ERROR 2026-04-26T08:29:15 +8ms service=skill-discovery url=http://localhost:43819/invalid-url/index.json status=404 failed to fetch index
+WARN  2026-04-26T08:29:15 +0ms service=skill-discovery url=http://localhost:43819/invalid-url/index.json invalid index format
+INFO  2026-04-26T08:29:15 +1ms service=skill-discovery url=http://localhost:43819/some-other-path/index.json fetching index
+ERROR 2026-04-26T08:29:15 +1ms service=skill-discovery url=http://localhost:43819/some-other-path/index.json status=404 failed to fetch index
+WARN  2026-04-26T08:29:15 +0ms service=skill-discovery url=http://localhost:43819/some-other-path/index.json invalid index format
+INFO  2026-04-26T08:29:15 +1ms service=skill-discovery url=http://localhost:43819/.well-known/skills/index.json fetching index
+INFO  2026-04-26T08:29:15 +16ms service=skill-discovery url=http://localhost:43819/.well-known/skills/index.json fetching index
+INFO  2026-04-26T08:29:15 +75ms service=skill-discovery url=http://localhost:43819/.well-known/skills/index.json fetching index
+WARN  2026-04-26T08:29:15 +329ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached

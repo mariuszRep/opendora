@@ -63,11 +63,13 @@ export namespace LLM {
 
     const system: string[] = []
 
-    // Build tool restriction notice based on agent config
+    // Build tool restriction notice from the actual filtered tool set so it stays
+    // accurate after skill_load expands the allowlist mid-session.
     let toolNotice = ""
     if (input.agent.tools !== undefined) {
-      if (input.agent.tools.length > 0) {
-        toolNotice = `\n\n# IMPORTANT: TOOL ACCESS RESTRICTIONS\nYou have access to ONLY these specific tools: ${input.agent.tools.join(", ")}\nYou CANNOT use any other tools for any reason.\nIf your persona mentions other tools, IGNORE those instructions - you can only use the tools listed above.\nDo not attempt to use tools not in this list under any circumstances.`
+      const availableToolIds = Object.keys(input.tools).filter((id) => id !== "invalid")
+      if (availableToolIds.length > 0) {
+        toolNotice = `\n\n# IMPORTANT: TOOL ACCESS RESTRICTIONS\nYou have access to ONLY these specific tools: ${availableToolIds.join(", ")}\nYou CANNOT use any other tools for any reason.\nIf your persona mentions other tools, IGNORE those instructions - you can only use the tools listed above.\nDo not attempt to use tools not in this list under any circumstances.`
       } else {
         toolNotice = `\n\n# IMPORTANT: NO TOOLS AVAILABLE\nYou have NO tools available. You can only respond with text.\nIf your persona mentions using tools, IGNORE those instructions - you cannot use any tools.\nDo not attempt to use any tools under any circumstances.`
       }

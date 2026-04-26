@@ -33,6 +33,7 @@ import { SessionPrompt } from "@opendora/session/prompt"
 import { Session } from "@opendora/session/session"
 import { Question } from "@/question"
 import { Schedule } from "@/schedule"
+import { addSkillTools, getSkillTools } from "@/session-skill-tools"
 
 async function enrichAgent(agent: any): Promise<any> {
   const allowedAgents: string[] | undefined = agent?.config?.toolConfig?.delegate?.allowedAgents
@@ -360,6 +361,10 @@ export function configureSessionCore() {
       async list() {
         return Skill.list()
       },
+    },
+    skillTools: {
+      get: (sessionID: string) => getSkillTools(sessionID),
+      add: (sessionID: string, tools: string[]) => addSkillTools(sessionID, tools),
     },
     // Wire session methods so compaction.create can call them without circular dep
     session: {

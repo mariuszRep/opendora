@@ -173,6 +173,11 @@ export interface SessionCoreConfig {
     uninstall?(name: string): Promise<void>
     list?(): Promise<any[]>
   }
+  /** Skill-tool registry — tools unlocked per session via skill_load */
+  skillTools?: {
+    get(sessionID: string): Set<string>
+    add(sessionID: string, tools: string[]): void
+  }
   /** Session service (for compaction.create, injected to avoid circular dep) */
   session?: {
     updateMessage(msg: any): Promise<any>

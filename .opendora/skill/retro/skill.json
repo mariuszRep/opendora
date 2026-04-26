@@ -1,0 +1,3 @@
+{
+  "tools": ["session_get", "session_search", "session_tree", "log"]
+}
