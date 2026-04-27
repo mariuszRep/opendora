@@ -30,3 +30,10 @@ agent_update accepted skills:['architecture-analysis'] for product-owner but rep
 _Context: product-owner architecture skill assignment_
 
 ---
+### 2026-04-27 12:38:27 UTC [BUG]
+
+After updating Minds with a skills array, agent_get view=config reported `Skills: none` while the underlying agents/agent-owner/agent.json contains the expected skills array. The registry/config view may be stale or not reading assigned skills correctly.
+
+_Context: ses_231247319ffe2FzgmKCy3uoVvp_
+
+---

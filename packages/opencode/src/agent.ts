@@ -135,6 +135,7 @@ export namespace Agent {
       steps: entry.config.steps,
       color: entry.config.color,
       tools: entry.config.tools,
+      skills: entry.config.skills,
       prompt: entry.persona || undefined,
       model: entry.config.model,
       permission,

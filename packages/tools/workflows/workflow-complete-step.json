@@ -1,0 +1,25 @@
+{
+  "name": "workflow_complete_step",
+  "description": "Commit a step's output to the run's ctx and advance the cursor to the next step in tree order. Call this after workflow_run_step once the orchestrator is satisfied with the result. The output value is stored under the step's declared output name (e.g. ctx.plan, ctx.build) and becomes available to subsequent $ctx.* references. If the step has no declared output, pass an empty object. Returns the refreshed run state.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "runId": {
+        "type": "string",
+        "description": "The run identifier."
+      },
+      "stepId": {
+        "type": "string",
+        "description": "The step being completed. Must match the step most recently run, or an explicitly named completed step."
+      },
+      "output": {
+        "description": "The step's output value to commit to ctx under the step's declared output name."
+      },
+      "note": {
+        "type": "string",
+        "description": "Optional short note describing why this output was accepted. Recorded in run history for audit."
+      }
+    },
+    "required": ["runId", "stepId", "output"]
+  }
+}

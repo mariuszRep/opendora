@@ -1,0 +1,14 @@
+{
+  "name": "tool_get",
+  "description": "Load the full definition of a specific tool by name.\n\nReturns: name, group, file path, full description, all parameters with types and descriptions, required fields, and which agents currently have this tool allocated.\n\nUse this before tool_update to understand current state and blast radius (which agents will be affected by a description change).",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Exact tool name/id as it appears in tool_list (e.g. delegate, session_search, bash)."
+      }
+    },
+    "required": ["name"]
+  }
+}

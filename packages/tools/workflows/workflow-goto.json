@@ -1,0 +1,22 @@
+{
+  "name": "workflow_goto",
+  "description": "Move the run cursor to a named step id. Use this to loop back to an earlier step (e.g. replan after an unsatisfactory result), retry a phase, or skip ahead when a decision branch warrants it. The target stepId must exist in the workflow tree. A reason is REQUIRED — the orchestrator must articulate why it is jumping rather than completing the current step. This produces an auditable record of the agent's control-flow decisions. Does not execute the target step; follow with workflow_run_step.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "runId": {
+        "type": "string",
+        "description": "The run identifier."
+      },
+      "stepId": {
+        "type": "string",
+        "description": "Target step id. Must resolve to an id present in the workflow tree."
+      },
+      "reason": {
+        "type": "string",
+        "description": "Why the orchestrator is jumping to this step instead of advancing normally. Recorded in run history."
+      }
+    },
+    "required": ["runId", "stepId", "reason"]
+  }
+}

@@ -1,3 +1,11 @@
 {
-  "tools": ["read", "glob", "grep", "write", "apply_patch", "session_search", "session_get"]
+  "tools": [
+    "read",
+    "glob",
+    "grep",
+    "write",
+    "apply_patch",
+    "session_search",
+    "session_get"
+  ]
 }

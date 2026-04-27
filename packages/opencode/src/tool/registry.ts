@@ -2,8 +2,8 @@
  * Thin opencode wrapper around @opendora/tools ToolRegistry.
  * Configures it with opencode-specific runtime dependencies.
  */
-import { ToolRegistry } from "@opendora/tools/system"
-import { configureRegistry } from "@opendora/tools/system"
+import { ToolRegistry } from "@opendora/tools/registry"
+import { configureRegistry } from "@opendora/tools/registry"
 import { Flag } from "@/flag/flag"
 import { Config } from "@/config/config"
 import { Plugin } from "@/plugin"

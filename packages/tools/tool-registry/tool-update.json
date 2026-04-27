@@ -1,0 +1,25 @@
+{
+  "name": "tool_update",
+  "description": "Update the metadata of an existing tool. Scope is strictly limited to descriptions — this tool cannot change parameter types, required fields, schema structure, or tool name.\n\nAllowed changes:\n- Top-level description (what the LLM sees when selecting tools)\n- Per-parameter descriptions (what the LLM sees when filling parameters)\n\nRequires confirmation before writing. Use tool_get first to review current state and see which agents will be affected.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Exact tool name/id to update."
+      },
+      "description": {
+        "type": "string",
+        "description": "New top-level description for the tool. Replaces the entire current description."
+      },
+      "parameter_descriptions": {
+        "type": "object",
+        "description": "Map of parameter name to new description string. Only updates description fields — does not change types, required list, or any other schema property.",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    },
+    "required": ["name"]
+  }
+}
