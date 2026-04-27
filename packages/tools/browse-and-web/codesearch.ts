@@ -1,6 +1,6 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
-import DESCRIPTION from "./codesearch.txt"
+import toolDef from "./codesearch.json"
 import { abortAfterAny } from "../lib/abort.ts"
 import { Config } from "@opendora/core/config/config"
 
@@ -43,7 +43,7 @@ interface McpCodeResponse {
 
 export const CodeSearchTool = Tool.define("codesearch", async () => {
   return {
-    description: DESCRIPTION,
+    description: toolDef.description,
     parameters: z.object({
       query: z
         .string()

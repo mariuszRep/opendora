@@ -1,0 +1,27 @@
+{
+  "name": "skill_create",
+  "description": "Create a new local skill under .opendora/skill/. Writes a SKILL.md with the provided frontmatter and body, registers it immediately (no session restart needed), and returns the skill directory path. Use the write/edit tools afterward to add optional scripts, agents, or reference files to the same directory.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Skill name (used as directory name and registry key, e.g. 'my-skill')"
+      },
+      "description": {
+        "type": "string",
+        "description": "One-line description of when to trigger this skill and what it does"
+      },
+      "tools": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Tool names this skill requires (e.g. ['skill_load', 'read', 'glob'])"
+      },
+      "content": {
+        "type": "string",
+        "description": "Markdown body of the SKILL.md (the instructions agents will follow)"
+      }
+    },
+    "required": ["name", "description"]
+  }
+}

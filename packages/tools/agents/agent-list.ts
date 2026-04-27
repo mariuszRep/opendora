@@ -1,11 +1,12 @@
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import z from "zod"
+import toolDef from "./agent-list.json"
 
 export const AgentListTool = Tool.define(
   "agent_list",
   async (initCtx) => ({
-    description: "List all available agents with their configurations. This allows agents to discover what agents exist and their properties.",
+    description: toolDef.description,
     parameters: z.object({
       mode: z.enum(["subagent", "primary", "all", "worker", "system"]).optional().describe("Optional filter by agent mode. If not provided, returns all agents regardless of their mode setting."),
       includeHidden: z.boolean().default(false).describe("Include hidden agents in the results"),

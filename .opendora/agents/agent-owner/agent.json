@@ -19,7 +19,7 @@
     "agent_get",
     "delegate",
     "session_search",
-    "skill_discover",
+    "skill_list",
     "skill_load",
     "log",
     "todowrite",

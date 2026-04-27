@@ -1,12 +1,12 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { EditTool } from "./edit.ts"
-import DESCRIPTION from "./multiedit.txt"
+import toolDef from "./multiedit.json"
 import path from "path"
 import { worktree } from "../host.ts"
 
 export const MultiEditTool = Tool.define("multiedit", {
-  description: DESCRIPTION,
+  description: toolDef.description,
   parameters: z.object({
     filePath: z.string().describe("The absolute path to the file to modify"),
     edits: z

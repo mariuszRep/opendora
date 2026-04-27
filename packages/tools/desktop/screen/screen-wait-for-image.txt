@@ -1,6 +1,0 @@
-Poll the screen until a template image appears, then return its location.
-
-`timeoutMs` controls how long to wait before throwing (default: 5000 ms).
-`intervalMs` sets the poll frequency (default: 500 ms).
-`confidence` sets the minimum similarity threshold (0–1, default: 0.8).
-Requires `@nut-tree-fork/template-matcher` to be installed.

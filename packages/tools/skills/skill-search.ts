@@ -1,10 +1,10 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
+import toolDef from "./skill-search.json"
 
 export const SkillSearchTool = Tool.define("skill_search", async (_initCtx) => {
-  const description =
-    "Search for skills across multiple registries (ClawHub, GitHub, Vercel, Anthropic). Use this to discover new skills that can extend the agent's capabilities."
+  const description = toolDef.description
 
   const parameters = z.object({
     query: z.string().describe("Search query for finding skills"),

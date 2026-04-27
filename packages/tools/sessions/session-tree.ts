@@ -1,7 +1,7 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
-import DESCRIPTION from "./session-tree.txt"
+import toolDef from "./session-tree.json"
 
 const parameters = z.object({
   session_id: z.string().optional().describe("ID of the session to inspect. Defaults to the current session."),
@@ -22,7 +22,7 @@ function sessionNode(session: any, isTarget: boolean, children: any[], stats?: {
 }
 
 export const SessionTreeTool = Tool.define("session_tree", {
-  description: DESCRIPTION,
+  description: toolDef.description,
   parameters,
   async execute(params, ctx) {
     const h = host(ctx)

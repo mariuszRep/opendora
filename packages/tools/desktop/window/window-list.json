@@ -1,0 +1,5 @@
+{
+  "name": "desktop_window_list",
+  "description": "List all visible windows with their titles and screen regions.\n\nReturns an array of `{title, x, y, width, height}` objects.",
+  "inputSchema": { "type": "object", "properties": {}, "required": [] }
+}

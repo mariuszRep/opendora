@@ -1,7 +1,7 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
-import DESCRIPTION from "./delegate.txt"
+import toolDef from "./delegate.json"
 
 const parameters = z
   .object({
@@ -65,8 +65,8 @@ export const DelegateTool = Tool.define("delegate", async (initCtx) => {
   const delegateAgents = initCtx?.agent?.delegateAgents
 
   const description = delegateAgents && delegateAgents.length > 0
-    ? `${DESCRIPTION}\n\nAgents you may delegate to:\n${delegateAgents.map((a) => `- ${a.name}${a.description ? `: ${a.description}` : ""}`).join("\n")}\n\nYou must not delegate to any agent outside this list.`
-    : DESCRIPTION
+    ? `${toolDef.description}\n\nAgents you may delegate to:\n${delegateAgents.map((a) => `- ${a.name}${a.description ? `: ${a.description}` : ""}`).join("\n")}\n\nYou must not delegate to any agent outside this list.`
+    : toolDef.description
 
   return {
   description,

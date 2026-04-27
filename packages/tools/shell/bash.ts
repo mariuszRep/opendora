@@ -2,7 +2,7 @@ import z from "zod"
 import { spawn } from "child_process"
 import { Tool } from "../tool.ts"
 import path from "path"
-import DESCRIPTION from "./bash.txt"
+import toolDef from "./bash.json"
 import { host, directory } from "../host.ts"
 import { fileURLToPath } from "url"
 import { Language } from "web-tree-sitter"
@@ -100,7 +100,7 @@ export const BashTool = Tool.define("bash", async (ctx) => {
   const shell = getAcceptableShell()
   const agentDefaultDir = ctx?.agent?.config?.defaultPaths?.[0]
   const dirLabel = agentDefaultDir ?? "the session's working directory"
-  const description = DESCRIPTION
+  const description = toolDef.description
     .replace("${directory}", dirLabel)
     .replace("${maxLines}", String(MAX_LINES))
     .replace("${maxBytes}", MAX_BYTES_LABEL)

@@ -1,7 +1,7 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import TurndownService from "turndown"
-import DESCRIPTION from "./webfetch.txt"
+import toolDef from "./webfetch.json"
 import { abortAfterAny } from "../lib/abort.ts"
 
 const MAX_RESPONSE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -9,7 +9,7 @@ const DEFAULT_TIMEOUT = 30 * 1000 // 30 seconds
 const MAX_TIMEOUT = 120 * 1000 // 2 minutes
 
 export const WebFetchTool = Tool.define("webfetch", {
-  description: DESCRIPTION,
+  description: toolDef.description,
   parameters: z.object({
     url: z.string().describe("The URL to fetch content from"),
     format: z

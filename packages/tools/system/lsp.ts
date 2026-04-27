@@ -2,7 +2,7 @@ import z from "zod"
 import { Tool } from "../tool.ts"
 import path from "path"
 import { host, directory, worktree } from "../host.ts"
-import DESCRIPTION from "./lsp.txt"
+import toolDef from "./lsp.json"
 import { pathToFileURL } from "url"
 import { assertExternalDirectory } from "./external-directory.ts"
 import { Filesystem } from "../filesystem/lib/primitives.ts"
@@ -20,7 +20,7 @@ const operations = [
 ] as const
 
 export const LspTool = Tool.define("lsp", {
-  description: DESCRIPTION,
+  description: toolDef.description,
   parameters: z.object({
     operation: z.enum(operations).describe("The LSP operation to perform"),
     filePath: z.string().describe("The absolute or relative path to the file"),

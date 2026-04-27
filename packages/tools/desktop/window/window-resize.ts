@@ -3,12 +3,12 @@ import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
 import { nativeWindowsPreferred, findByTitle, resizeWindow } from "../lib/window-native.ts"
-import DESCRIPTION from "./window-resize.txt"
+import toolDef from ".//window-resize.json"
 
 export const DesktopWindowResizeTool = Tool.define("desktop_window_resize", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: DESCRIPTION,
+    description: toolDef.description,
     parameters: z.object({
       title: z.string().min(1).describe("Window title or substring to match"),
       width: z.number().int().positive().describe("New window width in pixels"),

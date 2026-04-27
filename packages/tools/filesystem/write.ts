@@ -2,7 +2,7 @@ import z from "zod"
 import * as path from "path"
 import { Tool } from "../tool.ts"
 import { createTwoFilesPatch } from "diff"
-import DESCRIPTION from "./write.txt"
+import toolDef from "./write.json"
 import { FileTime } from "./lib/file-time.ts"
 import { Filesystem } from "./lib/primitives.ts"
 import { host, directory, worktree } from "../host.ts"
@@ -13,7 +13,7 @@ const MAX_DIAGNOSTICS_PER_FILE = 20
 const MAX_PROJECT_DIAGNOSTICS_FILES = 5
 
 export const WriteTool = Tool.define("write", {
-  description: DESCRIPTION,
+  description: toolDef.description,
   parameters: z.object({
     content: z.string().describe("The content to write to the file"),
     filePath: z.string().describe("The absolute path to the file to write (must be absolute, not relative)"),

@@ -5,7 +5,7 @@ import { Filesystem } from "./lib/primitives.ts"
 import { Process } from "../lib/process.ts"
 import { Ripgrep } from "./lib/ripgrep.ts"
 
-import DESCRIPTION from "./grep.txt"
+import toolDef from "./grep.json"
 import { directory, worktree } from "../host.ts"
 import path from "path"
 import { assertExternalDirectory } from "../system/external-directory.ts"
@@ -13,7 +13,7 @@ import { assertExternalDirectory } from "../system/external-directory.ts"
 const MAX_LINE_LENGTH = 2000
 
 export const GrepTool = Tool.define("grep", {
-  description: DESCRIPTION,
+  description: toolDef.description,
   parameters: z.object({
     pattern: z.string().describe("The regex pattern to search for in file contents"),
     path: z.string().optional().describe("The directory to search in. Defaults to the current working directory."),

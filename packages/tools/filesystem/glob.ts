@@ -2,12 +2,12 @@ import z from "zod"
 import path from "path"
 import { Tool } from "../tool.ts"
 import { Filesystem } from "./lib/primitives.ts"
-import DESCRIPTION from "./glob.txt"
+import toolDef from "./glob.json"
 import { host, directory, worktree } from "../host.ts"
 import { assertExternalDirectory } from "../system/external-directory.ts"
 
 export const GlobTool = Tool.define("glob", {
-  description: DESCRIPTION,
+  description: toolDef.description,
   parameters: z.object({
     pattern: z.string().describe("The glob pattern to match files against"),
     path: z

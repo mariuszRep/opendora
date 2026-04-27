@@ -1,7 +1,7 @@
 import z from "zod"
 import { Tool } from "../tool"
 import { host } from "../host"
-import DESCRIPTION from "./session-get.txt"
+import toolDef from "./session-get.json"
 
 const parameters = z.object({
   session_id: z.string().describe("ID of the session to retrieve"),
@@ -12,7 +12,7 @@ const parameters = z.object({
 })
 
 export const SessionGetTool = Tool.define("session_get", {
-  description: DESCRIPTION,
+  description: toolDef.description,
   parameters,
   async execute(params, ctx) {
     const h = host(ctx)

@@ -1,7 +1,8 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
-import DESCRIPTION_WRITE from "./todowrite.txt"
+import todoWriteDef from "./todowrite.json"
+import todoReadDef from "./todoread.json"
 
 const TodoItem = z.object({
   id: z.string(),
@@ -11,7 +12,7 @@ const TodoItem = z.object({
 })
 
 export const TodoWriteTool = Tool.define("todowrite", {
-  description: DESCRIPTION_WRITE,
+  description: todoWriteDef.description,
   parameters: z.object({
     todos: z.array(TodoItem).describe("The updated todo list"),
   }),
@@ -39,7 +40,7 @@ export const TodoWriteTool = Tool.define("todowrite", {
 })
 
 export const TodoReadTool = Tool.define("todoread", {
-  description: "Use this tool to read your todo list",
+  description: todoReadDef.description,
   parameters: z.object({}),
   async execute(_params, ctx) {
     await ctx.ask({

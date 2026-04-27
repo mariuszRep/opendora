@@ -14,7 +14,7 @@ import {
 } from "../lib/screen-native.ts"
 import { nativeWindowsPreferred, findByTitle } from "../lib/window-native.ts"
 import { assertExternalDirectory } from "../../system/external-directory.ts"
-import DESCRIPTION from "./screen-capture.txt"
+import toolDef from ".//screen-capture.json"
 
 const regionSchema = z.object({
   x: z.number().int(),
@@ -26,7 +26,7 @@ const regionSchema = z.object({
 export const DesktopScreenCaptureTool = Tool.define("desktop_screen_capture", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: DESCRIPTION,
+    description: toolDef.description,
     parameters: z.object({
       region: regionSchema
         .optional()

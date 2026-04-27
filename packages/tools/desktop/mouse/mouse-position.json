@@ -1,0 +1,5 @@
+{
+  "name": "desktop_mouse_position",
+  "description": "Return the current mouse cursor position as `{x, y}` screen coordinates.",
+  "inputSchema": { "type": "object", "properties": {}, "required": [] }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "agent_get",
+  "description": "Get information about a specific agent.\n\nUse the `view` parameter to control what is returned:\n\n- `config` (default) — agent.json fields: name, mode, model, tools list, skills list, temperature, steps, etc.\n- `persona` — raw PERSONA.md content (the agent's identity and behaviour instructions)\n- `injection` — raw INJECTION.md content (dynamic context injected at runtime)\n- `tools` — tools allocated to the agent as they are configured (IDs and descriptions)\n- `skills` — skills allocated to the agent with their full SKILL.md content\n- `system_prompt` — full assembled view: persona + injection + tools + skills, as the agent would receive them",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "id": { "type": "string", "description": "ID of the agent to retrieve" },
+      "view": {
+        "type": "string",
+        "enum": ["config", "persona", "injection", "tools", "skills", "system_prompt"],
+        "default": "config",
+        "description": "What to return: config (default), persona, injection, tools, skills, or system_prompt (full assembled view)"
+      }
+    },
+    "required": ["id"]
+  }
+}

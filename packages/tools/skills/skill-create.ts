@@ -1,10 +1,10 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
+import toolDef from "./skill-create.json"
 
 export const SkillCreateTool = Tool.define("skill_create", async (_initCtx) => {
-  const description =
-    "Create a new local skill under .opendora/skill/. Writes a SKILL.md with the provided frontmatter and body, registers it immediately (no session restart needed), and returns the skill directory path. Use the write/edit tools afterward to add optional scripts, agents, or reference files to the same directory."
+  const description = toolDef.description
 
   const parameters = z.object({
     name: z.string().describe("Skill name (used as directory name and registry key, e.g. 'my-skill')"),

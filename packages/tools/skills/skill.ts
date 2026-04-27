@@ -3,14 +3,14 @@ import { pathToFileURL } from "url"
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
+import toolDef from "./skill.json"
 
-// Tool to load and use a specific skill
 export const SkillLoadTool = Tool.define("skill_load", async (initCtx) => {
   const allowedSkills = initCtx?.agent?.skills ?? []
 
   const description = allowedSkills.length > 0
     ? `Load a specialized skill. This agent can load the following skills: ${allowedSkills.join(", ")}.`
-    : "Load a specialized skill that provides domain-specific instructions and workflows. When you recognize that a task matches one of the available skills, use this tool to load the full skill instructions."
+    : toolDef.description
 
   const parameters = z.object({
     name: z.string().describe("The name of the skill to load"),

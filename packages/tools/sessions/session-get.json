@@ -1,0 +1,33 @@
+{
+  "name": "session_get",
+  "description": "Get detailed information about a specific session including its metadata, message content, and conversation history. This tool allows agents to read and investigate any session by ID, enabling them to understand what was done in specific sessions, subsections, or canvas work. Use this when you need to examine the complete content and context of a particular session rather than just searching for sessions.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "session_id": {
+        "type": "string",
+        "description": "ID of the session to retrieve"
+      },
+      "include_messages": {
+        "type": "boolean",
+        "default": true,
+        "description": "Include the full message content of the session"
+      },
+      "message_limit": {
+        "type": "number",
+        "description": "Maximum number of messages to include (default: all)"
+      },
+      "include_thinking": {
+        "type": "boolean",
+        "default": false,
+        "description": "Include reasoning/thinking parts in messages"
+      },
+      "include_tool_calls": {
+        "type": "boolean",
+        "default": false,
+        "description": "Include tool call parts in messages"
+      }
+    },
+    "required": ["session_id"]
+  }
+}

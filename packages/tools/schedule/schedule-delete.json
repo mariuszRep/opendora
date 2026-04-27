@@ -1,0 +1,11 @@
+{
+  "name": "schedule_delete",
+  "description": "Permanently delete a schedule by ID. This cannot be undone. To temporarily stop a schedule without deleting it, use schedule_update with is_active: false instead.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "id": { "type": "string", "description": "The schedule ID to delete" }
+    },
+    "required": ["id"]
+  }
+}

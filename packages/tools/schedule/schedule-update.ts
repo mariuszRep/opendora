@@ -1,9 +1,10 @@
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import z from "zod"
+import toolDef from "./schedule-update.json"
 
 export const ScheduleUpdateTool = Tool.define("schedule_update", async () => ({
-  description: "Update an existing schedule. Only the fields you provide will be changed. Use this to enable/disable a schedule, change its cron expression, prompt, or target.",
+  description: toolDef.description,
   parameters: z.object({
     id: z.string().describe("The schedule ID to update"),
     is_active: z.boolean().optional().describe("Set to true to enable or false to disable the schedule"),

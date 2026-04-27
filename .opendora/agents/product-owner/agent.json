@@ -24,13 +24,14 @@
   ],
   "skills": [
     "project-context",
+    "intake-triage",
+    "requirements-readiness",
     "architecture-analysis"
   ],
   "toolConfig": {
     "delegate": {
       "allowedAgents": [
         "Business Analyst",
-        "Architect",
         "Project Manager"
       ]
     },

@@ -7,7 +7,7 @@ import z from "zod"
 import * as path from "path"
 import { Tool } from "../tool.ts"
 import { createTwoFilesPatch, diffLines } from "diff"
-import DESCRIPTION from "./edit.txt"
+import toolDef from "./edit.json"
 import { FileTime } from "./lib/file-time.ts"
 import { Filesystem } from "./lib/primitives.ts"
 import { host, directory, worktree } from "../host.ts"
@@ -20,7 +20,7 @@ function normalizeLineEndings(text: string): string {
 }
 
 export const EditTool = Tool.define("edit", {
-  description: DESCRIPTION,
+  description: toolDef.description,
   parameters: z.object({
     filePath: z.string().describe("The absolute path to the file to modify"),
     oldString: z.string().describe("The text to replace"),

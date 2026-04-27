@@ -2,12 +2,12 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
-import DESCRIPTION from "./keyboard-type.txt"
+import toolDef from ".//keyboard-type.json"
 
 export const DesktopKeyboardTypeTool = Tool.define("desktop_keyboard_type", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: DESCRIPTION,
+    description: toolDef.description,
     parameters: z.object({
       text: z.string().min(1).describe("Text to type"),
       delay: z

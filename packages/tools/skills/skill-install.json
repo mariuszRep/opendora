@@ -1,0 +1,23 @@
+{
+  "name": "skill_install",
+  "description": "Install a skill from a registry (ClawHub, GitHub, Vercel, Anthropic). The skill will be downloaded and made available for use.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "source": {
+        "type": "string",
+        "description": "Source identifier (e.g., 'openclaw/filesystem', 'shadcn/ui', 'vercel:nextjs')"
+      },
+      "registry": {
+        "type": "string",
+        "enum": ["clawhub", "github", "vercel", "anthropic"],
+        "description": "Registry to install from (auto-detected if not specified)"
+      },
+      "version": {
+        "type": "string",
+        "description": "Specific version to install (default: latest)"
+      }
+    },
+    "required": ["source"]
+  }
+}

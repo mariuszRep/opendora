@@ -1,10 +1,10 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
+import toolDef from "./skill-install.json"
 
 export const SkillInstallTool = Tool.define("skill_install", async (_initCtx) => {
-  const description =
-    "Install a skill from a registry (ClawHub, GitHub, Vercel, Anthropic). The skill will be downloaded and made available for use."
+  const description = toolDef.description
 
   const parameters = z.object({
     source: z.string().describe("Source identifier (e.g., 'openclaw/filesystem', 'shadcn/ui', 'vercel:nextjs')"),

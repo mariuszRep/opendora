@@ -3,12 +3,12 @@ import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
 import { parseKeys } from "../lib/keys.ts"
-import DESCRIPTION from "./keyboard-press.txt"
+import toolDef from ".//keyboard-press.json"
 
 export const DesktopKeyboardPressTool = Tool.define("desktop_keyboard_press", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: DESCRIPTION,
+    description: toolDef.description,
     parameters: z.object({
       keys: z
         .string()

@@ -1,9 +1,10 @@
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import z from "zod"
+import toolDef from "./schedule-create.json"
 
 export const ScheduleCreateTool = Tool.define("schedule_create", async () => ({
-  description: "Create a new schedule. A schedule runs a prompt or tool on a cron expression against a target agent or session. Use standard cron syntax (e.g. '0 9 * * 1-5' for weekdays at 9 AM).",
+  description: toolDef.description,
   parameters: z.object({
     prompt: z.string().describe("The prompt or instruction to execute when the schedule fires"),
     cron_expression: z.string().describe("Cron expression defining when the schedule runs (e.g. '0 9 * * *' for daily at 9 AM)"),

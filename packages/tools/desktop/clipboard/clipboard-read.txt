@@ -1,3 +1,0 @@
-Read the current text content of the system clipboard.
-
-Returns the clipboard text as the tool output.

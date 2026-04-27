@@ -3,12 +3,12 @@ import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
 import { nativeWindowsPreferred, getActive as nativeActive } from "../lib/window-native.ts"
-import DESCRIPTION from "./window-active.txt"
+import toolDef from ".//window-active.json"
 
 export const DesktopWindowActiveTool = Tool.define("desktop_window_active", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: DESCRIPTION,
+    description: toolDef.description,
     parameters: z.object({}),
     async execute(_params, ctx) {
       assertNotSandbox(sandbox)

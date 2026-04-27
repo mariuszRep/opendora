@@ -1,4 +1,0 @@
-Scroll the mouse wheel in a direction by a given number of steps.
-
-`direction` must be one of: "up", "down", "left", "right".
-`amount` is the number of scroll steps (positive integer).

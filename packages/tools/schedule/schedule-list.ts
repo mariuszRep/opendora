@@ -1,9 +1,10 @@
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import z from "zod"
+import toolDef from "./schedule-list.json"
 
 export const ScheduleListTool = Tool.define("schedule_list", async () => ({
-  description: "List all schedules. Returns every scheduled task (active and inactive) with their cron expressions, target agents/sessions, and last execution times.",
+  description: toolDef.description,
   parameters: z.object({
     active_only: z.boolean().default(false).describe("When true, return only active (enabled) schedules"),
   }),

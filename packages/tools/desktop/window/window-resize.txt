@@ -1,3 +1,0 @@
-Resize a window to the specified width and height in pixels.
-
-The window is matched by a case-insensitive substring of its title.

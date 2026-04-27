@@ -2,10 +2,10 @@ import { pathToFileURL } from "url"
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
+import toolDef from "./skill-list.json"
 
 export const SkillListTool = Tool.define("skill_list", async (_initCtx) => {
-  const description =
-    "List all available skills — both locally created (origin: opendora) and installed from external registries (origin: anthropic, vercel, clawhub, github). Use skill_search to find new skills in external registries."
+  const description = toolDef.description
 
   const parameters = z.object({})
 

@@ -1,5 +1,0 @@
-Capture a screenshot of the full screen or a specific region and save it as a PNG file.
-
-If `region` is provided, only that portion of the screen is captured.
-`path` sets the output file path; if omitted a temp file is created automatically.
-Returns the saved path, image dimensions, and an image attachment.

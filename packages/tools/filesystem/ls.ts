@@ -1,7 +1,7 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import * as path from "path"
-import DESCRIPTION from "./ls.txt"
+import toolDef from "./ls.json"
 import { host, directory, worktree } from "../host.ts"
 import { assertExternalDirectory } from "../system/external-directory.ts"
 
@@ -34,7 +34,7 @@ export const IGNORE_PATTERNS = [
 const LIMIT = 100
 
 export const ListTool = Tool.define("list", {
-  description: DESCRIPTION,
+  description: toolDef.description,
   parameters: z.object({
     path: z.string().describe("The absolute path to the directory to list (must be absolute, not relative)").optional(),
     ignore: z.array(z.string()).describe("List of glob patterns to ignore").optional(),

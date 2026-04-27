@@ -3,7 +3,7 @@ import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
 import { resolveButton } from "../lib/button.ts"
-import DESCRIPTION from "./mouse-drag.txt"
+import toolDef from ".//mouse-drag.json"
 
 const pointSchema = z.object({
   x: z.number().int(),
@@ -13,7 +13,7 @@ const pointSchema = z.object({
 export const DesktopMouseDragTool = Tool.define("desktop_mouse_drag", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: DESCRIPTION,
+    description: toolDef.description,
     parameters: z.object({
       from: pointSchema.describe("Start position {x, y}"),
       to: pointSchema.describe("End position {x, y}"),

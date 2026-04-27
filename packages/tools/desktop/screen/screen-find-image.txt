@@ -1,5 +1,0 @@
-Search the screen (or a region) for a template image using pixel-level matching.
-
-Returns all matches as a list of `{x, y, width, height, score}` objects.
-`confidence` sets the minimum similarity threshold (0–1, default: 0.8).
-Requires `@nut-tree-fork/template-matcher` to be installed.

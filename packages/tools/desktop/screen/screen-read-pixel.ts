@@ -3,12 +3,12 @@ import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
 import { colorAt as nativeColorAt, nativeCapturePreferred } from "../lib/screen-native.ts"
-import DESCRIPTION from "./screen-read-pixel.txt"
+import toolDef from ".//screen-read-pixel.json"
 
 export const DesktopScreenReadPixelTool = Tool.define("desktop_screen_read_pixel", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: DESCRIPTION,
+    description: toolDef.description,
     parameters: z.object({
       x: z.number().int().describe("X coordinate in pixels"),
       y: z.number().int().describe("Y coordinate in pixels"),

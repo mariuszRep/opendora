@@ -1,0 +1,13 @@
+{
+  "name": "desktop_window_resize",
+  "description": "Resize a window to the specified width and height in pixels.\n\nThe window is matched by a case-insensitive substring of its title.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string", "description": "Window title or substring to match" },
+      "width": { "type": "number", "description": "New window width in pixels" },
+      "height": { "type": "number", "description": "New window height in pixels" }
+    },
+    "required": ["title", "width", "height"]
+  }
+}

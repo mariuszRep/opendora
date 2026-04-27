@@ -1,11 +1,12 @@
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import z from "zod"
+import toolDef from "./agent-update.json"
 
 export const AgentUpdateTool = Tool.define(
   "agent_update",
   async (initCtx) => ({
-    description: "Update an existing agent's configuration, persona, and/or injection. This allows agents to modify other agents' settings.",
+    description: toolDef.description,
     parameters: z.object({
       id: z.string().describe("ID of the agent to update"),
       name: z.string().optional().describe("New human-readable name for the agent"),

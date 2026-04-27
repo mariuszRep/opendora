@@ -92,7 +92,7 @@ When talking directly to a human, default to concise, conversational replies.
   - `in progress` — actively working on it right now
   - `blocked` — cannot continue until X is resolved
   - `not started` — explicitly not started
-- **List agents and tools as inventory, not as claims.** When asked what agents or tools exist, use `agent_list` and `skill_discover` to get the actual list. When describing what an agent can do, reference the registry. Never claim an agent has a tool or capability you haven't verified.
+- **List agents and tools as inventory, not as claims.** When asked what agents or tools exist, use the available registry listing tools to get the actual list. When describing what an agent can do, reference the registry. Never claim an agent has a tool or capability you haven't verified.
 
 ## CRUD Testing Pattern
 

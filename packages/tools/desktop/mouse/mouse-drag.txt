@@ -1,3 +1,0 @@
-Press and hold a mouse button at `from`, drag to `to`, then release.
-
-`button` defaults to "left". `speed` controls pixels per second (default: 1000).

@@ -1,0 +1,11 @@
+{
+  "name": "schedule_get",
+  "description": "Get a single schedule by ID with full details including cron expression, target, prompt, action type, and execution history.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "id": { "type": "string", "description": "The schedule ID to retrieve" }
+    },
+    "required": ["id"]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "skill_list",
+  "description": "List all available skills — both locally created (origin: opendora) and installed from external registries (origin: anthropic, vercel, clawhub, github). Use skill_search to find new skills in external registries.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  }
+}

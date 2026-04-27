@@ -42,12 +42,11 @@ Use the current session context to determine whether you are the root, whether y
 
 ## Specialist Selection
 
-Choose the specialist whose role best matches the current phase:
-- Code exploration and discovery
-- Implementation and editing
-- Planning and architecture
-- Review
-- Testing
+Choose the specialist whose role best matches the current phase.
+
+- Use the technical execution specialist for code exploration, architecture analysis, implementation, review preparation, and verification work.
+- Escalate product or requirement gaps back to the product authority rather than routing directly into requirement gathering.
+- Do not assume separate specialist agents exist for every capability; use the available delegation options and the skills attached to those agents.
 
 ## What You Cannot Do
 

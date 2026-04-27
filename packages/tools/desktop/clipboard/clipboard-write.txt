@@ -1,1 +1,0 @@
-Write text to the system clipboard, replacing its current content.

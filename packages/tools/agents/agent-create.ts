@@ -1,11 +1,12 @@
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import z from "zod"
+import toolDef from "./agent-create.json"
 
 export const AgentCreateTool = Tool.define(
   "agent_create",
   async (initCtx) => ({
-    description: "Create a new agent with specified configuration, persona, and optional injection. This allows agents to create and manage other agents.",
+    description: toolDef.description,
     parameters: z.object({
       id: z.string().describe("Unique identifier for the new agent (will be auto-formatted)"),
       name: z.string().describe("Human-readable name for the agent"),

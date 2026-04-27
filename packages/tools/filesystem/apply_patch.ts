@@ -8,14 +8,14 @@ import { createTwoFilesPatch, diffLines } from "diff"
 import { assertExternalDirectory } from "../system/external-directory.ts"
 import { trimDiff } from "./edit.ts"
 import { Filesystem } from "./lib/primitives.ts"
-import DESCRIPTION from "./apply_patch.txt"
+import toolDef from "./apply_patch.json"
 
 const PatchParams = z.object({
   patchText: z.string().describe("The full patch text that describes all changes to be made"),
 })
 
 export const ApplyPatchTool = Tool.define("apply_patch", {
-  description: DESCRIPTION,
+  description: toolDef.description,
   parameters: PatchParams,
   async execute(params, ctx) {
     if (!params.patchText) {

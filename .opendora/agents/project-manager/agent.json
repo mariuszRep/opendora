@@ -15,7 +15,6 @@
     "session_tree",
     "session_get",
     "todowrite",
-    "skill_discover",
     "skill_load",
     "delegate",
     "reply",
@@ -31,11 +30,7 @@
     "delegate": {
       "allowedAgents": [
         "Engineer",
-        "Product Owner",
-        "Business Analyst",
-        "Architect",
-        "Code Explorer",
-        "Reviewer"
+        "Product Owner"
       ]
     },
     "reply": {

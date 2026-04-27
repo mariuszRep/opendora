@@ -1,9 +1,10 @@
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import z from "zod"
+import toolDef from "./schedule-get.json"
 
 export const ScheduleGetTool = Tool.define("schedule_get", async () => ({
-  description: "Get a single schedule by ID with full details including cron expression, target, prompt, action type, and execution history.",
+  description: toolDef.description,
   parameters: z.object({
     id: z.string().describe("The schedule ID to retrieve"),
   }),

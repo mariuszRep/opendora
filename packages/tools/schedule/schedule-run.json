@@ -1,0 +1,11 @@
+{
+  "name": "schedule_run",
+  "description": "Trigger a schedule immediately, as if its cron fired right now. Use this to test a schedule without waiting for the next scheduled time.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "id": { "type": "string", "description": "The schedule ID to trigger" }
+    },
+    "required": ["id"]
+  }
+}

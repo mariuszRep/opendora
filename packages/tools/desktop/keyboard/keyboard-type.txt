@@ -1,4 +1,0 @@
-Type a string of text using the keyboard, character by character.
-
-`delay` sets the pause in milliseconds between keystrokes (default: 50).
-Use `desktop_keyboard_press` for modifier combos like Ctrl+C.

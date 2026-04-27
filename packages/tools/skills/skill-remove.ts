@@ -1,10 +1,10 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
+import toolDef from "./skill-remove.json"
 
 export const SkillRemoveTool = Tool.define("skill_remove", async (_initCtx) => {
-  const description =
-    "Remove an installed or locally created skill by name. Deletes the skill directory and reloads the skill registry. This is irreversible — the skill files will be deleted."
+  const description = toolDef.description
 
   const parameters = z.object({
     name: z.string().describe("Name of the skill to remove"),

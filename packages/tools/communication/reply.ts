@@ -1,7 +1,7 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
-import DESCRIPTION from "./reply.txt"
+import toolDef from "./reply.json"
 
 const parameters = z.object({
   message: z.string().describe("Text content to post into the target session."),
@@ -12,7 +12,7 @@ export const ReplyTool = Tool.define("reply", async (initCtx) => {
   const stopAfterReply = initCtx?.agent?.config?.toolConfig?.reply?.stopAfterReply ?? false
 
   return {
-    description: DESCRIPTION,
+    description: toolDef.description,
     parameters,
     async execute(params: z.infer<typeof parameters>, ctx) {
       const h = host(ctx)

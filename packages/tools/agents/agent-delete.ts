@@ -1,11 +1,12 @@
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import z from "zod"
+import toolDef from "./agent-delete.json"
 
 export const AgentDeleteTool = Tool.define(
   "agent_delete",
   async (initCtx) => ({
-    description: "Delete an existing agent permanently. This action cannot be undone. Use with caution as it will remove all agent data including configuration, persona, and injection files.",
+    description: toolDef.description,
     parameters: z.object({
       id: z.string().describe("ID of the agent to delete"),
       confirm: z.boolean().describe("Confirmation flag - must be set to true to proceed with deletion")

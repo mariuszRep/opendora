@@ -1,0 +1,19 @@
+{
+  "name": "session_tree",
+  "description": "Show the full session hierarchy for a given session — all ancestors up to the root and all descendants recursively, with each session's position in the tree and its owning agent ID. If no session_id is provided, uses the current session. Use this to understand where a session sits within a delegation chain, who spawned it, and what sub-sessions it has created.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "session_id": {
+        "type": "string",
+        "description": "ID of the session to inspect. Defaults to the current session."
+      },
+      "include_stats": {
+        "type": "boolean",
+        "default": false,
+        "description": "Include per-node statistics: message count and tool call count."
+      }
+    },
+    "required": []
+  }
+}

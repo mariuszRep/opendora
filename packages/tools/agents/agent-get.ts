@@ -1,20 +1,12 @@
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import z from "zod"
+import toolDef from "./agent-get.json"
 
 export const AgentGetTool = Tool.define(
   "agent_get",
   async () => ({
-    description: `Get information about a specific agent.
-
-Use the \`view\` parameter to control what is returned:
-
-- \`config\` (default) — agent.json fields: name, mode, model, tools list, skills list, temperature, steps, etc.
-- \`persona\` — raw PERSONA.md content (the agent's identity and behaviour instructions)
-- \`injection\` — raw INJECTION.md content (dynamic context injected at runtime)
-- \`tools\` — tools allocated to the agent as they are configured (IDs and descriptions)
-- \`skills\` — skills allocated to the agent with their full SKILL.md content
-- \`system_prompt\` — full assembled view: persona + injection + tools + skills, as the agent would receive them`,
+    description: toolDef.description,
 
     parameters: z.object({
       id: z.string().describe("ID of the agent to retrieve"),

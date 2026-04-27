@@ -1,0 +1,35 @@
+{
+  "name": "agent_create",
+  "description": "Create a new agent with specified configuration, persona, and optional injection. This allows agents to create and manage other agents.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "id": { "type": "string", "description": "Unique identifier for the new agent (will be auto-formatted)" },
+      "name": { "type": "string", "description": "Human-readable name for the agent" },
+      "description": { "type": "string", "description": "Description of what this agent does and when to use it" },
+      "mode": { "type": "string", "enum": ["subagent", "primary", "all", "worker", "system"], "default": "all", "description": "Agent mode: primary, worker, system, or legacy compatibility modes subagent/all." },
+      "model": {
+        "type": "object",
+        "properties": { "providerID": { "type": "string" }, "modelID": { "type": "string" } },
+        "required": ["providerID", "modelID"],
+        "description": "Preferred model configuration for this agent"
+      },
+      "fallbackModel": {
+        "type": "object",
+        "properties": { "providerID": { "type": "string" }, "modelID": { "type": "string" } },
+        "required": ["providerID", "modelID"],
+        "description": "Fallback model if preferred model is unavailable"
+      },
+      "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Temperature for model responses (0.0-2.0)" },
+      "steps": { "type": "number", "description": "Maximum number of steps the agent can take" },
+      "color": { "type": "string", "description": "Hex color code for UI display" },
+      "hidden": { "type": "boolean", "description": "Whether to hide this agent from UI listings" },
+      "tools": { "type": "array", "items": { "type": "string" }, "description": "Specific tools this agent can use (empty array = no tools, undefined = all available tools)" },
+      "skills": { "type": "array", "items": { "type": "string" }, "description": "Skills allocated to this agent (skill names)" },
+      "enableInjection": { "type": "boolean", "description": "Enable dynamic prompt injection for this agent" },
+      "persona": { "type": "string", "description": "The agent's persona and system prompt (PERSONA.md content)" },
+      "injection": { "type": "string", "description": "Dynamic injection content (INJECTION.md content)" }
+    },
+    "required": ["id", "name"]
+  }
+}

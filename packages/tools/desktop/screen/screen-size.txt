@@ -1,1 +1,0 @@
-Return the primary screen dimensions as `{width, height}` in pixels.

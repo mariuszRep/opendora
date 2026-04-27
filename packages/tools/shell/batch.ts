@@ -1,6 +1,6 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
-import DESCRIPTION from "./batch.txt"
+import toolDef from "./batch.json"
 import { Identifier } from "../lib/identifier.ts"
 
 const DISALLOWED = new Set(["batch"])
@@ -36,7 +36,7 @@ export function configureBatch(opts: {
 
 export const BatchTool = Tool.define("batch", async () => {
   return {
-    description: DESCRIPTION,
+    description: toolDef.description,
     parameters: z.object({
       tool_calls: z
         .array(

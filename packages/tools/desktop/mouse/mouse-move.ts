@@ -2,12 +2,12 @@ import z from "zod"
 import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
-import DESCRIPTION from "./mouse-move.txt"
+import toolDef from ".//mouse-move.json"
 
 export const DesktopMouseMoveTool = Tool.define("desktop_mouse_move", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: DESCRIPTION,
+    description: toolDef.description,
     parameters: z.object({
       x: z.number().int().describe("Target X coordinate in pixels"),
       y: z.number().int().describe("Target Y coordinate in pixels"),

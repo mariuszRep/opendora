@@ -1,9 +1,10 @@
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import z from "zod"
+import toolDef from "./schedule-run.json"
 
 export const ScheduleRunTool = Tool.define("schedule_run", async () => ({
-  description: "Trigger a schedule immediately, as if its cron fired right now. Use this to test a schedule without waiting for the next scheduled time.",
+  description: toolDef.description,
   parameters: z.object({
     id: z.string().describe("The schedule ID to trigger"),
   }),

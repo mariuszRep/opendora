@@ -1,7 +1,7 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
-import DESCRIPTION from "./question.txt"
+import toolDef from "./question.json"
 
 const QuestionInfo = z.object({
   question: z.string(),
@@ -17,7 +17,7 @@ const QuestionInfo = z.object({
 })
 
 export const QuestionTool = Tool.define("question", {
-  description: DESCRIPTION,
+  description: toolDef.description,
   parameters: z.object({
     questions: z.array(QuestionInfo).describe("Questions to ask"),
   }),

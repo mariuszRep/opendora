@@ -1,7 +1,7 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
-import DESCRIPTION from "./session-search.txt"
+import toolDef from "./session-search.json"
 
 function isGlobPattern(query: string): boolean {
   return /[*?[]/.test(query)
@@ -75,7 +75,7 @@ const parameters = z
   })
 
 export const SessionSearchTool = Tool.define("session_search", {
-  description: DESCRIPTION,
+  description: toolDef.description,
   parameters,
   async execute(params, ctx) {
     const h = host(ctx)

@@ -1,0 +1,14 @@
+{
+  "name": "desktop_mouse_move",
+  "description": "Move the mouse cursor to an absolute screen position.\n\nUse `smooth: true` (default) for animated movement, or `smooth: false` to teleport instantly.\n`speed` controls pixels per second for smooth movement (default: 1000).",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "x": { "type": "number", "description": "Target X coordinate in pixels" },
+      "y": { "type": "number", "description": "Target Y coordinate in pixels" },
+      "smooth": { "type": "boolean", "description": "Use smooth animated movement (default: true)" },
+      "speed": { "type": "number", "description": "Mouse speed in pixels/sec (default: 1000)" }
+    },
+    "required": ["x", "y"]
+  }
+}

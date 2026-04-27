@@ -1,0 +1,5 @@
+{
+  "name": "desktop_screen_size",
+  "description": "Return the primary screen dimensions as `{width, height}` in pixels.",
+  "inputSchema": { "type": "object", "properties": {}, "required": [] }
+}

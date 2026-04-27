@@ -1,4 +1,0 @@
-Click a mouse button at the current cursor position, or at optional (x, y) coordinates.
-
-If `x` and `y` are provided the cursor moves there first, then clicks.
-`button` defaults to "left". Set `double: true` for a double-click.

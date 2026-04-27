@@ -1,0 +1,17 @@
+{
+  "name": "schedule_create",
+  "description": "Create a new schedule. A schedule runs a prompt or tool on a cron expression against a target agent or session. Use standard cron syntax (e.g. '0 9 * * 1-5' for weekdays at 9 AM).",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "prompt": { "type": "string", "description": "The prompt or instruction to execute when the schedule fires" },
+      "cron_expression": { "type": "string", "description": "Cron expression defining when the schedule runs (e.g. '0 9 * * *' for daily at 9 AM)" },
+      "agent_id": { "type": "string", "description": "ID of the agent to target. Provide either agent_id or session_id." },
+      "session_id": { "type": "string", "description": "ID of the session to target. Provide either agent_id or session_id." },
+      "timezone": { "type": "string", "default": "UTC", "description": "IANA timezone for the cron expression (e.g. 'America/New_York')" },
+      "action_type": { "type": "string", "enum": ["message", "tool"], "default": "message", "description": "'message' sends the prompt as a message; 'tool' executes the prompt as a tool call" },
+      "tool_name": { "type": "string", "description": "Tool name to invoke when action_type is 'tool'" }
+    },
+    "required": ["prompt", "cron_expression"]
+  }
+}

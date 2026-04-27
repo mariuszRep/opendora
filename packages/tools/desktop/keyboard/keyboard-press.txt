@@ -1,9 +1,0 @@
-Press a key or key combination such as "ctrl+c", "enter", or "ctrl+shift+t".
-
-Supported modifiers: ctrl, shift, alt, meta / cmd / win / super.
-Special keys: enter, esc, space, tab, backspace, delete, insert,
-  up, down, left, right, home, end, pageup, pagedown,
-  capslock, numlock, printscreen, pause.
-Letters a-z, digits 0-9, and function keys f1-f24 are also supported.
-
-All parts of a combo are pressed simultaneously, then released together.

@@ -5,7 +5,7 @@ import * as path from "path"
 import { createInterface } from "readline"
 import { Tool } from "../tool.ts"
 import { FileTime } from "./lib/file-time.ts"
-import DESCRIPTION from "./read.txt"
+import toolDef from "./read.json"
 import { host, directory, worktree } from "../host.ts"
 import { assertExternalDirectory } from "../system/external-directory.ts"
 import { Filesystem } from "./lib/primitives.ts"
@@ -17,7 +17,7 @@ const MAX_BYTES = 50 * 1024
 const MAX_BYTES_LABEL = `${MAX_BYTES / 1024} KB`
 
 export const ReadTool = Tool.define("read", {
-  description: DESCRIPTION,
+  description: toolDef.description,
   parameters: z.object({
     filePath: z.string().describe("The absolute path to the file or directory to read"),
     offset: z.coerce.number().describe("The line number to start reading from (1-indexed)").optional(),

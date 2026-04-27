@@ -3,12 +3,12 @@ import { Tool } from "../../tool.ts"
 import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
 import { nativeClipboardPreferred, readText as nativeRead } from "../lib/clipboard-native.ts"
-import DESCRIPTION from "./clipboard-read.txt"
+import toolDef from ".//clipboard-read.json"
 
 export const DesktopClipboardReadTool = Tool.define("desktop_clipboard_read", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
   return {
-    description: DESCRIPTION,
+    description: toolDef.description,
     parameters: z.object({}),
     async execute(_params, ctx) {
       assertNotSandbox(sandbox)

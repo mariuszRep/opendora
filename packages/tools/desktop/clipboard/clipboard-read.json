@@ -1,0 +1,5 @@
+{
+  "name": "desktop_clipboard_read",
+  "description": "Read the current text content of the system clipboard.\n\nReturns the clipboard text as the tool output.",
+  "inputSchema": { "type": "object", "properties": {}, "required": [] }
+}

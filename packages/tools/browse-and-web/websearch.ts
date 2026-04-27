@@ -1,6 +1,6 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
-import DESCRIPTION from "./websearch.txt"
+import toolDef from "./websearch.json"
 import { abortAfterAny } from "../lib/abort.ts"
 import { Config } from "@opendora/core/config/config"
 
@@ -48,7 +48,7 @@ interface McpSearchResponse {
 export const WebSearchTool = Tool.define("websearch", async () => {
   return {
     get description() {
-      return DESCRIPTION.replace("{{year}}", new Date().getFullYear().toString())
+      return toolDef.description.replace("{{year}}", new Date().getFullYear().toString())
     },
     parameters: z.object({
       query: z.string().describe("Websearch query"),

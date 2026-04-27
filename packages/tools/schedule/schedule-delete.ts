@@ -1,9 +1,10 @@
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import z from "zod"
+import toolDef from "./schedule-delete.json"
 
 export const ScheduleDeleteTool = Tool.define("schedule_delete", async () => ({
-  description: "Permanently delete a schedule by ID. This cannot be undone. To temporarily stop a schedule without deleting it, use schedule_update with is_active: false instead.",
+  description: toolDef.description,
   parameters: z.object({
     id: z.string().describe("The schedule ID to delete"),
   }),

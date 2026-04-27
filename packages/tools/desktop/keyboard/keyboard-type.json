@@ -1,0 +1,12 @@
+{
+  "name": "desktop_keyboard_type",
+  "description": "Type a string of text using the keyboard, character by character.\n\n`delay` sets the pause in milliseconds between keystrokes (default: 50).\nUse `desktop_keyboard_press` for modifier combos like Ctrl+C.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "text": { "type": "string", "description": "Text to type" },
+      "delay": { "type": "number", "description": "Delay in milliseconds between keystrokes (default: 50)" }
+    },
+    "required": ["text"]
+  }
+}

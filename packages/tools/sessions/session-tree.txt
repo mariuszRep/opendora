@@ -1,1 +1,0 @@
-Show the full session hierarchy for a given session — all ancestors up to the root and all descendants recursively, with each session's position in the tree and its owning agent ID. If no session_id is provided, uses the current session. Use this to understand where a session sits within a delegation chain, who spawned it, and what sub-sessions it has created.

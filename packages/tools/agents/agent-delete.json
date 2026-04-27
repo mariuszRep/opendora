@@ -1,0 +1,12 @@
+{
+  "name": "agent_delete",
+  "description": "Delete an existing agent permanently. This action cannot be undone. Use with caution as it will remove all agent data including configuration, persona, and injection files.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "id": { "type": "string", "description": "ID of the agent to delete" },
+      "confirm": { "type": "boolean", "description": "Confirmation flag - must be set to true to proceed with deletion" }
+    },
+    "required": ["id", "confirm"]
+  }
+}

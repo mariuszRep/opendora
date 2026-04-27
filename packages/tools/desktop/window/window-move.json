@@ -1,0 +1,13 @@
+{
+  "name": "desktop_window_move",
+  "description": "Move a window to the specified screen position.\n\nThe window is matched by a case-insensitive substring of its title.\n`x` and `y` set the new position of the window's top-left corner in pixels.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string", "description": "Window title or substring to match" },
+      "x": { "type": "number", "description": "New X position of the window's top-left corner" },
+      "y": { "type": "number", "description": "New Y position of the window's top-left corner" }
+    },
+    "required": ["title", "x", "y"]
+  }
+}

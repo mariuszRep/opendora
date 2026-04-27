@@ -5,7 +5,7 @@ import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
 import { resolveRegion } from "../lib/region.ts"
 import { assertExternalDirectory } from "../../system/external-directory.ts"
-import DESCRIPTION from "./screen-wait-for-image.txt"
+import toolDef from ".//screen-wait-for-image.json"
 
 const regionSchema = z.object({
   x: z.number().int(),
@@ -19,7 +19,7 @@ export const DesktopScreenWaitForImageTool = Tool.define(
   async (initCtx) => {
     const sandbox = initCtx?.agent?.config?.sandbox ?? false
     return {
-      description: DESCRIPTION,
+      description: toolDef.description,
       parameters: z.object({
         templatePath: z
           .string()
