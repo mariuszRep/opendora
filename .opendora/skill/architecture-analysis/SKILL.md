@@ -1,7 +1,6 @@
 ---
 name: architecture-analysis
 description: Load when a task needs technical design, affected-area analysis, tradeoffs, or a recommended implementation approach before coding.
-origin: opendora
 ---
 
 # Architecture Analysis

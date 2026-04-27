@@ -1,7 +1,6 @@
 ---
 name: code-exploration
 description: Load when you need to inspect a codebase, locate relevant files, explain structure, and identify likely change points before implementation.
-origin: opendora
 ---
 
 # Code Exploration

@@ -41,7 +41,17 @@ Use this skill when creating a new skill, rewriting an existing skill, or tighte
 
 ---
 
-## Recommended SKILL.md Structure
+## Recommended Skill Structure
+
+Each skill is a directory containing two required files:
+
+```
+{{skill_name}}/
+├── SKILL.md    — instructions loaded into context when the skill triggers
+└── skill.json  — declares which tools the skill needs
+```
+
+### SKILL.md template
 
 ```markdown
 ---
@@ -77,6 +87,16 @@ Use this skill when [clear trigger condition].
 - Quality bars
 - Stop conditions
 ```
+
+### skill.json template
+
+```json
+{
+  "tools": ["tool1", "tool2"]
+}
+```
+
+List only the tools the skill's steps will actually call. Keep it minimal — every extra tool adds noise. Common tools: `read`, `write`, `edit`, `glob`, `grep`, `bash`, `delegate`, `reply`, `todowrite`, `session_get`, `session_search`, `session_tree`, `agent_get`, `agent_create`, `agent_update`, `log`, `websearch`, `webfetch`, `question`, `codesearch`, `apply_patch`.
 
 ---
 
@@ -127,6 +147,7 @@ Before saving a skill:
 - [ ] Rules prevent likely failure patterns
 - [ ] The output or final report shape is clear when structure matters
 - [ ] The text is concise enough to be loaded repeatedly without waste
+- [ ] `skill.json` exists and lists exactly the tools the steps will call
 - [ ] Important existing behavior has been preserved or deliberately replaced with justification
 - [ ] Any behavior change has a simple validation plan
 
@@ -147,9 +168,10 @@ When refining a skill over time:
 ## Steps
 
 1. Clarify whether you are creating, rewriting, or improving the skill
-2. If the skill already exists, read it first and list the behavior that must be preserved
+2. If the skill already exists, read both `SKILL.md` and `skill.json` first and list the behavior that must be preserved
 3. Define the trigger, objective, variables, and expected output
 4. Draft or revise `SKILL.md` with the recommended structure
-5. Remove noise, redundant wording, and over-prescriptive instructions
-6. Verify the skill is reusable, focused, and does not accidentally remove established constraints
-7. If requested, pair the change with retrospective review and an improvement experiment
+5. Create or update `skill.json` — list every tool the skill's steps will call, nothing more
+6. Remove noise, redundant wording, and over-prescriptive instructions
+7. Verify the skill is reusable, focused, and does not accidentally remove established constraints
+8. If requested, pair the change with retrospective review and an improvement experiment

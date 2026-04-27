@@ -1,7 +1,6 @@
 ---
 name: project-context
 description: Load before project intake, onboarding, implementation, review, or context-doc updates to read and maintain VISION.md, MIGRATION.md, AGENTS.md, README.md consistently.
-origin: opendora
 ---
 
 # Project Context

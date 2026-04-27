@@ -1,7 +1,6 @@
 ---
 name: review-gate
 description: Load when completed work needs a read-first quality check for correctness, maintainability, consistency, and delivery risk.
-origin: opendora
 ---
 
 # Review Gate

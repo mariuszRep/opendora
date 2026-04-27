@@ -1,13 +1,6 @@
 ---
 name: ai-news-digest
 description: Load when you need a high-recall, source-accurate digest of the latest AI news with explicit time-window confidence.
-origin: opendora
-tools:
-  - websearch
-  - webfetch
-  - reply
-  - question
-  - todowrite
 ---
 
 # AI News Digest

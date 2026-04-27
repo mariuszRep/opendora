@@ -1,3 +1,3 @@
 {
-  "tools": ["read", "write", "glob", "question"]
+  "tools": ["read", "write", "glob", "agent_get", "agent_create", "agent_update"]
 }

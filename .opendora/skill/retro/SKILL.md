@@ -1,3 +1,7 @@
+---
+name: retro
+description: Conduct a full session retrospective — trace the delegation tree, compute token and step costs, surface inefficiencies, and recommend targeted improvements.
+---
 
 # Retro — Session Retrospective Skill
 You are conducting a retrospective on a session tree. Given a root session (or experiment label prefix), you walk the full delegation chain, surface every step and tool call at every level, compute costs, and generate actionable recommendations.

@@ -59,14 +59,23 @@ Proactively ask questions about edge cases, input/output formats, example files,
 
 Check available MCPs - if useful for research (searching docs, finding similar skills, looking up best practices), research in parallel via subagents if available, otherwise inline. Come prepared with context to reduce burden on the user.
 
-### Write the SKILL.md
+### Write the SKILL.md and skill.json
 
-Based on the user interview, fill in these components:
+Based on the user interview, fill in these components for SKILL.md:
 
 - **name**: Skill identifier
 - **description**: When to trigger, what it does. This is the primary triggering mechanism - include both what the skill does AND specific contexts for when to use it. All "when to use" info goes here, not in the body. Note: currently Claude has a tendency to "undertrigger" skills -- to not use them when they'd be useful. To combat this, please make the skill descriptions a little bit "pushy". So for instance, instead of "How to build a simple fast dashboard to display internal Anthropic data.", you might write "How to build a simple fast dashboard to display internal Anthropic data. Make sure to use this skill whenever the user mentions dashboards, data visualization, internal metrics, or wants to display any kind of company data, even if they don't explicitly ask for a 'dashboard.'"
-- **compatibility**: Required tools, dependencies (optional, rarely needed)
 - **the rest of the skill :)**
+
+Then create `skill.json` in the same directory listing the tools the skill's steps will call:
+
+```json
+{
+  "tools": ["read", "write"]
+}
+```
+
+Do NOT put tools in the SKILL.md frontmatter — `skill.json` is the only place tools are declared.
 
 ### Skill Writing Guide
 
@@ -75,13 +84,21 @@ Based on the user interview, fill in these components:
 ```
 skill-name/
 ├── SKILL.md (required)
-│   ├── YAML frontmatter (name, description required)
+│   ├── YAML frontmatter (name, description — only these two fields)
 │   └── Markdown instructions
+├── skill.json (required)
+│   └── { "tools": ["tool1", "tool2"] }  — tools the skill's steps will call
 └── Bundled Resources (optional)
     ├── scripts/    - Executable code for deterministic/repetitive tasks
     ├── references/ - Docs loaded into context as needed
     └── assets/     - Files used in output (templates, icons, fonts)
 ```
+
+**`skill.json` rules:**
+- Always create it alongside SKILL.md — a skill without it has no declared tool access
+- List only tools the skill's steps actually call — nothing speculative
+- Never declare tools in SKILL.md frontmatter — `skill.json` is the single source of truth for tools
+- Common tools: `read`, `write`, `edit`, `glob`, `grep`, `bash`, `delegate`, `reply`, `todowrite`, `session_get`, `session_search`, `session_tree`, `agent_get`, `agent_create`, `agent_update`, `log`, `websearch`, `webfetch`, `question`, `codesearch`, `apply_patch`
 
 #### Progressive Disclosure
 

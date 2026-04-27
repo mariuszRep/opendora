@@ -1,3 +1,7 @@
+---
+name: agent-experiment
+description: Run one targeted improvement experiment on an agent — baseline, apply one change, measure the delta, and keep or discard.
+---
 
 # Experiment — Agent Improvement Skill
 

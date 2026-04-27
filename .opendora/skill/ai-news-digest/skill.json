@@ -1,3 +1,3 @@
 {
-  "tools": ["websearch", "todowrite"]
+  "tools": ["websearch", "webfetch", "reply", "question", "todowrite"]
 }
