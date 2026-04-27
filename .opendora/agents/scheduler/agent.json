@@ -3,8 +3,8 @@
   "description": "Manages daily schedules and cron jobs for OpenDora agents. Creates, lists, updates, and triggers scheduled tasks.",
   "mode": "worker",
   "model": {
-    "modelID": "minimax-m2.5-free",
-    "providerID": "opencode"
+    "modelID": "e2daea63-4ca4-4817-9978-14baecf5612d",
+    "providerID": "fallback"
   },
   "temperature": 0.3,
   "color": "#8B5CF6",

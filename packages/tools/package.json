@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",
+    "@nut-tree-fork/nut-js": "^4.2.0",
     "@opendora/core": "workspace:*",
     "@zip.js/zip.js": "2.7.62",
     "diff": "catalog:",
@@ -50,6 +51,6 @@
     "turndown": "7.2.0",
     "web-tree-sitter": "0.25.10",
     "zod": "catalog:",
-    "@nut-tree-fork/nut-js": "^4.2.0"
+    "zod-to-json-schema": "3.25.2"
   }
 }

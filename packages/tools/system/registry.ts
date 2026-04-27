@@ -1,4 +1,3 @@
-import { PlanExitTool } from "./plan.ts"
 import { BashTool } from "../shell/bash.ts"
 import { BatchTool } from "../shell/batch.ts"
 import { EditTool } from "../filesystem/edit.ts"
@@ -9,11 +8,10 @@ import { GlobTool } from "../filesystem/glob.ts"
 import { GrepTool } from "../filesystem/grep.ts"
 import { MultiEditTool } from "../filesystem/multiedit.ts"
 import { ApplyPatchTool } from "../filesystem/apply_patch.ts"
-import { TaskTool } from "./task.ts"
 import { SessionSearchTool, SessionGetTool, SessionTreeTool } from "../sessions/index.ts"
 import { DelegateTool, ReplyTool, QuestionTool } from "../communication/index.ts"
 import { TodoWriteTool, TodoReadTool } from "./todo.ts"
-import { WebFetchTool, WebSearchTool, BrowserTool, CodeSearchTool } from "../browse-and-web/index.ts"
+import { WebFetchTool, WebSearchTool, CodeSearchTool } from "../browse-and-web/index.ts"
 import { InvalidTool } from "./invalid.ts"
 import { LspTool } from "./lsp.ts"
 import { SkillLoadTool, SkillListTool, SkillSearchTool, SkillInstallTool, SkillCreateTool, SkillRemoveTool } from "../skills/index.ts"
@@ -124,7 +122,6 @@ export namespace ToolRegistry {
       EditTool,
       MultiEditTool,
       WriteTool,
-      TaskTool,
       DelegateTool,
       SessionSearchTool,
       SessionGetTool,
@@ -134,7 +131,6 @@ export namespace ToolRegistry {
       TodoWriteTool,
       // TodoReadTool,
       WebSearchTool,
-      BrowserTool,
       CodeSearchTool,
       SkillListTool,
       SkillLoadTool,
@@ -157,7 +153,6 @@ export namespace ToolRegistry {
       ScheduleRunTool,
       ...(cfg.flags.enableLspTool ? [LspTool] : []),
       ...(cfg.flags.enableBatchTool ? [BatchTool] : []),
-      ...(cfg.flags.enablePlanMode && cfg.clientType === "cli" ? [PlanExitTool] : []),
       ...DESKTOP_TOOLS,
       ..._custom,
     ]
