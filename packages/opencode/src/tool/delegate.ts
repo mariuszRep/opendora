@@ -1,1 +1,1 @@
-export { DelegateTool } from "@opendora/tools/task-management"
+export { DelegateTool } from "@opendora/tools/communication"

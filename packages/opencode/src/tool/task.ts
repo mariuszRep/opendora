@@ -1,1 +1,1 @@
-export { TaskTool } from "@opendora/tools/task-management"
+export { TaskTool } from "@opendora/tools/system"

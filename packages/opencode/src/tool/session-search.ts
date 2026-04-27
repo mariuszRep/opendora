@@ -1,1 +1,1 @@
-export { SessionSearchTool } from "@opendora/tools/task-management"
+export { SessionSearchTool } from "@opendora/tools/sessions"

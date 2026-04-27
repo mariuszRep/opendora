@@ -16,6 +16,7 @@
     "./system": "./system/index.ts",
     "./task-management": "./task-management/index.ts",
     "./communication": "./communication/index.ts",
+    "./sessions": "./sessions/index.ts",
     "./execution": "./execution/index.ts",
     "./browser": "./browser/index.ts",
     "./browse-and-web": "./browse-and-web/index.ts",
