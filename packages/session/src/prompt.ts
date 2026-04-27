@@ -848,6 +848,10 @@ export namespace SessionPrompt {
         bypassAgentCheck: input.bypassAgentCheck,
         directory: effectiveDirectory,
         worktree,
+        skillTools: cfg.skillTools ? {
+          get: (sid: string) => cfg.skillTools!.get(sid),
+          add: (sid: string, toolIds: string[]) => cfg.skillTools!.add(sid, toolIds),
+        } : undefined,
         skills: {
           all: () => cfg.skill?.all?.(),
           get: (name: string) => cfg.skill?.get?.(name),

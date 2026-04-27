@@ -438,6 +438,7 @@ export namespace Server {
             },
           }),
           async (c) => {
+            await Skill.reload()
             const skills = await Skill.all()
             return c.json(skills)
           },
@@ -507,6 +508,7 @@ export namespace Server {
           validator("param", z.object({ name: z.string() })),
           async (c) => {
             const { name } = c.req.valid("param")
+            await Skill.reload()
             const skill = await Skill.get(name)
             if (!skill) return c.json({ error: `skill "${name}" not found` }, 404)
             return c.json(skill)

@@ -296,20 +296,21 @@ export namespace LLM {
     tools: Record<string, Tool>,
     agent: any,
     userTools?: Record<string, boolean>,
+    skillUnlocked?: Set<string>,
   ): Record<string, Tool> {
     const cfg = getConfig()
     const disabled = cfg.permissionNext?.disabled(Object.keys(tools), agent.permission) ?? new Set<string>()
 
-    // Apply agent's tools filter
-    const allowedTools = new Set(agent.tools || [])
+    // Apply agent's tools filter, expanded by any tools unlocked via skill_load
+    const allowedTools = new Set<string>([...(agent.tools || []), ...(skillUnlocked ?? [])])
 
     for (const t of Object.keys(tools)) {
       // Always keep "invalid" tool - it's used internally for tool-call repair
       if (t === "invalid") continue
 
-      // Filter by agent's tools configuration
+      // Filter by agent's tools configuration (plus skill-unlocked tools)
       if (agent.tools) {
-        if (agent.tools.length === 0) {
+        if (allowedTools.size === 0) {
           delete tools[t]
           continue
         }
@@ -326,7 +327,8 @@ export namespace LLM {
       }
 
       // Apply permission filtering only if tool is not explicitly in agent's tools array
-      if (disabled.has(t) && !agent.tools?.includes(t)) {
+      // or unlocked via a loaded skill
+      if (disabled.has(t) && !allowedTools.has(t)) {
         delete tools[t]
       }
     }
@@ -334,8 +336,18 @@ export namespace LLM {
     return tools
   }
 
-  async function resolveTools(input: Pick<StreamInput, "tools" | "agent" | "user">) {
-    return filterToolsByAgent(input.tools, input.agent, input.user.tools)
+  async function resolveTools(input: Pick<StreamInput, "tools" | "agent" | "user" | "sessionID">) {
+    const cfg = getConfig()
+    const skillUnlocked = cfg.skillTools?.get(input.sessionID) ?? new Set<string>()
+    const filtered = filterToolsByAgent(input.tools, input.agent, input.user.tools, skillUnlocked)
+    log.info("resolveTools", {
+      sessionID: input.sessionID,
+      agent: input.agent?.name,
+      agentTools: input.agent?.tools,
+      skillUnlocked: Array.from(skillUnlocked),
+      finalTools: Object.keys(filtered),
+    })
+    return filtered
   }
 
   // Check if messages contain any tool-call content

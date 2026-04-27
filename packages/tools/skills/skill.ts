@@ -46,6 +46,13 @@ export const SkillLoadTool = Tool.define("skill_load", async (initCtx) => {
         metadata: {},
       })
 
+      // Unlock any tools this skill declares (from skill.json) for the current session,
+      // so the agent's effective allowlist expands beyond its static agent.json tools array.
+      const skillTools = (skill as { tools?: string[] }).tools
+      if (skillTools && skillTools.length > 0) {
+        host(ctx).skillTools?.add(ctx.sessionID, skillTools)
+      }
+
       const dir = path.dirname(skill.location)
       const base = pathToFileURL(dir).href
 
@@ -63,6 +70,18 @@ export const SkillLoadTool = Tool.define("skill_load", async (initCtx) => {
         files = arr.map((file) => `<file>${file}</file>`).join("\n")
       }
 
+      const toolsNotice = skillTools && skillTools.length > 0
+        ? [
+            "",
+            "<skill_tools_registered>",
+            `Tools now registered for this session: ${skillTools.join(", ")}`,
+            "IMPORTANT: These tools are active starting from your NEXT tool call.",
+            "Do NOT attempt to call them in this response — they will appear as invalid.",
+            "In your immediate next action you may use any of the tools listed above.",
+            "</skill_tools_registered>",
+          ].join("\n")
+        : ""
+
       return {
         title: `Loaded skill: ${skill.name}`,
         output: [
@@ -79,6 +98,7 @@ export const SkillLoadTool = Tool.define("skill_load", async (initCtx) => {
           files,
           "</skill_files>",
           "</skill_content>",
+          toolsNotice,
         ].join("\n"),
         metadata: {
           name: skill.name,

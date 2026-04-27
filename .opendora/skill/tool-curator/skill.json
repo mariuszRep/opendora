@@ -1,0 +1,3 @@
+{
+  "tools": ["tool_list", "tool_get", "tool_update"]
+}

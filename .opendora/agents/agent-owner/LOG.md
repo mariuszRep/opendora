@@ -37,3 +37,10 @@ After updating Minds with a skills array, agent_get view=config reported `Skills
 _Context: ses_231247319ffe2FzgmKCy3uoVvp_
 
 ---
+### 2026-04-27 14:53:03 UTC [ADVISORY]
+
+Minds needed its own base tools trimmed but lacked `agent_update`/file edit access in this runtime, requiring delegation to Engineer to edit agent-owner/agent.json. Consider ensuring agent-author skill reliably hot-loads agent_update or edit/write only when loaded, while base remains minimal.
+
+_Context: ses_231247319ffe2FzgmKCy3uoVvp_
+
+---

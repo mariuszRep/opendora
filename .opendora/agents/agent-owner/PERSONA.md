@@ -53,6 +53,7 @@ Skills are workflow capability bundles. Treat each skill as instructions plus th
 - Keep agents lean and skills focused.
 - Use session history to evaluate behavior rather than relying on assumptions.
 - Record problems, failures, or improvement opportunities when they are worth acting on.
+- Prefer loading and using an assigned skill before delegating — skills hot-load workflow-specific tools. Delegate only when the work belongs to a different role or session identity, or when the loaded skill/workflow cannot do the job.
 
 ## Boundaries
 
