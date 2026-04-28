@@ -16,6 +16,12 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
@@ -23,9 +29,12 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { ChevronDownIcon, Settings2Icon } from "lucide-react"
+import { MessageResponse } from "@/components/ai-elements/message"
+import { CalendarIcon, ChevronDownIcon, ScrollTextIcon, Settings2Icon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { SessionEditSheet } from "@/components/sessions/session-edit-sheet"
+import { opendora } from "@/lib/opendora"
+import { cn } from "@/lib/utils"
 
 function formatSessionTitle(session: { title?: string; time: { created: number } }): string {
   if (session.title && !session.title.startsWith("New session")) return session.title
@@ -45,10 +54,28 @@ export function Header() {
   const [agentOpen, setAgentOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsTab, setSettingsTab] = useState<"general" | "schedules">("general")
+  const [promptOpen, setPromptOpen] = useState(false)
+  const [systemPromptSections, setSystemPromptSections] = useState<{ label: string; content: string }[]>([])
+  const [hasSchedules, setHasSchedules] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    if (!selectedSession) { setSystemPromptSections([]); return }
+    opendora.session.systemPrompt(selectedSession.id)
+      .then((res) => setSystemPromptSections(res.sections))
+      .catch(() => setSystemPromptSections([]))
+  }, [selectedSession?.id])
+
+  useEffect(() => {
+    if (!selectedSession) { setHasSchedules(false); return }
+    opendora.schedule.list()
+      .then((all) => setHasSchedules(all.some((s) => s.session_id === selectedSession.id)))
+      .catch(() => setHasSchedules(false))
+  }, [selectedSession?.id])
 
   const visibleAgents = agents.filter((a) => !a.hidden)
   const selectedAgentObj = agents.find((a) => (a as any)._id === selectedAgent)
@@ -158,8 +185,28 @@ export function Header() {
               variant="ghost"
               size="icon"
               className="size-8"
+              title="System prompt"
+              onClick={() => setPromptOpen(true)}
+            >
+              <ScrollTextIcon className="size-4" />
+              <span className="sr-only">System prompt</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn("size-8", !hasSchedules && "text-muted-foreground")}
+              title="Schedules"
+              onClick={() => { setSettingsTab("schedules"); setSettingsOpen(true) }}
+            >
+              <CalendarIcon className="size-4" />
+              <span className="sr-only">Schedules</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8"
               title="Session settings"
-              onClick={() => setSettingsOpen(true)}
+              onClick={() => { setSettingsTab("general"); setSettingsOpen(true) }}
             >
               <Settings2Icon className="size-4" />
               <span className="sr-only">Session settings</span>
@@ -172,7 +219,32 @@ export function Header() {
         session={selectedSession ?? null}
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
+        defaultTab={settingsTab}
       />
+
+      <Dialog open={promptOpen} onOpenChange={setPromptOpen}>
+        <DialogContent className="sm:max-w-[210mm] max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>System Prompt</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-6 pr-1">
+            {systemPromptSections.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No system prompt configured.</p>
+            ) : (
+              systemPromptSections.map((section, i) => (
+                <div key={i} className="flex flex-col gap-2">
+                  {systemPromptSections.length > 1 && (
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{section.label}</p>
+                  )}
+                  <MessageResponse className="prose dark:prose-invert max-w-none text-sm">
+                    {section.content}
+                  </MessageResponse>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

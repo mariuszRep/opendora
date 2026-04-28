@@ -49,6 +49,11 @@ interface SessionEditSheetProps {
 }
 
 export function SessionEditSheet({ session, open, onOpenChange, defaultTab = "general" }: SessionEditSheetProps) {
+  const [activeTab, setActiveTab] = useState<"general" | "schedules">(defaultTab)
+
+  useEffect(() => {
+    if (open) setActiveTab(defaultTab)
+  }, [open, defaultTab])
   const { agents, sessions, setSessionAgent, setAgentMainSession } = useOpendoraContext()
 
   const [title, setTitle] = useState("")
@@ -200,7 +205,7 @@ export function SessionEditSheet({ session, open, onOpenChange, defaultTab = "ge
             <SheetDescription className="sr-only">Edit session properties</SheetDescription>
           </SheetHeader>
 
-          <Tabs defaultValue={defaultTab} className="flex flex-col flex-1 min-h-0">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "general" | "schedules")} className="flex flex-col flex-1 min-h-0">
             <TabsList className="mx-6 mb-2 shrink-0 w-[calc(100%-3rem)]">
               <TabsTrigger value="general" className="flex-1">General</TabsTrigger>
               <TabsTrigger value="schedules" className="flex-1">Schedules</TabsTrigger>

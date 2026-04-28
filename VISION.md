@@ -110,6 +110,16 @@ ui/web               ← core HTTP/SSE via typed client exported from core/serve
 
 ---
 
+## System prompt
+
+Single general-purpose prompt regardless of model. No per-model variants (anthropic.txt, gemini.txt, etc.).
+
+Assembly is a single function in one place — not split across `prompt.ts`, `llm.ts`, and the REST endpoint. The REST endpoint calls the same function the loop calls; no duplication.
+
+Model-specific branches (`isCodex`, provider checks) are removed once all supported models accept the same prompt format.
+
+---
+
 ## What is removed
 
 | Removed | Reason |

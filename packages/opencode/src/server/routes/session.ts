@@ -10,6 +10,9 @@ import { SessionRevert } from "@opendora/session/revert"
 import { SessionStatus } from "@opendora/session/status"
 import { SessionSummary } from "@opendora/session/summary"
 import { Todo } from "@opendora/session/todo"
+import { InstructionPrompt } from "@opendora/session/instruction"
+import { getConfig } from "@opendora/session/config"
+import { sessionManager } from "@opendora/session/session"
 import { Agent } from "../../agent"
 import { Snapshot } from "@/snapshot"
 import { Log } from "../../util/log"
@@ -235,6 +238,108 @@ export const SessionRoutes = lazy(() =>
         const sessionID = c.req.valid("param").sessionID
         await Session.remove(sessionID)
         return c.json(true)
+      },
+    )
+    .get(
+      "/:sessionID/system-prompt",
+      describeRoute({
+        summary: "Get resolved system prompt",
+        description: "Returns the full system prompt the agent sees for this session: persona, session boundary prompt, and any instruction files (CLAUDE.md, AGENTS.md).",
+        operationId: "session.systemPrompt",
+        responses: {
+          200: {
+            description: "Resolved system prompt sections",
+            content: {
+              "application/json": {
+                schema: resolver(z.object({ sections: z.array(z.object({ label: z.string(), content: z.string() })) })),
+              },
+            },
+          },
+          ...errors(404),
+        },
+      }),
+      validator("param", z.object({ sessionID: z.string() })),
+      async (c) => {
+        const { sessionID } = c.req.valid("param")
+        const session = await Session.get(sessionID)
+        const sessionMeta = await sessionManager.getMeta(sessionID)
+        const cfg = getConfig()
+        const sections: { label: string; content: string }[] = []
+
+        // 1. Agent persona
+        let agent: any = undefined
+        if (session.agentID) {
+          agent = await cfg.agent?.getByIdOrName?.(session.agentID).catch(() => undefined)
+            ?? await cfg.agent?.get?.(session.agentID).catch(() => undefined)
+          const persona = agent?.prompt ?? await Agent.getPersona(session.agentID).catch(() => "")
+          if (persona) sections.push({ label: "Agent Persona", content: persona })
+        }
+
+        // 2. Session boundary prompt
+        if (sessionMeta?.systemPrompt) {
+          sections.push({ label: "Session Boundary Prompt", content: sessionMeta.systemPrompt })
+        }
+
+        // 3. Instruction files (CLAUDE.md, AGENTS.md, etc.)
+        const instructionParts = await InstructionPrompt.system().catch(() => [] as string[])
+        for (const part of instructionParts) {
+          if (part) sections.push({ label: "Instructions", content: part })
+        }
+
+        // 4. Available skills block
+        const agentSkills: string[] = agent?.config?.skills ?? []
+        if (agentSkills.length > 0) {
+          const skillLines: string[] = []
+          for (const skillName of agentSkills) {
+            const skill = await cfg.skill?.get?.(skillName).catch(() => undefined)
+            skillLines.push(skill ? `- ${skill.name}: ${skill.description}` : `- ${skillName}`)
+          }
+          sections.push({
+            label: "Available Skills",
+            content: [
+              "You have the following skills available. Load any with skill_load to unlock its full instructions and tools.",
+              "",
+              ...skillLines,
+            ].join("\n"),
+          })
+        }
+
+        // 5. Tool access restrictions
+        const agentTools: string[] | undefined = agent?.tools
+        if (agentTools !== undefined) {
+          const available = agentTools.filter((t) => t !== "invalid")
+          if (available.length > 0) {
+            sections.push({
+              label: "Tool Access Restrictions",
+              content: `You have access to ONLY these specific tools: ${available.join(", ")}\nYou CANNOT use any other tools for any reason.`,
+            })
+          } else {
+            sections.push({
+              label: "Tool Access Restrictions",
+              content: "You have NO tools available. You can only respond with text.",
+            })
+          }
+        }
+
+        // 6. Delegation restrictions
+        const hasDelegateTool = agentTools?.includes("delegate")
+        const allowedAgentNames: string[] | undefined = hasDelegateTool
+          ? agent?.config?.toolConfig?.delegate?.allowedAgents
+          : undefined
+        if (allowedAgentNames && allowedAgentNames.length > 0) {
+          const allAgents = await cfg.agent?.list?.() ?? []
+          const entries = (allAgents as any[])
+            .filter((a) => allowedAgentNames.includes(a.name))
+            .map((a: any) => `- ${a.name}${a.description ? `: ${a.description}` : ""}`)
+          if (entries.length > 0) {
+            sections.push({
+              label: "Delegation Restrictions",
+              content: `You may only delegate to the following agents:\n${entries.join("\n")}`,
+            })
+          }
+        }
+
+        return c.json({ sections })
       },
     )
     .patch(

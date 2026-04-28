@@ -297,7 +297,7 @@ export namespace Session {
         input?.path,
         input?.readPath,
       )
-      const directory = input?.directory ?? resolvedPath ?? cfg.instance?.directory ?? process.cwd()
+      const directory = input?.directory ?? resolvedPath ?? process.cwd()
       return createNext({
         directory,
         title: input?.title,
@@ -1022,7 +1022,7 @@ export namespace Session {
 
     const agentDefaultPath = await resolveAgentDefaultPath(agentID)
     return createNext({
-      directory: agentDefaultPath ?? cfg.instance?.directory ?? process.cwd(),
+      directory: agentDefaultPath ?? process.cwd(),
       title: `${agentID} (main)`,
       sessionType: "role",
       agentID,

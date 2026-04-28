@@ -90,7 +90,7 @@ async function globUp(pattern: string, dir: string, root: string): Promise<strin
 
 async function resolveRelative(instruction: string): Promise<string[]> {
   const cfg = getConfig()
-  const directory = cfg.instance?.directory ?? process.cwd()
+  const directory = process.cwd()
   const worktree = cfg.instance?.worktree ?? process.cwd()
   if (!(process.env.OPENCODE_DISABLE_PROJECT_CONFIG === "1")) {
     return globUp(instruction, directory, worktree).catch(() => [])
@@ -131,7 +131,7 @@ export namespace InstructionPrompt {
   export async function systemPaths() {
     const cfg = getConfig()
     const config = await cfg.config?.get() ?? {}
-    const directory = cfg.instance?.directory ?? process.cwd()
+    const directory = process.cwd()
     const worktree = cfg.instance?.worktree ?? process.cwd()
     const paths = new Set<string>()
 
@@ -246,7 +246,7 @@ export namespace InstructionPrompt {
 
     const target = path.resolve(filepath)
     let current = path.dirname(target)
-    const root = path.resolve(cfg.instance?.directory ?? process.cwd())
+    const root = path.resolve(process.cwd())
 
     while (current.startsWith(root) && current !== root) {
       const found = await find(current)

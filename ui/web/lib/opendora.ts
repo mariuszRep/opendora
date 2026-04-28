@@ -342,6 +342,7 @@ export const opendora = {
     create: (input?: { sessionType?: SessionType; agentID?: string | null; title?: string }) =>
       req<Session>("/session", { method: "POST", body: JSON.stringify(input ?? {}) }),
     children: (sessionID: string) => req<Session[]>(`/session/${sessionID}/children`),
+    systemPrompt: (sessionID: string) => req<{ sections: { label: string; content: string }[] }>(`/session/${sessionID}/system-prompt`),
     messages: (sessionID: string) => req<MessageWithParts[]>(`/session/${sessionID}/message`),
     abort: (sessionID: string) =>
       req<boolean>(`/session/${sessionID}/abort`, { method: "POST", body: JSON.stringify({}) }),
