@@ -10,7 +10,6 @@ import { Session } from "./session.ts"
 import { type Tool as AITool, tool, jsonSchema, type ToolCallOptions, asSchema } from "ai"
 import { SessionCompaction } from "./compaction.ts"
 import { getConfig } from "./config.ts"
-import { SystemPrompt } from "./system.ts"
 import { InstructionPrompt } from "./instruction.ts"
 import MAX_STEPS from "./prompt/max-steps.txt"
 import { SessionSummary } from "./summary.ts"
@@ -716,39 +715,18 @@ export namespace SessionPrompt {
 
       await cfg.plugin?.trigger("experimental.chat.messages.transform", {}, { messages: msgs })
 
-      // Build system prompt
-      const system = [...(await SystemPrompt.environment(model, sessionID)), ...(await InstructionPrompt.system())]
-
-      // Inject available skills block — visible immediately so agent knows what it can load
-      const agentSkills: string[] = agent.config?.skills ?? []
-      if (agentSkills.length > 0) {
-        const skillLines: string[] = []
-        for (const skillName of agentSkills) {
-          const skill = await cfg.skill?.get?.(skillName)
-          skillLines.push(skill ? `- ${skill.name}: ${skill.description}` : `- ${skillName}`)
-        }
-        system.push(
-          [
-            "# Available Skills",
-            "",
-            "You have the following skills available. Load any with skill_load to unlock its full instructions and tools.",
-            "",
-            ...skillLines,
-          ].join("\n"),
-        )
-      }
-
+      // System prompt is now built inside LLM.stream() via SystemPrompt.build()
+      // so both the agent loop and the UI preview use identical code.
+      // Structured output requires an extra instruction appended after build().
       const format = lastUser.format ?? { type: "text" }
-      if (format.type === "json_schema") {
-        system.push(STRUCTURED_OUTPUT_SYSTEM_PROMPT)
-      }
+      const structuredOutputSystem = format.type === "json_schema" ? [STRUCTURED_OUTPUT_SYSTEM_PROMPT] : []
 
       const result = await processor.process({
         user: lastUser,
         agent,
         abort,
         sessionID,
-        system,
+        system: structuredOutputSystem.length > 0 ? structuredOutputSystem : undefined,
         messages: [
           ...MessageV2.toModelMessages(msgs, model),
           ...(isLastStep

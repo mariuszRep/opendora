@@ -29,7 +29,13 @@ export namespace LLM {
     sessionID: string
     model: any
     agent: any
-    system: string[]
+    /**
+     * When undefined (main agent path), SystemPrompt.build() constructs the
+     * full system prompt automatically. Pass an explicit array (even []) to
+     * bypass the builder — used by title generation and compaction agents
+     * which manage their own minimal system context.
+     */
+    system?: string[]
     abort: AbortSignal
     messages: ModelMessage[]
     small?: boolean
@@ -63,43 +69,57 @@ export namespace LLM {
 
     const system: string[] = []
 
-    // Build tool restriction notice from the actual filtered tool set so it stays
-    // accurate after skill_load expands the allowlist mid-session.
-    let toolNotice = ""
-    if (input.agent.tools !== undefined) {
-      const availableToolIds = Object.keys(input.tools).filter((id) => id !== "invalid")
-      if (availableToolIds.length > 0) {
-        toolNotice = `\n\n# IMPORTANT: TOOL ACCESS RESTRICTIONS\nYou have access to ONLY these specific tools: ${availableToolIds.join(", ")}\nYou CANNOT use any other tools for any reason.\nIf your persona mentions other tools, IGNORE those instructions - you can only use the tools listed above.\nDo not attempt to use tools not in this list under any circumstances.`
-      } else {
-        toolNotice = `\n\n# IMPORTANT: NO TOOLS AVAILABLE\nYou have NO tools available. You can only respond with text.\nIf your persona mentions using tools, IGNORE those instructions - you cannot use any tools.\nDo not attempt to use any tools under any circumstances.`
+    if (input.system === undefined) {
+      // Main agent path: use the canonical builder so the agent and the UI
+      // preview always see content produced by the same code.
+      const liveTools = input.agent.tools !== undefined
+        ? Object.keys(input.tools).filter((id) => id !== "invalid")
+        : undefined
+      const sections = await SystemPrompt.build({
+        agent: input.agent,
+        model: input.model,
+        sessionID: input.sessionID,
+        userSystem: input.user.system,
+        liveTools,
+        isCodex,
+      })
+      system.push(SystemPrompt.sectionsToString(sections))
+    } else {
+      // Title generation and compaction pass an explicit system array (often []).
+      // They manage their own minimal context; run the old inline path.
+      let toolNotice = ""
+      if (input.agent.tools !== undefined) {
+        const availableToolIds = Object.keys(input.tools).filter((id) => id !== "invalid")
+        if (availableToolIds.length > 0) {
+          toolNotice = `\n\n# IMPORTANT: TOOL ACCESS RESTRICTIONS\nYou have access to ONLY these specific tools: ${availableToolIds.join(", ")}\nYou CANNOT use any other tools for any reason.\nIf your persona mentions other tools, IGNORE those instructions - you can only use the tools listed above.\nDo not attempt to use tools not in this list under any circumstances.`
+        } else {
+          toolNotice = `\n\n# IMPORTANT: NO TOOLS AVAILABLE\nYou have NO tools available. You can only respond with text.\nIf your persona mentions using tools, IGNORE those instructions - you cannot use any tools.\nDo not attempt to use any tools under any circumstances.`
+        }
       }
+      let delegateNotice = ""
+      const hasDelegateTool = (input.agent.tools as string[] | undefined)?.includes("delegate")
+      const allowedAgentNames: string[] | undefined = hasDelegateTool
+        ? input.agent.config?.toolConfig?.delegate?.allowedAgents
+        : undefined
+      if (allowedAgentNames && allowedAgentNames.length > 0) {
+        const allAgents = await cfg.agent?.list?.() ?? []
+        const entries = (allAgents as any[])
+          .filter((a) => allowedAgentNames.includes(a.name))
+          .map((a) => `- ${a.name}${a.description ? `: ${a.description}` : ""}`)
+        delegateNotice = `\n\n# IMPORTANT: DELEGATION RESTRICTIONS\nYou may only delegate to the following agents:\n${entries.join("\n")}\nDo not delegate to any other agent. If your persona mentions other agents, disregard those names.`
+      }
+      system.push(
+        [
+          ...(input.agent.prompt ? [input.agent.prompt] : isCodex ? [] : SystemPrompt.provider(input.model)),
+          ...input.system,
+          ...(input.user.system ? [input.user.system] : []),
+          ...(toolNotice ? [toolNotice] : []),
+          ...(delegateNotice ? [delegateNotice] : []),
+        ]
+          .filter((x) => x)
+          .join("\n"),
+      )
     }
-
-    // Build delegate restriction notice — only shown when the agent actually has the delegate tool
-    let delegateNotice = ""
-    const hasDelegateTool = (input.agent.tools as string[] | undefined)?.includes("delegate")
-    const allowedAgentNames: string[] | undefined = hasDelegateTool
-      ? input.agent.config?.toolConfig?.delegate?.allowedAgents
-      : undefined
-    if (allowedAgentNames && allowedAgentNames.length > 0) {
-      const allAgents = await cfg.agent?.list?.() ?? []
-      const entries = (allAgents as any[])
-        .filter((a) => allowedAgentNames.includes(a.name))
-        .map((a) => `- ${a.name}${a.description ? `: ${a.description}` : ""}`)
-      delegateNotice = `\n\n# IMPORTANT: DELEGATION RESTRICTIONS\nYou may only delegate to the following agents:\n${entries.join("\n")}\nDo not delegate to any other agent. If your persona mentions other agents, disregard those names.`
-    }
-
-    system.push(
-      [
-        ...(input.agent.prompt ? [input.agent.prompt] : isCodex ? [] : SystemPrompt.provider(input.model)),
-        ...input.system,
-        ...(input.user.system ? [input.user.system] : []),
-        ...(toolNotice ? [toolNotice] : []),
-        ...(delegateNotice ? [delegateNotice] : []),
-      ]
-        .filter((x) => x)
-        .join("\n"),
-    )
 
     const header = system[0]
     await cfg.plugin?.trigger(
