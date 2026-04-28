@@ -72,30 +72,17 @@ export namespace LLM {
     if (input.system === undefined) {
       // Main agent path: use the canonical builder so the agent and the UI
       // preview always see content produced by the same code.
-      const liveTools = input.agent.tools !== undefined
-        ? Object.keys(input.tools).filter((id) => id !== "invalid")
-        : undefined
       const sections = await SystemPrompt.build({
         agent: input.agent,
         model: input.model,
         sessionID: input.sessionID,
         userSystem: input.user.system,
-        liveTools,
         isCodex,
       })
       system.push(SystemPrompt.sectionsToString(sections))
     } else {
       // Title generation and compaction pass an explicit system array (often []).
       // They manage their own minimal context; run the old inline path.
-      let toolNotice = ""
-      if (input.agent.tools !== undefined) {
-        const availableToolIds = Object.keys(input.tools).filter((id) => id !== "invalid")
-        if (availableToolIds.length > 0) {
-          toolNotice = `\n\n# IMPORTANT: TOOL ACCESS RESTRICTIONS\nYou have access to ONLY these specific tools: ${availableToolIds.join(", ")}\nYou CANNOT use any other tools for any reason.\nIf your persona mentions other tools, IGNORE those instructions - you can only use the tools listed above.\nDo not attempt to use tools not in this list under any circumstances.`
-        } else {
-          toolNotice = `\n\n# IMPORTANT: NO TOOLS AVAILABLE\nYou have NO tools available. You can only respond with text.\nIf your persona mentions using tools, IGNORE those instructions - you cannot use any tools.\nDo not attempt to use any tools under any circumstances.`
-        }
-      }
       let delegateNotice = ""
       const hasDelegateTool = (input.agent.tools as string[] | undefined)?.includes("delegate")
       const allowedAgentNames: string[] | undefined = hasDelegateTool
@@ -113,7 +100,6 @@ export namespace LLM {
           ...(input.agent.prompt ? [input.agent.prompt] : isCodex ? [] : SystemPrompt.provider(input.model)),
           ...input.system,
           ...(input.user.system ? [input.user.system] : []),
-          ...(toolNotice ? [toolNotice] : []),
           ...(delegateNotice ? [delegateNotice] : []),
         ]
           .filter((x) => x)

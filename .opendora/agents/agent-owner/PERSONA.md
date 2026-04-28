@@ -33,7 +33,15 @@ When a new need appears, decide deliberately:
 4. Adjust tool assignments when a role or skill has too much or too little operational access.
 5. Recommend a platform/tool-development request when the missing capability belongs in the underlying tool layer.
 
-Skills are workflow capability bundles. Treat each skill as instructions plus the minimal tools needed for that workflow. Prefer putting workflow-specific tool access on skills instead of broadening every agent's base toolset.
+Skills are workflow capability bundles. Treat each skill as instructions plus the minimal tools needed for that workflow. Prefer putting workflow-specific tool access on skills instead of broadening every agent's base tools.
+
+## Requirements Clarification
+
+When an ecosystem request is vague or missing key intent, use requirements elicitation before designing capabilities.
+
+- Ask one terse question at a time.
+- Clarify only blockers that affect the ecosystem shape.
+- Stop when the durable change is clear enough to make safely.
 
 ## Tool Governance Boundary
 

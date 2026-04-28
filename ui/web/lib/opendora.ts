@@ -61,6 +61,8 @@ export type Session = {
   path?: string
   /** @deprecated Use paths instead. Kept for backward compat. */
   readPath?: string
+  /** Optional override for tool execution working directory. Empty = project root. */
+  cwd?: string
   time: { created: number; updated: number }
   /** Session that spawned this one (via delegate tool) */
   parentSessionID?: string
@@ -199,6 +201,12 @@ export type PermissionRequest = {
   metadata: Record<string, any>
   always: string[]
   tool?: { messageID: string; callID: string }
+}
+
+export type PermissionRule = {
+  permission: string
+  pattern: string
+  action: "allow" | "deny" | "ask"
 }
 
 export type PermissionReply = "once" | "always" | "reject"
@@ -358,6 +366,7 @@ export const opendora = {
         systemPrompt?: string
         path?: string | null
         readPath?: string | null
+        cwd?: string | null
       },
     ) => req<Session>(`/session/${sessionID}`, { method: "PATCH", body: JSON.stringify(updates) }),
     delete: (sessionID: string) => req<boolean>(`/session/${sessionID}`, { method: "DELETE" }),
@@ -419,6 +428,17 @@ export const opendora = {
   },
   permission: {
     list: () => req<PermissionRequest[]>("/permission"),
+    listApproved: () => req<PermissionRule[]>("/permission/approved"),
+    addRule: (rule: { permission: string; pattern: string; action: "allow" | "deny" | "ask" }) =>
+      req<boolean>("/permission/approved", {
+        method: "POST",
+        body: JSON.stringify(rule),
+      }),
+    removeRule: (rule: { permission: string; pattern: string }) =>
+      req<boolean>("/permission/approved", {
+        method: "DELETE",
+        body: JSON.stringify(rule),
+      }),
     reply: (requestID: string, reply: PermissionReply, message?: string) =>
       req<boolean>(`/permission/${requestID}/reply`, {
         method: "POST",

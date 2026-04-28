@@ -25,7 +25,8 @@
     "skill-creator",
     "agent-experiment",
     "retro",
-    "code-exploration"
+    "code-exploration",
+    "requirements-elicitation"
   ],
   "toolConfig": {
     "reply": {

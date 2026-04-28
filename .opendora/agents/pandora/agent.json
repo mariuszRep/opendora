@@ -12,7 +12,11 @@
     "websearch",
     "webfetch",
     "question",
-    "reply"
+    "reply",
+    "skill_load"
+  ],
+  "skills": [
+    "requirements-elicitation"
   ],
   "toolConfig": {
     "delegate": {

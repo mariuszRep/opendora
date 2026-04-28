@@ -64,5 +64,75 @@ export const PermissionRoutes = lazy(() =>
         const permissions = await PermissionNext.list()
         return c.json(permissions)
       },
+    )
+    .get(
+      "/approved",
+      describeRoute({
+        summary: "List approved permissions",
+        description: "Get all approved permission rules for the current project.",
+        operationId: "permission.listApproved",
+        responses: {
+          200: {
+            description: "List of approved permissions",
+            content: {
+              "application/json": {
+                schema: resolver(PermissionNext.Ruleset),
+              },
+            },
+          },
+        },
+      }),
+      async (c) => {
+        const permissions = await PermissionNext.listApproved()
+        return c.json(permissions)
+      },
+    )
+    .post(
+      "/approved",
+      describeRoute({
+        summary: "Add permission rule",
+        description: "Add a new permission rule to the approved list.",
+        operationId: "permission.addRule",
+        responses: {
+          200: {
+            description: "Permission rule added",
+            content: {
+              "application/json": {
+                schema: resolver(z.boolean()),
+              },
+            },
+          },
+        },
+      }),
+      validator("json", PermissionNext.AddRule),
+      async (c) => {
+        const input = c.req.valid("json")
+        await PermissionNext.addRule(input)
+        return c.json(true)
+      },
+    )
+    .delete(
+      "/approved",
+      describeRoute({
+        summary: "Remove permission rule",
+        description: "Remove a permission rule from the approved list.",
+        operationId: "permission.removeRule",
+        responses: {
+          200: {
+            description: "Permission rule removed",
+            content: {
+              "application/json": {
+                schema: resolver(z.boolean()),
+              },
+            },
+          },
+        },
+      }),
+      validator("json", PermissionNext.RemoveRule),
+      async (c) => {
+        const input = c.req.valid("json")
+        await PermissionNext.removeRule(input)
+        return c.json(true)
+      },
     ),
 )

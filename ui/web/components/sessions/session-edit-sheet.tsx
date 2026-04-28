@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Loader2Icon, Trash2Icon, PlusIcon } from "lucide-react"
+import { Loader2Icon, Trash2Icon, PlusIcon, FolderOpenIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -38,6 +38,7 @@ import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import type { Session, SessionType, RetentionPolicy, Schedule } from "@/lib/opendora"
 import { opendora } from "@/lib/opendora"
 import { ScheduleDialog } from "./schedule-dialog"
+import { FolderPickerDialog } from "./folder-picker-dialog"
 import { toast } from "sonner"
 
 
@@ -67,6 +68,8 @@ export function SessionEditSheet({ session, open, onOpenChange, defaultTab = "ge
   const [ttlHours, setTtlHours] = useState("")
   const [path, setPath] = useState("")
   const [readPath, setReadPath] = useState("")
+  const [cwd, setCwd] = useState("")
+  const [folderPickerOpen, setFolderPickerOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -88,6 +91,7 @@ export function SessionEditSheet({ session, open, onOpenChange, defaultTab = "ge
       setSystemPrompt(session.systemPrompt ?? "")
       setPath(session.path ?? "")
       setReadPath(session.readPath ?? "")
+      setCwd(session.cwd ?? "")
       setAutoArchive(session.retention?.autoArchive ?? false)
       setAutoDelete(session.retention?.autoDelete ?? false)
       setMaxMessages(session.retention?.maxMessages?.toString() ?? "")
@@ -141,6 +145,7 @@ export function SessionEditSheet({ session, open, onOpenChange, defaultTab = "ge
         systemPrompt: systemPrompt !== (session.systemPrompt ?? "") ? systemPrompt : undefined,
         path: path !== (session.path ?? "") ? (path.trim() || null) : undefined,
         readPath: readPath !== (session.readPath ?? "") ? (readPath.trim() || null) : undefined,
+        cwd: cwd !== (session.cwd ?? "") ? (cwd.trim() || null) : undefined,
         retention: Object.keys(retention).length > 0 ? retention : undefined,
       })
 
@@ -260,6 +265,31 @@ export function SessionEditSheet({ session, open, onOpenChange, defaultTab = "ge
                   <Label>System Prompt</Label>
                   <Textarea value={systemPrompt} onChange={(e) => setSystemPrompt(e.target.value)} placeholder="Additional instructions prepended to agent prompts..." rows={3} />
                   <p className="text-[11px] text-muted-foreground">Boundary prompt prepended to all agent system prompts.</p>
+                </div>
+
+                {/* ── Working Directory ── */}
+                <div className="flex flex-col gap-1.5">
+                  <Label>Working Directory</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={cwd}
+                      onChange={(e) => setCwd(e.target.value)}
+                      placeholder="Default (project root)"
+                      className="font-mono text-xs"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setFolderPickerOpen(true)}
+                      title="Browse"
+                    >
+                      <FolderOpenIcon className="size-4" />
+                    </Button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Working directory for tool execution. Leave empty to use the project root.
+                  </p>
                 </div>
 
                 {/* ── Path Boundaries ── */}
@@ -392,6 +422,13 @@ export function SessionEditSheet({ session, open, onOpenChange, defaultTab = "ge
           </Tabs>
         </SheetContent>
       </Sheet>
+
+      <FolderPickerDialog
+        open={folderPickerOpen}
+        onOpenChange={setFolderPickerOpen}
+        initialPath={cwd || session?.directory || "/"}
+        onSelect={(selected) => setCwd(selected)}
+      />
 
       <ScheduleDialog
         open={scheduleDialogOpen}

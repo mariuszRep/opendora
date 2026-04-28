@@ -3,7 +3,7 @@
   "description": "General-purpose web research specialist for discovery, source verification, and concise synthesis from current web information.",
   "mode": "worker",
   "model": {
-    "modelID": "gpt-5.4",
+    "modelID": "gpt-5.5",
     "providerID": "openai-codex"
   },
   "temperature": 0.3,

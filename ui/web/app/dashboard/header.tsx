@@ -30,9 +30,11 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { MessageResponse } from "@/components/ai-elements/message"
-import { CalendarIcon, ChevronDownIcon, ScrollTextIcon, Settings2Icon } from "lucide-react"
+import { ChevronDownIcon, ClockPlusIcon, ScrollTextIcon, Settings2Icon, ShieldIcon } from "lucide-react"
 import { useEffect, useState } from "react"
-import { SessionEditSheet } from "@/components/sessions/session-edit-sheet"
+import { SessionSettingsSheet } from "@/components/sessions/session-settings-sheet"
+import { SessionSchedulesSheet } from "@/components/sessions/session-schedules-sheet"
+import { SessionPermissionsSheet } from "@/components/sessions/session-permissions-sheet"
 import { opendora } from "@/lib/opendora"
 import { cn } from "@/lib/utils"
 
@@ -54,7 +56,8 @@ export function Header() {
   const [agentOpen, setAgentOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [settingsTab, setSettingsTab] = useState<"general" | "schedules">("general")
+  const [schedulesOpen, setSchedulesOpen] = useState(false)
+  const [permissionsOpen, setPermissionsOpen] = useState(false)
   const [promptOpen, setPromptOpen] = useState(false)
   const [systemPromptSections, setSystemPromptSections] = useState<{ label: string; content: string }[]>([])
   const [hasSchedules, setHasSchedules] = useState(false)
@@ -65,10 +68,26 @@ export function Header() {
 
   useEffect(() => {
     if (!selectedSession) { setSystemPromptSections([]); return }
+    let cancelled = false
+    opendora.session.systemPrompt(selectedSession.id)
+      .then((res) => { if (!cancelled) setSystemPromptSections(res.sections) })
+      .catch(() => { if (!cancelled) setSystemPromptSections([]) })
+    return () => { cancelled = true }
+  }, [
+    selectedSession?.id,
+    selectedSession?.agentID,
+    selectedSession?.cwd,
+    selectedSession?.path,
+    selectedSession?.systemPrompt,
+  ])
+
+  useEffect(() => {
+    if (!promptOpen || !selectedSession) return
     opendora.session.systemPrompt(selectedSession.id)
       .then((res) => setSystemPromptSections(res.sections))
       .catch(() => setSystemPromptSections([]))
-  }, [selectedSession?.id])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [promptOpen])
 
   useEffect(() => {
     if (!selectedSession) { setHasSchedules(false); return }
@@ -196,17 +215,27 @@ export function Header() {
               size="icon"
               className={cn("size-8", !hasSchedules && "text-muted-foreground")}
               title="Schedules"
-              onClick={() => { setSettingsTab("schedules"); setSettingsOpen(true) }}
+              onClick={() => setSchedulesOpen(true)}
             >
-              <CalendarIcon className="size-4" />
+              <ClockPlusIcon className="size-4" />
               <span className="sr-only">Schedules</span>
             </Button>
             <Button
               variant="ghost"
               size="icon"
               className="size-8"
+              title="Permissions"
+              onClick={() => setPermissionsOpen(true)}
+            >
+              <ShieldIcon className="size-4" />
+              <span className="sr-only">Permissions</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8"
               title="Session settings"
-              onClick={() => { setSettingsTab("general"); setSettingsOpen(true) }}
+              onClick={() => setSettingsOpen(true)}
             >
               <Settings2Icon className="size-4" />
               <span className="sr-only">Session settings</span>
@@ -215,11 +244,20 @@ export function Header() {
         )}
       </header>
 
-      <SessionEditSheet
+      <SessionSettingsSheet
         session={selectedSession ?? null}
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
-        defaultTab={settingsTab}
+      />
+      <SessionSchedulesSheet
+        session={selectedSession ?? null}
+        open={schedulesOpen}
+        onOpenChange={setSchedulesOpen}
+      />
+      <SessionPermissionsSheet
+        session={selectedSession ?? null}
+        open={permissionsOpen}
+        onOpenChange={setPermissionsOpen}
       />
 
       <Dialog open={promptOpen} onOpenChange={setPromptOpen}>

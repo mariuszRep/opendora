@@ -62,6 +62,7 @@ export namespace Session {
 
   export async function effectiveDefaultPath(session: string | Info, seen = new Set<string>()): Promise<string> {
     const info = typeof session === "string" ? await get(session) : session
+    if (info.cwd) return info.cwd
     if (info.path) return info.path
     if (seen.has(info.id)) return info.directory
     seen.add(info.id)
@@ -231,6 +232,7 @@ export namespace Session {
         .optional(),
       path: z.string().optional(),
       readPath: z.string().optional(),
+      cwd: z.string().optional(),
       spawnDepth: z.number().optional(),
       parentSessionID: z.string().optional(),
       replyToSessionID: z.string().optional(),
@@ -942,6 +944,17 @@ export namespace Session {
     z.object({ sessionID: Identifier.schema("session"), readPath: z.string().nullable() }),
     async (input) => {
       await sessionManager.update(input.sessionID, { readPath: input.readPath ?? undefined })
+      const db = getConfig().db
+      const row = db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get()
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      return fromRow(row)
+    },
+  )
+
+  export const setCwd = fn(
+    z.object({ sessionID: Identifier.schema("session"), cwd: z.string().nullable() }),
+    async (input) => {
+      await sessionManager.update(input.sessionID, { cwd: input.cwd ?? undefined })
       const db = getConfig().db
       const row = db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get()
       if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })

@@ -133,6 +133,7 @@ export type SessionMeta = {
   systemPrompt?: string           // boundary prompt prepended to all agent system prompts
   path?: string                   // write boundary — hard enforced; inherited by child sessions
   readPath?: string               // read boundary — soft enforced (approval outside this); inherited by child sessions
+  cwd?: string                    // working directory override for tool execution (empty = project root)
   share?: { url: string }         // set when session is shared publicly
   compactionCount?: number        // incremented each time context is compacted
   compactingAt?: number           // set while compaction is running, cleared on completion

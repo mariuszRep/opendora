@@ -1,3 +1,3 @@
 {
-  "tools": ["delegate", "todowrite", "reply"]
+  "tools": ["skill_load", "todowrite", "read", "glob", "grep", "edit", "write", "bash", "reply"]
 }

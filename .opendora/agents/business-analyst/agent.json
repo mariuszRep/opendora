@@ -1,6 +1,6 @@
 {
-  "name": "Business Analyst",
-  "description": "Business Analyst who extracts detailed requirements through patient, one-question-at-a-time dialogue focused on functionality, pain points, and user experience.",
+  "name": "Business Analyst (Deprecated)",
+  "description": "Deprecated requirements specialist retained temporarily for compatibility. Use the requirements-elicitation skill from Product Owner, Minds, or Pandora instead.",
   "mode": "worker",
   "model": {
     "modelID": "gpt-5.4",
@@ -9,7 +9,7 @@
   "temperature": 0.3,
   "steps": 30,
   "color": "violet",
-  "hidden": false,
+  "hidden": true,
   "tools": [
     "session_search",
     "session_tree",

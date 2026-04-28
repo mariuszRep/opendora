@@ -1,13 +1,13 @@
 {
-  "name": "Engineer",
-  "description": "Implementation and testing specialist with a builder persona. Owns approved code changes, automated verification, and can selectively load exploration, planning, and review workflows when they help deliver safer work.",
+  "name": "Product Engineer",
+  "description": "Post-approval delivery owner for software work. Coordinates skill-based delivery workflows, implements approved changes, verifies results, and escalates product gaps.",
   "mode": "worker",
   "model": {
     "modelID": "minimax-m2.5-free",
     "providerID": "opencode"
   },
-  "temperature": 0.2,
-  "steps": 60,
+  "temperature": 0.25,
+  "steps": 80,
   "color": "blue",
   "hidden": false,
   "tools": [
@@ -22,10 +22,13 @@
     "skill_load"
   ],
   "skills": [
+    "project-context",
     "code-exploration",
     "architecture-analysis",
     "review-gate",
-    "requirements-readiness"
+    "requirements-readiness",
+    "project-initiation",
+    "feature-workflow"
   ],
   "toolConfig": {
     "reply": {

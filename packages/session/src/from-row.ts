@@ -32,6 +32,7 @@ export type SessionInfo = {
   retention?: RetentionPolicy
   path?: string
   readPath?: string
+  cwd?: string
   spawnDepth?: number
   parentSessionID?: string
   replyToSessionID?: string
@@ -79,6 +80,7 @@ export function fromRow(row: SessionRow): SessionInfo {
     retention: row.retention ? (JSON.parse(row.retention) as RetentionPolicy) : undefined,
     path: row.path ?? undefined,
     readPath: row.read_path ?? undefined,
+    cwd: row.cwd ?? undefined,
     spawnDepth: row.spawn_depth ?? undefined,
     parentSessionID: row.parent_session_id ?? undefined,
     replyToSessionID: row.reply_to_session_id ?? undefined,

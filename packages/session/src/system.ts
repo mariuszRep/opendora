@@ -1,3 +1,5 @@
+import fs from "fs/promises"
+import path from "path"
 import { getConfig } from "./config.ts"
 import { Session } from "./session.ts"
 import { InstructionPrompt } from "./instruction.ts"
@@ -29,59 +31,51 @@ export namespace SystemPrompt {
     return [PROMPT_ANTHROPIC_WITHOUT_TODO]
   }
 
+  async function isGitRepo(dir: string): Promise<boolean> {
+    let current = path.resolve(dir)
+    while (true) {
+      try {
+        await fs.access(path.join(current, ".git"))
+        return true
+      } catch {}
+      const parent = path.dirname(current)
+      if (parent === current) return false
+      current = parent
+    }
+  }
+
   export async function environment(model: any, sessionID?: string) {
-    const cfg = getConfig()
-    const project = cfg.instance?.project
-
-    // Use session.path (the actual working boundary) instead of daemon's cwd
-    let cwd: string
+    let session: Awaited<ReturnType<typeof Session.get>> | undefined
     if (sessionID) {
-      const session = await Session.get(sessionID).catch(() => undefined)
-      cwd = session?.path ?? await Session.effectiveDefaultPath(sessionID).catch(() => process.cwd())
-    } else {
-      cwd = process.cwd()
+      session = await Session.get(sessionID).catch(() => undefined)
     }
 
-    const sessionContext: string[] = []
-    if (sessionID) {
-      const session = await Session.get(sessionID).catch(() => undefined)
-      if (session) {
-        sessionContext.push(`<session>`)
-        sessionContext.push(`  Session ID: ${session.id}`)
-        if (session.title) sessionContext.push(`  Title: ${session.title}`)
-        if (session.sessionType) sessionContext.push(`  Type: ${session.sessionType}`)
-        if (session.sessionStatus) sessionContext.push(`  Status: ${session.sessionStatus}`)
-        if (session.agentID) sessionContext.push(`  Agent: ${session.agentID}`)
-        if (session.parentSessionID) {
-          sessionContext.push(`  Parent session: ${session.parentSessionID}`)
-        }
-        sessionContext.push(`</session>`)
-      }
-    }
-
-    return [
-      [
-        `You are powered by the model named ${model.api.id}. The exact model ID is ${model.providerID}/${model.api.id}`,
-        `Here is some useful information about the environment you are running in:`,
-        `<env>`,
-        `  Working directory: ${cwd}`,
-        `  Is directory a git repo: ${project?.vcs === "git" ? "yes" : "no"}`,
-        `  Platform: ${process.platform}`,
-        `  Today's date: ${new Date().toDateString()}`,
-        `</env>`,
-        `<directories>`,
-        `  ${
-          project?.vcs === "git" && false
-            ? await cfg.ripgrep?.tree({
-                cwd,
-                limit: 50,
-              }) ?? ""
-            : ""
-        }`,
-        `</directories>`,
-        ...(sessionContext.length ? [sessionContext.join("\n")] : []),
-      ].join("\n"),
+    const lines: string[] = [
+      `**Model:** ${model.api.id} \`${model.providerID}/${model.api.id}\``,
+      `**Date:** ${new Date().toDateString()}`,
     ]
+
+    if (session?.cwd) {
+      const git = await isGitRepo(session.cwd).catch(() => false)
+      lines.push(
+        ``,
+        `- **Working directory:** \`${session.cwd}\``,
+        `- **Platform:** ${process.platform}`,
+        `- **Git repo:** ${git ? "yes" : "no"}`,
+      )
+    }
+
+    if (session) {
+      lines.push(``, `**Session**`, ``)
+      lines.push(`- **ID:** \`${session.id}\``)
+      if (session.title) lines.push(`- **Title:** ${session.title}`)
+      if (session.sessionType || session.sessionStatus)
+        lines.push(`- **Type:** ${session.sessionType ?? "—"} · **Status:** ${session.sessionStatus ?? "—"}`)
+      if (session.agentID) lines.push(`- **Agent:** ${session.agentID}`)
+      if (session.parentSessionID) lines.push(`- **Parent:** \`${session.parentSessionID}\``)
+    }
+
+    return [lines.join("\n")]
   }
 
   /**
@@ -90,17 +84,12 @@ export namespace SystemPrompt {
    * Both the agent loop (llm.ts) and the UI preview endpoint call this.
    * The agent joins sections to a string via sectionsToString(); the UI
    * displays them as labeled cards. Content is identical in both cases.
-   *
-   * liveTools: pass the actual filtered tool IDs from the agent loop so the
-   * restriction notice reflects skill_load expansions. When omitted, the
-   * agent's static tool config is used (sufficient for UI previews).
    */
   export async function build(input: {
     agent: any
     model: any
     sessionID?: string
     userSystem?: string
-    liveTools?: string[]
     isCodex?: boolean
   }): Promise<PromptSection[]> {
     const cfg = getConfig()
@@ -120,8 +109,11 @@ export namespace SystemPrompt {
       if (part) sections.push({ label: "Environment", content: part })
     }
 
-    // 3. Instruction files (CLAUDE.md, AGENTS.md, etc.)
-    for (const part of await InstructionPrompt.system().catch(() => [] as string[])) {
+    // 3. Instruction files (AGENTS.md, CLAUDE.md) — loaded from session cwd only
+    const sessionCwd = input.sessionID
+      ? await Session.get(input.sessionID).then((s) => s.cwd).catch(() => undefined)
+      : undefined
+    for (const part of await InstructionPrompt.system(sessionCwd).catch(() => [] as string[])) {
       if (part) sections.push({ label: "Instructions", content: part })
     }
 
@@ -148,24 +140,8 @@ export namespace SystemPrompt {
       sections.push({ label: "Session Boundary Prompt", content: input.userSystem })
     }
 
-    // 6. Tool restriction — exact text that the agent sees in llm.ts
+    // 6. Delegation restriction — exact text that the agent sees in llm.ts
     const agentToolsConfig = input.agent?.tools as string[] | undefined
-    if (agentToolsConfig !== undefined) {
-      const available = (input.liveTools ?? agentToolsConfig).filter((id) => id !== "invalid")
-      if (available.length > 0) {
-        sections.push({
-          label: "Tool Access Restrictions",
-          content: `# IMPORTANT: TOOL ACCESS RESTRICTIONS\nYou have access to ONLY these specific tools: ${available.join(", ")}\nYou CANNOT use any other tools for any reason.\nIf your persona mentions other tools, IGNORE those instructions - you can only use the tools listed above.\nDo not attempt to use tools not in this list under any circumstances.`,
-        })
-      } else {
-        sections.push({
-          label: "Tool Access Restrictions",
-          content: `# IMPORTANT: NO TOOLS AVAILABLE\nYou have NO tools available. You can only respond with text.\nIf your persona mentions using tools, IGNORE those instructions - you cannot use any tools.\nDo not attempt to use any tools under any circumstances.`,
-        })
-      }
-    }
-
-    // 7. Delegation restriction — exact text that the agent sees in llm.ts
     const hasDelegateTool = agentToolsConfig?.includes("delegate")
     const allowedAgentNames: string[] | undefined = hasDelegateTool
       ? input.agent?.config?.toolConfig?.delegate?.allowedAgents

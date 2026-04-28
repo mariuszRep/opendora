@@ -186,32 +186,24 @@ export namespace InstructionPrompt {
     return paths
   }
 
-  export async function system() {
-    const cfg = getConfig()
-    const config = await cfg.config?.get() ?? {}
-    const paths = await systemPaths()
+  /**
+   * Load instruction files for the system prompt.
+   *
+   * If sessionCwd is provided, only that exact directory is searched.
+   * If no file is found there, or if sessionCwd is omitted, returns [].
+   */
+  export async function system(sessionCwd?: string): Promise<string[]> {
+    if (!sessionCwd) return []
 
-    const files = Array.from(paths).map(async (p) => {
-      const content = await readText(p).catch(() => "")
-      return content ? "Instructions from: " + p + "\n" + content : ""
-    })
-
-    const urls: string[] = []
-    if (config.instructions) {
-      for (const instruction of config.instructions) {
-        if (instruction.startsWith("https://") || instruction.startsWith("http://")) {
-          urls.push(instruction)
-        }
+    for (const file of FILES) {
+      const filepath = path.resolve(path.join(sessionCwd, file))
+      if (await fileExists(filepath)) {
+        const content = await readText(filepath).catch(() => "")
+        if (content) return [`Instructions from: ${filepath}\n${content}`]
       }
     }
-    const fetches = urls.map((url) =>
-      fetch(url, { signal: AbortSignal.timeout(5000) })
-        .then((res) => (res.ok ? res.text() : ""))
-        .catch(() => "")
-        .then((x) => (x ? "Instructions from: " + url + "\n" + x : "")),
-    )
 
-    return Promise.all([...files, ...fetches]).then((result) => result.filter(Boolean))
+    return []
   }
 
   export function loaded(messages: MessageV2.WithParts[]) {

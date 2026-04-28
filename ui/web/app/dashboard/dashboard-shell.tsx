@@ -58,6 +58,14 @@ export function DashboardShell({ children }: DashboardShellProps) {
     displayPaths = [{ path: selectedSession.directory, edit: false }]
   }
 
+  // If session has an explicit cwd, prepend it as the primary tree root
+  if (selectedSession?.cwd?.startsWith("/")) {
+    displayPaths = [
+      { path: selectedSession.cwd, edit: true },
+      ...displayPaths.filter((e) => e.path !== selectedSession!.cwd),
+    ]
+  }
+
   // Convert PathEntry[] → PathOption[] for display
   const pathOptions: PathOption[] = displayPaths.map((entry) => ({
     path: entry.path,

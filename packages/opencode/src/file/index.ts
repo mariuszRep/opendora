@@ -589,8 +589,8 @@ export namespace File {
       const fullPath = path.join(resolved, entry.name)
       const relativePath = path.relative(Instance.directory, fullPath)
       const type = entry.isDirectory() ? "directory" : "file"
-      // ignore library requires paths without leading "../" — skip check for external paths
-      const isExternal = relativePath.startsWith("..")
+      // ignore library requires non-empty relative paths — skip for paths outside or equal to project root
+      const isExternal = !relativePath || relativePath.startsWith("..")
       nodes.push({
         name: entry.name,
         path: relativePath,

@@ -185,12 +185,12 @@ export namespace PermissionNext {
           const existing = db.select().from(PermissionTable).where(eq(PermissionTable.project_id, projectID)).get()
           if (existing) {
             db.update(PermissionTable)
-              .set({ data: s.approved, updated_at: Date.now() })
+              .set({ data: s.approved, time_updated: Date.now() })
               .where(eq(PermissionTable.project_id, projectID))
               .run()
           } else {
             db.insert(PermissionTable)
-              .values({ project_id: projectID, data: s.approved, created_at: Date.now(), updated_at: Date.now() })
+              .values({ project_id: projectID, data: s.approved, time_created: Date.now(), time_updated: Date.now() })
               .run()
           }
         })
@@ -220,6 +220,62 @@ export namespace PermissionNext {
   export async function list() {
     const s = await state()
     return Object.values(s.pending).map((x) => x.info)
+  }
+
+  export async function listApproved() {
+    const s = await state()
+    return s.approved
+  }
+
+  export const AddRule = z.object({
+    permission: z.string(),
+    pattern: z.string(),
+    action: z.enum(["allow", "deny", "ask"]),
+  })
+
+  export async function addRule(input: z.infer<typeof AddRule>) {
+    const s = await state()
+    s.approved.push(input)
+
+    // Persist to database
+    const projectID = Instance.project.id
+    Database.use((db) => {
+      const existing = db.select().from(PermissionTable).where(eq(PermissionTable.project_id, projectID)).get()
+      if (existing) {
+        db.update(PermissionTable)
+          .set({ data: s.approved, time_updated: Date.now() })
+          .where(eq(PermissionTable.project_id, projectID))
+          .run()
+      } else {
+        db.insert(PermissionTable)
+          .values({ project_id: projectID, data: s.approved, time_created: Date.now(), time_updated: Date.now() })
+          .run()
+      }
+    })
+  }
+
+  export const RemoveRule = z.object({
+    permission: z.string(),
+    pattern: z.string(),
+  })
+
+  export async function removeRule(input: z.infer<typeof RemoveRule>) {
+    const s = await state()
+    s.approved = s.approved.filter(
+      (rule) => !(rule.permission === input.permission && rule.pattern === input.pattern),
+    )
+
+    // Persist to database
+    const projectID = Instance.project.id
+    Database.use((db) => {
+      const existing = db.select().from(PermissionTable).where(eq(PermissionTable.project_id, projectID)).get()
+      if (existing) {
+        db.update(PermissionTable)
+          .set({ data: s.approved, time_updated: Date.now() })
+          .where(eq(PermissionTable.project_id, projectID))
+          .run()
+      }
+    })
   }
 
   /**

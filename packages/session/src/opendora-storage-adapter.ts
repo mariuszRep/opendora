@@ -48,6 +48,7 @@ export function rowToMeta(row: SessionRow): SessionMeta {
     agentId: row.agent_id ?? undefined,
     path: row.path ?? undefined,
     readPath: row.read_path ?? undefined,
+    cwd: row.cwd ?? undefined,
     share: row.share_url ? { url: row.share_url } : undefined,
     compactionCount: row.compaction_count ?? undefined,
     inputTokens: row.input_tokens ?? undefined,
@@ -74,6 +75,7 @@ function patchToColumns(patch: Partial<SessionMeta>): Partial<typeof SessionTabl
   if (patch.agentId !== undefined) cols.agent_id = patch.agentId
   if (patch.path !== undefined) cols.path = patch.path ?? null as any
   if (patch.readPath !== undefined) cols.read_path = patch.readPath ?? null as any
+  if (patch.cwd !== undefined) cols.cwd = patch.cwd ?? null as any
   if (patch.sendPolicy !== undefined) cols.send_policy = patch.sendPolicy ? JSON.stringify(patch.sendPolicy) : null as any
   if (patch.retention !== undefined) cols.retention = patch.retention ? JSON.stringify(patch.retention) : null as any
   if ("share" in patch) cols.share_url = patch.share?.url ?? null
@@ -138,6 +140,7 @@ export class OpenDoraStorageAdapter implements StorageAdapter {
         retention: meta.retention ? JSON.stringify(meta.retention) : null,
         path: meta.path ?? null,
         read_path: meta.readPath ?? null,
+        cwd: meta.cwd ?? null,
         spawn_depth: meta.spawnDepth ?? null,
         parent_session_id: meta.parent?.sessionId ?? null,
         input_tokens: 0,

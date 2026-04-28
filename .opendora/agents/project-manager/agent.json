@@ -1,6 +1,6 @@
 {
-  "name": "Project Manager",
-  "description": "Project Manager agent specialized in orchestrating approved project initiation and feature delivery through coordinated specialist sessions",
+  "name": "Project Manager (Deprecated)",
+  "description": "Deprecated delivery orchestrator retained temporarily for compatibility. Route approved delivery work to Product Engineer instead.",
   "mode": "worker",
   "model": {
     "modelID": "gpt-5.4",
@@ -9,7 +9,7 @@
   "temperature": 0.7,
   "steps": 60,
   "color": "violet",
-  "hidden": false,
+  "hidden": true,
   "tools": [
     "session_search",
     "session_tree",

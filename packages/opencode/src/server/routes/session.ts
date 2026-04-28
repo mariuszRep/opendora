@@ -341,6 +341,7 @@ export const SessionRoutes = lazy(() =>
           systemPrompt: z.string().optional(),
           path: z.string().nullable().optional(),
           readPath: z.string().nullable().optional(),
+          cwd: z.string().nullable().optional(),
           time: z
             .object({
               archived: z.number().optional(),
@@ -376,6 +377,9 @@ export const SessionRoutes = lazy(() =>
         }
         if (updates.readPath !== undefined) {
           session = await Session.setReadPath({ sessionID, readPath: updates.readPath })
+        }
+        if (updates.cwd !== undefined) {
+          session = await Session.setCwd({ sessionID, cwd: updates.cwd })
         }
         if (updates.time?.archived !== undefined) {
           session = await Session.setArchived({ sessionID, time: updates.time.archived })

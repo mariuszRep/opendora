@@ -41,19 +41,19 @@
     },
     {
       "id": "project-manager",
-      "name": "Project Manager",
+      "name": "Project Manager (Deprecated)",
       "mode": "worker",
-      "hidden": false
+      "hidden": true
     },
     {
       "id": "business-analyst",
-      "name": "Business Analyst",
+      "name": "Business Analyst (Deprecated)",
       "mode": "worker",
-      "hidden": false
+      "hidden": true
     },
     {
       "id": "engineer",
-      "name": "Engineer",
+      "name": "Product Engineer",
       "mode": "worker",
       "hidden": false
     },
