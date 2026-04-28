@@ -1,12 +1,12 @@
 {
   "name": "question",
-  "description": "Ask the human user one or more questions and wait for their answers. This is the only tool that opens a direct channel to the user for live dialogue.\n\nUse question whenever you need direct input from the human user — regardless of whether\nyou are in a delegated session or not.\n\nUse question for:\n1. Gathering user preferences or requirements\n2. Clarifying ambiguous instructions\n3. Getting decisions on implementation choices\n4. Offering choices about direction\n\nThis applies even when you are in a delegated session with a reply_to contract. If you\nneed the user's answer to proceed, use question — not reply. reply cannot carry the\nuser's response back to you; question can.\n\nUsage notes:\n- A \"Type your own answer\" option is added automatically; don't include \"Other\" or catch-all options\n- Answers are returned as arrays of labels\n- If you recommend a specific option, make that the first option in the list and add \"(Recommended)\" at the end of the label",
+  "description": "Ask the human user for input and wait for their answer.\n\nUse question only for direct human-user dialogue: requirements, preferences, clarification, approvals, choices, or decisions that cannot be inferred safely. Do not use question to talk to another agent. If another agent must answer or act, use delegate. If you are only posting a result/status upstream without needing an answer, use reply.\n\nCORE BOUNDARY\n\n- question = direct human-user input request.\n- delegate = agent-to-agent message WITH intent to trigger the receiving agent.\n- reply = silent upstream post WITHOUT triggering action.\n\nUse question even when you are in a delegated session with a reply_to contract if you need the human user's answer to proceed. reply cannot carry the user's response back to you; question can.\n\nUSE question FOR\n\n1. Gathering user preferences or requirements.\n2. Clarifying ambiguous user instructions.\n3. Getting decisions on implementation, product, or workflow choices.\n4. Offering explicit choices about direction.\n5. Confirming destructive, irreversible, security-sensitive, or external-impact actions.\n\nDO NOT USE question FOR\n\n- Agent-to-agent questions; use delegate.\n- Returning results to a delegating session; use reply.\n- Posting status with no required answer; use reply.\n- Asking questions that can be safely answered from repository, session, or tool context.\n\nUSAGE NOTES\n\n- Ask the minimum needed; one targeted question is preferred.\n- A \"Type your own answer\" option is added automatically; do not include \"Other\" or catch-all options.\n- Answers are returned as arrays of labels.\n- If you recommend a specific option, make that the first option and add \"(Recommended)\" to its label.",
   "inputSchema": {
     "type": "object",
     "properties": {
       "questions": {
         "type": "array",
-        "description": "Questions to ask the user",
+        "description": "List of direct human-user questions to ask; keep it minimal and prefer one targeted question.",
         "items": {
           "type": "object",
           "properties": {
@@ -33,14 +33,20 @@
                     "description": "Optional description shown beneath the label"
                   }
                 },
-                "required": ["label"]
+                "required": [
+                  "label"
+                ]
               }
             }
           },
-          "required": ["question"]
+          "required": [
+            "question"
+          ]
         }
       }
     },
-    "required": ["questions"]
+    "required": [
+      "questions"
+    ]
   }
 }

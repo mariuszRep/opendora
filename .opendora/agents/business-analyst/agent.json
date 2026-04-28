@@ -1,6 +1,6 @@
 {
   "name": "Business Analyst (Deprecated)",
-  "description": "Deprecated requirements specialist retained temporarily for compatibility. Use the requirements-elicitation skill from Product Owner, Minds, or Pandora instead.",
+  "description": "Deprecated requirements specialist retained temporarily for compatibility. Use the requirements-readiness skill from Product Owner, Minds, or Pandora instead.",
   "mode": "worker",
   "model": {
     "modelID": "gpt-5.4",

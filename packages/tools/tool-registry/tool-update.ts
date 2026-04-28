@@ -72,6 +72,7 @@ export const ToolUpdateTool = Tool.define("tool_update", {
       permission: "tool_update",
       patterns: [args.name],
       always: [],
+      metadata: { name: args.name, changes: changes.length },
       explanation: `Update tool metadata for "${args.name}":\n${changes.map((c) => `  • ${c}`).join("\n")}`,
     })
 

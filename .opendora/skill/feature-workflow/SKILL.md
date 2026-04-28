@@ -66,6 +66,14 @@ Use this skill when a feature specification is already clear enough to execute.
 - Validate the feature against acceptance criteria and changed behavior.
 - Expected output: checks run, results, gaps, and release readiness.
 
+## Communication Tools
+
+- Use `reply` to report delivery status, final results, verification, blockers, or handbacks through the established return path.
+- Use `delegate` only if this workflow has access to it and another agent must act or answer; otherwise report the need back to the owner with `reply`.
+- Use `question` only if this workflow has access to it and the human user must answer; otherwise report the needed user question back to the owner with `reply`.
+- Do not use `reply` to ask the user or another agent a follow-up question.
+- Product or requirement gaps must go back to the product authority; do not resolve them inside delivery.
+
 ## Rules
 
 - Do not start from ambiguous or unapproved requirements.

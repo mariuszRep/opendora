@@ -61,6 +61,14 @@ Scripts, when present, live in the `scripts/` folder alongside this skill.
 - Use code exploration when the existing structure is unclear.
 - Use architecture analysis when foundational technical decisions are not obvious from the approved brief.
 
+## Communication Tools
+
+- Use `reply` to report foundation status, blockers, or readiness through the established return path.
+- Use `delegate` only if this workflow has access to it and another agent must act or answer; otherwise report the need back to the owner with `reply`.
+- Use `question` only if this workflow has access to it and the human user must answer; otherwise report the needed user question back to the owner with `reply`.
+- Do not use `reply` to ask the user or another agent a follow-up question.
+- Approval or requirement gaps must go back to the product authority before setup continues.
+
 ## Rules
 
 - Do not build product features during initiation unless the setup step itself requires a tiny bootstrap artifact.

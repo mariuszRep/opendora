@@ -63,11 +63,6 @@
       "mode": "worker"
     },
     {
-      "id": "browser-agent",
-      "name": "Browser Agent",
-      "mode": "worker"
-    },
-    {
       "id": "scheduler",
       "name": "Scheduler",
       "mode": "worker"

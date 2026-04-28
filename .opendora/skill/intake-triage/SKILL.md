@@ -25,6 +25,21 @@ Use this skill when a new product request arrives and you need to decide what wo
    - route a non-delivery question elsewhere
 5. State the chosen path clearly and move the work into the correct hub session.
 
+## Ownership Boundaries
+
+- Product/development work belongs to the product authority until approved for delivery.
+- Early intake may clarify enough to route, but it must not make product, code, architecture, or delivery decisions.
+- Ecosystem capability work belongs to the ecosystem steward.
+- Approved implementation belongs to the delivery owner only after the responsible authority approves it.
+
+## Communication Tools
+
+- Use `question` only for direct human-user clarification needed to classify or route the request.
+- Use `delegate` when another agent should act, answer, or continue the conversation.
+- Use `reply` only to post classification, status, or handback to an upstream session without triggering action.
+- If asking another agent a question, use `delegate`, not `reply`.
+- If asking the user a question, use `question`, not `reply`.
+
 ## Rules
 
 - Do not create a new scope before searching for related sessions.

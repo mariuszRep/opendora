@@ -9,3 +9,10 @@ Attempted to rewrite skill files with `python`, but the environment only had `py
 _Context: ses_22b755ac7fferBqfjYeUsY7L91_
 
 ---
+### 2026-04-28 15:25:00 UTC [ADVISORY]
+
+Creating a new skill directory at runtime did not make it visible to skill_list or skill_load in the active registry. Use an existing registered skill or platform skill_create/registry refresh path for live availability.
+
+_Context: ses_22b755ac7fferBqfjYeUsY7L91_
+
+---
