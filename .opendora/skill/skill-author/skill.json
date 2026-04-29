@@ -1,3 +1,15 @@
 {
-  "tools": ["read", "write", "glob"]
+  "tools": [
+    "skill_list",
+    "skill_create",
+    "skill_search",
+    "skill_install",
+    "skill_remove",
+    "read",
+    "write",
+    "edit",
+    "glob",
+    "grep",
+    "log"
+  ]
 }

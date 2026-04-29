@@ -278,6 +278,9 @@ export namespace SessionPrompt {
       return
     }
     match.abort.abort()
+    for (const cb of match.callbacks) {
+      cb.reject(new Error("Session cancelled"))
+    }
     delete s[sessionID]
     SessionStatus.set(sessionID, { type: "idle" })
     return

@@ -1,6 +1,6 @@
 {
   "name": "session_update",
-  "description": "Update an existing session's metadata including title, agent assignment, parent session, and status. This tool allows modification of session properties for organization and workflow management. Use this to rename sessions, reassign agents, reorganize session hierarchies, or change session status. Note: Message content cannot be edited through this tool; use session_get to view messages instead.",
+  "description": "Update an existing session's metadata when you need to rename a session, reassign its agent, change its parent session, or change its status. The tool mutates only session metadata and returns the updated session plus changed fields; if requested values already match current values, no mutation occurs. The target session, target agent, and target parent session must exist; use session inspection/search tools for reading messages or finding session IDs.",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -22,10 +22,16 @@
       },
       "status": {
         "type": "string",
-        "enum": ["active", "archived", "closed"],
+        "enum": [
+          "active",
+          "archived",
+          "closed"
+        ],
         "description": "New status for the session"
       }
     },
-    "required": ["session_id"]
+    "required": [
+      "session_id"
+    ]
   }
 }

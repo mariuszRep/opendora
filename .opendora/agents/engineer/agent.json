@@ -27,7 +27,8 @@
     "architecture-analysis",
     "review-gate",
     "project-initiation",
-    "feature-workflow"
+    "feature-workflow",
+    "playwright-mcp-responsibility"
   ],
   "toolConfig": {
     "reply": {

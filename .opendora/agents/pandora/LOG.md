@@ -44,3 +44,17 @@ Pandora's persona still says to send a brief confirmation after delegating, whil
 _Context: exp-pandora-20260328-2_
 
 ---
+### 2026-04-29 09:31:34 UTC [BUG]
+
+Pandora routed an ambiguous product/capability request ('add Playwright MCP to OpenDora') directly to Minds as ecosystem work without clarifying whether the user wanted product planning. User later objected that Product Owner should have owned it.
+
+_Context: ses_2276fcb31ffe0i0MqM8neaecwT_
+
+---
+### 2026-04-29 10:00:17 UTC [BUG]
+
+During routing experiment exp-pandora-20260429-1, a natural baseline probe caused delegated work to implement Playwright MCP config in .opendora/opendora.json despite the prompt being intended as routing/planning. This shows Pandora can route/allow execution too early for ambiguous OpenDora MCP requests.
+
+_Context: exp-pandora-20260429-1_
+
+---

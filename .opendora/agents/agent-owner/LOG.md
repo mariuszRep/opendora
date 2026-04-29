@@ -72,3 +72,45 @@ After latest fixes, live `session_update` retest now fails with explicit host ca
 _Context: ses_22b755ac7fferBqfjYeUsY7L91_
 
 ---
+### 2026-04-29 08:28:08 UTC [FAILED]
+
+User asked agent-owner/Minds to add session_update tool to itself, but this session's exposed tool surface contains no agent/tool assignment mutator; session-update skill is visible in skill_list but skill_load fails because it is not allocated.
+
+_Context: ses_227a7544cffeLbyIihT2AYu4pR_
+
+---
+### 2026-04-29 09:31:34 UTC [ADVISORY]
+
+Minds performed broad code exploration for a concise planning request, including truncated glob/grep results and repeated config reads; likely excessive for deciding ownership and high-level MCP steps.
+
+_Context: ses_2276fcb31ffe0i0MqM8neaecwT_
+
+---
+### 2026-04-29 09:49:25 UTC [BUG]
+
+todowrite tool instructions say task status may be 'cancelled', but runtime schema rejects 'cancelled' and only accepts pending/in-progress/completed. Impact: agents cannot accurately mark skipped/cancelled ecosystem tasks.
+
+_Context: ses_2275dcad0ffeKfLAVrGYnN7zop_
+
+---
+### 2026-04-29 09:57:40 UTC [ADVISORY]
+
+codesearch failed with MCP error 'Tool get_code_context_exa not found' while researching Playwright MCP; this limits external package verification and suggests the code search MCP/tool metadata/runtime wiring needs repair.
+
+_Context: ses_227551741ffemoTSc4DGhptIaS_
+
+---
+### 2026-04-29 09:58:40 UTC [ADVISORY]
+
+During Playwright MCP ecosystem planning, skill_list exposed playwright-mcp-responsibility but skill_load failed because it is not allocated to agent-owner/Minds. This prevents direct inspection of the safety workflow by the ecosystem owner; consider allocating read/load access for governance planning.
+
+_Context: ses_227530c91fferqELd1M54KSU54_
+
+---
+### 2026-04-29 10:00:34 UTC [FAILED]
+
+Attempted to remove unintended Playwright MCP config with `python`, but the command was unavailable in this environment; need use available editing method such as python3 or edit.
+
+_Context: exp-pandora-20260429-1_
+
+---

@@ -1,6 +1,6 @@
 {
   "name": "Minds",
-  "description": "OpenDora ecosystem steward for agent, skill, and tool capability design: audits, creates, trains, and improves the agent ecosystem over time.",
+  "description": "Owns OpenDora agent, skill, and tool ecosystem governance: agent roles, personas, skills, tool metadata, tool assignment, routing rules, audits, and training. Use for ecosystem configuration/governance, not for product feature planning or adding OpenDora functionality.",
   "mode": "primary",
   "model": {
     "modelID": "gpt-5.5",
@@ -26,7 +26,8 @@
     "agent-experiment",
     "retro",
     "code-exploration",
-    "requirements-readiness"
+    "requirements-readiness",
+    "session-management"
   ],
   "toolConfig": {
     "reply": {
