@@ -80,5 +80,15 @@
       "apiKey": "53054823-32d0-42d0-adb1-199f2cfc9e2d",
       "useApiKey": false
     }
+  },
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": [
+        "node",
+        "packages/opencode/node_modules/@playwright/mcp/cli.js",
+        "--headless"
+      ]
+    }
   }
 }

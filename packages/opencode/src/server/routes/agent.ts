@@ -4,6 +4,7 @@ import z from "zod"
 import { Agent } from "../../agent"
 import { AgentStorage } from "@opendora/agent"
 import { ToolRegistry } from "../../tool/registry"
+import { MCP } from "../../mcp"
 import { lazy } from "../../util/lazy"
 import { errors } from "../error"
 import { Session } from "@opendora/session/session"
@@ -60,26 +61,65 @@ export const AgentRoutes = lazy(() =>
       },
     )
 
-    // GET /agent/tools — list all available tool ids
+    // GET /agent/tools — list all available tool ids with source info
     .get(
       "/tools",
       describeRoute({
         summary: "List available tools",
-        description: "Get a list of all tool IDs available in the runtime.",
+        description: "Get a list of all tool IDs available in the runtime, including MCP tools.",
         operationId: "agent.tools.list",
         responses: {
           200: {
-            description: "Tool IDs",
+            description: "Tool IDs with source",
             content: {
               "application/json": {
-                schema: resolver(z.array(z.string())),
+                schema: resolver(
+                  z.array(
+                    z.object({
+                      id: z.string(),
+                      source: z.enum(["internal", "mcp"]),
+                      mcpServer: z.string().optional(),
+                    }),
+                  ),
+                ),
               },
             },
           },
         },
       }),
       async (c) => {
-        return c.json(await ToolRegistry.ids())
+        const internalTools = await ToolRegistry.ids()
+        const mcpTools = await MCP.tools()
+        
+        // Convert internal tools
+        const result: Array<{ id: string; source: "internal" } | { id: string; source: "mcp"; mcpServer: string }> = internalTools.map((id) => ({
+          id,
+          source: "internal" as const,
+        }))
+        
+        // Add MCP tools with their server name
+        // MCP.tools() keys are "{sanitizedClientName}_{sanitizedToolName}" — we can't reliably
+        // re-parse the server name from the key because both parts may contain underscores.
+        // Instead, look up the server name from the MCP clients snapshot.
+        const mcpClients = await MCP.clients()
+        for (const [toolId] of Object.entries(mcpTools)) {
+          // Find which client owns this tool by checking the prefix
+          let mcpServer = "mcp"
+          for (const clientName of Object.keys(mcpClients)) {
+            const sanitized = clientName.replace(/[^a-zA-Z0-9_-]/g, "_")
+            if (toolId.startsWith(sanitized + "_")) {
+              mcpServer = clientName
+              break
+            }
+          }
+          result.push({
+            id: toolId,
+            source: "mcp" as const,
+            mcpServer,
+          })
+        }
+        
+        return c.json(result)
       },
     )
 

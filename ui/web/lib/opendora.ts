@@ -275,6 +275,12 @@ export type AgentConfig = {
   sandbox?: boolean
 }
 
+export type AgentTool = {
+  id: string
+  source: "internal" | "mcp"
+  mcpServer?: string
+}
+
 /** What the backend returns from create / update */
 export type AgentEntry = {
   id: string
@@ -479,7 +485,7 @@ export const opendora = {
       req<boolean>(`/agent/${id}/injection`, { method: "PUT", body: JSON.stringify({ injection }) }),
     generate: (input: { description: string; model?: { providerID: string; modelID: string } }) =>
       req<GeneratedAgent>("/agent/generate", { method: "POST", body: JSON.stringify(input) }),
-    tools: () => req<string[]>("/agent/tools"),
+    tools: () => req<AgentTool[]>("/agent/tools"),
   },
   voice: {
     stt: async (audioBlob: Blob): Promise<{ text: string }> => {

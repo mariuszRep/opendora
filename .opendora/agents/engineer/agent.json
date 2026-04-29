@@ -7,7 +7,7 @@
     "providerID": "opencode"
   },
   "temperature": 0.25,
-  "steps": 80,
+  "steps": 120,
   "color": "blue",
   "hidden": false,
   "tools": [
@@ -19,7 +19,8 @@
     "bash",
     "todowrite",
     "reply",
-    "skill_load"
+    "skill_load",
+    "delegate"
   ],
   "skills": [
     "project-context",
@@ -28,7 +29,9 @@
     "review-gate",
     "project-initiation",
     "feature-workflow",
-    "playwright-mcp-responsibility"
+    "playwright-mcp-responsibility",
+    "session-management",
+    "requirements-readiness"
   ],
   "toolConfig": {
     "reply": {

@@ -114,3 +114,10 @@ Attempted to remove unintended Playwright MCP config with `python`, but the comm
 _Context: exp-pandora-20260429-1_
 
 ---
+### 2026-04-29 13:40:41 UTC [ADVISORY]
+
+Capability surface mismatch: skill_list shows 17 skills (including feature-workflow/project-initiation/intake-triage), but skill_load for this agent allows only 9 baseline skills. This can mislead ecosystem audits and planning because discoverable skills are not necessarily allocatable to current agent.
+
+_Context: ses_2268a3a1bfferwRDdGY0D183nR_
+
+---
