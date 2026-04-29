@@ -13,7 +13,9 @@
     "webfetch",
     "question",
     "reply",
-    "skill_load"
+    "skill_load",
+    "session_search",
+    "session_update"
   ],
   "skills": [
     "requirements-readiness"
