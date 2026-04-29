@@ -7,7 +7,7 @@ import { Config } from "@opendora/core/config/config"
 const API_CONFIG = {
   BASE_URL: "https://mcp.exa.ai",
   ENDPOINTS: {
-    CONTEXT: "/mcp",
+    CONTEXT: "/mcp?tools=get_code_context_exa",
   },
 } as const
 
@@ -93,7 +93,7 @@ export const CodeSearchTool = Tool.define("codesearch", async () => {
         }
 
         if (apiKey) {
-          headers["Authorization"] = `Bearer ${apiKey}`
+          headers["x-api-key"] = apiKey
         }
 
         const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CONTEXT}`, {
