@@ -320,6 +320,8 @@ export const SessionRoutes = lazy(() =>
         z.object({
           title: z.string().optional(),
           agentID: z.string().nullable().optional(),
+          parentSessionID: z.string().optional(),
+          sessionStatus: z.enum(["active", "archived", "closed"]).optional(),
           sessionType: z.enum(["role", "scope", "worker", "scratchpad"]).optional(),
           retention: z
             .object({
@@ -359,6 +361,12 @@ export const SessionRoutes = lazy(() =>
         }
         if (updates.agentID !== undefined) {
           session = await Session.setAgentID({ sessionID, agentID: updates.agentID ?? "" })
+        }
+        if (updates.parentSessionID !== undefined) {
+          session = await Session.setParentSessionID({ sessionID, parentSessionID: updates.parentSessionID })
+        }
+        if (updates.sessionStatus !== undefined) {
+          session = await Session.setSessionStatus({ sessionID, status: updates.sessionStatus })
         }
         if (updates.sessionType !== undefined) {
           session = await Session.setSessionType({ sessionID, sessionType: updates.sessionType })

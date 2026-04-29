@@ -6,7 +6,7 @@
     "properties": {
       "questions": {
         "type": "array",
-        "description": "List of direct human-user questions to ask; keep it minimal and prefer one targeted question.",
+        "description": "List of direct human-user questions to ask; keep it minimal, prefer one targeted question, and never use this parameter for agent-to-agent messages.",
         "items": {
           "type": "object",
           "properties": {

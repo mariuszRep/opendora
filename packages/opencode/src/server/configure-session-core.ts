@@ -371,6 +371,21 @@ export function configureSessionCore() {
       updateMessage: Session.updateMessage,
       updatePart: Session.updatePart,
       messages: Session.messages,
+      get: Session.get,
+      list: Session.list,
+      children: Session.children,
+      setTitle(sessionId: string, title: string) {
+        return Session.setTitle({ sessionID: sessionId, title })
+      },
+      setAgentID(sessionId: string, agentId: string) {
+        return Session.setAgentID({ sessionID: sessionId, agentID: agentId })
+      },
+      setParentSessionID(input: { sessionID: string; parentSessionID: string }) {
+        return Session.setParentSessionID(input)
+      },
+      setSessionStatus(sessionId: string, status: string) {
+        return Session.setSessionStatus({ sessionID: sessionId, status: status as any })
+      },
     },
     question: {
       ask: Question.ask,

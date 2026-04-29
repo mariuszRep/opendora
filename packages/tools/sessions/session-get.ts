@@ -48,7 +48,7 @@ export const SessionGetTool = Tool.define("session_get", {
         directory: session.directory || null,
         created: session.time?.created ?? null,
         updated: session.time?.updated ?? null,
-        parentId: session.parentID || null,
+        parentId: session.parentSessionID || null,
         messageCount: session.messageCount ?? null,
       }
 

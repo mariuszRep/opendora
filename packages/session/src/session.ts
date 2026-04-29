@@ -523,6 +523,55 @@ export namespace Session {
     },
   )
 
+  /**
+   * Check for parent cycles by walking the ancestor chain.
+   * Returns true if setting newParentID as parent of sessionID would create a cycle.
+   */
+  async function wouldCreateCycle(sessionID: string, newParentID: string, visited = new Set<string>()): Promise<boolean> {
+    if (sessionID === newParentID) return true
+    if (visited.has(newParentID)) return false
+    visited.add(newParentID)
+
+    const row = getConfig().db.select().from(SessionTable).where(eq(SessionTable.id, newParentID)).get()
+    if (!row || !row.parent_session_id) return false
+
+    return wouldCreateCycle(sessionID, row.parent_session_id, visited)
+  }
+
+  export const setParentSessionID = fn(
+    z.object({
+      sessionID: Identifier.schema("session"),
+      parentSessionID: z.string(),
+    }),
+    async (input) => {
+      // Check parent session exists
+      const parentRow = getConfig().db.select().from(SessionTable).where(eq(SessionTable.id, input.parentSessionID)).get()
+      if (!parentRow) throw new NotFoundError({ message: `Parent session not found: ${input.parentSessionID}` })
+
+      // Check self-parenting
+      if (input.sessionID === input.parentSessionID) {
+        throw new Error("Session cannot be its own parent")
+      }
+
+      // Check for cycles
+      if (await wouldCreateCycle(input.sessionID, input.parentSessionID)) {
+        throw new Error("Setting this parent would create a parent cycle")
+      }
+
+      const db = getConfig().db
+      const row = db
+        .update(SessionTable)
+        .set({ parent_session_id: input.parentSessionID, time_updated: Date.now() })
+        .where(eq(SessionTable.id, input.sessionID))
+        .returning()
+        .get()
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      const info = fromRow(row)
+      getConfig().bus?.publish(Event.Updated, { info })
+      return info
+    },
+  )
+
   export const setArchived = fn(
     z.object({
       sessionID: Identifier.schema("session"),
