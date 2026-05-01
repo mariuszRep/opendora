@@ -1,9 +1,9 @@
 ---
-name: feature-workflow
+name: project-delivery
 description: Orchestrate delivery of a ready-to-build feature through skill-driven phases, implementation, validation, and reporting. Load this for approved feature work that needs more than a direct small code change.
 ---
 
-# Feature Workflow
+# Project Delivery
 
 Use this skill when a feature specification is already clear enough to execute.
 
@@ -23,11 +23,12 @@ Use this skill when a feature specification is already clear enough to execute.
 ## Phases
 
 1. Confirm the input is execution-ready. If it is vague, unapproved, or missing acceptance criteria, return the gap to the product authority.
-2. Decide which phases are needed. Typical phases are exploration, architecture, implementation, review, and testing.
-3. Load the skill that matches the next phase before doing substantial phase work.
-4. Execute one phase at a time, preserving the findings needed by later phases.
-5. Validate each phase output before moving forward.
-6. Report progress at decision points and final delivery when all gates pass.
+2. Verify delivery execution will occur in a `delivery` child under the relevant project workstream; document exception rationale if work must occur outside the project tree.
+3. Decide which phases are needed. Typical phases are exploration, architecture, implementation, review, and testing.
+4. Load the skill that matches the next phase before doing substantial phase work.
+5. Execute one phase at a time, preserving the findings needed by later phases.
+6. Validate each phase output before moving forward.
+7. Report progress at decision points and final delivery when all gates pass.
 
 ## Skill-First Coordination
 

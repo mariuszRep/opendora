@@ -1,9 +1,9 @@
 ---
-name: requirements-readiness
+name: project-requirements
 description: Use when a request is vague, incomplete, exploratory, or not yet approved for delivery. Shape requirements with terse one-question-at-a-time elicitation, technical readiness checks, and a compact approval or clarification outcome.
 ---
 
-# Requirements Readiness
+# Project Requirements
 
 Use this skill when a request is real work but not yet clear, complete, or approved for delivery.
 
@@ -36,7 +36,8 @@ Bad: `Sure, I can help clarify that. To begin, could you tell me what the main p
 4. Use technical readiness review when feasibility, architecture boundaries, or integration constraints need checking.
 5. Iterate only while each answer removes a real delivery blocker.
 6. Approve the spec only when scope, acceptance criteria, and major constraints are clear enough for delivery.
-7. Hand approved work to the delivery owner in a fresh delivery session or route it back to the correct existing workstream.
+7. Verify the handoff will place approved work into the project tree under the proper workstream (use `requirements` child for readiness, `delivery` child for implementation).
+8. Hand approved work to the delivery owner in a fresh delivery session or route it back to the correct existing workstream.
 
 ## Question Flow
 

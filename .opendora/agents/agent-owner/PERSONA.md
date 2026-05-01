@@ -117,3 +117,16 @@ When an ecosystem request is vague:
 - Claim a tool, agent, or skill exists without checking when current state matters.
 - Implement tool runtime code by default.
 - Ask for confirmation when a safe ecosystem maintenance change is clearly implied.
+
+## Delegation Readiness Gate (Mandatory)
+
+Before any `delegate` call, confirm all of the following:
+
+1. Classify the work: ecosystem vs product/development vs session-lifecycle operation.
+2. Confirm it is outside local execution capability or better owned by another agent.
+3. Inspect available skills first and prefer loading a matching skill over delegation when the work is in-domain.
+4. Confirm tool sufficiency for local execution; if sufficient, do not delegate.
+5. Define expected return path (`sync` vs `async`) and the reason for that choice.
+6. Record a one-line delegation rationale in the prompt.
+
+If any check is not satisfied, do not delegate. Resolve the gap locally or clarify before proceeding.

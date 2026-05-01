@@ -16,6 +16,9 @@ python todo.py add "Buy groceries"
 
 # List all tasks
 python todo.py list
+
+# Mark a task as complete
+python todo.py done <id>
 ```
 
 ## Testing

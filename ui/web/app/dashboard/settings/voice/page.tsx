@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { useVoiceSettings, formatHotkey, type HotkeyConfig } from "@/hooks/use-voice-settings"
 import { Volume2Icon, MicIcon, RotateCcwIcon, KeyboardIcon } from "lucide-react"
 import { toast } from "sonner"
+import { opendora } from "@/lib/opendora"
 
 export default function VoiceSettingsPage() {
   const router = useRouter()
@@ -15,6 +16,25 @@ export default function VoiceSettingsPage() {
   const [isRecordingHotkey, setIsRecordingHotkey] = useState(false)
   const [tempHotkey, setTempHotkey] = useState<HotkeyConfig | null>(null)
   const [recordingKeys, setRecordingKeys] = useState<string[]>([])
+  const [googleApiKey, setGoogleApiKey] = useState("")
+  const [savingGoogleKey, setSavingGoogleKey] = useState(false)
+
+  const needsGemini = settings.stt.provider === "google-gemini" || settings.tts.provider === "google-gemini"
+  const needsOpenAI = settings.stt.provider === "openai-whisper" || settings.tts.provider === "openai"
+
+  const saveGoogleApiKey = async () => {
+    if (!googleApiKey.trim()) return
+    setSavingGoogleKey(true)
+    try {
+      await opendora.auth.set("google", { type: "api", key: googleApiKey.trim() })
+      toast.success("Google API key saved")
+      setGoogleApiKey("")
+    } catch {
+      toast.error("Failed to save Google API key")
+    } finally {
+      setSavingGoogleKey(false)
+    }
+  }
 
   // Handle hotkey recording
   useEffect(() => {
@@ -193,21 +213,24 @@ export default function VoiceSettingsPage() {
                       updateSettings({
                         stt: {
                           ...settings.stt,
-                          provider: e.target.value as "openai-whisper" | "browser-native" | "disabled",
+                          provider: e.target.value as "openai-whisper" | "google-gemini" | "browser-native" | "disabled",
                         },
                       })
                     }
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <option value="openai-whisper">OpenAI Whisper (Recommended)</option>
-                    <option value="browser-native">Browser Native (Chrome/Edge only)</option>
+                    <option value="browser-native">Browser Native (Chrome/Edge only, free)</option>
+                    <option value="openai-whisper">OpenAI Whisper</option>
+                    <option value="google-gemini">Google Gemini</option>
                     <option value="disabled">Disabled</option>
                   </select>
                   <p className="text-xs text-muted-foreground">
-                    {settings.stt.provider === "openai-whisper" &&
-                      "Uses OpenAI's Whisper model for high-quality transcription. Requires OPENAI_API_KEY."}
                     {settings.stt.provider === "browser-native" &&
-                      "Uses browser's built-in speech recognition (Chrome/Edge only). No API key required."}
+                      "Uses browser's built-in speech recognition. Free — no API key required. Chrome/Edge only."}
+                    {settings.stt.provider === "openai-whisper" &&
+                      "Uses OpenAI's Whisper model for high-quality transcription. Requires an OpenAI API key."}
+                    {settings.stt.provider === "google-gemini" &&
+                      "Uses Google Gemini for transcription. Requires a Google API key."}
                     {settings.stt.provider === "disabled" && "Voice input will be disabled."}
                   </p>
                 </div>
@@ -254,18 +277,21 @@ export default function VoiceSettingsPage() {
                       updateSettings({
                         tts: {
                           ...settings.tts,
-                          provider: e.target.value as "openai" | "disabled",
+                          provider: e.target.value as "openai" | "google-gemini" | "disabled",
                         },
                       })
                     }
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <option value="openai">OpenAI TTS</option>
+                    <option value="google-gemini">Google Gemini TTS</option>
                     <option value="disabled">Disabled</option>
                   </select>
                   <p className="text-xs text-muted-foreground">
                     {settings.tts.provider === "openai" &&
-                      "Uses OpenAI's text-to-speech API. Requires OPENAI_API_KEY."}
+                      "Uses OpenAI's text-to-speech API. Requires an OpenAI API key."}
+                    {settings.tts.provider === "google-gemini" &&
+                      "Uses Google Gemini TTS. Requires a Google API key."}
                     {settings.tts.provider === "disabled" &&
                       "Text-to-speech will be disabled. Listen buttons will not appear."}
                   </p>
@@ -492,35 +518,64 @@ export default function VoiceSettingsPage() {
               </CardContent>
             </Card>
 
-            {/* Info Card */}
-            <Card className="bg-muted/50 border-orange-500/50">
-              <CardHeader>
-                <CardTitle className="text-base">⚠️ Important: API Key Required</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground space-y-3">
-                <p className="font-medium text-foreground">
-                  Voice features require an OpenAI API key, NOT OAuth Codex tokens.
-                </p>
-                <div className="space-y-2">
-                  <p className="font-semibold text-foreground">Setup Steps:</p>
+            {/* Gemini API Key Setup */}
+            {needsGemini && (
+              <Card className="border-blue-500/50">
+                <CardHeader>
+                  <CardTitle className="text-base">Google API Key</CardTitle>
+                  <CardDescription>Required for Google Gemini STT and TTS</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Get a free API key at <strong>aistudio.google.com</strong> → Get API key. No billing required for the free tier.
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="password"
+                      placeholder="AIza..."
+                      value={googleApiKey}
+                      onChange={(e) => setGoogleApiKey(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && saveGoogleApiKey()}
+                      className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                    <Button onClick={saveGoogleApiKey} disabled={!googleApiKey.trim() || savingGoogleKey} size="sm">
+                      {savingGoogleKey ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* OpenAI API Key Setup */}
+            {needsOpenAI && (
+              <Card className="bg-muted/50 border-orange-500/50">
+                <CardHeader>
+                  <CardTitle className="text-base">⚠️ OpenAI API Key Required</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground space-y-3">
+                  <p className="font-medium text-foreground">
+                    OpenAI voice features require an API key with billing — OAuth Codex tokens don't work here.
+                  </p>
                   <ol className="list-decimal list-inside space-y-1 ml-2">
                     <li>Go to <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">Settings → Providers</span></li>
-                    <li>Find <strong>OpenAI</strong> provider</li>
-                    <li>Click <strong>"Manually enter API Key"</strong></li>
-                    <li>Paste your OpenAI API key (starts with sk-...)</li>
+                    <li>Find <strong>OpenAI</strong> → <strong>"Manually enter API Key"</strong></li>
+                    <li>Paste your key (starts with sk-...)</li>
                   </ol>
-                </div>
-                <p className="text-xs italic">
-                  Note: If you're using OAuth Codex for chat, adding an API key will replace it.
-                  You can switch back to OAuth later via the same menu.
-                </p>
-                <p className="text-xs">
-                  Voice input will appear as a microphone button in the chat interface.
-                  Hover over AI responses to see the "Listen" button for text-to-speech.
-                  Use Push-to-Talk to quickly record and send messages with voice replies.
-                </p>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Browser native info */}
+            {settings.stt.provider === "browser-native" && (
+              <Card className="border-green-500/50">
+                <CardHeader>
+                  <CardTitle className="text-base">✓ No API Key Needed</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground">
+                  Browser-native uses Chrome/Edge's built-in speech recognition. It's free and works offline. Push-to-talk also uses the browser API directly — no backend calls.
+                </CardContent>
+              </Card>
+            )}
           </div>
       </div>
     </SettingsPageLayout>

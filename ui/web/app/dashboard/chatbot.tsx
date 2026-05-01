@@ -562,11 +562,11 @@ export const Chatbot = () => {
     return () => clearTimeout(timer)
   }, [status, messages, autoVoiceNextMessage, isTtsEnabled, playingId, speak])
 
-  // Handler for STT with OpenAI Whisper
   const handleAudioRecorded = useCallback(async (audioBlob: Blob) => {
     try {
       const { opendora } = await import("@/lib/opendora")
-      const result = await opendora.voice.stt(audioBlob)
+      const provider = settings.stt.provider === "google-gemini" ? "google-gemini" : "openai-whisper"
+      const result = await opendora.voice.stt(audioBlob, { provider })
       return result.text || ""
     } catch (error) {
       console.error("STT error:", error)
@@ -578,7 +578,7 @@ export const Chatbot = () => {
       }
       return ""
     }
-  }, [])
+  }, [settings.stt.provider])
 
   return (
     <div className="relative flex size-full flex-col divide-y overflow-hidden">
@@ -1303,7 +1303,7 @@ export const Chatbot = () => {
                   forceMode={
                     settings.stt.provider === "disabled"
                       ? "none"
-                      : settings.stt.provider === "openai-whisper"
+                      : settings.stt.provider === "openai-whisper" || settings.stt.provider === "google-gemini"
                         ? "media-recorder"
                         : undefined
                   }

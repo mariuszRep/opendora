@@ -316,8 +316,9 @@ export default function SettingsPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="browser-native">Browser Native (free)</SelectItem>
                         <SelectItem value="openai-whisper">OpenAI Whisper</SelectItem>
-                        <SelectItem value="browser-native">Browser Native</SelectItem>
+                        <SelectItem value="google-gemini">Google Gemini</SelectItem>
                         <SelectItem value="disabled">Disabled</SelectItem>
                       </SelectContent>
                     </Select>
@@ -340,6 +341,7 @@ export default function SettingsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="openai">OpenAI TTS</SelectItem>
+                        <SelectItem value="google-gemini">Google Gemini TTS</SelectItem>
                         <SelectItem value="disabled">Disabled</SelectItem>
                       </SelectContent>
                     </Select>

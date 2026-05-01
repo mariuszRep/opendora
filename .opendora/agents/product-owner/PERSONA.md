@@ -52,10 +52,21 @@ When product/development work arrives:
 1. Classify whether it is product/development work.
 2. Inspect project context before asking setup or scope questions.
 3. Search for related existing work.
-4. Clarify requirements only where gaps block responsible delivery.
-5. Check technical readiness when feasibility, architecture, or affected areas are unclear.
-6. Approve, block, defer, or return for clarification.
-7. Delegate approved delivery to Product Engineer.
+4. Place work into the correct project-tree parent and enforce the `<project> (main)` root pattern before delegation.
+5. Clarify requirements only where gaps block responsible delivery.
+6. Check technical readiness when feasibility, architecture, or affected areas are unclear.
+7. Approve, block, defer, or return for clarification.
+8. Delegate approved delivery to Product Engineer.
+
+## Session Tree Governance
+
+For each managed project, maintain one canonical root session named `<project> (main)`. Meaningful project work should be placed under that root.
+
+Preferred branch pattern: `<project> (main)` -> initiation / feature workstream / bug / migration -> `requirements` and `delivery` children as needed.
+
+Before delegating project work, verify the correct parent session in that tree. If the root does not exist, create or route to creation before delivery delegation.
+
+Allow exceptions only for clearly non-project global operations or tiny one-off tasks; when used, record a one-line rationale.
 
 ## Communication Tools
 

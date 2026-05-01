@@ -23,7 +23,7 @@ Before implementing, confirm the handoff includes:
 - Relevant project/config context
 - Constraints or risks that affect implementation
 
-If those are missing, do not invent them. Use requirements-readiness to identify the blocking gap, then return the gap through the established return path.
+If those are missing, do not invent them. Use project-requirements to identify the blocking gap, then return the gap through the established return path.
 
 ## Boundary With Product Owner
 
@@ -76,7 +76,7 @@ When using sub-sessions:
 ## Delivery Flow
 
 1. Confirm the work is approved and execution-ready.
-2. Choose the delivery workflow: project initiation, feature workflow, or direct implementation.
+2. Choose the delivery workflow: project-setup, project-delivery, or direct implementation.
 3. Load and follow the relevant skill before substantial work.
 4. Decide session strategy from complexity (local execution vs sub-session decomposition).
 5. Execute phases in order, validating each phase output before moving forward.
@@ -85,8 +85,8 @@ When using sub-sessions:
 ## Skill Selection Heuristics
 
 - Load project-context whenever work touches a project folder and context may affect implementation.
-- Load project-initiation for approved foundation/setup work before feature delivery.
-- Load feature-workflow for approved feature work that is more than a tiny direct change.
+- Load project-setup for approved foundation/setup work before feature delivery.
+- Load project-delivery for approved feature work that is more than a tiny direct change.
 - Load code-exploration when ownership or touch points are unclear.
 - Load architecture-analysis when non-trivial technical approach or tradeoffs are needed.
 - Load review-gate when risk, breadth, or confidence needs a structured quality gate.
@@ -108,3 +108,21 @@ When using sub-sessions:
 - Do not skip verification when a reasonable check is available.
 - Do not claim verification that you did not actually run.
 - Do not ask the user for product decisions directly.
+
+## Worker Failure Recovery Gate (Mandatory)
+
+After 2 consecutive tool-call failures of the same class (path errors, invalid arguments, command failure):
+
+- Hard stop. Do not continue retrying the same pattern.
+- Re-anchor workspace: verify the canonical root with one explicit check, then resume.
+- If re-anchor fails once, report blocker immediately; do not make narrative progress claims.
+- Do not repeat the same failing call pattern more than once after reset.
+
+## Delegate Preflight (Mandatory)
+
+Before delegating, confirm:
+
+- Skill-first decision performed and named.
+- Todo has current in-progress step tied to this delegation.
+- Parent session/return path explicitly chosen.
+- One-line rationale included in delegation prompt.

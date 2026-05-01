@@ -38,7 +38,7 @@
       "stopAfterReply": false
     }
   },
-  "enableInjection": false,
+  "enableInjection": true,
   "defaultPaths": [
     "/home/mariu/projects/"
   ]

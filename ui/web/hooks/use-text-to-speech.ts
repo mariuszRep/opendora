@@ -47,9 +47,12 @@ export function useTextToSpeech() {
         const { opendora } = await import("@/lib/opendora")
         const blob = await opendora.voice.tts({
           text,
+          provider: settings.tts.provider === "google-gemini" ? "google-gemini" : "openai",
           voice: settings.tts.voice,
           model: settings.tts.openaiModel,
           speed: settings.tts.speed,
+          geminiVoice: settings.tts.geminiVoice,
+          geminiModel: settings.tts.geminiModel,
         })
         const url = URL.createObjectURL(blob)
         const audio = new Audio(url)

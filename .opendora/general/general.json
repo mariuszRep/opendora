@@ -2,11 +2,11 @@
   "theme": "system",
   "voice": {
     "stt": {
-      "provider": "openai-whisper",
+      "provider": "browser-native",
       "openaiModel": "whisper-1"
     },
     "tts": {
-      "provider": "openai",
+      "provider": "disabled",
       "openaiModel": "tts-1",
       "voice": "shimmer",
       "speed": 1

@@ -4,6 +4,11 @@
       "id": 1,
       "description": "Learn OpenDora",
       "done": true
+    },
+    {
+      "id": 2,
+      "description": "Test task for verification",
+      "done": true
     }
   ]
 }

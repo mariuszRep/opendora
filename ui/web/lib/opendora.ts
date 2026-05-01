@@ -488,9 +488,10 @@ export const opendora = {
     tools: () => req<AgentTool[]>("/agent/tools"),
   },
   voice: {
-    stt: async (audioBlob: Blob): Promise<{ text: string }> => {
+    stt: async (audioBlob: Blob, options?: { provider?: "openai-whisper" | "google-gemini" }): Promise<{ text: string }> => {
       const formData = new FormData()
       formData.append("audio", audioBlob)
+      if (options?.provider) formData.append("provider", options.provider)
       const res = await fetch(`${OPENDORA_URL}/voice/stt`, {
         method: "POST",
         body: formData,
@@ -503,9 +504,12 @@ export const opendora = {
     },
     tts: async (input: {
       text: string
+      provider?: "openai" | "google-gemini"
       voice?: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer"
       model?: "tts-1" | "tts-1-hd"
       speed?: number
+      geminiVoice?: string
+      geminiModel?: string
     }): Promise<Blob> => {
       const res = await fetch(`${OPENDORA_URL}/voice/tts`, {
         method: "POST",
@@ -554,8 +558,8 @@ export const opendora = {
       req<{
         theme?: string
         voice?: {
-          stt: { provider: string; openaiModel?: string }
-          tts: { provider: string; openaiModel?: string; voice?: string; speed?: number }
+          stt: { provider: string; openaiModel?: string; geminiModel?: string }
+          tts: { provider: string; openaiModel?: string; voice?: string; speed?: number; geminiVoice?: string; geminiModel?: string }
           pushToTalk: {
             enabled: boolean
             hotkey: { key: string; ctrlKey: boolean; shiftKey: boolean; altKey: boolean; metaKey: boolean } | null
@@ -565,8 +569,8 @@ export const opendora = {
     update: (patch: {
       theme?: string
       voice?: {
-        stt?: { provider?: string; openaiModel?: string }
-        tts?: { provider?: string; openaiModel?: string; voice?: string; speed?: number }
+        stt?: { provider?: string; openaiModel?: string; geminiModel?: string }
+        tts?: { provider?: string; openaiModel?: string; voice?: string; speed?: number; geminiVoice?: string; geminiModel?: string }
         pushToTalk?: {
           enabled?: boolean
           hotkey?: { key: string; ctrlKey: boolean; shiftKey: boolean; altKey: boolean; metaKey: boolean } | null

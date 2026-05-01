@@ -5,14 +5,17 @@ import { opendora } from "@/lib/opendora"
 
 export interface VoiceSettings {
   stt: {
-    provider: "openai-whisper" | "browser-native" | "disabled"
+    provider: "openai-whisper" | "google-gemini" | "browser-native" | "disabled"
     openaiModel?: "whisper-1"
+    geminiModel?: string
   }
   tts: {
-    provider: "openai" | "disabled"
+    provider: "openai" | "google-gemini" | "disabled"
     openaiModel?: "tts-1" | "tts-1-hd"
     voice?: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer"
     speed?: number
+    geminiVoice?: string
+    geminiModel?: string
   }
   pushToTalk: {
     enabled: boolean
