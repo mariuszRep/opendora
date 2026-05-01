@@ -7,6 +7,11 @@
       "message": {
         "type": "string",
         "description": "One-way result, status, answer, or handback text to post silently to the resolved upstream/parent session; must not ask for user or agent input."
+      },
+      "data": {
+        "type": "object",
+        "description": "Optional structured JSON payload to accompany the message. Appended as a <result_data> block so the receiving agent can extract it programmatically. Use when the delegating agent specified a result_schema.",
+        "additionalProperties": true
       }
     },
     "required": [

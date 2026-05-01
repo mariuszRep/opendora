@@ -36,7 +36,21 @@
       },
       "reply_to": {
         "type": "string",
-        "description": "Session ID where the target agent should silently post results/status with reply; omit only for synchronous blocking delegation."
+        "description": "Session ID where the target agent should silently post results/status with reply; required when mode is 'async'."
+      },
+      "mode": {
+        "type": "string",
+        "enum": ["sync", "async"],
+        "description": "Delegation mode. 'sync' blocks until the agent replies inline. 'async' fires without blocking; the downstream agent posts results via reply to reply_to. Inferred from reply_to if omitted: async when reply_to is set, sync when not."
+      },
+      "result_schema": {
+        "type": "object",
+        "description": "JSON Schema object describing the expected structure of the result. For sync delegations the result is parsed as JSON and validated. For async delegations the schema is injected as a hidden instruction so the downstream agent knows what format to reply with.",
+        "additionalProperties": true
+      },
+      "intercepting": {
+        "type": "boolean",
+        "description": "Set to true to explicitly opt in to intercepting the upstream return path when your session has an upstream replyToSessionID and you are intentionally routing reply_to to your own session. Without this flag such routing throws a contract violation error."
       }
     },
     "required": [
