@@ -105,9 +105,10 @@ export const SpeechInput = ({
 }: SpeechInputProps) => {
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [mode] = useState<SpeechInputMode>(
-    forceMode ?? detectSpeechInputMode
-  );
+  // Detect once on mount (avoids SSR window access on every render)
+  const [detectedMode] = useState<SpeechInputMode>(detectSpeechInputMode);
+  // Derive from prop so mode updates when forceMode changes after async settings load
+  const mode = forceMode ?? detectedMode;
   const [isRecognitionReady, setIsRecognitionReady] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);

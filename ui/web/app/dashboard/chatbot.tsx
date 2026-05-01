@@ -1297,6 +1297,7 @@ export const Chatbot = () => {
                   </PromptInputActionMenuContent>
                 </PromptInputActionMenu>
                 <SpeechInput
+                  key={settings.stt.provider}
                   className="shrink-0"
                   onTranscriptionChange={(t) => setText((prev) => (prev ? `${prev} ${t}` : t))}
                   onAudioRecorded={handleAudioRecorded}
