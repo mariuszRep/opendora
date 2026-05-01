@@ -20,6 +20,9 @@
     "skill_list"
   ],
   "skills": [
-    "ai-news-digest"
+    "ai-news-digest",
+    "playwright-mcp-responsibility",
+    "playwright-browser",
+    "suno-auth-exploration"
   ]
 }

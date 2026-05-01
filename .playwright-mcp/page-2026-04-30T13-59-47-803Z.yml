@@ -1,0 +1,1865 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - link "Suno Logo" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img "Suno Logo" [ref=e7]
+      - button "Collapse sidebar" [ref=e13] [cursor=pointer]:
+        - img [ref=e15]
+      - button "Profile menu button" [ref=e21] [cursor=pointer]:
+        - generic [ref=e23]:
+          - img "mariusz85" [ref=e27]
+          - generic [ref=e28]:
+            - paragraph [ref=e29]: mariusz85
+            - paragraph [ref=e30]: 2030 credits
+          - img [ref=e31]
+      - link "Upgrade to Premier" [ref=e35] [cursor=pointer]:
+        - /url: /account?source=sideNav
+        - generic [ref=e36]: Upgrade to Premier
+      - generic [ref=e37]:
+        - link "Home" [ref=e38] [cursor=pointer]:
+          - /url: /discover
+          - generic [ref=e39]:
+            - img [ref=e40]
+            - generic [ref=e43]: Home
+        - link "Explore" [ref=e44] [cursor=pointer]:
+          - /url: /explore
+          - generic [ref=e45]:
+            - img [ref=e46]
+            - generic [ref=e49]: Explore
+        - link "Create" [ref=e50] [cursor=pointer]:
+          - /url: /create
+          - generic [ref=e51]:
+            - img [ref=e52]
+            - generic [ref=e56]: Create
+        - link "Studio" [ref=e57] [cursor=pointer]:
+          - /url: /studio
+          - generic [ref=e58]:
+            - img [ref=e59]
+            - generic [ref=e62]: Studio
+        - link "Library" [ref=e63] [cursor=pointer]:
+          - /url: /me
+          - generic [ref=e64]:
+            - img [ref=e65]
+            - generic [ref=e69]: Library
+        - generic [ref=e70]:
+          - link "Hooks" [ref=e71] [cursor=pointer]:
+            - /url: /hooks
+            - generic [ref=e72]:
+              - img [ref=e73]
+              - generic [ref=e78]: Hooks
+          - link "Create" [ref=e79] [cursor=pointer]:
+            - /url: /hooks/create
+            - generic [ref=e80]:
+              - img [ref=e81]
+              - text: Create
+        - link "Notifications 1" [ref=e4099] [cursor=pointer]:
+          - /url: /notifications
+          - generic [ref=e85]:
+            - img [ref=e86]
+            - generic [ref=e89]: Notifications
+            - generic [ref=e4101]: "1"
+        - generic:
+          - generic:
+            - generic:
+              - generic: Notifications
+              - generic: Activity
+              - button:
+                - img
+            - generic:
+              - generic: Last 7 Days
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@mario1982vrc
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@mario1982vrc
+                          - text: Lavanda Grex Polaris
+                        - text: "commented: 🌹❤️‍🔥🌹❤️‍🔥🌹❤️‍🔥🌅🌅🌅"
+                      - paragraph: 3 days ago
+                  - generic:
+                    - link:
+                      - /url: /hook/efdb7fa3-4021-4a95-b3e2-d23789fe3f06?show_comments=true
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@mario1982vrc
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@mario1982vrc
+                          - text: Lavanda Grex Polaris
+                        - text: liked your Hook
+                      - paragraph: 3 days ago
+                  - generic:
+                    - link:
+                      - /url: /hook/efdb7fa3-4021-4a95-b3e2-d23789fe3f06
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@darkgranz176
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@darkgranz176
+                          - text: ⛧ 𝔇𝔞𝔯𝔨 𝔊𝔯𝔞𝔫𝔷 ⛧
+                        - text: liked your video cover in the Hooks feed
+                      - paragraph: 3 days ago
+                  - generic:
+                    - link:
+                      - /url: /hook/c12396e4-0912-4a47-bf66-1c3fa750c4d5
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - link:
+                          - /url: /@sr71a
+                          - img
+                          - img
+                        - link:
+                          - /url: /@cybershrapnel
+                          - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@cybershrapnel
+                          - text: cybershrapnel (NanoCheeZe MEQUAVIS)
+                        - text: and
+                        - link:
+                          - /url: /@sr71a
+                          - text: Ceni
+                        - text: liked your song 'Can’t Let You Go (Amapiano Remix)'
+                      - paragraph: 5 days ago
+                  - generic:
+                    - link:
+                      - /url: /song/7828eb89-c365-4cea-b569-4fd0afc15fe6
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@infinitespace
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@infinitespace
+                          - text: Mark Ellis
+                        - text: "commented: 👍Great"
+                      - paragraph: 5 days ago
+                  - generic:
+                    - link:
+                      - /url: /song/7cea8a15-c2c1-4969-975a-3344aaec847e?show_comments=true
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@infinitespace
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@infinitespace
+                          - text: Mark Ellis
+                        - text: followed you
+                      - paragraph: 5 days ago
+                  - generic:
+                    - button:
+                      - img
+                      - generic: Follow
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@inna1517
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@inna1517
+                          - text: SUN
+                        - text: liked your Hook
+                      - paragraph: 7 days ago
+                  - generic:
+                    - link:
+                      - /url: /hook/efdb7fa3-4021-4a95-b3e2-d23789fe3f06
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - link:
+                          - /url: /@manicviolin0685
+                          - img
+                          - img
+                        - link:
+                          - /url: /@collectedresolution2712
+                          - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@collectedresolution2712
+                          - text: Didzy Chris
+                        - text: and
+                        - link:
+                          - /url: /@manicviolin0685
+                          - text: Trancys
+                        - text: liked your video cover in the Hooks feed
+                      - paragraph: 1 week ago
+                  - generic:
+                    - link:
+                      - /url: /hook/c12396e4-0912-4a47-bf66-1c3fa750c4d5
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - link:
+                          - /url: /@143nuhjsazinabac
+                          - img
+                          - img
+                        - link:
+                          - /url: /@alexs50plus
+                          - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@alexs50plus
+                          - text: DJ Alessandro 50+
+                        - text: and
+                        - link:
+                          - /url: /@143nuhjsazinabac
+                          - text: Nuhj
+                        - text: liked your Hook
+                      - paragraph: 1 week ago
+                  - generic:
+                    - link:
+                      - /url: /hook/efdb7fa3-4021-4a95-b3e2-d23789fe3f06
+                      - img
+              - generic: Last 30 Days
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@lucimarlucimarpereiredadilva
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@lucimarlucimarpereiredadilva
+                          - text: lucimarlucimarpereiredadilva
+                        - text: followed you
+                      - paragraph: 1 week ago
+                  - generic:
+                    - button:
+                      - img
+                      - generic: Follow
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@conway0701
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@conway0701
+                          - text: CptConway
+                        - text: followed you
+                      - paragraph: 1 week ago
+                  - generic:
+                    - button:
+                      - img
+                      - generic: Follow
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - link:
+                          - /url: /@alexs50plus
+                          - img
+                          - img
+                        - link:
+                          - /url: /@algera
+                          - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@algera
+                          - text: GALINA V
+                        - text: and
+                        - link:
+                          - /url: /@alexs50plus
+                          - text: DJ Alessandro 50+
+                        - text: liked your song 'Can’t Let You Go (Progressive House Remix)'
+                      - paragraph: 1 week ago
+                  - generic:
+                    - link:
+                      - /url: /song/ce873e35-b11b-49fc-9004-b53ef1f2be42
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@algera
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@algera
+                          - text: GALINA V
+                        - text: liked your song 'Can’t Let You Go (Amapiano Remix)'
+                      - paragraph: 1 week ago
+                  - generic:
+                    - link:
+                      - /url: /song/ec5fad4d-49b1-4f2e-90ae-3783f94963ea
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@algera
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@algera
+                          - text: GALINA V
+                        - text: liked your song 'Can’t Let You Go (DnB Remix)'
+                      - paragraph: 1 week ago
+                  - generic:
+                    - link:
+                      - /url: /song/97daba77-74e1-45d4-9522-c3e6e9777d9a
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@sequenciafx
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@sequenciafx
+                          - text: sequenciafx
+                        - text: liked your song 'Can’t Let You Go (RNB vs House Club Remix)'
+                      - paragraph: 1 week ago
+                  - generic:
+                    - link:
+                      - /url: /song/6b604baf-3065-4bb6-97e1-754c2e5fcc60
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@algera
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@algera
+                          - text: GALINA V
+                        - text: liked your song 'Can’t Let You Go (RNB vs House Club Remix)'
+                      - paragraph: 1 week ago
+                  - generic:
+                    - link:
+                      - /url: /song/6b604baf-3065-4bb6-97e1-754c2e5fcc60
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@trisha1mn
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@trisha1mn
+                          - text: Trisha
+                        - text: liked your song 'Can’t Let You Go (Progressive House Remix)'
+                      - paragraph: 1 week ago
+                  - generic:
+                    - link:
+                      - /url: /song/ce873e35-b11b-49fc-9004-b53ef1f2be42
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@trisha1mn
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@trisha1mn
+                          - text: Trisha
+                        - text: liked your song 'Can’t Let You Go (Techno Mix)'
+                      - paragraph: 1 week ago
+                  - generic:
+                    - link:
+                      - /url: /song/326313e3-5548-4a46-a8ea-819f78afce27
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@jypproduction
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@jypproduction
+                          - text: Jypproduction
+                        - text: followed you
+                      - paragraph: 2 weeks ago
+                  - generic:
+                    - button:
+                      - img
+                      - generic: Follow
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@fuzzycow2
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@fuzzycow2
+                          - text: FUZZYISCOOKIN
+                        - text: liked your song 'MRS - Something Real (Techno Remix)'
+                      - paragraph: 2 weeks ago
+                  - generic:
+                    - link:
+                      - /url: /song/274f7461-d057-4d27-8cc2-f8f918a065e4
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@seachi
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@seachi
+                          - text: Seachi
+                        - text: liked your song 'MRS - Something Real'
+                      - paragraph: 2 weeks ago
+                  - generic:
+                    - link:
+                      - /url: /song/efd1a2c4-c798-47aa-98e1-2202641c3c3a
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@seachi
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@seachi
+                          - text: Seachi
+                        - text: liked your song 'MRS - Something Real'
+                      - paragraph: 2 weeks ago
+                  - generic:
+                    - link:
+                      - /url: /song/59bd15ce-ba1f-4c4b-b836-c3bad7b51083
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@sequenciafx
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@sequenciafx
+                          - text: sequenciafx
+                        - text: liked your song 'Stay Anyway'
+                      - paragraph: 2 weeks ago
+                  - generic:
+                    - link:
+                      - /url: /song/b5fc7fcb-a4d5-488f-b8ba-9f08ee6f69f6
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@sequenciafx
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@sequenciafx
+                          - text: sequenciafx
+                        - text: liked your song 'MRS - Not Done Yet'
+                      - paragraph: 2 weeks ago
+                  - generic:
+                    - link:
+                      - /url: /song/aa262d9b-af6e-4ef3-a582-f4a7d51508b3
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@sequenciafx
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@sequenciafx
+                          - text: sequenciafx
+                        - text: liked your song 'Evie - Numb (DnB Remix)'
+                      - paragraph: 2 weeks ago
+                  - generic:
+                    - link:
+                      - /url: /song/a7bc273d-ceeb-4689-b393-898574e69dc0
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@sequenciafx
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@sequenciafx
+                          - text: sequenciafx
+                        - text: liked your song 'Evie - Numb (Electronica Remix)'
+                      - paragraph: 2 weeks ago
+                  - generic:
+                    - link:
+                      - /url: /song/21a95994-4ab8-4712-aca3-eebf33f4de33
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@valettadragon
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@valettadragon
+                          - text: Valetta Dragon
+                        - text: liked your song 'I Survived'
+                      - paragraph: 2 weeks ago
+                  - generic:
+                    - link:
+                      - /url: /song/85bc467f-481b-4f39-abef-b799f23fe185
+                      - img
+      - generic [ref=e91]:
+        - link "Labs" [ref=e92] [cursor=pointer]:
+          - /url: /labs
+          - generic [ref=e93]:
+            - img [ref=e94]
+            - generic [ref=e96]: Labs
+        - button "Terms & Policies" [ref=e97] [cursor=pointer]:
+          - generic [ref=e98]:
+            - img [ref=e99]
+            - generic [ref=e102]: Terms & Policies
+        - button "More" [ref=e103] [cursor=pointer]:
+          - generic [ref=e104]:
+            - img [ref=e105]
+            - generic [ref=e108]: More
+    - generic [ref=e109]:
+      - generic [ref=e2077]:
+        - generic [ref=e2079]:
+          - generic [ref=e2080]:
+            - heading "Library" [level=1] [ref=e2081]
+            - generic [ref=e2082]:
+              - button "Audio" [ref=e2084] [cursor=pointer]:
+                - generic [ref=e2085]:
+                  - img [ref=e2086]
+                  - text: Audio
+              - button [ref=e2089] [cursor=pointer]:
+                - img [ref=e2091]
+          - generic [ref=e2095]:
+            - link "Songs" [ref=e2096] [cursor=pointer]:
+              - /url: /me
+              - text: Songs
+            - link "Playlists" [ref=e2098] [cursor=pointer]:
+              - /url: /me/playlists
+            - link "Workspaces" [ref=e2099] [cursor=pointer]:
+              - /url: /me/workspaces
+            - link "Studio Projects" [ref=e2100] [cursor=pointer]:
+              - /url: /me/studio-projects
+            - link "Voices" [ref=e2101] [cursor=pointer]:
+              - /url: /me/personas
+            - link "Cover Art" [ref=e2102] [cursor=pointer]:
+              - /url: /me/cover-art
+            - link "Hooks" [ref=e2103] [cursor=pointer]:
+              - /url: /me/hooks
+            - link "Liked Hooks" [ref=e2104] [cursor=pointer]:
+              - /url: /me/liked-hooks
+            - link "History" [ref=e2105] [cursor=pointer]:
+              - /url: /me/history
+          - generic [ref=e2107]:
+            - generic [ref=e2108]:
+              - generic [ref=e2109]:
+                - img [ref=e2110]
+                - textbox "Search" [ref=e2113]
+              - button "Filters (2)" [ref=e2115] [cursor=pointer]:
+                - generic [ref=e2116]:
+                  - img [ref=e2117]
+                  - text: Filters (2)
+                  - img [ref=e2120]
+              - button "Newest" [ref=e2124] [cursor=pointer]:
+                - generic [ref=e2125]:
+                  - img [ref=e2126]
+                  - text: Newest
+                  - img [ref=e2129]
+              - button "Liked" [ref=e2133] [cursor=pointer]:
+                - generic [ref=e2134]: Liked
+              - button "Public" [ref=e2136] [cursor=pointer]:
+                - generic [ref=e2137]: Public
+              - button "Uploads" [ref=e2139] [cursor=pointer]:
+                - generic [ref=e2140]: Uploads
+            - generic [ref=e2142]:
+              - rowgroup [ref=e2144]:
+                - group "Hold Me Like This (Afro Amapiano Festival Mix)" [ref=e2147]:
+                  - generic [ref=e2148]:
+                    - button "Select clip" [ref=e2151] [cursor=pointer]:
+                      - img [ref=e2153]
+                    - button "Play Hold Me Like This (Afro Amapiano Festival Mix)" [ref=e2156] [cursor=pointer]:
+                      - img "Hold Me Like This (Afro Amapiano Festival Mix) artwork" [ref=e2157]
+                      - img [ref=e2159]
+                      - generic: 3:46
+                    - generic [ref=e2162]:
+                      - generic [ref=e2163]:
+                        - generic [ref=e2164]:
+                          - link "Hold Me Like This (Afro Amapiano Festival Mix)" [ref=e2166] [cursor=pointer]:
+                            - /url: /song/5958e2f6-99c9-4682-a7f0-b2269ad5be64
+                          - button "Edit title" [ref=e3941] [cursor=pointer]:
+                            - img [ref=e3942]
+                        - generic [ref=e2169]: v5.5
+                        - generic [ref=e2170]: Cover
+                      - generic [ref=e2171]: "Afro-house and Amapiano fusion; high-energy festival vibe with rolling log-drum bass and syncopated afro percussion; tempo pushed to driving mid-120s; bright major chords with bittersweet topline; arrangement: atmospheric pad and filtered piano intro → percussive groove build with shakers and congas → vocal-led verse over deep log-drum pattern → tension-lift pre with rising synth swells and crowd-ready risers → explosive chorus drop with punchy kick, wide log-drum stabs, metallic plucks and chanting ad-libs → extended drum- and bass-focused dance section → second verse and pre with call-and-response vocal phrases → bigger second drop with layered synth brass and festival-style uplifters → stripped drum-only break with clap patterns and vocal chops → final peak drop and chant-outro; drums: thumping four-on-the-floor kick, crisp snares, rimshots, afro shakers, congas and tom fills; bass: bouncy Amapiano log-drum patterns, warm sub reinforcement; instruments: detuned piano stabs, marimba"
+                      - generic [ref=e2173]:
+                        - button "Play \"Hold Me Like This (Afro Amapiano Festival Mix)\"" [ref=e2174] [cursor=pointer]:
+                          - generic [ref=e2175]:
+                            - img [ref=e2176]
+                            - generic [ref=e2179]: "2"
+                        - button "Like \"Hold Me Like This (Afro Amapiano Festival Mix)\"" [ref=e2180] [cursor=pointer]:
+                          - img [ref=e2182]
+                        - generic [ref=e2185]:
+                          - button "Dislike \"Hold Me Like This (Afro Amapiano Festival Mix)\"" [ref=e2186] [cursor=pointer]:
+                            - img [ref=e2188]
+                          - button "Comment on \"Hold Me Like This (Afro Amapiano Festival Mix)\"" [ref=e2191] [cursor=pointer]:
+                            - img [ref=e2193]
+                        - button "Share \"Hold Me Like This (Afro Amapiano Festival Mix)\"" [ref=e2196] [cursor=pointer]:
+                          - img [ref=e2198]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e2201]:
+                    - button "Remix/Edit clip" [ref=e2203] [cursor=pointer]:
+                      - generic [ref=e2204]:
+                        - text: Remix/Edit
+                        - img [ref=e2205]
+                    - button "More options" [expanded] [active] [ref=e2209] [cursor=pointer]:
+                      - img [ref=e2211]
+                - group "Hold Me Like This (Afro Amapiano Festival Mix)" [ref=e2216]:
+                  - generic [ref=e2217]:
+                    - button "Select clip" [ref=e2220] [cursor=pointer]:
+                      - img [ref=e2222]
+                    - button "Play Hold Me Like This (Afro Amapiano Festival Mix)" [ref=e2225] [cursor=pointer]:
+                      - img "Hold Me Like This (Afro Amapiano Festival Mix) artwork" [ref=e2226]
+                      - img [ref=e2228]
+                      - generic: 3:48
+                    - generic [ref=e2231]:
+                      - generic [ref=e2232]:
+                        - generic [ref=e2233]:
+                          - link "Hold Me Like This (Afro Amapiano Festival Mix)" [ref=e2235] [cursor=pointer]:
+                            - /url: /song/8747a59f-de91-475b-a6e1-6e7cd287d974
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e2238]: v5.5
+                        - generic [ref=e2239]: Cover
+                      - generic [ref=e2240]: "Afro-house and Amapiano fusion; high-energy festival vibe with rolling log-drum bass and syncopated afro percussion; tempo pushed to driving mid-120s; bright major chords with bittersweet topline; arrangement: atmospheric pad and filtered piano intro → percussive groove build with shakers and congas → vocal-led verse over deep log-drum pattern → tension-lift pre with rising synth swells and crowd-ready risers → explosive chorus drop with punchy kick, wide log-drum stabs, metallic plucks and chanting ad-libs → extended drum- and bass-focused dance section → second verse and pre with call-and-response vocal phrases → bigger second drop with layered synth brass and festival-style uplifters → stripped drum-only break with clap patterns and vocal chops → final peak drop and chant-outro; drums: thumping four-on-the-floor kick, crisp snares, rimshots, afro shakers, congas and tom fills; bass: bouncy Amapiano log-drum patterns, warm sub reinforcement; instruments: detuned piano stabs, marimba"
+                      - generic [ref=e2242]:
+                        - button "Play \"Hold Me Like This (Afro Amapiano Festival Mix)\"" [ref=e2243] [cursor=pointer]:
+                          - generic [ref=e2244]:
+                            - img [ref=e2245]
+                            - generic [ref=e2248]: "2"
+                        - button "Like \"Hold Me Like This (Afro Amapiano Festival Mix)\"" [ref=e2249] [cursor=pointer]:
+                          - img [ref=e2251]
+                        - generic [ref=e2254]:
+                          - button "Dislike \"Hold Me Like This (Afro Amapiano Festival Mix)\"" [ref=e2255] [cursor=pointer]:
+                            - img [ref=e2257]
+                          - button "Comment on \"Hold Me Like This (Afro Amapiano Festival Mix)\"" [ref=e2260] [cursor=pointer]:
+                            - img [ref=e2262]
+                        - button "Share \"Hold Me Like This (Afro Amapiano Festival Mix)\"" [ref=e2265] [cursor=pointer]:
+                          - img [ref=e2267]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e2270]:
+                    - button "Remix/Edit clip" [ref=e2272] [cursor=pointer]:
+                      - generic [ref=e2273]:
+                        - text: Remix/Edit
+                        - img [ref=e2274]
+                    - button "More options" [ref=e2278] [cursor=pointer]:
+                      - img [ref=e2280]
+                - group "Hold Me Like This (Remix)" [ref=e2285]:
+                  - generic [ref=e2286]:
+                    - button "Select clip" [ref=e2289] [cursor=pointer]:
+                      - img [ref=e2291]
+                    - button "Play Hold Me Like This (Remix)" [ref=e2294] [cursor=pointer]:
+                      - img "Hold Me Like This (Remix) artwork" [ref=e2295]
+                      - img [ref=e2297]
+                      - generic: 3:47
+                    - generic [ref=e2300]:
+                      - generic [ref=e2301]:
+                        - generic [ref=e2302]:
+                          - link "Hold Me Like This (Remix)" [ref=e2304] [cursor=pointer]:
+                            - /url: /song/7680fa94-5b43-4dbc-881a-df51d3bde643
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e2307]: v5.5
+                        - generic [ref=e2308]: Cover
+                      - generic [ref=e2309]: Afro-house Amapiano, spinnin' records, fire, festival, energy
+                      - generic [ref=e2311]:
+                        - button "Play \"Hold Me Like This (Remix)\"" [ref=e2312] [cursor=pointer]:
+                          - generic [ref=e2313]:
+                            - img [ref=e2314]
+                            - generic [ref=e2317]: "2"
+                        - button "Like \"Hold Me Like This (Remix)\"" [ref=e2318] [cursor=pointer]:
+                          - img [ref=e2320]
+                        - generic [ref=e2323]:
+                          - button "Dislike \"Hold Me Like This (Remix)\"" [ref=e2324] [cursor=pointer]:
+                            - img [ref=e2326]
+                          - button "Comment on \"Hold Me Like This (Remix)\"" [ref=e2329] [cursor=pointer]:
+                            - img [ref=e2331]
+                        - button "Share \"Hold Me Like This (Remix)\"" [ref=e2334] [cursor=pointer]:
+                          - img [ref=e2336]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e2339]:
+                    - button "Remix/Edit clip" [ref=e2341] [cursor=pointer]:
+                      - generic [ref=e2342]:
+                        - text: Remix/Edit
+                        - img [ref=e2343]
+                    - button "More options" [ref=e2347] [cursor=pointer]:
+                      - img [ref=e2349]
+                - group "Hold Me Like This (Remix)" [ref=e2354]:
+                  - generic [ref=e2355]:
+                    - button "Select clip" [ref=e2358] [cursor=pointer]:
+                      - img [ref=e2360]
+                    - button "Play Hold Me Like This (Remix)" [ref=e2363] [cursor=pointer]:
+                      - img "Hold Me Like This (Remix) artwork" [ref=e2364]
+                      - img [ref=e2366]
+                      - generic: 3:59
+                    - generic [ref=e2369]:
+                      - generic [ref=e2370]:
+                        - generic [ref=e2371]:
+                          - link "Hold Me Like This (Remix)" [ref=e2373] [cursor=pointer]:
+                            - /url: /song/2c7dd7cc-1604-4341-b984-974823e96fbd
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e2376]: v5.5
+                        - generic [ref=e2377]: Cover
+                      - generic [ref=e2378]: Afro-house Amapiano, spinnin' records, fire, festival, energy
+                      - generic [ref=e2380]:
+                        - button "Play \"Hold Me Like This (Remix)\"" [ref=e2381] [cursor=pointer]:
+                          - generic [ref=e2382]:
+                            - img [ref=e2383]
+                            - generic [ref=e2386]: "3"
+                        - button "Like \"Hold Me Like This (Remix)\"" [ref=e2387] [cursor=pointer]:
+                          - generic [ref=e2388]:
+                            - img [ref=e2389]
+                            - generic [ref=e2392]: "1"
+                        - generic [ref=e2393]:
+                          - button "Dislike \"Hold Me Like This (Remix)\"" [ref=e2394] [cursor=pointer]:
+                            - img [ref=e2396]
+                          - button "Comment on \"Hold Me Like This (Remix)\"" [ref=e2399] [cursor=pointer]:
+                            - img [ref=e2401]
+                        - button "Share \"Hold Me Like This (Remix)\"" [ref=e2404] [cursor=pointer]:
+                          - img [ref=e2406]
+                        - button "Publish clip" [ref=e2410] [cursor=pointer]:
+                          - generic [ref=e2411]: Publish
+                  - generic [ref=e2412]:
+                    - button "Remix/Edit clip" [ref=e2414] [cursor=pointer]:
+                      - generic [ref=e2415]:
+                        - text: Remix/Edit
+                        - img [ref=e2416]
+                    - button "More options" [ref=e2420] [cursor=pointer]:
+                      - img [ref=e2422]
+                - group "Hold Me Like This (Remix)" [ref=e2427]:
+                  - generic [ref=e2428]:
+                    - button "Select clip" [ref=e2431] [cursor=pointer]:
+                      - img [ref=e2433]
+                    - button "Play Hold Me Like This (Remix)" [ref=e2436] [cursor=pointer]:
+                      - img "Hold Me Like This (Remix) artwork" [ref=e2437]
+                      - img [ref=e2439]
+                      - generic: 3:33
+                    - generic [ref=e2442]:
+                      - generic [ref=e2443]:
+                        - generic [ref=e2444]:
+                          - link "Hold Me Like This (Remix)" [ref=e2446] [cursor=pointer]:
+                            - /url: /song/258371e2-5fb1-429d-8768-58f46960a57e
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e2449]: v5.5
+                        - generic [ref=e2450]: Cover
+                      - generic [ref=e2451]: Amapiano Afro house; spinnin' records
+                      - generic [ref=e2453]:
+                        - button "Play \"Hold Me Like This (Remix)\"" [ref=e2454] [cursor=pointer]:
+                          - generic [ref=e2455]:
+                            - img [ref=e2456]
+                            - generic [ref=e2459]: "2"
+                        - button "Like \"Hold Me Like This (Remix)\"" [ref=e2460] [cursor=pointer]:
+                          - img [ref=e2462]
+                        - generic [ref=e2465]:
+                          - button "Dislike \"Hold Me Like This (Remix)\"" [ref=e2466] [cursor=pointer]:
+                            - img [ref=e2468]
+                          - button "Comment on \"Hold Me Like This (Remix)\"" [ref=e2471] [cursor=pointer]:
+                            - img [ref=e2473]
+                        - button "Share \"Hold Me Like This (Remix)\"" [ref=e2476] [cursor=pointer]:
+                          - img [ref=e2478]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e2481]:
+                    - button "Remix/Edit clip" [ref=e2483] [cursor=pointer]:
+                      - generic [ref=e2484]:
+                        - text: Remix/Edit
+                        - img [ref=e2485]
+                    - button "More options" [ref=e2489] [cursor=pointer]:
+                      - img [ref=e2491]
+                - group "Hold Me Like This (Remix)" [ref=e2496]:
+                  - generic [ref=e2497]:
+                    - button "Select clip" [ref=e2500] [cursor=pointer]:
+                      - img [ref=e2502]
+                    - button "Play Hold Me Like This (Remix)" [ref=e2505] [cursor=pointer]:
+                      - img "Hold Me Like This (Remix) artwork" [ref=e2506]
+                      - img [ref=e2508]
+                      - generic: 3:53
+                    - generic [ref=e2511]:
+                      - generic [ref=e2512]:
+                        - generic [ref=e2513]:
+                          - link "Hold Me Like This (Remix)" [ref=e2515] [cursor=pointer]:
+                            - /url: /song/a049ac5b-cb4a-48e7-8c77-1f6ce4d47469
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e2518]: v5.5
+                        - generic [ref=e2519]: Cover
+                      - generic [ref=e2520]: Amapiano Afro house; spinnin' records
+                      - generic [ref=e2522]:
+                        - button "Play \"Hold Me Like This (Remix)\"" [ref=e2523] [cursor=pointer]:
+                          - generic [ref=e2524]:
+                            - img [ref=e2525]
+                            - generic [ref=e2528]: "2"
+                        - button "Like \"Hold Me Like This (Remix)\"" [ref=e2529] [cursor=pointer]:
+                          - img [ref=e2531]
+                        - generic [ref=e2534]:
+                          - button "Dislike \"Hold Me Like This (Remix)\"" [ref=e2535] [cursor=pointer]:
+                            - img [ref=e2537]
+                          - button "Comment on \"Hold Me Like This (Remix)\"" [ref=e2540] [cursor=pointer]:
+                            - img [ref=e2542]
+                        - button "Share \"Hold Me Like This (Remix)\"" [ref=e2545] [cursor=pointer]:
+                          - img [ref=e2547]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e2550]:
+                    - button "Remix/Edit clip" [ref=e2552] [cursor=pointer]:
+                      - generic [ref=e2553]:
+                        - text: Remix/Edit
+                        - img [ref=e2554]
+                    - button "More options" [ref=e2558] [cursor=pointer]:
+                      - img [ref=e2560]
+                - group "Hold Me Like This" [ref=e2565]:
+                  - generic [ref=e2566]:
+                    - button "Select clip" [ref=e2569] [cursor=pointer]:
+                      - img [ref=e2571]
+                    - button "Play Hold Me Like This" [ref=e2574] [cursor=pointer]:
+                      - img "Hold Me Like This artwork" [ref=e2575]
+                      - img [ref=e2577]
+                      - generic: 3:27
+                    - generic [ref=e2580]:
+                      - generic [ref=e2581]:
+                        - generic [ref=e2582]:
+                          - link "Hold Me Like This" [ref=e2584] [cursor=pointer]:
+                            - /url: /song/9f45a014-3b2b-4470-9ebe-1eaba685625d
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e2587]: v5.5
+                      - generic [ref=e2588]: "Pop electronic + tropical house; warm sunset euphoria with emotional pull; ~102 BPM; major key with bittersweet tone; glossy modern production; arrangement: soft guitar/pluck intro → light groove verse → rising pre → bright tropical drop chorus → instrumental hook → verse → pre → bigger drop → stripped breakdown → final chorus → fade; drums: punchy kick, rim/snare, shakers; bass: warm sub; instruments: acoustic guitar like miniMoog layered, marimba plucks, airy pads, soft lead; female vocal intimate then open; stacked harmonies and “oh-oh” ad-libs; wide stereo, sidechain pump, plate reverb, light delay; minimal but emotional lyrics; avoid clutter; target ~3:20"
+                      - generic [ref=e2590]:
+                        - button "Play \"Hold Me Like This\"" [ref=e2591] [cursor=pointer]:
+                          - generic [ref=e2592]:
+                            - img [ref=e2593]
+                            - generic [ref=e2596]: "4"
+                        - button "Like \"Hold Me Like This\"" [ref=e2597] [cursor=pointer]:
+                          - img [ref=e2599]
+                        - generic [ref=e2602]:
+                          - button "Dislike \"Hold Me Like This\"" [ref=e2603] [cursor=pointer]:
+                            - img [ref=e2605]
+                          - button "Comment on \"Hold Me Like This\"" [ref=e2608] [cursor=pointer]:
+                            - img [ref=e2610]
+                        - button "Share \"Hold Me Like This\"" [ref=e2613] [cursor=pointer]:
+                          - img [ref=e2615]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e2618]:
+                    - button "Remix/Edit clip" [ref=e2620] [cursor=pointer]:
+                      - generic [ref=e2621]:
+                        - text: Remix/Edit
+                        - img [ref=e2622]
+                    - button "More options" [ref=e2626] [cursor=pointer]:
+                      - img [ref=e2628]
+                - group "Hold Me Like This" [ref=e2633]:
+                  - generic [ref=e2634]:
+                    - button "Select clip" [ref=e2637] [cursor=pointer]:
+                      - img [ref=e2639]
+                    - button "Play Hold Me Like This" [ref=e2642] [cursor=pointer]:
+                      - img "Hold Me Like This artwork" [ref=e2643]
+                      - img [ref=e2645]
+                      - generic: 3:28
+                    - generic [ref=e2648]:
+                      - generic [ref=e2649]:
+                        - generic [ref=e2650]:
+                          - link "Hold Me Like This" [ref=e2652] [cursor=pointer]:
+                            - /url: /song/a90e4913-381f-43b1-9009-cc043b412671
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e2655]: v5.5
+                      - generic [ref=e2656]: "Pop electronic + tropical house; warm sunset euphoria with emotional pull; ~102 BPM; major key with bittersweet tone; glossy modern production; arrangement: soft guitar/pluck intro → light groove verse → rising pre → bright tropical drop chorus → instrumental hook → verse → pre → bigger drop → stripped breakdown → final chorus → fade; drums: punchy kick, rim/snare, shakers; bass: warm sub; instruments: acoustic guitar like miniMoog layered, marimba plucks, airy pads, soft lead; female vocal intimate then open; stacked harmonies and “oh-oh” ad-libs; wide stereo, sidechain pump, plate reverb, light delay; minimal but emotional lyrics; avoid clutter; target ~3:20"
+                      - generic [ref=e2658]:
+                        - button "Play \"Hold Me Like This\"" [ref=e2659] [cursor=pointer]:
+                          - generic [ref=e2660]:
+                            - img [ref=e2661]
+                            - generic [ref=e2664]: "2"
+                        - button "Like \"Hold Me Like This\"" [ref=e2665] [cursor=pointer]:
+                          - img [ref=e2667]
+                        - generic [ref=e2670]:
+                          - button "Dislike \"Hold Me Like This\"" [ref=e2671] [cursor=pointer]:
+                            - img [ref=e2673]
+                          - button "Comment on \"Hold Me Like This\"" [ref=e2676] [cursor=pointer]:
+                            - img [ref=e2678]
+                        - button "Share \"Hold Me Like This\"" [ref=e2681] [cursor=pointer]:
+                          - img [ref=e2683]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e2686]:
+                    - button "Remix/Edit clip" [ref=e2688] [cursor=pointer]:
+                      - generic [ref=e2689]:
+                        - text: Remix/Edit
+                        - img [ref=e2690]
+                    - button "More options" [ref=e2694] [cursor=pointer]:
+                      - img [ref=e2696]
+                - group "Fade Into You (Remix) (Remix)" [ref=e2701]:
+                  - generic [ref=e2702]:
+                    - button "Select clip" [ref=e2705] [cursor=pointer]:
+                      - img [ref=e2707]
+                    - button "Play Fade Into You (Remix) (Remix)" [ref=e2710] [cursor=pointer]:
+                      - img "Fade Into You (Remix) (Remix) artwork" [ref=e2711]
+                      - img [ref=e2713]
+                      - generic: 3:43
+                    - generic [ref=e2716]:
+                      - generic [ref=e2717]:
+                        - generic [ref=e2718]:
+                          - link "Fade Into You (Remix) (Remix)" [ref=e2720] [cursor=pointer]:
+                            - /url: /song/a648ec8d-e44d-4afa-a341-ec3cc811e3ad
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e2723]: v5.5
+                        - generic [ref=e2724]: Cover
+                      - generic [ref=e2725]: deep-pop, organic-pop, analogue-pop 2026, female vacal
+                      - generic [ref=e2727]:
+                        - button "Play \"Fade Into You (Remix) (Remix)\"" [ref=e2728] [cursor=pointer]:
+                          - generic [ref=e2729]:
+                            - img [ref=e2730]
+                            - generic [ref=e2733]: "5"
+                        - button "Like \"Fade Into You (Remix) (Remix)\"" [ref=e2734] [cursor=pointer]:
+                          - img [ref=e2736]
+                        - generic [ref=e2739]:
+                          - button "Dislike \"Fade Into You (Remix) (Remix)\"" [ref=e2740] [cursor=pointer]:
+                            - img [ref=e2742]
+                          - button "Comment on \"Fade Into You (Remix) (Remix)\"" [ref=e2745] [cursor=pointer]:
+                            - img [ref=e2747]
+                        - button "Share \"Fade Into You (Remix) (Remix)\"" [ref=e2750] [cursor=pointer]:
+                          - img [ref=e2752]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e2755]:
+                    - button "Remix/Edit clip" [ref=e2757] [cursor=pointer]:
+                      - generic [ref=e2758]:
+                        - text: Remix/Edit
+                        - img [ref=e2759]
+                    - button "More options" [ref=e2763] [cursor=pointer]:
+                      - img [ref=e2765]
+                - group "Fade Into You (Remix) (Remix)" [ref=e2770]:
+                  - generic [ref=e2771]:
+                    - button "Select clip" [ref=e2774] [cursor=pointer]:
+                      - img [ref=e2776]
+                    - button "Play Fade Into You (Remix) (Remix)" [ref=e2779] [cursor=pointer]:
+                      - img "Fade Into You (Remix) (Remix) artwork" [ref=e2780]
+                      - img [ref=e2782]
+                      - generic: 3:45
+                    - generic [ref=e2785]:
+                      - generic [ref=e2786]:
+                        - generic [ref=e2787]:
+                          - link "Fade Into You (Remix) (Remix)" [ref=e2789] [cursor=pointer]:
+                            - /url: /song/65af11d9-054f-4fd1-b219-1ebb7b8627ab
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e2792]: v5.5
+                        - generic [ref=e2793]: Cover
+                      - generic [ref=e2794]: deep-pop, organic-pop, analogue-pop 2026, female vacal
+                      - generic [ref=e2796]:
+                        - button "Play \"Fade Into You (Remix) (Remix)\"" [ref=e2797] [cursor=pointer]:
+                          - generic [ref=e2798]:
+                            - img [ref=e2799]
+                            - generic [ref=e2802]: "5"
+                        - button "Like \"Fade Into You (Remix) (Remix)\"" [ref=e2803] [cursor=pointer]:
+                          - img [ref=e2805]
+                        - generic [ref=e2808]:
+                          - button "Dislike \"Fade Into You (Remix) (Remix)\"" [ref=e2809] [cursor=pointer]:
+                            - img [ref=e2811]
+                          - button "Comment on \"Fade Into You (Remix) (Remix)\"" [ref=e2814] [cursor=pointer]:
+                            - img [ref=e2816]
+                        - button "Share \"Fade Into You (Remix) (Remix)\"" [ref=e2819] [cursor=pointer]:
+                          - img [ref=e2821]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e2824]:
+                    - button "Remix/Edit clip" [ref=e2826] [cursor=pointer]:
+                      - generic [ref=e2827]:
+                        - text: Remix/Edit
+                        - img [ref=e2828]
+                    - button "More options" [ref=e2832] [cursor=pointer]:
+                      - img [ref=e2834]
+                - group "Fade Into You (Organic Pop Female Vocal Mix)" [ref=e2839]:
+                  - generic [ref=e2840]:
+                    - button "Select clip" [ref=e2843] [cursor=pointer]:
+                      - img [ref=e2845]
+                    - button "Play Fade Into You (Organic Pop Female Vocal Mix)" [ref=e2848] [cursor=pointer]:
+                      - img "Fade Into You (Organic Pop Female Vocal Mix) artwork" [ref=e2849]
+                      - img [ref=e2851]
+                      - generic: 3:34
+                    - generic [ref=e2854]:
+                      - generic [ref=e2855]:
+                        - generic [ref=e2856]:
+                          - link "Fade Into You (Organic Pop Female Vocal Mix)" [ref=e2858] [cursor=pointer]:
+                            - /url: /song/0e4e9c12-69cc-46aa-bb24-f4d861f500db
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e2861]: v5.5
+                        - generic [ref=e2862]: Cover
+                      - generic [ref=e2863]: organic-pop focus, warm acoustic guitars, soft piano layers, subtle analog synth pads, midtempo groove, intimate female lead vocal with breathy tone, airy harmonies, modern pop sheen with gentle rhythmic percussion, spacious reverb and emotional, confessional delivery
+                      - generic [ref=e2865]:
+                        - button "Play \"Fade Into You (Organic Pop Female Vocal Mix)\"" [ref=e2866] [cursor=pointer]:
+                          - generic [ref=e2867]:
+                            - img [ref=e2868]
+                            - generic [ref=e2871]: "5"
+                        - button "Like \"Fade Into You (Organic Pop Female Vocal Mix)\"" [ref=e2872] [cursor=pointer]:
+                          - img [ref=e2874]
+                        - generic [ref=e2877]:
+                          - button "Dislike \"Fade Into You (Organic Pop Female Vocal Mix)\"" [ref=e2878] [cursor=pointer]:
+                            - img [ref=e2880]
+                          - button "Comment on \"Fade Into You (Organic Pop Female Vocal Mix)\"" [ref=e2883] [cursor=pointer]:
+                            - img [ref=e2885]
+                        - button "Share \"Fade Into You (Organic Pop Female Vocal Mix)\"" [ref=e2888] [cursor=pointer]:
+                          - img [ref=e2890]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e2893]:
+                    - button "Remix/Edit clip" [ref=e2895] [cursor=pointer]:
+                      - generic [ref=e2896]:
+                        - text: Remix/Edit
+                        - img [ref=e2897]
+                    - button "More options" [ref=e2901] [cursor=pointer]:
+                      - img [ref=e2903]
+                - group "Fade Into You (Organic Pop Female Vocal Mix)" [ref=e2908]:
+                  - generic [ref=e2909]:
+                    - button "Select clip" [ref=e2912] [cursor=pointer]:
+                      - img [ref=e2914]
+                    - button "Play Fade Into You (Organic Pop Female Vocal Mix)" [ref=e2917] [cursor=pointer]:
+                      - img "Fade Into You (Organic Pop Female Vocal Mix) artwork" [ref=e2918]
+                      - img [ref=e2920]
+                      - generic: 3:54
+                    - generic [ref=e2923]:
+                      - generic [ref=e2924]:
+                        - generic [ref=e2925]:
+                          - link "Fade Into You (Organic Pop Female Vocal Mix)" [ref=e2927] [cursor=pointer]:
+                            - /url: /song/180bffe5-0e50-4eb5-9f88-31ce7706dd4b
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e2930]: v5.5
+                        - generic [ref=e2931]: Cover
+                      - generic [ref=e2932]: organic-pop focus, warm acoustic guitars, soft piano layers, subtle analog synth pads, midtempo groove, intimate female lead vocal with breathy tone, airy harmonies, modern pop sheen with gentle rhythmic percussion, spacious reverb and emotional, confessional delivery
+                      - generic [ref=e2934]:
+                        - button "Play \"Fade Into You (Organic Pop Female Vocal Mix)\"" [ref=e2935] [cursor=pointer]:
+                          - generic [ref=e2936]:
+                            - img [ref=e2937]
+                            - generic [ref=e2940]: "2"
+                        - button "Like \"Fade Into You (Organic Pop Female Vocal Mix)\"" [ref=e2941] [cursor=pointer]:
+                          - img [ref=e2943]
+                        - generic [ref=e2946]:
+                          - button "Dislike \"Fade Into You (Organic Pop Female Vocal Mix)\"" [ref=e2947] [cursor=pointer]:
+                            - img [ref=e2949]
+                          - button "Comment on \"Fade Into You (Organic Pop Female Vocal Mix)\"" [ref=e2952] [cursor=pointer]:
+                            - img [ref=e2954]
+                        - button "Share \"Fade Into You (Organic Pop Female Vocal Mix)\"" [ref=e2957] [cursor=pointer]:
+                          - img [ref=e2959]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e2962]:
+                    - button "Remix/Edit clip" [ref=e2964] [cursor=pointer]:
+                      - generic [ref=e2965]:
+                        - text: Remix/Edit
+                        - img [ref=e2966]
+                    - button "More options" [ref=e2970] [cursor=pointer]:
+                      - img [ref=e2972]
+                - group "Fade Into You (Remix)" [ref=e2977]:
+                  - generic [ref=e2978]:
+                    - button "Select clip" [ref=e2981] [cursor=pointer]:
+                      - img [ref=e2983]
+                    - button "Play Fade Into You (Remix)" [ref=e2986] [cursor=pointer]:
+                      - img "Fade Into You (Remix) artwork" [ref=e2987]
+                      - img [ref=e2989]
+                      - generic: 3:43
+                    - generic [ref=e2992]:
+                      - generic [ref=e2993]:
+                        - generic [ref=e2994]:
+                          - link "Fade Into You (Remix)" [ref=e2996] [cursor=pointer]:
+                            - /url: /song/6f795fbc-5ed3-4758-83f0-04fd5023d67b
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e2999]: v5.5
+                        - generic [ref=e3000]: Cover
+                      - generic [ref=e3001]: deep-pop, organic-pop, analogue-pop 2026 republic records
+                      - generic [ref=e3003]:
+                        - button "Play \"Fade Into You (Remix)\"" [ref=e3004] [cursor=pointer]:
+                          - generic [ref=e3005]:
+                            - img [ref=e3006]
+                            - generic [ref=e3009]: "6"
+                        - button "Like \"Fade Into You (Remix)\"" [ref=e3010] [cursor=pointer]:
+                          - img [ref=e3012]
+                        - generic [ref=e3015]:
+                          - button "Dislike \"Fade Into You (Remix)\"" [ref=e3016] [cursor=pointer]:
+                            - img [ref=e3018]
+                          - button "Comment on \"Fade Into You (Remix)\"" [ref=e3021] [cursor=pointer]:
+                            - img [ref=e3023]
+                        - button "Share \"Fade Into You (Remix)\"" [ref=e3026] [cursor=pointer]:
+                          - img [ref=e3028]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e3031]:
+                    - button "Remix/Edit clip" [ref=e3033] [cursor=pointer]:
+                      - generic [ref=e3034]:
+                        - text: Remix/Edit
+                        - img [ref=e3035]
+                    - button "More options" [ref=e3039] [cursor=pointer]:
+                      - img [ref=e3041]
+                - group "Fade Into You (Remix)" [ref=e3046]:
+                  - generic [ref=e3047]:
+                    - button "Select clip" [ref=e3050] [cursor=pointer]:
+                      - img [ref=e3052]
+                    - button "Play Fade Into You (Remix)" [ref=e3055] [cursor=pointer]:
+                      - img "Fade Into You (Remix) artwork" [ref=e3056]
+                      - img [ref=e3058]
+                      - generic: 4:13
+                    - generic [ref=e3061]:
+                      - generic [ref=e3062]:
+                        - generic [ref=e3063]:
+                          - link "Fade Into You (Remix)" [ref=e3065] [cursor=pointer]:
+                            - /url: /song/8f5c3715-08aa-4738-997a-6c5d3cf95950
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e3068]: v5.5
+                        - generic [ref=e3069]: Cover
+                      - generic [ref=e3070]: deep-pop, organic-pop, analogue-pop 2026 republic records
+                      - generic [ref=e3072]:
+                        - button "Play \"Fade Into You (Remix)\"" [ref=e3073] [cursor=pointer]:
+                          - generic [ref=e3074]:
+                            - img [ref=e3075]
+                            - generic [ref=e3078]: "3"
+                        - button "Like \"Fade Into You (Remix)\"" [ref=e3079] [cursor=pointer]:
+                          - img [ref=e3081]
+                        - generic [ref=e3084]:
+                          - button "Dislike \"Fade Into You (Remix)\"" [ref=e3085] [cursor=pointer]:
+                            - img [ref=e3087]
+                          - button "Comment on \"Fade Into You (Remix)\"" [ref=e3090] [cursor=pointer]:
+                            - img [ref=e3092]
+                        - button "Share \"Fade Into You (Remix)\"" [ref=e3095] [cursor=pointer]:
+                          - img [ref=e3097]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e3100]:
+                    - button "Remix/Edit clip" [ref=e3102] [cursor=pointer]:
+                      - generic [ref=e3103]:
+                        - text: Remix/Edit
+                        - img [ref=e3104]
+                    - button "More options" [ref=e3108] [cursor=pointer]:
+                      - img [ref=e3110]
+                - group "Fade Into You (Remix)" [ref=e3115]:
+                  - generic [ref=e3116]:
+                    - button "Select clip" [ref=e3119] [cursor=pointer]:
+                      - img [ref=e3121]
+                    - button "Play Fade Into You (Remix)" [ref=e3124] [cursor=pointer]:
+                      - img "Fade Into You (Remix) artwork" [ref=e3125]
+                      - img [ref=e3127]
+                      - generic: 4:44
+                    - generic [ref=e3130]:
+                      - generic [ref=e3131]:
+                        - generic [ref=e3132]:
+                          - link "Fade Into You (Remix)" [ref=e3134] [cursor=pointer]:
+                            - /url: /song/f77c1056-f4ba-419e-9c21-e21a576dfc51
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e3137]: v5.5
+                        - generic [ref=e3138]: Cover
+                      - generic [ref=e3139]: deep-pop, organic-pop, analogue-pop 2026 republic records
+                      - generic [ref=e3141]:
+                        - button "Play \"Fade Into You (Remix)\"" [ref=e3142] [cursor=pointer]:
+                          - generic [ref=e3143]:
+                            - img [ref=e3144]
+                            - generic [ref=e3147]: "4"
+                        - button "Like \"Fade Into You (Remix)\"" [ref=e3148] [cursor=pointer]:
+                          - img [ref=e3150]
+                        - generic [ref=e3153]:
+                          - button "Dislike \"Fade Into You (Remix)\"" [ref=e3154] [cursor=pointer]:
+                            - img [ref=e3156]
+                          - button "Comment on \"Fade Into You (Remix)\"" [ref=e3159] [cursor=pointer]:
+                            - img [ref=e3161]
+                        - button "Share \"Fade Into You (Remix)\"" [ref=e3164] [cursor=pointer]:
+                          - img [ref=e3166]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e3169]:
+                    - button "Remix/Edit clip" [ref=e3171] [cursor=pointer]:
+                      - generic [ref=e3172]:
+                        - text: Remix/Edit
+                        - img [ref=e3173]
+                    - button "More options" [ref=e3177] [cursor=pointer]:
+                      - img [ref=e3179]
+                - group "Fade Into You (Remix)" [ref=e3184]:
+                  - generic [ref=e3185]:
+                    - button "Select clip" [ref=e3188] [cursor=pointer]:
+                      - img [ref=e3190]
+                    - button "Play Fade Into You (Remix)" [ref=e3193] [cursor=pointer]:
+                      - img "Fade Into You (Remix) artwork" [ref=e3194]
+                      - img [ref=e3196]
+                      - generic: 4:32
+                    - generic [ref=e3199]:
+                      - generic [ref=e3200]:
+                        - generic [ref=e3201]:
+                          - link "Fade Into You (Remix)" [ref=e3203] [cursor=pointer]:
+                            - /url: /song/3a5cfdb3-e564-469a-b16c-d43e0a2a2eb5
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e3206]: v5.5
+                        - generic [ref=e3207]: Cover
+                      - generic [ref=e3208]: deep-pop, organic-pop, analogue-pop 2026 republic records
+                      - generic [ref=e3210]:
+                        - button "Play \"Fade Into You (Remix)\"" [ref=e3211] [cursor=pointer]:
+                          - generic [ref=e3212]:
+                            - img [ref=e3213]
+                            - generic [ref=e3216]: "2"
+                        - button "Like \"Fade Into You (Remix)\"" [ref=e3217] [cursor=pointer]:
+                          - img [ref=e3219]
+                        - generic [ref=e3222]:
+                          - button "Dislike \"Fade Into You (Remix)\"" [ref=e3223] [cursor=pointer]:
+                            - img [ref=e3225]
+                          - button "Comment on \"Fade Into You (Remix)\"" [ref=e3228] [cursor=pointer]:
+                            - img [ref=e3230]
+                        - button "Share \"Fade Into You (Remix)\"" [ref=e3233] [cursor=pointer]:
+                          - img [ref=e3235]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e3238]:
+                    - button "Remix/Edit clip" [ref=e3240] [cursor=pointer]:
+                      - generic [ref=e3241]:
+                        - text: Remix/Edit
+                        - img [ref=e3242]
+                    - button "More options" [ref=e3246] [cursor=pointer]:
+                      - img [ref=e3248]
+                - group "Fade Into You (Remix)" [ref=e3253]:
+                  - generic [ref=e3254]:
+                    - button "Select clip" [ref=e3257] [cursor=pointer]:
+                      - img [ref=e3259]
+                    - button "Play Fade Into You (Remix)" [ref=e3262] [cursor=pointer]:
+                      - img "Fade Into You (Remix) artwork" [ref=e3263]
+                      - img [ref=e3265]
+                      - generic: 4:30
+                    - generic [ref=e3268]:
+                      - generic [ref=e3269]:
+                        - generic [ref=e3270]:
+                          - link "Fade Into You (Remix)" [ref=e3272] [cursor=pointer]:
+                            - /url: /song/3a77d97b-9731-4ec8-967d-c73d7e6f7bbd
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e3275]: v5.5
+                        - generic [ref=e3276]: Cover
+                      - generic [ref=e3277]: Mou5trap and spinnin' records analogy sidechain planks minimal opening u
+                      - generic [ref=e3279]:
+                        - button "Play \"Fade Into You (Remix)\"" [ref=e3280] [cursor=pointer]:
+                          - generic [ref=e3281]:
+                            - img [ref=e3282]
+                            - generic [ref=e3285]: "5"
+                        - button "Like \"Fade Into You (Remix)\"" [ref=e3286] [cursor=pointer]:
+                          - img [ref=e3288]
+                        - generic [ref=e3291]:
+                          - button "Dislike \"Fade Into You (Remix)\"" [ref=e3292] [cursor=pointer]:
+                            - img [ref=e3294]
+                          - button "Comment on \"Fade Into You (Remix)\"" [ref=e3297] [cursor=pointer]:
+                            - img [ref=e3299]
+                        - button "Share \"Fade Into You (Remix)\"" [ref=e3302] [cursor=pointer]:
+                          - img [ref=e3304]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e3307]:
+                    - button "Remix/Edit clip" [ref=e3309] [cursor=pointer]:
+                      - generic [ref=e3310]:
+                        - text: Remix/Edit
+                        - img [ref=e3311]
+                    - button "More options" [ref=e3315] [cursor=pointer]:
+                      - img [ref=e3317]
+                - group "Fade Into You (Remix)" [ref=e3322]:
+                  - generic [ref=e3323]:
+                    - button "Select clip" [ref=e3326] [cursor=pointer]:
+                      - img [ref=e3328]
+                    - button "Play Fade Into You (Remix)" [ref=e3331] [cursor=pointer]:
+                      - img "Fade Into You (Remix) artwork" [ref=e3332]
+                      - img [ref=e3334]
+                      - generic: 4:22
+                    - generic [ref=e3337]:
+                      - generic [ref=e3338]:
+                        - generic [ref=e3339]:
+                          - link "Fade Into You (Remix)" [ref=e3341] [cursor=pointer]:
+                            - /url: /song/c9090586-2f9b-484d-8626-20816fe4c5f6
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e3344]: v5.5
+                        - generic [ref=e3345]: Cover
+                      - generic [ref=e3346]: Mou5trap and spinnin' records analogy sidechain planks minimal opening u
+                      - generic [ref=e3348]:
+                        - button "Play \"Fade Into You (Remix)\"" [ref=e3349] [cursor=pointer]:
+                          - generic [ref=e3350]:
+                            - img [ref=e3351]
+                            - generic [ref=e3354]: "3"
+                        - button "Like \"Fade Into You (Remix)\"" [ref=e3355] [cursor=pointer]:
+                          - img [ref=e3357]
+                        - generic [ref=e3360]:
+                          - button "Dislike \"Fade Into You (Remix)\"" [ref=e3361] [cursor=pointer]:
+                            - img [ref=e3363]
+                          - button "Comment on \"Fade Into You (Remix)\"" [ref=e3366] [cursor=pointer]:
+                            - img [ref=e3368]
+                        - button "Share \"Fade Into You (Remix)\"" [ref=e3371] [cursor=pointer]:
+                          - img [ref=e3373]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e3376]:
+                    - button "Remix/Edit clip" [ref=e3378] [cursor=pointer]:
+                      - generic [ref=e3379]:
+                        - text: Remix/Edit
+                        - img [ref=e3380]
+                    - button "More options" [ref=e3384] [cursor=pointer]:
+                      - img [ref=e3386]
+                - group "Fade Into You (Remix)" [ref=e3391]:
+                  - generic [ref=e3392]:
+                    - button "Select clip" [ref=e3395] [cursor=pointer]:
+                      - img [ref=e3397]
+                    - button "Play Fade Into You (Remix)" [ref=e3400] [cursor=pointer]:
+                      - img "Fade Into You (Remix) artwork" [ref=e3401]
+                      - img [ref=e3403]
+                      - generic: 3:48
+                    - generic [ref=e3406]:
+                      - generic [ref=e3407]:
+                        - generic [ref=e3408]:
+                          - link "Fade Into You (Remix)" [ref=e3410] [cursor=pointer]:
+                            - /url: /song/3cf284ef-0d3d-4bdb-9078-3a733f8a6296
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e3413]: v5.5
+                        - generic [ref=e3414]: Cover
+                      - generic [ref=e3415]: organic-pop deep-pop analogue feel 2026; keep minimal, republic records spinnin' records
+                      - generic [ref=e3417]:
+                        - button "Play \"Fade Into You (Remix)\"" [ref=e3418] [cursor=pointer]:
+                          - generic [ref=e3419]:
+                            - img [ref=e3420]
+                            - generic [ref=e3423]: "7"
+                        - button "Like \"Fade Into You (Remix)\"" [ref=e3424] [cursor=pointer]:
+                          - img [ref=e3426]
+                        - generic [ref=e3429]:
+                          - button "Dislike \"Fade Into You (Remix)\"" [ref=e3430] [cursor=pointer]:
+                            - img [ref=e3432]
+                          - button "Comment on \"Fade Into You (Remix)\"" [ref=e3435] [cursor=pointer]:
+                            - img [ref=e3437]
+                        - button "Share \"Fade Into You (Remix)\"" [ref=e3440] [cursor=pointer]:
+                          - img [ref=e3442]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e3445]:
+                    - button "Remix/Edit clip" [ref=e3447] [cursor=pointer]:
+                      - generic [ref=e3448]:
+                        - text: Remix/Edit
+                        - img [ref=e3449]
+                    - button "More options" [ref=e3453] [cursor=pointer]:
+                      - img [ref=e3455]
+                - group "Fade Into You (Remix)" [ref=e3460]:
+                  - generic [ref=e3461]:
+                    - button "Select clip" [ref=e3464] [cursor=pointer]:
+                      - img [ref=e3466]
+                    - button "Play Fade Into You (Remix)" [ref=e3469] [cursor=pointer]:
+                      - img "Fade Into You (Remix) artwork" [ref=e3470]
+                      - img [ref=e3472]
+                      - generic: 4:02
+                    - generic [ref=e3475]:
+                      - generic [ref=e3476]:
+                        - generic [ref=e3477]:
+                          - link "Fade Into You (Remix)" [ref=e3479] [cursor=pointer]:
+                            - /url: /song/fd53a380-a4c3-4abf-be3f-5fef14e25072
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e3482]: v5.5
+                        - generic [ref=e3483]: Cover
+                      - generic [ref=e3484]: organic-pop deep-pop analogue feel 2026; keep minimal, republic records spinnin' records
+                      - generic [ref=e3486]:
+                        - button "Play \"Fade Into You (Remix)\"" [ref=e3487] [cursor=pointer]:
+                          - generic [ref=e3488]:
+                            - img [ref=e3489]
+                            - generic [ref=e3492]: "10"
+                        - button "Like \"Fade Into You (Remix)\"" [ref=e3493] [cursor=pointer]:
+                          - generic [ref=e3494]:
+                            - img [ref=e3495]
+                            - generic [ref=e3498]: "1"
+                        - generic [ref=e3499]:
+                          - button "Dislike \"Fade Into You (Remix)\"" [ref=e3500] [cursor=pointer]:
+                            - img [ref=e3502]
+                          - button "Comment on \"Fade Into You (Remix)\"" [ref=e3505] [cursor=pointer]:
+                            - img [ref=e3507]
+                        - button "Share \"Fade Into You (Remix)\"" [ref=e3510] [cursor=pointer]:
+                          - img [ref=e3512]
+                        - button "Publish clip" [ref=e3516] [cursor=pointer]:
+                          - generic [ref=e3517]: Publish
+                  - generic [ref=e3518]:
+                    - button "Remix/Edit clip" [ref=e3520] [cursor=pointer]:
+                      - generic [ref=e3521]:
+                        - text: Remix/Edit
+                        - img [ref=e3522]
+                    - button "More options" [ref=e3526] [cursor=pointer]:
+                      - img [ref=e3528]
+                - group "Fade Into You (Remix)" [ref=e3559]:
+                  - generic [ref=e3560]:
+                    - button "Select clip" [ref=e3563] [cursor=pointer]:
+                      - img [ref=e3565]
+                    - button "Play Fade Into You (Remix)" [ref=e3568] [cursor=pointer]:
+                      - img "Fade Into You (Remix) artwork" [ref=e3569]
+                      - img [ref=e3571]
+                      - generic: 4:04
+                    - generic [ref=e3574]:
+                      - generic [ref=e3575]:
+                        - generic [ref=e3576]:
+                          - link "Fade Into You (Remix)" [ref=e3578] [cursor=pointer]:
+                            - /url: /song/95e7eac4-2d3f-4a88-b374-a2f7b36d3846
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e3581]: v5.5
+                        - generic [ref=e3582]: Cover
+                      - generic [ref=e3583]: organic-pop deep house, spinnin' records, male vocals
+                      - generic [ref=e3585]:
+                        - button "Play \"Fade Into You (Remix)\"" [ref=e3586] [cursor=pointer]:
+                          - generic [ref=e3587]:
+                            - img [ref=e3588]
+                            - generic [ref=e3591]: "5"
+                        - button "Like \"Fade Into You (Remix)\"" [ref=e3592] [cursor=pointer]:
+                          - img [ref=e3594]
+                        - generic [ref=e3597]:
+                          - button "Dislike \"Fade Into You (Remix)\"" [ref=e3598] [cursor=pointer]:
+                            - img [ref=e3600]
+                          - button "Comment on \"Fade Into You (Remix)\"" [ref=e3603] [cursor=pointer]:
+                            - img [ref=e3605]
+                        - button "Share \"Fade Into You (Remix)\"" [ref=e3608] [cursor=pointer]:
+                          - img [ref=e3610]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e3613]:
+                    - button "Remix/Edit clip" [ref=e3615] [cursor=pointer]:
+                      - generic [ref=e3616]:
+                        - text: Remix/Edit
+                        - img [ref=e3617]
+                    - button "More options" [ref=e3621] [cursor=pointer]:
+                      - img [ref=e3623]
+                - group "Fade Into You (Remix)" [ref=e3628]:
+                  - generic [ref=e3629]:
+                    - button "Select clip" [ref=e3632] [cursor=pointer]:
+                      - img [ref=e3634]
+                    - button "Play Fade Into You (Remix)" [ref=e3637] [cursor=pointer]:
+                      - img "Fade Into You (Remix) artwork" [ref=e3638]
+                      - img [ref=e3640]
+                      - generic: 3:57
+                    - generic [ref=e3643]:
+                      - generic [ref=e3644]:
+                        - generic [ref=e3645]:
+                          - link "Fade Into You (Remix)" [ref=e3647] [cursor=pointer]:
+                            - /url: /song/7f864b0e-7f1e-41b6-bd5a-c9ce553b85ce
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e3650]: v5.5
+                        - generic [ref=e3651]: Cover
+                      - generic [ref=e3652]: organic-pop deep house, spinnin' records, male vocals
+                      - generic [ref=e3654]:
+                        - button "Play \"Fade Into You (Remix)\"" [ref=e3655] [cursor=pointer]:
+                          - generic [ref=e3656]:
+                            - img [ref=e3657]
+                            - generic [ref=e3660]: "3"
+                        - button "Like \"Fade Into You (Remix)\"" [ref=e3661] [cursor=pointer]:
+                          - img [ref=e3663]
+                        - generic [ref=e3666]:
+                          - button "Dislike \"Fade Into You (Remix)\"" [ref=e3667] [cursor=pointer]:
+                            - img [ref=e3669]
+                          - button "Comment on \"Fade Into You (Remix)\"" [ref=e3672] [cursor=pointer]:
+                            - img [ref=e3674]
+                        - button "Share \"Fade Into You (Remix)\"" [ref=e3677] [cursor=pointer]:
+                          - img [ref=e3679]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e3682]:
+                    - button "Remix/Edit clip" [ref=e3684] [cursor=pointer]:
+                      - generic [ref=e3685]:
+                        - text: Remix/Edit
+                        - img [ref=e3686]
+                    - button "More options" [ref=e3690] [cursor=pointer]:
+                      - img [ref=e3692]
+                - group "Fade Into You (Remix)" [ref=e3697]:
+                  - generic [ref=e3698]:
+                    - button "Select clip" [ref=e3701] [cursor=pointer]:
+                      - img [ref=e3703]
+                    - button "Play Fade Into You (Remix)" [ref=e3706] [cursor=pointer]:
+                      - img "Fade Into You (Remix) artwork" [ref=e3707]
+                      - img [ref=e3709]
+                      - generic: 4:04
+                    - generic [ref=e3712]:
+                      - generic [ref=e3713]:
+                        - generic [ref=e3714]:
+                          - link "Fade Into You (Remix)" [ref=e3716] [cursor=pointer]:
+                            - /url: /song/96ba2456-0b74-4c53-a72b-d4d67887a46c
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e3719]: v5.5
+                        - generic [ref=e3720]: Cover
+                      - generic [ref=e3721]: deep house, organic, analogue, Repetitive echoing chord stabs, melody is just analogue stubs low key with base, closed > open spectrum
+                      - generic [ref=e3723]:
+                        - button "Play \"Fade Into You (Remix)\"" [ref=e3724] [cursor=pointer]:
+                          - generic [ref=e3725]:
+                            - img [ref=e3726]
+                            - generic [ref=e3729]: "2"
+                        - button "Like \"Fade Into You (Remix)\"" [ref=e3730] [cursor=pointer]:
+                          - img [ref=e3732]
+                        - generic [ref=e3735]:
+                          - button "Dislike \"Fade Into You (Remix)\"" [ref=e3736] [cursor=pointer]:
+                            - img [ref=e3738]
+                          - button "Comment on \"Fade Into You (Remix)\"" [ref=e3741] [cursor=pointer]:
+                            - img [ref=e3743]
+                        - button "Share \"Fade Into You (Remix)\"" [ref=e3746] [cursor=pointer]:
+                          - img [ref=e3748]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e3751]:
+                    - button "Remix/Edit clip" [ref=e3753] [cursor=pointer]:
+                      - generic [ref=e3754]:
+                        - text: Remix/Edit
+                        - img [ref=e3755]
+                    - button "More options" [ref=e3759] [cursor=pointer]:
+                      - img [ref=e3761]
+                - group "Fade Into You (Remix)" [ref=e3766]:
+                  - generic [ref=e3767]:
+                    - button "Select clip" [ref=e3770] [cursor=pointer]:
+                      - img [ref=e3772]
+                    - button "Play Fade Into You (Remix)" [ref=e3775] [cursor=pointer]:
+                      - img "Fade Into You (Remix) artwork" [ref=e3776]
+                      - img [ref=e3778]
+                      - generic: 4:32
+                    - generic [ref=e3781]:
+                      - generic [ref=e3782]:
+                        - generic [ref=e3783]:
+                          - link "Fade Into You (Remix)" [ref=e3785] [cursor=pointer]:
+                            - /url: /song/a37d5449-9658-4c55-9610-129921b57dc2
+                          - button "Edit title":
+                            - img
+                        - generic [ref=e3788]: v5.5
+                        - generic [ref=e3789]: Cover
+                      - generic [ref=e3790]: deep house, organic, analogue, Repetitive echoing chord stabs, melody is just analogue stubs low key with base, closed > open spectrum
+                      - generic [ref=e3792]:
+                        - button "Play \"Fade Into You (Remix)\"" [ref=e3793] [cursor=pointer]:
+                          - generic [ref=e3794]:
+                            - img [ref=e3795]
+                            - generic [ref=e3798]: "3"
+                        - button "Like \"Fade Into You (Remix)\"" [ref=e3799] [cursor=pointer]:
+                          - img [ref=e3801]
+                        - generic [ref=e3804]:
+                          - button "Dislike \"Fade Into You (Remix)\"" [ref=e3805] [cursor=pointer]:
+                            - img [ref=e3807]
+                          - button "Comment on \"Fade Into You (Remix)\"" [ref=e3810] [cursor=pointer]:
+                            - img [ref=e3812]
+                        - button "Share \"Fade Into You (Remix)\"" [ref=e3815] [cursor=pointer]:
+                          - img [ref=e3817]
+                        - generic:
+                          - button "Publish clip":
+                            - generic: Publish
+                  - generic [ref=e3820]:
+                    - button "Remix/Edit clip" [ref=e3822] [cursor=pointer]:
+                      - generic [ref=e3823]:
+                        - text: Remix/Edit
+                        - img [ref=e3824]
+                    - button "More options" [ref=e3828] [cursor=pointer]:
+                      - img [ref=e3830]
+                - group "Untitled" [ref=e3835]
+                - group "Untitled" [ref=e3838]
+                - group "Untitled" [ref=e3841]
+                - group "Untitled" [ref=e3844]
+                - group "Untitled" [ref=e3847]
+                - group "Untitled" [ref=e3850]
+                - group "Untitled" [ref=e3853]
+                - group "Untitled" [ref=e3856]
+                - group "Untitled" [ref=e3859]
+                - group "Untitled" [ref=e3862]
+                - group "Untitled" [ref=e3865]
+                - group "Untitled" [ref=e3868]
+                - group "Untitled" [ref=e3871]
+                - group "Untitled" [ref=e3874]
+                - group "Untitled" [ref=e3877]
+                - group "Untitled" [ref=e3880]
+                - group "Untitled" [ref=e3883]
+                - group "Untitled" [ref=e3886]
+                - group "Untitled" [ref=e3889]
+                - group "Untitled" [ref=e3892]
+                - group "Untitled" [ref=e3895]
+                - group "Untitled" [ref=e3898]
+                - group "Untitled" [ref=e3901]
+                - group "Untitled" [ref=e3904]
+                - group "Untitled" [ref=e3907]
+                - group "Untitled" [ref=e3910]
+                - group "Untitled" [ref=e3913]
+                - group "Untitled" [ref=e3916]
+                - group "Untitled" [ref=e3919]
+                - group "Untitled" [ref=e3922]
+                - group "Untitled" [ref=e3925]
+                - group "Untitled" [ref=e3928]
+                - group "Untitled" [ref=e3931]
+                - group "Untitled" [ref=e3934]
+                - group "Untitled" [ref=e3937]
+                - group "Untitled" [ref=e3940]
+              - generic:
+                - generic: Page
+                - button [disabled]:
+                  - generic:
+                    - img
+                - textbox "#": "1"
+                - button:
+                  - generic:
+                    - img
+        - button [ref=e3549] [cursor=pointer]:
+          - img [ref=e3551]
+      - generic [ref=e2027]:
+        - generic [ref=e2030]:
+          - generic [ref=e2031]:
+            - 'button "Playbar: Toggle shuffle button" [ref=e2032] [cursor=pointer]':
+              - img [ref=e2034]
+            - 'button "Playbar: Previous Song button" [disabled] [ref=e2037]':
+              - img [ref=e2039]
+            - 'button "Playbar: Play button" [disabled] [ref=e2042]':
+              - img [ref=e2044]
+            - 'button "Playbar: Next Song button" [disabled] [ref=e2047]':
+              - img [ref=e2049]
+            - 'button "Playbar: Toggle repeat button" [ref=e2052] [cursor=pointer]':
+              - img [ref=e2054]
+          - generic [ref=e2058]:
+            - generic [ref=e2059]: 0:00
+            - slider "Playback progress" [disabled] [ref=e2064]: "0"
+            - generic [ref=e2065]: "--:--"
+        - 'generic "Playbar: Volume Slider" [ref=e2068] [cursor=pointer]':
+          - img [ref=e2070]
+  - alert [ref=e2075]
+  - generic:
+    - region "Notifications-top"
+    - region "Notifications-top-left"
+    - region "Notifications-top-right"
+    - region "Notifications-bottom-left"
+    - region "Notifications-bottom"
+    - region "Notifications-bottom-right"
+  - generic:
+    - region "Notifications-top"
+    - region "Notifications-top-left"
+    - region "Notifications-top-right"
+    - region "Notifications-bottom-left"
+    - region "Notifications-bottom"
+    - region "Notifications-bottom-right"
+  - generic [ref=e4288]:
+    - generic [ref=e4289]:
+      - button "Remix/Edit" [ref=e4292] [cursor=pointer]:
+        - generic [ref=e4293]:
+          - img [ref=e4294]
+          - generic [ref=e4298]: Remix/Edit
+          - img [ref=e4300]
+      - button "Create" [ref=e4305] [cursor=pointer]:
+        - generic [ref=e4306]:
+          - img [ref=e4307]
+          - generic [ref=e4311]: Create
+          - img [ref=e4313]
+      - button "Get Stems" [ref=e4317] [cursor=pointer]:
+        - generic [ref=e4318]:
+          - img [ref=e4319]
+          - generic [ref=e4323]:
+            - generic [ref=e4324]: Get Stems
+            - generic [ref=e4325]: Pro
+      - button "Add to Queue" [ref=e4327] [cursor=pointer]:
+        - generic [ref=e4328]:
+          - img [ref=e4329]
+          - text: Add to Queue
+      - button "Add to Playlist" [ref=e4333] [cursor=pointer]:
+        - generic [ref=e4334]:
+          - img [ref=e4335]
+          - text: Add to Playlist
+      - button "Move to Workspace" [ref=e4339] [cursor=pointer]:
+        - generic [ref=e4340]:
+          - img [ref=e4341]
+          - text: Move to Workspace
+    - generic [ref=e4344]:
+      - button "Publish" [ref=e4346] [cursor=pointer]:
+        - generic [ref=e4347]:
+          - img [ref=e4348]
+          - text: Publish
+      - button "Song Details" [ref=e4352] [cursor=pointer]:
+        - generic [ref=e4353]:
+          - img [ref=e4354]
+          - text: Song Details
+      - button "Generate Cover Art" [ref=e4358] [cursor=pointer]:
+        - generic [ref=e4359]:
+          - img [ref=e4360]
+          - text: Generate Cover Art
+      - button "Visibility & Permissions" [ref=e4365] [cursor=pointer]:
+        - generic [ref=e4366]:
+          - img [ref=e4367]
+          - generic [ref=e4370]: Visibility & Permissions
+          - img [ref=e4372]
+    - generic [ref=e4375]:
+      - button "Share" [ref=e4378] [cursor=pointer]:
+        - generic [ref=e4379]:
+          - img [ref=e4380]
+          - generic [ref=e4383]: Share
+          - img [ref=e4385]
+      - button "Download" [ref=e4390] [cursor=pointer]:
+        - generic [ref=e4391]:
+          - img [ref=e4392]
+          - generic [ref=e4395]: Download
+          - img [ref=e4397]
+    - generic [ref=e4400]:
+      - button "Report" [ref=e4402] [cursor=pointer]:
+        - generic [ref=e4403]:
+          - img [ref=e4404]
+          - text: Report
+      - button "Move to Trash" [ref=e4408] [cursor=pointer]:
+        - generic [ref=e4409]:
+          - img [ref=e4410]
+          - text: Move to Trash

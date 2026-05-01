@@ -1,5 +1,6 @@
 {
   "tools": [
+    "playwright_browser_mode",
     "playwright_browser_navigate",
     "playwright_browser_navigate_back",
     "playwright_browser_tabs",

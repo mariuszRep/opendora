@@ -1,6 +1,6 @@
 ---
 name: playwright-browser
-description: Use when automating, testing, debugging, or inspecting the OpenDora UI or any web page via Playwright MCP. Covers all 22 browser tools: navigation, observation, interaction, scripting, and control. Load this alongside playwright-mcp-responsibility when browser work is needed.
+description: "Use when automating, testing, debugging, or inspecting the OpenDora UI or any web page via Playwright MCP. Covers all 22 browser tools (navigation, observation, interaction, scripting, and control). Load this alongside playwright-mcp-responsibility when browser work is needed."
 origin: opendora
 ---
 
@@ -9,6 +9,21 @@ origin: opendora
 Use this skill when you are operating a browser through Playwright MCP tools. It covers every available tool, when to choose one over another, and OpenDora-specific patterns for testing the local UI at `http://localhost:3000`.
 
 Load `playwright-mcp-responsibility` alongside this skill for safety and external-impact guidance. This skill focuses on **how** to use the tools effectively.
+
+## Switching browser mode (headed / headless)
+
+The browser starts in whatever mode is set in `opendora.json`. To switch mid-session run:
+
+```bash
+.opendora/bin/playwright-mode headed    # shows a visible browser window via WSLg
+.opendora/bin/playwright-mode headless  # invisible, default for automation
+```
+
+This disconnects the MCP, rewrites the config flag, and reconnects — all in one call. The MCP server stays running; only the browser process is cycled. After it returns, all `playwright_browser_*` tools work normally against the new browser instance.
+
+**When to switch to headed:** the user needs to authenticate to a site. Show the window, navigate to the login page, tell the user to log in, wait for confirmation, switch back to headless.
+
+**When to switch to headless:** automation is finalised and will run on a schedule — no window needed.
 
 ## Variables
 
