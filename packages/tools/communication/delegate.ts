@@ -47,6 +47,12 @@ const parameters = z
       .describe(
         "Set to true to explicitly opt in to intercepting the upstream return path. Required when your session has an upstream replyToSessionID and you intentionally route reply_to to your own session. Without this flag, such routing throws a contract violation error.",
       ),
+    skills: z
+      .array(z.string())
+      .optional()
+      .describe(
+        "List of skill names to preload into the new session. Skills are loaded before the delegated task executes, making their instructions and tools available. Only applies when creating a new session (session_type or self-delegation). Ignored for existing sessions.",
+      ),
   })
   .superRefine((value, ctx) => {
     if (!value.agent && !value.session_id) {
@@ -90,6 +96,17 @@ const parameters = z
         path: ["mode"],
         message: "Sync delegation cannot have reply_to. Remove reply_to for sync mode, or change mode to 'async'.",
       })
+    }
+    // Validate skills parameter: only allowed for new sessions
+    if (value.skills && value.skills.length > 0) {
+      if (value.session_id) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["skills"],
+          message: "skills cannot be used with session_id. Skills are only preloaded when creating a new session.",
+        })
+      }
+      // Note: skills are allowed for session_type (new session) or agent-only (self-delegation -> worker)
     }
   })
 
@@ -187,12 +204,14 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
       let lookedUpAgent: any = undefined
       let created = false
       let route: string
+      let isNewSession = false // Track if we're creating a new session for skill preloading
 
       if (params.session_id) {
         targetSession = await sessionSvc.get(params.session_id)
         if (!targetSession) throw new Error(`Session not found: ${params.session_id}`)
         targetAgentName = params.agent ?? targetSession.agentID
         route = "existing_session"
+        isNewSession = false
       } else {
         const agents = h.agents as any
         if (!agents) throw new Error("agents service not available")
@@ -212,6 +231,7 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
             ...(replyToSessionID ? { replyToSessionID } : {}),
           })
           created = true
+          isNewSession = true
           route = "new_session"
         } else {
           const mainSession = await sessionSvc.ensureMainSession(targetAgentName)
@@ -230,10 +250,12 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
               ...(replyToSessionID ? { replyToSessionID } : {}),
             })
             created = true
+            isNewSession = true
             route = "self_subsession"
           } else {
             targetSession = mainSession
             route = "agent_main"
+            isNewSession = false
           }
         }
       }
@@ -243,7 +265,7 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
       }
 
       if (targetAgentName) {
-        const callerData = (await (h.agents as any)?.get(ctx.agent)) as any
+        const callerData = await (h.agents as any)?.get(ctx.agent) as any
         const allowedAgents = callerData?.config?.toolConfig?.delegate?.allowedAgents as string[] | undefined
         if (allowedAgents && allowedAgents.length > 0) {
           const targetName = lookedUpAgent?.name ?? targetAgentName
@@ -271,6 +293,97 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
         throw new Error(
           `Cannot delegate to the current session (${targetSession.id}). ` + `Provide session_type to create a new worker session instead.`,
         )
+      }
+
+      // ── SKILL PRELOADING FOR NEW SESSIONS ─────────────────────────────────
+      const skillsToPreload = params.skills && params.skills.length > 0 ? params.skills : []
+      let skillPreloadErrors: string[] = []
+
+      if (isNewSession && skillsToPreload.length > 0) {
+        const skillSvc = h.skills as any
+        if (!skillSvc) {
+          throw new Error("skills service not available")
+        }
+
+        // Validate and preload each skill
+        for (const skillName of skillsToPreload) {
+          const skill = await skillSvc.get(skillName)
+          if (!skill) {
+            const available = await skillSvc.list().then((x: any) => x.map((s: any) => s.name).join(", "))
+            skillPreloadErrors.push(
+              `Skill "${skillName}" not found. Available skills: ${available || "none"}`
+            )
+            continue
+          }
+
+          // Check permission using the target agent's permission context
+          // The target session's agentID determines what skills are accessible
+          const permissionSvc = h.permission as any
+          if (permissionSvc) {
+            // Get the target agent's permission config
+            const targetAgentData = await (h.agents as any)?.get(targetAgentName)
+            const targetPermission = targetAgentData?.permission
+
+            if (targetPermission) {
+              // Use PermissionNext.evaluate if available, otherwise check directly
+              const evaluateFn = permissionSvc.evaluate || permissionSvc.check
+              if (evaluateFn) {
+                const rule = evaluateFn("skill", skillName, targetPermission)
+                if (rule?.action === "deny") {
+                  skillPreloadErrors.push(
+                    `Skill "${skillName}" is not permitted for agent "${targetAgentName}"`
+                  )
+                  continue
+                }
+              }
+            }
+          }
+
+          // Add skill tools to the session (makes them available in the tool allowlist)
+          const skillToolsSvc = h.skillTools as any
+          if (skillToolsSvc?.add && skill.tools && skill.tools.length > 0) {
+            skillToolsSvc.add(targetSession.id, skill.tools)
+          }
+
+          console.log(`[DELEGATE] Preloaded skill: ${skillName} for session ${targetSession.id}`)
+        }
+
+        // If any skills failed to preload, fail the delegation
+        if (skillPreloadErrors.length > 0) {
+          throw new Error(
+            `[DELEGATE] Skill preloading failed:\n${skillPreloadErrors.join("\n")}`
+          )
+        }
+
+        // Inject skill content into the prompt so the downstream agent sees the loaded skills
+        const skillContentParts: any[] = []
+        for (const skillName of skillsToPreload) {
+          const skill = await skillSvc.get(skillName)
+          if (skill) {
+            const dir = skill.location.substring(0, skill.location.lastIndexOf("/"))
+            const base = dir // file URL would be: pathToFileURL(dir).href
+
+            skillContentParts.push({
+              type: "text",
+              text: [
+                `<skill_content name="${skillName}">`,
+                `# Skill: ${skill.name}`,
+                "",
+                skill.content.trim(),
+                "",
+                `Base directory for this skill: file://${base}`,
+                "Relative paths in this skill (e.g., scripts/, reference/) are relative to this base directory.",
+                "</skill_content>",
+              ].join("\n"),
+              hidden: true,
+            })
+          }
+        }
+
+        if (skillContentParts.length > 0) {
+          // Prepend skill content to the prompt
+          promptParts.unshift(...skillContentParts)
+        }
       }
 
       const promptParts = (await resolvePromptParts(params.prompt)) as any[]
@@ -343,7 +456,10 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
         agent: targetAgentName as string | undefined,
         messageId: result.info.id as string,
         mode: resolvedMode as string,
+        created,
+        replied: wait,
         parsedData,
+        skillsPreloaded: isNewSession && skillsToPreload.length > 0 ? skillsToPreload : undefined,
       }
 
       if (!wait) {
@@ -357,8 +473,9 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
             `mode: ${resolvedMode}`,
             `message_id: ${result.info.id}`,
             `reply_mode: reply → session ${params.reply_to}`,
+            isNewSession && skillsToPreload.length > 0 ? `skills_preloaded: ${skillsToPreload.join(", ")}` : null,
             "status: message posted",
-          ].join("\n"),
+          ].filter(Boolean).join("\n"),
         }
       }
 
@@ -370,14 +487,13 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
           `agent: ${targetAgentName ?? "(session default)"}`,
           `route: ${route}`,
           `mode: ${resolvedMode}`,
+          isNewSession && skillsToPreload.length > 0 ? `skills_preloaded: ${skillsToPreload.join(", ")}` : null,
           "",
           `<${resultTag}>`,
           text,
           `</${resultTag}>`,
           validationSummary,
-        ]
-          .join("\n")
-          .trimEnd(),
+        ].filter(Boolean).join("\n").trimEnd(),
       }
     },
   }

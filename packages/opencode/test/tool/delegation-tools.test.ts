@@ -31,7 +31,7 @@ describe("delegation tool set", () => {
         const parent = await Session.create({ title: "parent" })
         const tool = await PingMainTool.init()
         const result = await tool.execute(
-          { agent: "plan", prompt: "Continue planning", wait_for_reply: false },
+          { agent: "plan", prompt: "Continue planning", mode: "async", reply_to: parent.id },
           { ...ctx, sessionID: parent.id },
         )
 
@@ -56,7 +56,7 @@ describe("delegation tool set", () => {
         const target = await Session.create({ title: "target", parentID: parent.id, agentID: "plan" })
         const tool = await PingSessionTool.init()
         const result = await tool.execute(
-          { session_id: target.id, prompt: "Update this thread", wait_for_reply: false },
+          { session_id: target.id, prompt: "Update this thread", mode: "async", reply_to: parent.id },
           { ...ctx, sessionID: parent.id },
         )
 
@@ -79,7 +79,7 @@ describe("delegation tool set", () => {
         const parent = await Session.create({ title: "parent" })
         const tool = await SpawnSessionTool.init()
         const result = await tool.execute(
-          { route: "new_child_session", agent: "build", prompt: "Implement this", wait_for_reply: false },
+          { route: "new_child_session", agent: "build", prompt: "Implement this", mode: "async", reply_to: parent.id },
           { ...ctx, sessionID: parent.id },
         )
 

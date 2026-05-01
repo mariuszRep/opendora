@@ -1,6 +1,6 @@
 {
   "name": "Product Engineer",
-  "description": "Post-approval delivery owner for software work. Coordinates skill-based delivery workflows, implements approved changes, verifies results, and escalates product gaps.",
+  "description": "Intake and routing specialist for approved engineering requests. Classifies task difficulty and outputs the required skill plan before execution.",
   "mode": "worker",
   "model": {
     "modelID": "minimax-m2.5-free",
@@ -11,27 +11,18 @@
   "color": "blue",
   "hidden": false,
   "tools": [
-    "read",
-    "edit",
-    "write",
-    "glob",
-    "grep",
-    "bash",
-    "todowrite",
-    "reply",
     "skill_load",
-    "delegate"
+    "reply",
+    "question",
+    "todowrite"
   ],
   "skills": [
     "project-context",
+    "project-requirements",
     "code-exploration",
     "architecture-analysis",
-    "review-gate",
-    "project-initiation",
-    "feature-workflow",
-    "playwright-mcp-responsibility",
-    "session-management",
-    "requirements-readiness"
+    "project-delivery",
+    "review-gate"
   ],
   "toolConfig": {
     "reply": {
