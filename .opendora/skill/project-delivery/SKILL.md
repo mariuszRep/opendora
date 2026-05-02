@@ -10,7 +10,7 @@ Use this skill when a feature specification is already clear enough to execute.
 ## Objective
 
 - Turn an approved feature specification into a delivered implementation through staged, skill-driven execution.
-- Keep one delivery owner in control of sequencing, validation, and reporting.
+- Keep one delivery owner in control of sequencing, synthesis, and reporting.
 - Avoid agent handoffs for normal feature phases when an attached skill can guide the work.
 
 ## Inputs
@@ -20,67 +20,84 @@ Use this skill when a feature specification is already clear enough to execute.
 - Constraints, architectural notes, or prior readiness findings
 - The current reply-routing context
 
-## Phases
+## Workflow Phases
 
-1. Confirm the input is execution-ready. If it is vague, unapproved, or missing acceptance criteria, return the gap to the product authority.
-2. Verify delivery execution will occur in a `delivery` child under the relevant project workstream; document exception rationale if work must occur outside the project tree.
-3. Decide which phases are needed. Typical phases are exploration, architecture, implementation, review, and testing.
-4. Load the skill that matches the next phase before doing substantial phase work.
-5. Execute one phase at a time, preserving the findings needed by later phases.
-6. Validate each phase output before moving forward.
-7. Report progress at decision points and final delivery when all gates pass.
+The four standard phases are: **Research → Synthesis → Implementation → Verification**
+
+### Phase 1: Research
+
+- Load `code-exploration` and/or `architecture-analysis` to understand the codebase and design the approach.
+- Run read-only exploration. Do not implement yet.
+- Specify thoroughness level when loading `code-exploration` (quick/medium/thorough).
+- Independent research angles can run in parallel.
+
+### Phase 2: Synthesis (mandatory before implementation)
+
+After research, synthesize findings before writing a single line of code. This is your most important job.
+
+- Read the exploration findings yourself. Understand the approach.
+- Write an implementation spec that proves you understood: include specific file paths, line numbers, type signatures, and exactly what to change.
+- Never write "based on the findings, implement it" — that delegates understanding instead of doing it yourself.
+- The spec must state what "done" looks like.
+
+**Good spec**: "Fix the null pointer in `src/auth/validate.ts:42`. The `user` field on `Session` is undefined when the session expires but the token remains cached. Add a null check before `user.id` access — if null, return 401. Run `bun test src/auth` and report result."
+
+**Bad spec**: "Based on the exploration, fix the auth bug." — No. Synthesize first.
+
+### Phase 3: Implementation
+
+- Work from the synthesized spec and prior phase outputs.
+- Keep changes small, conventional, and testable.
+- After changes: run relevant tests, typecheck, and linter. Fix failures before proceeding.
+- Expected output: completed code changes with test/typecheck results.
+
+### Phase 4: Verification
+
+- Load `review-gate` for the final quality check.
+- Verification means proving the code works, not confirming it exists.
+- Run builds, tests, and targeted runtime checks.
+- Try edge cases and error paths the implementation did not cover.
+- Expected output: PASS, FAIL, or PARTIAL verdict with evidence.
+
+## Deciding Which Phases to Run
+
+| Task size | Phases |
+|-----------|--------|
+| Small, single-file, low-risk | Skip research; implement directly; review-gate |
+| Medium, multi-file | Research (medium thoroughness) → Synthesis → Implementation → Verification |
+| Hard, cross-cutting or high-risk | Research (thorough) → Architecture → Synthesis → Implementation → Verification |
+
+When in doubt, do research first. Research is cheap. Wrong implementation is expensive.
+
+## Parallel Execution
+
+Independent work can run concurrently. Examples:
+- Two unrelated files can be searched at the same time during research.
+- Tests and typecheck can run at the same time after implementation.
+- Do NOT run implementation in parallel with itself on overlapping files.
 
 ## Skill-First Coordination
 
-- Use skills as the default coordination mechanism for feature delivery.
-- Use code exploration when the relevant code surface is unknown.
-- Use architecture analysis when the work needs non-trivial technical design, interface changes, data model changes, or tradeoff decisions.
-- Implement directly after exploration or architecture is clear enough to act.
-- Use a review gate when the change is risky, broad, security-sensitive, or likely to benefit from a structured quality check.
-- Validate with tests, builds, linters, type checks, or focused runtime checks that match the change.
-
-## Phase Guidance
-
-### Exploration
-
-- Use when the existing codebase, behavior owner, or delivery surface is not yet understood.
-- Expected output: relevant files, ownership boundaries, likely touch points, risks, and a proposed implementation path.
-
-### Architecture
-
-- Use only when design decisions materially affect the implementation.
-- Expected output: technical approach, change boundaries, tradeoffs, dependencies, and open risks.
-
-### Implementation
-
-- Work from the approved spec and any prior phase outputs.
-- Keep changes small, conventional, and testable.
-- Expected output: completed code changes and notes needed for review or testing.
-
-### Review
-
-- Use when quality, correctness, maintainability, or security need an explicit gate.
-- Expected output: approved, or fixes required with concrete issues.
-
-### Testing
-
-- Validate the feature against acceptance criteria and changed behavior.
-- Expected output: checks run, results, gaps, and release readiness.
+- Use skills as the default coordination mechanism for every phase.
+- Load `project-context` before touching any project folder.
+- Load `code-exploration` before implementing in an unfamiliar area.
+- Load `architecture-analysis` when the work needs non-trivial design decisions.
+- Load `review-gate` for any change that is risky, broad, or security-sensitive.
 
 ## Communication Tools
 
-- Use `reply` to report delivery status, final results, verification, blockers, or handbacks through the established return path.
-- Use `delegate` only if this workflow has access to it and another agent must act or answer; otherwise report the need back to the owner with `reply`.
-- Use `question` only if this workflow has access to it and the human user must answer; otherwise report the needed user question back to the owner with `reply`.
-- Do not use `reply` to ask the user or another agent a follow-up question.
-- Product or requirement gaps must go back to the product authority; do not resolve them inside delivery.
+- Use `reply` to report delivery status, final results, verification, blockers, or handbacks.
+- Use `delegate` only when another agent must act or answer.
+- Use `question` only when the human user must answer.
+- Do not use `reply` to ask questions.
+- Product or requirement gaps must go back to the product authority.
 
 ## Rules
 
 - Do not start from ambiguous or unapproved requirements.
-- Do not overlap multiple active phases unless the work is truly independent.
+- Do not skip synthesis after research.
+- Do not skip verification after implementation.
 - Do not delegate normal feature phases to agents when a loaded skill can guide the phase.
-- Do not skip validation after implementation.
 - Keep one live plan in your todo list and update it as phases complete.
 - Surface blockers and product decision gaps promptly.
 
@@ -90,6 +107,7 @@ When the workflow completes, provide:
 
 - What was delivered
 - Which phases and skills ran
-- What verification ran and what remains unverified
+- Synthesis spec used (summarized)
+- What verification ran and its result (PASS/FAIL/PARTIAL)
 - Any important risks, follow-ups, or deferred items
 - Whether the feature is ready for the next release step

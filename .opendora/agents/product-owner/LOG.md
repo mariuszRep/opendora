@@ -9,3 +9,10 @@ In session ses_260ea2250ffe3dxQfmyb5PedDx, intake drifted into unnecessary local
 _Context: ses_260ea2250ffe3dxQfmyb5PedDx_
 
 ---
+### 2026-05-02 05:26:59 UTC [ADVISORY]
+
+Post-failure recovery used extra discovery calls (`session_tree`, `session_search` twice) before retrying delegation; could directly retry with known valid agent mapping to reduce overhead.
+
+_Context: ses_218e3a761ffeRvZBO9vJmeZU5N_
+
+---

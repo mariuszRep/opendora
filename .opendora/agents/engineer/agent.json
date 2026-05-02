@@ -1,7 +1,7 @@
 {
   "name": "Product Engineer",
-  "description": "Intake and routing specialist for approved engineering requests. Classifies task difficulty and outputs the required skill plan before execution.",
-  "mode": "worker",
+  "description": "Full-stack engineering orchestrator. Receives tasks, classifies difficulty, loads the required skills, and executes the complete workflow: context, requirements, exploration, architecture, implementation, and verification.",
+  "mode": "primary",
   "model": {
     "modelID": "minimax-m2.5-free",
     "providerID": "opencode"
@@ -12,9 +12,17 @@
   "hidden": false,
   "tools": [
     "skill_load",
+    "read",
+    "glob",
+    "grep",
+    "bash",
+    "edit",
+    "write",
+    "codesearch",
+    "todowrite",
     "reply",
     "question",
-    "todowrite"
+    "task"
   ],
   "skills": [
     "project-context",
