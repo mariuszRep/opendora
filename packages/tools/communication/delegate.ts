@@ -148,12 +148,30 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
 
   const description =
     delegateAgents && delegateAgents.length > 0
-      ? `${toolDef.description}\n\nAgents you may delegate to:\n${delegateAgents.map((a) => `- ${a.name}${a.description ? `: ${a.description}` : ""}`).join("\n")}\n\nYou must not delegate to any agent outside this list.`
+      ? `${toolDef.description}\n\nAgents you may delegate to — pass the exact name string, including spacing and capitalisation:\n${delegateAgents.map((a) => `- "${a.name}"${a.description ? `: ${a.description}` : ""}`).join("\n")}\n\nYou must not delegate to any agent outside this list. Any other value for the agent parameter will be rejected.`
       : toolDef.description
+
+  // Schema-level validation: reject unknown agent names before execution reaches the handler.
+  // Derived from the same allowedAgents source as the runtime check, so no separate list to maintain.
+  const runtimeParameters =
+    delegateAgents && delegateAgents.length > 0
+      ? parameters.superRefine((value, ctx) => {
+          if (value.agent && !value.session_id) {
+            const validNames = delegateAgents.map((a) => a.name)
+            if (!validNames.includes(value.agent)) {
+              ctx.addIssue({
+                code: "custom",
+                path: ["agent"],
+                message: `"${value.agent}" is not a valid agent. Allowed values: ${validNames.map((n) => `"${n}"`).join(", ")}`,
+              })
+            }
+          }
+        })
+      : parameters
 
   return {
     description,
-    parameters,
+    parameters: runtimeParameters,
     async execute(params: z.infer<typeof parameters>, ctx) {
       const h = host(ctx)
       const sessionSvc = h.session as any
@@ -210,6 +228,12 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
         targetSession = await sessionSvc.get(params.session_id)
         if (!targetSession) throw new Error(`Session not found: ${params.session_id}`)
         targetAgentName = params.agent ?? targetSession.agentID
+        // Resolve agent record so the allowedAgents check below can compare by name, not ID.
+        const agents = h.agents as any
+        if (agents && targetAgentName) {
+          const allAgents = (await agents.list()) as any[]
+          lookedUpAgent = allAgents.find((a: any) => a.name === targetAgentName || a.id === targetAgentName)
+        }
         route = "existing_session"
         isNewSession = false
       } else {

@@ -31,8 +31,8 @@
   "toolConfig": {
     "delegate": {
       "allowedAgents": [
-        "Business Analyst",
-        "Project Manager"
+        "Product Engineer",
+        "Weber"
       ]
     },
     "reply": {
