@@ -92,6 +92,47 @@ Independent work can run concurrently. Examples:
 - Do not use `reply` to ask questions.
 - Product or requirement gaps must go back to the product authority.
 
+## Harness
+
+### Inputs
+
+- **Feature specification** — bounded request with scope, acceptance criteria
+- **Constraints** — architectural notes, existing patterns, limits
+- **Reply routing context** — where to report results
+
+### Allowed Actions/Tools
+
+- **skill_load** — load project-context, code-exploration, architecture-analysis, review-gate as needed
+- **read** — read context files, explore codebase
+- **glob/grep** — locate files for implementation
+- **edit** — make code changes
+- **write** — create new files when needed
+- **bash** — run tests, builds, typecheck
+- **todowrite** — update working plan
+
+### Verification
+
+- **Review-gate** must be loaded for final verification
+- Build must succeed before reporting
+- Tests must pass (no regressions)
+- Typecheck must pass
+
+### Output Contract
+
+When workflow completes, report:
+
+```
+## Delivery Report
+
+**Specification:** [what was built]
+**Phases Completed:** Research → Synthesis → Implementation → Verification
+**Skills Used:** [list in order]
+**Synthesis Spec:** [summary of implementation spec]
+**Verification:** [PASS|FAIL|PARTIAL] — [evidence]
+
+**Status:** COMPLETE
+```
+
 ## Rules
 
 - Do not start from ambiguous or unapproved requirements.
@@ -100,14 +141,3 @@ Independent work can run concurrently. Examples:
 - Do not delegate normal feature phases to agents when a loaded skill can guide the phase.
 - Keep one live plan in your todo list and update it as phases complete.
 - Surface blockers and product decision gaps promptly.
-
-## Output
-
-When the workflow completes, provide:
-
-- What was delivered
-- Which phases and skills ran
-- Synthesis spec used (summarized)
-- What verification ran and its result (PASS/FAIL/PARTIAL)
-- Any important risks, follow-ups, or deferred items
-- Whether the feature is ready for the next release step

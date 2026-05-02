@@ -34,7 +34,26 @@ Classify difficulty as `simple`, `medium`, or `hard`.
 - `medium`: moderate ambiguity or cross-file/module impact
 - `hard`: broad scope, high risk, cross-cutting dependencies, or phased work
 
-### Step 3: Select and Load Skills
+### Step 3: Triage Output
+
+After intake and classification, produce a strict triage output:
+
+```
+## Triage
+- ready: <boolean>
+- complexity: <low|medium|high>
+- needed_skills: [<ordered skill list>]
+- missing: [<list of missing info>]
+```
+
+**Triage Rules:**
+
+1. `ready=false` when `missing` is not empty
+2. If `ready=false`: do NOT execute — return only the triage with missing info
+3. If `ready=true` and `needed_skills` is empty: triage is invalid, fix before proceeding
+4. Always assess `complexity` — even when `ready=false`
+
+### Step 4: Skills
 
 Load the minimum ordered skill set for the classified difficulty. Load each skill before starting that phase.
 
@@ -60,7 +79,7 @@ Load the minimum ordered skill set for the classified difficulty. Load each skil
 
 Adjust only when the request clearly needs a different minimal set.
 
-### Step 4: Execute Each Phase
+### Step 5: Execute Each Phase
 
 Follow the loaded skill for each phase. Key rules:
 
@@ -69,7 +88,7 @@ Follow the loaded skill for each phase. Key rules:
 - **Implementation** follows the spec. Run tests and typecheck after changes.
 - **Verification** (`review-gate`) proves the code works. Run commands. Produce a PASS/FAIL/PARTIAL verdict with evidence.
 
-### Step 5: Report
+### Step 6: Report
 
 At completion, provide:
 
