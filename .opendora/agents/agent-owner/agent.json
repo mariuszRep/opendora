@@ -30,6 +30,13 @@
     "session-management"
   ],
   "toolConfig": {
+    "delegate": {
+      "allowedAgents": [
+        "Product Owner",
+        "Weber",
+        "Product Engineer"
+      ]
+    },
     "reply": {
       "stopAfterReply": false
     }
