@@ -755,6 +755,20 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
         {
           label: "ChatGPT Pro/Plus (browser)",
           type: "oauth",
+          refresh: async (refreshToken: string, _accessToken?: string) => {
+            try {
+              const tokens = await refreshAccessToken(refreshToken)
+              return {
+                type: "success" as const,
+                refresh: tokens.refresh_token,
+                access: tokens.access_token,
+                expires: Date.now() + (tokens.expires_in ?? 3600) * 1000,
+                accountId: extractAccountId(tokens),
+              }
+            } catch (error) {
+              return { type: "failed" as const }
+            }
+          },
           authorize: async () => {
             const { redirectUri } = await startOAuthServer()
             const pkce = await generatePKCE()
@@ -785,6 +799,20 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
         {
           label: "ChatGPT Pro/Plus (headless)",
           type: "oauth",
+          refresh: async (refreshToken: string, _accessToken?: string) => {
+            try {
+              const tokens = await refreshAccessToken(refreshToken)
+              return {
+                type: "success" as const,
+                refresh: tokens.refresh_token,
+                access: tokens.access_token,
+                expires: Date.now() + (tokens.expires_in ?? 3600) * 1000,
+                accountId: extractAccountId(tokens),
+              }
+            } catch (error) {
+              return { type: "failed" as const }
+            }
+          },
           authorize: async () => {
             const deviceResponse = await fetch(`${ISSUER}/api/accounts/deviceauth/usercode`, {
               method: "POST",

@@ -310,5 +310,37 @@ export const ProviderRoutes = lazy(() =>
         })
         return c.json(true)
       },
+    )
+    .post(
+      "/:providerID/oauth/refresh",
+      describeRoute({
+        summary: "OAuth refresh",
+        description: "Refresh OAuth tokens for a provider using the stored refresh token.",
+        operationId: "provider.oauth.refresh",
+        responses: {
+          200: {
+            description: "Token refresh successful",
+            content: {
+              "application/json": {
+                schema: resolver(z.boolean()),
+              },
+            },
+          },
+          ...errors(400),
+        },
+      }),
+      validator(
+        "param",
+        z.object({
+          providerID: z.string().meta({ description: "Provider ID" }),
+        }),
+      ),
+      async (c) => {
+        const providerID = c.req.valid("param").providerID
+        const result = await ProviderAuth.refresh({
+          providerID,
+        })
+        return c.json(result)
+      },
     ),
 )

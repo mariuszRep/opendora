@@ -130,6 +130,45 @@ export namespace ProviderAuth {
     },
   )
 
+  /** Refresh OAuth tokens for a provider.
+   *  Calls the plugin's refresh method if available, otherwise performs generic refresh. */
+  export const refresh = fn(
+    z.object({
+      providerID: z.string(),
+    }),
+    async (input): Promise<boolean> => {
+      const auth = await Auth.get(input.providerID)
+      if (!auth || auth.type !== "oauth" || !auth.refresh) {
+        throw new OauthNotConfigured({ providerID: input.providerID })
+      }
+
+      // Try to get plugin-specific refresh handler
+      const pluginAuth = await state().then((s) => s.methods[input.providerID])
+      if (pluginAuth?.methods.length > 0) {
+        const method = pluginAuth.methods[0]
+        if (method.type === "oauth" && "refresh" in method && typeof method.refresh === "function") {
+          const result = await method.refresh(auth.refresh, auth.access)
+          if (result?.type === "success" && result.access) {
+            const info: Auth.Info = {
+              type: "oauth",
+              access: result.access,
+              refresh: result.refresh ?? auth.refresh,
+              expires: result.expires,
+            }
+            if (result.accountId) {
+              info.accountId = result.accountId
+            }
+            await Auth.set(input.providerID, info)
+            return true
+          }
+        }
+      }
+
+      // Generic refresh not supported - plugins must implement refresh
+      throw new OauthRefreshNotSupported({ providerID: input.providerID })
+    },
+  )
+
   export const OauthMissing = NamedError.create(
     "ProviderAuthOauthMissing",
     z.object({
@@ -144,4 +183,17 @@ export namespace ProviderAuth {
   )
 
   export const OauthCallbackFailed = NamedError.create("ProviderAuthOauthCallbackFailed", z.object({}))
+
+  export const OauthNotConfigured = NamedError.create(
+    "ProviderAuthOauthNotConfigured",
+    z.object({
+      providerID: z.string(),
+    }),
+  )
+  export const OauthRefreshNotSupported = NamedError.create(
+    "ProviderAuthOauthRefreshNotSupported",
+    z.object({
+      providerID: z.string(),
+    }),
+  )
 }
