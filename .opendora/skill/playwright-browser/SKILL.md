@@ -1,14 +1,12 @@
 ---
 name: playwright-browser
-description: "Use when automating, testing, debugging, or inspecting the OpenDora UI or any web page via Playwright MCP. Covers all 22 browser tools (navigation, observation, interaction, scripting, and control). Load this alongside playwright-mcp-responsibility when browser work is needed."
+description: "Use when automating, testing, debugging, or inspecting the OpenDora UI or any web page via Playwright MCP. Covers all 22 browser tools (navigation, observation, interaction, scripting, and control) plus safety and external-impact guidance."
 origin: opendora
 ---
 
 # Playwright Browser
 
-Use this skill when you are operating a browser through Playwright MCP tools. It covers every available tool, when to choose one over another, and OpenDora-specific patterns for testing the local UI at `http://localhost:3000`.
-
-Load `playwright-mcp-responsibility` alongside this skill for safety and external-impact guidance. This skill focuses on **how** to use the tools effectively.
+Use this skill when you are operating a browser through Playwright MCP tools. It covers every available tool, when to choose one over another, OpenDora-specific patterns for testing the local UI at `http://localhost:3000`, and safety rules for responsible browser automation.
 
 ## Switching browser mode (headed / headless)
 
@@ -246,3 +244,55 @@ The OpenDora UI runs at `http://localhost:3000`. Common routes:
 - Handle dialogs immediately — unhandled dialogs block all subsequent tool calls.
 - Close the browser when done: `browser_close` releases resources.
 - For OpenDora localhost work, prefer snapshots over screenshots to keep context size small.
+
+---
+
+## Safety and Responsibility
+
+### Before Opening the Browser
+
+1. Prefer code inspection, API calls, logs, or static docs when those answer the question without a browser.
+2. Classify the target:
+   - `local/dev` — localhost, preview, staging, test accounts.
+   - `external/public` — public sites, read-only browsing.
+   - `external/private` — logged-in accounts, admin consoles, production SaaS, private data.
+3. Classify the action:
+   - `observe` — navigate, inspect, screenshot.
+   - `test` — exercise flows in a safe environment.
+   - `input` — type, upload, change filters.
+   - `commit` — submit, save, publish, buy, send, delete, or trigger real-world effects.
+4. If the task involves `external/private` or `commit`, ask one targeted question before proceeding unless the user already gave explicit instructions for the exact action.
+
+### Authentication and Secrets
+
+- Do not ask the user to paste passwords, OTPs, recovery codes, API keys, session cookies, or bearer tokens into chat.
+- If login is required, prefer user-driven login in headed mode, existing auth state, or test credentials explicitly provided for automation.
+- Treat screenshots, console logs, network payloads, cookies, and DOM content as potentially sensitive.
+- Do not expose secrets in the final report. Redact values; quote only the minimum text needed.
+
+### External Impact Boundaries
+
+Ask before actions that could:
+- submit, publish, message, email, buy, cancel, approve, merge, deploy, delete, or change permissions;
+- create load, scrape at scale, or violate a site's terms;
+- access data from accounts the user has not clearly authorized.
+
+When approval is needed, ask one concrete question. Recommend the safer default first.
+
+### Stop Conditions
+
+Stop browser automation and report instead of pushing through when:
+- the next step is a real-world commit without explicit approval;
+- credentials, MFA, or CAPTCHA are required from chat;
+- the site blocks or prohibits automation;
+- actions could affect third parties, billing, production data, or private records;
+- repeated tool failures suggest the browser state is unreliable.
+
+### Reporting
+
+Include in the final answer:
+- **Browser scope:** target site/app and environment.
+- **Actions taken:** notable navigation, inputs, clicks, screenshots.
+- **Findings:** what was observed or verified.
+- **State changes:** explicitly say `no state-changing actions taken` or list what changed.
+- **Blockers:** auth, CAPTCHA, missing approval, or unreliable automation.

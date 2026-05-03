@@ -1,6 +1,6 @@
 ---
 name: requirements
-description: Conditional skill for unclear, incomplete, or risky requests. Uses iterative one-question-at-a-time fact-finding to reduce bias and remove unknowns. Produces concise readiness outcome for handoff. Enforces VISION.md sync gate and strict mismatch block before implementation.
+description: Conditional skill for unclear, incomplete, or risky requests. Uses iterative one-question-at-a-time fact-finding to reduce bias and remove unknowns. Produces concise readiness outcome for handoff. Enforces VISION.md sync gate and strict mismatch block before implementation. Applies to all artifact types: projects, agents, skills, and tools.
 last_updated: 2026-05-03T12:00:00Z
 ---
 
@@ -31,8 +31,8 @@ This skill defines what VISION.md and requirements artifacts are, and enforces s
 **Requirements artifact IS:**
 - A bounded, actionable specification produced through elicitation
 - The input that drives implementation
-- Owned by the requirements skill (this skill) and project-requirements skill
-- Parity contract: must follow the same terse one-question loop style as project-requirements
+- Owned by the requirements skill (this skill)
+- Terse one-question loop style throughout
 
 **Requirements artifact IS NOT:**
 - A vision statement (that's VISION.md)
@@ -61,16 +61,6 @@ If implementation would violate VISION.md:
 - Only the user (not agents) can approve VISION.md intent changes
 - When VISION.md needs update, present the proposed change to user and await approval
 - Do not auto-merge or agent-approve vision changes
-
-### Parity Contract with project-requirements
-
-This skill must feel identical to project-requirements in interaction style:
-- Same terse one-question-at-a-time loop
-- Same caveman-style brevity
-- Same readiness outcome format
-- Same bias reduction and unknown tracking approach
-
-The only difference: requirements skill applies to any artifact (agent/skill), project-requirements applies to project-level work.
 
 ## Objective
 

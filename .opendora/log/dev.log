@@ -12545,3 +12545,23 @@ INFO  2026-05-03T16:59:16 +0ms service=server status=started method=GET path=/ev
 INFO  2026-05-03T16:59:16 +1ms service=server event connected
 INFO  2026-05-03T16:59:16 +0ms service=bus type=* subscribing
 INFO  2026-05-03T16:59:16 +1ms service=server status=completed duration=2 method=GET path=/event request
+INFO  2026-05-03T17:02:07 +170553ms service=server method=OPTIONS path=/provider request
+INFO  2026-05-03T17:02:07 +0ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-05-03T17:02:07 +1ms service=server status=completed duration=1 method=OPTIONS path=/provider request
+INFO  2026-05-03T17:02:07 +14ms service=server method=GET path=/provider request
+INFO  2026-05-03T17:02:07 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-03T17:02:07 +662ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-03T17:02:07 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-03T17:02:08 +53ms service=server status=completed duration=715 method=GET path=/provider request
+INFO  2026-05-03T17:12:56 +648897ms service=bus type=* unsubscribing
+INFO  2026-05-03T17:12:56 +0ms service=server event disconnected
+INFO  2026-05-03T17:38:31 +1534445ms service=server method=GET path=/event request
+INFO  2026-05-03T17:38:31 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-03T17:38:31 +1ms service=server event connected
+INFO  2026-05-03T17:38:31 +1ms service=bus type=* subscribing
+INFO  2026-05-03T17:38:31 +0ms service=server status=completed duration=2 method=GET path=/event request
+INFO  2026-05-03T17:42:31 +239764ms service=scheduler id=snapshot.cleanup run
+INFO  2026-05-03T17:42:31 +3ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-05-03T17:42:36 +5548ms service=snapshot prune=7.days cleanup
+INFO  2026-05-03T17:50:29 +472498ms service=bus type=* unsubscribing
+INFO  2026-05-03T17:50:29 +0ms service=server event disconnected

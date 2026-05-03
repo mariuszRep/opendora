@@ -21,20 +21,15 @@
   "skills": [
     "requirements",
     "session-management",
-    "code-exploration",
+    "pre-implementation",
     "agent-eval",
     "skill-eval",
     "tool-eval",
     "session-eval",
-    "retro",
-    "agent-experiment",
-    "project-requirements",
-    "agent-author",
-    "skill-author",
-    "skill-creator",
-    "tool-curator",
     "suno-auth-exploration",
-    "agent-ops"
+    "agent-ops",
+    "skill-ops",
+    "tool-meta-ops"
   ],
   "toolConfig": {
     "delegate": {
