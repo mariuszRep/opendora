@@ -14,6 +14,42 @@ Use this skill when a request is real work but not yet clear, complete, or appro
 - Keep readiness separate from delivery execution.
 - Use terse caveman-style interaction: technical substance stays, fluff dies.
 
+## Elicitation Loop
+
+### Core Pattern
+
+1. Identify the single most important blocker
+2. Ask one targeted question using `question` tool
+3. Wait for reply—do not assume or answer your own question
+4. Adapt next question based on the answer
+5. Repeat until sufficient clarity or clear blocker emerges
+
+### Question Strategy
+
+Focus on removing the highest-impact unknown:
+
+1. What problem are you solving? (pain point, goal)
+2. What does success look like? (desired outcome, acceptance)
+3. Who is this for? (user, context)
+4. What constraints apply? (non-negotiables, limits)
+5. What's out of scope? (boundaries)
+
+Ask one at a time. Never bundle. Never answer your own question.
+
+### Bias Reduction
+
+- Do not assume intent—elicit it.
+- Do not fill gaps with assumptions—ask.
+- Do not push for answers the user doesn't have—record as open.
+- Challenge your own interpretation: ask "Did I get that right?" before proceeding.
+
+### Unknown Removal
+
+- Track what is known vs. unknown.
+- Unknowns that block delivery = continue eliciting.
+- Unknowns that are refinements = note and proceed.
+- If user says "I don't know" or "decide later", record as open question, not blocker.
+
 ## Caveman Elicitation Style
 
 Default to caveman-lite during clarification:
@@ -27,34 +63,6 @@ Default to caveman-lite during clarification:
 
 Good: `Main pain today?`
 Bad: `Sure, I can help clarify that. To begin, could you tell me what the main pain point is today?`
-
-## Steps
-
-1. Define the intended readiness end state: approved for delivery, clarification needed, blocked, deferred, or already satisfied.
-2. Check whether the requirement is already minimally actionable.
-3. If vague or incomplete, elicit the single most important missing piece.
-4. Use technical readiness review when feasibility, architecture boundaries, or integration constraints need checking.
-5. Iterate only while each answer removes a real delivery blocker.
-6. Approve the spec only when scope, acceptance criteria, and major constraints are clear enough for delivery.
-7. Verify the handoff will place approved work into the project tree under the proper workstream (use `requirements` child for readiness, `delivery` child for implementation).
-8. Hand approved work to the delivery owner in a fresh delivery session or route it back to the correct existing workstream.
-
-## Question Flow
-
-Before asking, identify the most important blocker:
-
-1. Problem or pain point
-2. Desired outcome
-3. User or context
-4. Constraints or non-negotiables
-5. Acceptance criteria
-
-Ask one question, then stop.
-
-- Never bundle multiple questions.
-- Never answer your own question.
-- If the user gives low-signal input, ask one recovery question only if needed.
-- If the user shows impatience or wants to move on, stop and summarize from current information.
 
 ## Readiness Gate
 
@@ -99,25 +107,19 @@ If the user says they do not know, wants to decide later, or repeats the same id
 When enough is known, provide:
 
 ```text
-## Requirements: <title>
+## Readiness: <title>
 
-**What we're building:**
-<need and goal>
+**Goal:** <what we're building>
 
-**Core Features:**
-- <feature>
+**Scope:** <bounded deliverable>
 
-**Target Users:**
-<who uses it and context>
+**Acceptance:** <key criteria>
 
-**Constraints:**
-<known limits and non-negotiables>
+**Constraints:** <known limits>
 
-**Acceptance Criteria:**
-- <criterion>
+**Open Questions:** <gaps or None>
 
-**Open Questions:**
-- <gap, or None>
+**Status:** ready | blocked | deferred
 ```
 
-Also state readiness status and recommended next owner when handing back.
+State readiness status and recommended next owner when handing back.

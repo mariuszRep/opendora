@@ -1,0 +1,9 @@
+{
+  "tools": [
+    "delegate",
+    "session_get",
+    "todowrite",
+    "question",
+    "reply"
+  ]
+}

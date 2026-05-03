@@ -1,11 +1,20 @@
 ---
 name: agent-author
-description: Templates and guidance for writing high-quality agent personas, injections, and configurations. Load this when creating or rewriting agents from scratch.
+description: DEPRECATED. Use agent-ops instead for agent-authoring and agent-management. This skill is kept for backward compatibility only.
 ---
 
-# Agent Authoring Skill
+# Agent Author (Deprecated)
 
-Use this skill when creating a new agent or doing a full rewrite of an existing one.
+**This skill has been replaced by `agent-ops`.**
+
+Load `agent-ops` for all agent-authoring, agent-management, and agent-experimentation tasks.
+
+## Migration
+
+All functionality has been migrated to:
+- **agent-ops** — contains both agent-authoring guidance and agent-experimentation workflow
+
+Please update any references to use `agent-ops` instead.
 
 ## No-Regression Rule
 

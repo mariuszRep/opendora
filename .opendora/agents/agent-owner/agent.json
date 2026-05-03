@@ -19,15 +19,19 @@
     "log"
   ],
   "skills": [
-    "agent-author",
-    "skill-author",
-    "tool-curator",
-    "skill-creator",
-    "agent-experiment",
-    "retro",
+    "requirements",
+    "agent-ops",
+    "skill-ops",
+    "tool-meta-ops",
+    "session-management",
     "code-exploration",
-    "requirements-readiness",
-    "session-management"
+    "agent-eval",
+    "skill-eval",
+    "tool-eval",
+    "session-eval",
+    "retro",
+    "agent-experiment",
+    "project-requirements"
   ],
   "toolConfig": {
     "delegate": {

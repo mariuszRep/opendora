@@ -1,0 +1,10 @@
+{
+  "tools": [
+    "tool_list",
+    "tool_get",
+    "session_get",
+    "todowrite",
+    "question",
+    "reply"
+  ]
+}

@@ -1,11 +1,19 @@
 ---
 name: agent-experiment
-description: Run one targeted improvement experiment on an agent — baseline, apply one change, measure the delta, and keep or discard.
+description: DEPRECATED. Use agent-ops instead for agent-experimentation. This skill is kept for backward compatibility only.
 ---
 
-# Experiment — Agent Improvement Skill
+# Agent Experiment (Deprecated)
 
-You are running one improvement experiment. This skill is driven by a **campaign brief** — read it carefully before starting. The brief defines the target, the goal, and optionally the scope and test approach. Everything else you derive from that brief.
+**This skill has been replaced by `agent-ops`.**
+
+Load `agent-ops` for all agent experimentation tasks (baseline, apply change, measure delta, keep/discard).
+
+## Migration
+
+The agent-experimentation workflow has been merged into `agent-ops`.
+
+Please update any references to use `agent-ops` instead.
 
 ## Campaign Variables
 

@@ -1,11 +1,20 @@
 ---
 name: skill-creator
-description: Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy.
+description: DEPRECATED. Use skill-ops instead for skill-creation and skill-improvement. This skill is kept for backward compatibility only.
 ---
 
-# Skill Creator
+# Skill Creator (Deprecated)
 
-A skill for creating new skills and iteratively improving them.
+**This skill has been replaced by `skill-ops`.**
+
+Load `skill-ops` for all skill-creation, skill-improvement, skill-evals, and benchmarking tasks.
+
+## Migration
+
+All functionality has been migrated to:
+- **skill-ops** — contains skill-authoring guidance + skill-creator workflow + evaluation tools
+
+Please update any references to use `skill-ops` instead.
 
 At a high level, the process of creating a skill goes like this:
 

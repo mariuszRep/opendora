@@ -1,11 +1,20 @@
 ---
 name: tool-curator
-description: Audit and refine tool metadata (top-level descriptions and parameter descriptions) so agents pick the right tool and fill parameters correctly. Load this when a tool is being mis-selected, mis-used, or has unclear or outdated descriptions.
+description: DEPRECATED. Use tool-meta-ops instead for tool-metadata updates. This skill is kept for backward compatibility only.
 ---
 
-# Tool Curator Skill
+# Tool Curator (Deprecated)
 
-Use this skill when tool metadata needs review or improvement — for example when an agent picked the wrong tool, mis-filled a parameter, or when a description is vague, stale, or contradicts current behavior.
+**This skill has been replaced by `tool-meta-ops`.**
+
+Load `tool-meta-ops` for all tool-metadata, tool-description, and parameter-description tasks.
+
+## Migration
+
+All functionality has been migrated to:
+- **tool-meta-ops** — manages tool top-level descriptions and parameter descriptions
+
+Please update any references to use `tool-meta-ops` instead.
 
 ## No-Regression Rule
 

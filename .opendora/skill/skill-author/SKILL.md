@@ -1,11 +1,20 @@
 ---
 name: skill-author
-description: Guidance and templates for creating, rewriting, and improving reusable skills so they are clear, effective, and easy for agents to execute.
+description: DEPRECATED. Use skill-ops instead for skill-authoring and skill-creation. This skill is kept for backward compatibility only.
 ---
 
-# Skill Authoring Skill
+# Skill Author (Deprecated)
 
-Use this skill when creating a new skill, rewriting an existing skill, or tightening a skill that is too vague, too procedural, or too brittle.
+**This skill has been replaced by `skill-ops`.**
+
+Load `skill-ops` for all skill-authoring, skill-creation, skill-evals, and skill-benchmarking tasks.
+
+## Migration
+
+All functionality has been migrated to:
+- **skill-ops** — contains skill-authoring guidance + skill-creator workflow + evaluation tools
+
+Please update any references to use `skill-ops` instead.
 
 ## No-Regression Rule
 

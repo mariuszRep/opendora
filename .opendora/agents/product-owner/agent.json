@@ -24,8 +24,8 @@
     "grep"
   ],
   "skills": [
+    "requirements",
     "project-context",
-    "project-requirements",
     "architecture-analysis"
   ],
   "toolConfig": {
