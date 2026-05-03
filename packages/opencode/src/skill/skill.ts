@@ -209,6 +209,7 @@ export namespace Skill {
   }
 
   export async function all() {
+    reload()
     return state().then((x) => Object.values(x.skills))
   }
 

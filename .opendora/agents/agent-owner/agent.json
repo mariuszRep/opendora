@@ -32,7 +32,9 @@
     "agent-author",
     "skill-author",
     "skill-creator",
-    "tool-curator"
+    "tool-curator",
+    "suno-auth-exploration",
+    "agent-ops"
   ],
   "toolConfig": {
     "delegate": {

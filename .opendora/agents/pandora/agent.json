@@ -18,7 +18,8 @@
     "session_update"
   ],
   "skills": [
-    "requirements"
+    "requirements",
+    "requirements-elicitation"
   ],
   "toolConfig": {
     "delegate": {
