@@ -1,3 +1,14 @@
 {
-  "tools": ["read", "write", "edit", "glob", "grep", "delegate", "reply", "todowrite", "session_get", "session_search"]
+  "tools": [
+    "read",
+    "edit",
+    "delegate",
+    "reply",
+    "question",
+    "todowrite",
+    "session_get",
+    "agent_get",
+    "agent_update",
+    "log"
+  ]
 }

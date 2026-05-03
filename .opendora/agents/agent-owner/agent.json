@@ -20,9 +20,6 @@
   ],
   "skills": [
     "requirements",
-    "agent-ops",
-    "skill-ops",
-    "tool-meta-ops",
     "session-management",
     "code-exploration",
     "agent-eval",
@@ -31,20 +28,26 @@
     "session-eval",
     "retro",
     "agent-experiment",
-    "project-requirements"
+    "project-requirements",
+    "agent-author",
+    "skill-author",
+    "skill-creator",
+    "tool-curator"
   ],
   "toolConfig": {
     "delegate": {
       "allowedAgents": [
         "Product Owner",
         "Weber",
-        "Product Engineer"
+        "Product Engineer",
+        "Minds"
       ]
     },
     "reply": {
       "stopAfterReply": false
     }
   },
+  "enableInjection": false,
   "defaultPaths": [
     "/home/mariu/projects/opendora/.opendora"
   ]

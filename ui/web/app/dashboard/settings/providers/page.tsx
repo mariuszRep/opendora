@@ -53,7 +53,7 @@ export default function ProvidersPage() {
   const [savingDefaultModel, setSavingDefaultModel] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [globalConfig, setGlobalConfig] = useState<{ model?: string; model_filters?: Record<string, "all" | "free" | "none">; [k: string]: unknown } | null>(null)
+  const [globalConfig, setGlobalConfig] = useState<{ model?: string; model_filters?: Record<string, "all" | "free" | "none">; tool_config?: Record<string, { apiKey?: string; useApiKey?: boolean }>; [k: string]: unknown } | null>(null)
   const [groupDialogOpen, setGroupDialogOpen] = useState(false)
 
   useEffect(() => {
@@ -170,25 +170,6 @@ export default function ProvidersPage() {
       router.refresh()
     } catch (err) {
       setApiKeyForm((f) => f && { ...f, saving: false, error: err instanceof Error ? err.message : "Failed to save" })
-    }
-  }
-
-  async function handleSaveToolApiKey() {
-    if (!toolApiKeyForm || !toolApiKeyForm.key.trim()) return
-    setToolApiKeyForm((f) => f && { ...f, saving: true, error: null })
-    try {
-      const currentToolConfig = globalConfig?.tool_config || {} as Record<string, { apiKey?: string }>
-      await opendora.config.update({
-        tool_config: {
-          ...currentToolConfig,
-          [toolApiKeyForm.toolID]: { apiKey: toolApiKeyForm.key.trim() },
-        },
-      })
-      setToolApiKeyForm(null)
-      // Refresh config
-      opendora.config.get().then(setGlobalConfig).catch(() => {})
-    } catch (err) {
-      setToolApiKeyForm((f) => f && { ...f, saving: false, error: err instanceof Error ? err.message : "Failed to save" })
     }
   }
 

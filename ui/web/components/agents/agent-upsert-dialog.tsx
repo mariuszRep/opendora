@@ -156,8 +156,8 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
 
   // Load available tools and skills once
   useEffect(() => {
-    opendora.agent.tools().then((ids) => {
-      setAvailableTools(ids.filter((id) => !HIDDEN_TOOLS.has(id)))
+    opendora.agent.tools().then((tools) => {
+      setAvailableTools(tools.map((t) => t.id).filter((id) => !HIDDEN_TOOLS.has(id)))
     }).catch(() => {})
     opendora.skill.list().then(setAvailableSkills).catch(() => {})
   }, [])

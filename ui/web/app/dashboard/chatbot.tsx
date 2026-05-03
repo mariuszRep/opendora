@@ -883,8 +883,8 @@ export const Chatbot = () => {
                                       
                                       const permissionRequest = permissionRequests.find((request) => request.tool?.callID === tool.callID)
                                       const hasPermissionRequest = !!permissionRequest
-                                      const isPermissionTool = tool.state.status === "approval-requested" || hasPermissionRequest
-                                      const permissionResponded = tool.state.status === "approval-responded"
+                                      const isPermissionTool = hasPermissionRequest
+                                      const permissionResponded = tool.state.status === "completed" || tool.state.status === "error"
                                       // Question tools waiting for user input should show "Awaiting Approval" not "Running"
                                       const isQuestionWaiting = !!questionRequest && tool.state.status === "running"
                                       const state = toToolState(tool.state.status, hasPermissionRequest || isQuestionWaiting)
@@ -1059,8 +1059,8 @@ export const Chatbot = () => {
                                   
                                   const permissionRequest = permissionRequests.find((request) => request.tool?.callID === tool.callID)
                                   const hasPermissionRequest = !!permissionRequest
-                                  const isPermissionTool = tool.state.status === "approval-requested" || hasPermissionRequest
-                                  const permissionResponded = tool.state.status === "approval-responded"
+                                  const isPermissionTool = hasPermissionRequest
+                                  const permissionResponded = tool.state.status === "completed" || tool.state.status === "error"
                                   const state = toToolState(tool.state.status, hasPermissionRequest)
                                   const toolInput = <ToolInput input={input ?? {}} />
                                   const currentViewMode = questionViewModes[tool.id] ?? "view"

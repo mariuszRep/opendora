@@ -43,7 +43,7 @@
       ]
     }
   ],
-  "model": "fallback/kimi-k2",
+  "model": "updated/model",
   "provider": {
     "ollama": {
       "name": "Ollama (local)",

@@ -199,7 +199,7 @@ export default function SettingsPage() {
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {settingsCards.map((card) => {
               const Icon = card.icon
-              const handleClick = 'href' in card ? () => router.push(card.href) : card.onClick
+              const handleClick = 'href' in card && card.href ? () => router.push(card.href) : card.onClick
               return (
                 <SettingsCard
                   key={card.title}

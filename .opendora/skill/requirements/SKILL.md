@@ -1,12 +1,76 @@
 ---
 name: requirements
-description: Conditional skill for unclear, incomplete, or risky requests. Uses iterative one-question-at-a-time fact-finding to reduce bias and remove unknowns. Produces concise readiness outcome for handoff.
-last_updated: 2026-05-03T00:00:00Z
+description: Conditional skill for unclear, incomplete, or risky requests. Uses iterative one-question-at-a-time fact-finding to reduce bias and remove unknowns. Produces concise readiness outcome for handoff. Enforces VISION.md sync gate and strict mismatch block before implementation.
+last_updated: 2026-05-03T12:00:00Z
 ---
 
 # Requirements
 
 Use this skill when a request is unclear, incomplete, exploratory, or carries significant risk. Not a mandatory first gate—apply conditionally based on request clarity.
+
+## VISION.md Governance
+
+This skill defines what VISION.md and requirements artifacts are, and enforces strict sync discipline.
+
+### VISION.md Definition
+
+**VISION.md IS:**
+- A durable intent document describing what a folder, agent, skill, or project should be and how it should behave
+- The single source of truth for approved behavioral requirements
+- Process-agnostic: applies to any agent or skill folder regardless of workflow
+- Updated only when user approves new intent
+
+**VISION.md IS NOT:**
+- A completion checklist or roadmap with done/not-done status
+- Technical implementation instructions
+- A status report or changelog of work performed
+- A substitute for requirements elicitation
+
+### Requirements Artifact Definition
+
+**Requirements artifact IS:**
+- A bounded, actionable specification produced through elicitation
+- The input that drives implementation
+- Owned by the requirements skill (this skill) and project-requirements skill
+- Parity contract: must follow the same terse one-question loop style as project-requirements
+
+**Requirements artifact IS NOT:**
+- A vision statement (that's VISION.md)
+- A design document with technical architecture
+- A task list or backlog
+- A status update
+
+### Mandatory Sync Gate
+
+Before any implementation begins:
+
+1. **Check VISION.md exists** in the relevant folder (agent or skill folder)
+2. **Verify alignment**: confirmed requirements must match VISION.md approved behaviors
+3. **Block on mismatch**: if requirements drift from VISION.md, halt and request clarification
+4. **Log the sync**: record VISION.md version/commit in readiness outcome
+
+### Strict Mismatch Block
+
+If implementation would violate VISION.md:
+- Do not proceed
+- Report the specific mismatch to the user
+- Request VISION.md update through user-approved intent before continuing
+
+### User-Only Approval for VISION Changes
+
+- Only the user (not agents) can approve VISION.md intent changes
+- When VISION.md needs update, present the proposed change to user and await approval
+- Do not auto-merge or agent-approve vision changes
+
+### Parity Contract with project-requirements
+
+This skill must feel identical to project-requirements in interaction style:
+- Same terse one-question-at-a-time loop
+- Same caveman-style brevity
+- Same readiness outcome format
+- Same bias reduction and unknown tracking approach
+
+The only difference: requirements skill applies to any artifact (agent/skill), project-requirements applies to project-level work.
 
 ## Objective
 

@@ -426,7 +426,7 @@ export default function SkillsPage() {
       .catch(() => {})
       .finally(() => setLoading(false))
     opendora.agent.tools()
-      .then((ids) => setAvailableTools(ids.filter((id) => !HIDDEN_TOOLS.has(id))))
+      .then((tools) => setAvailableTools(tools.map((t) => t.id).filter((id) => !HIDDEN_TOOLS.has(id))))
       .catch(() => {})
   }, [])
 
