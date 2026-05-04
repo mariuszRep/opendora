@@ -27,7 +27,8 @@
   "skills": [
     "project-context",
     "requirements",
-    "pre-implementation",
+    "code-exploration",
+    "architecture-analysis",
     "project-setup",
     "project-delivery",
     "review-gate"

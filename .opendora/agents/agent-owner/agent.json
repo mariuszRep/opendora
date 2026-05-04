@@ -21,12 +21,11 @@
   "skills": [
     "requirements",
     "session-management",
-    "pre-implementation",
+    "code-exploration",
     "agent-eval",
     "skill-eval",
     "tool-eval",
     "session-eval",
-    "suno-auth-exploration",
     "agent-ops",
     "skill-ops",
     "tool-meta-ops"

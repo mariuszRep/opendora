@@ -65,16 +65,17 @@ Load the minimum ordered skill set for the classified difficulty. Load each skil
 **Medium:**
 1) `project-context`
 2) `requirements`
-3) `pre-implementation` (medium thoroughness)
+3) `code-exploration` (medium thoroughness)
 4) `project-delivery`
 5) `review-gate`
 
 **Hard:**
 1) `project-context`
 2) `requirements`
-3) `pre-implementation` (thorough)
-4) `project-delivery`
-5) `review-gate`
+3) `architecture-analysis`
+4) `code-exploration` (thorough)
+5) `project-delivery`
+6) `review-gate`
 
 Adjust only when the request clearly needs a different minimal set.
 
@@ -82,7 +83,7 @@ Adjust only when the request clearly needs a different minimal set.
 
 Follow the loaded skill for each phase. Key rules:
 
-- **Research phases** (`pre-implementation`) are read-only. Do not implement during research.
+- **Research phases** (`code-exploration`, `architecture-analysis`) are read-only. Do not implement during research.
 - **Synthesis is mandatory** before implementation. After research, write a concrete spec with file paths, line numbers, and exactly what to change. Never write "based on the findings, fix it" — synthesize yourself.
 - **Implementation** follows the spec. Run tests and typecheck after changes.
 - **Verification** (`review-gate`) proves the code works. Run commands. Produce a PASS/FAIL/PARTIAL verdict with evidence.
