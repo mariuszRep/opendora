@@ -319,6 +319,18 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
         )
       }
 
+      // Emit the session link immediately so the UI can show a "View" button
+      // while the delegation is still running (important for sync/blocking mode).
+      ctx.metadata({
+        title: params.description ?? `Delegated to ${targetAgentName ?? targetSession.id}`,
+        metadata: {
+          sessionId: targetSession.id,
+          agent: targetAgentName,
+          mode: resolvedMode,
+          created,
+        },
+      })
+
       // ── SKILL PRELOADING FOR NEW SESSIONS ─────────────────────────────────
       const skillsToPreload = params.skills && params.skills.length > 0 ? params.skills : []
       let skillPreloadErrors: string[] = []
