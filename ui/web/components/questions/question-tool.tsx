@@ -8,7 +8,7 @@ import type { QuestionAnswer, QuestionRequest } from "@/lib/opendora"
 import { cn } from "@/lib/utils"
 import { CheckIcon } from "lucide-react"
 
-function QuestionStep(props: {
+export function QuestionStep(props: {
   question: QuestionRequest["questions"][number]
   value: QuestionAnswer
   customValue: string
@@ -16,9 +16,10 @@ function QuestionStep(props: {
   onPickSingle: (label: string) => void
   onCustomChange: (value: string) => void
   submitted?: boolean
+  hideCustomInput?: boolean
 }) {
   const multi = props.question.multiple === true
-  const allowCustom = props.question.custom !== false
+  const allowCustom = !props.hideCustomInput && props.question.custom !== false
 
   return (
     <div className="grid gap-4">

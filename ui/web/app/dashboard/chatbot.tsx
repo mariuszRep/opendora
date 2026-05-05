@@ -59,7 +59,7 @@ import { SpeechInput } from "@/components/ai-elements/speech-input"
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 
-import { QuestionTool } from "@/components/questions/question-tool"
+import { QuestionTool, QuestionStep } from "@/components/questions/question-tool"
 import { PermissionTool } from "@/components/permissions/permission-tool"
 import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart } from "@/lib/opendora"
 import { useUserProfile } from "@/hooks/use-user-profile"
@@ -78,6 +78,7 @@ import { BellIcon, CheckIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, L
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
@@ -246,6 +247,8 @@ export const Chatbot = () => {
   const [sessionTreeViewModes, setSessionTreeViewModes] = useState<Record<string, "code" | "view">>({})
   const [webfetchViewModes, setWebfetchViewModes] = useState<Record<string, "code" | "view">>({})
   const [expandedContractParts, setExpandedContractParts] = useState<Record<string, boolean>>({})
+  const [questionStep, setQuestionStep] = useState(0)
+  const [questionSelections, setQuestionSelections] = useState<string[][]>([])
 
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -266,6 +269,14 @@ export const Chatbot = () => {
       inputRef.current.focus()
     }
   }, [selectedSession])
+
+  // Reset question dock state when the pending question or session changes
+  const activeQuestionId = questionRequests[0]?.id
+  useEffect(() => {
+    const n = questionRequests[0]?.questions.length ?? 0
+    setQuestionStep(0)
+    setQuestionSelections(Array.from({ length: n }, () => []))
+  }, [activeQuestionId, selectedSession?.id])
 
   // Update agent's preferred model when user changes it in chat interface
   const updateAgentModel = useCallback(async (providerID: string, modelID: string) => {
@@ -432,8 +443,33 @@ export const Chatbot = () => {
     setTimeout(tryScroll, initialDelay)
   }, [messages, router, buildDashboardUrl, selectedSession?.id])
 
+  const handleQuestionAdvance = useCallback((trimmedText: string) => {
+    const request = questionRequests[0]
+    if (!request) return
+    const currentSels = questionSelections[questionStep] ?? []
+    const answer = trimmedText ? [...currentSels, trimmedText] : currentSels
+    if (answer.length === 0) return
+    const total = request.questions.length
+    const allAnswers = Array.from({ length: total }, (_, i) =>
+      i === questionStep ? answer : (questionSelections[i] ?? [])
+    )
+    setText("")
+    if (questionStep < total - 1) {
+      setQuestionSelections(allAnswers)
+      setQuestionStep((prev) => prev + 1)
+    } else {
+      void replyQuestion(request.id, allAnswers)
+      setQuestionStep(0)
+      setQuestionSelections([])
+    }
+  }, [questionRequests, questionStep, questionSelections, replyQuestion])
+
   const handleSubmit = useCallback(
     (message: PromptInputMessage) => {
+      if (questionRequests.length > 0) {
+        handleQuestionAdvance(message.text?.trim() ?? "")
+        return
+      }
       if (!message.text?.trim()) return
       if (message.files?.length) {
         toast.info(`${message.files.length} file(s) attached`)
@@ -451,7 +487,7 @@ export const Chatbot = () => {
         doSend()
       }
     },
-    [sendMessage, selectedModel, selectedGroupId, selectedAgent, selectedSession, createSession, userName],
+    [sendMessage, selectedModel, selectedGroupId, selectedAgent, selectedSession, createSession, userName, questionRequests, handleQuestionAdvance],
   )
 
   const handleSuggestionClick = useCallback(
@@ -936,7 +972,7 @@ export const Chatbot = () => {
                                       ) : undefined
 
                                       return (
-                                        <Tool defaultOpen={isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}>
+                                        <Tool defaultOpen={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}>
                                           <ToolHeader
                                             state={state}
                                             title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : tool.tool}
@@ -1110,7 +1146,7 @@ export const Chatbot = () => {
                                   ) : undefined
                                   return (
                                     <Tool
-                                      defaultOpen={isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}
+                                      defaultOpen={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}
                                       key={tool.id}
                                     >
                                       <ToolHeader
@@ -1273,6 +1309,37 @@ export const Chatbot = () => {
             <PromptInputHeader>
               <AttachmentsDisplay />
             </PromptInputHeader>
+            {questionRequests.length > 0 && (() => {
+              const request = questionRequests[0]
+              const question = request.questions[questionStep]
+              const currentSels = questionSelections[questionStep] ?? []
+              return (
+                <div className="px-4 pt-4 pb-2 border-b border-border">
+                  <QuestionStep
+                    question={question}
+                    value={currentSels}
+                    customValue=""
+                    hideCustomInput
+                    onToggle={(label) =>
+                      setQuestionSelections((prev) => {
+                        const updated = [...prev]
+                        const sel = updated[questionStep] ?? []
+                        updated[questionStep] = sel.includes(label) ? sel.filter((s) => s !== label) : [...sel, label]
+                        return updated
+                      })
+                    }
+                    onPickSingle={(label) =>
+                      setQuestionSelections((prev) => {
+                        const updated = [...prev]
+                        updated[questionStep] = [label]
+                        return updated
+                      })
+                    }
+                    onCustomChange={() => {}}
+                  />
+                </div>
+              )
+            })()}
             {(questionRequests.length > 0 || permissionRequests.length > 0) && (
               <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-amber-400 border-b border-border">
                 <BellIcon className="size-3 shrink-0" />
@@ -1285,7 +1352,7 @@ export const Chatbot = () => {
                 onChange={(e) => setText(e.target.value)}
                 value={text}
                 placeholder={selectedSession ? (isRecording ? "Listening..." : isTranscribing ? "Transcribing..." : "Type a message…") : "Create or select a session to chat"}
-                disabled={questionRequests.length > 0 || isRecording}
+                disabled={isRecording}
               />
             </PromptInputBody>
             <PromptInputFooter>
@@ -1404,7 +1471,22 @@ export const Chatbot = () => {
                 )}
 
               </PromptInputTools>
-              <PromptInputSubmit status={status} onStop={abort} disabled={questionRequests.length > 0 || permissionRequests.length > 0} />
+              <div className="flex items-center gap-1">
+                {questionRequests.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => void rejectQuestion(questionRequests[0].id)}
+                    className="text-xs text-muted-foreground hover:text-foreground px-2 py-1"
+                  >
+                    Dismiss
+                  </button>
+                )}
+                <PromptInputSubmit
+                  status={questionRequests.length > 0 ? undefined : status}
+                  onStop={abort}
+                  disabled={permissionRequests.length > 0}
+                />
+              </div>
             </PromptInputFooter>
           </PromptInput>
           

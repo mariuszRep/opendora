@@ -1,0 +1,41 @@
+- generic [ref=e8]:
+  - generic [ref=e10]:
+    - link "Suno Logo" [ref=e12] [cursor=pointer]:
+      - /url: /home
+      - img "Suno Logo" [ref=e13]
+    - generic [ref=e19]:
+      - button "Log In" [ref=e20] [cursor=pointer]:
+        - generic [ref=e21]: Log In
+      - button "Open App" [ref=e22] [cursor=pointer]:
+        - generic [ref=e23]: Open App
+  - generic [ref=e24]:
+    - generic [ref=e25]:
+      - heading "Make any song you can imagine" [level=1] [ref=e28]: Make any song you can imagine
+      - heading "Start with a simple prompt or dive into our pro editing tools, your next track is just a step away." [level=2] [ref=e31]
+    - generic [ref=e34]:
+      - textbox "Chat to make music" [ref=e36]
+      - generic [ref=e37]:
+        - button [ref=e40]:
+          - img [ref=e41]
+        - button "Advanced" [ref=e44]:
+          - img [ref=e45]
+          - generic [ref=e48]: Advanced
+        - button "Generate random prompt" [ref=e49]:
+          - img [ref=e50]
+        - button "Create" [ref=e54]:
+          - generic [ref=e55]:
+            - img [ref=e57]
+            - generic [ref=e61]: Create
+    - generic [ref=e64]:
+      - img "Billboard" [ref=e67]
+      - img "Complex" [ref=e70]
+      - img "Forbes" [ref=e73]
+      - img "Rolling Stone" [ref=e76]
+      - img "Variety" [ref=e79]
+      - img "Wired" [ref=e82]
+      - img "Billboard" [ref=e85]
+      - img "Complex" [ref=e88]
+      - img "Forbes" [ref=e91]
+      - img "Rolling Stone" [ref=e94]
+      - img "Variety" [ref=e97]
+      - img "Wired" [ref=e100]
