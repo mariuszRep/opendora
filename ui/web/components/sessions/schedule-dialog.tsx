@@ -22,6 +22,8 @@ type RunMode = "direct" | "sub-session"
 type SubTarget = "new" | "existing"
 type SubSessionType = "worker" | "scope" | "scratchpad"
 
+const CREATE_NEW_SESSION = "__create_new__"
+
 function formatSessionTitle(session: Session): string {
   if (session.title && !session.title.startsWith("New session")) return session.title
   return new Date(session.time.created).toLocaleString(undefined, {
@@ -45,6 +47,8 @@ export function ScheduleDialog({
   onDeleted?: () => void
 }) {
   const isEdit = !!schedule
+  // When opened from within a session, lock the session+agent context
+  const isSessionScoped = !!sessionIdProp
   const { agents, sessions } = useOpendoraContext()
   const visibleAgents = agents.filter((a) => !a.hidden)
 
@@ -54,14 +58,40 @@ export function ScheduleDialog({
   const [color, setColor] = React.useState("slate")
   const [isActive, setIsActive] = React.useState(true)
   const [ownerSessionId, setOwnerSessionId] = React.useState<string>("")
+  // Explicit agent selection (global mode only; session-scoped derives from session)
+  const [explicitAgentId, setExplicitAgentId] = React.useState<string>("")
+  const [newSessionName, setNewSessionName] = React.useState<string>("")
   const [runMode, setRunMode] = React.useState<RunMode>("direct")
   const [subTarget, setSubTarget] = React.useState<SubTarget>("new")
   const [subSessionType, setSubSessionType] = React.useState<SubSessionType>("worker")
   const [subExistingSessionId, setSubExistingSessionId] = React.useState<string>("")
   const [subAgentOverride, setSubAgentOverride] = React.useState<string>("")
 
+  const isCreatingNewSession = !isSessionScoped && ownerSessionId === CREATE_NEW_SESSION
+
   const ownerSession = sessions.find((s) => s.id === ownerSessionId) ?? null
-  const ownerAgentId = ownerSession?.agentID ?? agentIdProp ?? ""
+  const ownerAgentId = isSessionScoped
+    ? (agentIdProp ?? ownerSession?.agentID ?? "")
+    : (explicitAgentId || (ownerSession?.agentID ?? ""))
+
+  // In global mode, filter sessions to those matching the selected agent
+  const filteredSessions = !isSessionScoped && explicitAgentId
+    ? sessions.filter((s) => s.agentID === explicitAgentId)
+    : sessions
+
+  // Labels for the session-scoped info box
+  const scopedSessionTitle = React.useMemo(() => {
+    if (!isSessionScoped) return null
+    const s = sessions.find((s) => s.id === sessionIdProp)
+    return s ? formatSessionTitle(s) : sessionIdProp ?? ""
+  }, [isSessionScoped, sessions, sessionIdProp])
+
+  const scopedAgentName = React.useMemo(() => {
+    if (!isSessionScoped) return null
+    const agId = agentIdProp ?? sessions.find((s) => s.id === sessionIdProp)?.agentID ?? ""
+    const ag = agents.find((a) => (a as any)._id === agId)
+    return ag?.name ?? null
+  }, [isSessionScoped, agents, sessions, agentIdProp, sessionIdProp])
 
   React.useEffect(() => {
     if (!open) return
@@ -71,6 +101,8 @@ export function ScheduleDialog({
       setColor(schedule.color ?? "slate")
       setIsActive(schedule.is_active ?? true)
       setOwnerSessionId(schedule.session_id ?? "")
+      setExplicitAgentId(schedule.agent_id ?? "")
+      setNewSessionName("")
       if (schedule.action_type === "tool") {
         try {
           const p = JSON.parse(schedule.prompt)
@@ -105,17 +137,40 @@ export function ScheduleDialog({
       setColor("slate")
       setIsActive(true)
       setOwnerSessionId(sessionIdProp ?? "")
+      setExplicitAgentId(agentIdProp ?? "")
+      setNewSessionName("")
       setRunMode("direct")
       setSubTarget("new")
       setSubSessionType("worker")
       setSubExistingSessionId("")
       setSubAgentOverride("")
     }
-  }, [open, schedule, sessionIdProp])
+  }, [open, schedule, sessionIdProp, agentIdProp])
 
   const handleSubmit = async () => {
     if (!message.trim()) { toast.error("Message cannot be empty"); return }
-    if (!ownerSessionId) { toast.error("Select a parent session"); return }
+
+    let finalSessionId: string | undefined
+
+    if (isSessionScoped) {
+      finalSessionId = sessionIdProp
+    } else {
+      if (!ownerSessionId) { toast.error("Select or create a parent session"); return }
+      if (isCreatingNewSession) {
+        try {
+          const created = await opendora.session.create({
+            agentID: ownerAgentId || undefined,
+            title: newSessionName.trim() || undefined,
+          })
+          finalSessionId = created.id
+        } catch (err: any) {
+          toast.error(err.message || "Failed to create session")
+          return
+        }
+      } else {
+        finalSessionId = ownerSessionId
+      }
+    }
 
     let prompt: string
     let action_type: "message" | "tool"
@@ -124,7 +179,7 @@ export function ScheduleDialog({
     if (runMode === "sub-session") {
       const agentId = subAgentOverride || ownerAgentId
       if (!agentId && subTarget === "new") {
-        toast.error("No agent available — select an agent override or attach to a session with an agent")
+        toast.error("No agent available — select an agent override")
         return
       }
       action_type = "tool"
@@ -149,14 +204,14 @@ export function ScheduleDialog({
         await opendora.schedule.update(schedule.id, {
           prompt, cron_expression: cronExpr, action_type, tool_name, color,
           is_active: isActive,
-          session_id: ownerSessionId,
+          session_id: finalSessionId,
           agent_id: ownerAgentId || null,
           ...(name.trim() ? { name: name.trim() } : {}),
         })
         toast.success("Schedule updated!")
       } else {
         await opendora.schedule.create({
-          session_id: ownerSessionId,
+          session_id: finalSessionId,
           agent_id: ownerAgentId || undefined,
           prompt, cron_expression: cronExpr, action_type, tool_name, color,
           name: name.trim() || undefined,
@@ -215,34 +270,89 @@ export function ScheduleDialog({
               />
             </div>
 
-            {/* Parent session */}
-            <div className="flex flex-col gap-1.5">
-              <Label>Parent session</Label>
-              <Select
-                value={ownerSessionId || "__none__"}
-                onValueChange={(v) => setOwnerSessionId(v === "__none__" ? "" : v)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a session…" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">— None (unattached) —</SelectItem>
-                  {sessions.map((s) => {
-                    const agent = agents.find((a) => (a as any)._id === s.agentID)
-                    return (
-                      <SelectItem key={s.id} value={s.id}>
-                        <span className="flex items-baseline gap-1.5">
-                          <span>{formatSessionTitle(s)}</span>
-                          {agent && (
-                            <span className="text-xs text-muted-foreground capitalize">@{agent.name}</span>
-                          )}
-                        </span>
-                      </SelectItem>
-                    )
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
+            {isSessionScoped ? (
+              /* Session-scoped: show locked context, no selectors */
+              <div className="flex flex-col gap-0.5 rounded-md border px-3 py-2.5 bg-muted/40">
+                <span className="text-xs text-muted-foreground mb-0.5">Attached to</span>
+                <span className="text-sm font-medium truncate">{scopedSessionTitle}</span>
+                {scopedAgentName && (
+                  <span className="text-xs text-muted-foreground capitalize">@{scopedAgentName}</span>
+                )}
+              </div>
+            ) : (
+              /* Global mode: agent selector + parent session */
+              <>
+                {/* Agent */}
+                <div className="flex flex-col gap-1.5">
+                  <Label>
+                    Agent
+                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">(optional)</span>
+                  </Label>
+                  <Select
+                    value={explicitAgentId || "__none__"}
+                    onValueChange={(v) => {
+                      const newAgent = v === "__none__" ? "" : v
+                      setExplicitAgentId(newAgent)
+                      // Clear session if it no longer matches the selected agent
+                      if (newAgent && ownerSession && ownerSession.agentID !== newAgent) {
+                        setOwnerSessionId("")
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select agent…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— Any agent —</SelectItem>
+                      {visibleAgents.map((a) => (
+                        <SelectItem key={(a as any)._id} value={(a as any)._id}>
+                          <span className="capitalize">{a.name}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Parent session */}
+                <div className="flex flex-col gap-1.5">
+                  <Label>Parent session</Label>
+                  <Select
+                    value={ownerSessionId || "__none__"}
+                    onValueChange={(v) => setOwnerSessionId(v === "__none__" ? "" : v)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select or create session…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— None (unattached) —</SelectItem>
+                      <SelectItem value={CREATE_NEW_SESSION}>+ Create new session…</SelectItem>
+                      {filteredSessions.map((s) => {
+                        const agent = agents.find((a) => (a as any)._id === s.agentID)
+                        return (
+                          <SelectItem key={s.id} value={s.id}>
+                            <span className="flex items-baseline gap-1.5">
+                              <span>{formatSessionTitle(s)}</span>
+                              {agent && (
+                                <span className="text-xs text-muted-foreground capitalize">@{agent.name}</span>
+                              )}
+                            </span>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+
+                  {isCreatingNewSession && (
+                    <Input
+                      placeholder="Session name (optional)"
+                      value={newSessionName}
+                      onChange={(e) => setNewSessionName(e.target.value)}
+                      autoFocus
+                    />
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Cron */}
             <div className="flex flex-col gap-1.5">
@@ -380,11 +490,9 @@ export function ScheduleDialog({
           </div>
         </div>
 
-        {/* Separator before footer on mobile keeps layout clean */}
         <Separator className="mt-1" />
 
         <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-between">
-          {/* Destructive actions — left side (edit only) */}
           {isEdit ? (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handleRunNow} className="gap-1.5">
@@ -400,7 +508,6 @@ export function ScheduleDialog({
             <div />
           )}
 
-          {/* Primary actions — right side */}
           <div className="flex gap-2 justify-end">
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>

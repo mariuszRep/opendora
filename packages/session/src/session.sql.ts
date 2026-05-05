@@ -75,6 +75,10 @@ export const SessionTable = sqliteTable(
     cache_read_tokens: integer(),
     cache_write_tokens: integer(),
     compaction_count: integer(),
+    // Tools unlocked for this session via skill_load (skill.json's tools array).
+    // Persisted so the allowlist survives server restarts without forcing the model
+    // to re-invoke skill_load. Stored as a JSON array of tool IDs.
+    unlocked_tools: text({ mode: "json" }).$type<string[]>(),
     // Vendor import — origin of sessions that were brought in from other agents
     // (Claude Code, Codex, Antigravity, Windsurf). NULL on opendora-native sessions.
     vendor: text().$type<"claude" | "codex" | "antigravity" | "windsurf">(),

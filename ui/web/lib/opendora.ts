@@ -459,9 +459,9 @@ export const opendora = {
   },
   schedule: {
     list: () => req<Schedule[]>("/schedule"),
-    create: (input: { agent_id?: string; prompt: string; cron_expression: string; session_id?: string; action_type?: "message" | "tool"; tool_name?: string; color?: string; name?: string }) =>
+    create: (input: { agent_id?: string; prompt: string; cron_expression: string; session_id?: string; timezone?: string; action_type?: "message" | "tool"; tool_name?: string; color?: string; name?: string }) =>
       req<Schedule>("/schedule", { method: "POST", body: JSON.stringify(input) }),
-    update: (id: string, input: { is_active?: boolean; cron_expression?: string; prompt?: string; action_type?: "message" | "tool"; tool_name?: string; color?: string; agent_id?: string | null; session_id?: string | null; name?: string | null }) =>
+    update: (id: string, input: { is_active?: boolean; cron_expression?: string; timezone?: string; prompt?: string; action_type?: "message" | "tool"; tool_name?: string; color?: string; agent_id?: string | null; session_id?: string | null; name?: string | null }) =>
       req<Schedule>(`/schedule/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
     remove: (id: string) => req<boolean>(`/schedule/${id}`, { method: "DELETE" }),
     run: (id: string) => req<boolean>(`/schedule/${id}/run`, { method: "POST" }),

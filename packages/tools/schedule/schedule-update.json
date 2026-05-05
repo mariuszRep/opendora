@@ -1,16 +1,32 @@
 {
   "name": "schedule_update",
-  "description": "Update an existing schedule. Only the fields you provide will be changed. Use this to enable/disable a schedule, change its cron expression, prompt, or target.",
+  "description": "Update an existing schedule. Only the fields you provide will be changed. Use run_mode to change how the schedule delivers its prompt: 'direct' sends to the parent session, 'delegate_new' creates a fresh sub-session each run, 'delegate_existing' routes to a specific existing session.",
   "inputSchema": {
     "type": "object",
     "properties": {
       "id": { "type": "string", "description": "The schedule ID to update" },
       "is_active": { "type": "boolean", "description": "Set to true to enable or false to disable the schedule" },
       "cron_expression": { "type": "string", "description": "New cron expression (e.g. '0 10 * * *')" },
-      "prompt": { "type": "string", "description": "New prompt or instruction" },
       "timezone": { "type": "string", "description": "New IANA timezone (e.g. 'Europe/Berlin')" },
-      "action_type": { "type": "string", "enum": ["message", "tool"], "description": "Change action type" },
-      "tool_name": { "type": "string", "description": "New tool name when action_type is 'tool'. Pass empty string to clear." }
+      "agent_id": { "type": "string", "description": "Update the owning agent ID" },
+      "session_id": { "type": "string", "description": "Update the parent session ID" },
+      "name": { "type": "string", "description": "New display name for the schedule" },
+      "color": { "type": "string", "description": "New color identifier (e.g. 'blue', 'green', 'slate')" },
+      "run_mode": {
+        "type": "string",
+        "enum": ["direct", "delegate_new", "delegate_existing"],
+        "description": "'direct' sends to the parent session. 'delegate_new' creates a fresh sub-session each run. 'delegate_existing' routes to a specific existing session."
+      },
+      "prompt": { "type": "string", "description": "New message or instruction (inner prompt for delegate modes)" },
+      "delegate_session_id": { "type": "string", "description": "New target session ID when run_mode is 'delegate_existing'" },
+      "delegate_session_type": {
+        "type": "string",
+        "enum": ["worker", "scope", "scratchpad"],
+        "description": "New sub-session type when run_mode is 'delegate_new'"
+      },
+      "delegate_agent_id": { "type": "string", "description": "New agent override for delegation" },
+      "action_type": { "type": "string", "enum": ["message", "tool"], "description": "Low-level: change action type. Prefer run_mode instead." },
+      "tool_name": { "type": "string", "description": "Low-level: new tool name when action_type is 'tool'. Pass empty string to clear. Prefer run_mode instead." }
     },
     "required": ["id"]
   }

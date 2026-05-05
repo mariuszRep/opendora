@@ -68,6 +68,7 @@ export interface HostServices {
     setReplyToSessionID?(input: { sessionID: string; replyToSessionID: string }): Promise<unknown>
     reply?(input: { sessionID: string; agentID: string; message: string; parentMessageID?: string }): Promise<unknown>
     pong(sessionId: string, opts: { from: { kind: string; id: string }; content: string; parent: { messageId: string } | null }): Promise<void>
+    ensureMainSession?(agentID: string): Promise<{ id: string; [k: string]: unknown }>
   }
   prompt?: (options: unknown) => Promise<unknown>
   promptCancel?: (sessionId: string) => void
@@ -107,6 +108,8 @@ export interface HostServices {
       cron_expression: string
       agent_id?: string
       session_id?: string
+      name?: string
+      color?: string
       timezone?: string
       action_type?: "message" | "tool"
       tool_name?: string
@@ -118,6 +121,10 @@ export interface HostServices {
       timezone?: string
       action_type?: "message" | "tool"
       tool_name?: string
+      agent_id?: string | null
+      session_id?: string | null
+      name?: string | null
+      color?: string | null
     }): Promise<unknown | undefined>
     remove(id: string): Promise<void>
   }

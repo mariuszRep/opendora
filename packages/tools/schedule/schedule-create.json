@@ -1,16 +1,31 @@
 {
   "name": "schedule_create",
-  "description": "Create a new schedule. A schedule runs a prompt or tool on a cron expression against a target agent or session. Use standard cron syntax (e.g. '0 9 * * 1-5' for weekdays at 9 AM).",
+  "description": "Create a new schedule. A schedule runs a prompt on a cron expression against a target agent or session. Use run_mode to specify how the prompt is delivered: 'direct' sends it to the parent session, 'delegate_new' creates a fresh sub-session each run, 'delegate_existing' reuses a specific session. Use standard cron syntax (e.g. '0 9 * * 1-5' for weekdays at 9 AM).",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "prompt": { "type": "string", "description": "The prompt or instruction to execute when the schedule fires" },
+      "prompt": { "type": "string", "description": "The message or instruction to send when the schedule fires" },
       "cron_expression": { "type": "string", "description": "Cron expression defining when the schedule runs (e.g. '0 9 * * *' for daily at 9 AM)" },
-      "agent_id": { "type": "string", "description": "ID of the agent to target. Provide either agent_id or session_id." },
-      "session_id": { "type": "string", "description": "ID of the session to target. Provide either agent_id or session_id." },
+      "agent_id": { "type": "string", "description": "ID or name of the agent that owns this schedule (parent session's agent)" },
+      "session_id": { "type": "string", "description": "ID of the parent session to attach this schedule to" },
+      "name": { "type": "string", "description": "Display name for the schedule (auto-generated from prompt if omitted)" },
+      "color": { "type": "string", "description": "Color identifier for the schedule card (e.g. 'blue', 'green', 'slate')" },
       "timezone": { "type": "string", "default": "UTC", "description": "IANA timezone for the cron expression (e.g. 'America/New_York')" },
-      "action_type": { "type": "string", "enum": ["message", "tool"], "default": "message", "description": "'message' sends the prompt as a message; 'tool' executes the prompt as a tool call" },
-      "tool_name": { "type": "string", "description": "Tool name to invoke when action_type is 'tool'" }
+      "run_mode": {
+        "type": "string",
+        "enum": ["direct", "delegate_new", "delegate_existing"],
+        "description": "'direct' sends the prompt as a message to the parent session. 'delegate_new' creates a fresh sub-session each run. 'delegate_existing' routes to a specific existing session each run."
+      },
+      "delegate_session_id": { "type": "string", "description": "Target session ID when run_mode is 'delegate_existing'" },
+      "delegate_session_type": {
+        "type": "string",
+        "enum": ["worker", "scope", "scratchpad"],
+        "default": "worker",
+        "description": "Sub-session type to create when run_mode is 'delegate_new'"
+      },
+      "delegate_agent_id": { "type": "string", "description": "Agent override for the delegated session (defaults to parent session's agent)" },
+      "action_type": { "type": "string", "enum": ["message", "tool"], "description": "Low-level: 'message' or 'tool'. Prefer run_mode instead." },
+      "tool_name": { "type": "string", "description": "Low-level: tool name when action_type is 'tool'. Prefer run_mode instead." }
     },
     "required": ["prompt", "cron_expression"]
   }

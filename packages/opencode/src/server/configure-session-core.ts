@@ -386,6 +386,9 @@ export function configureSessionCore() {
       setSessionStatus(sessionId: string, status: string) {
         return Session.setSessionStatus({ sessionID: sessionId, status: status as any })
       },
+      ensureMainSession(agentID: string) {
+        return Session.ensureMainSession(agentID)
+      },
     },
     question: {
       ask: Question.ask,

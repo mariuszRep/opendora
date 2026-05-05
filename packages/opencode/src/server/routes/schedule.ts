@@ -135,6 +135,7 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
       session_id: z.string().optional(),
       prompt: z.string(),
       cron_expression: z.string(),
+      timezone: z.string().optional(),
       action_type: z.enum(["message", "tool"]).optional(),
       tool_name: z.string().optional(),
       color: z.string().optional(),
@@ -152,7 +153,7 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
         session_id: input.session_id || null,
         project_id: null,
         is_active: true,
-        timezone: "UTC",
+        timezone: input.timezone || "UTC",
         action_type: input.action_type ?? "message" as const,
         tool_name: input.tool_name || null,
         color: input.color || null,
@@ -188,6 +189,7 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
     validator("json", z.object({
       is_active: z.boolean().optional(),
       cron_expression: z.string().optional(),
+      timezone: z.string().optional(),
       prompt: z.string().optional(),
       action_type: z.enum(["message", "tool"]).optional(),
       tool_name: z.string().optional(),
@@ -204,6 +206,7 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
       const setBlock: any = { time_updated: Date.now() }
       if (updates.is_active !== undefined) setBlock.is_active = updates.is_active
       if (updates.cron_expression) setBlock.cron_expression = updates.cron_expression
+      if (updates.timezone) setBlock.timezone = updates.timezone
       if (updates.prompt) setBlock.prompt = updates.prompt
       if (updates.action_type) setBlock.action_type = updates.action_type
       if (updates.tool_name !== undefined) setBlock.tool_name = updates.tool_name || null
