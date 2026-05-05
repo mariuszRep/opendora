@@ -1,15 +1,10 @@
 {
   "tools": [
-    "read",
-    "edit",
-    "delegate",
-    "reply",
-    "question",
-    "todowrite",
-    "session_get",
-    "agent_get",
-    "agent_update",
-    "log",
-    "bash"
+    "skill_list",
+    "skill_load",
+    "skill_search",
+    "skill_create",
+    "skill_remove",
+    "todowrite"
   ]
 }
