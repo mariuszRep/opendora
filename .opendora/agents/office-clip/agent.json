@@ -1,0 +1,33 @@
+{
+  "name": "Office Clip",
+  "description": "Creates, reads, edits, converts, and finalizes office-style file artifacts including documents, spreadsheets, presentations, PDFs, CSVs, and related administrative deliverables.",
+  "mode": "worker",
+  "model": {
+    "modelID": "gpt-5.5",
+    "providerID": "openai-codex"
+  },
+  "temperature": 0.3,
+  "steps": 60,
+  "color": "lime",
+  "tools": [
+    "read",
+    "glob",
+    "grep",
+    "bash",
+    "reply",
+    "question",
+    "todowrite",
+    "skill_load"
+  ],
+  "skills": [
+    "document-generation",
+    "spreadsheet-generation",
+    "presentation-generation",
+    "pdf-processing"
+  ],
+  "toolConfig": {
+    "reply": {
+      "stopAfterReply": false
+    }
+  }
+}

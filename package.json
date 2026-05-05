@@ -1,4 +1,3 @@
-
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "opendora",
@@ -83,9 +82,12 @@
     "@opencode-ai/plugin": "*",
     "@opendora/sdk": "workspace:*",
     "@opendora/util": "workspace:*",
+    "@pdf-lib/fontkit": "1.1.1",
+    "pdf-lib": "1.17.1",
     "quansync": "1.0.0",
     "react": "19.2.5",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "xlsx": "0.18.5"
   },
   "repository": {
     "type": "git",
