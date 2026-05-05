@@ -7,18 +7,11 @@ description: Required lane for tool metadata only: tool descriptions and paramet
 
 Use this skill when tool metadata needs review, improvement, or auditing — for example when an agent picked the wrong tool, mis-filled a parameter, or when a description is vague, stale, or contradicts current behavior.
 
-## This Skill Combines
-
-- **Tool Curator** — auditing and refining tool metadata
-- **Tool Metadata Management** — description and parameter description updates
-
 ## Alias Triggers
 
-This skill responds to:
 - "tool metadata"
 - "tool meta"
 - "tool descriptions"
-- "tool-curator"
 - "update tool description"
 - "improve tool parameters"
 - "fix tool selection"
@@ -121,9 +114,3 @@ Produce tool descriptions that:
 
 ---
 
-## Migration Notes
-
-This skill (`tool-meta-ops`) replaces:
-- `tool-curator` (merged entirely into this skill)
-
-Old skill directory is retained as a compatibility alias but all new work should reference this skill.

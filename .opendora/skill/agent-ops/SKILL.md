@@ -8,19 +8,10 @@ origin: opendora
 
 Use this skill for creating new agents, managing existing agents, running improvement experiments, and handling all agent lifecycle tasks.
 
-## This Skill Combines
-
-- **Agent Authoring** — templates and guidance for writing high-quality agent personas, injections, and configurations
-- **Agent Experimentation** — running targeted improvement experiments on agents (baseline, apply one change, measure delta, keep or discard)
-- **Agent Management** — creating, updating, listing, getting, and deleting agents
-
 ## Alias Triggers
 
-This skill responds to:
 - "agent operations"
 - "agent management"
-- "agent-author"
-- "agent-experiment"
 - "create a new agent"
 - "update an agent"
 - "run an experiment on agent"
@@ -292,12 +283,3 @@ Append one entry per experiment to `.opendora/skill/agent-ops/log.md`:
 - **Lesson**: {one sentence}
 ```
 
----
-
-## Migration Notes
-
-This skill (`agent-ops`) combines and replaces:
-- `agent-author` (merged into Agent Authoring section)
-- `agent-experiment` (merged into Agent Experimentation section)
-
-Old skill directories are retained as compatibility aliases but all new work should reference this skill.

@@ -8,19 +8,10 @@ origin: opendora
 
 Use this skill for creating new skills, improving existing skills, running evaluations and benchmarks, and managing all skill lifecycle tasks.
 
-## This Skill Combines
-
-- **Skill Authoring** — templates and guidance for creating, rewriting, and improving reusable skills
-- **Skill Creator** — hands-on skill creation workflow with test cases, evaluation, and iteration
-- **Skill Management** — skill lifecycle including improvements, benchmarks, and description optimization
-
 ## Alias Triggers
 
-This skill responds to:
 - "skill operations"
 - "skill management"
-- "skill-author"
-- "skill-creator"
 - "create a new skill"
 - "improve a skill"
 - "run skill evals"
@@ -277,12 +268,3 @@ Before saving any skill:
 - [ ] `skill.json` exists and lists exactly the tools
 - [ ] Important existing behavior has been preserved or deliberately replaced
 
----
-
-## Migration Notes
-
-This skill (`skill-ops`) combines and replaces:
-- `skill-author` (merged into Skill Authoring section)
-- `skill-creator` (merged into Skill Creation Workflow section)
-
-Old skill directories are retained as compatibility aliases but all new work should reference this skill.

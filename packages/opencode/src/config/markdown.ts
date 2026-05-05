@@ -68,24 +68,34 @@ export namespace ConfigMarkdown {
     return content.replace(frontmatter, () => processed)
   }
 
+  function hasObjectValues(data: Record<string, unknown>): boolean {
+    return Object.values(data).some(
+      (v) => v !== null && typeof v === "object" && !Array.isArray(v) && !(v instanceof Date),
+    )
+  }
+
   export async function parse(filePath: string) {
     const template = await Filesystem.readText(filePath)
 
     try {
       const md = matter(template)
-      return md
+      // gray-matter succeeds but YAML silently misparses `key: text: more` as a
+      // nested object — detect and re-parse with the sanitizer in that case too
+      if (!hasObjectValues(md.data)) return md
     } catch {
-      try {
-        return matter(fallbackSanitization(template))
-      } catch (err) {
-        throw new FrontmatterError(
-          {
-            path: filePath,
-            message: `${filePath}: Failed to parse YAML frontmatter: ${err instanceof Error ? err.message : String(err)}`,
-          },
-          { cause: err },
-        )
-      }
+      // fall through to sanitized re-parse below
+    }
+
+    try {
+      return matter(fallbackSanitization(template))
+    } catch (err) {
+      throw new FrontmatterError(
+        {
+          path: filePath,
+          message: `${filePath}: Failed to parse YAML frontmatter: ${err instanceof Error ? err.message : String(err)}`,
+        },
+        { cause: err },
+      )
     }
   }
 

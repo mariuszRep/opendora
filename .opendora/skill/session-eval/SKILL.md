@@ -14,8 +14,6 @@ Use this skill when you need to evaluate whether a session was executed correctl
 - "evaluate session"
 - "session audit"
 - "workflow quality check"
-- "retro"
-- "session retro"
 - "session retrospective"
 - "efficiency audit"
 
