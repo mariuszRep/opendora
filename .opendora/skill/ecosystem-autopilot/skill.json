@@ -1,0 +1,17 @@
+{
+  "tools": [
+    "todowrite",
+    "agent_list",
+    "agent_get",
+    "skill_list",
+    "tool_list",
+    "session_search",
+    "session_get",
+    "session_tree",
+    "schedule_list",
+    "delegate",
+    "log",
+    "question",
+    "reply"
+  ]
+}
