@@ -1,6 +1,6 @@
 ---
 name: tool-meta-ops
-description: Required lane for tool metadata only: tool descriptions and parameter docs that affect tool selection/fill accuracy. Do not use for agent persona/config changes or skill content changes.
+description: Required lane for tool metadata only covering tool descriptions and parameter docs that affect tool selection/fill accuracy. Do not use for agent persona/config changes or skill content changes.
 ---
 
 # Tool Metadata Operations Skill

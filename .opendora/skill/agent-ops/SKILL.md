@@ -1,6 +1,6 @@
 ---
 name: agent-ops
-description: Required lane for all agent work: personas, injections, configs, routing rules, and agent eval/experiments. Do not use for skill content or tool metadata changes.
+description: Required lane for all agent work including personas, injections, configs, routing rules, and agent eval/experiments. Do not use for skill content or tool metadata changes.
 origin: opendora
 ---
 

@@ -1,0 +1,12 @@
+{
+  "tools": [
+    "schedule_create",
+    "schedule_list",
+    "schedule_get",
+    "schedule_update",
+    "schedule_delete",
+    "schedule_run",
+    "agent_list",
+    "agent_get"
+  ]
+}

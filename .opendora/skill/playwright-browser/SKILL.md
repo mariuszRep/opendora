@@ -1,6 +1,6 @@
 ---
 name: playwright-browser
-description: "Use when automating, testing, debugging, or inspecting the OpenDora UI or any web page via Playwright MCP. Covers all 22 browser tools (navigation, observation, interaction, scripting, and control) plus safety and external-impact guidance."
+description: Use when automating, testing, debugging, or inspecting the OpenDora UI or any web page via Playwright MCP. Covers all 22 browser tools including navigation, observation, interaction, scripting, and control plus safety and external-impact guidance.
 origin: opendora
 ---
 

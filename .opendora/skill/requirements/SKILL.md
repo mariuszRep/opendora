@@ -1,6 +1,6 @@
 ---
 name: requirements
-description: Conditional skill for unclear, incomplete, or risky requests. Uses iterative one-question-at-a-time fact-finding to reduce bias and remove unknowns. Produces concise readiness outcome for handoff. Enforces VISION.md sync gate and strict mismatch block before implementation. Applies to all artifact types: projects, agents, skills, and tools.
+description: Conditional skill for unclear, incomplete, or risky requests. Uses iterative one-question-at-a-time fact-finding to reduce bias and remove unknowns. Produces concise readiness outcome for handoff. Enforces VISION.md sync gate and strict mismatch block before implementation. Applies to all artifact types including projects, agents, skills, and tools.
 last_updated: 2026-05-03T12:00:00Z
 ---
 

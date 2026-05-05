@@ -1,6 +1,6 @@
 ---
 name: skill-ops
-description: Required lane for all skill work: create/update SKILL.md and skill.json, improve trigger descriptions, and run skill eval/benchmarks. Do not use for agent persona/config or tool metadata updates.
+description: Required lane for all skill work including creating or updating SKILL.md and skill.json, improving trigger descriptions, and running skill eval/benchmarks. Do not use for agent persona/config or tool metadata updates.
 origin: opendora
 ---
 

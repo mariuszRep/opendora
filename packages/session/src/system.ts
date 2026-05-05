@@ -117,22 +117,21 @@ export namespace SystemPrompt {
       if (part) sections.push({ label: "Instructions", content: part })
     }
 
-    // 4. Available skills
-    const agentSkills: string[] = input.agent?.config?.skills ?? []
-    if (agentSkills.length > 0) {
-      const skillLines: string[] = []
-      for (const skillName of agentSkills) {
-        const skill = await cfg.skill?.get?.(skillName).catch(() => undefined)
-        skillLines.push(skill ? `- ${skill.name}: ${skill.description}` : `- ${skillName}`)
+    // 4. Available skills — auto-discovered from skill folder, no manual registration needed
+    const agentTools = input.agent?.tools as string[] | undefined
+    if (agentTools?.includes("skill_load")) {
+      const allSkills = await cfg.skill?.all?.().catch(() => undefined)
+      if (allSkills && allSkills.length > 0) {
+        const skillLines = allSkills.map((s) => `- ${s.name}: ${s.description}`)
+        sections.push({
+          label: "Available Skills",
+          content: [
+            "You have the following skills available. Load any with skill_load to unlock its full instructions and tools.",
+            "",
+            ...skillLines,
+          ].join("\n"),
+        })
       }
-      sections.push({
-        label: "Available Skills",
-        content: [
-          "You have the following skills available. Load any with skill_load to unlock its full instructions and tools.",
-          "",
-          ...skillLines,
-        ].join("\n"),
-      })
     }
 
     // 5. Session/user system override (mirrors user.system in llm.ts)

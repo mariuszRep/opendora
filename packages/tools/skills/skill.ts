@@ -5,30 +5,18 @@ import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import toolDef from "./skill.json"
 
-export const SkillLoadTool = Tool.define("skill_load", async (initCtx) => {
-  const allowedSkills = initCtx?.agent?.skills ?? []
-
-  const description = allowedSkills.length > 0
-    ? `Load a specialized skill. This agent can load the following skills: ${allowedSkills.join(", ")}.`
-    : toolDef.description
-
+export const SkillLoadTool = Tool.define("skill_load", async (_initCtx) => {
   const parameters = z.object({
     name: z.string().describe("The name of the skill to load"),
   })
 
   return {
-    description,
+    description: toolDef.description,
     parameters,
     async execute(params: z.infer<typeof parameters>, ctx) {
       const skills = host(ctx).skills
       if (!skills) {
         throw new Error("Skill tool is not available in this context")
-      }
-
-      if (allowedSkills.length > 0 && !allowedSkills.includes(params.name)) {
-        throw new Error(
-          `Skill "${params.name}" is not allocated to this agent. Allowed skills: ${allowedSkills.join(", ")}`
-        )
       }
 
       const skill = await skills.get(params.name)

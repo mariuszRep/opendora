@@ -28,7 +28,8 @@
     "session-eval",
     "agent-ops",
     "skill-ops",
-    "tool-meta-ops"
+    "tool-meta-ops",
+    "scheduling"
   ],
   "toolConfig": {
     "delegate": {
