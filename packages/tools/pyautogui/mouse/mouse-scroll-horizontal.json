@@ -1,0 +1,13 @@
+{
+  "name": "pyautogui_mouse_scroll_horizontal",
+  "description": "Scroll horizontally at the given screen position.\n\nPositive clicks scroll right, negative clicks scroll left. Move to (x, y) first if provided.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "clicks": { "type": "integer", "description": "Number of scroll units (positive = right, negative = left)" },
+      "x": { "type": "integer", "description": "X coordinate to scroll at (omit to scroll at current position)" },
+      "y": { "type": "integer", "description": "Y coordinate" }
+    },
+    "required": ["clicks"]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "pyautogui_mouse_move_relative",
+  "description": "Move the mouse cursor by a relative offset (dx, dy) from its current position.\n\nUseful for nudging the cursor without knowing absolute coordinates. Returns the new cursor position.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "dx": { "type": "integer", "description": "Horizontal offset in pixels (positive = right, negative = left)" },
+      "dy": { "type": "integer", "description": "Vertical offset in pixels (positive = down, negative = up)" },
+      "duration": { "type": "number", "description": "Movement duration in seconds (default: 0.15)" }
+    },
+    "required": ["dx", "dy"]
+  }
+}

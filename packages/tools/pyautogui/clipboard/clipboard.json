@@ -1,0 +1,12 @@
+{
+  "name": "pyautogui_clipboard",
+  "description": "Read from or write to the X11 clipboard.\n\n- `get` — return current clipboard text\n- `set` — replace clipboard with provided text",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "mode": { "type": "string", "enum": ["get", "set"] },
+      "text": { "type": "string", "description": "Text to write (mode=set)" }
+    },
+    "required": ["mode"]
+  }
+}

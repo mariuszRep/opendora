@@ -37,14 +37,16 @@
         "Product Owner",
         "Weber",
         "Product Engineer",
-        "Minds"
+        "Minds",
+        "PyAutoGUI Agent",
+        "Office Clip"
       ]
     },
     "reply": {
       "stopAfterReply": false
     }
   },
-  "enableInjection": false,
+  "enableInjection": true,
   "defaultPaths": [
     "/home/mariu/projects/opendora/.opendora"
   ]

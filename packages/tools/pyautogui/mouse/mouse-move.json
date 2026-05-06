@@ -1,0 +1,13 @@
+{
+  "name": "pyautogui_mouse_move",
+  "description": "Move the mouse cursor to (x, y) screen coordinates. Use `duration` to control how fast the cursor moves (seconds, default 0.15). Returns confirmed position after move.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "x": { "type": "integer", "description": "Target X screen coordinate" },
+      "y": { "type": "integer", "description": "Target Y screen coordinate" },
+      "duration": { "type": "number", "description": "Seconds to take for the move (default 0.15)" }
+    },
+    "required": ["x", "y"]
+  }
+}

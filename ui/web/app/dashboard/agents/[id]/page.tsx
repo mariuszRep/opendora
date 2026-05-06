@@ -89,6 +89,8 @@ const DESKTOP_TOOLS = new Set([
   "desktop_clipboard_read", "desktop_clipboard_write",
 ])
 
+const isPyAutoGUI = (id: string) => id.startsWith("pyautogui_")
+
 type ModelValue = { providerID: string; modelID: string } | undefined
 
 export default function AgentSettingsPage() {
@@ -643,7 +645,7 @@ export default function AgentSettingsPage() {
               Leave all unchecked to allow all tools. Select specific tools to restrict this agent.
             </p>
 
-            {(["filesystem", "shell", "browse-and-web", "sessions", "agents", "skills", "schedule", "desktop", "others"] as const).map((group) => {
+            {(["filesystem", "shell", "browse-and-web", "sessions", "agents", "skills", "schedule", "desktop", "pyautogui", "others"] as const).map((group) => {
               const groupTools = (() => {
                 if (group === "filesystem") return availableTools.filter((id) => FILESYSTEM_TOOLS.has(id))
                 if (group === "shell") return availableTools.filter((id) => SHELL_TOOLS.has(id))
@@ -653,11 +655,12 @@ export default function AgentSettingsPage() {
                 if (group === "skills") return availableTools.filter((id) => SKILL_TOOLS.has(id))
                 if (group === "schedule") return availableTools.filter((id) => SCHEDULE_TOOLS.has(id))
                 if (group === "desktop") return availableTools.filter((id) => DESKTOP_TOOLS.has(id))
+                if (group === "pyautogui") return availableTools.filter(isPyAutoGUI)
                 // others: everything not in any specific group
                 return availableTools.filter((id) =>
                   !FILESYSTEM_TOOLS.has(id) && !SHELL_TOOLS.has(id) && !BROWSE_AND_WEB_TOOLS.has(id) &&
                   !SESSION_TOOLS.has(id) && !AGENT_TOOLS.has(id) && !SKILL_TOOLS.has(id) && !SCHEDULE_TOOLS.has(id) &&
-                  !DESKTOP_TOOLS.has(id)
+                  !DESKTOP_TOOLS.has(id) && !isPyAutoGUI(id)
                 )
               })()
               const selectedCount = groupTools.filter((id) => selectedTools.includes(id)).length

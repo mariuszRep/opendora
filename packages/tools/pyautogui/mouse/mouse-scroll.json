@@ -1,0 +1,13 @@
+{
+  "name": "pyautogui_mouse_scroll",
+  "description": "Scroll the mouse wheel at the current cursor position or at (x, y). Positive `clicks` scrolls up; negative scrolls down.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "clicks": { "type": "integer", "description": "Number of scroll steps (positive = up, negative = down)" },
+      "x": { "type": "integer", "description": "X coordinate to scroll at (optional)" },
+      "y": { "type": "integer", "description": "Y coordinate to scroll at (optional)" }
+    },
+    "required": ["clicks"]
+  }
+}

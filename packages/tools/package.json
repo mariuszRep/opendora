@@ -27,6 +27,8 @@
     "./desktop": "./desktop/index.ts",
     "./desktop/*": "./desktop/*.ts",
     "./desktop/lib/*": "./desktop/lib/*.ts",
+    "./pyautogui": "./pyautogui/index.ts",
+    "./pyautogui/*": "./pyautogui/*.ts",
     "./tool": "./tool.ts",
     "./registry": "./registry.ts",
     "./truncation": "./truncation.ts"

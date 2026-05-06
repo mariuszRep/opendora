@@ -1,0 +1,13 @@
+{
+  "name": "pyautogui_mouse_press",
+  "description": "Press and hold a mouse button down at (x, y) without releasing it.\n\nUse with mouse_release to perform manual drag operations or hold modifier buttons. Returns the position.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "x": { "type": "integer", "description": "X coordinate to move to before pressing (omit to press at current position)" },
+      "y": { "type": "integer", "description": "Y coordinate" },
+      "button": { "type": "string", "enum": ["left", "right", "middle"], "description": "Mouse button to press (default: left)" }
+    },
+    "required": []
+  }
+}

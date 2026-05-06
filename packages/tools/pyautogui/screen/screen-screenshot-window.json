@@ -1,0 +1,12 @@
+{
+  "name": "pyautogui_screen_screenshot_window",
+  "description": "Capture a screenshot of a specific X11 window by its numeric window ID and save it as a PNG.\n\nThis is the reliable method on WSLg/XWayland for capturing actual app content. Use `xdotool search --name <title>` (via the bash tool) to find a window ID first.\n\nReturns the saved file path and image dimensions.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "window_id": { "type": "integer", "description": "X11 window ID (decimal or hex)" },
+      "path": { "type": "string", "description": "Output PNG path (defaults to a temp file)" }
+    },
+    "required": ["window_id"]
+  }
+}

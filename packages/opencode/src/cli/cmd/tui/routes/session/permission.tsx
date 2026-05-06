@@ -398,6 +398,25 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
               }
             }
 
+            if (permission === "desktop") {
+              const summary = typeof props.request.metadata?.summary === "string"
+                ? props.request.metadata.summary
+                : "Desktop automation"
+              const kind = typeof props.request.metadata?.kind === "string"
+                ? props.request.metadata.kind
+                : ""
+              const icon = kind === "mouse" ? "⊙" : kind === "keyboard" ? "⌨" : kind === "screen" ? "▣" : kind === "app" ? "⧉" : "⚙"
+              return {
+                icon,
+                title: summary,
+                body: (
+                  <box paddingLeft={1}>
+                    <text fg={theme.textMuted}>GUI automation (pyautogui)</text>
+                  </box>
+                ),
+              }
+            }
+
             return {
               icon: "⚙",
               title: `Call tool ${permission}`,

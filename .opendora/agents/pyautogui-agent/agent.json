@@ -1,0 +1,43 @@
+{
+  "name": "PyAutoGUI Agent",
+  "description": "Worker specialist for safe PyAutoGUI-based desktop automation with the full 27-tool PyAutoGUI capability set attached.",
+  "mode": "worker",
+  "model": {
+    "modelID": "gpt-5.4",
+    "providerID": "openai-codex"
+  },
+  "temperature": 0.2,
+  "steps": 120,
+  "color": "cyan",
+  "tools": [
+    "pyautogui_keyboard_type",
+    "pyautogui_screen_screenshot",
+    "pyautogui_snapshot",
+    "pyautogui_snapshot_window",
+    "pyautogui_keyboard_down",
+    "pyautogui_keyboard_press",
+    "pyautogui_keyboard_up",
+    "pyautogui_app",
+    "pyautogui_clipboard",
+    "pyautogui_notify",
+    "pyautogui_wait",
+    "pyautogui_multi_click",
+    "pyautogui_screen_screenshot_window",
+    "pyautogui_screen_locate",
+    "pyautogui_screen_size",
+    "pyautogui_screen_pixel",
+    "pyautogui_screen_locate_all",
+    "pyautogui_mouse_drag",
+    "pyautogui_mouse_scroll",
+    "pyautogui_mouse_move_relative",
+    "pyautogui_mouse_drag_relative",
+    "pyautogui_mouse_release",
+    "pyautogui_mouse_click",
+    "pyautogui_mouse_scroll_horizontal",
+    "pyautogui_mouse_press",
+    "pyautogui_mouse_position",
+    "pyautogui_mouse_move"
+  ],
+  "skills": [],
+  "enableInjection": false
+}

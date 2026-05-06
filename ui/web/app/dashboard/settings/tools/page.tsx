@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { CheckCircle2Icon, CircleIcon, Loader2Icon, MonitorIcon, Trash2Icon, WrenchIcon } from "lucide-react"
+import { CheckCircle2Icon, CircleIcon, Loader2Icon, MonitorIcon, MousePointerIcon, Trash2Icon, WrenchIcon } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -61,6 +61,61 @@ const DESKTOP_TOOLS = [
     tools: [
       { id: "desktop_clipboard_read", label: "Clipboard Read", desc: "Read clipboard text" },
       { id: "desktop_clipboard_write", label: "Clipboard Write", desc: "Write text to clipboard" },
+    ],
+  },
+]
+
+const PYAUTOGUI_TOOL_GROUPS = [
+  {
+    group: "Mouse",
+    tools: [
+      { id: "pyautogui_mouse_click", label: "Click", desc: "Click at coordinates" },
+      { id: "pyautogui_mouse_move", label: "Move", desc: "Move cursor to coordinates" },
+      { id: "pyautogui_mouse_move_relative", label: "Move Relative", desc: "Move cursor by offset" },
+      { id: "pyautogui_mouse_press", label: "Press", desc: "Hold mouse button down" },
+      { id: "pyautogui_mouse_release", label: "Release", desc: "Release held mouse button" },
+      { id: "pyautogui_mouse_scroll", label: "Scroll", desc: "Scroll vertically" },
+      { id: "pyautogui_mouse_scroll_horizontal", label: "Scroll Horizontal", desc: "Scroll horizontally" },
+      { id: "pyautogui_mouse_drag", label: "Drag", desc: "Drag to coordinates" },
+      { id: "pyautogui_mouse_drag_relative", label: "Drag Relative", desc: "Drag by offset" },
+      { id: "pyautogui_mouse_position", label: "Position", desc: "Get current cursor position" },
+      { id: "pyautogui_multi_click", label: "Multi-Click", desc: "Click multiple points" },
+    ],
+  },
+  {
+    group: "Keyboard",
+    tools: [
+      { id: "pyautogui_keyboard_type", label: "Type", desc: "Type text" },
+      { id: "pyautogui_keyboard_press", label: "Press", desc: "Press key combinations" },
+      { id: "pyautogui_keyboard_down", label: "Key Down", desc: "Hold a key down" },
+      { id: "pyautogui_keyboard_up", label: "Key Up", desc: "Release a held key" },
+    ],
+  },
+  {
+    group: "Screen",
+    tools: [
+      { id: "pyautogui_screen_screenshot", label: "Screenshot", desc: "Full-screen screenshot" },
+      { id: "pyautogui_screen_screenshot_window", label: "Screenshot Window", desc: "Capture a specific window" },
+      { id: "pyautogui_screen_size", label: "Screen Size", desc: "Get screen dimensions" },
+      { id: "pyautogui_screen_pixel", label: "Pixel Color", desc: "Read pixel color at coordinates" },
+      { id: "pyautogui_screen_locate", label: "Locate Image", desc: "Find image on screen" },
+      { id: "pyautogui_screen_locate_all", label: "Locate All", desc: "Find all occurrences of image" },
+    ],
+  },
+  {
+    group: "Snapshot",
+    tools: [
+      { id: "pyautogui_snapshot", label: "Snapshot", desc: "Annotated desktop with window labels" },
+      { id: "pyautogui_snapshot_window", label: "Snapshot Window", desc: "Annotated window with element labels" },
+    ],
+  },
+  {
+    group: "App & System",
+    tools: [
+      { id: "pyautogui_app", label: "App", desc: "List, launch, focus, move, resize windows" },
+      { id: "pyautogui_clipboard", label: "Clipboard", desc: "Read and write clipboard" },
+      { id: "pyautogui_wait", label: "Wait", desc: "Sleep for a duration" },
+      { id: "pyautogui_notify", label: "Notify", desc: "Send a desktop notification" },
     ],
   },
 ]
@@ -252,6 +307,34 @@ export default function ToolsPage() {
               ))}
             </CardContent>
           )}
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <MousePointerIcon className="size-5 text-muted-foreground" />
+              <CardTitle className="text-lg">PyAutoGUI — Linux/WSLg Automation</CardTitle>
+            </div>
+            <CardDescription>
+              Mouse, keyboard, screen capture, and window control for Linux GUI apps via X11/WSLg. Requires Python + xdotool + scrot on the host.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {PYAUTOGUI_TOOL_GROUPS.map(({ group, tools }) => (
+              <div key={group}>
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{group}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {tools.map((tool) => (
+                    <div key={tool.id} className="flex flex-col gap-0.5 px-3 py-2 border rounded-md bg-muted/30">
+                      <span className="text-sm font-medium">{tool.label}</span>
+                      <span className="text-xs text-muted-foreground">{tool.desc}</span>
+                      <span className="text-xs font-mono text-muted-foreground/60">{tool.id}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </CardContent>
         </Card>
       </div>
     </SettingsPageLayout>

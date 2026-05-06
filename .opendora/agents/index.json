@@ -76,6 +76,11 @@
       "id": "office-clip",
       "name": "Office Clip",
       "mode": "worker"
+    },
+    {
+      "id": "pyautogui-agent",
+      "name": "PyAutoGUI Agent",
+      "mode": "worker"
     }
   ]
 }

@@ -5,6 +5,7 @@ import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
 import { resolveRegion } from "../lib/region.ts"
 import { assertExternalDirectory } from "../../system/external-directory.ts"
+import { captureComposite, findAllInImage } from "../lib/screen-native.ts"
 import toolDef from ".//screen-wait-for-image.json"
 
 const regionSchema = z.object({
@@ -61,23 +62,54 @@ export const DesktopScreenWaitForImageTool = Tool.define(
           },
         })
 
-        const { screen, imageResource } = await getNut()
-        if (params.confidence !== undefined) screen.config.confidence = params.confidence
-
-        // See screen-find-image.ts for why this split is required.
-        screen.config.resourceDirectory = path.dirname(templatePath)
-        const needle = await imageResource(path.basename(templatePath))
         const timeout = params.timeoutMs ?? 5000
         const interval = params.intervalMs ?? 500
-        const searchRegion = params.region ? await resolveRegion(params.region) : undefined
+        const confidence = params.confidence ?? 0.8
+        const deadline = Date.now() + timeout
 
-        const result = await screen.waitFor(needle, timeout, interval, searchRegion ? { searchRegion } : undefined)
+        let match: { x: number; y: number; width: number; height: number } | null = null
 
-        const match = {
-          x: (result as any).left ?? (result as any).x,
-          y: (result as any).top ?? (result as any).y,
-          width: (result as any).width,
-          height: (result as any).height,
+        if (process.platform === "linux") {
+          // nut-js uses XShm internally which fails under XWayland/WSLg. Poll
+          // with composite capture + Python/OpenCV instead on any Linux X11.
+          const osModule = await import("os")
+          const fsModule = await import("fs/promises")
+          while (Date.now() < deadline) {
+            const haystackPath = path.join(osModule.tmpdir(), "opendora-desktop", `wait-haystack-${Date.now()}.png`)
+            try {
+              await captureComposite(haystackPath)
+              let hits = await findAllInImage(haystackPath, templatePath, confidence)
+              if (params.region) {
+                const { x: rx, y: ry, width: rw, height: rh } = params.region
+                hits = hits.filter((m) => m.x >= rx && m.x <= rx + rw && m.y >= ry && m.y <= ry + rh)
+              }
+              if (hits.length > 0) {
+                const h = hits[0]
+                match = { x: h.x, y: h.y, width: h.width, height: h.height }
+                break
+              }
+            } catch { /* ignore single-poll errors */ } finally {
+              await fsModule.unlink(haystackPath).catch(() => {})
+            }
+            await new Promise((r) => setTimeout(r, interval))
+          }
+        } else {
+          const { screen, imageResource } = await getNut()
+          if (params.confidence !== undefined) screen.config.confidence = params.confidence
+          screen.config.resourceDirectory = path.dirname(templatePath)
+          const needle = await imageResource(path.basename(templatePath))
+          const searchRegion = params.region ? await resolveRegion(params.region) : undefined
+          const result = await screen.waitFor(needle, timeout, interval, searchRegion ? { searchRegion } : undefined)
+          match = {
+            x: (result as any).left ?? (result as any).x,
+            y: (result as any).top ?? (result as any).y,
+            width: (result as any).width,
+            height: (result as any).height,
+          }
+        }
+
+        if (!match) {
+          throw new Error(`Timed out waiting for ${path.basename(templatePath)} (${timeout}ms)`)
         }
 
         return {

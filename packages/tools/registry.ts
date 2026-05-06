@@ -23,6 +23,7 @@ import { AgentListTool } from "./agents/agent-list.ts"
 import { AgentGetTool } from "./agents/agent-get.ts"
 import { ScheduleListTool, ScheduleCreateTool, ScheduleUpdateTool, ScheduleDeleteTool, ScheduleGetTool, ScheduleRunTool } from "./schedule/index.ts"
 import { DESKTOP_TOOLS } from "./desktop/index.ts"
+import { PYAUTOGUI_TOOLS } from "./pyautogui/index.ts"
 import { PlaywrightModeTool } from "./browser/playwright-mode.ts"
 import { ToolListTool, ToolGetTool, ToolUpdateTool } from "./tool-registry/index.ts"
 import type { Tool } from "./tool.ts"
@@ -154,6 +155,7 @@ export namespace ToolRegistry {
       ...(cfg.flags.enableBatchTool ? [BatchTool] : []),
       PlaywrightModeTool,
       ...DESKTOP_TOOLS,
+      ...PYAUTOGUI_TOOLS,
       ..._custom,
     ]
   }

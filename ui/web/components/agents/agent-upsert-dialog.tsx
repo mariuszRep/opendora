@@ -83,6 +83,8 @@ const DESKTOP_TOOLS = new Set([
   "desktop_clipboard_read", "desktop_clipboard_write",
 ])
 
+const isPyAutoGUI = (id: string) => id.startsWith("pyautogui_")
+
 const NONE = "__none__"
 
 function resolveModelLabel(
@@ -142,7 +144,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [availableTools, setAvailableTools] = useState<string[]>([])
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
-  const [expandedGroup, setExpandedGroup] = useState<"filesystem" | "shell" | "browse-and-web" | "sessions" | "agents" | "skills" | "schedule" | "desktop" | "others" | null>(null)
+  const [expandedGroup, setExpandedGroup] = useState<"filesystem" | "shell" | "browse-and-web" | "sessions" | "agents" | "skills" | "schedule" | "desktop" | "pyautogui" | "others" | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
   const [defaultPaths, setDefaultPaths] = useState<string[]>([])
@@ -546,7 +548,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                 Leave all unchecked to allow all tools. Select specific tools to restrict this agent.
               </p>
 
-              {(["filesystem", "shell", "browse-and-web", "sessions", "agents", "skills", "schedule", "desktop", "others"] as const).map((group) => {
+              {(["filesystem", "shell", "browse-and-web", "sessions", "agents", "skills", "schedule", "desktop", "pyautogui", "others"] as const).map((group) => {
                 const groupTools = availableTools.filter((id) => {
                   if (group === "filesystem") return FILESYSTEM_TOOLS.has(id)
                   if (group === "shell") return SHELL_TOOLS.has(id)
@@ -556,10 +558,11 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                   if (group === "skills") return SKILL_TOOLS.has(id)
                   if (group === "schedule") return SCHEDULE_TOOLS.has(id)
                   if (group === "desktop") return DESKTOP_TOOLS.has(id)
+                  if (group === "pyautogui") return isPyAutoGUI(id)
                   // others: everything not in any specific group
                   return !FILESYSTEM_TOOLS.has(id) && !SHELL_TOOLS.has(id) && !BROWSE_AND_WEB_TOOLS.has(id) &&
                          !SESSION_TOOLS.has(id) && !AGENT_TOOLS.has(id) && !SKILL_TOOLS.has(id) && !SCHEDULE_TOOLS.has(id) &&
-                         !DESKTOP_TOOLS.has(id)
+                         !DESKTOP_TOOLS.has(id) && !isPyAutoGUI(id)
                 })
                 const selectedCount = groupTools.filter((id) => selectedTools.includes(id)).length
                 const isExpanded = expandedGroup === group

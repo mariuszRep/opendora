@@ -1,0 +1,18 @@
+{
+  "name": "pyautogui_app",
+  "description": "Manage Linux GUI applications: list open windows, launch a new app, focus/raise a window, move or resize a window.\n\nModes:\n- `list` — return all visible named windows with IDs and geometry\n- `launch` — start an app by command (e.g. \"xcalc\", \"gedit\", \"firefox\")\n- `focus` — bring a window to front by window_id\n- `move` — reposition a window to (x, y)\n- `resize` — set window dimensions to width × height",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "mode": { "type": "string", "enum": ["list", "launch", "focus", "move", "resize"] },
+      "name": { "type": "string", "description": "App command to launch (mode=launch)" },
+      "window_id": { "type": "integer", "description": "X11 window ID (modes: focus, move, resize)" },
+      "x": { "type": "integer", "description": "X position (mode=move)" },
+      "y": { "type": "integer", "description": "Y position (mode=move)" },
+      "width": { "type": "integer", "description": "Width in pixels (mode=resize)" },
+      "height": { "type": "integer", "description": "Height in pixels (mode=resize)" },
+      "wait": { "type": "number", "description": "Seconds to wait after launch before returning (default 1.5)" }
+    },
+    "required": ["mode"]
+  }
+}

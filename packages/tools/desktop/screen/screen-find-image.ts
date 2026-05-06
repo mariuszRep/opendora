@@ -5,6 +5,7 @@ import { getNut } from "../lib/nut.ts"
 import { assertNotSandbox, assertDisplay } from "../lib/guards.ts"
 import { resolveRegion } from "../lib/region.ts"
 import { assertExternalDirectory } from "../../system/external-directory.ts"
+import { captureComposite, findAllInImage } from "../lib/screen-native.ts"
 import toolDef from ".//screen-find-image.json"
 
 const regionSchema = z.object({
@@ -49,44 +50,56 @@ export const DesktopScreenFindImageTool = Tool.define("desktop_screen_find_image
         },
       })
 
-      const { screen, imageResource } = await getNut()
-      if (params.confidence !== undefined) {
-        screen.config.confidence = params.confidence
-      }
-
-      // nut-js's `imageResource()` prepends `screen.config.resourceDirectory`
-      // via `path.join`. `path.join("./", "/tmp/foo.png")` strips the leading
-      // slash and yields `tmp/foo.png`, which then resolves relative to CWD
-      // (`packages/opencode/...`). Work around by splitting the absolute path
-      // into directory + filename and setting the resource directory
-      // explicitly before loading.
-      screen.config.resourceDirectory = path.dirname(templatePath)
-      const needle = await imageResource(path.basename(templatePath))
       let matches: Array<{ x: number; y: number; width: number; height: number; score?: number }>
 
-      try {
-        if (params.region) {
-          const region = await resolveRegion(params.region)
-          const found = await screen.findAll(needle, { searchRegion: region })
-          matches = found.map((r: any) => ({
-            x: r.left ?? r.x,
-            y: r.top ?? r.y,
-            width: r.width,
-            height: r.height,
-            score: r.score,
-          }))
-        } else {
-          const found = await screen.findAll(needle)
-          matches = found.map((r: any) => ({
-            x: r.left ?? r.x,
-            y: r.top ?? r.y,
-            width: r.width,
-            height: r.height,
-            score: r.score,
-          }))
+      if (process.platform === "linux") {
+        // nut-js uses XShm/XGetImage internally which fails under XWayland/WSLg
+        // (and other X11 configurations where the compositor root isn't exposed).
+        // Use a per-window composite screenshot + Python/OpenCV instead — works
+        // on any Linux X11 setup.
+        const import_ = await import("os")
+        const haystackPath = path.join(import_.tmpdir(), `opendora-desktop`, `find-haystack-${Date.now()}.png`)
+        try {
+          await captureComposite(haystackPath)
+          let raw = await findAllInImage(haystackPath, templatePath, params.confidence ?? 0.8)
+          if (params.region) {
+            const { x: rx, y: ry, width: rw, height: rh } = params.region
+            raw = raw.filter((m) => m.x >= rx && m.x <= rx + rw && m.y >= ry && m.y <= ry + rh)
+          }
+          matches = raw.map((m) => ({ x: m.x, y: m.y, width: m.width, height: m.height, score: m.score }))
+        } catch {
+          matches = []
+        } finally {
+          await import("fs/promises").then((f) => f.unlink(haystackPath).catch(() => {}))
         }
-      } catch {
-        matches = []
+      } else {
+        const { screen, imageResource } = await getNut()
+        if (params.confidence !== undefined) {
+          screen.config.confidence = params.confidence
+        }
+
+        // nut-js's `imageResource()` prepends `screen.config.resourceDirectory`
+        // via `path.join`. `path.join("./", "/tmp/foo.png")` strips the leading
+        // slash and yields `tmp/foo.png`, which then resolves relative to CWD.
+        screen.config.resourceDirectory = path.dirname(templatePath)
+        const needle = await imageResource(path.basename(templatePath))
+
+        try {
+          if (params.region) {
+            const region = await resolveRegion(params.region)
+            const found = await screen.findAll(needle, { searchRegion: region })
+            matches = found.map((r: any) => ({
+              x: r.left ?? r.x, y: r.top ?? r.y, width: r.width, height: r.height, score: r.score,
+            }))
+          } else {
+            const found = await screen.findAll(needle)
+            matches = found.map((r: any) => ({
+              x: r.left ?? r.x, y: r.top ?? r.y, width: r.width, height: r.height, score: r.score,
+            }))
+          }
+        } catch {
+          matches = []
+        }
       }
 
       return {

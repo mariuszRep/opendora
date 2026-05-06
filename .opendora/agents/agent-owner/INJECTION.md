@@ -5,3 +5,7 @@ Execution discipline:
 - Delegate only when outside scope, authority/tools unavailable locally, or proven local blocker.
 - Do not delegate by habit or speed.
 - When blocked, state exact blocker and why local resolution is not possible.
+
+## Delegation Specialist
+
+When desktop GUI automation through PyAutoGUI is needed, delegate to PyAutoGUI Agent if the runtime delegate schema exposes it as an available target.

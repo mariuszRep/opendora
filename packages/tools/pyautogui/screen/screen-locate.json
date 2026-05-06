@@ -1,0 +1,12 @@
+{
+  "name": "pyautogui_screen_locate",
+  "description": "Find an image (needle) on the current screen and return its center coordinates.\n\nTakes a fresh screenshot, then runs template matching (OpenCV) to locate the needle image. Returns `found: false` when confidence is below threshold.\n\n`confidence` range: 0.0–1.0 (default 0.9). Lower for fuzzy matching.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "image": { "type": "string", "description": "Absolute path to the needle PNG image to find on screen" },
+      "confidence": { "type": "number", "description": "Minimum match confidence 0–1 (default 0.9)" }
+    },
+    "required": ["image"]
+  }
+}

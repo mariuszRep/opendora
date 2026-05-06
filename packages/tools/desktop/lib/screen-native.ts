@@ -40,13 +40,29 @@ export interface PixelColor {
  * a native binary. Currently: WSL (WSLg's Xwayland root window cannot be
  * grabbed via XGetImage).
  */
+let _wslDetected: boolean | null = null
+
+/** True when running under WSL/WSLg (Wayland-backed X11, XShm capture is broken). */
+function isWSLg(): boolean {
+  if (_wslDetected !== null) return _wslDetected
+  // Env vars are the fast path but may not be inherited when the server is
+  // spawned outside a normal login shell.
+  if (process.env.WSL_DISTRO_NAME || process.env.WSL_INTEROP) {
+    return (_wslDetected = true)
+  }
+  // Fallback: /proc/version always contains "microsoft" on WSL kernels.
+  try {
+    const { readFileSync } = require("fs") as typeof import("fs")
+    const v = readFileSync("/proc/version", "utf8")
+    return (_wslDetected = v.toLowerCase().includes("microsoft"))
+  } catch {
+    return (_wslDetected = false)
+  }
+}
+
 export function nativeCapturePreferred(): boolean {
   if (process.platform !== "linux") return false
-  return !!(
-    process.env.WSL_DISTRO_NAME ||
-    process.env.WSL_INTEROP ||
-    process.env.WSLENV !== undefined
-  )
+  return isWSLg()
 }
 
 type Tool = { cmd: string; supportsRegion: boolean }
@@ -98,6 +114,13 @@ function run(cmd: string, args: string[]): Promise<void> {
 
 /** Capture the whole screen to the given PNG path. */
 export async function captureFull(destPath: string): Promise<void> {
+  // On WSLg the compositor root framebuffer is not exposed via XShm/scrot/maim,
+  // so all full-screen tools return a black image. Use the per-window composite
+  // path instead — it works because individual client pixmaps ARE accessible.
+  if (nativeCapturePreferred()) {
+    await captureComposite(destPath)
+    return
+  }
   const tool = await resolveTool()
   if (!tool) {
     throw new NativeScreenUnavailableError(
@@ -165,6 +188,116 @@ export async function colorAt(x: number, y: number): Promise<PixelColor> {
   } finally {
     await fs.unlink(tmp).catch(() => {})
   }
+}
+
+/**
+ * Composite full-desktop screenshot from per-window captures.
+ *
+ * scrot/maim/`import -window root` all return a black frame on WSLg because
+ * the Wayland compositor never exposes the XShm root buffer. Individual client
+ * windows DO expose their own pixmaps via `import -window <id>`, so we capture
+ * each and compose them with ImageMagick `convert`.
+ */
+export async function captureComposite(destPath: string): Promise<{ width: number; height: number }> {
+  const { listWindows } = await import("./window-native.ts")
+  const windows = await listWindows().catch(() => [])
+
+  // Resolve screen size via xdotool
+  let screenW = 1920
+  let screenH = 1080
+  try {
+    const sizeOut = await new Promise<string>((resolve, reject) => {
+      const child = spawn("xdotool", ["getdisplaygeometry"], { stdio: ["ignore", "pipe", "ignore"] })
+      let out = ""
+      child.stdout.on("data", (c: Buffer) => (out += c))
+      child.on("error", reject)
+      child.on("close", (code: number) => (code === 0 ? resolve(out) : reject(new Error("xdotool geometry"))))
+    })
+    const [w, h] = sizeOut.trim().split(/\s+/).map(Number)
+    if (w > 0 && h > 0) { screenW = w; screenH = h }
+  } catch { /* keep defaults */ }
+
+  await fs.mkdir(path.dirname(destPath), { recursive: true })
+
+  const tmpDir = path.join(os.tmpdir(), "opendora-desktop")
+  await fs.mkdir(tmpDir, { recursive: true })
+  const tmpFiles: string[] = []
+
+  // Build ImageMagick `convert` command: start with black canvas, composite each window
+  const args: string[] = ["-size", `${screenW}x${screenH}`, "xc:black"]
+
+  try {
+    for (const w of windows) {
+      if (w.width < 10 || w.height < 10) continue
+      const tmpWin = path.join(tmpDir, `composite-${w.id}-${Date.now()}.png`)
+      tmpFiles.push(tmpWin)
+      try {
+        await run("import", ["-window", String(w.id), tmpWin])
+        args.push(tmpWin, "-geometry", `+${Math.max(0, w.x)}+${Math.max(0, w.y)}`, "-composite")
+      } catch { /* window closed or unreachable — skip */ }
+    }
+    args.push(destPath)
+    await run("convert", args)
+  } finally {
+    for (const f of tmpFiles) await fs.unlink(f).catch(() => {})
+  }
+
+  return { width: screenW, height: screenH }
+}
+
+export interface TemplateMatch {
+  x: number
+  y: number
+  width: number
+  height: number
+  score: number
+}
+
+/**
+ * Find all occurrences of `needlePath` in `haystackPath` using OpenCV via
+ * a Python3 subprocess. Returns deduplicated matches above `confidence`.
+ */
+export async function findAllInImage(
+  haystackPath: string,
+  needlePath: string,
+  confidence = 0.8,
+): Promise<TemplateMatch[]> {
+  const script = `
+import sys, json, cv2, numpy as np
+from PIL import Image
+haystack = np.array(Image.open(sys.argv[1]).convert("RGB"))
+needle   = np.array(Image.open(sys.argv[2]).convert("RGB"))
+conf     = float(sys.argv[3])
+res = cv2.matchTemplate(haystack, needle, cv2.TM_CCOEFF_NORMED)
+nh, nw = needle.shape[:2]
+locs = np.where(res >= conf)
+matches = []
+for pt in zip(*locs[::-1]):
+    matches.append({"x": int(pt[0]) + nw//2, "y": int(pt[1]) + nh//2,
+                    "left": int(pt[0]), "top": int(pt[1]), "width": nw, "height": nh,
+                    "score": float(res[int(pt[1]), int(pt[0])])})
+deduped = []
+for m in sorted(matches, key=lambda x: -x["score"]):
+    if not any(abs(m["x"]-d["x"]) < nw//2 and abs(m["y"]-d["y"]) < nh//2 for d in deduped):
+        deduped.append(m)
+print(json.dumps(deduped))
+`.trim()
+
+  const output = await new Promise<string>((resolve, reject) => {
+    const child = spawn("python3", ["-c", script, haystackPath, needlePath, String(confidence)], {
+      stdio: ["ignore", "pipe", "pipe"],
+    })
+    let out = ""
+    let err = ""
+    child.stdout.on("data", (c: Buffer) => (out += c))
+    child.stderr.on("data", (c: Buffer) => (err += c))
+    child.on("error", reject)
+    child.on("close", (code: number) =>
+      code === 0 ? resolve(out) : reject(new Error(`python3 template match failed: ${err.trim()}`)),
+    )
+  })
+
+  return JSON.parse(output.trim()) as TemplateMatch[]
 }
 
 /**

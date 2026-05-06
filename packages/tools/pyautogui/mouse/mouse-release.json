@@ -1,0 +1,13 @@
+{
+  "name": "pyautogui_mouse_release",
+  "description": "Release a held mouse button at (x, y).\n\nPair with mouse_press to complete manual drag operations. Returns the position.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "x": { "type": "integer", "description": "X coordinate to move to before releasing (omit to release at current position)" },
+      "y": { "type": "integer", "description": "Y coordinate" },
+      "button": { "type": "string", "enum": ["left", "right", "middle"], "description": "Mouse button to release (default: left)" }
+    },
+    "required": []
+  }
+}

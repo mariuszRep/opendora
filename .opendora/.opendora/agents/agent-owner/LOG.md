@@ -16,3 +16,17 @@ Minds/agent-owner needs agent_list for agent inventory tasks. agent-ops document
 _Context: scheduler-to-scheduling-skill-assessment_
 
 ---
+### 2026-05-06 13:03:09 UTC [BUG]
+
+Created pyautogui-agent with desktop_* tools copied from desktop-agent instead of assigning the requested PyAutoGUI tool set. Cause: used existing Desktop Agent as template and did not verify that PyAutoGUI-specific tool IDs were available before creation. Mitigation: removed desktop_* tools from pyautogui-agent pending exact PyAutoGUI tool IDs.
+
+_Context: ses_202cc93bfffejpJxciOYoWsDT8_
+
+---
+### 2026-05-06 13:08:29 UTC [ADVISORY]
+
+Cannot live-test newly created pyautogui-agent from Minds because delegate schema allowlist only permits Minds, Product Owner, Product Engineer, and Weber. Agent config can be verified, but runtime delegation to the new agent is blocked by routing/tool allowlist.
+
+_Context: ses_202cc93bfffejpJxciOYoWsDT8_
+
+---

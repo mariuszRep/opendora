@@ -1,0 +1,16 @@
+{
+  "name": "pyautogui_mouse_drag",
+  "description": "Drag the mouse from an optional start position to (x, y) with the button held down.\n\nIf from_x/from_y are omitted, dragging starts at the current cursor position. Returns the final cursor position.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "x": { "type": "integer", "description": "Destination X coordinate" },
+      "y": { "type": "integer", "description": "Destination Y coordinate" },
+      "from_x": { "type": "integer", "description": "Start X coordinate (omit to drag from current position)" },
+      "from_y": { "type": "integer", "description": "Start Y coordinate" },
+      "button": { "type": "string", "enum": ["left", "right", "middle"], "description": "Mouse button to hold during drag (default: left)" },
+      "duration": { "type": "number", "description": "Drag duration in seconds (default: 0.4)" }
+    },
+    "required": ["x", "y"]
+  }
+}

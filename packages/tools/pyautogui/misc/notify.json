@@ -1,0 +1,14 @@
+{
+  "name": "pyautogui_notify",
+  "description": "Send a desktop notification via notify-send. Appears as a toast/popup in the Linux desktop session.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string", "description": "Notification title" },
+      "message": { "type": "string", "description": "Notification body text (optional)" },
+      "urgency": { "type": "string", "enum": ["low", "normal", "critical"], "description": "Urgency level (default normal)" },
+      "timeout_ms": { "type": "integer", "description": "Auto-dismiss after this many milliseconds" }
+    },
+    "required": ["title"]
+  }
+}
