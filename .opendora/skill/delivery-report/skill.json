@@ -1,0 +1,9 @@
+{
+  "tools": [
+    "session_get",
+    "read",
+    "bash",
+    "todowrite",
+    "reply"
+  ]
+}

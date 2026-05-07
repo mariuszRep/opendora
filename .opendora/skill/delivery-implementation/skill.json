@@ -1,0 +1,14 @@
+{
+  "tools": [
+    "read",
+    "glob",
+    "grep",
+    "bash",
+    "apply_patch",
+    "edit",
+    "write",
+    "todowrite",
+    "question",
+    "reply"
+  ]
+}

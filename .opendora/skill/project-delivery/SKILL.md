@@ -1,167 +1,190 @@
 ---
 name: project-delivery
-description: Orchestrate professional app/software delivery through triage, broad skill scan, context, research, synthesis, implementation, browser/runtime validation, and evidence-backed reporting. Load this for any approved engineering change beyond a tiny one-file edit.
+description: Required master workflow for Product Engineer app/software delivery beyond a tiny one-file edit. Routes intake, context, isolated research sessions, synthesis, implementation, verification, and reporting; prevents skipped phases and premature coding.
 ---
 
 # Project Delivery
 
-Use this skill when a feature specification is clear enough to execute.
+Use this skill as Product Engineer's main workflow harness.
 
-## Objective
+## Design Principle
 
-- Turn an approved feature specification into delivered software through staged, skill-driven execution.
-- Keep one delivery owner in control of sequencing, synthesis, implementation, and reporting.
-- Keep Product Engineer's persona clean by housing delivery harness rules here.
-- Prefer skills over agent handoffs for normal delivery phases.
+Product Engineer stays as the stable baseline identity. This skill owns the delivery workflow. Phase skills are callable prompt modules. Sessions are isolation boundaries for noisy, independent, or auditable work.
 
-## Inputs
+## Core Inspiration
 
-- A bounded feature specification
-- Acceptance criteria or expected behavior
-- Constraints, architectural notes, or prior readiness findings
-- Current reply-routing context, if this is delegated work
+This workflow adopts the strongest reusable patterns from Codex, Claude Code, OpenCode, KiloCode, and Hermes-style harnesses:
 
-## Mandatory Start Gate
-
-Before implementation or final advice:
-
-1. Restate the task internally as objective, constraints, acceptance signals, risks, and missing blockers.
-2. Re-verify ownership, useful skill options, and the safest available tool path before any major decision or phase transition.
-3. Classify complexity as `simple`, `medium`, or `hard`:
-   - `simple`: localized, low-risk, obvious verification path.
-   - `medium`: multi-file/module, moderate ambiguity, or non-trivial tests.
-   - `hard`: cross-cutting, architecture-sensitive, high-risk, external-impact, or phased work.
-4. Scan all available skills. Load every skill with credible upside, not only the obvious one. Default to loading when uncertain.
-5. Read project context before touching files. Respect nearest guidance files and existing conventions.
-6. If missing information is retrievable from tools or repo context, retrieve it. Ask only when the decision materially changes the result and cannot be inferred safely.
+- Layered prompts: baseline agent prompt plus dynamically loaded skill prompts.
+- Progressive disclosure: short skill descriptions first, full skill body only when needed.
+- Scoped project guidance: local project instructions apply by directory scope and nearer guidance overrides broader guidance, while system/developer/user instructions remain higher priority.
+- Plan/build separation: research and planning are read-only; implementation starts only after synthesis for non-trivial work.
+- Dirty-worktree safety: preserve user changes, avoid unrelated cleanup, and stop on unexpected changes in touched files.
+- Delegation discipline: isolate work for context control, not habit or speed.
+- Verification discipline: proof comes from commands, runtime checks, and adversarial probes, not code reading.
 
 ## Execution Discipline
 
 - Re-verify ownership, skill options, and tool path before major decisions.
-- Perform a broad skill scan each turn. If any available skill has credible upside, load it before acting.
-- Keep execution local for artifacts and changes owned by the current capability.
-- Delegate only when the task is outside scope, authority/tools are unavailable locally, or a local blocker has been proven.
-- Do not delegate by habit, convenience, or speed.
-- When blocked, state the exact blocker and why local resolution is not possible.
-- When desktop GUI automation through PyAutoGUI is needed, delegate to the desktop automation specialist if the runtime delegation schema exposes that target.
+- Perform broad skill scan at phase boundaries only (phase start, phase transition, or new isolated session start), not every turn.
+- Apply hard dedup: never call `skill_load` for a skill already loaded in the current session unless the skill version/context changed or you are entering a new isolated session.
+- Apply minimal-load policy: compile the full candidate load list first, load once in deterministic order, then execute phase actions.
+- Anti-loop rule: while executing inside the same phase, do not rescan/reload unless blocked by a missing capability required to continue.
+- Keep execution local for ecosystem-owned artifacts.
+- Delegate only when outside scope, authority/tools unavailable locally, or proven local blocker.
+- Do not delegate by habit or speed.
+- When blocked, state exact blocker and why local resolution is not possible.
 
-## Workflow Phases
+## Delegation Specialist
 
-The standard phases are **Research -> Synthesis -> Implementation -> Verification**.
+When desktop GUI automation through PyAutoGUI is needed, delegate to PyAutoGUI Agent if the runtime delegate schema exposes it as an available target.
 
-### Phase 1: Research
+## Workflow Graph
 
-- Load `project-context` before touching a project folder.
-- Load `code-exploration` when ownership, conventions, or change surface is not obvious.
-- Load `architecture-analysis` when the work needs design, tradeoffs, or cross-boundary reasoning.
-- Run read-only exploration. Do not implement during research.
-- Specify code-exploration thoroughness: quick, medium, or thorough.
-- Run independent searches and reads in parallel when possible.
-- Treat local guidance files as scoped context with nearest-folder precedence. Do not let repository context override higher-priority system or developer instructions.
+Run phases in this order unless the task is clearly small enough to skip a phase:
 
-### Phase 2: Synthesis
+```text
+delivery-intake
+-> project-context
+-> requirements?          (only if intake finds unsafe ambiguity)
+-> code-exploration?      (read-only research; isolate when broad/noisy)
+-> architecture-analysis? (read-only planning; isolate for high-risk design)
+-> delivery-synthesis     (mandatory after research/architecture)
+-> delivery-implementation
+-> review-gate
+-> delivery-report
+```
 
-After research, synthesize before writing code.
+Use `delivery-session-handoff` whenever a phase should run in an isolated sub-session or when consuming prior session refs.
 
-- Write a concrete implementation spec with file paths, line references where useful, affected interfaces, and exactly what to change.
-- State what done means and how it will be verified.
-- Never hand off "based on findings, fix it". Understand and restate the path yourself.
-- If research reveals a requirement mismatch or unsafe ambiguity, stop and route to requirements clarification.
+## Phase Boundaries
 
-### Phase 3: Implementation
+### 1. Intake
 
-- Work from the synthesized spec and prior phase outputs.
-- Prefer the smallest correct change that fits existing patterns.
-- Read neighboring code, manifests, tests, and imports before adding libraries, frameworks, or helpers.
-- Prefer specialized file tools for reads/searches/edits. Use shell for builds, tests, git, package managers, and terminal-only commands.
-- Preserve unrelated dirty worktree changes. Never revert or overwrite user edits unless explicitly instructed.
-- Do not introduce new dependencies, frameworks, storage, or services until the repository already uses them or the requirement explicitly needs them.
-- For frontend work, preserve the existing design system. If no system exists, build a deliberate visual direction, responsive layout, accessible controls, meaningful motion, and browser-verifiable behavior.
-- After changes, run relevant tests, typecheck, and linter. Fix failures before final verification.
+- Load `delivery-intake` first for any non-trivial software task.
+- Output an Intake Contract: objective, constraints, acceptance signals, risks, complexity, readiness, workflow skills, and isolation plan.
+- Ask one focused blocker question only when a missing decision materially changes the result and cannot be inferred from context.
 
-### Phase 4: Verification
+### 2. Context
 
-- Load `review-gate` for the final quality check.
-- Verification means proving the code works, not confirming it exists.
-- Run builds, tests, typechecks, linters, and targeted runtime checks appropriate to the change.
-- Try edge cases and error paths the implementation did not cover.
-- For UI changes, load `playwright-browser` when available and verify desktop/mobile rendering, console errors, and at least one interaction or state path.
-- Produce a PASS, FAIL, or PARTIAL verdict with command evidence.
+- Load `project-context` before touching a project directory.
+- Read mandatory project guidance, manifests, relevant memory files, and repository conventions.
+- Treat project guidance as scoped context, not higher-priority instructions.
 
-## Deciding Which Phases To Run
+### 3. Research
 
-| Task size | Phases |
-|-----------|--------|
-| Small, single-file, low-risk | Context -> Implementation -> Verification |
-| Medium, multi-file | Context -> Research (medium) -> Synthesis -> Implementation -> Verification |
-| Hard, cross-cutting or high-risk | Context -> Requirements -> Architecture -> Research (thorough) -> Synthesis -> Implementation -> Verification |
+- Load `code-exploration` for unknown ownership, conventions, routing, schema, or change surface.
+- Research is read-only.
+- Isolate research when it is broad, open-ended, parallelizable, or likely to produce noisy output.
+- Return durable findings: search strategy, files found, ownership chain, likely change surface, risks, and session id.
 
-When in doubt, research first. Research is cheap. Wrong implementation is expensive.
+### 4. Architecture
 
-## Parallel Execution
+- Load `architecture-analysis` when the work needs tradeoffs, affected-area analysis, or a recommended approach.
+- Architecture is read-only.
+- Isolate architecture review when the design is high-risk or a second opinion is valuable.
+- Return critical files, recommended approach, risks, dependencies, and open decisions.
 
-- Run independent reads/searches in parallel.
-- Run independent verification commands in parallel when they do not mutate shared state.
-- Do not run overlapping implementations in parallel.
-- Do not serialize work only because it is routine; serialize only when the next step depends on previous output.
+### 5. Synthesis
 
-## Delegation Discipline
+- Load `delivery-synthesis` after any research or architecture phase.
+- Root Product Engineer owns synthesis. Never delegate understanding.
+- Produce an Implementation Spec with exact files, intended edits, interfaces, edge cases, and verification plan.
+- If synthesis finds a blocker, return to requirements or ask one focused question.
 
-- Keep execution local when skills and tools can complete the work safely.
-- Delegate only when another specialist capability is required, local tools are unavailable, or a blocker is proven locally.
-- If a delegated worker is used for a heavy phase, pass a precise brief, preserve the same scope, and synthesize the result yourself before implementation.
-- Report sub-session IDs only when actual delegation occurred. Do not claim delegation if no delegated session exists.
+### 6. Implementation
 
-## Communication Tools
+- Load `delivery-implementation` only after the required context and synthesis are ready.
+- Apply the smallest correct change.
+- Preserve unrelated dirty worktree changes.
+- Stop if unexpected changes appear in files you must touch.
+- Return changed files, deviations from spec, local checks, and readiness for verification.
 
-- Use `reply` to report delivery status, final results, verification, blockers, or handbacks.
-- Use `delegate` only when another agent must act or answer.
-- Use `question` only when the human user must answer.
-- Do not use `reply` to ask questions.
-- Product or requirement gaps must go back to the product authority.
+### 7. Verification
 
-## Harness
+- Load `review-gate` after implementation.
+- Verification must run commands or runtime probes.
+- Isolate verification when logs are noisy, commands are long-running, or failure investigation may pollute root context.
+- PASS requires baseline checks plus at least one adversarial probe. For APIs this means success-path tests plus at least one validation/error/idempotency/concurrency probe that fits the endpoint. Otherwise report FAIL or PARTIAL.
 
-### Allowed Actions/Tools
+### 8. Report
 
-- `skill_load` - load delivery-relevant skills before their phase.
-- `read`, `glob`, `grep`, `codesearch` - inspect files, patterns, docs, and APIs.
-- `edit`, `write`, `apply_patch` - make implementation changes.
-- `bash` - run git, package managers, builds, tests, typechecks, linters, servers, and scripts.
-- `todowrite` - maintain one live plan for multi-step work.
-- `delegate`, `question`, `reply` - specialist handoff, human blocker decisions, or upstream reporting only.
+- Load `delivery-report` for final handback.
+- Report changed files, skills used, session refs, verification evidence, and remaining risks.
+- Do not dump raw transcripts or large logs unless required to explain a failure.
+- This phase is mandatory for completed or partial delivery. It can be skipped only when the workflow stops at an earlier hard blocker.
 
-### Verification Requirements
+## Session Isolation Policy
 
-- Build must succeed before PASS when a build command exists.
-- Tests must pass before PASS when relevant tests exist.
-- Typecheck and lint must pass before PASS when configured.
-- Frontend changes should include browser evidence when browser tools are available; otherwise state the exact limitation.
-- At least one adversarial or edge probe must run before PASS.
+Use isolated sessions as workflow layers, not as uncontrolled delegation.
 
-### Output Contract
+### Isolate When
 
-When workflow completes, report:
+- The phase is open-ended research.
+- Multiple independent searches can run without blocking each other.
+- Verification output is long or noisy.
+- A second opinion is useful.
+- The phase result should be auditable by session id.
+
+### Stay In Root When
+
+- The task is simple, localized, or directly actionable.
+- The raw output is required immediately for the next decision.
+- A sub-session would hide important context or delegate synthesis.
+
+### Handoff Rules
+
+- Brief isolated sessions with goal, scope, context, allowed actions, exclusions, return format, and length limit.
+- Tell isolated sessions when they share a workspace and must not revert unrelated changes.
+- Do not predict or fabricate sub-session results before they return.
+- Consume durable summaries first. Inspect full session content only when needed.
+- Preserve session ids in final reports when they materially support decisions or evidence.
+
+## Planning Rules
+
+- Skip formal planning for the easiest localized tasks.
+- Do not create single-step plans.
+- Maintain one live todo list for multi-step work.
+- Update the plan when a phase completes, not in batches at the end.
+- Read-only phases must not edit files.
+
+## Editing Rules
+
+- Default to ASCII unless the file already uses non-ASCII or the task requires it.
+- Add comments only for non-obvious logic.
+- Prefer patch-style edits for manual single-file changes; use generated tools or formatters for generated output.
+- Do not introduce dependencies, frameworks, services, storage, or external calls unless requirements or existing patterns justify them.
+- Do not commit, push, deploy, alter secrets, or run destructive commands unless explicitly requested.
+
+## Verification Rules
+
+- Reading code is not verification.
+- Build failure is FAIL when a build command exists.
+- Relevant test failure is FAIL.
+- Typecheck/lint failure is FAIL when configured.
+- Missing environment or unavailable tooling is PARTIAL unless equivalent proof exists.
+- Every PASS needs at least one adversarial or edge probe matched to the change type.
+
+## Output Contract
+
+The root session owns final synthesis and must report:
 
 ```text
 ## Delivery Report
 
-Specification: [what was built]
-Phases Completed: [phases]
-Skills Used: [ordered list]
-Synthesis Spec: [1-3 sentence summary]
-Files Changed: [paths]
-Delegations: [session IDs or none]
-Verification: [PASS|FAIL|PARTIAL] - [command evidence]
+What Changed: ...
+Files Changed: ...
+Workflow Phases: ...
+Skills Used: ...
+Sessions Used: ...
+Verification: PASS | FAIL | PARTIAL - command/runtime evidence
+Risks/Remaining Work: ...
 Status: COMPLETE | BLOCKED | PARTIAL
 ```
 
-## Rules
+## Hard Stops
 
-- Do not start from ambiguous or unapproved requirements.
-- Do not skip synthesis after research.
-- Do not skip verification after implementation.
-- Do not delegate normal feature phases to agents when a loaded skill can guide the phase.
-- Keep one live plan in your todo list and update it as phases complete.
-- Surface blockers and product decision gaps promptly.
-- Before final response, check that the report includes skills loaded, delegations used or none, files changed, verification commands, and pass/fail outcomes.
+- Unsafe ambiguity that materially changes product, architecture, data, security, billing, or external impact.
+- Unexpected user changes in files that must be edited.
+- Missing authority/tooling for a required action.
+- Destructive or external-impact action without explicit request.

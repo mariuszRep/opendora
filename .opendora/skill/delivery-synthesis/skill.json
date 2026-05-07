@@ -1,0 +1,11 @@
+{
+  "tools": [
+    "session_get",
+    "read",
+    "glob",
+    "grep",
+    "todowrite",
+    "question",
+    "reply"
+  ]
+}

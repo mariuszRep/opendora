@@ -1,0 +1,11 @@
+{
+  "tools": [
+    "delegate",
+    "session_get",
+    "session_search",
+    "session_tree",
+    "todowrite",
+    "reply",
+    "question"
+  ]
+}

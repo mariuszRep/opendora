@@ -3,8 +3,8 @@
   "description": "Compacts conversation history to reduce token usage.",
   "mode": "system",
   "model": {
-    "modelID": "gemini-2.5-flash-lite",
-    "providerID": "google-gemini-cli"
+    "modelID": "minimax-m2.5",
+    "providerID": "fallback"
   },
   "color": "violet",
   "hidden": true,

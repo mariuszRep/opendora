@@ -1,6 +1,6 @@
 {
   "name": "Product Engineer",
-  "description": "Full-stack engineering orchestrator. Receives tasks, classifies difficulty, loads the required skills, and executes the complete workflow: context, requirements, exploration, architecture, implementation, and verification.",
+  "description": "Full-stack engineering orchestrator. Runs a skill-driven delivery workflow across intake, context, isolated research/planning sessions, synthesis, implementation, verification, and reporting.",
   "mode": "primary",
   "model": {
     "modelID": "minimax-m2.5-free",
@@ -12,6 +12,7 @@
   "hidden": false,
   "tools": [
     "skill_load",
+    "skill_list",
     "read",
     "glob",
     "grep",
@@ -24,16 +25,24 @@
     "delegate",
     "reply",
     "question",
+    "session_get",
+    "session_search",
+    "session_tree",
     "task"
   ],
   "skills": [
+    "project-delivery",
+    "delivery-intake",
+    "delivery-session-handoff",
     "project-context",
     "requirements",
     "code-exploration",
     "architecture-analysis",
-    "project-setup",
-    "project-delivery",
+    "delivery-synthesis",
+    "delivery-implementation",
     "review-gate",
+    "delivery-report",
+    "project-setup",
     "playwright-browser"
   ],
   "toolConfig": {
