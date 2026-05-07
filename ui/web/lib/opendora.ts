@@ -317,6 +317,7 @@ export type Event =
   | { type: "session.updated"; properties: { info: Session } }
   | { type: "session.deleted"; properties: { sessionID: string } }
   | { type: "session.idle"; properties: { sessionID: string } }
+  | { type: "session.status"; properties: { sessionID: string; status: { type: "idle" | "busy" | "retry"; attempt?: number; message?: string; next?: number } } }
   | { type: string; properties: unknown }
 
 export class SessionBusyError extends Error {
@@ -353,6 +354,7 @@ async function req<T>(path: string, opts?: RequestInit): Promise<T> {
 export const opendora = {
   session: {
     list: () => req<Session[]>(`/session`),
+    status: () => req<Record<string, { type: "idle" | "busy" | "retry"; attempt?: number; message?: string; next?: number }>>("/session/status"),
     create: (input?: { sessionType?: SessionType; agentID?: string | null; title?: string }) =>
       req<Session>("/session", { method: "POST", body: JSON.stringify(input ?? {}) }),
     children: (sessionID: string) => req<Session[]>(`/session/${sessionID}/children`),

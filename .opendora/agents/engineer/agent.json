@@ -35,15 +35,13 @@
     "delivery-intake",
     "delivery-session-handoff",
     "project-context",
-    "requirements",
     "code-exploration",
     "architecture-analysis",
     "delivery-synthesis",
     "delivery-implementation",
     "review-gate",
     "delivery-report",
-    "project-setup",
-    "playwright-browser"
+    "project-setup"
   ],
   "toolConfig": {
     "reply": {

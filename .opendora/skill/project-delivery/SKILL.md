@@ -55,7 +55,7 @@ delivery-intake
 -> delivery-report
 ```
 
-Use `delivery-session-handoff` whenever a phase should run in an isolated sub-session or when consuming prior session refs.
+Use `delivery-session-handoff` whenever a phase should run in an isolated sub-session or when consuming prior session refs. Isolation decisions are driven by the complexity tier — see Tier-Based Isolation Policy below.
 
 ## Phase Boundaries
 
@@ -114,25 +114,47 @@ Use `delivery-session-handoff` whenever a phase should run in an isolated sub-se
 - Do not dump raw transcripts or large logs unless required to explain a failure.
 - This phase is mandatory for completed or partial delivery. It can be skipped only when the workflow stops at an earlier hard blocker.
 
-## Session Isolation Policy
+## Tier-Based Isolation Policy
 
-Use isolated sessions as workflow layers, not as uncontrolled delegation.
+The complexity tier from the Intake Contract drives isolation decisions. Apply these policies mechanically. Escalate a tier when unexpected scope is discovered mid-delivery; never downgrade a tier to reduce work.
 
-### Isolate When
+### Easy
 
-- The phase is open-ended research.
-- Multiple independent searches can run without blocking each other.
-- Verification output is long or noisy.
-- A second opinion is useful.
-- The phase result should be auditable by session id.
+All phases inline in root session. No sub-sessions.
 
-### Stay In Root When
+```text
+intake -> context -> [code-exploration inline, optional] -> implementation -> review-gate -> report
+```
 
-- The task is simple, localized, or directly actionable.
-- The raw output is required immediately for the next decision.
-- A sub-session would hide important context or delegate synthesis.
+- Skip formal synthesis unless the change touches more than one area.
+- Isolate nothing unless a phase produces unexpectedly noisy output.
 
-### Handoff Rules
+### Medium
+
+Isolate phases that are open-ended, broad, or produce noisy output. Keep action phases inline.
+
+```text
+intake -> context -> [isolated: code-exploration?] -> [isolated: architecture-analysis?] -> synthesis (root) -> implementation (root) -> review-gate -> report
+```
+
+- Isolate `code-exploration` when the search is broad or the codebase is unfamiliar.
+- Isolate `architecture-analysis` when the design carries meaningful risk.
+- Implementation and verification stay in root unless a long test run warrants isolation.
+
+### Hard
+
+Each major phase in its own sub-session. Parent session owns orchestration and synthesis only.
+
+```text
+intake (root) -> [isolated: context + exploration] -> [isolated: architecture-analysis] -> synthesis (root) -> [isolated: implementation] -> [isolated: review-gate] -> report (root)
+```
+
+- Parent receives only: summary, key file paths, durable findings, and session id.
+- Never pass raw logs, broad search results, or noisy output to parent.
+- Parent must re-derive the implementation spec from phase summaries before delegating implementation.
+- Root session stays lean: its context holds only contracts, specs, decisions, and session refs.
+
+### Handoff Rules (all tiers)
 
 - Brief isolated sessions with goal, scope, context, allowed actions, exclusions, return format, and length limit.
 - Tell isolated sessions when they share a workspace and must not revert unrelated changes.

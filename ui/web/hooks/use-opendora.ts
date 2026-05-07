@@ -249,13 +249,14 @@ export function useOpendora(): UseOpendoraResult {
 
     async function init() {
       try {
-        const [providerData, agentData, sessionData, questionData, configData, scheduleData] = await Promise.all([
+        const [providerData, agentData, sessionData, questionData, configData, scheduleData, sessionStatusData] = await Promise.all([
           opendora.provider.list(),
           opendora.agent.list(),
           opendora.session.list(),
           opendora.question.list(),
           opendora.config.get(),
           opendora.schedule.list(),
+          opendora.session.status().catch(() => ({} as Record<string, { type: string }>)),
         ])
         if (cancelled) return
 
@@ -287,6 +288,14 @@ export function useOpendora(): UseOpendoraResult {
 
         const sorted = [...sessionData].sort((a, b) => b.time.updated - a.time.updated)
         setSessions(sorted)
+
+        const initialActive = new Set(
+          Object.entries(sessionStatusData)
+            .filter(([, s]) => s.type !== "idle")
+            .map(([id]) => id),
+        )
+        setActiveSessions(initialActive)
+        activeSessionsRef.current = initialActive
 
         const requestedSessionID = initialRequestedSessionIdRef.current
         const requestedSession = requestedSessionID
@@ -488,6 +497,29 @@ export function useOpendora(): UseOpendoraResult {
           }
           break
         }
+        case "session.status": {
+          const { sessionID, status } = (event as { type: string; properties: { sessionID: string; status: { type: string } } }).properties
+          if (status.type === "idle") {
+            setActiveSessions((prev) => {
+              const next = new Set(prev)
+              next.delete(sessionID)
+              return next
+            })
+            recentlyCompletedRef.current[sessionID] = Date.now()
+            questionRequestsRef.current[sessionID] = []
+            setQuestionRequests((prev) => ({ ...prev, [sessionID]: [] }))
+            if (selectedSessionRef.current?.id === sessionID) {
+              setStatus("ready")
+            }
+          } else {
+            const completedAt = recentlyCompletedRef.current[sessionID]
+            const isRecentlyCompleted = completedAt && (Date.now() - completedAt) < 2000
+            if (!isRecentlyCompleted) {
+              setActiveSessions((prev) => new Set(prev).add(sessionID))
+            }
+          }
+          break
+        }
         case "message.part.updated": {
           const { part, delta } = (event as { type: string; properties: { part: Part; delta?: string } }).properties
           if (part.sessionID !== selectedSessionRef.current?.id) break
@@ -574,7 +606,17 @@ export function useOpendora(): UseOpendoraResult {
         }
       }
     }, () => {
-      // SSE reconnected — reset stuck status only; preserve the user's current session.
+      // SSE reconnected — reload active sessions so spinners reflect true server state.
+      opendora.session.status().then((statuses) => {
+        const activeIds = new Set(
+          Object.entries(statuses)
+            .filter(([, s]) => s.type !== "idle")
+            .map(([id]) => id),
+        )
+        setActiveSessions(activeIds)
+        activeSessionsRef.current = activeIds
+      }).catch(() => {})
+      // Reset stuck status only; preserve the user's current session.
       // Only navigate to the default agent if nothing is selected (cold start / first open).
       setStatus((prev) => (prev === "streaming" || prev === "submitted" ? "ready" : prev))
       if (selectedSessionRef.current) return

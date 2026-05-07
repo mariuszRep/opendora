@@ -1,6 +1,6 @@
 ---
 name: delivery-intake
-description: Load at the start of any Product Engineer software task to classify scope, risk, readiness, required workflow skills, and whether isolated phase sessions are needed before implementation.
+description: Load at the start of any Product Engineer software task to adopt or self-classify the complexity tier (easy/medium/hard), assess scope, risk, readiness, required workflow skills, and whether isolated phase sessions are needed before implementation.
 origin: opendora
 ---
 
@@ -30,10 +30,12 @@ Use this skill as the first callable prompt module for Product Engineer software
 5. While executing inside intake phase, do not rescan/reload unless blocked by a missing capability required to continue.
 6. Extract objective, constraints, acceptance signals, risks, blockers, and likely project area.
 7. Classify complexity:
-   - `simple`: localized, low-risk, clear verification path.
-   - `medium`: multi-file/module, moderate ambiguity, non-trivial tests, or meaningful UX/API behavior. A new API endpoint is `medium` unless it is a tiny copy of an existing route with no new behavior.
-   - `hard`: cross-cutting, architecture-sensitive, high-risk, external-impact, or phased work.
-   - Use only these labels: `simple`, `medium`, `hard`.
+   - If the incoming request includes a Product Owner handoff with a `complexity` field, adopt that tier directly. Do not self-classify.
+   - Self-classify only when no tier was provided by Product Owner:
+     - `easy`: localized, low-risk, clear verification path, single-file or tightly scoped change.
+     - `medium`: multi-file/module, moderate ambiguity, non-trivial tests, or meaningful UX/API behavior. A new API endpoint is `medium` unless it is a tiny copy of an existing route with no new behavior.
+     - `hard`: cross-cutting, architecture-sensitive, high-risk, external-impact, or phased work.
+   - Use only these labels: `easy`, `medium`, `hard`.
 8. Decide readiness:
    - Ready when implementation path can be inferred from repository context or explicit requirements.
    - Not ready when a decision materially changes architecture, data/security posture, product behavior, or external impact.
@@ -51,7 +53,7 @@ Objective: ...
 Constraints: ...
 Acceptance Signals: ...
 Risks: ...
-Complexity: simple | medium | hard
+Complexity: easy | medium | hard
 Ready: true | false
 Missing Blockers: ...
 Workflow Skills: [ordered skills; include project-context before code exploration and delivery-report for final handback unless blocked]

@@ -95,7 +95,8 @@ export namespace Session {
       const parent = await get(parentSessionID).catch(() => undefined)
       basePath = parent?.path
       baseReadPath = parent?.readPath
-    } else if (agentID) {
+    }
+    if (!basePath && agentID) {
       const agent = await getConfig().agent?.get?.(agentID)
       basePath = agent?.config?.defaultPaths?.[0]
     }
@@ -299,7 +300,7 @@ export namespace Session {
         input?.path,
         input?.readPath,
       )
-      const directory = input?.directory ?? resolvedPath ?? process.cwd()
+      const directory = input?.directory ?? resolvedPath ?? cfg.instance?.directory ?? process.cwd()
       return createNext({
         directory,
         title: input?.title,
@@ -1084,7 +1085,7 @@ export namespace Session {
 
     const agentDefaultPath = await resolveAgentDefaultPath(agentID)
     return createNext({
-      directory: agentDefaultPath ?? process.cwd(),
+      directory: agentDefaultPath ?? cfg.instance?.directory ?? process.cwd(),
       title: `${agentID} (main)`,
       sessionType: "role",
       agentID,

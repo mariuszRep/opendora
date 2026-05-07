@@ -614,9 +614,9 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
 
                         {group === "filesystem" && isExpanded && (
                           <div className="mt-3 border-t pt-3">
-                            <p className="mb-0.5 text-xs font-medium">Default paths</p>
+                            <p className="mb-0.5 text-xs font-medium">Default working directory</p>
                             <p className="mb-2 text-xs text-muted-foreground">
-                              Suggested starting directories for root sessions. First path is used as default.
+                              The working directory for this agent's sessions. First path is used as default. Can be overridden per-session.
                             </p>
                             {defaultPaths.map((p) => (
                               <div key={p} className="mb-1 flex items-center gap-2">
