@@ -9,6 +9,7 @@ export const PyAutoGUIKeyboardDownTool = Tool.define("pyautogui_keyboard_down", 
     description: toolDef.description,
     parameters: z.object({
       key: z.string(),
+      window_id: z.number().int().optional().describe("X11 window ID to target directly (bypasses compositor focus)"),
     }),
     async execute(params, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")
@@ -20,7 +21,7 @@ export const PyAutoGUIKeyboardDownTool = Tool.define("pyautogui_keyboard_down", 
         metadata: { kind: "keyboard", summary: `Hold down key: ${params.key}` },
       })
 
-      await runPyAutoGUI({ action: "key_down", key: params.key })
+      await runPyAutoGUI({ action: "key_down", key: params.key, window_id: params.window_id })
 
       return {
         title: `Holding down: ${params.key}`,

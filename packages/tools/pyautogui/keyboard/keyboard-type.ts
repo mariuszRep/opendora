@@ -9,6 +9,7 @@ export const PyAutoGUIKeyboardTypeTool = Tool.define("pyautogui_keyboard_type", 
     description: toolDef.description,
     parameters: z.object({
       text: z.string(),
+      window_id: z.number().int().optional().describe("X11 window ID to target directly (bypasses compositor focus)"),
     }),
     async execute(params, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")
@@ -20,7 +21,7 @@ export const PyAutoGUIKeyboardTypeTool = Tool.define("pyautogui_keyboard_type", 
         metadata: { kind: "keyboard", summary: `Type "${params.text.slice(0, 40)}${params.text.length > 40 ? "…" : ""}"` },
       })
 
-      await runPyAutoGUI({ action: "type", text: params.text })
+      await runPyAutoGUI({ action: "type", text: params.text, window_id: params.window_id })
       return {
         title: `Typed ${params.text.length} characters`,
         metadata: { length: params.text.length },

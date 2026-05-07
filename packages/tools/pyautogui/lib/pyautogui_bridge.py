@@ -279,8 +279,12 @@ def run(cmd: dict) -> dict:
     # --- Keyboard ---
 
     elif action == "type":
+        # Under XWayland the compositor may not honour xdotool windowfocus.
+        # --window <wid> uses XSendEvent to deliver directly to the window.
+        wid = cmd.get("window_id")
+        win_args = ["--window", str(wid)] if wid else []
         subprocess.run(
-            ["xdotool", "type", "--clearmodifiers", "--delay", "0", cmd["text"]],
+            ["xdotool", "type", *win_args, "--clearmodifiers", "--delay", "20", "--", cmd["text"]],
             env=ENV, check=True,
         )
         return {}
@@ -291,18 +295,24 @@ def run(cmd: dict) -> dict:
         if isinstance(keys, str):
             keys = [keys]
         key_str = "+".join(keys)
+        wid = cmd.get("window_id")
+        win_args = ["--window", str(wid)] if wid else []
         for _ in range(presses):
-            subprocess.run(["xdotool", "key", "--clearmodifiers", key_str], env=ENV, check=True)
+            subprocess.run(["xdotool", "key", *win_args, "--clearmodifiers", key_str], env=ENV, check=True)
         return {}
 
     elif action == "key_down":
         key = cmd["key"]
-        subprocess.run(["xdotool", "keydown", key], env=ENV, check=True)
+        wid = cmd.get("window_id")
+        win_args = ["--window", str(wid)] if wid else []
+        subprocess.run(["xdotool", "keydown", *win_args, key], env=ENV, check=True)
         return {}
 
     elif action == "key_up":
         key = cmd["key"]
-        subprocess.run(["xdotool", "keyup", key], env=ENV, check=True)
+        wid = cmd.get("window_id")
+        win_args = ["--window", str(wid)] if wid else []
+        subprocess.run(["xdotool", "keyup", *win_args, key], env=ENV, check=True)
         return {}
 
     # --- Screen ---

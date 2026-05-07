@@ -1,0 +1,17 @@
+{
+  "tools": [
+    "skill_load",
+    "read",
+    "glob",
+    "grep",
+    "bash",
+    "edit",
+    "write",
+    "apply_patch",
+    "codesearch",
+    "todowrite",
+    "delegate",
+    "question",
+    "reply"
+  ]
+}

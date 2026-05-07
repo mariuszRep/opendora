@@ -54,7 +54,7 @@
     {
       "id": "engineer",
       "name": "Product Engineer",
-      "mode": "worker",
+      "mode": "primary",
       "hidden": false
     },
     {

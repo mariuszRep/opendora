@@ -18,8 +18,10 @@
     "bash",
     "edit",
     "write",
+    "apply_patch",
     "codesearch",
     "todowrite",
+    "delegate",
     "reply",
     "question",
     "task"
@@ -31,7 +33,8 @@
     "architecture-analysis",
     "project-setup",
     "project-delivery",
-    "review-gate"
+    "review-gate",
+    "playwright-browser"
   ],
   "toolConfig": {
     "reply": {

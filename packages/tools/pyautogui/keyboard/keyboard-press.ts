@@ -10,6 +10,7 @@ export const PyAutoGUIKeyboardPressTool = Tool.define("pyautogui_keyboard_press"
     parameters: z.object({
       keys: z.union([z.string(), z.array(z.string())]),
       presses: z.number().int().positive().optional(),
+      window_id: z.number().int().optional().describe("X11 window ID to target directly (bypasses compositor focus)"),
     }),
     async execute(params, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")

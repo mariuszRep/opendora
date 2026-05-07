@@ -40,6 +40,8 @@ Then apply the type-specific strategy below.
 
 **Frontend changes** — start dev server → navigate the affected pages → check console for errors → verify state persists on refresh → test that buttons and forms actually work, not just render.
 
+When browser tools are available for frontend changes, load and use the browser automation workflow. Verify at minimum one desktop viewport, one mobile viewport, browser console health, and one representative user interaction. If the browser cannot run, report PARTIAL unless equivalent runtime evidence exists.
+
 **CLI/script changes** — run with representative inputs → verify stdout/stderr/exit codes → test edge inputs: empty, malformed, boundary values.
 
 **Bug fixes** — reproduce the original bug first → verify the fix resolves it → check related code for side effects.
@@ -57,6 +59,7 @@ Choose the probes that fit the change:
 - **Idempotency** — same mutating request twice: duplicate created? error? correct no-op?
 - **Error paths** — delete/reference IDs that do not exist, missing required fields, invalid types
 - **Concurrency** — parallel requests to create-or-update paths (for servers and APIs)
+- **Responsive UI** — desktop and mobile viewport checks for layout overflow, hidden controls, and broken interactions
 
 ## Before Issuing FAIL
 
