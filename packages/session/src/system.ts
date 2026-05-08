@@ -117,22 +117,8 @@ export namespace SystemPrompt {
       if (part) sections.push({ label: "Instructions", content: part })
     }
 
-    // 4. Available skills — auto-discovered from skill folder, no manual registration needed
+    // 4. (Skills are listed in the skill_load tool description — no separate system prompt section needed)
     const agentTools = input.agent?.tools as string[] | undefined
-    if (agentTools?.includes("skill_load")) {
-      const allSkills = await cfg.skill?.all?.().catch(() => undefined)
-      if (allSkills && allSkills.length > 0) {
-        const skillLines = allSkills.map((s) => `- ${s.name}: ${s.description}`)
-        sections.push({
-          label: "Available Skills",
-          content: [
-            "You have the following skills available. Load any with skill_load to unlock its full instructions and tools.",
-            "",
-            ...skillLines,
-          ].join("\n"),
-        })
-      }
-    }
 
     // 5. Session/user system override (mirrors user.system in llm.ts)
     if (input.userSystem) {

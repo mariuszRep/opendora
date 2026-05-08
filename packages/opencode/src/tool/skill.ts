@@ -11,10 +11,18 @@ import { addSkillTools } from "../session-skill-tools"
 // Tool to load and use a specific skill
 export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
   const agent = ctx?.agent
+  const agentSkills = agent?.config?.skills as string[] | undefined
+  const agentToolsList = agent?.tools as string[] | undefined
+  // Agents with skill_list tool bypass the assignment restriction and can discover any skill
+  const hasUnrestrictedDiscovery = agentToolsList?.includes("skill_list") ?? false
+
   const allSkills = await Skill.all()
-  
+
   const accessibleSkills = agent
     ? allSkills.filter((skill) => {
+        if (hasUnrestrictedDiscovery) return true
+        if (agentSkills?.length) return agentSkills.includes(skill.name)
+        // No skills assigned — fall back to permission check
         const rule = PermissionNext.evaluate("skill", skill.name, agent.permission)
         return rule.action !== "deny"
       })
@@ -50,8 +58,13 @@ export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
       const skill = await Skill.get(params.name)
 
       if (!skill) {
-        const available = await Skill.all().then((x) => x.map(s => s.name).join(", "))
+        const available = accessibleSkills.map(s => s.name).join(", ")
         throw new Error(`Skill "${params.name}" not found. Available skills: ${available || "none"}`)
+      }
+
+      if (!hasUnrestrictedDiscovery && agentSkills?.length && !agentSkills.includes(params.name)) {
+        const available = accessibleSkills.map(s => s.name).join(", ")
+        throw new Error(`Skill "${params.name}" is not assigned to this agent. Assigned skills: ${available || "none"}`)
       }
 
       await ctx.ask({

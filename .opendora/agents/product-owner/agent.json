@@ -14,6 +14,7 @@
     "session_search",
     "session_tree",
     "session_get",
+    "session_update",
     "skill_load",
     "todowrite",
     "delegate",
@@ -25,7 +26,8 @@
   ],
   "skills": [
     "requirements",
-    "project-context"
+    "project-context",
+    "context-reconciliation-intake"
   ],
   "toolConfig": {
     "delegate": {

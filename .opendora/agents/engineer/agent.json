@@ -41,7 +41,8 @@
     "delivery-implementation",
     "review-gate",
     "delivery-report",
-    "project-setup"
+    "project-setup",
+    "impeccable"
   ],
   "toolConfig": {
     "reply": {

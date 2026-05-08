@@ -1,9 +1,14 @@
 {
   "name": "skill_list",
-  "description": "List all available skills — both locally created (origin: opendora) and installed from external registries (origin: anthropic, vercel, clawhub, github). Use skill_search to find new skills in external registries.",
+  "description": "List available skills. Without arguments: lists ALL skills on the system (unrestricted, for discovery and agent management). With agent='<name>': lists only the skills assigned to that agent, useful before delegating a task.",
   "inputSchema": {
     "type": "object",
-    "properties": {},
+    "properties": {
+      "agent": {
+        "type": "string",
+        "description": "Agent name or ID. When provided, returns only the skills assigned to that agent."
+      }
+    },
     "required": []
   }
 }
