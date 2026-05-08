@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2Icon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon, BrainIcon, WrenchIcon, PlusIcon, LayersIcon } from "lucide-react"
+import { CheckCircle2Icon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon, BrainIcon, WrenchIcon, PlusIcon, LayersIcon, DatabaseIcon } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import {
   ModelSelector,
   ModelSelectorContent,
@@ -21,6 +22,8 @@ import {
   ModelSelectorTrigger,
 } from "@/components/ai-elements/model-selector"
 import { GroupBuilderDialog, type ModelGroup } from "@/components/providers/group-builder-dialog"
+import { ProviderModelsPanel } from "@/components/providers/provider-models-panel"
+import { AllModelsView } from "@/components/providers/all-models-view"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { opendora, type AuthMethod, type Provider } from "@/lib/opendora"
 import { cn } from "@/lib/utils"
@@ -239,7 +242,6 @@ export default function ProvidersPage() {
   return (
     <SettingsPageLayout
       title="Providers"
-      narrow
       headerAction={
         <>
           <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setGroupDialogOpen(true)}>
@@ -257,7 +259,21 @@ export default function ProvidersPage() {
         </>
       }
     >
-      <div className="flex flex-col gap-6">
+      <Tabs defaultValue="providers" className="flex flex-col gap-6">
+        <TabsList variant="line" className="w-fit">
+          <TabsTrigger value="providers">Providers</TabsTrigger>
+          <TabsTrigger value="models">
+            <DatabaseIcon className="size-3.5" />
+            All Models
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="models">
+          <AllModelsView providers={providers} connectedProviders={connectedProviders} />
+        </TabsContent>
+
+        <TabsContent value="providers">
+          <div className="mx-auto max-w-2xl flex flex-col gap-6">
           {/* Default Model Configuration */}
           <Card>
             <CardHeader>
@@ -566,6 +582,9 @@ export default function ProvidersPage() {
                   {apiKeyForm.error && <p className="text-xs text-destructive">{apiKeyForm.error}</p>}
                 </div>
               )}
+
+              {/* Models panel */}
+              <ProviderModelsPanel models={provider.models} />
             </div>
           ))}
 
@@ -686,6 +705,9 @@ export default function ProvidersPage() {
                   {apiKeyForm.error && <p className="text-xs text-destructive">{apiKeyForm.error}</p>}
                 </div>
               )}
+
+              {/* Models panel */}
+              <ProviderModelsPanel models={provider.models} />
             </div>
           ))}
           </div>
@@ -715,6 +737,8 @@ export default function ProvidersPage() {
             </div>
           </CardContent>
         </Card>
+        </TabsContent>
+      </Tabs>
     </SettingsPageLayout>
   )
 }

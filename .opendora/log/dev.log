@@ -1,247 +1,189 @@
-INFO  2026-05-08T05:51:51 +781ms service=default version=local args=["serve","--port","4097"] opencode
-INFO  2026-05-08T05:51:51 +1ms service=config path=/home/mariu/projects/opendora/.opendora/config.json loading
-INFO  2026-05-08T05:51:51 +2ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.json loading
-INFO  2026-05-08T05:51:51 +1ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.jsonc loading
-INFO  2026-05-08T05:51:51 +25ms service=db path=/home/mariu/projects/opendora/.opendora/storage/opendora.db opening database
-INFO  2026-05-08T05:51:51 +24ms service=db count=17 mode=dev applying migrations
-INFO  2026-05-08T05:51:51 +165ms service=server Browser control server started
-INFO  2026-05-08T05:52:02 +11086ms service=server method=OPTIONS path=/user request
-INFO  2026-05-08T05:52:02 +1ms service=server status=started method=OPTIONS path=/user request
-INFO  2026-05-08T05:52:02 +2ms service=server status=completed duration=2 method=OPTIONS path=/user request
-INFO  2026-05-08T05:52:02 +9ms service=server method=OPTIONS path=/general request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=OPTIONS path=/general request
-INFO  2026-05-08T05:52:02 +0ms service=server status=completed duration=0 method=OPTIONS path=/general request
-INFO  2026-05-08T05:52:02 +0ms service=server method=OPTIONS path=/general request
-INFO  2026-05-08T05:52:02 +1ms service=server status=started method=OPTIONS path=/general request
-INFO  2026-05-08T05:52:02 +0ms service=server status=completed duration=0 method=OPTIONS path=/general request
-INFO  2026-05-08T05:52:02 +0ms service=server method=OPTIONS path=/general request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=OPTIONS path=/general request
-INFO  2026-05-08T05:52:02 +0ms service=server status=completed duration=0 method=OPTIONS path=/general request
-INFO  2026-05-08T05:52:02 +6ms service=server method=OPTIONS path=/provider request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=OPTIONS path=/provider request
-INFO  2026-05-08T05:52:02 +0ms service=server status=completed duration=0 method=OPTIONS path=/provider request
-INFO  2026-05-08T05:52:02 +2ms service=server method=OPTIONS path=/agent request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=OPTIONS path=/agent request
-INFO  2026-05-08T05:52:02 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent request
-INFO  2026-05-08T05:52:02 +1ms service=server method=OPTIONS path=/session request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=OPTIONS path=/session request
-INFO  2026-05-08T05:52:02 +0ms service=server status=completed duration=0 method=OPTIONS path=/session request
-INFO  2026-05-08T05:52:02 +2ms service=server method=OPTIONS path=/question request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=OPTIONS path=/question request
-INFO  2026-05-08T05:52:02 +0ms service=server status=completed duration=0 method=OPTIONS path=/question request
-INFO  2026-05-08T05:52:02 +3ms service=server method=OPTIONS path=/config request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=OPTIONS path=/config request
-INFO  2026-05-08T05:52:02 +0ms service=server status=completed duration=0 method=OPTIONS path=/config request
-INFO  2026-05-08T05:52:02 +11ms service=server method=OPTIONS path=/schedule request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=OPTIONS path=/schedule request
-INFO  2026-05-08T05:52:02 +0ms service=server status=completed duration=0 method=OPTIONS path=/schedule request
-INFO  2026-05-08T05:52:02 +1ms service=server method=OPTIONS path=/session/status request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=OPTIONS path=/session/status request
-INFO  2026-05-08T05:52:02 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/status request
-INFO  2026-05-08T05:52:02 +0ms service=server method=GET path=/event request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=GET path=/event request
-INFO  2026-05-08T05:52:02 +1ms service=default directory=/home/mariu/projects/opendora creating instance
-INFO  2026-05-08T05:52:02 +0ms service=project directory=/home/mariu/projects/opendora fromDirectory
-INFO  2026-05-08T05:52:02 +2ms service=server method=GET path=/user request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=GET path=/user request
-INFO  2026-05-08T05:52:02 +11ms service=server method=GET path=/provider request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-05-08T05:52:02 +2ms service=server method=GET path=/general request
-INFO  2026-05-08T05:52:02 +1ms service=server status=started method=GET path=/general request
-INFO  2026-05-08T05:52:02 +15ms service=default directory=/home/mariu/projects/opendora bootstrapping
-DEBUG 2026-05-08T05:52:02 +14ms service=config path=/home/mariu/projects/opendora/.opendora loading config from OPENCODE_CONFIG_DIR
-DEBUG 2026-05-08T05:52:02 +0ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.jsonc
-INFO  2026-05-08T05:52:02 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.jsonc loading
-DEBUG 2026-05-08T05:52:02 +0ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.json
-INFO  2026-05-08T05:52:02 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.json loading
-INFO  2026-05-08T05:52:02 +60ms service=plugin name=CodexAuthPlugin loading internal plugin
-INFO  2026-05-08T05:52:02 +0ms service=plugin name=CopilotAuthPlugin loading internal plugin
-INFO  2026-05-08T05:52:02 +1ms service=plugin name=gitlabAuthPlugin loading internal plugin
-INFO  2026-05-08T05:52:02 +0ms service=plugin name=googleOAuthPlugin loading internal plugin
-INFO  2026-05-08T05:52:02 +0ms service=plugin path=opencode-anthropic-auth@0.0.13 loading plugin
-INFO  2026-05-08T05:52:02 +24ms service=bus type=* subscribing
-INFO  2026-05-08T05:52:02 +1ms service=bus type=session.updated subscribing
-INFO  2026-05-08T05:52:02 +0ms service=bus type=message.updated subscribing
-INFO  2026-05-08T05:52:02 +0ms service=bus type=message.part.updated subscribing
-INFO  2026-05-08T05:52:02 +0ms service=bus type=session.diff subscribing
-INFO  2026-05-08T05:52:02 +0ms service=format init
-INFO  2026-05-08T05:52:02 +0ms service=bus type=file.edited subscribing
-INFO  2026-05-08T05:52:02 +1ms service=lsp serverIds=deno, typescript, vue, eslint, oxlint, biome, gopls, ruby-lsp, pyright, elixir-ls, zls, csharp, fsharp, sourcekit-lsp, rust, clangd, svelte, astro, jdtls, kotlin-ls, yaml-ls, lua-ls, php intelephense, prisma, dart, ocaml-lsp, bash, terraform, texlab, dockerfile, gleam, clojure-lsp, nixd, tinymist, haskell-language-server, julials enabled LSP servers
-INFO  2026-05-08T05:52:02 +1ms service=file.watcher init
-INFO  2026-05-08T05:52:02 +148ms service=scheduler id=snapshot.cleanup run
-INFO  2026-05-08T05:52:02 +0ms service=scheduler id=tool.truncation.cleanup run
-INFO  2026-05-08T05:52:02 +1ms service=bus type=command.executed subscribing
-INFO  2026-05-08T05:52:02 +1ms service=file.watcher platform=linux backend=inotify watcher backend
-ERROR 2026-05-08T05:52:02 +0ms service=file.watcher error=OPENCODE_LIBC is not defined failed to load watcher binding
-INFO  2026-05-08T05:52:02 +2ms service=server event connected
-INFO  2026-05-08T05:52:02 +3ms service=bus type=* subscribing
-INFO  2026-05-08T05:52:02 +3ms service=server status=completed duration=292 method=GET path=/event request
-INFO  2026-05-08T05:52:02 +6ms service=server status=completed duration=295 method=GET path=/user request
-INFO  2026-05-08T05:52:02 +1ms service=server status=completed duration=282 method=GET path=/general request
-INFO  2026-05-08T05:52:02 +25ms service=provider status=started state
-INFO  2026-05-08T05:52:02 +26ms service=provider init
-INFO  2026-05-08T05:52:02 +2ms service=vcs branch=intake-gate-rollout initialized
-INFO  2026-05-08T05:52:02 +0ms service=bus type=file.watcher.updated subscribing
-INFO  2026-05-08T05:52:02 +5ms service=server method=GET path=/agent request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=GET path=/agent request
-INFO  2026-05-08T05:52:02 +2ms service=server method=GET path=/session request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=GET path=/session request
-INFO  2026-05-08T05:52:02 +6ms service=server status=completed duration=6 method=GET path=/session request
-INFO  2026-05-08T05:52:02 +18ms service=server method=GET path=/question request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=GET path=/question request
-INFO  2026-05-08T05:52:02 +0ms service=server status=completed duration=0 method=GET path=/question request
-INFO  2026-05-08T05:52:02 +12ms service=server method=GET path=/config request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=GET path=/config request
-INFO  2026-05-08T05:52:02 +1ms service=server status=completed duration=1 method=GET path=/config request
-INFO  2026-05-08T05:52:02 +15ms service=server method=GET path=/session/status request
-INFO  2026-05-08T05:52:02 +0ms service=server status=started method=GET path=/session/status request
-INFO  2026-05-08T05:52:02 +1ms service=server status=completed duration=1 method=GET path=/session/status request
-INFO  2026-05-08T05:52:03 +13ms service=server method=GET path=/schedule request
-INFO  2026-05-08T05:52:03 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-08T05:52:03 +2ms service=server status=completed duration=2 method=GET path=/schedule request
-INFO  2026-05-08T05:52:03 +13ms service=server method=GET path=/general request
-INFO  2026-05-08T05:52:03 +0ms service=server status=started method=GET path=/general request
-INFO  2026-05-08T05:52:03 +2ms service=server status=completed duration=2 method=GET path=/general request
-INFO  2026-05-08T05:52:03 +15ms service=server method=GET path=/general request
-INFO  2026-05-08T05:52:03 +0ms service=server status=started method=GET path=/general request
-INFO  2026-05-08T05:52:03 +1ms service=server status=completed duration=1 method=GET path=/general request
-INFO  2026-05-08T05:52:03 +235ms service=server status=completed duration=336 method=GET path=/agent request
-WARN  2026-05-08T05:52:03 +369ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
-INFO  2026-05-08T05:52:03 +300ms service=provider providerID=openai found
-INFO  2026-05-08T05:52:03 +1ms service=provider providerID=kilo found
-INFO  2026-05-08T05:52:03 +0ms service=provider providerID=openrouter found
-INFO  2026-05-08T05:52:03 +0ms service=provider providerID=openai-codex found
-INFO  2026-05-08T05:52:03 +1ms service=provider providerID=google-gemini-cli found
-INFO  2026-05-08T05:52:03 +0ms service=provider providerID=opencode found
-INFO  2026-05-08T05:52:03 +0ms service=provider providerID=ollama found
-INFO  2026-05-08T05:52:03 +0ms service=provider status=completed duration=1040 state
-INFO  2026-05-08T05:52:04 +199ms service=provider.routes count=5 codex models fetched
-INFO  2026-05-08T05:52:04 +0ms service=provider.routes codex models updated in provider list response
-INFO  2026-05-08T05:52:04 +98ms service=server status=completed duration=1647 method=GET path=/provider request
-INFO  2026-05-08T05:52:04 +352ms service=server method=GET path=/schedule request
-INFO  2026-05-08T05:52:04 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-08T05:52:04 +2ms service=server status=completed duration=2 method=GET path=/schedule request
-INFO  2026-05-08T05:52:04 +0ms service=server method=OPTIONS path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
-INFO  2026-05-08T05:52:04 +0ms service=server status=started method=OPTIONS path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
-INFO  2026-05-08T05:52:04 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
-INFO  2026-05-08T05:52:04 +1ms service=server method=OPTIONS path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/system-prompt request
-INFO  2026-05-08T05:52:04 +0ms service=server status=started method=OPTIONS path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/system-prompt request
-INFO  2026-05-08T05:52:04 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/system-prompt request
-INFO  2026-05-08T05:52:04 +12ms service=server method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
-INFO  2026-05-08T05:52:04 +1ms service=server status=started method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
-INFO  2026-05-08T05:52:04 +13ms service=server status=completed duration=14 method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
-INFO  2026-05-08T05:52:04 +1ms service=server method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/system-prompt request
-INFO  2026-05-08T05:52:04 +0ms service=server status=started method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/system-prompt request
-INFO  2026-05-08T05:52:04 +277ms service=server status=completed duration=276 method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/system-prompt request
-INFO  2026-05-08T05:52:10 +5347ms service=snapshot prune=7.days cleanup
-INFO  2026-05-08T05:52:12 +2242ms service=server method=OPTIONS path=/provider request
-INFO  2026-05-08T05:52:12 +0ms service=server status=started method=OPTIONS path=/provider request
-INFO  2026-05-08T05:52:12 +0ms service=server status=completed duration=0 method=OPTIONS path=/provider request
-INFO  2026-05-08T05:52:12 +15ms service=server method=GET path=/provider request
-INFO  2026-05-08T05:52:12 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-05-08T05:52:12 +224ms service=provider.routes count=5 codex models fetched
-INFO  2026-05-08T05:52:12 +1ms service=provider.routes codex models updated in provider list response
-INFO  2026-05-08T05:52:12 +45ms service=server status=completed duration=270 method=GET path=/provider request
-INFO  2026-05-08T05:52:18 +5379ms service=server method=OPTIONS path=/schedule request
-INFO  2026-05-08T05:52:18 +1ms service=server status=started method=OPTIONS path=/schedule request
-INFO  2026-05-08T05:52:18 +0ms service=server status=completed duration=0 method=OPTIONS path=/schedule request
-INFO  2026-05-08T05:52:18 +0ms service=server method=OPTIONS path=/session/ses_207f4b588ffew5pt7Ef8PEf5WK/system-prompt request
-INFO  2026-05-08T05:52:18 +0ms service=server status=started method=OPTIONS path=/session/ses_207f4b588ffew5pt7Ef8PEf5WK/system-prompt request
-INFO  2026-05-08T05:52:18 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_207f4b588ffew5pt7Ef8PEf5WK/system-prompt request
-INFO  2026-05-08T05:52:18 +3ms service=server method=OPTIONS path=/session/ses_207f4b588ffew5pt7Ef8PEf5WK/message request
-INFO  2026-05-08T05:52:18 +0ms service=server status=started method=OPTIONS path=/session/ses_207f4b588ffew5pt7Ef8PEf5WK/message request
-INFO  2026-05-08T05:52:18 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_207f4b588ffew5pt7Ef8PEf5WK/message request
-INFO  2026-05-08T05:52:18 +9ms service=server method=GET path=/session/ses_207f4b588ffew5pt7Ef8PEf5WK/system-prompt request
-INFO  2026-05-08T05:52:18 +0ms service=server status=started method=GET path=/session/ses_207f4b588ffew5pt7Ef8PEf5WK/system-prompt request
-INFO  2026-05-08T05:52:18 +4ms service=server method=GET path=/session/ses_207f4b588ffew5pt7Ef8PEf5WK/message request
-INFO  2026-05-08T05:52:18 +1ms service=server status=started method=GET path=/session/ses_207f4b588ffew5pt7Ef8PEf5WK/message request
-INFO  2026-05-08T05:52:18 +2ms service=server status=completed duration=2 method=GET path=/session/ses_207f4b588ffew5pt7Ef8PEf5WK/message request
-INFO  2026-05-08T05:52:18 +0ms service=server method=GET path=/schedule request
-INFO  2026-05-08T05:52:18 +1ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-08T05:52:18 +0ms service=server status=completed duration=0 method=GET path=/schedule request
-INFO  2026-05-08T05:52:18 +133ms service=server status=completed duration=141 method=GET path=/session/ses_207f4b588ffew5pt7Ef8PEf5WK/system-prompt request
-INFO  2026-05-08T05:52:26 +8341ms service=server method=OPTIONS path=/schedule request
-INFO  2026-05-08T05:52:26 +1ms service=server status=started method=OPTIONS path=/schedule request
-INFO  2026-05-08T05:52:26 +0ms service=server status=completed duration=0 method=OPTIONS path=/schedule request
-INFO  2026-05-08T05:52:26 +1ms service=server method=OPTIONS path=/session/ses_1fe2bb2eaffeEpyDX78kv4ggiE/system-prompt request
-INFO  2026-05-08T05:52:26 +0ms service=server status=started method=OPTIONS path=/session/ses_1fe2bb2eaffeEpyDX78kv4ggiE/system-prompt request
-INFO  2026-05-08T05:52:26 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_1fe2bb2eaffeEpyDX78kv4ggiE/system-prompt request
-INFO  2026-05-08T05:52:26 +0ms service=server method=OPTIONS path=/session/ses_1fe2bb2eaffeEpyDX78kv4ggiE/message request
-INFO  2026-05-08T05:52:26 +0ms service=server status=started method=OPTIONS path=/session/ses_1fe2bb2eaffeEpyDX78kv4ggiE/message request
-INFO  2026-05-08T05:52:26 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_1fe2bb2eaffeEpyDX78kv4ggiE/message request
-INFO  2026-05-08T05:52:26 +10ms service=server method=GET path=/schedule request
-INFO  2026-05-08T05:52:26 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-08T05:52:26 +2ms service=server status=completed duration=2 method=GET path=/schedule request
-INFO  2026-05-08T05:52:26 +1ms service=server method=GET path=/session/ses_1fe2bb2eaffeEpyDX78kv4ggiE/system-prompt request
-INFO  2026-05-08T05:52:26 +0ms service=server status=started method=GET path=/session/ses_1fe2bb2eaffeEpyDX78kv4ggiE/system-prompt request
-INFO  2026-05-08T05:52:26 +5ms service=server method=GET path=/session/ses_1fe2bb2eaffeEpyDX78kv4ggiE/message request
-INFO  2026-05-08T05:52:26 +0ms service=server status=started method=GET path=/session/ses_1fe2bb2eaffeEpyDX78kv4ggiE/message request
-INFO  2026-05-08T05:52:26 +125ms service=server status=completed duration=124 method=GET path=/session/ses_1fe2bb2eaffeEpyDX78kv4ggiE/message request
-INFO  2026-05-08T05:52:26 +116ms service=server status=completed duration=246 method=GET path=/session/ses_1fe2bb2eaffeEpyDX78kv4ggiE/system-prompt request
-INFO  2026-05-08T05:52:31 +4202ms service=server method=GET path=/schedule request
-INFO  2026-05-08T05:52:31 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-08T05:52:31 +2ms service=server status=completed duration=2 method=GET path=/schedule request
-INFO  2026-05-08T05:52:31 +0ms service=server method=OPTIONS path=/session/ses_1fe222cadffeBui6sxgaHRcqNT/system-prompt request
-INFO  2026-05-08T05:52:31 +0ms service=server status=started method=OPTIONS path=/session/ses_1fe222cadffeBui6sxgaHRcqNT/system-prompt request
-INFO  2026-05-08T05:52:31 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_1fe222cadffeBui6sxgaHRcqNT/system-prompt request
-INFO  2026-05-08T05:52:31 +6ms service=server method=OPTIONS path=/session/ses_1fe222cadffeBui6sxgaHRcqNT/message request
-INFO  2026-05-08T05:52:31 +1ms service=server status=started method=OPTIONS path=/session/ses_1fe222cadffeBui6sxgaHRcqNT/message request
-INFO  2026-05-08T05:52:31 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_1fe222cadffeBui6sxgaHRcqNT/message request
-INFO  2026-05-08T05:52:31 +4ms service=server method=GET path=/session/ses_1fe222cadffeBui6sxgaHRcqNT/system-prompt request
-INFO  2026-05-08T05:52:31 +0ms service=server status=started method=GET path=/session/ses_1fe222cadffeBui6sxgaHRcqNT/system-prompt request
-INFO  2026-05-08T05:52:31 +5ms service=server method=GET path=/session/ses_1fe222cadffeBui6sxgaHRcqNT/message request
-INFO  2026-05-08T05:52:31 +0ms service=server status=started method=GET path=/session/ses_1fe222cadffeBui6sxgaHRcqNT/message request
-INFO  2026-05-08T05:52:31 +6ms service=server status=completed duration=6 method=GET path=/session/ses_1fe222cadffeBui6sxgaHRcqNT/message request
-INFO  2026-05-08T05:52:31 +247ms service=server status=completed duration=258 method=GET path=/session/ses_1fe222cadffeBui6sxgaHRcqNT/system-prompt request
-INFO  2026-05-08T05:52:34 +3104ms service=server method=OPTIONS path=/session/ses_1fe033efaffeCEwMEo2meRUDqK/system-prompt request
-INFO  2026-05-08T05:52:34 +1ms service=server status=started method=OPTIONS path=/session/ses_1fe033efaffeCEwMEo2meRUDqK/system-prompt request
-INFO  2026-05-08T05:52:34 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_1fe033efaffeCEwMEo2meRUDqK/system-prompt request
-INFO  2026-05-08T05:52:34 +1ms service=server method=OPTIONS path=/schedule request
-INFO  2026-05-08T05:52:34 +0ms service=server status=started method=OPTIONS path=/schedule request
-INFO  2026-05-08T05:52:34 +0ms service=server status=completed duration=0 method=OPTIONS path=/schedule request
-INFO  2026-05-08T05:52:34 +3ms service=server method=OPTIONS path=/session/ses_1fe033efaffeCEwMEo2meRUDqK/message request
-INFO  2026-05-08T05:52:34 +0ms service=server status=started method=OPTIONS path=/session/ses_1fe033efaffeCEwMEo2meRUDqK/message request
-INFO  2026-05-08T05:52:34 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_1fe033efaffeCEwMEo2meRUDqK/message request
-INFO  2026-05-08T05:52:34 +6ms service=server method=GET path=/session/ses_1fe033efaffeCEwMEo2meRUDqK/system-prompt request
-INFO  2026-05-08T05:52:34 +0ms service=server status=started method=GET path=/session/ses_1fe033efaffeCEwMEo2meRUDqK/system-prompt request
-INFO  2026-05-08T05:52:34 +7ms service=server method=GET path=/schedule request
-INFO  2026-05-08T05:52:34 +1ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-08T05:52:34 +0ms service=server status=completed duration=0 method=GET path=/schedule request
-INFO  2026-05-08T05:52:34 +7ms service=server method=GET path=/session/ses_1fe033efaffeCEwMEo2meRUDqK/message request
-INFO  2026-05-08T05:52:34 +0ms service=server status=started method=GET path=/session/ses_1fe033efaffeCEwMEo2meRUDqK/message request
-INFO  2026-05-08T05:52:34 +4ms service=server status=completed duration=4 method=GET path=/session/ses_1fe033efaffeCEwMEo2meRUDqK/message request
-INFO  2026-05-08T05:52:34 +64ms service=server status=completed duration=83 method=GET path=/session/ses_1fe033efaffeCEwMEo2meRUDqK/system-prompt request
-INFO  2026-05-08T05:52:51 +16852ms service=bus type=session.deleted publishing
-INFO  2026-05-08T05:52:51 +15ms service=bus type=session.deleted publishing
-INFO  2026-05-08T05:52:51 +3ms service=bus type=session.deleted publishing
-INFO  2026-05-08T05:52:51 +7ms service=bus type=session.deleted publishing
-INFO  2026-05-08T05:52:51 +0ms service=bus type=session.deleted publishing
-INFO  2026-05-08T05:52:51 +1ms service=bus type=session.deleted publishing
-INFO  2026-05-08T05:52:51 +3ms service=bus type=session.deleted publishing
-INFO  2026-05-08T05:52:51 +0ms service=bus type=session.deleted publishing
-INFO  2026-05-08T05:52:51 +1ms service=bus type=session.deleted publishing
-ERROR 2026-05-08T05:52:51 +1ms service=default e=No context found for instance rejection
-ERROR 2026-05-08T05:52:51 +0ms service=default e=No context found for instance rejection
-ERROR 2026-05-08T05:52:51 +0ms service=default e=No context found for instance rejection
-ERROR 2026-05-08T05:52:51 +0ms service=default e=No context found for instance rejection
-ERROR 2026-05-08T05:52:51 +0ms service=default e=No context found for instance rejection
-ERROR 2026-05-08T05:52:51 +0ms service=default e=No context found for instance rejection
-ERROR 2026-05-08T05:52:51 +0ms service=default e=No context found for instance rejection
-ERROR 2026-05-08T05:52:51 +0ms service=default e=No context found for instance rejection
-ERROR 2026-05-08T05:52:51 +0ms service=default e=No context found for instance rejection
-INFO  2026-05-08T05:59:11 +379865ms service=server method=OPTIONS path=/provider request
-INFO  2026-05-08T05:59:11 +0ms service=server status=started method=OPTIONS path=/provider request
-INFO  2026-05-08T05:59:11 +0ms service=server status=completed duration=0 method=OPTIONS path=/provider request
-INFO  2026-05-08T05:59:11 +15ms service=server method=GET path=/provider request
-INFO  2026-05-08T05:59:11 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-05-08T05:59:12 +681ms service=provider.routes count=5 codex models fetched
-INFO  2026-05-08T05:59:12 +0ms service=provider.routes codex models updated in provider list response
-INFO  2026-05-08T05:59:12 +49ms service=server status=completed duration=730 method=GET path=/provider request
-INFO  2026-05-08T06:00:35 +83776ms service=server method=OPTIONS path=/provider request
-INFO  2026-05-08T06:00:35 +0ms service=server status=started method=OPTIONS path=/provider request
-INFO  2026-05-08T06:00:35 +1ms service=server status=completed duration=1 method=OPTIONS path=/provider request
-INFO  2026-05-08T06:00:35 +14ms service=server method=GET path=/provider request
-INFO  2026-05-08T06:00:35 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-05-08T06:00:36 +650ms service=provider.routes count=5 codex models fetched
-INFO  2026-05-08T06:00:36 +0ms service=provider.routes codex models updated in provider list response
-INFO  2026-05-08T06:00:36 +38ms service=server status=completed duration=688 method=GET path=/provider request
+INFO  2026-05-08T11:53:06 +530ms service=default version=local args=["serve","--port","4097"] opencode
+INFO  2026-05-08T11:53:06 +1ms service=config path=/home/mariu/projects/opendora/.opendora/config.json loading
+INFO  2026-05-08T11:53:06 +1ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.json loading
+INFO  2026-05-08T11:53:06 +1ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.jsonc loading
+INFO  2026-05-08T11:53:06 +2ms service=db path=/home/mariu/projects/opendora/.opendora/storage/opendora.db opening database
+INFO  2026-05-08T11:53:06 +17ms service=db count=17 mode=dev applying migrations
+INFO  2026-05-08T11:53:06 +98ms service=server Browser control server started
+INFO  2026-05-08T11:53:21 +14897ms service=server method=OPTIONS path=/provider request
+INFO  2026-05-08T11:53:21 +0ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-05-08T11:53:21 +2ms service=server status=completed duration=2 method=OPTIONS path=/provider request
+INFO  2026-05-08T11:53:23 +2051ms service=server method=OPTIONS path=/provider/auth request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=OPTIONS path=/provider/auth request
+INFO  2026-05-08T11:53:23 +0ms service=server status=completed duration=0 method=OPTIONS path=/provider/auth request
+INFO  2026-05-08T11:53:23 +4ms service=server method=OPTIONS path=/config request
+INFO  2026-05-08T11:53:23 +1ms service=server status=started method=OPTIONS path=/config request
+INFO  2026-05-08T11:53:23 +0ms service=server status=completed duration=0 method=OPTIONS path=/config request
+INFO  2026-05-08T11:53:23 +7ms service=server method=GET path=/provider request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-08T11:53:23 +1ms service=default directory=/home/mariu/projects/opendora creating instance
+INFO  2026-05-08T11:53:23 +1ms service=project directory=/home/mariu/projects/opendora fromDirectory
+INFO  2026-05-08T11:53:23 +8ms service=server method=OPTIONS path=/agent request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=OPTIONS path=/agent request
+INFO  2026-05-08T11:53:23 +0ms service=server status=completed duration=0 method=OPTIONS path=/agent request
+INFO  2026-05-08T11:53:23 +9ms service=server method=OPTIONS path=/session request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=OPTIONS path=/session request
+INFO  2026-05-08T11:53:23 +0ms service=server status=completed duration=0 method=OPTIONS path=/session request
+INFO  2026-05-08T11:53:23 +18ms service=default directory=/home/mariu/projects/opendora bootstrapping
+INFO  2026-05-08T11:53:23 +4ms service=server method=OPTIONS path=/question request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=OPTIONS path=/question request
+INFO  2026-05-08T11:53:23 +0ms service=server status=completed duration=0 method=OPTIONS path=/question request
+DEBUG 2026-05-08T11:53:23 +10ms service=config path=/home/mariu/projects/opendora/.opendora loading config from OPENCODE_CONFIG_DIR
+DEBUG 2026-05-08T11:53:23 +0ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.jsonc
+INFO  2026-05-08T11:53:23 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.jsonc loading
+INFO  2026-05-08T11:53:23 +1ms service=server method=OPTIONS path=/config request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=OPTIONS path=/config request
+INFO  2026-05-08T11:53:23 +0ms service=server status=completed duration=0 method=OPTIONS path=/config request
+DEBUG 2026-05-08T11:53:23 +0ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.json
+INFO  2026-05-08T11:53:23 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.json loading
+INFO  2026-05-08T11:53:23 +17ms service=server method=OPTIONS path=/schedule request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=OPTIONS path=/schedule request
+INFO  2026-05-08T11:53:23 +0ms service=server status=completed duration=0 method=OPTIONS path=/schedule request
+INFO  2026-05-08T11:53:23 +12ms service=server method=OPTIONS path=/session/status request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=OPTIONS path=/session/status request
+INFO  2026-05-08T11:53:23 +1ms service=server status=completed duration=0 method=OPTIONS path=/session/status request
+INFO  2026-05-08T11:53:23 +9ms service=server method=GET path=/provider/auth request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=GET path=/provider/auth request
+INFO  2026-05-08T11:53:23 +16ms service=plugin name=CodexAuthPlugin loading internal plugin
+INFO  2026-05-08T11:53:23 +0ms service=plugin name=CopilotAuthPlugin loading internal plugin
+INFO  2026-05-08T11:53:23 +1ms service=plugin name=gitlabAuthPlugin loading internal plugin
+INFO  2026-05-08T11:53:23 +0ms service=plugin name=googleOAuthPlugin loading internal plugin
+INFO  2026-05-08T11:53:23 +0ms service=plugin path=opencode-anthropic-auth@0.0.13 loading plugin
+INFO  2026-05-08T11:53:23 +21ms service=bus type=* subscribing
+INFO  2026-05-08T11:53:23 +0ms service=bus type=session.updated subscribing
+INFO  2026-05-08T11:53:23 +0ms service=bus type=message.updated subscribing
+INFO  2026-05-08T11:53:23 +0ms service=bus type=message.part.updated subscribing
+INFO  2026-05-08T11:53:23 +0ms service=bus type=session.diff subscribing
+INFO  2026-05-08T11:53:23 +0ms service=format init
+INFO  2026-05-08T11:53:23 +0ms service=bus type=file.edited subscribing
+INFO  2026-05-08T11:53:23 +1ms service=lsp serverIds=deno, typescript, vue, eslint, oxlint, biome, gopls, ruby-lsp, pyright, elixir-ls, zls, csharp, fsharp, sourcekit-lsp, rust, clangd, svelte, astro, jdtls, kotlin-ls, yaml-ls, lua-ls, php intelephense, prisma, dart, ocaml-lsp, bash, terraform, texlab, dockerfile, gleam, clojure-lsp, nixd, tinymist, haskell-language-server, julials enabled LSP servers
+INFO  2026-05-08T11:53:23 +0ms service=file.watcher init
+INFO  2026-05-08T11:53:23 +187ms service=scheduler id=snapshot.cleanup run
+INFO  2026-05-08T11:53:23 +0ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-05-08T11:53:23 +2ms service=bus type=command.executed subscribing
+INFO  2026-05-08T11:53:23 +1ms service=file.watcher platform=linux backend=inotify watcher backend
+ERROR 2026-05-08T11:53:23 +0ms service=file.watcher error=OPENCODE_LIBC is not defined failed to load watcher binding
+INFO  2026-05-08T11:53:23 +11ms service=server status=completed duration=240 method=GET path=/provider/auth request
+INFO  2026-05-08T11:53:23 +34ms service=provider status=started state
+INFO  2026-05-08T11:53:23 +38ms service=provider init
+INFO  2026-05-08T11:53:23 +3ms service=vcs branch=intake-gate-rollout initialized
+INFO  2026-05-08T11:53:23 +0ms service=bus type=file.watcher.updated subscribing
+INFO  2026-05-08T11:53:23 +20ms service=server method=GET path=/schedule request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-08T11:53:23 +2ms service=server status=completed duration=2 method=GET path=/schedule request
+INFO  2026-05-08T11:53:23 +11ms service=server method=GET path=/config request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=GET path=/config request
+INFO  2026-05-08T11:53:23 +1ms service=server status=completed duration=1 method=GET path=/config request
+INFO  2026-05-08T11:53:23 +1ms service=server method=GET path=/agent request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-05-08T11:53:23 +2ms service=server method=GET path=/session request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=GET path=/session request
+INFO  2026-05-08T11:53:23 +7ms service=server status=completed duration=7 method=GET path=/session request
+INFO  2026-05-08T11:53:23 +1ms service=server method=GET path=/question request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=GET path=/question request
+INFO  2026-05-08T11:53:23 +1ms service=server status=completed duration=1 method=GET path=/question request
+INFO  2026-05-08T11:53:23 +2ms service=server method=GET path=/session/status request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=GET path=/session/status request
+INFO  2026-05-08T11:53:23 +0ms service=server status=completed duration=0 method=GET path=/session/status request
+INFO  2026-05-08T11:53:23 +14ms service=server method=GET path=/event request
+INFO  2026-05-08T11:53:23 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-08T11:53:23 +0ms service=server event connected
+INFO  2026-05-08T11:53:23 +3ms service=bus type=* subscribing
+INFO  2026-05-08T11:53:23 +3ms service=server status=completed duration=6 method=GET path=/event request
+INFO  2026-05-08T11:53:23 +3ms service=server method=GET path=/config request
+INFO  2026-05-08T11:53:23 +1ms service=server status=started method=GET path=/config request
+INFO  2026-05-08T11:53:23 +0ms service=server status=completed duration=0 method=GET path=/config request
+INFO  2026-05-08T11:53:23 +326ms service=server status=completed duration=363 method=GET path=/agent request
+INFO  2026-05-08T11:53:24 +22ms service=provider providerID=openai found
+INFO  2026-05-08T11:53:24 +0ms service=provider providerID=kilo found
+INFO  2026-05-08T11:53:24 +1ms service=provider providerID=openrouter found
+INFO  2026-05-08T11:53:24 +0ms service=provider providerID=openai-codex found
+INFO  2026-05-08T11:53:24 +0ms service=provider providerID=google-gemini-cli found
+INFO  2026-05-08T11:53:24 +0ms service=provider providerID=opencode found
+INFO  2026-05-08T11:53:24 +0ms service=provider providerID=ollama found
+INFO  2026-05-08T11:53:24 +0ms service=provider status=completed duration=463 state
+INFO  2026-05-08T11:53:24 +193ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-08T11:53:24 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-08T11:53:24 +103ms service=server status=completed duration=1123 method=GET path=/provider request
+WARN  2026-05-08T11:53:24 +240ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
+INFO  2026-05-08T11:53:29 +4648ms service=snapshot prune=7.days cleanup
+INFO  2026-05-08T11:53:33 +4642ms service=server method=OPTIONS path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
+INFO  2026-05-08T11:53:33 +0ms service=server status=started method=OPTIONS path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
+INFO  2026-05-08T11:53:33 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
+INFO  2026-05-08T11:53:33 +25ms service=server method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
+INFO  2026-05-08T11:53:33 +1ms service=server status=started method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
+INFO  2026-05-08T11:53:33 +9ms service=server status=completed duration=9 method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
+INFO  2026-05-08T11:53:46 +12238ms service=server method=OPTIONS path=/provider request
+INFO  2026-05-08T11:53:46 +0ms service=server status=started method=OPTIONS path=/provider request
+INFO  2026-05-08T11:53:46 +0ms service=server status=completed duration=0 method=OPTIONS path=/provider request
+INFO  2026-05-08T11:53:46 +27ms service=server method=GET path=/provider request
+INFO  2026-05-08T11:53:46 +1ms service=server status=started method=GET path=/provider request
+INFO  2026-05-08T11:53:46 +24ms service=bus type=* unsubscribing
+INFO  2026-05-08T11:53:46 +0ms service=server event disconnected
+INFO  2026-05-08T11:53:46 +180ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-08T11:53:46 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-08T11:53:46 +53ms service=server status=completed duration=257 method=GET path=/provider request
+INFO  2026-05-08T11:53:48 +1695ms service=server method=OPTIONS path=/config request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=OPTIONS path=/config request
+INFO  2026-05-08T11:53:48 +0ms service=server status=completed duration=0 method=OPTIONS path=/config request
+INFO  2026-05-08T11:53:48 +1ms service=server method=OPTIONS path=/provider/auth request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=OPTIONS path=/provider/auth request
+INFO  2026-05-08T11:53:48 +0ms service=server status=completed duration=0 method=OPTIONS path=/provider/auth request
+INFO  2026-05-08T11:53:48 +1ms service=server method=GET path=/provider request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-08T11:53:48 +25ms service=server method=OPTIONS path=/agent request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=OPTIONS path=/agent request
+INFO  2026-05-08T11:53:48 +1ms service=server status=completed duration=1 method=OPTIONS path=/agent request
+INFO  2026-05-08T11:53:48 +1ms service=server method=OPTIONS path=/question request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=OPTIONS path=/question request
+INFO  2026-05-08T11:53:48 +1ms service=server status=completed duration=1 method=OPTIONS path=/question request
+INFO  2026-05-08T11:53:48 +0ms service=server method=OPTIONS path=/session request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=OPTIONS path=/session request
+INFO  2026-05-08T11:53:48 +0ms service=server status=completed duration=0 method=OPTIONS path=/session request
+INFO  2026-05-08T11:53:48 +9ms service=server method=OPTIONS path=/config request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=OPTIONS path=/config request
+INFO  2026-05-08T11:53:48 +0ms service=server status=completed duration=0 method=OPTIONS path=/config request
+INFO  2026-05-08T11:53:48 +1ms service=server method=OPTIONS path=/session/status request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=OPTIONS path=/session/status request
+INFO  2026-05-08T11:53:48 +0ms service=server status=completed duration=0 method=OPTIONS path=/session/status request
+INFO  2026-05-08T11:53:48 +0ms service=server method=OPTIONS path=/schedule request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=OPTIONS path=/schedule request
+INFO  2026-05-08T11:53:48 +0ms service=server status=completed duration=0 method=OPTIONS path=/schedule request
+INFO  2026-05-08T11:53:48 +7ms service=server method=GET path=/config request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=GET path=/config request
+INFO  2026-05-08T11:53:48 +1ms service=server status=completed duration=1 method=GET path=/config request
+INFO  2026-05-08T11:53:48 +1ms service=server method=GET path=/provider/auth request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=GET path=/provider/auth request
+INFO  2026-05-08T11:53:48 +0ms service=server status=completed duration=0 method=GET path=/provider/auth request
+INFO  2026-05-08T11:53:48 +6ms service=server method=GET path=/event request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-08T11:53:48 +0ms service=server event connected
+INFO  2026-05-08T11:53:48 +0ms service=bus type=* subscribing
+INFO  2026-05-08T11:53:48 +1ms service=server status=completed duration=1 method=GET path=/event request
+INFO  2026-05-08T11:53:48 +4ms service=server method=GET path=/agent request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-05-08T11:53:48 +1ms service=server method=GET path=/question request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=GET path=/question request
+INFO  2026-05-08T11:53:48 +0ms service=server status=completed duration=0 method=GET path=/question request
+INFO  2026-05-08T11:53:48 +11ms service=server method=GET path=/session request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=GET path=/session request
+INFO  2026-05-08T11:53:48 +3ms service=server status=completed duration=3 method=GET path=/session request
+INFO  2026-05-08T11:53:48 +15ms service=server method=GET path=/session/status request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=GET path=/session/status request
+INFO  2026-05-08T11:53:48 +1ms service=server status=completed duration=1 method=GET path=/session/status request
+INFO  2026-05-08T11:53:48 +6ms service=server status=completed duration=37 method=GET path=/agent request
+INFO  2026-05-08T11:53:48 +8ms service=server method=GET path=/schedule request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-08T11:53:48 +1ms service=server status=completed duration=1 method=GET path=/schedule request
+INFO  2026-05-08T11:53:48 +2ms service=server method=GET path=/config request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=GET path=/config request
+INFO  2026-05-08T11:53:48 +1ms service=server status=completed duration=1 method=GET path=/config request
+INFO  2026-05-08T11:53:48 +31ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-08T11:53:48 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-08T11:53:48 +41ms service=server status=completed duration=179 method=GET path=/provider request
+INFO  2026-05-08T11:53:48 +495ms service=server method=OPTIONS path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
+INFO  2026-05-08T11:53:48 +0ms service=server status=started method=OPTIONS path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
+INFO  2026-05-08T11:53:48 +1ms service=server status=completed duration=1 method=OPTIONS path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
+INFO  2026-05-08T11:53:48 +11ms service=server method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
+INFO  2026-05-08T11:53:48 +1ms service=server status=started method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
+INFO  2026-05-08T11:53:48 +11ms service=server status=completed duration=11 method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request

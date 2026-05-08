@@ -68,6 +68,13 @@ export type Session = {
   parentSessionID?: string
   /** Override: where to reply when done (set by delegator) */
   replyToSessionID?: string
+  tokens?: {
+    input: number
+    output: number
+    cacheRead: number
+    cacheWrite: number
+    compactionCount: number
+  }
 }
 
 export type UserMessage = {
