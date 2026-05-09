@@ -9,7 +9,7 @@ export const WorkflowRunStepTool = Tool.define("workflow_run_step", async () => 
   const parameters = z.object({
     runId: z.string().describe("The run identifier returned by workflow_create."),
     stepId: z.string().optional().describe("Optional. Run a specific step instead of the current cursor."),
-    inputOverride: z.record(z.unknown()).optional().describe("Optional. Override the step's resolved input for this invocation only."),
+    inputOverride: z.object({}).catchall(z.unknown()).optional().describe("Optional. Override the step's resolved input for this invocation only."),
   })
 
   return {

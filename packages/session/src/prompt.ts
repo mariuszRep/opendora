@@ -918,7 +918,14 @@ export namespace SessionPrompt {
 
     const toolRegistryItems = await cfg.toolRegistry?.get({ modelID: input.model.api.id, providerID: input.model.providerID }, input.agent) ?? {}
     for (const [id, item] of Object.entries(toolRegistryItems as Record<string, any>)) {
-      const schema = cfg.providerTransform?.schema?.(input.model, (await import("zod").then(z => z.default.toJSONSchema(item.parameters))) ) ?? {}
+      const rawSchema = await import("zod").then(z => {
+        try {
+          return z.default.toJSONSchema(item.parameters) as any
+        } catch {
+          return asSchema(item.parameters).jsonSchema
+        }
+      })
+      const schema = cfg.providerTransform?.schema?.(input.model, rawSchema) ?? rawSchema
       tools[id] = tool({
         id: id as any,
         description: item.description,
