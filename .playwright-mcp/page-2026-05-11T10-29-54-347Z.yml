@@ -1,0 +1,127 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Open Vibe" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img [ref=e6]
+        - generic [ref=e9]: Open Vibe
+      - navigation [ref=e11]:
+        - list [ref=e12]:
+          - listitem [ref=e13]:
+            - link "Home" [ref=e14] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e15]:
+            - link "Products" [ref=e16] [cursor=pointer]:
+              - /url: /products
+      - generic [ref=e17]:
+        - link "GitHub" [ref=e18] [cursor=pointer]:
+          - /url: https://github.com/opendora/opendora
+          - img
+          - text: GitHub
+        - link "Get Started" [ref=e19] [cursor=pointer]:
+          - /url: /products/opendora
+  - main [ref=e20]:
+    - generic [ref=e22]:
+      - generic [ref=e23]: Product Portfolio
+      - heading "Our Products" [level=1] [ref=e24]
+      - paragraph [ref=e25]: Open Vibe builds AI-native software and SaaS products. Each product is designed for visibility, collaboration, and real-world AI workflows.
+    - generic [ref=e30]:
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - img [ref=e34]
+          - generic [ref=e37]:
+            - generic [ref=e38]:
+              - heading "OpenDora" [level=2] [ref=e39]
+              - generic [ref=e40]: Flagship
+            - paragraph [ref=e41]: Stable
+        - paragraph [ref=e42]: OpenDora is an AI agent software platform built for end-to-end visibility and collaboration. It gives technical and non-technical users alike the ability to build, investigate, and improve AI-powered workflows — with full session-chain transparency baked in.
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - generic [ref=e45]: 100%
+            - generic [ref=e46]: Open Source
+          - generic [ref=e47]:
+            - generic [ref=e48]: "Yes"
+            - generic [ref=e49]: API-first
+          - generic [ref=e50]:
+            - generic [ref=e51]: Multi
+            - generic [ref=e52]: LLM Providers
+        - generic [ref=e53]:
+          - link "Learn More" [ref=e54] [cursor=pointer]:
+            - /url: /products/opendora
+          - link "GitHub" [ref=e55] [cursor=pointer]:
+            - /url: https://github.com/opendora/opendora
+            - img
+            - text: GitHub
+      - generic [ref=e56]:
+        - heading "Key Capabilities" [level=3] [ref=e57]
+        - generic [ref=e58]:
+          - generic [ref=e59]:
+            - img [ref=e62]
+            - generic [ref=e65]:
+              - heading "Full Session Visibility" [level=4] [ref=e66]
+              - paragraph [ref=e67]: Every step, tool call, and LLM response is captured and replayable.
+          - generic [ref=e68]:
+            - img [ref=e71]
+            - generic [ref=e75]:
+              - heading "Agentic Workflow Investigation" [level=4] [ref=e76]
+              - paragraph [ref=e77]: Deep-dive into execution chains. Find bottlenecks, replay failures, tune behavior.
+          - generic [ref=e78]:
+            - img [ref=e81]
+            - generic [ref=e86]:
+              - heading "Collaborative by Design" [level=4] [ref=e87]
+              - paragraph [ref=e88]: Technical and non-technical users work together on the same workflows.
+          - generic [ref=e89]:
+            - img [ref=e92]
+            - generic [ref=e94]:
+              - heading "AI Skills & Embedded Architecture" [level=4] [ref=e95]
+              - paragraph [ref=e96]: Extend with skills, embed in your stack, customize for your domain.
+    - generic [ref=e99]:
+      - generic [ref=e100]: Roadmap
+      - heading "More products coming" [level=2] [ref=e101]
+      - paragraph [ref=e102]: Open Vibe is building a suite of AI-native tools. OpenDora is the first — with more products on the horizon.
+      - link "Return Home" [ref=e103] [cursor=pointer]:
+        - /url: /
+  - contentinfo [ref=e104]:
+    - generic [ref=e105]:
+      - generic [ref=e106]:
+        - generic [ref=e107]:
+          - link "Open Vibe" [ref=e108] [cursor=pointer]:
+            - /url: /
+            - img [ref=e110]
+            - generic [ref=e113]: Open Vibe
+          - paragraph [ref=e114]: Building AI-native software and SaaS products. OpenDora brings visibility and collaboration to agentic workflows.
+          - generic [ref=e115]:
+            - generic [ref=e116]: AI-First
+            - generic [ref=e117]: Open Source
+        - generic [ref=e118]:
+          - heading "Products" [level=3] [ref=e119]
+          - list [ref=e120]:
+            - listitem [ref=e121]:
+              - link "OpenDora" [ref=e122] [cursor=pointer]:
+                - /url: /products/opendora
+            - listitem [ref=e123]:
+              - link "All Products" [ref=e124] [cursor=pointer]:
+                - /url: /products
+        - generic [ref=e125]:
+          - heading "Company" [level=3] [ref=e126]
+          - list [ref=e127]:
+            - listitem [ref=e128]:
+              - link "Home" [ref=e129] [cursor=pointer]:
+                - /url: /
+        - generic [ref=e130]:
+          - heading "Open Source" [level=3] [ref=e131]
+          - list [ref=e132]:
+            - listitem [ref=e133]:
+              - link "GitHub" [ref=e134] [cursor=pointer]:
+                - /url: https://github.com/opendora/opendora
+                - text: GitHub
+                - img [ref=e135]
+      - separator [ref=e139]
+      - generic [ref=e140]:
+        - paragraph [ref=e141]: © 2026 Open Vibe. All rights reserved.
+        - generic [ref=e142]:
+          - img [ref=e143]
+          - link "OpenDora on GitHub" [ref=e145] [cursor=pointer]:
+            - /url: https://github.com/opendora/opendora
+  - button "Open Next.js Dev Tools" [ref=e151] [cursor=pointer]:
+    - img [ref=e152]

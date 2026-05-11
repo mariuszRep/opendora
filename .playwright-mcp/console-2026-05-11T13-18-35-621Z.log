@@ -1,0 +1,25 @@
+[    2518ms] Error: Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at rX (https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:25:122289)
+    at o6 (https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:25:163997)
+    at su (https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:25:173876)
+    at uf (https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:25:214020)
+    at https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:25:208906
+    at ue (https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:25:209007)
+    at uH (https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:25:235571)
+    at MessagePort.P (https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:25:83729)
+[    2536ms] [LOG] %c
+  ███████╗██╗   ██╗███╗   ██╗ ██████╗
+  ██╔════╝██║   ██║████╗  ██║██╔═══██╗
+  ███████╗██║   ██║██╔██╗ ██║██║   ██║
+  ╚════██║██║   ██║██║╚██╗██║██║   ██║
+  ███████║╚██████╔╝██║ ╚████║╚██████╔╝
+  ╚══════╝ ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝
+  We are hiring! Come join our amazing team!
+  https://suno.com/careers
+       color: #ff6b9d; font-weight: bold; text-shadow: 0 0 10px rgba(255, 107, 157, 0.5), 0 0 20px rgba(255, 107, 157, 0.3), 0 0 30px rgba(255, 107, 157, 0.2); font-family: "Courier New", monospace; @ https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:10
+[    2816ms] [WARNING] [Cloudflare Turnstile] Ignored message from unexpected source for event: init. @ https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:10
+[    2817ms] [WARNING] [Cloudflare Turnstile] Ignored message from unexpected source for event: requestExtraParams. @ https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:10
+[    3225ms] [WARNING] [Cloudflare Turnstile] Cannot find Widget cf-chl-widget-6zs1k, consider using turnstile.remove() to clean up a widget. @ https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:10
+[    4052ms] [ERROR] Invalid id passed to identify. @ https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:10
+[    5994ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ https://suno.com/create:0
+[    6314ms] [WARNING] [Stripe.js] It looks like Stripe.js was loaded more than one time. Please only load it once per page. @ https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:10

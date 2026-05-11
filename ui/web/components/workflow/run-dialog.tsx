@@ -48,7 +48,7 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
       .then((list) => {
         const capable = list.filter((a) => a.tools?.includes("workflow_run"))
         setAgents(capable)
-        if (capable.length > 0 && !agentId) setAgentId(capable[0].name ?? "")
+        if (capable.length > 0 && !agentId) setAgentId(capable[0].id ?? capable[0].name ?? "")
       })
       .catch(() => {})
   }, [open])
@@ -91,7 +91,7 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
                 <SelectTrigger><SelectValue placeholder="Select agent…" /></SelectTrigger>
                 <SelectContent>
                   {agents.map((a) => (
-                    <SelectItem key={a.name} value={a.name ?? ""}>
+                    <SelectItem key={a.id ?? a.name} value={a.id ?? a.name ?? ""}>
                       {a.name}
                       {a.description && <span className="ml-2 text-muted-foreground text-xs">{a.description}</span>}
                     </SelectItem>

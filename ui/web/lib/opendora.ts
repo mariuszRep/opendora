@@ -267,6 +267,7 @@ export type Workflow = {
 }
 
 export type Agent = {
+  id?: string
   name: string
   description?: string
   mode?: "subagent" | "primary" | "all" | "worker" | "system"

@@ -1084,6 +1084,9 @@ export namespace Provider {
       })
       const s = await state()
       const provider = s.providers[model.providerID]
+      if (!provider) {
+        throw new Error(`Provider "${model.providerID ?? "undefined"}" is not configured or enabled`)
+      }
       const options = { ...provider.options }
 
       if (model.providerID === "google-vertex" && !model.api.npm.includes("@ai-sdk/openai-compatible")) {
@@ -1216,7 +1219,7 @@ export namespace Provider {
     const sdk = await getSDK(model)
 
     try {
-      const language = s.modelLoaders[model.providerID]
+      const language = s.modelLoaders[model.providerID] && provider
         ? await s.modelLoaders[model.providerID](sdk, model.api.id, provider.options)
         : sdk.languageModel(model.api.id)
       s.models.set(key, language)

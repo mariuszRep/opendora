@@ -80,7 +80,8 @@
       "type": "local",
       "command": [
         "node",
-        "packages/opencode/node_modules/@playwright/mcp/cli.js"
+        "packages/opencode/node_modules/@playwright/mcp/cli.js",
+        "--headless"
       ]
     }
   },

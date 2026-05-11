@@ -1,0 +1,202 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Open Vibe" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img [ref=e6]
+        - generic [ref=e9]: Open Vibe
+      - navigation [ref=e11]:
+        - list [ref=e12]:
+          - listitem [ref=e13]:
+            - link "Home" [ref=e14] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e15]:
+            - link "Products" [ref=e16] [cursor=pointer]:
+              - /url: /products
+      - generic [ref=e17]:
+        - link "GitHub" [ref=e18] [cursor=pointer]:
+          - /url: https://github.com/opendora/opendora
+          - img
+          - text: GitHub
+        - link "Get Started" [ref=e19] [cursor=pointer]:
+          - /url: /products/opendora
+  - main [ref=e20]:
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e25]: Open Source
+        - generic [ref=e26]: API-First
+        - generic [ref=e27]: AI Agents
+        - generic [ref=e28]: Workflow Visibility
+      - heading "OpenDora" [level=1] [ref=e29]
+      - paragraph [ref=e30]: Visible. Traceable. Collaborative.
+      - paragraph [ref=e31]: OpenDora is an open-source AI agent platform that brings end-to-end visibility and traceability to your AI workflows — while staying user-friendly for both engineers and end-users.
+      - generic [ref=e32]:
+        - link "View on GitHub" [ref=e33] [cursor=pointer]:
+          - /url: https://github.com/opendora/opendora
+          - img
+          - text: View on GitHub
+        - link "All Products" [ref=e34] [cursor=pointer]:
+          - /url: /products
+          - img
+          - text: All Products
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e38]: What it is
+        - heading "AI agents that show their work" [level=2] [ref=e39]
+        - paragraph [ref=e40]: Traditional AI agents are opaque — you send a prompt, get a response, and have no visibility into how it happened. OpenDora changes that by making every step of every agentic workflow transparent and replayable.
+        - paragraph [ref=e41]: Whether you are debugging a complex pipeline, auditing AI decisions for compliance, or collaborating with non-technical teammates on workflow design, OpenDora gives you the visibility you need without sacrificing usability.
+      - generic [ref=e43]:
+        - generic [ref=e48]: "opendora — session: analyze-2024"
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]: "01"
+            - generic [ref=e52]: ">"
+            - generic [ref=e53]: Analyzing workflow chain...
+          - generic [ref=e54]:
+            - generic [ref=e55]: "02"
+            - generic [ref=e56]: ✓
+            - generic [ref=e57]: User input captured
+          - generic [ref=e58]:
+            - generic [ref=e59]: "03"
+            - generic [ref=e60]: ✓
+            - generic [ref=e61]: "LLM: anthropic/claude-3-5"
+          - generic [ref=e62]:
+            - generic [ref=e63]: "04"
+            - generic [ref=e64]: ✓
+            - generic [ref=e65]: "Tool: bash (3 commands)"
+          - generic [ref=e66]:
+            - generic [ref=e67]: "05"
+            - generic [ref=e68]: ✓
+            - generic [ref=e69]: "Tool: read (2 files)"
+          - generic [ref=e70]:
+            - generic [ref=e71]: "06"
+            - generic [ref=e72]: ✓
+            - generic [ref=e73]: "LLM: response generated"
+          - generic [ref=e74]:
+            - generic [ref=e75]: "07"
+            - generic [ref=e76]: → 100% traceable. Ready to replay.
+    - generic [ref=e78]:
+      - generic [ref=e79]:
+        - heading "What you get" [level=2] [ref=e80]
+        - paragraph [ref=e81]: A complete platform for building, running, investigating, and improving AI agentic workflows.
+      - generic [ref=e82]:
+        - generic [ref=e83]:
+          - generic [ref=e85]:
+            - img [ref=e87]
+            - generic [ref=e90]: Session-Chain Visibility
+          - generic [ref=e92]: Every step of every agent execution is captured. See the full chain — from user input through LLM calls, tool executions, and final output. No black boxes.
+        - generic [ref=e93]:
+          - generic [ref=e95]:
+            - img [ref=e97]
+            - generic [ref=e101]: Workflow Investigation
+          - generic [ref=e103]: Replay any session, step through execution, and identify exactly where something went wrong. Investigate workflows with surgical precision.
+        - generic [ref=e104]:
+          - generic [ref=e106]:
+            - img [ref=e108]
+            - generic [ref=e112]: Built-in Tools & Skills
+          - generic [ref=e114]: A growing library of built-in tools (bash, read, edit, search, and more) plus extensible skill chains for your specific domain needs.
+        - generic [ref=e115]:
+          - generic [ref=e117]:
+            - img [ref=e119]
+            - generic [ref=e121]: AI Skills Architecture
+          - generic [ref=e123]: Compose and customize AI skills to extend agent behavior. Define reusable instruction sets that agents can call on demand.
+        - generic [ref=e124]:
+          - generic [ref=e126]:
+            - img [ref=e128]
+            - generic [ref=e131]: Multi-Provider LLM Support
+          - generic [ref=e133]: Connect to OpenAI, Anthropic, Google Gemini, and more. Swap providers without changing your workflow logic.
+        - generic [ref=e134]:
+          - generic [ref=e136]:
+            - img [ref=e138]
+            - generic [ref=e143]: Technical & Non-Technical Collaboration
+          - generic [ref=e145]: Designed for both engineers who build and customize agents, and end-users who run, monitor, and improve workflows.
+    - generic [ref=e146]:
+      - heading "Built on solid foundations" [level=2] [ref=e147]
+      - generic [ref=e148]:
+        - generic [ref=e149]:
+          - img [ref=e151]
+          - heading "Terminal UI (TUI)" [level=3] [ref=e153]
+          - paragraph [ref=e154]: Interactive terminal interface for AI-powered development. Keyboard-driven, rich output, zero browser needed.
+        - generic [ref=e155]:
+          - img [ref=e157]
+          - heading "API-First Architecture" [level=3] [ref=e161]
+          - paragraph [ref=e162]: Full HTTP API with streaming (SSE/WS) support. Build your own UI, integrate into existing tools, or embed in your platform.
+        - generic [ref=e163]:
+          - img [ref=e165]
+          - heading "Open Source & Extensible" [level=3] [ref=e167]
+          - paragraph [ref=e168]: MIT licensed, fully open. Extend the core, fork it, or contribute back. Built for the community.
+    - generic [ref=e171]:
+      - generic [ref=e172]:
+        - generic [ref=e173]: Architecture
+        - heading "Multiple ways to use OpenDora" [level=2] [ref=e174]
+        - paragraph [ref=e175]: OpenDora is built as a single binary that operates in multiple modes. Use it as an interactive terminal UI, a headless API server, or script it into your own pipelines.
+        - list [ref=e176]:
+          - listitem [ref=e177]: TUI mode — interactive terminal interface (default)
+          - listitem [ref=e179]: Server mode — HTTP/SSE/WS API, no UI
+          - listitem [ref=e181]: Attach mode — connect TUI to a remote server
+          - listitem [ref=e183]: CLI mode — scriptable commands for automation
+      - generic [ref=e186]:
+        - generic [ref=e187]: opendora --help
+        - generic [ref=e188]:
+          - generic [ref=e189]: opendora [command]
+          - generic [ref=e190]: run ............. Run a script or workflow
+          - generic [ref=e191]: serve ........... Start API server (HTTP/SSE/WS)
+          - generic [ref=e192]: session ......... Manage sessions
+          - generic [ref=e193]: agent ........... Run agentic tasks
+          - generic [ref=e194]: attach .......... Connect to remote instance
+        - generic [ref=e195]: "Default: opendora → launches TUI + embedded server"
+    - generic [ref=e198]:
+      - img [ref=e200]
+      - heading "Open source. Community-driven." [level=2] [ref=e202]
+      - paragraph [ref=e203]: OpenDora is MIT licensed. Fork it, extend it, deploy it your way. Contributions and feedback from the community are always welcome.
+      - generic [ref=e204]:
+        - link "Star on GitHub" [ref=e205] [cursor=pointer]:
+          - /url: https://github.com/opendora/opendora
+          - img
+          - text: Star on GitHub
+        - link "Explore All Products" [ref=e206] [cursor=pointer]:
+          - /url: /products
+  - contentinfo [ref=e207]:
+    - generic [ref=e208]:
+      - generic [ref=e209]:
+        - generic [ref=e210]:
+          - link "Open Vibe" [ref=e211] [cursor=pointer]:
+            - /url: /
+            - img [ref=e213]
+            - generic [ref=e216]: Open Vibe
+          - paragraph [ref=e217]: Building AI-native software and SaaS products. OpenDora brings visibility and collaboration to agentic workflows.
+          - generic [ref=e218]:
+            - generic [ref=e219]: AI-First
+            - generic [ref=e220]: Open Source
+        - generic [ref=e221]:
+          - heading "Products" [level=3] [ref=e222]
+          - list [ref=e223]:
+            - listitem [ref=e224]:
+              - link "OpenDora" [ref=e225] [cursor=pointer]:
+                - /url: /products/opendora
+            - listitem [ref=e226]:
+              - link "All Products" [ref=e227] [cursor=pointer]:
+                - /url: /products
+        - generic [ref=e228]:
+          - heading "Company" [level=3] [ref=e229]
+          - list [ref=e230]:
+            - listitem [ref=e231]:
+              - link "Home" [ref=e232] [cursor=pointer]:
+                - /url: /
+        - generic [ref=e233]:
+          - heading "Open Source" [level=3] [ref=e234]
+          - list [ref=e235]:
+            - listitem [ref=e236]:
+              - link "GitHub" [ref=e237] [cursor=pointer]:
+                - /url: https://github.com/opendora/opendora
+                - text: GitHub
+                - img [ref=e238]
+      - separator [ref=e242]
+      - generic [ref=e243]:
+        - paragraph [ref=e244]: © 2026 Open Vibe. All rights reserved.
+        - generic [ref=e245]:
+          - img [ref=e246]
+          - link "OpenDora on GitHub" [ref=e248] [cursor=pointer]:
+            - /url: https://github.com/opendora/opendora
+  - button "Open Next.js Dev Tools" [ref=e254] [cursor=pointer]:
+    - img [ref=e255]

@@ -68,7 +68,9 @@ async function injectMessage(sessionId: string, parts: InjectedPart[], directory
         state: {
           status: "completed",
           input: p.input,
-          output: p.output,
+          output: typeof p.output === "string" ? p.output : JSON.stringify(p.output, null, 2),
+          title: p.tool,
+          metadata: {},
           time: { start: now, end: now },
         },
       })
@@ -155,7 +157,7 @@ export async function runWorkflow({
       await injectMessage(sessionId, [
         {
           type: "tool",
-          tool: "workflow.input",
+          tool: "workflow_input",
           input: { workflow: workflow.name, ...input },
           output: { status: "received", fields: Object.keys(input) },
         },
@@ -171,7 +173,7 @@ export async function runWorkflow({
         await injectMessage(sessionId, [
           {
             type: "tool",
-            tool: "workflow.skill_load",
+            tool: "workflow_skill_load",
             input: { skill: data.skill },
             output: { loaded: true, characters: content.length },
           },
@@ -180,7 +182,7 @@ export async function runWorkflow({
         await injectMessage(sessionId, [
           {
             type: "tool",
-            tool: "workflow.skill_load",
+            tool: "workflow_skill_load",
             input: { skill: data.skill },
             output: { loaded: false, error: `Skill "${data.skill}" not found` },
           },
@@ -237,7 +239,7 @@ export async function runWorkflow({
       await injectMessage(sessionId, [
         {
           type: "tool",
-          tool: "workflow.decide",
+          tool: "workflow_decide",
           input: { branches: data.branches },
           output: { chosen: branch },
         },
