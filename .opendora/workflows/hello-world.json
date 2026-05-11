@@ -6,39 +6,125 @@
   "nodes": [
     {
       "id": "start",
-      "type": "input",
+      "type": "workflow",
       "data": {
-        "type": "input",
-        "fields": [{ "name": "message", "type": "string", "required": true }]
+        "nodeType": "start",
+        "node": {
+          "label": "Start",
+          "description": "Workflow entry point"
+        },
+        "data": {
+          "inputs": [
+            {
+              "name": "message",
+              "type": "string",
+              "required": true
+            }
+          ],
+          "outputs": []
+        }
       },
-      "position": { "x": 250, "y": 0 }
+      "position": {
+        "x": 243.06161137440756,
+        "y": -27.753554502369667
+      }
     },
     {
       "id": "load-echo",
-      "type": "skill_load",
-      "data": { "type": "skill_load", "skill": "echo" },
-      "position": { "x": 250, "y": 140 }
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Echo",
+          "description": "Load skill \"echo\"",
+          "action_id": "echo"
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
+      },
+      "position": {
+        "x": 250,
+        "y": 140
+      }
     },
     {
       "id": "process",
-      "type": "agent",
+      "type": "workflow",
       "data": {
-        "type": "agent",
-        "prompt": "Echo the following message back to the user: $input.message",
-        "output": "result"
+        "nodeType": "tool",
+        "node": {
+          "label": "Process",
+          "description": "Echo the following message back to the user: $input.message",
+          "action_id": "agent"
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "instructions": "Echo the following message back to the user: $input.message"
       },
-      "position": { "x": 250, "y": 280 }
+      "position": {
+        "x": 250,
+        "y": 280
+      }
     },
     {
       "id": "done",
-      "type": "output",
-      "data": { "type": "output", "message": "Workflow complete. Result: $ctx.result" },
-      "position": { "x": 250, "y": 420 }
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Output",
+          "description": "Workflow complete. Result: $ctx.result",
+          "action_id": "output"
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
+      },
+      "position": {
+        "x": 250,
+        "y": 420
+      }
+    },
+    {
+      "id": "_3CZ0_eRgiaMsNnAuGA22",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Tool",
+          "description": ""
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
+      },
+      "position": {
+        "x": 845.1430227012165,
+        "y": -28.434468231969426
+      }
     }
   ],
   "edges": [
-    { "id": "e1", "source": "start", "target": "load-echo" },
-    { "id": "e2", "source": "load-echo", "target": "process" },
-    { "id": "e3", "source": "process", "target": "done" }
+    {
+      "id": "e1",
+      "source": "start",
+      "target": "load-echo"
+    },
+    {
+      "id": "e2",
+      "source": "load-echo",
+      "target": "process"
+    },
+    {
+      "id": "e3",
+      "source": "process",
+      "target": "done"
+    }
   ]
 }

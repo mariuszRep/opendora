@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -12,6 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '@/components/ui/combobox'
 import { cn } from '@/lib/utils'
 import { Trash2, Save, X, GitBranch, Workflow as WorkflowIcon, Map as MapIcon } from 'lucide-react'
 import { WorkflowControls, WorkflowControlButton } from '@/components/react-flow'
@@ -20,6 +29,8 @@ import type { Node, Edge } from '@xyflow/react'
 import type { WorkflowNodeData, UnifiedNodeData, NodeType } from '@/components/react-flow/unified-node'
 import { getNodeTypeMetadata } from '@/components/react-flow/node-type-registry'
 import { resolveNodeType } from '@/components/react-flow/node-utils'
+import { useToolSchemas } from '@/hooks/use-tool-schemas'
+import { ToolParameterForm } from './tool-parameter-form'
 
 type EditType = 'workflow' | 'node' | 'edge'
 
@@ -64,6 +75,7 @@ export function WorkflowEditDrawer({
   const [formData, setFormData] = React.useState<DrawerFormData>({})
   const [editingNodeData, setEditingNodeData] = React.useState<UnifiedNodeData | null>(null)
   const [activeTab, setActiveTab] = React.useState('general')
+  const { schemas, loading: loadingSchemas } = useToolSchemas()
 
   React.useEffect(() => {
     if (open && data) {
@@ -102,6 +114,13 @@ export function WorkflowEditDrawer({
   }
 
   const getAvailableTabs = () => {
+    if (editType === 'node' && editingNodeData?.nodeType !== 'start') {
+      return [
+        { value: 'general', label: 'General' },
+        { value: 'inputs', label: 'Inputs' },
+        { value: 'settings', label: 'Settings' },
+      ]
+    }
     switch (editType) {
       case 'workflow':
         return [{ value: 'general', label: 'General' }]
@@ -161,7 +180,7 @@ export function WorkflowEditDrawer({
           </div>
         )
 
-      case 'node':
+      case 'node': {
         if (!editingNodeData) return null
 
         const handleNodeChange = (updates: Partial<UnifiedNodeData['node']>) => {
@@ -173,9 +192,62 @@ export function WorkflowEditDrawer({
           setFormData((prev) => ({ ...prev, label: updated.node.label, action_id: updated.node.action_id }))
         }
 
+        const isStartNode = editingNodeData.nodeType === 'start'
+        const selectedSchema = schemas.find((s) => s.id === editingNodeData.node.action_id)
+
         if (activeTab === 'general') {
           return (
             <div className="space-y-4">
+              {!isStartNode && (
+                <div className="space-y-2">
+                  <Label>Tool</Label>
+                  <Combobox
+                    value={editingNodeData.node.action_id ?? null}
+                    onValueChange={(toolId) => {
+                      handleNodeChange({
+                        action_id: toolId ?? undefined,
+                        label: editingNodeData.node.label || toolId || '',
+                        parameters: {},
+                      })
+                    }}
+                    items={schemas.map((s) => s.id)}
+                  >
+                    <ComboboxInput
+                      placeholder={loadingSchemas ? 'Loading tools…' : 'Search tools…'}
+                      disabled={loadingSchemas}
+                      showClear
+                      className="font-mono text-xs"
+                    />
+                    <ComboboxContent>
+                      <ComboboxEmpty>No tools found.</ComboboxEmpty>
+                      <ComboboxList>
+                        {(toolId) => {
+                          const s = schemas.find((x) => x.id === toolId)
+                          return (
+                            <ComboboxItem key={toolId} value={toolId}>
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <span className="font-mono text-xs">{toolId}</span>
+                                {s?.description && (
+                                  <span className="text-xs text-muted-foreground truncate max-w-[280px]">
+                                    {s.description}
+                                  </span>
+                                )}
+                              </div>
+                              {s?.source === 'mcp' && (
+                                <Badge variant="secondary" className="ml-2 text-xs shrink-0">MCP</Badge>
+                              )}
+                            </ComboboxItem>
+                          )
+                        }}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
+                  {selectedSchema?.description && (
+                    <p className="text-xs text-muted-foreground">{selectedSchema.description}</p>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="node-label">Label</Label>
                 <Input
@@ -185,26 +257,50 @@ export function WorkflowEditDrawer({
                   placeholder="Node label"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="node-description">Description</Label>
-                <Textarea
-                  id="node-description"
-                  value={editingNodeData.node.description || ''}
-                  onChange={(e) => handleNodeChange({ description: e.target.value })}
-                  placeholder="Brief description"
-                  rows={2}
-                />
-              </div>
-              {editingNodeData.nodeType === 'action' && (
+
+              {!isStartNode && (
                 <div className="space-y-2">
-                  <Label htmlFor="node-action">Action ID</Label>
-                  <Input
-                    id="node-action"
-                    value={editingNodeData.node.action_id || ''}
-                    onChange={(e) => handleNodeChange({ action_id: e.target.value })}
-                    placeholder="e.g. read-file"
+                  <Label htmlFor="node-description">Description</Label>
+                  <Textarea
+                    id="node-description"
+                    value={editingNodeData.node.description || ''}
+                    onChange={(e) => handleNodeChange({ description: e.target.value })}
+                    placeholder="What does this step do?"
+                    rows={2}
                   />
                 </div>
+              )}
+
+              {isStartNode && (
+                <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  This is the workflow entry point. Input fields can be configured in the Settings tab.
+                </div>
+              )}
+            </div>
+          )
+        }
+
+        if (activeTab === 'inputs' && !isStartNode) {
+          const properties = selectedSchema?.inputSchema?.properties ?? {}
+          const required = selectedSchema?.inputSchema?.required ?? []
+          const parameters = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+
+          return (
+            <div className="space-y-4">
+              {!selectedSchema ? (
+                <p className="text-xs text-muted-foreground py-4 text-center">
+                  Select a tool in the General tab to configure its inputs.
+                </p>
+              ) : (
+                <ToolParameterForm
+                  properties={properties}
+                  required={required}
+                  values={parameters}
+                  onChange={(updated) => {
+                    const next = { ...editingNodeData, node: { ...editingNodeData.node, parameters: updated } }
+                    setEditingNodeData(next)
+                  }}
+                />
               )}
             </div>
           )
@@ -234,6 +330,7 @@ export function WorkflowEditDrawer({
           )
         }
         return null
+      }
 
       case 'edge':
         return (
@@ -295,14 +392,22 @@ export function WorkflowEditDrawer({
   }
 
   return (
-    <>
-      {/* Controls — always visible at the bottom center of the canvas */}
-      <div className="absolute bottom-4 inset-x-0 flex justify-center z-20 pointer-events-none">
+    <div
+      className={cn(
+        'absolute z-10 inset-x-0 bottom-0',
+        open && cn(
+          'bg-background flex h-auto flex-col border-t shadow-lg mt-24 max-h-[80vh] rounded-t-lg',
+          !isDragging && 'transition-transform duration-500 ease-[0.32,0.72,0,1]'
+        )
+      )}
+      style={open ? { transform: `translateY(${dragY}px)`, willChange: 'transform' } : undefined}
+    >
+      {/* Controls — attached above the container, always visible */}
+      <div className="absolute -top-16 inset-x-0 flex justify-center z-[100] pointer-events-none">
         <WorkflowControls
           orientation="horizontal"
           showInteractive={true}
           className="!static shadow-lg pointer-events-auto"
-          style={{ marginBottom: open ? '0' : undefined }}
         >
           {setShowMiniMap && (
             <WorkflowControlButton
@@ -315,16 +420,8 @@ export function WorkflowEditDrawer({
         </WorkflowControls>
       </div>
 
-      {/* Drawer panel — only when open */}
       {open && (
-        <div
-          className={cn(
-            'bg-background absolute z-10 flex h-auto flex-col border-t shadow-lg',
-            'inset-x-0 bottom-0 mt-24 max-h-[80vh] rounded-t-lg',
-            !isDragging && 'transition-transform duration-500 ease-[0.32,0.72,0,1]'
-          )}
-          style={{ transform: `translateY(${dragY}px)`, willChange: 'transform' }}
-        >
+        <>
           {/* Drag handle */}
           <div
             className="absolute -top-2 left-1/2 -translate-x-1/2 h-4 w-[100px] flex items-center justify-center cursor-grab active:cursor-grabbing touch-none z-50 group"
@@ -395,8 +492,8 @@ export function WorkflowEditDrawer({
               {renderTabContent()}
             </div>
           </div>
-        </div>
+        </>
       )}
-    </>
+    </div>
   )
 }

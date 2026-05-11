@@ -323,6 +323,25 @@ export type AgentTool = {
   mcpServer?: string
 }
 
+export type ToolSchemaProperty = {
+  type?: string
+  description?: string
+  enum?: string[]
+  default?: unknown
+}
+
+export type ToolSchema = {
+  id: string
+  description: string
+  source: "internal" | "mcp"
+  mcpServer?: string
+  inputSchema: {
+    type?: string
+    properties?: Record<string, ToolSchemaProperty>
+    required?: string[]
+  }
+}
+
 /** What the backend returns from create / update */
 export type AgentEntry = {
   id: string
@@ -530,6 +549,7 @@ export const opendora = {
     generate: (input: { description: string; model?: { providerID: string; modelID: string } }) =>
       req<GeneratedAgent>("/agent/generate", { method: "POST", body: JSON.stringify(input) }),
     tools: () => req<AgentTool[]>("/agent/tools"),
+    toolSchemas: () => req<ToolSchema[]>("/agent/tools/schema"),
   },
   voice: {
     stt: async (audioBlob: Blob, options?: { provider?: "openai-whisper" | "google-gemini" }): Promise<{ text: string }> => {

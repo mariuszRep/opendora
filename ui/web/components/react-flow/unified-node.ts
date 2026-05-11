@@ -1,4 +1,4 @@
-export type NodeType = 'start' | 'stage' | 'action'
+export type NodeType = 'start' | 'tool'
 
 export type ExecutionMode = 'automatic' | 'manual'
 

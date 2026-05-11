@@ -16,7 +16,6 @@ import type { WorkflowNodeData } from './unified-node'
 
 export function WorkflowNode({ data, selected }: NodeProps) {
   const nodeData = data as WorkflowNodeData
-
   const nodeType = resolveNodeType(nodeData)
   const metadata = getNodeTypeMetadata(nodeType)
   const Icon = metadata.icon
@@ -24,13 +23,10 @@ export function WorkflowNode({ data, selected }: NodeProps) {
   const renderHandles = () =>
     getHandlesForNodeType(nodeType).map((handle) => {
       const position =
-        handle.position === 'top'
-          ? Position.Top
-          : handle.position === 'bottom'
-            ? Position.Bottom
-            : handle.position === 'left'
-              ? Position.Left
-              : Position.Right
+        handle.position === 'top' ? Position.Top :
+        handle.position === 'bottom' ? Position.Bottom :
+        handle.position === 'left' ? Position.Left :
+        Position.Right
 
       return (
         <Handle
@@ -46,40 +42,30 @@ export function WorkflowNode({ data, selected }: NodeProps) {
   return (
     <WorkflowNodeBase
       handles={{ target: false, source: false }}
-      className={`min-w-[250px] ${selected ? 'ring-[3px] ring-ring/50 border-ring' : ''}`}
+      className={`min-w-[220px] ${selected ? 'ring-[3px] ring-ring/50 border-ring' : ''}`}
     >
       {renderHandles()}
       <WorkflowNodeHeader className="pb-3 bg-secondary/50">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
-            <div className="flex-1 min-w-0">
-              <WorkflowNodeTitle className="text-sm font-medium">
-                {nodeData.node.label}
-              </WorkflowNodeTitle>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                {metadata.label} Node
-              </div>
-              {nodeData.node.description && (
-                <WorkflowNodeDescription className="text-xs mt-1">
-                  {nodeData.node.description}
-                </WorkflowNodeDescription>
-              )}
-              {nodeData.node.action_id && (
-                <div className="mt-2">
-                  <Badge variant="secondary" className="text-xs">
-                    {nodeData.node.action_id.replace(/-/g, ' ')}
-                  </Badge>
-                </div>
-              )}
-              {nodeType === 'start' && (
-                <div className="mt-2">
-                  <Badge variant="outline" className="text-xs">
-                    Workflow Entry
-                  </Badge>
-                </div>
-              )}
-            </div>
+        <div className="flex items-center gap-3">
+          <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+          <div className="flex-1 min-w-0">
+            <WorkflowNodeTitle className="text-sm font-medium leading-tight">
+              {nodeData.node.label}
+            </WorkflowNodeTitle>
+            {nodeType === 'tool' && nodeData.node.action_id ? (
+              <Badge variant="secondary" className="mt-1.5 text-xs font-mono">
+                {nodeData.node.action_id}
+              </Badge>
+            ) : nodeType === 'start' ? (
+              <div className="text-xs text-muted-foreground mt-0.5">Entry point</div>
+            ) : (
+              <div className="text-xs text-muted-foreground mt-0.5">No tool selected</div>
+            )}
+            {nodeData.node.description && nodeType !== 'tool' && (
+              <WorkflowNodeDescription className="text-xs mt-1">
+                {nodeData.node.description}
+              </WorkflowNodeDescription>
+            )}
           </div>
         </div>
       </WorkflowNodeHeader>

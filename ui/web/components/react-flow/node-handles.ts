@@ -32,29 +32,21 @@ export interface NodeConstraints {
   hiddenFields: string[]
   requiredFields: string[]
   exposedFields: string[]
-  allowedExecutionModes?: Array<'automatic' | 'manual'>
 }
 
+// start  → tool(s) via bottom handle (unlimited)
+// tool   ← start or tool via top handle (single input)
+// tool   → tool(s) via bottom handle (unlimited)
 export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
   start: {
     handles: [
       {
-        id: 'horizontal',
-        position: 'right',
-        type: 'source',
-        connections: {
-          canConnectTo: [
-            { nodeType: 'stage', handleId: null, maxConnections: 1 },
-          ],
-        },
-      },
-      {
-        id: 'vertical',
+        id: null,
         position: 'bottom',
         type: 'source',
         connections: {
           canConnectTo: [
-            { nodeType: 'action', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
           ],
         },
       },
@@ -62,56 +54,12 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
     constraints: {
       allowedInboundEdges: 0,
       allowedOutboundEdges: 'unlimited',
-      hiddenFields: ['conditions', 'action_id', 'outputSchema'],
-      requiredFields: ['label'],
-      exposedFields: ['toolName', 'toolTitle', 'toolDescription', 'toolAnnotations', 'inputSchema', 'instructions', 'execution_mode'],
-      allowedExecutionModes: ['automatic', 'manual'],
-    },
-  },
-  stage: {
-    handles: [
-      {
-        id: null,
-        position: 'left',
-        type: 'target',
-        connections: {
-          canReceiveFrom: [
-            { nodeType: 'start', handleId: 'horizontal', maxConnections: 'unlimited' },
-            { nodeType: 'stage', handleId: 'horizontal', maxConnections: 'unlimited' },
-          ],
-        },
-      },
-      {
-        id: 'horizontal',
-        position: 'right',
-        type: 'source',
-        connections: {
-          canConnectTo: [
-            { nodeType: 'stage', handleId: null, maxConnections: 'unlimited' },
-          ],
-        },
-      },
-      {
-        id: 'vertical',
-        position: 'bottom',
-        type: 'source',
-        connections: {
-          canConnectTo: [
-            { nodeType: 'action', handleId: null, maxConnections: 'unlimited' },
-          ],
-        },
-      },
-    ],
-    constraints: {
-      allowedInboundEdges: 'unlimited',
-      allowedOutboundEdges: 'unlimited',
       hiddenFields: [],
       requiredFields: ['label'],
-      exposedFields: ['action_id', 'inputSchema', 'outputSchema', 'conditions', 'instructions', 'input_mapping', 'output_field_selection'],
-      allowedExecutionModes: ['automatic', 'manual'],
+      exposedFields: ['inputSchema'],
     },
   },
-  action: {
+  tool: {
     handles: [
       {
         id: null,
@@ -119,9 +67,8 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
         type: 'target',
         connections: {
           canReceiveFrom: [
-            { nodeType: 'start', handleId: 'vertical', maxConnections: 1 },
-            { nodeType: 'stage', handleId: 'vertical', maxConnections: 1 },
-            { nodeType: 'action', handleId: null, maxConnections: 1 },
+            { nodeType: 'start', handleId: null, maxConnections: 1 },
+            { nodeType: 'tool', handleId: null, maxConnections: 1 },
           ],
         },
       },
@@ -131,7 +78,7 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
         type: 'source',
         connections: {
           canConnectTo: [
-            { nodeType: 'action', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
           ],
         },
       },
@@ -141,8 +88,7 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
       allowedOutboundEdges: 'unlimited',
       hiddenFields: [],
       requiredFields: ['label'],
-      exposedFields: ['action_id', 'inputSchema', 'outputSchema', 'conditions', 'instructions', 'input_mapping', 'output_field_selection'],
-      allowedExecutionModes: ['automatic', 'manual'],
+      exposedFields: ['action_id', 'parameters'],
     },
   },
 }
@@ -157,6 +103,7 @@ export function getHandleDefinition(
   handleType?: HandleType
 ): HandleDefinition | undefined {
   const config = HANDLE_SCHEMA[nodeType]
+  if (!config) return undefined
 
   if (handleId == null) {
     if (handleType) {
@@ -201,26 +148,26 @@ export function validateConnection(
 ): { valid: boolean; error?: string } {
   const sourceHandle = getHandleDefinition(sourceNodeType, sourceHandleId, 'source')
   if (!sourceHandle) {
-    return { valid: false, error: `Invalid source handle: ${sourceNodeType}.${sourceHandleId}` }
+    return { valid: false, error: `Invalid source handle: ${sourceNodeType}` }
   }
 
   const targetHandle = getHandleDefinition(targetNodeType, targetHandleId, 'target')
   if (!targetHandle) {
-    return { valid: false, error: `Invalid target handle: ${targetNodeType}.${targetHandleId}` }
+    return { valid: false, error: `Invalid target handle: ${targetNodeType}` }
   }
 
   const allowedTarget = sourceHandle.connections.canConnectTo?.find(
-    c => c.nodeType === targetNodeType && c.handleId === targetHandle.id
+    c => c.nodeType === targetNodeType
   )
   if (!allowedTarget) {
-    return { valid: false, error: `${sourceNodeType} ${sourceHandle.position} cannot connect to ${targetNodeType}` }
+    return { valid: false, error: `${sourceNodeType} cannot connect to ${targetNodeType}` }
   }
 
   const allowedSource = targetHandle.connections.canReceiveFrom?.find(
-    c => c.nodeType === sourceNodeType && c.handleId === sourceHandle.id
+    c => c.nodeType === sourceNodeType
   )
   if (!allowedSource) {
-    return { valid: false, error: `${targetNodeType} cannot receive from ${sourceNodeType} ${sourceHandle.position}` }
+    return { valid: false, error: `${targetNodeType} cannot receive from ${sourceNodeType}` }
   }
 
   const sourceOutCount = countEdgesFromHandle(existingEdges, sourceNodeId, sourceHandleId)
@@ -228,7 +175,7 @@ export function validateConnection(
     allowedTarget.maxConnections !== 'unlimited' &&
     sourceOutCount >= allowedTarget.maxConnections
   ) {
-    return { valid: false, error: `${sourceNodeType} ${sourceHandle.position} has reached maximum connections` }
+    return { valid: false, error: `${sourceNodeType} has reached maximum outbound connections` }
   }
 
   const targetInCount = countEdgesToHandle(existingEdges, targetNodeId, targetHandleId)
@@ -236,18 +183,18 @@ export function validateConnection(
     allowedSource.maxConnections !== 'unlimited' &&
     targetInCount >= allowedSource.maxConnections
   ) {
-    return { valid: false, error: `${targetNodeType} ${targetHandle.position} has reached maximum connections` }
+    return { valid: false, error: `${targetNodeType} already has an incoming connection` }
   }
 
   return { valid: true }
 }
 
 export function getHandlesForNodeType(nodeType: NodeType): HandleDefinition[] {
-  return HANDLE_SCHEMA[nodeType].handles
+  return HANDLE_SCHEMA[nodeType]?.handles ?? []
 }
 
 export function getNodeConstraints(nodeType: NodeType): NodeConstraints {
-  return HANDLE_SCHEMA[nodeType].constraints
+  return HANDLE_SCHEMA[nodeType]?.constraints ?? HANDLE_SCHEMA.tool.constraints
 }
 
 export function isVerticalHandle(position: HandlePosition): boolean {

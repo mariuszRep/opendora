@@ -1,6 +1,7 @@
 import { Hono } from "hono"
 import { describeRoute, resolver, validator } from "hono-openapi"
 import z from "zod"
+import { zodToJsonSchema } from "zod-to-json-schema"
 import { Agent } from "../../agent"
 import { AgentStorage } from "@opendora/agent"
 import { ToolRegistry } from "../../tool/registry"
@@ -120,6 +121,62 @@ export const AgentRoutes = lazy(() =>
         }
         
         return c.json(result)
+      },
+    )
+
+    // GET /agent/tools/schema — all tools with their JSON Schema input definitions
+    .get(
+      "/tools/schema",
+      describeRoute({
+        summary: "List tools with input schemas",
+        description: "Returns all available tools (internal + MCP) with their JSON Schema input definitions for use in workflow editors.",
+        operationId: "agent.tools.schema",
+        responses: {
+          200: {
+            description: "Tool schemas",
+            content: {
+              "application/json": {
+                schema: resolver(
+                  z.array(
+                    z.object({
+                      id: z.string(),
+                      description: z.string(),
+                      source: z.enum(["internal", "mcp"]),
+                      mcpServer: z.string().optional(),
+                      inputSchema: z.record(z.string(), z.unknown()),
+                    })
+                  )
+                ),
+              },
+            },
+          },
+        },
+      }),
+      async (c) => {
+        const dummyModel = { providerID: "anthropic", modelID: "claude-sonnet-4-6" }
+        const internalTools = await Promise.all(
+          ToolRegistry.all().map(async (t) => {
+            try {
+              const tool = await t.init({ model: dummyModel })
+              const schema = (tool.parameters as any)?._def
+                ? zodToJsonSchema(tool.parameters as any, { target: "jsonSchema7" })
+                : (tool.parameters ?? { type: "object", properties: {} })
+              return {
+                id: t.id,
+                description: tool.description,
+                source: "internal" as const,
+                inputSchema: schema as Record<string, unknown>,
+              }
+            } catch {
+              return { id: t.id, description: "", source: "internal" as const, inputSchema: { type: "object", properties: {} } as Record<string, unknown> }
+            }
+          })
+        )
+        const mcpTools = await MCP.rawTools()
+        return c.json([
+          ...internalTools,
+          ...mcpTools.map((t) => ({ ...t, source: "mcp" as const })),
+        ])
       },
     )
 

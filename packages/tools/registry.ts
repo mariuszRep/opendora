@@ -103,7 +103,7 @@ export namespace ToolRegistry {
     else _custom.push(tool)
   }
 
-  function all(): Tool.Info[] {
+  export function all(): Tool.Info[] {
     const cfg = _config
     const question = ["app", "cli", "desktop"].includes(cfg.clientType) || cfg.flags.enableQuestion
 

@@ -32,6 +32,7 @@ import { WorkflowEditDrawer, type DrawerFormData } from './workflow-edit-drawer'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { toast } from 'sonner'
 import type { Workflow, WorkflowNodeType } from '@/lib/opendora'
+import { migrateWorkflow, needsMigration } from './migrate-workflow'
 
 const nodeTypes = {
   workflow: WorkflowNode,
@@ -87,9 +88,15 @@ interface WorkflowEditorProps {
   onSave: (workflow: Workflow) => Promise<void>
 }
 
-function WorkflowEditorInner({ workflow, directory, onSave }: WorkflowEditorProps) {
+function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: WorkflowEditorProps) {
   const reactFlowInstance = useReactFlow()
   const reactFlowWrapper = React.useRef<HTMLDivElement>(null)
+
+  const workflow = React.useMemo(
+    () => migrateWorkflow(workflowProp),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [workflowProp.id]
+  )
 
   const [nodes, setNodes] = React.useState<Node<WorkflowNodeData>[]>(() =>
     toReactFlowNodes(workflow)
@@ -97,6 +104,24 @@ function WorkflowEditorInner({ workflow, directory, onSave }: WorkflowEditorProp
   const [edges, setEdges] = React.useState<Edge[]>(() =>
     toReactFlowEdges(workflow)
   )
+
+  // Stable refs so saveWorkflow never goes stale
+  const onSaveRef = React.useRef(onSave)
+  const workflowRef = React.useRef(workflow)
+  const nodesRef = React.useRef(nodes)
+  const edgesRef = React.useRef(edges)
+  React.useEffect(() => { onSaveRef.current = onSave }, [onSave])
+  React.useEffect(() => { workflowRef.current = workflow }, [workflow])
+  React.useEffect(() => { nodesRef.current = nodes }, [nodes])
+  React.useEffect(() => { edgesRef.current = edges }, [edges])
+
+  React.useEffect(() => {
+    if (needsMigration(workflowProp)) {
+      onSave(workflow).catch(() => {})
+    }
+  // run once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [isSaving, setIsSaving] = React.useState(false)
   const [drawerOpen, setDrawerOpen] = React.useState(false)
   const [drawerType, setDrawerType] = React.useState<'workflow' | 'node' | 'edge'>('workflow')
@@ -108,29 +133,43 @@ function WorkflowEditorInner({ workflow, directory, onSave }: WorkflowEditorProp
   } | null>(null)
   const [showMiniMap, setShowMiniMap] = React.useState(true)
 
+  // Stable save — uses refs so it never needs to be recreated
   const saveWorkflow = React.useCallback(
     async (updatedNodes: Node<WorkflowNodeData>[], updatedEdges: Edge[]) => {
       setIsSaving(true)
       try {
-        await onSave({
-          ...workflow,
+        await onSaveRef.current({
+          ...workflowRef.current,
           nodes: fromReactFlowNodes(updatedNodes) as Workflow['nodes'],
           edges: fromReactFlowEdges(updatedEdges),
         })
-      } catch {
+      } catch (err) {
         toast.error('Failed to save workflow')
+        console.error('[WorkflowEditor] save error:', err)
       } finally {
         setIsSaving(false)
       }
     },
-    [workflow, onSave]
+    [] // stable — reads latest values via refs
   )
+
+  const positionSaveTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const onNodesChange: OnNodesChange = React.useCallback(
     (changes) => {
-      setNodes((nds) => applyNodeChanges(changes, nds) as Node<WorkflowNodeData>[])
+      setNodes((nds) => {
+        const newNodes = applyNodeChanges(changes, nds) as Node<WorkflowNodeData>[]
+        // Save when a drag ends (dragging: false = drop completed)
+        if (changes.some((c) => c.type === 'position' && c.dragging === false)) {
+          if (positionSaveTimer.current) clearTimeout(positionSaveTimer.current)
+          positionSaveTimer.current = setTimeout(() => {
+            saveWorkflow(newNodes, edgesRef.current)
+          }, 300)
+        }
+        return newNodes
+      })
     },
-    []
+    [saveWorkflow]
   )
 
   const onEdgesChange: OnEdgesChange = React.useCallback(
@@ -144,12 +183,12 @@ function WorkflowEditorInner({ workflow, directory, onSave }: WorkflowEditorProp
     (connection) => {
       if (!connection.source || !connection.target) return
 
-      const sourceNode = nodes.find((n) => n.id === connection.source)
-      const targetNode = nodes.find((n) => n.id === connection.target)
+      const sourceNode = nodesRef.current.find((n) => n.id === connection.source)
+      const targetNode = nodesRef.current.find((n) => n.id === connection.target)
       if (!sourceNode || !targetNode) return
 
-      const sourceType = (sourceNode.data as WorkflowNodeData).nodeType ?? 'stage'
-      const targetType = (targetNode.data as WorkflowNodeData).nodeType ?? 'stage'
+      const sourceType = (sourceNode.data as WorkflowNodeData).nodeType ?? 'tool'
+      const targetType = (targetNode.data as WorkflowNodeData).nodeType ?? 'tool'
 
       const result = validateConnectionSchema(
         sourceType as NodeType,
@@ -158,7 +197,7 @@ function WorkflowEditorInner({ workflow, directory, onSave }: WorkflowEditorProp
         targetType as NodeType,
         connection.target,
         connection.targetHandle ?? null,
-        edges
+        edgesRef.current
       )
 
       if (!result.valid) {
@@ -166,11 +205,11 @@ function WorkflowEditorInner({ workflow, directory, onSave }: WorkflowEditorProp
         return
       }
 
-      const newEdges = addEdge({ ...connection, type: 'animated' }, edges)
+      const newEdges = addEdge({ ...connection, type: 'animated' }, edgesRef.current)
       setEdges(newEdges)
-      saveWorkflow(nodes, newEdges)
+      saveWorkflow(nodesRef.current, newEdges)
     },
-    [nodes, edges, saveWorkflow]
+    [saveWorkflow]
   )
 
   const onNodeDoubleClick: NodeMouseHandler = React.useCallback(
@@ -193,26 +232,26 @@ function WorkflowEditorInner({ workflow, directory, onSave }: WorkflowEditorProp
 
   const onNodesDelete = React.useCallback(
     (deletedNodes: Node[]) => {
-      const updatedNodes = nodes.filter((n) => !deletedNodes.find((d) => d.id === n.id))
+      const updatedNodes = nodesRef.current.filter((n) => !deletedNodes.find((d) => d.id === n.id))
       const deletedIds = new Set(deletedNodes.map((n) => n.id))
-      const updatedEdges = edges.filter(
+      const updatedEdges = edgesRef.current.filter(
         (e) => !deletedIds.has(e.source) && !deletedIds.has(e.target)
       )
       setNodes(updatedNodes)
       setEdges(updatedEdges)
       saveWorkflow(updatedNodes, updatedEdges)
     },
-    [nodes, edges, saveWorkflow]
+    [saveWorkflow]
   )
 
   const onEdgesDelete = React.useCallback(
     (deletedEdges: Edge[]) => {
       const deletedIds = new Set(deletedEdges.map((e) => e.id))
-      const updatedEdges = edges.filter((e) => !deletedIds.has(e.id))
+      const updatedEdges = edgesRef.current.filter((e) => !deletedIds.has(e.id))
       setEdges(updatedEdges)
-      saveWorkflow(nodes, updatedEdges)
+      saveWorkflow(nodesRef.current, updatedEdges)
     },
-    [nodes, edges, saveWorkflow]
+    [saveWorkflow]
   )
 
   const onDragOver = React.useCallback((event: React.DragEvent) => {
@@ -246,11 +285,11 @@ function WorkflowEditorInner({ workflow, directory, onSave }: WorkflowEditorProp
         },
       }
 
-      const updatedNodes = [...nodes, newNode]
+      const updatedNodes = [...nodesRef.current, newNode]
       setNodes(updatedNodes)
-      saveWorkflow(updatedNodes, edges)
+      saveWorkflow(updatedNodes, edgesRef.current)
     },
-    [reactFlowInstance, nodes, edges, saveWorkflow]
+    [reactFlowInstance, saveWorkflow]
   )
 
   const onNodeDoubleClickFromPalette = React.useCallback(
@@ -273,24 +312,24 @@ function WorkflowEditorInner({ workflow, directory, onSave }: WorkflowEditorProp
         },
       }
 
-      const updatedNodes = [...nodes, newNode]
+      const updatedNodes = [...nodesRef.current, newNode]
       setNodes(updatedNodes)
-      saveWorkflow(updatedNodes, edges)
+      saveWorkflow(updatedNodes, edgesRef.current)
     },
-    [reactFlowInstance, nodes, edges, saveWorkflow]
+    [reactFlowInstance, saveWorkflow]
   )
 
   const handleDrawerSave = React.useCallback(
     (formData: DrawerFormData) => {
       if (drawerType === 'workflow') {
-        saveWorkflow(nodes, edges)
+        saveWorkflow(nodesRef.current, edgesRef.current)
         setDrawerOpen(false)
         return
       }
 
       if (drawerType === 'node' && drawerData?.node) {
         const targetId = drawerData.node.id
-        const updatedNodes = nodes.map((n) => {
+        const updatedNodes = nodesRef.current.map((n) => {
           if (n.id !== targetId) return n
           return {
             ...n,
@@ -307,31 +346,31 @@ function WorkflowEditorInner({ workflow, directory, onSave }: WorkflowEditorProp
           }
         })
         setNodes(updatedNodes)
-        saveWorkflow(updatedNodes, edges)
+        saveWorkflow(updatedNodes, edgesRef.current)
         setDrawerOpen(false)
         return
       }
 
       if (drawerType === 'edge' && drawerData?.edge) {
         const targetId = drawerData.edge.id
-        const updatedEdges = edges.map((e) => {
+        const updatedEdges = edgesRef.current.map((e) => {
           if (e.id !== targetId) return e
           return { ...e, type: formData.type ?? e.type }
         })
         setEdges(updatedEdges)
-        saveWorkflow(nodes, updatedEdges)
+        saveWorkflow(nodesRef.current, updatedEdges)
         setDrawerOpen(false)
         return
       }
     },
-    [drawerType, drawerData, nodes, edges, saveWorkflow]
+    [drawerType, drawerData, saveWorkflow]
   )
 
   const handleDrawerDelete = React.useCallback(() => {
     if (drawerType === 'node' && drawerData?.node) {
       const targetId = drawerData.node.id
-      const updatedNodes = nodes.filter((n) => n.id !== targetId)
-      const updatedEdges = edges.filter(
+      const updatedNodes = nodesRef.current.filter((n) => n.id !== targetId)
+      const updatedEdges = edgesRef.current.filter(
         (e) => e.source !== targetId && e.target !== targetId
       )
       setNodes(updatedNodes)
@@ -340,12 +379,12 @@ function WorkflowEditorInner({ workflow, directory, onSave }: WorkflowEditorProp
       setDrawerOpen(false)
     } else if (drawerType === 'edge' && drawerData?.edge) {
       const targetId = drawerData.edge.id
-      const updatedEdges = edges.filter((e) => e.id !== targetId)
+      const updatedEdges = edgesRef.current.filter((e) => e.id !== targetId)
       setEdges(updatedEdges)
-      saveWorkflow(nodes, updatedEdges)
+      saveWorkflow(nodesRef.current, updatedEdges)
       setDrawerOpen(false)
     }
-  }, [drawerType, drawerData, nodes, edges, saveWorkflow])
+  }, [drawerType, drawerData, saveWorkflow])
 
   return (
     <SidebarProvider className="relative flex h-full w-full overflow-hidden">

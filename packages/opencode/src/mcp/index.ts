@@ -620,6 +620,29 @@ export namespace MCP {
     return result
   }
 
+  export async function rawTools(): Promise<Array<{ id: string; description: string; inputSchema: Record<string, unknown>; mcpServer: string }>> {
+    const result: Array<{ id: string; description: string; inputSchema: Record<string, unknown>; mcpServer: string }> = []
+    const s = await state()
+    const clientsSnapshot = await clients()
+    const connectedClients = Object.entries(clientsSnapshot).filter(
+      ([clientName]) => s.status[clientName]?.status === "connected",
+    )
+    for (const [clientName] of connectedClients) {
+      const toolList = s.toolsCache[clientName] ?? []
+      for (const mcpTool of toolList) {
+        const sanitizedClientName = clientName.replace(/[^a-zA-Z0-9_-]/g, "_")
+        const sanitizedToolName = mcpTool.name.replace(/[^a-zA-Z0-9_-]/g, "_")
+        result.push({
+          id: sanitizedClientName + "_" + sanitizedToolName,
+          description: mcpTool.description ?? "",
+          inputSchema: (mcpTool.inputSchema ?? { type: "object", properties: {} }) as Record<string, unknown>,
+          mcpServer: clientName,
+        })
+      }
+    }
+    return result
+  }
+
   export async function prompts() {
     const s = await state()
     const clientsSnapshot = await clients()

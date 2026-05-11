@@ -1,9 +1,8 @@
 import type { NodeType, WorkflowNodeData } from './unified-node'
 
 export function resolveNodeType(nodeData: WorkflowNodeData): NodeType {
-  if (nodeData.nodeType) return nodeData.nodeType
-  if (nodeData.node.action_id) return 'action'
-  return 'stage'
+  if (nodeData.nodeType === 'start') return 'start'
+  return 'tool'
 }
 
 export function normalizeNodeName(label: string): string {
@@ -19,16 +18,13 @@ export function generateUniqueNodeName(
   existingNames: Set<string>
 ): string {
   const baseName = normalizeNodeName(label)
-
   if (!existingNames.has(baseName)) return baseName
 
   let counter = 1
   let uniqueName = `${baseName}_${counter}`
-
   while (existingNames.has(uniqueName)) {
     counter++
     uniqueName = `${baseName}_${counter}`
   }
-
   return uniqueName
 }

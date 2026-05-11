@@ -30,3 +30,4 @@
 [  783885ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ https://suno.com/me:0
 [  795162ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ https://suno.com/me/playlists:0
 [  810088ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ https://suno.com/playlist/6d0a938b-9517-448a-a15f-4d7af68547a1:0
+[ 3604768ms] [WARNING] [Service Worker] Update check failed: AbortError: Failed to update a ServiceWorker for scope ('https://suno.com/') with script ('https://suno.com/sw.js'): Failed to access storage. @ https://suno.com/_next/static/chunks/00sy-4itlc00o.js?dpl=dpl_4gHfMNcRvVwg8VKbjeBWkFMxUDhe:10
