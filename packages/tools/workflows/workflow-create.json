@@ -10,7 +10,7 @@
       },
       "input": {
         "type": "object",
-        "description": "Initial input passed to the workflow. Must satisfy the workflow's declared input schema. Becomes available as $input.* throughout the run."
+        "description": "Initial input passed to the workflow as a JSON object (NOT a string). Must satisfy the workflow's declared input schema. Becomes available as $input.* throughout the run. Example: {\"message\": \"hello\"}"
       },
       "title": {
         "type": "string",

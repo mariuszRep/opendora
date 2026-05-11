@@ -233,6 +233,27 @@ export type Skill = {
   tools?: string[]
 }
 
+export type WorkflowInputSchema = {
+  type: "object"
+  properties: Record<string, { type: string; description?: string }>
+  required?: string[]
+}
+
+export type WorkflowNode = {
+  kind: "task" | "sequence" | "parallel" | "foreach" | "decide"
+  id?: string
+  [k: string]: unknown
+}
+
+export type Workflow = {
+  id: string
+  name: string
+  description?: string
+  version: string
+  input?: WorkflowInputSchema
+  root: WorkflowNode
+}
+
 export type Agent = {
   name: string
   description?: string
@@ -543,6 +564,31 @@ export const opendora = {
     update: (updates: { model_filters?: Record<string, "all" | "free" | "none">; [k: string]: unknown }) =>
       req<boolean>("/config", { method: "PATCH", body: JSON.stringify(updates) }),
   },
+  workflow: {
+    list: (directory?: string) =>
+      req<Workflow[]>(directory ? `/workflow?directory=${encodeURIComponent(directory)}` : "/workflow"),
+    get: (id: string, directory?: string) =>
+      req<Workflow>(directory ? `/workflow/${id}?directory=${encodeURIComponent(directory)}` : `/workflow/${id}`),
+    create: (workflow: Workflow, directory?: string) =>
+      req<Workflow>(directory ? `/workflow?directory=${encodeURIComponent(directory)}` : "/workflow", {
+        method: "POST",
+        body: JSON.stringify(workflow),
+      }),
+    update: (id: string, workflow: Workflow, directory?: string) =>
+      req<Workflow>(directory ? `/workflow/${id}?directory=${encodeURIComponent(directory)}` : `/workflow/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(workflow),
+      }),
+    remove: (id: string, directory?: string) =>
+      req<boolean>(directory ? `/workflow/${id}?directory=${encodeURIComponent(directory)}` : `/workflow/${id}`, {
+        method: "DELETE",
+      }),
+    execute: (id: string, agentId?: string, input?: Record<string, unknown>, directory?: string) =>
+      req<{ sessionId: string; workflowId: string; agentId: string }>(
+        directory ? `/workflow/${id}/execute?directory=${encodeURIComponent(directory)}` : `/workflow/${id}/execute`,
+        { method: "POST", body: JSON.stringify({ agentId, input }) },
+      ),
+  },
   skill: {
     list: (directory?: string) =>
       req<Skill[]>(
@@ -566,6 +612,7 @@ export const opendora = {
     get: () =>
       req<{
         theme?: string
+        timezone?: string
         voice?: {
           stt: { provider: string; openaiModel?: string; geminiModel?: string }
           tts: { provider: string; openaiModel?: string; voice?: string; speed?: number; geminiVoice?: string; geminiModel?: string }
@@ -577,6 +624,7 @@ export const opendora = {
       }>("/general"),
     update: (patch: {
       theme?: string
+      timezone?: string
       voice?: {
         stt?: { provider?: string; openaiModel?: string; geminiModel?: string }
         tts?: { provider?: string; openaiModel?: string; voice?: string; speed?: number; geminiVoice?: string; geminiModel?: string }

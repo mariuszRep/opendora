@@ -28,7 +28,13 @@
     "session_get",
     "session_search",
     "session_tree",
-    "task"
+    "task",
+    "workflow_load",
+    "workflow_create",
+    "workflow_run_step",
+    "workflow_complete_step",
+    "workflow_goto",
+    "workflow_finish"
   ],
   "skills": [
     "project-delivery",

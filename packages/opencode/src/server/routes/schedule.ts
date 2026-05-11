@@ -11,6 +11,7 @@ import { Provider } from "@opendora/provider/provider"
 import { LLM } from "@opendora/session/llm"
 import { Log } from "../../util/log"
 import { Identifier } from "@opendora/util/id"
+import { getGlobalTimezone } from "./general"
 
 const log = Log.create({ service: "schedule-name" })
 
@@ -153,7 +154,7 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
         session_id: input.session_id || null,
         project_id: null,
         is_active: true,
-        timezone: input.timezone || "UTC",
+        timezone: input.timezone || getGlobalTimezone(),
         action_type: input.action_type ?? "message" as const,
         tool_name: input.tool_name || null,
         color: input.color || null,

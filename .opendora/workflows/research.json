@@ -1,0 +1,49 @@
+{
+  "id": "research",
+  "name": "Research & Summarize",
+  "description": "Three-step workflow: gather sources, analyze findings, produce summary",
+  "version": "1.0.0",
+  "input": {
+    "type": "object",
+    "properties": {
+      "topic": { "type": "string" },
+      "depth": { "type": "string" }
+    },
+    "required": ["topic"]
+  },
+  "root": {
+    "kind": "sequence",
+    "id": "root",
+    "steps": [
+      {
+        "kind": "task",
+        "id": "step-gather",
+        "skill": "web-researcher",
+        "input": {
+          "query": "$input.topic",
+          "depth": "$input.depth"
+        },
+        "output": "sources"
+      },
+      {
+        "kind": "task",
+        "id": "step-analyze",
+        "skill": "architecture-analysis",
+        "input": {
+          "context": "$ctx.sources",
+          "topic": "$input.topic"
+        },
+        "output": "analysis"
+      },
+      {
+        "kind": "task",
+        "id": "step-summarize",
+        "skill": "echo",
+        "input": {
+          "message": "$ctx.analysis"
+        },
+        "output": "summary"
+      }
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": "hello-world",
+  "name": "Hello World",
+  "description": "Single-step test workflow — echoes a message through the echo skill",
+  "version": "1.0.0",
+  "input": {
+    "type": "object",
+    "properties": {
+      "message": { "type": "string" }
+    },
+    "required": ["message"]
+  },
+  "root": {
+    "kind": "task",
+    "id": "step-echo",
+    "skill": "echo",
+    "input": {
+      "message": "$input.message"
+    },
+    "output": "result"
+  }
+}

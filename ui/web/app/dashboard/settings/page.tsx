@@ -29,12 +29,54 @@ import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { useUserProfile } from "@/hooks/use-user-profile"
 import { useVoiceSettings, formatHotkey, type HotkeyConfig } from "@/hooks/use-voice-settings"
 import { useTheme } from "next-themes"
-import { BotIcon, MessageSquareIcon, SettingsIcon, PlugIcon, UserIcon, ClockPlusIcon, WrenchIcon, SunIcon, MoonIcon, MonitorIcon, BookOpenIcon, MicIcon, Volume2Icon, KeyboardIcon } from "lucide-react"
+import { BotIcon, MessageSquareIcon, SettingsIcon, PlugIcon, UserIcon, ClockPlusIcon, WrenchIcon, SunIcon, MoonIcon, MonitorIcon, BookOpenIcon, MicIcon, Volume2Icon, KeyboardIcon, WorkflowIcon } from "lucide-react"
 import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { AGENT_COLORS } from "@/lib/agent-colors"
 import { opendora } from "@/lib/opendora"
+
+const COMMON_TIMEZONES = [
+  "UTC",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Anchorage",
+  "Pacific/Honolulu",
+  "America/Toronto",
+  "America/Vancouver",
+  "America/Mexico_City",
+  "America/Sao_Paulo",
+  "America/Argentina/Buenos_Aires",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Europe/Madrid",
+  "Europe/Rome",
+  "Europe/Amsterdam",
+  "Europe/Stockholm",
+  "Europe/Warsaw",
+  "Europe/Kyiv",
+  "Europe/Istanbul",
+  "Europe/Moscow",
+  "Africa/Cairo",
+  "Africa/Johannesburg",
+  "Africa/Lagos",
+  "Asia/Dubai",
+  "Asia/Kolkata",
+  "Asia/Bangkok",
+  "Asia/Singapore",
+  "Asia/Shanghai",
+  "Asia/Tokyo",
+  "Asia/Seoul",
+  "Asia/Hong_Kong",
+  "Australia/Sydney",
+  "Australia/Melbourne",
+  "Australia/Perth",
+  "Pacific/Auckland",
+  "Pacific/Fiji",
+]
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -47,22 +89,29 @@ export default function SettingsPage() {
   const [generalDialogOpen, setGeneralDialogOpen] = useState(false)
   const [recordingHotkey, setRecordingHotkey] = useState(false)
   const [recordingKeys, setRecordingKeys] = useState<string[]>([])
+  const [timezone, setTimezone] = useState("UTC")
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Sync theme from general.json on first open
+  // Sync theme and timezone from general.json on first open
   useEffect(() => {
     if (!mounted) return
     opendora.general.get().then((data) => {
       if (data.theme && data.theme !== theme) setTheme(data.theme)
+      if (data.timezone) setTimezone(data.timezone)
     }).catch(() => {})
   }, [mounted])
 
   const handleSetTheme = (newTheme: string) => {
     setTheme(newTheme)
     opendora.general.update({ theme: newTheme }).catch(() => {})
+  }
+
+  const handleSetTimezone = (newTimezone: string) => {
+    setTimezone(newTimezone)
+    opendora.general.update({ timezone: newTimezone }).catch(() => {})
   }
 
   // Hotkey recording effect
@@ -167,6 +216,14 @@ export default function SettingsPage() {
       count: null,
       countLabel: null,
     },
+    {
+      title: "Workflows",
+      description: "Create and run multi-step agent workflows",
+      icon: WorkflowIcon,
+      href: "/dashboard/settings/workflows",
+      count: null,
+      countLabel: null,
+    },
   ]
 
   return (
@@ -263,6 +320,28 @@ export default function SettingsPage() {
             <DialogTitle>General Settings</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-2">
+            {/* Timezone */}
+            <div className="space-y-2">
+              <Label htmlFor="timezone">Timezone</Label>
+              {mounted && (
+                <Select value={timezone} onValueChange={handleSetTimezone}>
+                  <SelectTrigger id="timezone" className="w-full">
+                    <SelectValue placeholder="Select timezone" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64">
+                    {COMMON_TIMEZONES.map((tz) => (
+                      <SelectItem key={tz} value={tz}>
+                        {tz}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Used as the default timezone for schedules and timestamps across the system.
+              </p>
+            </div>
+
             {/* Theme */}
             <div className="space-y-2">
               <Label htmlFor="theme">Theme</Label>

@@ -10,7 +10,14 @@ import toolDef from "./workflow-create.json"
 export const WorkflowCreateTool = Tool.define("workflow_create", async () => {
   const parameters = z.object({
     workflowId: z.string().describe("Identifier of the workflow definition to load."),
-    input: z.object({}).catchall(z.unknown()).describe("Initial input passed to the workflow. Must satisfy the workflow's declared input schema. Becomes available as $input.* throughout the run."),
+    input: z
+      .union([
+        z.object({}).catchall(z.unknown()),
+        z.string().transform((v) => {
+          try { return JSON.parse(v) } catch { return {} }
+        }),
+      ])
+      .describe("Initial input passed to the workflow. Must be an object (e.g. {\"message\": \"hi\"}), NOT a JSON string. Becomes available as $input.* throughout the run."),
     title: z.string().optional().describe("Optional human-readable title for this run; surfaced in UI and logs."),
   })
 

@@ -7,6 +7,7 @@ import { ScheduleTable } from "@opendora/schedule/sql"
 import type { ScheduleDispatchFn } from "@opendora/schedule/cron-scheduler"
 import { eq } from "drizzle-orm"
 import { ulid } from "ulid"
+import { getGlobalTimezone } from "@/server/routes/general"
 
 export namespace Schedule {
   let _dispatch: ScheduleDispatchFn = async () => {}
@@ -84,7 +85,7 @@ export namespace Schedule {
       session_id: input.session_id ?? null,
       project_id: null,
       is_active: true,
-      timezone: input.timezone ?? "UTC",
+      timezone: input.timezone ?? getGlobalTimezone(),
       action_type: (input.action_type ?? "message") as "message" | "tool",
       tool_name: input.tool_name ?? null,
       color: input.color ?? null,

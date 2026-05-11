@@ -31,7 +31,10 @@
     "./pyautogui/*": "./pyautogui/*.ts",
     "./tool": "./tool.ts",
     "./registry": "./registry.ts",
-    "./truncation": "./truncation.ts"
+    "./truncation": "./truncation.ts",
+    "./workflows": "./workflows/index.ts",
+    "./workflows/routes": "./workflows/routes.ts",
+    "./workflows/schema": "./workflows/schema.ts"
   },
   "devDependencies": {
     "@tsconfig/bun": "catalog:",
@@ -42,7 +45,9 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",
     "@nut-tree-fork/nut-js": "^4.2.0",
+    "@opendora/agent": "workspace:*",
     "@opendora/core": "workspace:*",
+    "@opendora/session": "workspace:*",
     "@zip.js/zip.js": "2.7.62",
     "diff": "catalog:",
     "fuzzysort": "3.1.0",
@@ -55,6 +60,7 @@
     "turndown": "7.2.0",
     "web-tree-sitter": "0.25.10",
     "zod": "catalog:",
-    "zod-to-json-schema": "3.25.2"
+    "zod-to-json-schema": "3.25.2",
+    "hono": "catalog:"
   }
 }

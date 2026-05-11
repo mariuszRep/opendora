@@ -6,7 +6,7 @@ export const WorkflowNode: z.ZodType<any> = z.lazy(() =>
       kind: z.literal("task"),
       id: z.string().optional(),
       skill: z.string().describe("Skill name to load for this step"),
-      input: z.record(z.unknown()).optional().describe("Input passed to the skill. May contain $input.* and $ctx.* references."),
+      input: z.record(z.string(), z.unknown()).optional().describe("Input passed to the skill. May contain $input.* and $ctx.* references."),
       output: z.string().describe("Name under which this step's output is stored in ctx"),
     }),
     z.object({
@@ -33,8 +33,9 @@ export const WorkflowNode: z.ZodType<any> = z.lazy(() =>
       kind: z.literal("decide"),
       id: z.string().optional(),
       skill: z.string().describe("Skill name for the decision step"),
-      input: z.record(z.unknown()).optional().describe("Input for the decision. May contain $input.* and $ctx.* references."),
+      input: z.record(z.string(), z.unknown()).optional().describe("Input for the decision. May contain $input.* and $ctx.* references."),
       branches: z.record(
+        z.string(),
         z.object({
           goto: z.string().nullable().describe("Target step id, or null for terminal"),
         }),
@@ -51,7 +52,7 @@ export const Workflow = z.object({
   input: z
     .object({
       type: z.literal("object"),
-      properties: z.record(z.object({ type: z.string() })),
+      properties: z.record(z.string(), z.object({ type: z.string() })),
       required: z.array(z.string()).optional(),
     })
     .optional()
@@ -65,14 +66,14 @@ export type WorkflowNode = z.infer<typeof WorkflowNode>
 export const RunState = z.object({
   runId: z.string(),
   workflowId: z.string(),
-  input: z.record(z.unknown()),
+  input: z.record(z.string(), z.unknown()),
   cursor: z.string(),
-  ctx: z.record(z.unknown()).default({}),
+  ctx: z.record(z.string(), z.unknown()).default({}),
   completed: z.array(z.string()).default([]),
   history: z.array(
     z.object({
       tool: z.string(),
-      args: z.record(z.unknown()),
+      args: z.record(z.string(), z.unknown()),
       result: z.unknown(),
       at: z.number(),
     }),

@@ -1,3 +1,4 @@
+@import "@xyflow/react/dist/style.css";
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -132,4 +133,27 @@
   50% {
     transform: translateY(-10px);
   }
+}
+
+/* React Flow theming — maps RF CSS variables to existing design tokens */
+.react-flow {
+  --xy-background-color: var(--background);
+  --xy-background-pattern-dots-color-default: var(--border);
+  --xy-background-pattern-lines-color-default: var(--border);
+  --xy-node-background-color-default: var(--card);
+  --xy-node-border-default: 1px solid var(--border);
+  --xy-node-color-default: var(--card-foreground);
+  --xy-node-boxshadow-hover-default: 0 0 0 1px var(--ring);
+  --xy-node-boxshadow-selected-default: 0 0 0 2px var(--primary);
+  --xy-edge-stroke-default: var(--muted-foreground);
+  --xy-edge-stroke-width-default: 1.5;
+  --xy-edge-stroke-selected-default: var(--primary);
+  --xy-handle-background-color-default: var(--background);
+  --xy-handle-border-color-default: var(--primary);
+  --xy-minimap-background-color-default: var(--card);
+  --xy-controls-button-background-color-default: var(--card);
+  --xy-controls-button-background-color-hover-default: var(--accent);
+  --xy-controls-button-color-default: var(--card-foreground);
+  --xy-controls-button-border-color-default: var(--border);
+  --xy-attribution-background-color-default: transparent;
 }

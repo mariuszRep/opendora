@@ -31,6 +31,7 @@ import { ProviderRoutes } from "./routes/provider"
 import { startBrowserControlServiceFromConfig, stopBrowserControlService } from "@opendora/tools/browser"
 import { AgentRoutes } from "./routes/agent"
 import { ScheduleRoutes } from "./routes/schedule"
+import { WorkflowRoutes } from "@opendora/tools/workflows/routes"
 import { CronScheduler, type ScheduleDispatchFn } from "@opendora/schedule/cron-scheduler"
 import { Schedule } from "../schedule"
 import { Database } from "../storage/db"
@@ -252,6 +253,7 @@ export namespace Server {
         .route("/question", QuestionRoutes())
         .route("/provider", ProviderRoutes())
         .route("/schedule", ScheduleRoutes(_scheduleDispatch))
+        .route("/workflow", WorkflowRoutes())
         .route("/voice", VoiceRoutes())
         .route("/user", UserRoutes())
         .route("/general", GeneralRoutes())

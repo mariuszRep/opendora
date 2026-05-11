@@ -1,5 +1,6 @@
 import { Hono } from "hono"
 import fs from "fs/promises"
+import { existsSync, readFileSync } from "fs"
 import path from "path"
 import { Global } from "../../global"
 import { lazy } from "../../util/lazy"
@@ -15,11 +16,13 @@ type VoiceSettings = {
 
 type GeneralSettings = {
   theme?: string
+  timezone?: string
   voice?: VoiceSettings
 }
 
 const DEFAULT: GeneralSettings = {
   theme: "system",
+  timezone: "UTC",
   voice: {
     stt: { provider: "openai-whisper", openaiModel: "whisper-1" },
     tts: { provider: "openai", openaiModel: "tts-1", voice: "alloy", speed: 1.0 },
@@ -69,6 +72,17 @@ function deepMerge(target: any, source: any): any {
     }
   }
   return result
+}
+
+export function getGlobalTimezone(): string {
+  try {
+    const p = filePath()
+    if (!existsSync(p)) return "UTC"
+    const raw = JSON.parse(readFileSync(p, "utf8"))
+    return raw.timezone || "UTC"
+  } catch {
+    return "UTC"
+  }
 }
 
 export const GeneralRoutes = lazy(() =>

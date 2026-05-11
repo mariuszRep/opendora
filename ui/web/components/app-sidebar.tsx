@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/utils"
 import type { Session, SessionType } from "@/lib/opendora"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BellIcon, BotIcon, FolderTreeIcon, MessageSquareIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, NetworkIcon, GalleryHorizontalIcon, GlobeIcon, CreditCardIcon } from "lucide-react"
+import { BellIcon, BotIcon, FolderTreeIcon, MessageSquareIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, NetworkIcon, GalleryHorizontalIcon, GlobeIcon, CreditCardIcon, WorkflowIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type React from "react"
 import { useState } from "react"
@@ -467,6 +467,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               >
                 <CreditCardIcon className="size-4 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">Billing</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => router.push("/dashboard/settings/workflows")}
+                tooltip="Workflows"
+                isActive={false}
+              >
+                <WorkflowIcon className="size-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden">Workflows</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
