@@ -233,16 +233,28 @@ export type Skill = {
   tools?: string[]
 }
 
-export type WorkflowInputSchema = {
-  type: "object"
-  properties: Record<string, { type: string; description?: string }>
-  required?: string[]
-}
+export type WorkflowNodeType = "input" | "skill_load" | "tool_call" | "agent" | "decide" | "output"
+
+export type WorkflowNodeData =
+  | { type: "input"; fields: Array<{ name: string; type: string; required?: boolean; description?: string }> }
+  | { type: "skill_load"; skill: string; storeAs?: string }
+  | { type: "tool_call"; tool: string; args: Record<string, string>; output?: string }
+  | { type: "agent"; prompt: string; output?: string }
+  | { type: "decide"; prompt: string; branches: string[] }
+  | { type: "output"; message?: string }
 
 export type WorkflowNode = {
-  kind: "task" | "sequence" | "parallel" | "foreach" | "decide"
-  id?: string
-  [k: string]: unknown
+  id: string
+  type: WorkflowNodeType
+  data: WorkflowNodeData
+  position: { x: number; y: number }
+}
+
+export type WorkflowEdge = {
+  id: string
+  source: string
+  target: string
+  label?: string
 }
 
 export type Workflow = {
@@ -250,8 +262,8 @@ export type Workflow = {
   name: string
   description?: string
   version: string
-  input?: WorkflowInputSchema
-  root: WorkflowNode
+  nodes: WorkflowNode[]
+  edges: WorkflowEdge[]
 }
 
 export type Agent = {

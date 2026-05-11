@@ -269,6 +269,7 @@
         "@opendora/agent": "workspace:*",
         "@opendora/core": "workspace:*",
         "@opendora/session": "workspace:*",
+        "@opendora/util": "workspace:*",
         "@zip.js/zip.js": "2.7.62",
         "diff": "catalog:",
         "fuzzysort": "3.1.0",

@@ -7,34 +7,54 @@ import {
   MiniMap,
   ReactFlowProvider,
   type NodeTypes,
+  type Edge,
 } from "@xyflow/react"
 import { useMemo } from "react"
 import type { Workflow } from "@/lib/opendora"
-import { workflowToFlow } from "./workflow-to-flow"
-import { TaskNode } from "./nodes/task-node"
+import { InputNode } from "./nodes/input-node"
+import { SkillLoadNode } from "./nodes/skill-load-node"
+import { ToolCallNode } from "./nodes/tool-call-node"
+import { AgentNode } from "./nodes/agent-node"
 import { DecideNode } from "./nodes/decide-node"
-import { SequenceNode } from "./nodes/sequence-node"
-import { ParallelNode } from "./nodes/parallel-node"
-import { ForeachNode } from "./nodes/foreach-node"
+import { OutputNode } from "./nodes/output-node"
 
 const nodeTypes: NodeTypes = {
-  task: TaskNode as any,
+  input: InputNode as any,
+  skill_load: SkillLoadNode as any,
+  tool_call: ToolCallNode as any,
+  agent: AgentNode as any,
   decide: DecideNode as any,
-  sequence: SequenceNode as any,
-  parallel: ParallelNode as any,
-  foreach: ForeachNode as any,
+  output: OutputNode as any,
 }
 
 interface WorkflowCanvasProps {
   workflow: Workflow
-  activeStepId?: string
+  activeNodeId?: string
   height?: number
 }
 
-function Canvas({ workflow, activeStepId, height = 520 }: WorkflowCanvasProps) {
-  const { nodes, edges } = useMemo(
-    () => workflowToFlow(workflow.root as any, activeStepId),
-    [workflow, activeStepId],
+function Canvas({ workflow, activeNodeId, height = 520 }: WorkflowCanvasProps) {
+  const nodes = useMemo(
+    () =>
+      workflow.nodes.map((n) => ({
+        id: n.id,
+        type: n.type,
+        position: n.position,
+        data: { ...n.data, _active: activeNodeId === n.id },
+      })),
+    [workflow.nodes, activeNodeId],
+  )
+
+  const edges: Edge[] = useMemo(
+    () =>
+      workflow.edges.map((e) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        label: e.label,
+        type: "smoothstep",
+      })),
+    [workflow.edges],
   )
 
   return (

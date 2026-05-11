@@ -33,7 +33,9 @@
     "delegate": {
       "allowedAgents": [
         "Product Engineer",
-        "Weber"
+        "Weber",
+        "Minds",
+        "PyAutoGUI Agent"
       ]
     },
     "reply": {

@@ -26,7 +26,7 @@ import { DESKTOP_TOOLS } from "./desktop/index.ts"
 import { PYAUTOGUI_TOOLS } from "./pyautogui/index.ts"
 import { PlaywrightModeTool } from "./browser/playwright-mode.ts"
 import { ToolListTool, ToolGetTool, ToolUpdateTool } from "./tool-registry/index.ts"
-import { WorkflowLoadTool, WorkflowCreateTool, WorkflowRunStepTool, WorkflowCompleteStepTool, WorkflowGotoTool, WorkflowFinishTool } from "./workflows/index.ts"
+import { WorkflowRunTool } from "./workflows/index.ts"
 import type { Tool } from "./tool.ts"
 import path from "path"
 import { pathToFileURL } from "url"
@@ -152,12 +152,7 @@ export namespace ToolRegistry {
       ToolListTool,
       ToolGetTool,
       ToolUpdateTool,
-      WorkflowLoadTool,
-      WorkflowCreateTool,
-      WorkflowRunStepTool,
-      WorkflowCompleteStepTool,
-      WorkflowGotoTool,
-      WorkflowFinishTool,
+      WorkflowRunTool,
       ...(cfg.flags.enableLspTool ? [LspTool] : []),
       ...(cfg.flags.enableBatchTool ? [BatchTool] : []),
       PlaywrightModeTool,

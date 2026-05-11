@@ -29,12 +29,7 @@
     "session_search",
     "session_tree",
     "task",
-    "workflow_load",
-    "workflow_create",
-    "workflow_run_step",
-    "workflow_complete_step",
-    "workflow_goto",
-    "workflow_finish"
+    "workflow_run"
   ],
   "skills": [
     "project-delivery",
@@ -49,7 +44,10 @@
     "delivery-report",
     "project-setup",
     "impeccable",
-    "frontend-design-impeccable"
+    "frontend-design-impeccable",
+    "nextjs",
+    "shadcn-ui",
+    "vercel"
   ],
   "toolConfig": {
     "reply": {

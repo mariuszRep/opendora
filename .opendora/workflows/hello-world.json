@@ -1,22 +1,44 @@
 {
   "id": "hello-world",
   "name": "Hello World",
-  "description": "Single-step test workflow — echoes a message through the echo skill",
+  "description": "Minimal test: receives a message, loads the echo skill, agent processes and responds.",
   "version": "1.0.0",
-  "input": {
-    "type": "object",
-    "properties": {
-      "message": { "type": "string" }
+  "nodes": [
+    {
+      "id": "start",
+      "type": "input",
+      "data": {
+        "type": "input",
+        "fields": [{ "name": "message", "type": "string", "required": true }]
+      },
+      "position": { "x": 250, "y": 0 }
     },
-    "required": ["message"]
-  },
-  "root": {
-    "kind": "task",
-    "id": "step-echo",
-    "skill": "echo",
-    "input": {
-      "message": "$input.message"
+    {
+      "id": "load-echo",
+      "type": "skill_load",
+      "data": { "type": "skill_load", "skill": "echo" },
+      "position": { "x": 250, "y": 140 }
     },
-    "output": "result"
-  }
+    {
+      "id": "process",
+      "type": "agent",
+      "data": {
+        "type": "agent",
+        "prompt": "Echo the following message back to the user: $input.message",
+        "output": "result"
+      },
+      "position": { "x": 250, "y": 280 }
+    },
+    {
+      "id": "done",
+      "type": "output",
+      "data": { "type": "output", "message": "Workflow complete. Result: $ctx.result" },
+      "position": { "x": 250, "y": 420 }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "start", "target": "load-echo" },
+    { "id": "e2", "source": "load-echo", "target": "process" },
+    { "id": "e3", "source": "process", "target": "done" }
+  ]
 }

@@ -7,7 +7,6 @@ import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { SettingsCard } from "@/components/settings/settings-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogContent,
@@ -17,32 +16,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 import { opendora, type Workflow } from "@/lib/opendora"
 
-function countNodes(node: Workflow["root"]): number {
-  const n = node as any
-  let count = 1
-  if (n.steps) count += n.steps.reduce((s: number, c: any) => s + countNodes(c), 0)
-  if (n.branches) count += n.branches.reduce((s: number, c: any) => s + countNodes(c), 0)
-  if (n.body) count += countNodes(n.body)
-  return count
-}
-
-const KIND_COLORS: Record<string, string> = {
-  task: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  decide: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  sequence: "bg-muted text-muted-foreground",
-  parallel: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
-  foreach: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-}
-
-function collectKinds(node: Workflow["root"], set = new Set<string>()): Set<string> {
-  const n = node as any
-  set.add(n.kind)
-  if (n.steps) n.steps.forEach((c: any) => collectKinds(c, set))
-  if (n.branches) n.branches.forEach((c: any) => collectKinds(c, set))
-  if (n.body) collectKinds(n.body, set)
-  return set
+const NODE_TYPE_COLORS: Record<string, string> = {
+  input:      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+  skill_load: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+  tool_call:  "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  agent:      "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  decide:     "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+  output:     "bg-muted text-muted-foreground",
 }
 
 export default function WorkflowsPage() {
@@ -57,16 +40,14 @@ export default function WorkflowsPage() {
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
 
-  function load() {
+  useEffect(() => {
     setLoading(true)
     opendora.workflow
       .list()
       .then(setWorkflows)
       .catch(() => setWorkflows([]))
       .finally(() => setLoading(false))
-  }
-
-  useEffect(() => { load() }, [])
+  }, [])
 
   const filtered = workflows.filter(
     (w) =>
@@ -86,18 +67,15 @@ export default function WorkflowsPage() {
         name: newName.trim(),
         description: newDescription.trim() || undefined,
         version: "1.0.0",
-        root: {
-          kind: "sequence",
-          id: "root",
-          steps: [
-            {
-              kind: "task",
-              id: "step-1",
-              skill: "echo",
-              output: "result",
-            } as any,
-          ],
-        } as any,
+        nodes: [
+          { id: "start",   type: "input",  data: { type: "input",  fields: [] },                               position: { x: 200, y: 0   } },
+          { id: "process", type: "agent",  data: { type: "agent",  prompt: "Process the input.", output: "result" }, position: { x: 200, y: 140 } },
+          { id: "done",    type: "output", data: { type: "output" },                                            position: { x: 200, y: 280 } },
+        ],
+        edges: [
+          { id: "e1", source: "start",   target: "process" },
+          { id: "e2", source: "process", target: "done"    },
+        ],
       }
       await opendora.workflow.create(stub)
       setCreateOpen(false)
@@ -145,8 +123,7 @@ export default function WorkflowsPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((w) => {
-              const kinds = Array.from(collectKinds(w.root))
-              const nodeCount = countNodes(w.root)
+              const types = Array.from(new Set(w.nodes.map((n) => n.type)))
               return (
                 <SettingsCard
                   key={w.id}
@@ -156,13 +133,15 @@ export default function WorkflowsPage() {
                   onClick={() => router.push(`/dashboard/settings/workflows/${w.id}`)}
                   footer={
                     <div className="flex flex-wrap items-center gap-1.5 w-full">
-                      <span className="text-xs text-muted-foreground mr-auto">{nodeCount} nodes · v{w.version}</span>
-                      {kinds.map((k) => (
+                      <span className="text-xs text-muted-foreground mr-auto">
+                        {w.nodes.length} nodes · {w.edges.length} edges · v{w.version}
+                      </span>
+                      {types.map((t) => (
                         <span
-                          key={k}
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${KIND_COLORS[k] ?? "bg-muted text-muted-foreground"}`}
+                          key={t}
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${NODE_TYPE_COLORS[t] ?? "bg-muted text-muted-foreground"}`}
                         >
-                          {k}
+                          {t}
                         </span>
                       ))}
                     </div>
@@ -174,7 +153,6 @@ export default function WorkflowsPage() {
         )}
       </div>
 
-      {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -184,28 +162,16 @@ export default function WorkflowsPage() {
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label>ID <span className="text-destructive">*</span></Label>
-              <Input
-                placeholder="my-workflow"
-                value={newId}
-                onChange={(e) => setNewId(e.target.value)}
-              />
+              <Input placeholder="my-workflow" value={newId} onChange={(e) => setNewId(e.target.value)} />
               <p className="text-xs text-muted-foreground">Lowercase letters, numbers, hyphens, underscores.</p>
             </div>
             <div className="space-y-1.5">
               <Label>Name <span className="text-destructive">*</span></Label>
-              <Input
-                placeholder="My Workflow"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-              />
+              <Input placeholder="My Workflow" value={newName} onChange={(e) => setNewName(e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label>Description</Label>
-              <Input
-                placeholder="What this workflow does…"
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-              />
+              <Input placeholder="What this workflow does…" value={newDescription} onChange={(e) => setNewDescription(e.target.value)} />
             </div>
             {createError && <p className="text-sm text-destructive">{createError}</p>}
           </div>

@@ -894,12 +894,14 @@ export const Chatbot = () => {
                                     ) : null}
                                     {step.kind === "tool" ? (() => {
                                       const tool = step.content
-                                      const input = "input" in tool.state ? tool.state.input : undefined
-                                      const output = "output" in tool.state ? formatToolPayload(tool.state.output) : undefined
-                                      const error = "error" in tool.state ? formatToolPayload(tool.state.error) : undefined
+                                      // Guard: legacy sessions stored state as a string ("result"/"call"); normalize to object
+                                      const toolState = typeof tool.state === "object" && tool.state !== null ? tool.state : {} as typeof tool.state
+                                      const input = "input" in toolState ? toolState.input : undefined
+                                      const output = "output" in toolState ? formatToolPayload((toolState as any).output) : undefined
+                                      const error = "error" in toolState ? formatToolPayload((toolState as any).error) : undefined
                                       const answered =
-                                        "metadata" in tool.state && Array.isArray(tool.state.metadata?.answers)
-                                          ? (tool.state.metadata.answers as string[][])
+                                        "metadata" in toolState && Array.isArray((toolState as any).metadata?.answers)
+                                          ? ((toolState as any).metadata.answers as string[][])
                                           : undefined
                                       const questionRequest = tool.tool === "question"
                                         ? questionRequests.find((request) => request.tool?.callID === tool.callID) ?? (
@@ -920,10 +922,10 @@ export const Chatbot = () => {
                                       const permissionRequest = permissionRequests.find((request) => request.tool?.callID === tool.callID)
                                       const hasPermissionRequest = !!permissionRequest
                                       const isPermissionTool = hasPermissionRequest
-                                      const permissionResponded = tool.state.status === "completed" || tool.state.status === "error"
+                                      const permissionResponded = toolState.status === "completed" || toolState.status === "error"
                                       // Question tools waiting for user input should show "Awaiting Approval" not "Running"
-                                      const isQuestionWaiting = !!questionRequest && tool.state.status === "running"
-                                      const state = toToolState(tool.state.status, hasPermissionRequest || isQuestionWaiting)
+                                      const isQuestionWaiting = !!questionRequest && toolState.status === "running"
+                                      const state = toToolState(toolState.status, hasPermissionRequest || isQuestionWaiting)
                                       const toolInput = <ToolInput input={input ?? {}} />
                                       const currentViewMode = questionViewModes[tool.id] ?? "view"
                                       const handleViewModeChange = (mode: "code" | "view") => {
@@ -1070,12 +1072,13 @@ export const Chatbot = () => {
                             ) : (
                               <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
                                 {tools.map((tool) => {
-                                  const input = "input" in tool.state ? tool.state.input : undefined
-                                  const output = "output" in tool.state ? formatToolPayload(tool.state.output) : undefined
-                                  const error = "error" in tool.state ? formatToolPayload(tool.state.error) : undefined
+                                  const toolState = typeof tool.state === "object" && tool.state !== null ? tool.state : {} as typeof tool.state
+                                  const input = "input" in toolState ? toolState.input : undefined
+                                  const output = "output" in toolState ? formatToolPayload((toolState as any).output) : undefined
+                                  const error = "error" in toolState ? formatToolPayload((toolState as any).error) : undefined
                                   const answered =
-                                    "metadata" in tool.state && Array.isArray(tool.state.metadata?.answers)
-                                      ? (tool.state.metadata.answers as string[][])
+                                    "metadata" in toolState && Array.isArray((toolState as any).metadata?.answers)
+                                      ? ((toolState as any).metadata.answers as string[][])
                                       : undefined
                                   const questionRequest = tool.tool === "question"
                                     ? questionRequests.find((request) => request.tool?.callID === tool.callID) ?? (
@@ -1096,8 +1099,8 @@ export const Chatbot = () => {
                                   const permissionRequest = permissionRequests.find((request) => request.tool?.callID === tool.callID)
                                   const hasPermissionRequest = !!permissionRequest
                                   const isPermissionTool = hasPermissionRequest
-                                  const permissionResponded = tool.state.status === "completed" || tool.state.status === "error"
-                                  const state = toToolState(tool.state.status, hasPermissionRequest)
+                                  const permissionResponded = toolState.status === "completed" || toolState.status === "error"
+                                  const state = toToolState(toolState.status, hasPermissionRequest)
                                   const toolInput = <ToolInput input={input ?? {}} />
                                   const currentViewMode = questionViewModes[tool.id] ?? "view"
                                   const handleViewModeChange = (mode: "code" | "view") => {

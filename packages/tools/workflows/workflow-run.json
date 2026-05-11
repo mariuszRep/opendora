@@ -1,0 +1,22 @@
+{
+  "name": "workflow_run",
+  "description": "Start a workflow in a new isolated session. The workflow executes deterministically — nodes run in the defined order without agent decisions, except at 'agent' and 'decide' nodes where the session's agent participates. Returns the new session ID immediately; execution continues in the background session.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "workflowId": {
+        "type": "string",
+        "description": "ID of the workflow to run (matches the workflow file name without .json)"
+      },
+      "input": {
+        "type": "object",
+        "description": "Input values passed to the workflow's input node. Must be a JSON object, not a string."
+      },
+      "agentId": {
+        "type": "string",
+        "description": "Optional. Agent to use for the workflow session. Defaults to the calling agent."
+      }
+    },
+    "required": ["workflowId", "input"]
+  }
+}

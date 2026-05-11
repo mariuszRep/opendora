@@ -1,49 +1,81 @@
 {
   "id": "research",
   "name": "Research & Summarize",
-  "description": "Three-step workflow: gather sources, analyze findings, produce summary",
+  "description": "Multi-step: loads a research skill, agent researches the topic, agent decides whether to go deeper or summarize.",
   "version": "1.0.0",
-  "input": {
-    "type": "object",
-    "properties": {
-      "topic": { "type": "string" },
-      "depth": { "type": "string" }
+  "nodes": [
+    {
+      "id": "start",
+      "type": "input",
+      "data": {
+        "type": "input",
+        "fields": [
+          { "name": "topic", "type": "string", "required": true },
+          { "name": "depth", "type": "string", "required": false, "description": "quick | thorough" }
+        ]
+      },
+      "position": { "x": 300, "y": 0 }
     },
-    "required": ["topic"]
-  },
-  "root": {
-    "kind": "sequence",
-    "id": "root",
-    "steps": [
-      {
-        "kind": "task",
-        "id": "step-gather",
-        "skill": "web-researcher",
-        "input": {
-          "query": "$input.topic",
-          "depth": "$input.depth"
-        },
-        "output": "sources"
+    {
+      "id": "load-researcher",
+      "type": "skill_load",
+      "data": { "type": "skill_load", "skill": "web-researcher", "storeAs": "skill_research" },
+      "position": { "x": 300, "y": 140 }
+    },
+    {
+      "id": "research",
+      "type": "agent",
+      "data": {
+        "type": "agent",
+        "prompt": "Research the following topic using the loaded skill: $input.topic\n\nDepth: $input.depth\n\nProvide a structured set of key findings.",
+        "output": "findings"
       },
-      {
-        "kind": "task",
-        "id": "step-analyze",
-        "skill": "architecture-analysis",
-        "input": {
-          "context": "$ctx.sources",
-          "topic": "$input.topic"
-        },
-        "output": "analysis"
+      "position": { "x": 300, "y": 280 }
+    },
+    {
+      "id": "decide-depth",
+      "type": "decide",
+      "data": {
+        "type": "decide",
+        "prompt": "Based on the findings so far: $ctx.findings\n\nIs the research sufficient to produce a final summary, or does it need deeper investigation?",
+        "branches": ["summarize", "deeper"]
       },
-      {
-        "kind": "task",
-        "id": "step-summarize",
-        "skill": "echo",
-        "input": {
-          "message": "$ctx.analysis"
-        },
+      "position": { "x": 300, "y": 420 }
+    },
+    {
+      "id": "deeper-research",
+      "type": "agent",
+      "data": {
+        "type": "agent",
+        "prompt": "The initial research on \"$input.topic\" needs to go deeper. Previous findings:\n$ctx.findings\n\nProvide additional in-depth analysis.",
+        "output": "findings"
+      },
+      "position": { "x": 500, "y": 560 }
+    },
+    {
+      "id": "summarize",
+      "type": "agent",
+      "data": {
+        "type": "agent",
+        "prompt": "Produce a concise, well-structured summary of the research on \"$input.topic\".\n\nFindings:\n$ctx.findings",
         "output": "summary"
-      }
-    ]
-  }
+      },
+      "position": { "x": 100, "y": 560 }
+    },
+    {
+      "id": "done",
+      "type": "output",
+      "data": { "type": "output", "message": "Research complete.\n\n$ctx.summary" },
+      "position": { "x": 300, "y": 700 }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "start", "target": "load-researcher" },
+    { "id": "e2", "source": "load-researcher", "target": "research" },
+    { "id": "e3", "source": "research", "target": "decide-depth" },
+    { "id": "e4", "source": "decide-depth", "target": "summarize", "label": "summarize" },
+    { "id": "e5", "source": "decide-depth", "target": "deeper-research", "label": "deeper" },
+    { "id": "e6", "source": "deeper-research", "target": "summarize" },
+    { "id": "e7", "source": "summarize", "target": "done" }
+  ]
 }

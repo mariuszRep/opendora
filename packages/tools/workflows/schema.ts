@@ -1,203 +1,132 @@
 import { z } from "zod"
 
-export const WorkflowNode: z.ZodType<any> = z.lazy(() =>
-  z.discriminatedUnion("kind", [
-    z.object({
-      kind: z.literal("task"),
-      id: z.string().optional(),
-      skill: z.string().describe("Skill name to load for this step"),
-      input: z.record(z.string(), z.unknown()).optional().describe("Input passed to the skill. May contain $input.* and $ctx.* references."),
-      output: z.string().describe("Name under which this step's output is stored in ctx"),
-    }),
-    z.object({
-      kind: z.literal("sequence"),
-      id: z.string().optional(),
-      steps: z.array(WorkflowNode).describe("Steps to execute in order"),
-    }),
-    z.object({
-      kind: z.literal("parallel"),
-      id: z.string().optional(),
-      branches: z.array(WorkflowNode).describe("Branches to execute concurrently"),
-      join: z.enum(["all", "any", "n"]).default("all").describe("Join strategy: all must complete, any one completes, or n must complete"),
-      joinN: z.number().int().positive().optional().describe("Number of branches that must complete when join is 'n'"),
-    }),
-    z.object({
-      kind: z.literal("foreach"),
-      id: z.string().optional(),
-      items: z.string().describe("Dotted path to array in ctx, e.g. '$ctx.files'"),
-      as: z.string().describe("Loop variable name, available as $<name> in body"),
-      mode: z.enum(["sequential", "parallel"]).default("sequential"),
-      body: WorkflowNode.describe("Step to execute for each item"),
-    }),
-    z.object({
-      kind: z.literal("decide"),
-      id: z.string().optional(),
-      skill: z.string().describe("Skill name for the decision step"),
-      input: z.record(z.string(), z.unknown()).optional().describe("Input for the decision. May contain $input.* and $ctx.* references."),
-      branches: z.record(
-        z.string(),
-        z.object({
-          goto: z.string().nullable().describe("Target step id, or null for terminal"),
-        }),
-      ).describe("Branch labels mapping to goto targets"),
-    }),
-  ]),
-)
+// ─── Node data schemas ────────────────────────────────────────────────────────
 
-export const Workflow = z.object({
-  id: z.string().describe("Unique workflow identifier"),
-  name: z.string().describe("Human-readable name"),
-  description: z.string().optional(),
-  version: z.string().default("1.0.0"),
-  input: z
-    .object({
-      type: z.literal("object"),
-      properties: z.record(z.string(), z.object({ type: z.string() })),
-      required: z.array(z.string()).optional(),
-    })
-    .optional()
-    .describe("JSON Schema for workflow input"),
-  root: WorkflowNode.describe("Root node of the workflow tree"),
+export const InputNodeData = z.object({
+  type: z.literal("input"),
+  fields: z
+    .array(
+      z.object({
+        name: z.string(),
+        type: z.enum(["string", "number", "boolean", "object"]).default("string"),
+        required: z.boolean().default(true),
+        description: z.string().optional(),
+      }),
+    )
+    .default([]),
 })
 
-export type Workflow = z.infer<typeof Workflow>
+export const SkillLoadNodeData = z.object({
+  type: z.literal("skill_load"),
+  skill: z.string().describe("Skill name (matches .opendora/skill/<name>/)"),
+  storeAs: z.string().optional().describe("Key name to store skill content in ctx (optional)"),
+})
+
+export const ToolCallNodeData = z.object({
+  type: z.literal("tool_call"),
+  tool: z.string().describe("Tool name to call (must be available in this session)"),
+  args: z
+    .record(z.string(), z.string())
+    .default({})
+    .describe("Tool arguments. Values may reference $input.<field> or $ctx.<key>"),
+  output: z.string().optional().describe("Context key to store the tool result under"),
+})
+
+export const AgentNodeData = z.object({
+  type: z.literal("agent"),
+  prompt: z.string().describe("Instruction sent to the agent. May reference $input.<field> or $ctx.<key>"),
+  output: z.string().optional().describe("Context key to store the agent's response text under"),
+})
+
+export const DecideNodeData = z.object({
+  type: z.literal("decide"),
+  prompt: z.string().describe("Question/instruction for the agent to decide between branches"),
+  branches: z.array(z.string()).describe("Branch labels — must match edge labels from this node"),
+})
+
+export const OutputNodeData = z.object({
+  type: z.literal("output"),
+  message: z.string().optional().describe("Final summary message (may reference $ctx.<key>)"),
+})
+
+export const NodeData = z.discriminatedUnion("type", [
+  InputNodeData,
+  SkillLoadNodeData,
+  ToolCallNodeData,
+  AgentNodeData,
+  DecideNodeData,
+  OutputNodeData,
+])
+export type NodeData = z.infer<typeof NodeData>
+
+// ─── Node + Edge ──────────────────────────────────────────────────────────────
+
+export const WorkflowNode = z.object({
+  id: z.string(),
+  type: z.enum(["input", "skill_load", "tool_call", "agent", "decide", "output"]),
+  data: NodeData,
+  position: z.object({ x: z.number(), y: z.number() }).default({ x: 0, y: 0 }),
+})
 export type WorkflowNode = z.infer<typeof WorkflowNode>
 
-export const RunState = z.object({
-  runId: z.string(),
-  workflowId: z.string(),
-  input: z.record(z.string(), z.unknown()),
-  cursor: z.string(),
-  ctx: z.record(z.string(), z.unknown()).default({}),
-  completed: z.array(z.string()).default([]),
-  history: z.array(
-    z.object({
-      tool: z.string(),
-      args: z.record(z.string(), z.unknown()),
-      result: z.unknown(),
-      at: z.number(),
-    }),
-  ).default([]),
+export const WorkflowEdge = z.object({
+  id: z.string(),
+  source: z.string().describe("Source node id"),
+  target: z.string().describe("Target node id"),
+  label: z.string().optional().describe("For decide nodes: the branch label this edge represents"),
 })
+export type WorkflowEdge = z.infer<typeof WorkflowEdge>
 
-export type RunState = z.infer<typeof RunState>
+// ─── Workflow ─────────────────────────────────────────────────────────────────
 
-/** Resolve $input.* and $ctx.* references in a value */
-export function resolveReferences(
-  value: unknown,
+export const Workflow = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  version: z.string().default("1.0.0"),
+  nodes: z.array(WorkflowNode),
+  edges: z.array(WorkflowEdge),
+})
+export type Workflow = z.infer<typeof Workflow>
+
+// ─── Reference resolution ─────────────────────────────────────────────────────
+
+export function resolveRef(
+  value: string,
   input: Record<string, unknown>,
   ctx: Record<string, unknown>,
-  loopVars?: Record<string, unknown>,
 ): unknown {
-  if (typeof value === "string") {
-    if (value.startsWith("$input.")) {
-      const path = value.slice(7)
-      return getByPath(input, path)
-    }
-    if (value.startsWith("$ctx.")) {
-      const path = value.slice(5)
-      return getByPath(ctx, path)
-    }
-    if (loopVars && value.startsWith("$")) {
-      const varName = value.slice(1)
-      if (varName in loopVars) return loopVars[varName]
-    }
-    return value
-  }
-  if (Array.isArray(value)) {
-    return value.map((v) => resolveReferences(v, input, ctx, loopVars))
-  }
-  if (value && typeof value === "object") {
-    const result: Record<string, unknown> = {}
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      result[k] = resolveReferences(v, input, ctx, loopVars)
-    }
-    return result
-  }
+  if (value.startsWith("$input.")) return getPath(input, value.slice(7))
+  if (value.startsWith("$ctx.")) return getPath(ctx, value.slice(5))
   return value
 }
 
-function getByPath(obj: Record<string, unknown>, path: string): unknown {
-  const parts = path.split(".")
-  let current: unknown = obj
-  for (const part of parts) {
-    if (current && typeof current === "object") {
-      current = (current as Record<string, unknown>)[part]
-    } else {
-      return undefined
-    }
+export function resolveRefs(
+  args: Record<string, string>,
+  input: Record<string, unknown>,
+  ctx: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(args)) {
+    out[k] = resolveRef(v, input, ctx)
   }
-  return current
+  return out
 }
 
-/** Find the first leaf node (task or decide) in tree order */
-export function findFirstStep(node: WorkflowNode): string | undefined {
-  switch (node.kind) {
-    case "task":
-    case "decide":
-      return node.id
-    case "sequence":
-      for (const step of node.steps) {
-        const found = findFirstStep(step)
-        if (found) return found
-      }
-      return undefined
-    case "parallel":
-      for (const branch of node.branches) {
-        const found = findFirstStep(branch)
-        if (found) return found
-      }
-      return undefined
-    case "foreach":
-      return findFirstStep(node.body)
-    default:
-      return undefined
-  }
+function getPath(obj: Record<string, unknown>, path: string): unknown {
+  return path.split(".").reduce<unknown>((cur, key) => {
+    if (cur && typeof cur === "object") return (cur as Record<string, unknown>)[key]
+    return undefined
+  }, obj)
 }
 
-/** Find a node by id in the workflow tree */
-export function findNodeById(root: WorkflowNode, id: string): WorkflowNode | undefined {
-  if (root.id === id) return root
-  switch (root.kind) {
-    case "sequence":
-      for (const step of root.steps) {
-        const found = findNodeById(step, id)
-        if (found) return found
-      }
-      return undefined
-    case "parallel":
-      for (const branch of root.branches) {
-        const found = findNodeById(branch, id)
-        if (found) return found
-      }
-      return undefined
-    case "foreach":
-      return findNodeById(root.body, id)
-    default:
-      return undefined
-  }
-}
-
-/** Find the next leaf step after the given id in tree order */
-export function findNextStep(root: WorkflowNode, currentId: string): string | undefined {
-  const ids = collectLeafIds(root)
-  const idx = ids.indexOf(currentId)
-  if (idx >= 0 && idx < ids.length - 1) return ids[idx + 1]
-  return undefined
-}
-
-function collectLeafIds(node: WorkflowNode): string[] {
-  switch (node.kind) {
-    case "task":
-    case "decide":
-      return node.id ? [node.id] : []
-    case "sequence":
-      return node.steps.flatMap(collectLeafIds)
-    case "parallel":
-      return node.branches.flatMap(collectLeafIds)
-    case "foreach":
-      return collectLeafIds(node.body)
-    default:
-      return []
-  }
+export function resolveTemplate(
+  template: string,
+  input: Record<string, unknown>,
+  ctx: Record<string, unknown>,
+): string {
+  return template.replace(/\$(input|ctx)\.([a-zA-Z0-9_.]+)/g, (_, ns, path) => {
+    const val = getPath(ns === "input" ? input : ctx, path)
+    return val == null ? "" : String(val)
+  })
 }
