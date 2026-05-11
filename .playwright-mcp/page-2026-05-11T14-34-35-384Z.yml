@@ -1,0 +1,494 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - link "Suno Logo" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img "Suno Logo" [ref=e7]
+      - button "Collapse sidebar" [ref=e13] [cursor=pointer]:
+        - img [ref=e15]
+      - button "Profile menu button" [ref=e21] [cursor=pointer]:
+        - generic [ref=e23]:
+          - img "mariusz85" [ref=e27]
+          - generic [ref=e28]:
+            - paragraph [ref=e29]: mariusz85
+            - paragraph [ref=e30]: 1190 credits
+          - img [ref=e31]
+      - link "Upgrade to Premier" [ref=e35] [cursor=pointer]:
+        - /url: /account?source=sideNav
+        - generic [ref=e36]: Upgrade to Premier
+      - generic [ref=e37]:
+        - link "Home" [ref=e38] [cursor=pointer]:
+          - /url: /discover
+          - generic [ref=e39]:
+            - img [ref=e40]
+            - generic [ref=e43]: Home
+        - link "Explore" [ref=e44] [cursor=pointer]:
+          - /url: /explore
+          - generic [ref=e45]:
+            - img [ref=e46]
+            - generic [ref=e49]: Explore
+        - link "Create" [ref=e50] [cursor=pointer]:
+          - /url: /create
+          - generic [ref=e51]:
+            - img [ref=e52]
+            - generic [ref=e56]: Create
+        - link "Studio" [ref=e57] [cursor=pointer]:
+          - /url: /studio
+          - generic [ref=e58]:
+            - img [ref=e59]
+            - generic [ref=e62]: Studio
+        - link "Library" [ref=e63] [cursor=pointer]:
+          - /url: /me
+          - generic [ref=e64]:
+            - img [ref=e65]
+            - generic [ref=e69]: Library
+        - generic [ref=e70]:
+          - link "Hooks" [ref=e71] [cursor=pointer]:
+            - /url: /hooks
+            - generic [ref=e72]:
+              - img [ref=e73]
+              - generic [ref=e78]: Hooks
+          - link "Create" [ref=e79] [cursor=pointer]:
+            - /url: /hooks/create
+            - generic [ref=e80]:
+              - img [ref=e81]
+              - text: Create
+        - link "Notifications" [ref=e84] [cursor=pointer]:
+          - /url: /notifications
+          - generic [ref=e85]:
+            - img [ref=e86]
+            - generic [ref=e89]: Notifications
+        - generic:
+          - generic:
+            - generic:
+              - generic: Notifications
+              - generic: Activity
+              - button:
+                - img
+            - generic:
+              - generic: Today
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@unlimitedless
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@unlimitedless
+                          - text: Unlimitedless
+                        - text: liked your song 'Hold Your Breath (Afro House)'
+                      - paragraph: 3 hours ago
+                  - generic:
+                    - link:
+                      - /url: /song/7561d8c3-89c0-44c1-970a-2d3d2e0a621a
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@jeanbernar_gattodu65
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@jeanbernar_gattodu65
+                          - text: jb
+                        - text: liked your video cover in the Hooks feed
+                      - paragraph: 12 hours ago
+                  - generic:
+                    - link:
+                      - /url: /hook/3b140146-d79e-43ca-9310-c96251651ed9
+                      - img
+              - generic: Yesterday
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@basche42
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@basche42
+                          - text: f8692wc4ky
+                        - text: liked your song 'If This Is All We Get'
+                      - paragraph: 21 hours ago
+                  - generic:
+                    - link:
+                      - /url: /song/3101d44c-ac90-4bb6-a058-ca4ce9133c43
+                      - img
+              - generic: Last 7 Days
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - link:
+                          - /url: /@gsusamen
+                          - img
+                          - img
+                        - link:
+                          - /url: /@punkshaven
+                          - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@punkshaven
+                          - text: 𝐒𝐡𝐚𝐯𝐞𝐧
+                        - text: and
+                        - link:
+                          - /url: /@gsusamen
+                          - text: G. Sus
+                        - text: liked your song 'Hold Your Breath (Experimental)'
+                      - paragraph: 3 days ago
+                  - generic:
+                    - link:
+                      - /url: /song/5fc4977b-ddeb-4b34-9f8a-206862b7ce6f
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@cybershrapnel
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@cybershrapnel
+                          - text: cybershrapnel (NanoCheeZe MEQUAVIS)
+                        - text: liked your song 'Say What You Want'
+                      - paragraph: 3 days ago
+                  - generic:
+                    - link:
+                      - /url: /song/7db19b29-446a-42ab-b29f-a6037059fb6d
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@kipimaister
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@kipimaister
+                          - text: DJ Kipimaister
+                        - text: liked your song 'MRS - Something Real (Techno Remix)'
+                      - paragraph: 4 days ago
+                  - generic:
+                    - link:
+                      - /url: /song/274f7461-d057-4d27-8cc2-f8f918a065e4
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@jeanbernar_gattodu65
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@jeanbernar_gattodu65
+                          - text: jb
+                        - text: "commented: 👍👍👍👍👍😍😍😍😍😍"
+                      - paragraph: 4 days ago
+                  - generic:
+                    - link:
+                      - /url: /song/3b687b34-2bd1-4f8b-b57a-f7d4bf146b45?show_comments=true
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@jeanbernar_gattodu65
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@jeanbernar_gattodu65
+                          - text: jb
+                        - text: liked your song 'Almost Famous Tonight'
+                      - paragraph: 4 days ago
+                  - generic:
+                    - link:
+                      - /url: /song/3b687b34-2bd1-4f8b-b57a-f7d4bf146b45
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@jeanbernar_gattodu65
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@jeanbernar_gattodu65
+                          - text: jb
+                        - text: followed you
+                      - paragraph: 4 days ago
+                  - generic:
+                    - button:
+                      - img
+                      - generic: Follow
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@krapzillahallo
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@krapzillahallo
+                          - text: Крапзилла (bots are for Lyrics) 💟
+                        - text: liked your song 'VELVET TEETH'
+                      - paragraph: 5 days ago
+                  - generic:
+                    - link:
+                      - /url: /song/a28348a4-66fa-4e69-96fd-14122d494116
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@trisha1mn
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@trisha1mn
+                          - text: Trisha
+                        - text: liked your song 'VELVET TEETH'
+                      - paragraph: 5 days ago
+                  - generic:
+                    - link:
+                      - /url: /song/c048efba-3aff-4657-8be9-c4462649e352
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@bernardszymonmfranceschi
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@bernardszymonmfranceschi
+                          - text: FRANX
+                        - text: followed you
+                      - paragraph: 6 days ago
+                  - generic:
+                    - button:
+                      - img
+                      - generic: Follow
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@krapzillahallo
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@krapzillahallo
+                          - text: Крапзилла (bots are for Lyrics) 💟
+                        - text: liked your song 'MRS - Come Back To Me'
+                      - paragraph: 7 days ago
+                  - generic:
+                    - link:
+                      - /url: /song/39493d3c-e982-4095-9d57-3b623f824d46
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@trisha1mn
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@trisha1mn
+                          - text: Trisha
+                        - text: liked your song 'Pull Me Back'
+                      - paragraph: 7 days ago
+                  - generic:
+                    - link:
+                      - /url: /song/f2521d21-685b-436e-be7c-95908cf1392b
+                      - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@balancemusicplant
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@balancemusicplant
+                          - text: "#balanceplant"
+                        - text: followed you
+                      - paragraph: 1 week ago
+                  - generic:
+                    - button:
+                      - img
+                      - generic: Follow
+              - generic: Last 30 Days
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /@twfx23
+                        - img
+                        - img
+                  - generic:
+                    - generic:
+                      - paragraph:
+                        - link:
+                          - /url: /@twfx23
+                          - text: TWFX23
+                        - text: liked your song 'MRS - Higher Than Before'
+                      - paragraph: 1 week ago
+                  - generic:
+                    - link:
+                      - /url: /song/320cad54-d3d2-45b2-84d2-893f6f00b0cb
+                      - img
+      - generic [ref=e91]:
+        - link "Labs" [ref=e92] [cursor=pointer]:
+          - /url: /labs
+          - generic [ref=e93]:
+            - img [ref=e94]
+            - generic [ref=e96]: Labs
+        - button "Terms & Policies" [ref=e97] [cursor=pointer]:
+          - generic [ref=e98]:
+            - img [ref=e99]
+            - generic [ref=e102]: Terms & Policies
+        - button "More" [ref=e103] [cursor=pointer]:
+          - generic [ref=e104]:
+            - img [ref=e105]
+            - generic [ref=e108]: More
+    - generic [ref=e109]:
+      - main [ref=e1458]:
+        - generic [ref=e1460]:
+          - generic [ref=e1462]:
+            - img "Playlist cover art" [ref=e1463] [cursor=pointer]
+            - generic [ref=e1464]:
+              - heading "downloads" [level=1] [ref=e1465]
+              - button "Add playlist description" [ref=e1467]:
+                - generic [ref=e1468]: Add playlist description
+              - generic [ref=e1469]:
+                - generic [ref=e1470]:
+                  - link "Profile avatar" [ref=e1472] [cursor=pointer]:
+                    - /url: /@mariusz85
+                    - img "Profile avatar" [ref=e1473]
+                  - link "Synaptix Music" [ref=e1474] [cursor=pointer]:
+                    - /url: /@mariusz85
+                - text: ·
+                - generic [ref=e1475]: 0 songs
+            - generic [ref=e1477]:
+              - button "Public" [ref=e1478]:
+                - generic [ref=e1479]: Public
+                - generic [ref=e1481]:
+                  - switch [ref=e1482] [cursor=pointer]
+                  - checkbox [ref=e1484]
+              - button "Inspire" [ref=e1485] [cursor=pointer]:
+                - generic [ref=e1486]:
+                  - img [ref=e1487]
+                  - text: Inspire
+              - generic [ref=e1490]:
+                - button [ref=e1491] [cursor=pointer]:
+                  - img [ref=e1493]
+                - button [ref=e1496] [cursor=pointer]:
+                  - img [ref=e1498]
+              - button [ref=e1501] [cursor=pointer]:
+                - img [ref=e1502]
+              - button [ref=e1505] [cursor=pointer]:
+                - img [ref=e1506]
+              - button "More Actions" [ref=e1509] [cursor=pointer]:
+                - img [ref=e1511]
+          - generic [ref=e1514]:
+            - generic [ref=e1515]:
+              - generic [ref=e1516]: Start your playlist by creating a song or adding an existing song from your Library
+              - generic [ref=e1517]:
+                - button "Create Song" [ref=e1518] [cursor=pointer]:
+                  - generic [ref=e1519]: Create Song
+                - button "Go to Library" [ref=e1520] [cursor=pointer]:
+                  - generic [ref=e1521]: Go to Library
+            - grid "0 Clips"
+            - status [ref=e1522]
+      - generic [ref=e171]:
+        - generic [ref=e174]:
+          - generic [ref=e175]:
+            - 'button "Playbar: Toggle shuffle button" [ref=e176] [cursor=pointer]':
+              - img [ref=e178]
+            - 'button "Playbar: Previous Song button" [disabled] [ref=e181]':
+              - img [ref=e183]
+            - 'button "Playbar: Play button" [disabled] [ref=e186]':
+              - img [ref=e188]
+            - 'button "Playbar: Next Song button" [disabled] [ref=e191]':
+              - img [ref=e193]
+            - 'button "Playbar: Toggle repeat button" [ref=e196] [cursor=pointer]':
+              - img [ref=e198]
+          - generic [ref=e202]:
+            - generic [ref=e203]: 0:00
+            - slider "Playback progress" [disabled] [ref=e208]: "0"
+            - generic [ref=e209]: "--:--"
+        - 'generic "Playbar: Volume Slider" [ref=e212] [cursor=pointer]':
+          - img [ref=e214]
+  - alert [ref=e219]: downloads by @mariusz85 | Suno
+  - generic:
+    - region "Notifications-top"
+    - region "Notifications-top-left"
+    - region "Notifications-top-right"
+    - region "Notifications-bottom-left"
+    - region "Notifications-bottom"
+    - region "Notifications-bottom-right"
+  - generic:
+    - region "Notifications-top"
+    - region "Notifications-top-left"
+    - region "Notifications-top-right"
+    - region "Notifications-bottom-left"
+    - region "Notifications-bottom"
+    - region "Notifications-bottom-right"

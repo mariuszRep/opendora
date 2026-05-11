@@ -61,12 +61,21 @@ export type NodeData = z.infer<typeof NodeData>
 
 // ─── Node + Edge ──────────────────────────────────────────────────────────────
 
-export const WorkflowNode = z.object({
+const LegacyWorkflowNode = z.object({
   id: z.string(),
   type: z.enum(["input", "skill_load", "tool_call", "agent", "decide", "output"]),
   data: NodeData,
   position: z.object({ x: z.number(), y: z.number() }).default({ x: 0, y: 0 }),
 })
+
+const VisualWorkflowNode = z.object({
+  id: z.string(),
+  type: z.literal("workflow"),
+  data: z.record(z.string(), z.unknown()).default({}),
+  position: z.object({ x: z.number(), y: z.number() }).default({ x: 0, y: 0 }),
+})
+
+export const WorkflowNode = z.union([LegacyWorkflowNode, VisualWorkflowNode])
 export type WorkflowNode = z.infer<typeof WorkflowNode>
 
 export const WorkflowEdge = z.object({

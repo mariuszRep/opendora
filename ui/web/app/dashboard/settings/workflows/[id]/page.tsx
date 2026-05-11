@@ -1,18 +1,15 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import {
   PlayIcon,
-  SaveIcon,
-  CheckIcon,
   Loader2Icon,
   Trash2Icon,
 } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { WorkflowCanvas } from "@/components/workflow/canvas"
+import { WorkflowEditor } from "@/components/workflow/workflow-editor"
 import { RunDialog } from "@/components/workflow/run-dialog"
 import {
   AlertDialog,
@@ -36,51 +33,19 @@ export default function WorkflowEditorPage() {
 
   const [workflow, setWorkflow] = useState<Workflow | null>(null)
   const [loading, setLoading] = useState(true)
-  const [jsonText, setJsonText] = useState("")
-  const [jsonError, setJsonError] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [runOpen, setRunOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState("canvas")
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   useEffect(() => {
     opendora.workflow
       .get(id)
-      .then((w) => {
-        setWorkflow(w)
-        setJsonText(JSON.stringify(w, null, 2))
-      })
+      .then((w) => setWorkflow(w))
       .catch(() => router.replace("/dashboard/settings/workflows"))
       .finally(() => setLoading(false))
   }, [id])
 
-  function handleJsonChange(text: string) {
-    setJsonText(text)
-    try {
-      const parsed = JSON.parse(text)
-      setWorkflow(parsed as Workflow)
-      setJsonError(null)
-    } catch {
-      setJsonError("Invalid JSON")
-    }
-  }
-
-  async function handleSave() {
-    if (!workflow || jsonError) return
-    setSaving(true)
-    try {
-      const updated = await opendora.workflow.update(id, workflow)
-      setWorkflow(updated)
-      setJsonText(JSON.stringify(updated, null, 2))
-      setJsonError(null)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
-    } catch (e: any) {
-      setJsonError(e?.message ?? "Failed to save")
-    } finally {
-      setSaving(false)
-    }
+  async function handleSave(updated: Workflow) {
+    const saved = await opendora.workflow.update(id, updated)
+    setWorkflow(saved)
   }
 
   async function handleDelete() {
@@ -114,6 +79,7 @@ export default function WorkflowEditorPage() {
 
   return (
     <SettingsPageLayout
+      flush
       breadcrumbs={[
         { label: "Dashboard", href: "/dashboard" },
         { label: "Settings", href: "/dashboard/settings" },
@@ -137,28 +103,15 @@ export default function WorkflowEditorPage() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
                   Delete
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSave}
-            disabled={saving || !!jsonError}
-          >
-            {saving ? (
-              <Loader2Icon className="size-4 animate-spin" />
-            ) : saved ? (
-              <CheckIcon className="size-4 text-green-500" />
-            ) : (
-              <SaveIcon className="size-4" />
-            )}
-            Save
-          </Button>
 
           <Button size="sm" onClick={() => setRunOpen(true)}>
             <PlayIcon className="size-4" />
@@ -167,33 +120,10 @@ export default function WorkflowEditorPage() {
         </div>
       }
     >
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-fit">
-          <TabsTrigger value="canvas">Canvas</TabsTrigger>
-          <TabsTrigger value="json">JSON</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="canvas" className="mt-4 rounded-xl border overflow-hidden">
-          <WorkflowCanvas workflow={workflow} height={560} />
-        </TabsContent>
-
-        <TabsContent value="json" className="flex-1 mt-4">
-          <div className="relative font-mono text-sm rounded-xl border overflow-hidden" style={{ minHeight: 500 }}>
-            <div className="flex items-center justify-between border-b bg-muted/50 px-4 py-2">
-              <span className="text-xs text-muted-foreground">{workflow.id}.json</span>
-              {jsonError && <span className="text-xs text-destructive">{jsonError}</span>}
-            </div>
-            <textarea
-              ref={textareaRef}
-              className="w-full resize-none bg-background p-4 outline-none font-mono text-sm leading-relaxed"
-              style={{ minHeight: 460 }}
-              value={jsonText}
-              onChange={(e) => handleJsonChange(e.target.value)}
-              spellCheck={false}
-            />
-          </div>
-        </TabsContent>
-      </Tabs>
+      <WorkflowEditor
+        workflow={workflow}
+        onSave={handleSave}
+      />
 
       <RunDialog
         workflow={workflow}

@@ -233,7 +233,7 @@ export type Skill = {
   tools?: string[]
 }
 
-export type WorkflowNodeType = "input" | "skill_load" | "tool_call" | "agent" | "decide" | "output"
+export type WorkflowNodeType = "input" | "skill_load" | "tool_call" | "agent" | "decide" | "output" | "workflow"
 
 export type WorkflowNodeData =
   | { type: "input"; fields: Array<{ name: string; type: string; required?: boolean; description?: string }> }
@@ -242,6 +242,7 @@ export type WorkflowNodeData =
   | { type: "agent"; prompt: string; output?: string }
   | { type: "decide"; prompt: string; branches: string[] }
   | { type: "output"; message?: string }
+  | Record<string, unknown>
 
 export type WorkflowNode = {
   id: string

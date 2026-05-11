@@ -30,6 +30,11 @@ export interface SettingsPageLayoutProps {
    * form-heavy settings pages (providers, tools, voice). Default: false (full width).
    */
   narrow?: boolean
+  /**
+   * When true, removes padding and scroll from the body so children fill the
+   * remaining height flush to the header. Use for canvas/editor pages.
+   */
+  flush?: boolean
   children: React.ReactNode
 }
 
@@ -43,6 +48,7 @@ export function SettingsPageLayout({
   title,
   headerAction,
   narrow = false,
+  flush = false,
   children,
 }: SettingsPageLayoutProps) {
   const trail: SettingsBreadcrumb[] = breadcrumbs ?? [
@@ -81,11 +87,15 @@ export function SettingsPageLayout({
       </div>
 
       {/* Unified body */}
-      <div className="flex-1 overflow-y-auto">
-        <div className={narrow ? "mx-auto max-w-2xl px-6 py-8" : "p-6"}>
-          {children}
+      {flush ? (
+        <div className="flex-1 overflow-hidden">{children}</div>
+      ) : (
+        <div className="flex-1 overflow-y-auto">
+          <div className={narrow ? "mx-auto max-w-2xl px-6 py-8" : "p-6"}>
+            {children}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

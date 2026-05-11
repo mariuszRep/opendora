@@ -1,0 +1,139 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - link "Suno Logo" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img "Suno Logo" [ref=e7]
+      - button "Collapse sidebar" [ref=e13] [cursor=pointer]:
+        - img [ref=e15]
+      - button "Profile menu button" [ref=e21] [cursor=pointer]:
+        - generic [ref=e23]:
+          - img "mariusz85" [ref=e27]
+          - generic [ref=e28]:
+            - paragraph [ref=e29]: mariusz85
+            - paragraph [ref=e30]: 1190 credits
+          - img [ref=e31]
+      - link "Upgrade to Premier" [ref=e35] [cursor=pointer]:
+        - /url: /account?source=sideNav
+        - generic [ref=e36]: Upgrade to Premier
+      - generic [ref=e37]:
+        - link "Home" [ref=e38] [cursor=pointer]:
+          - /url: /discover
+          - generic [ref=e39]:
+            - img [ref=e40]
+            - generic [ref=e43]: Home
+        - link "Explore" [ref=e44] [cursor=pointer]:
+          - /url: /explore
+          - generic [ref=e45]:
+            - img [ref=e46]
+            - generic [ref=e49]: Explore
+        - link "Create" [ref=e50] [cursor=pointer]:
+          - /url: /create
+          - generic [ref=e51]:
+            - img [ref=e52]
+            - generic [ref=e56]: Create
+        - link "Studio" [ref=e57] [cursor=pointer]:
+          - /url: /studio
+          - generic [ref=e58]:
+            - img [ref=e59]
+            - generic [ref=e62]: Studio
+        - link "Library" [ref=e63] [cursor=pointer]:
+          - /url: /me
+          - generic [ref=e64]:
+            - img [ref=e65]
+            - generic [ref=e69]: Library
+        - generic [ref=e70]:
+          - link "Hooks" [ref=e71] [cursor=pointer]:
+            - /url: /hooks
+            - generic [ref=e72]:
+              - img [ref=e73]
+              - generic [ref=e78]: Hooks
+          - link "Create" [ref=e79] [cursor=pointer]:
+            - /url: /hooks/create
+            - generic [ref=e80]:
+              - img [ref=e81]
+              - text: Create
+        - link "Notifications" [ref=e84] [cursor=pointer]:
+          - /url: /notifications
+          - generic [ref=e85]:
+            - img [ref=e86]
+            - generic [ref=e89]: Notifications
+      - generic [ref=e91]:
+        - link "Labs" [ref=e92] [cursor=pointer]:
+          - /url: /labs
+          - generic [ref=e93]:
+            - img [ref=e94]
+            - generic [ref=e96]: Labs
+        - button "Terms & Policies" [ref=e97] [cursor=pointer]:
+          - generic [ref=e98]:
+            - img [ref=e99]
+            - generic [ref=e102]: Terms & Policies
+        - button "More" [ref=e103] [cursor=pointer]:
+          - generic [ref=e104]:
+            - img [ref=e105]
+            - generic [ref=e108]: More
+    - generic [ref=e109]:
+      - generic [ref=e113]:
+        - search [ref=e117]:
+          - button "Submit search" [ref=e118]:
+            - img [ref=e119]
+          - searchbox "Search" [ref=e122]
+        - generic [ref=e123]:
+          - generic [ref=e124]:
+            - generic [ref=e126]: Let the music out
+            - generic [ref=e128]:
+              - textbox "Create" [ref=e131]:
+                - /placeholder: Describe the song you want to make
+              - generic [ref=e132]:
+                - button [ref=e135] [cursor=pointer]:
+                  - img [ref=e137]
+                - generic [ref=e140]:
+                  - button [ref=e141] [cursor=pointer]:
+                    - img [ref=e143]
+                  - button "Create" [disabled] [ref=e146]:
+                    - generic [ref=e147]:
+                      - img [ref=e148]
+                      - text: Create
+          - status "Loading home page feed content" [ref=e152]
+      - generic [ref=e171]:
+        - generic [ref=e174]:
+          - generic [ref=e175]:
+            - 'button "Playbar: Toggle shuffle button" [ref=e176] [cursor=pointer]':
+              - img [ref=e178]
+            - 'button "Playbar: Previous Song button" [disabled] [ref=e181]':
+              - img [ref=e183]
+            - 'button "Playbar: Play button" [disabled] [ref=e186]':
+              - img [ref=e188]
+            - 'button "Playbar: Next Song button" [disabled] [ref=e191]':
+              - img [ref=e193]
+            - 'button "Playbar: Toggle repeat button" [ref=e196] [cursor=pointer]':
+              - img [ref=e198]
+          - generic [ref=e202]:
+            - generic [ref=e203]: 0:00
+            - slider "Playback progress" [disabled] [ref=e208]: "0"
+            - generic [ref=e209]: "--:--"
+        - 'generic "Playbar: Volume Slider" [ref=e212] [cursor=pointer]':
+          - img [ref=e214]
+  - alert [ref=e219]
+  - generic:
+    - region "Notifications-top"
+    - region "Notifications-top-left"
+    - region "Notifications-top-right"
+    - region "Notifications-bottom-left"
+    - region "Notifications-bottom"
+    - region "Notifications-bottom-right"
+  - generic:
+    - region "Notifications-top"
+    - region "Notifications-top-left"
+    - region "Notifications-top-right"
+    - region "Notifications-bottom-left"
+    - region "Notifications-bottom"
+    - region "Notifications-bottom-right"
+  - dialog "Privacy" [ref=e221]:
+    - generic [ref=e223]:
+      - generic [ref=e226]: By clicking “Accept All Cookies”, you agree to the storing of cookies on your device to enhance site navigation, analyze site usage, and assist in our marketing efforts.
+      - generic [ref=e228]:
+        - button "Your Privacy Choices, Opens the preference center dialog" [ref=e229] [cursor=pointer]: Your Privacy Choices
+        - button "Reject All" [ref=e230] [cursor=pointer]
+        - button "Accept All Cookies" [ref=e231] [cursor=pointer]
+    - button "Close" [ref=e233] [cursor=pointer]

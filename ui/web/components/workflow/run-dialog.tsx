@@ -38,7 +38,11 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
   const [error, setError] = useState<string | null>(null)
 
   const inputNode = workflow.nodes.find((n) => n.type === "input")
-  const inputFields = inputNode?.data.type === "input" ? inputNode.data.fields : []
+  type InputField = { name: string; type: string; required?: boolean; description?: string }
+  const inputFields: InputField[] =
+    inputNode && 'type' in inputNode.data && inputNode.data.type === "input"
+      ? (inputNode.data as { type: "input"; fields: InputField[] }).fields
+      : []
   const requiredFields = inputFields.filter((f) => f.required !== false).map((f) => f.name)
 
   useEffect(() => {
