@@ -42,7 +42,8 @@
     "review-gate",
     "delivery-report",
     "project-setup",
-    "impeccable"
+    "impeccable",
+    "frontend-design-impeccable"
   ],
   "toolConfig": {
     "reply": {

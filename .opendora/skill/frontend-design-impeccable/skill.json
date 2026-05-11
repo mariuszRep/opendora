@@ -1,0 +1,9 @@
+{
+  "tools": [
+    "skill_list",
+    "skill_load",
+    "delegate",
+    "question",
+    "reply"
+  ]
+}

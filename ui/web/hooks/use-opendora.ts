@@ -322,6 +322,7 @@ export function useOpendora(): UseOpendoraResult {
             setSelectedSessionId(mainSess.id)
             selectedSessionRef.current = mainSess
             rememberSessionForAgent(mainSess)
+            if (initialActive.has(mainSess.id)) setStatus("streaming")
           }
         }
 
@@ -661,7 +662,7 @@ export function useOpendora(): UseOpendoraResult {
     const session = sessionsRef.current.find((s) => s.id === id) ?? null
     selectedSessionRef.current = session
     setSelectedSessionId(id)
-    setStatus("ready")
+    setStatus(activeSessionsRef.current.has(id) ? "streaming" : "ready")
     setError(null)
     if (session?.agentID) setSelectedAgent(session.agentID)
     rememberSessionForAgent(session)

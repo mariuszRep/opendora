@@ -383,7 +383,7 @@ const messageResponseComponents = {
   },
   pre: ({ children }: ComponentProps<"pre">) =>
     isValidElement(children)
-      ? cloneElement(children, { "data-block": "true" })
+      ? cloneElement(children, { "data-block": "true" } as React.Attributes & { "data-block": string })
       : children,
   a: ({
     children,
