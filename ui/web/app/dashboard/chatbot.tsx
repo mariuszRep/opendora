@@ -38,6 +38,7 @@ import {
 import {
   PromptInput,
   PromptInputActionAddAttachments,
+  PromptInputActionAddScreenshot,
   PromptInputActionMenu,
   PromptInputActionMenuContent,
   PromptInputActionMenuTrigger,
@@ -74,7 +75,7 @@ import { SessionTreeToolContent, isSessionTreeTool, getSessionTreeToolTitle } fr
 import { WebFetchToolContent, isWebFetchTool, getWebFetchToolTitle, getWebFetchUrl } from "@/components/ai-elements/webfetch-tool"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BellIcon, CheckIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, Link2Icon, PanelRightIcon, Volume2Icon, VolumeXIcon } from "lucide-react"
+import { BellIcon, CheckIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, FileIcon, Link2Icon, PanelRightIcon, Volume2Icon, VolumeXIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
@@ -104,6 +105,11 @@ function getReasoningPart(parts: Part[]): ReasoningPart | undefined {
 
 function getToolParts(parts: Part[]): ToolPart[] {
   return parts.filter((p): p is ToolPart => p.type === "tool")
+}
+
+type FilePart = { type: "file"; id: string; sessionID: string; messageID: string; url: string; mime?: string; filename?: string }
+function getFileParts(parts: Part[]): FilePart[] {
+  return parts.filter((p): p is FilePart => p.type === "file")
 }
 
 function getMessageText(parts: Part[]): string {
@@ -470,17 +476,20 @@ export const Chatbot = () => {
         handleQuestionAdvance(message.text?.trim() ?? "")
         return
       }
-      if (!message.text?.trim()) return
-      if (message.files?.length) {
-        toast.info(`${message.files.length} file(s) attached`)
-      }
+      if (!message.text?.trim() && !message.files?.length) return
       const model = selectedModel && !selectedGroupId
         ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
         : undefined
       const fallbackGroupID = selectedGroupId ?? undefined
       const content = userName ? `user: ${userName}\n\n${message.text}` : message.text
+      const files = (message.files ?? []).map((f) => ({
+        type: "file" as const,
+        mime: f.mediaType,
+        filename: f.filename,
+        url: f.url,
+      }))
       setText("")
-      const doSend = () => sendMessage(content, { model, fallbackGroupID, agent: selectedAgent })
+      const doSend = () => sendMessage(content, { model, fallbackGroupID, agent: selectedAgent, files: files.length > 0 ? files : undefined })
       if (!selectedSession) {
         createSession().then(doSend)
       } else {
@@ -767,6 +776,32 @@ export const Chatbot = () => {
                           <div className="flex flex-col gap-2">
                             <MessageContent className="!ml-0">
                               {content ? <MessageResponse>{content}</MessageResponse> : null}
+                              {(() => {
+                                const fileParts = getFileParts(parts)
+                                if (!fileParts.length) return null
+                                return (
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    {fileParts.map((fp) => {
+                                      const isImage = fp.mime?.startsWith("image/")
+                                      // Skip inline rendering for very large data URLs (>500KB) to avoid browser hang
+                                      const isSafeToInline = !fp.url?.startsWith("data:") || fp.url.length < 524288
+                                      return isImage && isSafeToInline ? (
+                                        <img
+                                          key={fp.id}
+                                          src={fp.url}
+                                          alt={fp.filename ?? "image"}
+                                          className="max-h-48 max-w-48 rounded border object-contain"
+                                        />
+                                      ) : (
+                                        <div key={fp.id} className="flex items-center gap-1 rounded border bg-muted/50 px-2 py-1 text-xs">
+                                          <FileIcon className="size-3 shrink-0" />
+                                          {fp.filename ?? "image"}
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )
+                              })()}
                             </MessageContent>
                             <MessageActions
                               className="relative mt-1 w-full"
@@ -1362,8 +1397,9 @@ export const Chatbot = () => {
               <PromptInputTools>
                 <PromptInputActionMenu>
                   <PromptInputActionMenuTrigger />
-                  <PromptInputActionMenuContent>
+                  <PromptInputActionMenuContent side="top">
                     <PromptInputActionAddAttachments />
+                    <PromptInputActionAddScreenshot />
                   </PromptInputActionMenuContent>
                 </PromptInputActionMenu>
                 <SpeechInput

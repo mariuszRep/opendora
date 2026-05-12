@@ -58,6 +58,7 @@ import { cn } from "@/lib/utils";
 import {
   CornerDownLeftIcon,
   ImageIcon,
+  MonitorIcon,
   PlusIcon,
   SquareIcon,
   XIcon,
@@ -355,6 +356,52 @@ export const PromptInputActionAddAttachments = ({
   return (
     <DropdownMenuItem {...props} onSelect={handleSelect}>
       <ImageIcon className="mr-2 size-4" /> {label}
+    </DropdownMenuItem>
+  );
+};
+
+export type PromptInputActionAddScreenshotProps = ComponentProps<
+  typeof DropdownMenuItem
+> & {
+  label?: string;
+};
+
+export const PromptInputActionAddScreenshot = ({
+  label = "Take screenshot",
+  ...props
+}: PromptInputActionAddScreenshotProps) => {
+  const attachments = usePromptInputAttachments();
+
+  const handleSelect = useCallback(
+    async (e: Event) => {
+      e.preventDefault();
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const track = stream.getVideoTracks()[0];
+        const imageCapture = new (window as any).ImageCapture(track);
+        const bitmap = await imageCapture.grabFrame();
+        track.stop();
+
+        const canvas = document.createElement("canvas");
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        canvas.getContext("2d")!.drawImage(bitmap, 0, 0);
+
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const file = new File([blob], `screenshot-${Date.now()}.png`, { type: "image/png" });
+          attachments.add([file]);
+        }, "image/png");
+      } catch {
+        // user cancelled or permission denied — silently ignore
+      }
+    },
+    [attachments]
+  );
+
+  return (
+    <DropdownMenuItem {...props} onSelect={handleSelect}>
+      <MonitorIcon className="mr-2 size-4" /> {label}
     </DropdownMenuItem>
   );
 };

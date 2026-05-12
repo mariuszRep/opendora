@@ -236,6 +236,7 @@ export namespace ProviderTransform {
         const filename = part.type === "file" ? part.filename : undefined
         const modality = mimeToModality(mime)
         if (!modality) return part
+        if (!model.capabilities?.input) return part
         if (model.capabilities.input[modality]) return part
 
         const name = filename ? `"${filename}"` : modality

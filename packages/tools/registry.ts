@@ -154,6 +154,8 @@ export namespace ToolRegistry {
       ToolGetTool,
       ToolUpdateTool,
       WorkflowRunTool,
+      MemoryWriteTool,
+      MemoryReadTool,
       ...(cfg.flags.enableLspTool ? [LspTool] : []),
       ...(cfg.flags.enableBatchTool ? [BatchTool] : []),
       PlaywrightModeTool,

@@ -66,7 +66,7 @@ export type UseOpendoraResult = {
   allPermissionRequests: Record<string, PermissionRequest[]>
   replyPermission: (requestID: string, reply: PermissionReply) => Promise<void>
   status: ChatStatus
-  sendMessage: (text: string, options?: { model?: { providerID: string; modelID: string }; fallbackGroupID?: string; agent?: string }) => Promise<void>
+  sendMessage: (text: string, options?: { model?: { providerID: string; modelID: string }; fallbackGroupID?: string; agent?: string; files?: Array<{ type: "file"; mime: string; filename?: string; url: string }> }) => Promise<void>
   abort: () => void
   abortSession: (sessionID: string) => void
   // Agents — read
@@ -698,15 +698,19 @@ export function useOpendora(): UseOpendoraResult {
   }, [selectedAgent, router])
 
   const sendMessage = useCallback(
-    async (text: string, options?: { model?: { providerID: string; modelID: string }; fallbackGroupID?: string; agent?: string }) => {
+    async (text: string, options?: { model?: { providerID: string; modelID: string }; fallbackGroupID?: string; agent?: string; files?: Array<{ type: "file"; mime: string; filename?: string; url: string }> }) => {
       const session = selectedSessionRef.current
       if (!session) return
       if (statusRef.current !== "ready") return
       setStatus("submitted")
       setError(null)
       try {
+        const parts: Array<{ type: "text"; text: string } | { type: "file"; mime: string; filename?: string; url: string }> = [
+          { type: "text", text },
+          ...(options?.files ?? []),
+        ]
         await opendora.session.promptAsync(session.id, {
-          parts: [{ type: "text", text }],
+          parts,
           ...(options?.model ? { model: options.model } : {}),
           ...(options?.fallbackGroupID ? { fallbackGroupID: options.fallbackGroupID } : {}),
           agent: options?.agent ?? selectedAgent,
