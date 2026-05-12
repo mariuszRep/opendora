@@ -1,14 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { CheckCircle2Icon, CircleIcon, Loader2Icon, MonitorIcon, MousePointerIcon, Trash2Icon, WrenchIcon } from "lucide-react"
+import { CheckCircle2Icon, CircleIcon, ChevronDownIcon, ChevronRightIcon, Loader2Icon, MonitorIcon, MousePointerIcon, SearchIcon, Trash2Icon, WrenchIcon } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { opendora } from "@/lib/opendora"
+import { opendora, type ToolSchema } from "@/lib/opendora"
 
 type GlobalConfig = {
   tool_config?: {
@@ -120,6 +121,101 @@ const PYAUTOGUI_TOOL_GROUPS = [
   },
 ]
 
+function ToolRegistryCard({ schemas, loading }: { schemas: ToolSchema[]; loading: boolean }) {
+  const [search, setSearch] = useState("")
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+  const filtered = schemas.filter((s) => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return s.id.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
+  })
+
+  const toggle = (id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <SearchIcon className="size-5 text-muted-foreground" />
+          <CardTitle className="text-lg">Tool Registry</CardTitle>
+        </div>
+        <CardDescription>
+          All available tools — internal and MCP — with their full JSON input schemas.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="relative">
+          <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+          <Input
+            placeholder="Search tools…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">No tools found.</p>
+        ) : (
+          <div className="space-y-1">
+            {filtered.map((tool) => {
+              const isOpen = expanded.has(tool.id)
+              const json = JSON.stringify(
+                { name: tool.id, description: tool.description, inputSchema: tool.inputSchema },
+                null,
+                2
+              )
+              return (
+                <div key={tool.id} className="rounded-md border bg-muted/20 overflow-hidden">
+                  <button
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted/40 transition-colors"
+                    onClick={() => toggle(tool.id)}
+                  >
+                    {isOpen ? (
+                      <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
+                    ) : (
+                      <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
+                    )}
+                    <span className="font-mono text-sm font-medium flex-1 min-w-0 truncate">{tool.id}</span>
+                    {tool.source === "mcp" && (
+                      <Badge variant="secondary" className="text-xs shrink-0">MCP</Badge>
+                    )}
+                    {tool.mcpServer && (
+                      <span className="text-xs text-muted-foreground shrink-0">{tool.mcpServer}</span>
+                    )}
+                  </button>
+                  {isOpen && (
+                    <div className="border-t px-3 py-3 space-y-2">
+                      {tool.description && (
+                        <p className="text-sm text-muted-foreground">{tool.description}</p>
+                      )}
+                      <pre className="text-xs bg-background rounded border p-3 overflow-auto font-mono leading-relaxed whitespace-pre-wrap max-h-64">
+                        {json}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function ToolsPage() {
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig | null>(null)
   const [exaApiKey, setExaApiKey] = useState("")
@@ -127,9 +223,15 @@ export default function ToolsPage() {
   const [exaKeyError, setExaKeyError] = useState<string | null>(null)
   const [savingExaToggle, setSavingExaToggle] = useState(false)
   const [savingDesktop, setSavingDesktop] = useState(false)
+  const [toolSchemas, setToolSchemas] = useState<ToolSchema[]>([])
+  const [loadingSchemas, setLoadingSchemas] = useState(true)
 
   useEffect(() => {
     opendora.config.get().then(setGlobalConfig).catch(() => {})
+    opendora.agent.toolSchemas()
+      .then(setToolSchemas)
+      .catch(() => {})
+      .finally(() => setLoadingSchemas(false))
   }, [])
 
   const exa = globalConfig?.tool_config?.exa
@@ -192,6 +294,8 @@ export default function ToolsPage() {
   return (
     <SettingsPageLayout title="Tools" narrow>
       <div className="flex flex-col gap-6">
+        <ToolRegistryCard schemas={toolSchemas} loading={loadingSchemas} />
+
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">

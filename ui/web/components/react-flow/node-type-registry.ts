@@ -1,4 +1,4 @@
-import { Play, Wrench, type LucideIcon } from 'lucide-react'
+import { MessageSquare, Play, Wrench, type LucideIcon } from 'lucide-react'
 import type { NodeType } from './unified-node'
 
 export interface NodeTypeMetadata {
@@ -30,6 +30,16 @@ export const NODE_TYPE_REGISTRY: Record<NodeType, NodeTypeMetadata> = {
     icon: Wrench,
     defaultNodeData: {
       node: { label: 'Tool', description: '' },
+      data: { inputs: [], outputs: [] },
+    },
+  },
+  prompt: {
+    type: 'prompt',
+    label: 'Prompt',
+    description: 'Send a message to the agent and capture the response',
+    icon: MessageSquare,
+    defaultNodeData: {
+      node: { label: 'Prompt', description: '' },
       data: { inputs: [], outputs: [] },
     },
   },

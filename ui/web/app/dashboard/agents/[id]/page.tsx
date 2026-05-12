@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { CheckIcon, Loader2Icon, MessageSquareIcon, SparklesIcon, StarIcon, Trash2Icon } from "lucide-react"
+import { CheckIcon, ExternalLinkIcon, Loader2Icon, MessageSquareIcon, SparklesIcon, StarIcon, Trash2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -641,9 +641,20 @@ export default function AgentSettingsPage() {
         {/* ── Tools tab ── */}
         <TabsContent value="tools" className="flex-1 overflow-y-auto">
           <div className="mx-auto flex max-w-2xl flex-col gap-4 px-6 py-8">
-            <p className="text-xs text-muted-foreground">
-              Leave all unchecked to allow all tools. Select specific tools to restrict this agent.
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                Leave all unchecked to allow all tools. Select specific tools to restrict this agent.
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs gap-1.5 text-muted-foreground shrink-0"
+                onClick={() => router.push("/dashboard/settings/tools")}
+              >
+                <ExternalLinkIcon className="size-3.5" />
+                Tool Registry
+              </Button>
+            </div>
 
             {(["filesystem", "shell", "browse-and-web", "sessions", "agents", "skills", "schedule", "desktop", "pyautogui", "others"] as const).map((group) => {
               const groupTools = (() => {

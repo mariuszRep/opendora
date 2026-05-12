@@ -31,7 +31,9 @@ import { ProviderRoutes } from "./routes/provider"
 import { startBrowserControlServiceFromConfig, stopBrowserControlService } from "@opendora/tools/browser"
 import { AgentRoutes } from "./routes/agent"
 import { ScheduleRoutes } from "./routes/schedule"
-import { WorkflowRoutes } from "@opendora/tools/workflows/routes"
+import { WorkflowRoutes } from "@opendora/workflow/routes"
+import { registerSkillFunctions } from "@opendora/workflow/runner"
+import { addSkillTools } from "../session-skill-tools"
 import { CronScheduler, type ScheduleDispatchFn } from "@opendora/schedule/cron-scheduler"
 import { Schedule } from "../schedule"
 import { Database } from "../storage/db"
@@ -684,6 +686,7 @@ export namespace Server {
     cors?: string[]
   }) {
     configureSessionCore()
+    registerSkillFunctions(Skill.get, addSkillTools)
     // Clear out any tool parts left in pending/running state by a previous
     // process that was killed mid-stream — otherwise the UI shows them stuck
     // at "Pending" forever with no way to approve, dismiss, or retry.

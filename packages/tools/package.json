@@ -32,9 +32,7 @@
     "./tool": "./tool.ts",
     "./registry": "./registry.ts",
     "./truncation": "./truncation.ts",
-    "./workflows": "./workflows/index.ts",
-    "./workflows/routes": "./workflows/routes.ts",
-    "./workflows/schema": "./workflows/schema.ts"
+    "./workflows": "./workflows/index.ts"
   },
   "devDependencies": {
     "@tsconfig/bun": "catalog:",
@@ -49,6 +47,7 @@
     "@opendora/core": "workspace:*",
     "@opendora/session": "workspace:*",
     "@opendora/util": "workspace:*",
+    "@opendora/workflow": "workspace:*",
     "@zip.js/zip.js": "2.7.62",
     "diff": "catalog:",
     "fuzzysort": "3.1.0",

@@ -45,3 +45,13 @@ See `VISION.md` for the target architecture. During migration, the actual struct
 - `MIGRATION.md` is agent-owned. Update it as steps complete, start, or get blocked.
 - If you add or tighten workflow constraints for agents, update the relevant `AGENTS.md`.
 - Code is the source of truth for current state — do not maintain parallel state documents.
+
+## Folder documentation
+
+Each meaningful folder or subtree should contain local context files that describe or reference its own structure:
+
+- **`AGENTS.md`** — operating rules for agents working in that folder or subtree.
+- **`VISION.md`** — desired target state for that folder or subtree; human-owned where intent changes.
+- **`MIGRATION.md`** — required once a migration, refactor, replacement, retirement, or structural change is decided. Include the planning and discussion phase before any code changes begin.
+
+Nested documentation inherits parent context by default. Treat nested files as stricter or more specific than their parents.

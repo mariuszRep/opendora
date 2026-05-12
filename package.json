@@ -29,7 +29,8 @@
       "packages/util",
       "ui/*",
       "packages/session",
-      "packages/schedule"
+      "packages/schedule",
+      "packages/workflow"
     ],
     "catalog": {
       "@types/bun": "1.3.9",

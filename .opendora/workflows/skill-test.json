@@ -1,0 +1,57 @@
+{
+  "id": "skill-test",
+  "name": "Load Skill",
+  "description": "this workflow loads the skill",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "jRgh4KGsbN21x3AnoL2Co",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Tool",
+          "description": "",
+          "action_id": "skill_load",
+          "parameters": {
+            "name": "requirements"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
+      },
+      "position": {
+        "x": 125.16298302977535,
+        "y": -575.4661065415847
+      }
+    },
+    {
+      "id": "1r644iQkreZcbsEc42Qbc",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "node": {
+          "label": "Prompt",
+          "description": ""
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
+      },
+      "position": {
+        "x": 120.91643151610344,
+        "y": -450.360210545491
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "xy-edge__jRgh4KGsbN21x3AnoL2Co-1r644iQkreZcbsEc42Qbc",
+      "source": "jRgh4KGsbN21x3AnoL2Co",
+      "target": "1r644iQkreZcbsEc42Qbc"
+    }
+  ]
+}

@@ -1,11 +1,11 @@
 import z from "zod"
-import fs from "fs"
-import path from "path"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import { Session } from "@opendora/session/session"
-import { Workflow } from "./schema.ts"
-import { runWorkflow } from "./runner.ts"
+import { Workflow } from "@opendora/workflow/schema"
+import { runWorkflow } from "@opendora/workflow/runner"
+import fs from "fs"
+import path from "path"
 import toolDef from "./workflow-run.json"
 
 export const WorkflowRunTool = Tool.define("workflow_run", async () => {
@@ -29,7 +29,6 @@ export const WorkflowRunTool = Tool.define("workflow_run", async () => {
       const h = host(ctx)
       const directory = h.directory
 
-      // Load and validate workflow definition
       const workflowsDir = path.join(directory, ".opendora", "workflows")
       const workflowPath = path.join(workflowsDir, `${params.workflowId}.json`)
 
@@ -48,7 +47,6 @@ export const WorkflowRunTool = Tool.define("workflow_run", async () => {
       const workflow = Workflow.parse(raw)
       const input = params.input as Record<string, unknown>
 
-      // Create isolated session for the workflow
       const agentId = params.agentId ?? ctx.agentID ?? "engineer"
       const session = await Session.createNext({
         directory,
@@ -58,13 +56,7 @@ export const WorkflowRunTool = Tool.define("workflow_run", async () => {
         ownerKind: "service",
       })
 
-      // Run workflow asynchronously — caller gets session ID immediately
-      runWorkflow({
-        workflow,
-        sessionId: session.id,
-        input,
-        directory,
-      }).catch((err) => {
+      runWorkflow({ workflow, sessionId: session.id, input, directory }).catch((err) => {
         console.error(`[workflow_run] error in workflow "${params.workflowId}":`, err)
       })
 

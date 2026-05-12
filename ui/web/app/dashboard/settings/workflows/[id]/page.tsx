@@ -6,6 +6,8 @@ import {
   PlayIcon,
   Loader2Icon,
   Trash2Icon,
+  WorkflowIcon,
+  CodeIcon,
 } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { Button } from "@/components/ui/button"
@@ -34,6 +36,9 @@ export default function WorkflowEditorPage() {
   const [workflow, setWorkflow] = useState<Workflow | null>(null)
   const [loading, setLoading] = useState(true)
   const [runOpen, setRunOpen] = useState(false)
+  const [view, setView] = useState<"flow" | "json">("flow")
+  const [jsonText, setJsonText] = useState("")
+  const [jsonError, setJsonError] = useState<string | null>(null)
 
   useEffect(() => {
     opendora.workflow
@@ -43,9 +48,27 @@ export default function WorkflowEditorPage() {
       .finally(() => setLoading(false))
   }, [id])
 
+  useEffect(() => {
+    if (workflow && view === "json") {
+      setJsonText(JSON.stringify(workflow, null, 2))
+      setJsonError(null)
+    }
+  }, [view, workflow])
+
   async function handleSave(updated: Workflow) {
     const saved = await opendora.workflow.update(id, updated)
     setWorkflow(saved)
+  }
+
+  async function handleJsonSave() {
+    try {
+      const parsed = JSON.parse(jsonText)
+      const saved = await opendora.workflow.update(id, parsed)
+      setWorkflow(saved)
+      setJsonError(null)
+    } catch (e: any) {
+      setJsonError(e?.message ?? "Invalid JSON")
+    }
   }
 
   async function handleDelete() {
@@ -88,6 +111,27 @@ export default function WorkflowEditorPage() {
       ]}
       headerAction={
         <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-md border bg-muted/40 p-0.5">
+            <Button
+              variant={view === "flow" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 gap-1.5 px-2.5 text-xs"
+              onClick={() => setView("flow")}
+            >
+              <WorkflowIcon className="size-3.5" />
+              Flow
+            </Button>
+            <Button
+              variant={view === "json" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 gap-1.5 px-2.5 text-xs"
+              onClick={() => setView("json")}
+            >
+              <CodeIcon className="size-3.5" />
+              JSON
+            </Button>
+          </div>
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
@@ -120,10 +164,25 @@ export default function WorkflowEditorPage() {
         </div>
       }
     >
-      <WorkflowEditor
-        workflow={workflow}
-        onSave={handleSave}
-      />
+      {view === "flow" ? (
+        <WorkflowEditor
+          workflow={workflow}
+          onSave={handleSave}
+        />
+      ) : (
+        <div className="flex flex-col gap-2 p-4 h-full">
+          <textarea
+            className="flex-1 min-h-[60vh] w-full rounded-md border bg-muted/30 p-3 font-mono text-xs text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+            value={jsonText}
+            onChange={(e) => { setJsonText(e.target.value); setJsonError(null) }}
+            spellCheck={false}
+          />
+          {jsonError && <p className="text-sm text-destructive">{jsonError}</p>}
+          <div className="flex justify-end">
+            <Button size="sm" onClick={handleJsonSave}>Save JSON</Button>
+          </div>
+        </div>
+      )}
 
       <RunDialog
         workflow={workflow}

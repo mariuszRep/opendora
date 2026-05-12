@@ -56,19 +56,23 @@ export function WorkflowNode({ data, selected }: NodeProps) {
               <Badge variant="secondary" className="mt-1.5 text-xs font-mono">
                 {nodeData.node.action_id}
               </Badge>
+            ) : nodeType === 'tool' ? (
+              <div className="text-xs text-muted-foreground mt-0.5">No tool selected</div>
             ) : nodeType === 'start' ? (
               <div className="text-xs text-muted-foreground mt-0.5">Entry point</div>
-            ) : (
-              <div className="text-xs text-muted-foreground mt-0.5">No tool selected</div>
-            )}
-            {nodeData.node.description && nodeType !== 'tool' && (
-              <WorkflowNodeDescription className="text-xs mt-1">
-                {nodeData.node.description}
-              </WorkflowNodeDescription>
-            )}
+            ) : nodeType === 'prompt' ? (
+              nodeData.instructions ? (
+                <div className="text-xs text-muted-foreground mt-1 line-clamp-3 whitespace-pre-wrap break-words">
+                  {nodeData.instructions as string}
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground mt-0.5">No prompt set</div>
+              )
+            ) : null}
           </div>
         </div>
       </WorkflowNodeHeader>
+
     </WorkflowNodeBase>
   )
 }

@@ -3,7 +3,7 @@
   "description": "Owns product and software work: feature intake, requirements readiness, approval, and delivery routing for new projects, app changes, integrations, and OpenDora functionality. Use when the request is to add, change, or plan product behavior, including integrations such as MCPs.",
   "mode": "primary",
   "model": {
-    "modelID": "gpt-5.4",
+    "modelID": "gpt-5.5",
     "providerID": "openai-codex"
   },
   "temperature": 0.4,

@@ -1,0 +1,32 @@
+{
+  "name": "memory_write",
+  "description": "Save or update a memory entry in MEMORY.md.\n\nMemories persist across sessions and are injected into the system prompt at session start. Use this to preserve facts, decisions, preferences, or references that would otherwise be lost when the conversation ends.\n\nSCOPE\n\n- global: written to .opendora/agents/MEMORY.md — visible to all agents in this project.\n- local: written to .opendora/agents/<this-agent>/MEMORY.md — private to this agent only.\n\nUse global for user preferences, project decisions, and cross-agent facts. Use local for agent-specific behavior, persona adjustments, or private working notes.\n\nTYPES\n\n- user: facts about the user — role, goals, expertise, communication style.\n- feedback: guidance on how to work — what to avoid or keep doing. Lead with the rule, then **Why:** and **How to apply:** lines.\n- project: ongoing work context — decisions, blockers, deadlines. Lead with the fact, then **Why:** and **How to apply:** lines.\n- reference: pointers to external resources — where to find things, URLs, system names.\n\nFORMAT\n\nThe entry is stored as:\n\n---\nname: <name>\ndescription: <description>\ntype: <type>\n---\n<content>\n\nIf an entry with the same name already exists, it is replaced. Otherwise it is appended.\n\nWHEN TO SAVE\n\n- User corrects your approach (save as feedback)\n- User confirms a non-obvious approach worked (save as feedback)\n- You learn something about the user's role or preferences (save as user)\n- A project decision is made that future sessions need to know (save as project)\n- You discover where important resources live (save as reference)\n\nDO NOT save:\n- Code patterns or architecture derivable from reading files\n- Ephemeral task details only relevant to this session\n- Anything already documented in AGENTS.md or VISION.md",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Unique snake_case key for this entry (e.g. user_prefers_terse_replies). Used to find and replace existing entries."
+      },
+      "description": {
+        "type": "string",
+        "description": "One-line description — used to decide relevance when scanning MEMORY.md. Be specific: 'User prefers terse replies — no trailing summaries' beats 'user preference'."
+      },
+      "type": {
+        "type": "string",
+        "enum": ["user", "feedback", "project", "reference"],
+        "description": "user = facts about the user; feedback = working guidance; project = ongoing context; reference = external resource pointers"
+      },
+      "content": {
+        "type": "string",
+        "description": "Full memory body. For feedback and project types: lead with the rule or fact, then a **Why:** line (the reason) and a **How to apply:** line (when this kicks in)."
+      },
+      "scope": {
+        "type": "string",
+        "enum": ["global", "local"],
+        "description": "global = .opendora/agents/MEMORY.md (all agents); local = .opendora/agents/<this-agent>/MEMORY.md (this agent only)"
+      }
+    },
+    "required": ["name", "description", "type", "content", "scope"]
+  }
+}

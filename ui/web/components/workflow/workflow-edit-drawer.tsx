@@ -22,7 +22,7 @@ import {
   ComboboxList,
 } from '@/components/ui/combobox'
 import { cn } from '@/lib/utils'
-import { Trash2, Save, X, GitBranch, Workflow as WorkflowIcon, Map as MapIcon } from 'lucide-react'
+import { Trash2, Save, X, GitBranch, Workflow as WorkflowIcon, Map as MapIcon, PlusIcon } from 'lucide-react'
 import { WorkflowControls, WorkflowControlButton } from '@/components/react-flow'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Node, Edge } from '@xyflow/react'
@@ -31,8 +31,45 @@ import { getNodeTypeMetadata } from '@/components/react-flow/node-type-registry'
 import { resolveNodeType } from '@/components/react-flow/node-utils'
 import { useToolSchemas } from '@/hooks/use-tool-schemas'
 import { ToolParameterForm } from './tool-parameter-form'
+import type { ToolSchemaProperty } from '@/lib/opendora'
 
 type EditType = 'workflow' | 'node' | 'edge'
+
+type BuiltinSchema = { description: string; properties: Record<string, ToolSchemaProperty>; required: string[] }
+
+const BUILTIN_SCHEMAS: Record<string, BuiltinSchema> = {
+  skill_load: {
+    description: 'Load a skill into the workflow context so agent nodes can use it.',
+    properties: {
+      name: { type: 'string', description: 'Name of the skill to load (must exist in .opendora/skill/)' },
+      storeAs: { type: 'string', description: 'Context key to store the skill under (default: skill_<name>)' },
+    },
+    required: ['name'],
+  },
+  agent: {
+    description: 'Send a prompt to the agent and store the response.',
+    properties: {
+      prompt: { type: 'string', description: 'Prompt to send. Use $input.fieldName or $ctx.key for substitution.' },
+      output: { type: 'string', description: 'Context key to store the agent response under' },
+    },
+    required: ['prompt'],
+  },
+  decide: {
+    description: 'Ask the agent to choose a branch and route execution accordingly.',
+    properties: {
+      prompt: { type: 'string', description: 'Decision prompt. Use $ctx.key for context. Agent must reply with one branch name.' },
+      branches: { type: 'string', description: 'Comma-separated branch names (e.g. "yes, no" or "summarize, deeper")' },
+    },
+    required: ['prompt', 'branches'],
+  },
+  output: {
+    description: 'Final output node — displays a message and ends execution.',
+    properties: {
+      message: { type: 'string', description: 'Message to display. Use $ctx.key for substitution.' },
+    },
+    required: [],
+  },
+}
 
 export type DrawerFormData = {
   name?: string
@@ -40,6 +77,8 @@ export type DrawerFormData = {
   label?: string
   action_id?: string
   parameters?: Record<string, unknown>
+  inputs?: import('@/components/react-flow/unified-node').ParameterSchema[]
+  instructions?: string
   nodeType?: NodeType
   type?: string
 }
@@ -106,6 +145,8 @@ export function WorkflowEditDrawer({
         label: editingNodeData.node.label,
         action_id: editingNodeData.node.action_id,
         parameters: editingNodeData.node.parameters,
+        inputs: editingNodeData.data.inputs,
+        instructions: editingNodeData.instructions as string | undefined,
         nodeType: editingNodeData.nodeType,
       })
     } else {
@@ -114,25 +155,30 @@ export function WorkflowEditDrawer({
   }
 
   const getAvailableTabs = () => {
-    if (editType === 'node' && editingNodeData?.nodeType !== 'start') {
-      return [
-        { value: 'general', label: 'General' },
-        { value: 'inputs', label: 'Inputs' },
-        { value: 'settings', label: 'Settings' },
-      ]
-    }
-    switch (editType) {
-      case 'workflow':
-        return [{ value: 'general', label: 'General' }]
-      case 'node':
+    if (editType === 'node') {
+      if (editingNodeData?.nodeType === 'start') {
+        return [
+          { value: 'general', label: 'General' },
+          { value: 'inputs', label: 'Inputs' },
+        ]
+      }
+      if (editingNodeData?.nodeType === 'prompt') {
         return [
           { value: 'general', label: 'General' },
           { value: 'settings', label: 'Settings' },
         ]
-      case 'edge':
-        return [{ value: 'general', label: 'General' }]
-      default:
-        return [{ value: 'general', label: 'General' }]
+      }
+      return [
+        { value: 'general', label: 'General' },
+        { value: 'inputs', label: 'Inputs' },
+        { value: 'settings', label: 'Settings' },
+        { value: 'schema', label: 'Schema' },
+      ]
+    }
+    switch (editType) {
+      case 'workflow': return [{ value: 'general', label: 'General' }]
+      case 'edge': return [{ value: 'general', label: 'General' }]
+      default: return [{ value: 'general', label: 'General' }]
     }
   }
 
@@ -193,7 +239,50 @@ export function WorkflowEditDrawer({
         }
 
         const isStartNode = editingNodeData.nodeType === 'start'
+        const isPromptNode = editingNodeData.nodeType === 'prompt'
         const selectedSchema = schemas.find((s) => s.id === editingNodeData.node.action_id)
+
+        if (isPromptNode && activeTab === 'general') {
+          return (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="prompt-label">Label</Label>
+                <Input
+                  id="prompt-label"
+                  value={editingNodeData.node.label || ''}
+                  onChange={(e) => handleNodeChange({ label: e.target.value })}
+                  placeholder="Step label"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="prompt-text">Prompt</Label>
+                <Textarea
+                  id="prompt-text"
+                  value={(editingNodeData.instructions as string) || ''}
+                  onChange={(e) =>
+                    setEditingNodeData({ ...editingNodeData, instructions: e.target.value })
+                  }
+                  placeholder="Message to send to the agent. Use $input.field or $ctx.key for substitution."
+                  rows={6}
+                  className="font-mono text-xs"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="prompt-output">Store response as</Label>
+                <Input
+                  id="prompt-output"
+                  value={String(editingNodeData.node.parameters?.output ?? '')}
+                  onChange={(e) =>
+                    handleNodeChange({ parameters: { ...editingNodeData.node.parameters, output: e.target.value || undefined } })
+                  }
+                  placeholder="ctx key (e.g. result)"
+                  className="font-mono text-xs"
+                />
+                <p className="text-xs text-muted-foreground">Response stored in <code className="font-mono">$ctx.&lt;key&gt;</code> for use in later steps.</p>
+              </div>
+            </div>
+          )
+        }
 
         if (activeTab === 'general') {
           return (
@@ -209,6 +298,7 @@ export function WorkflowEditDrawer({
                         label: editingNodeData.node.label || toolId || '',
                         parameters: {},
                       })
+                      if (toolId) setActiveTab('inputs')
                     }}
                     items={schemas.map((s) => s.id)}
                   >
@@ -242,8 +332,8 @@ export function WorkflowEditDrawer({
                       </ComboboxList>
                     </ComboboxContent>
                   </Combobox>
-                  {selectedSchema?.description && (
-                    <p className="text-xs text-muted-foreground">{selectedSchema.description}</p>
+                  {(selectedSchema?.description ?? BUILTIN_SCHEMAS[editingNodeData.node.action_id ?? '']?.description) && (
+                    <p className="text-xs text-muted-foreground">{selectedSchema?.description ?? BUILTIN_SCHEMAS[editingNodeData.node.action_id ?? '']?.description}</p>
                   )}
                 </div>
               )}
@@ -273,21 +363,129 @@ export function WorkflowEditDrawer({
 
               {isStartNode && (
                 <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                  This is the workflow entry point. Input fields can be configured in the Settings tab.
+                  This is the workflow entry point. Define the fields users fill in when running this workflow in the <strong>Inputs</strong> tab.
                 </div>
               )}
             </div>
           )
         }
 
-        if (activeTab === 'inputs' && !isStartNode) {
-          const properties = selectedSchema?.inputSchema?.properties ?? {}
-          const required = selectedSchema?.inputSchema?.required ?? []
+        if (activeTab === 'inputs') {
+          if (isStartNode) {
+            const fields = editingNodeData.data.inputs
+            const setFields = (updated: typeof fields) => {
+              setEditingNodeData({ ...editingNodeData, data: { ...editingNodeData.data, inputs: updated } })
+            }
+            return (
+              <div className="space-y-3">
+                {fields.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-4">
+                    No input fields yet. Add one below.
+                  </p>
+                )}
+                {fields.map((field, i) => (
+                  <div key={i} className="rounded-md border p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 space-y-1">
+                        <Label className="text-xs">Name</Label>
+                        <Input
+                          className="h-7 text-xs font-mono"
+                          value={field.name}
+                          onChange={(e) => {
+                            const next = [...fields]
+                            next[i] = { ...next[i], name: e.target.value }
+                            setFields(next)
+                          }}
+                          placeholder="field_name"
+                        />
+                      </div>
+                      <div className="w-28 space-y-1">
+                        <Label className="text-xs">Type</Label>
+                        <Select
+                          value={field.type}
+                          onValueChange={(v) => {
+                            const next = [...fields]
+                            next[i] = { ...next[i], type: v as typeof field.type }
+                            setFields(next)
+                          }}
+                        >
+                          <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {(['string','number','boolean','object','array'] as const).map((t) => (
+                              <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Req.</Label>
+                        <div className="h-7 flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={field.required !== false}
+                            onChange={(e) => {
+                              const next = [...fields]
+                              next[i] = { ...next[i], required: e.target.checked }
+                              setFields(next)
+                            }}
+                            className="rounded"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs opacity-0 select-none">Del</Label>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => setFields(fields.filter((_, j) => j !== i))}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Description</Label>
+                      <Input
+                        className="h-7 text-xs"
+                        value={field.description ?? ''}
+                        onChange={(e) => {
+                          const next = [...fields]
+                          next[i] = { ...next[i], description: e.target.value || undefined }
+                          setFields(next)
+                        }}
+                        placeholder="Optional hint shown to the user"
+                      />
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1.5"
+                  onClick={() => setFields([...fields, { name: '', type: 'string', required: true }])}
+                >
+                  <PlusIcon className="h-3.5 w-3.5" />
+                  Add field
+                </Button>
+              </div>
+            )
+          }
+
+          const actionId = editingNodeData.node.action_id ?? ''
+          const builtin = BUILTIN_SCHEMAS[actionId]
+          const properties = selectedSchema?.inputSchema?.properties ?? builtin?.properties ?? {}
+          const required = selectedSchema?.inputSchema?.required ?? builtin?.required ?? []
+          const description = selectedSchema?.description ?? builtin?.description
           const parameters = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+          const hasSchema = !!(selectedSchema || builtin)
 
           return (
             <div className="space-y-4">
-              {!selectedSchema ? (
+              {description && (
+                <p className="text-xs text-muted-foreground">{description}</p>
+              )}
+              {!hasSchema ? (
                 <p className="text-xs text-muted-foreground py-4 text-center">
                   Select a tool in the General tab to configure its inputs.
                 </p>
@@ -302,6 +500,49 @@ export function WorkflowEditDrawer({
                   }}
                 />
               )}
+            </div>
+          )
+        }
+
+        if (activeTab === 'schema') {
+          const actionId = editingNodeData.node.action_id ?? ''
+          const builtin = BUILTIN_SCHEMAS[actionId]
+          const schemaObj = selectedSchema ?? (builtin ? {
+            id: actionId,
+            description: builtin.description,
+            source: 'internal' as const,
+            inputSchema: { type: 'object', properties: builtin.properties, required: builtin.required },
+          } : null)
+
+          if (!schemaObj) {
+            return (
+              <p className="text-xs text-muted-foreground py-4 text-center">
+                Select a tool in the General tab to view its JSON schema.
+              </p>
+            )
+          }
+
+          const json = JSON.stringify(
+            {
+              name: schemaObj.id,
+              description: schemaObj.description,
+              inputSchema: schemaObj.inputSchema,
+            },
+            null,
+            2
+          )
+
+          return (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono text-muted-foreground">{schemaObj.id}</span>
+                {schemaObj.source === 'mcp' && (
+                  <Badge variant="secondary" className="text-xs">MCP</Badge>
+                )}
+              </div>
+              <pre className="text-xs bg-muted/50 rounded-md p-3 overflow-auto font-mono leading-relaxed whitespace-pre-wrap border max-h-[50vh]">
+                {json}
+              </pre>
             </div>
           )
         }

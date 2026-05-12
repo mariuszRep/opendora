@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "version": "1.0.0",
+  "name": "@opendora/workflow",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "exports": {
+    "./schema": "./src/schema.ts",
+    "./runner": "./src/runner.ts",
+    "./routes": "./src/routes.ts"
+  },
+  "dependencies": {
+    "@opendora/agent": "workspace:*",
+    "@opendora/session": "workspace:*",
+    "@opendora/util": "workspace:*",
+    "hono": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@tsconfig/bun": "catalog:",
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

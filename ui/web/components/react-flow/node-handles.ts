@@ -47,6 +47,7 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
         connections: {
           canConnectTo: [
             { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
           ],
         },
       },
@@ -69,6 +70,7 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
           canReceiveFrom: [
             { nodeType: 'start', handleId: null, maxConnections: 1 },
             { nodeType: 'tool', handleId: null, maxConnections: 1 },
+            { nodeType: 'prompt', handleId: null, maxConnections: 1 },
           ],
         },
       },
@@ -79,6 +81,7 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
         connections: {
           canConnectTo: [
             { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
           ],
         },
       },
@@ -89,6 +92,40 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
       hiddenFields: [],
       requiredFields: ['label'],
       exposedFields: ['action_id', 'parameters'],
+    },
+  },
+  prompt: {
+    handles: [
+      {
+        id: null,
+        position: 'top',
+        type: 'target',
+        connections: {
+          canReceiveFrom: [
+            { nodeType: 'start', handleId: null, maxConnections: 1 },
+            { nodeType: 'tool', handleId: null, maxConnections: 1 },
+            { nodeType: 'prompt', handleId: null, maxConnections: 1 },
+          ],
+        },
+      },
+      {
+        id: null,
+        position: 'bottom',
+        type: 'source',
+        connections: {
+          canConnectTo: [
+            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
+          ],
+        },
+      },
+    ],
+    constraints: {
+      allowedInboundEdges: 1,
+      allowedOutboundEdges: 'unlimited',
+      hiddenFields: [],
+      requiredFields: ['label'],
+      exposedFields: ['instructions', 'parameters'],
     },
   },
 }

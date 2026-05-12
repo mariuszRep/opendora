@@ -1,4 +1,4 @@
-export type NodeType = 'start' | 'tool'
+export type NodeType = 'start' | 'tool' | 'prompt'
 
 export type ExecutionMode = 'automatic' | 'manual'
 
