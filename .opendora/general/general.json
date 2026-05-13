@@ -1,5 +1,6 @@
 {
   "theme": "system",
+  "timezone": "Europe/London",
   "voice": {
     "stt": {
       "provider": "browser-native",

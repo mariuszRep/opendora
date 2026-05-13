@@ -1,116 +1,116 @@
-INFO  2026-05-12T15:33:12 +694ms service=default version=local args=["serve","--port","4097"] opencode
-INFO  2026-05-12T15:33:12 +2ms service=config path=/home/mariu/projects/opendora/.opendora/config.json loading
-INFO  2026-05-12T15:33:12 +2ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.json loading
-INFO  2026-05-12T15:33:12 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.jsonc loading
-INFO  2026-05-12T15:33:12 +9ms service=db path=/home/mariu/projects/opendora/.opendora/storage/opendora.db opening database
-INFO  2026-05-12T15:33:12 +30ms service=db count=17 mode=dev applying migrations
-INFO  2026-05-12T15:33:12 +148ms service=server Browser control server started
-INFO  2026-05-12T15:36:38 +205948ms service=server method=GET path=/session/list request
-INFO  2026-05-12T15:36:38 +1ms service=server status=started method=GET path=/session/list request
-INFO  2026-05-12T15:36:38 +1ms service=default directory=/home/mariu/projects/opendora creating instance
-INFO  2026-05-12T15:36:38 +2ms service=project directory=/home/mariu/projects/opendora fromDirectory
-INFO  2026-05-12T15:36:38 +42ms service=default directory=/home/mariu/projects/opendora bootstrapping
-DEBUG 2026-05-12T15:36:38 +20ms service=config path=/home/mariu/projects/opendora/.opendora loading config from OPENCODE_CONFIG_DIR
-DEBUG 2026-05-12T15:36:38 +0ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.jsonc
-INFO  2026-05-12T15:36:38 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.jsonc loading
-DEBUG 2026-05-12T15:36:38 +7ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.json
-INFO  2026-05-12T15:36:38 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.json loading
-INFO  2026-05-12T15:36:39 +81ms service=plugin name=CodexAuthPlugin loading internal plugin
-INFO  2026-05-12T15:36:39 +0ms service=plugin name=CopilotAuthPlugin loading internal plugin
-INFO  2026-05-12T15:36:39 +1ms service=plugin name=gitlabAuthPlugin loading internal plugin
-INFO  2026-05-12T15:36:39 +1ms service=plugin name=googleOAuthPlugin loading internal plugin
-INFO  2026-05-12T15:36:39 +0ms service=plugin path=opencode-anthropic-auth@0.0.13 loading plugin
-INFO  2026-05-12T15:36:39 +25ms service=bus type=* subscribing
-INFO  2026-05-12T15:36:39 +1ms service=bus type=session.updated subscribing
-INFO  2026-05-12T15:36:39 +0ms service=bus type=message.updated subscribing
-INFO  2026-05-12T15:36:39 +0ms service=bus type=message.part.updated subscribing
-INFO  2026-05-12T15:36:39 +0ms service=bus type=session.diff subscribing
-INFO  2026-05-12T15:36:39 +0ms service=format init
-INFO  2026-05-12T15:36:39 +0ms service=bus type=file.edited subscribing
-INFO  2026-05-12T15:36:39 +0ms service=lsp serverIds=deno, typescript, vue, eslint, oxlint, biome, gopls, ruby-lsp, pyright, elixir-ls, zls, csharp, fsharp, sourcekit-lsp, rust, clangd, svelte, astro, jdtls, kotlin-ls, yaml-ls, lua-ls, php intelephense, prisma, dart, ocaml-lsp, bash, terraform, texlab, dockerfile, gleam, clojure-lsp, nixd, tinymist, haskell-language-server, julials enabled LSP servers
-INFO  2026-05-12T15:36:39 +1ms service=file.watcher init
-INFO  2026-05-12T15:36:39 +115ms service=scheduler id=snapshot.cleanup run
-INFO  2026-05-12T15:36:39 +0ms service=scheduler id=tool.truncation.cleanup run
-INFO  2026-05-12T15:36:39 +2ms service=bus type=command.executed subscribing
-INFO  2026-05-12T15:36:39 +3ms service=file.watcher platform=linux backend=inotify watcher backend
-ERROR 2026-05-12T15:36:39 +1ms service=file.watcher error=OPENCODE_LIBC is not defined failed to load watcher binding
-INFO  2026-05-12T15:36:39 +5ms service=server status=completed duration=308 method=GET path=/session/list request
-INFO  2026-05-12T15:36:39 +5ms service=vcs branch=intake-gate-rollout initialized
-INFO  2026-05-12T15:36:39 +0ms service=bus type=file.watcher.updated subscribing
-WARN  2026-05-12T15:36:40 +821ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
-INFO  2026-05-12T15:36:45 +5477ms service=server method=GET path=/session request
-INFO  2026-05-12T15:36:45 +0ms service=server status=started method=GET path=/session request
-INFO  2026-05-12T15:36:45 +7ms service=server status=completed duration=7 method=GET path=/session request
-INFO  2026-05-12T15:36:45 +137ms service=snapshot prune=7.days cleanup
-INFO  2026-05-12T15:37:00 +14741ms service=server method=GET path=/agent request
-INFO  2026-05-12T15:37:00 +0ms service=server status=started method=GET path=/agent request
-INFO  2026-05-12T15:37:00 +249ms service=server status=completed duration=249 method=GET path=/agent request
-INFO  2026-05-12T15:48:09 +669015ms service=server method=GET path=/agent request
-INFO  2026-05-12T15:48:09 +0ms service=server status=started method=GET path=/agent request
-INFO  2026-05-12T15:48:09 +33ms service=server status=completed duration=33 method=GET path=/agent request
-INFO  2026-05-12T15:48:55 +45654ms service=server method=GET path=/agent request
-INFO  2026-05-12T15:48:55 +0ms service=server status=started method=GET path=/agent request
-INFO  2026-05-12T15:48:55 +49ms service=server status=completed duration=49 method=GET path=/agent request
-INFO  2026-05-12T15:48:57 +2286ms service=server method=GET path=/session request
-INFO  2026-05-12T15:48:57 +0ms service=server status=started method=GET path=/session request
-INFO  2026-05-12T15:48:57 +5ms service=server status=completed duration=5 method=GET path=/session request
-INFO  2026-05-12T15:51:07 +130081ms service=server method=GET path=/provider request
-INFO  2026-05-12T15:51:07 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-05-12T15:51:07 +26ms service=provider status=started state
-INFO  2026-05-12T15:51:07 +22ms service=provider init
-INFO  2026-05-12T15:51:08 +1196ms service=provider providerID=openai found
-INFO  2026-05-12T15:51:08 +1ms service=provider providerID=kilo found
-INFO  2026-05-12T15:51:08 +0ms service=provider providerID=openrouter found
-INFO  2026-05-12T15:51:08 +0ms service=provider providerID=openai-codex found
-INFO  2026-05-12T15:51:08 +0ms service=provider providerID=google-gemini-cli found
-INFO  2026-05-12T15:51:08 +1ms service=provider providerID=opencode found
-INFO  2026-05-12T15:51:08 +0ms service=provider providerID=ollama found
-INFO  2026-05-12T15:51:08 +0ms service=provider status=completed duration=1220 state
-INFO  2026-05-12T15:51:09 +276ms service=provider.routes count=5 codex models fetched
-INFO  2026-05-12T15:51:09 +0ms service=provider.routes codex models updated in provider list response
-INFO  2026-05-12T15:51:09 +60ms service=server status=completed duration=1581 method=GET path=/provider request
-INFO  2026-05-12T15:51:09 +23ms service=server method=GET path=/question request
-INFO  2026-05-12T15:51:09 +0ms service=server status=started method=GET path=/question request
-INFO  2026-05-12T15:51:09 +1ms service=server status=completed duration=1 method=GET path=/question request
-INFO  2026-05-12T15:51:09 +18ms service=server method=GET path=/config request
-INFO  2026-05-12T15:51:09 +0ms service=server status=started method=GET path=/config request
-INFO  2026-05-12T15:51:09 +2ms service=server status=completed duration=2 method=GET path=/config request
-INFO  2026-05-12T15:51:09 +12ms service=server method=GET path=/schedule request
-INFO  2026-05-12T15:51:09 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-12T15:51:09 +1ms service=server status=completed duration=1 method=GET path=/schedule request
-INFO  2026-05-12T15:52:07 +58235ms service=server method=GET path=/question request
-INFO  2026-05-12T15:52:07 +0ms service=server status=started method=GET path=/question request
-INFO  2026-05-12T15:52:07 +1ms service=server status=completed duration=1 method=GET path=/question request
-INFO  2026-05-12T15:52:07 +10ms service=server method=GET path=/config request
-INFO  2026-05-12T15:52:07 +0ms service=server status=started method=GET path=/config request
-INFO  2026-05-12T15:52:07 +2ms service=server status=completed duration=2 method=GET path=/config request
-INFO  2026-05-12T15:52:07 +16ms service=server method=GET path=/schedule request
-INFO  2026-05-12T15:52:07 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-12T15:52:07 +2ms service=server status=completed duration=1 method=GET path=/schedule request
-INFO  2026-05-12T15:53:22 +74759ms service=server method=GET path=/schedule request
-INFO  2026-05-12T15:53:22 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-12T15:53:22 +2ms service=server status=completed duration=2 method=GET path=/schedule request
-INFO  2026-05-12T15:58:59 +337491ms service=server method=GET path=/schedule request
-INFO  2026-05-12T15:58:59 +1ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-12T15:58:59 +1ms service=server status=completed duration=1 method=GET path=/schedule request
-INFO  2026-05-12T15:59:20 +20871ms service=server method=GET path=/config request
-INFO  2026-05-12T15:59:20 +0ms service=server status=started method=GET path=/config request
-INFO  2026-05-12T15:59:20 +2ms service=server status=completed duration=2 method=GET path=/config request
-INFO  2026-05-12T16:01:28 +127357ms service=server method=GET path=/config request
-INFO  2026-05-12T16:01:28 +0ms service=server status=started method=GET path=/config request
-INFO  2026-05-12T16:01:28 +2ms service=server status=completed duration=2 method=GET path=/config request
-INFO  2026-05-12T16:01:39 +11498ms service=server method=GET path=/config request
-INFO  2026-05-12T16:01:39 +0ms service=server status=started method=GET path=/config request
-INFO  2026-05-12T16:01:39 +2ms service=server status=completed duration=2 method=GET path=/config request
-INFO  2026-05-12T16:07:47 +367431ms service=server method=GET path=/session/ses_1e388cfb5ffeXbUAa54VM2BGVR/message request
-INFO  2026-05-12T16:07:47 +1ms service=server status=started method=GET path=/session/ses_1e388cfb5ffeXbUAa54VM2BGVR/message request
-INFO  2026-05-12T16:07:47 +40ms service=server status=completed duration=39 method=GET path=/session/ses_1e388cfb5ffeXbUAa54VM2BGVR/message request
-INFO  2026-05-12T16:07:56 +9220ms service=server method=GET path=/session/ses_1e388cfb5ffeXbUAa54VM2BGVR/message request
-INFO  2026-05-12T16:07:56 +0ms service=server status=started method=GET path=/session/ses_1e388cfb5ffeXbUAa54VM2BGVR/message request
-INFO  2026-05-12T16:07:56 +21ms service=server status=completed duration=21 method=GET path=/session/ses_1e388cfb5ffeXbUAa54VM2BGVR/message request
-INFO  2026-05-12T16:08:29 +32678ms service=server method=GET path=/session/ses_1e388cfb5ffeXbUAa54VM2BGVR/message request
-INFO  2026-05-12T16:08:29 +0ms service=server status=started method=GET path=/session/ses_1e388cfb5ffeXbUAa54VM2BGVR/message request
-INFO  2026-05-12T16:08:29 +31ms service=server status=completed duration=31 method=GET path=/session/ses_1e388cfb5ffeXbUAa54VM2BGVR/message request
-INFO  2026-05-12T16:10:07 +98021ms service=server method=GET path=/question request
-INFO  2026-05-12T16:10:07 +0ms service=server status=started method=GET path=/question request
-INFO  2026-05-12T16:10:07 +1ms service=server status=completed duration=1 method=GET path=/question request
+INFO  2026-05-13T08:35:42 +1082ms service=default version=local args=["serve","--port","4097","--hostname","0.0.0.0"] opencode
+INFO  2026-05-13T08:35:42 +3ms service=config path=/home/mariu/projects/opendora/.opendora/config.json loading
+INFO  2026-05-13T08:35:42 +8ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.json loading
+INFO  2026-05-13T08:35:42 +1ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.jsonc loading
+INFO  2026-05-13T08:35:42 +24ms service=db path=/home/mariu/projects/opendora/.opendora/storage/opendora.db opening database
+INFO  2026-05-13T08:35:42 +23ms service=db count=17 mode=dev applying migrations
+INFO  2026-05-13T08:35:42 +308ms service=server Browser control server started
+INFO  2026-05-13T08:35:48 +5733ms service=server method=GET path=/user request
+INFO  2026-05-13T08:35:48 +1ms service=server status=started method=GET path=/user request
+INFO  2026-05-13T08:35:48 +3ms service=default directory=/home/mariu/projects/opendora creating instance
+INFO  2026-05-13T08:35:48 +1ms service=project directory=/home/mariu/projects/opendora fromDirectory
+INFO  2026-05-13T08:35:48 +34ms service=server method=GET path=/agent request
+INFO  2026-05-13T08:35:48 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-05-13T08:35:48 +1ms service=server method=GET path=/provider request
+INFO  2026-05-13T08:35:48 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-13T08:35:48 +1ms service=server method=GET path=/general request
+INFO  2026-05-13T08:35:48 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-13T08:35:48 +0ms service=server method=GET path=/session request
+INFO  2026-05-13T08:35:48 +0ms service=server status=started method=GET path=/session request
+INFO  2026-05-13T08:35:48 +0ms service=server method=GET path=/question request
+INFO  2026-05-13T08:35:48 +0ms service=server status=started method=GET path=/question request
+INFO  2026-05-13T08:35:48 +20ms service=default directory=/home/mariu/projects/opendora bootstrapping
+DEBUG 2026-05-13T08:35:48 +15ms service=config path=/home/mariu/projects/opendora/.opendora loading config from OPENCODE_CONFIG_DIR
+DEBUG 2026-05-13T08:35:48 +2ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.jsonc
+INFO  2026-05-13T08:35:48 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.jsonc loading
+DEBUG 2026-05-13T08:35:48 +12ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.json
+INFO  2026-05-13T08:35:48 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.json loading
+INFO  2026-05-13T08:35:48 +145ms service=plugin name=CodexAuthPlugin loading internal plugin
+INFO  2026-05-13T08:35:48 +1ms service=plugin name=CopilotAuthPlugin loading internal plugin
+INFO  2026-05-13T08:35:48 +1ms service=plugin name=gitlabAuthPlugin loading internal plugin
+INFO  2026-05-13T08:35:48 +0ms service=plugin name=googleOAuthPlugin loading internal plugin
+INFO  2026-05-13T08:35:48 +0ms service=plugin path=opencode-anthropic-auth@0.0.13 loading plugin
+INFO  2026-05-13T08:35:48 +81ms service=bus type=* subscribing
+INFO  2026-05-13T08:35:48 +1ms service=bus type=session.updated subscribing
+INFO  2026-05-13T08:35:48 +1ms service=bus type=message.updated subscribing
+INFO  2026-05-13T08:35:48 +1ms service=bus type=message.part.updated subscribing
+INFO  2026-05-13T08:35:48 +1ms service=bus type=session.diff subscribing
+INFO  2026-05-13T08:35:48 +0ms service=format init
+INFO  2026-05-13T08:35:48 +0ms service=bus type=file.edited subscribing
+INFO  2026-05-13T08:35:48 +2ms service=lsp serverIds=deno, typescript, vue, eslint, oxlint, biome, gopls, ruby-lsp, pyright, elixir-ls, zls, csharp, fsharp, sourcekit-lsp, rust, clangd, svelte, astro, jdtls, kotlin-ls, yaml-ls, lua-ls, php intelephense, prisma, dart, ocaml-lsp, bash, terraform, texlab, dockerfile, gleam, clojure-lsp, nixd, tinymist, haskell-language-server, julials enabled LSP servers
+INFO  2026-05-13T08:35:48 +4ms service=file.watcher init
+INFO  2026-05-13T08:35:48 +144ms service=scheduler id=snapshot.cleanup run
+INFO  2026-05-13T08:35:48 +0ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-05-13T08:35:48 +1ms service=bus type=command.executed subscribing
+INFO  2026-05-13T08:35:48 +2ms service=file.watcher platform=linux backend=inotify watcher backend
+ERROR 2026-05-13T08:35:48 +0ms service=file.watcher error=OPENCODE_LIBC is not defined failed to load watcher binding
+INFO  2026-05-13T08:35:48 +13ms service=server status=completed duration=447 method=GET path=/question request
+INFO  2026-05-13T08:35:48 +2ms service=server status=completed duration=449 method=GET path=/session request
+INFO  2026-05-13T08:35:48 +4ms service=server status=completed duration=493 method=GET path=/user request
+INFO  2026-05-13T08:35:48 +2ms service=server status=completed duration=455 method=GET path=/general request
+INFO  2026-05-13T08:35:48 +29ms service=provider status=started state
+INFO  2026-05-13T08:35:48 +48ms service=provider init
+INFO  2026-05-13T08:35:48 +26ms service=vcs branch=main initialized
+INFO  2026-05-13T08:35:48 +0ms service=bus type=file.watcher.updated subscribing
+INFO  2026-05-13T08:35:49 +335ms service=server method=GET path=/config request
+INFO  2026-05-13T08:35:49 +0ms service=server status=started method=GET path=/config request
+INFO  2026-05-13T08:35:49 +2ms service=server status=completed duration=2 method=GET path=/config request
+INFO  2026-05-13T08:35:49 +1ms service=server method=GET path=/session/status request
+INFO  2026-05-13T08:35:49 +0ms service=server status=started method=GET path=/session/status request
+INFO  2026-05-13T08:35:49 +1ms service=server status=completed duration=1 method=GET path=/session/status request
+INFO  2026-05-13T08:35:49 +0ms service=server method=GET path=/schedule request
+INFO  2026-05-13T08:35:49 +1ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-13T08:35:49 +2ms service=server status=completed duration=2 method=GET path=/schedule request
+INFO  2026-05-13T08:35:49 +20ms service=server method=GET path=/event request
+INFO  2026-05-13T08:35:49 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-13T08:35:49 +1ms service=server event connected
+INFO  2026-05-13T08:35:49 +9ms service=bus type=* subscribing
+INFO  2026-05-13T08:35:49 +3ms service=server status=completed duration=13 method=GET path=/event request
+INFO  2026-05-13T08:35:49 +52ms service=provider providerID=openai found
+INFO  2026-05-13T08:35:49 +4ms service=provider providerID=kilo found
+INFO  2026-05-13T08:35:49 +1ms service=provider providerID=openrouter found
+INFO  2026-05-13T08:35:49 +1ms service=provider providerID=openai-codex found
+INFO  2026-05-13T08:35:49 +0ms service=provider providerID=google-gemini-cli found
+INFO  2026-05-13T08:35:49 +0ms service=provider providerID=opencode found
+INFO  2026-05-13T08:35:49 +0ms service=provider providerID=ollama found
+INFO  2026-05-13T08:35:49 +0ms service=provider status=completed duration=507 state
+INFO  2026-05-13T08:35:49 +54ms service=server status=completed duration=1047 method=GET path=/agent request
+INFO  2026-05-13T08:35:49 +253ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-13T08:35:49 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-13T08:35:49 +328ms service=server status=completed duration=1627 method=GET path=/provider request
+INFO  2026-05-13T08:35:49 +10ms service=server method=GET path=/general request
+INFO  2026-05-13T08:35:49 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-13T08:35:49 +2ms service=server status=completed duration=2 method=GET path=/general request
+INFO  2026-05-13T08:35:50 +391ms service=server method=GET path=/general request
+INFO  2026-05-13T08:35:50 +1ms service=server status=started method=GET path=/general request
+INFO  2026-05-13T08:35:50 +2ms service=server status=completed duration=2 method=GET path=/general request
+INFO  2026-05-13T08:35:50 +697ms service=server method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/system-prompt request
+INFO  2026-05-13T08:35:50 +0ms service=server status=started method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/system-prompt request
+INFO  2026-05-13T08:35:50 +20ms service=server method=GET path=/schedule request
+INFO  2026-05-13T08:35:50 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-13T08:35:50 +5ms service=server status=completed duration=5 method=GET path=/schedule request
+INFO  2026-05-13T08:35:50 +38ms service=server method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
+INFO  2026-05-13T08:35:50 +0ms service=server status=started method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
+INFO  2026-05-13T08:35:50 +27ms service=server status=completed duration=26 method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/message request
+WARN  2026-05-13T08:35:51 +102ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
+INFO  2026-05-13T08:35:51 +54ms service=server status=completed duration=246 method=GET path=/session/ses_23af324f7ffeley4e2Zisvf5Vx/system-prompt request
+INFO  2026-05-13T08:35:51 +454ms service=server method=GET path=/agent request
+INFO  2026-05-13T08:35:51 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-05-13T08:35:51 +68ms service=server status=completed duration=68 method=GET path=/agent request
+INFO  2026-05-13T08:35:51 +52ms service=server method=GET path=/agent request
+INFO  2026-05-13T08:35:51 +1ms service=server status=started method=GET path=/agent request
+INFO  2026-05-13T08:35:51 +65ms service=server status=completed duration=65 method=GET path=/agent request
+INFO  2026-05-13T08:35:56 +5065ms service=snapshot prune=7.days cleanup
+INFO  2026-05-13T08:40:00 +243259ms service=bus type=message.updated publishing
+INFO  2026-05-13T08:40:00 +3ms service=bus type=message.part.updated publishing
+INFO  2026-05-13T08:40:00 +4ms service=bus type=session.updated publishing
+INFO  2026-05-13T08:40:00 +6ms service=bus type=session.status publishing
+INFO  2026-05-13T08:40:00 +20ms service=bus type=message.updated publishing
+INFO  2026-05-13T08:40:00 +68ms service=mcp key=playwright type=local found
+INFO  2026-05-13T08:40:00 +21ms service=mcp key=playwright mcp stderr: [x11_nocrash] XSetErrorHandler installed
+
+INFO  2026-05-13T08:40:00 +469ms service=mcp key=playwright toolCount=22 create() successfully created client
+INFO  2026-05-13T08:40:00 +20ms service=provider status=started providerID=openai-codex getSDK
+INFO  2026-05-13T08:40:00 +1ms service=provider providerID=openai-codex pkg=@ai-sdk/openai using bundled provider
+INFO  2026-05-13T08:40:00 +0ms service=provider status=completed duration=1 providerID=openai-codex getSDK
+INFO  2026-05-13T08:40:00 +52ms service=bus type=session.status publishing

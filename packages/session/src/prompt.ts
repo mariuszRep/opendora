@@ -60,14 +60,17 @@ const STRUCTURED_OUTPUT_SYSTEM_PROMPT = `IMPORTANT: The user has requested struc
 
 export namespace SessionPrompt {
   // Module-level state map — equivalent to Instance.state()
+  type Waiter = {
+    resolve(input: MessageV2.WithParts): void
+    reject(reason?: any): void
+  }
+
   const _state: Record<
     string,
     {
       abort: AbortController
-      callbacks: {
-        resolve(input: MessageV2.WithParts): void
-        reject(reason?: any): void
-      }[]
+      callbacks: Waiter[]
+      pendingRestarts: Waiter[]
     }
   > = {}
 
@@ -258,6 +261,7 @@ export namespace SessionPrompt {
     s[sessionID] = {
       abort: controller,
       callbacks: [],
+      pendingRestarts: [],
     }
     return controller.signal
   }
@@ -281,8 +285,14 @@ export namespace SessionPrompt {
     for (const cb of match.callbacks) {
       cb.reject(new Error("Session cancelled"))
     }
+    const restarts = match.pendingRestarts
     delete s[sessionID]
     SessionStatus.set(sessionID, { type: "idle" })
+    if (restarts.length > 0) {
+      loop({ sessionID })
+        .then((msg) => { for (const r of restarts) r.resolve(msg) })
+        .catch((err) => { for (const r of restarts) r.reject(err) })
+    }
     return
   }
 
@@ -297,9 +307,15 @@ export namespace SessionPrompt {
     const abort = resume_existing ? resume(sessionID) : start(sessionID)
     if (!abort) {
       if (!resume_existing) {
-        throw new Error(
-          `Session ${sessionID} is already running. Cannot start a nested loop — use spawn to create a new session.`,
-        )
+        return new Promise<MessageV2.WithParts>((resolve, reject) => {
+          const s = state()[sessionID]
+          if (!s) {
+            // Race: session freed between start() and here — retry immediately
+            loop({ sessionID }).then(resolve).catch(reject)
+            return
+          }
+          s.pendingRestarts.push({ resolve, reject })
+        })
       }
       return new Promise<MessageV2.WithParts>((resolve, reject) => {
         const callbacks = state()[sessionID].callbacks

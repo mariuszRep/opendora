@@ -16,10 +16,13 @@ export class CronScheduler {
   private jobs: Map<string, Cron> = new Map();
   private db: any;
   private dispatch: ScheduleDispatchFn;
+  private getTimezone: () => string;
+  private currentTimezone: string = "";
 
-  constructor(db: any, dispatch: ScheduleDispatchFn) {
+  constructor(db: any, dispatch: ScheduleDispatchFn, getTimezone: () => string) {
     this.db = db;
     this.dispatch = dispatch;
+    this.getTimezone = getTimezone;
   }
 
   start() {
@@ -35,6 +38,15 @@ export class CronScheduler {
   }
 
   private async loadSchedules() {
+    const tz = this.getTimezone();
+    const timezoneChanged = tz !== this.currentTimezone;
+
+    if (timezoneChanged) {
+      for (const job of this.jobs.values()) job.stop();
+      this.jobs.clear();
+      this.currentTimezone = tz;
+    }
+
     const activeSchedules: any[] = await this.db
       .select()
       .from(ScheduleTable)
@@ -43,7 +55,6 @@ export class CronScheduler {
 
     const activeIds = new Set(activeSchedules.map((s) => s.id));
 
-    // Stop jobs for schedules that are no longer active
     for (const [id, job] of this.jobs) {
       if (!activeIds.has(id)) {
         job.stop();
@@ -51,13 +62,12 @@ export class CronScheduler {
       }
     }
 
-    // Start jobs for schedules that don't have one yet
     for (const schedule of activeSchedules) {
       if (this.jobs.has(schedule.id)) continue;
       try {
         const job = new Cron(
           schedule.cron_expression,
-          { timezone: schedule.timezone || "UTC", protect: true },
+          { timezone: tz, protect: true },
           async () => {
             await this.executeJob(schedule);
           },

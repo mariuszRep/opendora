@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { PlusIcon, WorkflowIcon, SearchIcon, Loader2Icon } from "lucide-react"
+import { PlusIcon, SearchIcon, Loader2Icon } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { SettingsCard } from "@/components/settings/settings-card"
 import { Button } from "@/components/ui/button"
@@ -115,13 +115,13 @@ export default function WorkflowsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-            <WorkflowIcon className="size-10 text-muted-foreground/40" />
+            <SearchIcon className="size-10 text-muted-foreground/40" />
             <p className="text-sm text-muted-foreground">
               {search ? "No workflows match your search." : "No workflows yet. Create one to get started."}
             </p>
           </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 items-stretch">
             {filtered.map((w) => {
               const types = Array.from(new Set(w.nodes.map((n) => n.type)))
               return (
@@ -129,21 +129,22 @@ export default function WorkflowsPage() {
                   key={w.id}
                   title={w.name}
                   description={w.description}
-                  icon={WorkflowIcon}
                   onClick={() => router.push(`/dashboard/settings/workflows/${w.id}`)}
                   footer={
-                    <div className="flex flex-wrap items-center gap-1.5 w-full">
-                      <span className="text-xs text-muted-foreground mr-auto">
+                    <div className="flex items-center justify-between gap-2 w-full">
+                      <span className="text-xs text-muted-foreground truncate">
                         {w.nodes.length} nodes · {w.edges.length} edges · v{w.version}
                       </span>
-                      {types.map((t) => (
-                        <span
-                          key={t}
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${NODE_TYPE_COLORS[t] ?? "bg-muted text-muted-foreground"}`}
-                        >
-                          {t}
-                        </span>
-                      ))}
+                      <div className="flex flex-wrap items-center gap-1.5 justify-end">
+                        {types.map((t) => (
+                          <span
+                            key={t}
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${NODE_TYPE_COLORS[t] ?? "bg-muted text-muted-foreground"}`}
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   }
                 />

@@ -26,11 +26,11 @@ export function SettingsCard({
 }: SettingsCardProps) {
   return (
     <Card
-      className={`hover:shadow-md hover:border-primary/50 transition-all cursor-pointer ${className || ""}`}
+      className={`hover:shadow-md hover:border-primary/50 transition-all cursor-pointer h-full flex flex-col ${className || ""}`}
       onDoubleClick={onDoubleClick}
       onClick={onClick}
     >
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 flex-1">
         <div className="flex items-start gap-2">
           {Icon && (
             <div className="shrink-0">
@@ -49,7 +49,7 @@ export function SettingsCard({
       </CardHeader>
       {children}
       {footer && (
-        <CardFooter className="border-t bg-muted/30 pt-3">
+        <CardFooter className="border-t bg-muted/30 pt-3 mt-auto">
           {footer}
         </CardFooter>
       )}

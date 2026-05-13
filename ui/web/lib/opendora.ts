@@ -1,4 +1,10 @@
-const OPENDORA_URL = process.env.NEXT_PUBLIC_OPENDORA_URL ?? "http://localhost:4097"
+// All API traffic goes through the Next.js dev proxy at /api so the browser
+// only ever contacts one port. This fixes WSL2 port-forwarding issues where
+// the Windows browser can reach port 3000 (Next.js) but not port 4097 directly.
+// Set NEXT_PUBLIC_OPENDORA_URL to override (e.g. a remote backend URL).
+const OPENDORA_URL = process.env.NEXT_PUBLIC_OPENDORA_URL
+  ? `${process.env.NEXT_PUBLIC_OPENDORA_URL}`
+  : "/api"
 
 export type SessionType = "role" | "scope" | "worker" | "scratchpad"
 

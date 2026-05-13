@@ -51,7 +51,7 @@ import { GlobalRoutes } from "./routes/global"
 import { VoiceRoutes } from "./routes/voice"
 import { AuthRoutes } from "./routes/auth"
 import { UserRoutes } from "./routes/user"
-import { GeneralRoutes } from "./routes/general"
+import { GeneralRoutes, getGlobalTimezone } from "./routes/general"
 import { MDNS } from "./mdns"
 import { BusBridge } from "@opendora/session/bus-bridge"
 import { retentionDaemon, sessionManager } from "@opendora/session/session"
@@ -132,6 +132,10 @@ export namespace Server {
 
               if (input.startsWith("http://localhost:")) return input
               if (input.startsWith("http://127.0.0.1:")) return input
+              // Allow private/LAN dev origins (covers WSL2 IPs like 10.255.255.254
+              // and standard RFC1918 ranges) so the dev UI works whether loaded
+              // from localhost or the WSL/LAN address.
+              if (/^https?:\/\/(10|172\.(1[6-9]|2\d|3[01])|192\.168)\.[0-9.]+(:\d+)?$/.test(input)) return input
               if (
                 input === "tauri://localhost" ||
                 input === "http://tauri.localhost" ||
@@ -850,19 +854,11 @@ export namespace Server {
         log.warn("schedule has no session or agent, skipping", { id: schedule.id })
         return
       }
-      try {
-        await SessionPrompt.prompt({
-          sessionID,
-          schedule_id: schedule.id,
-          parts: [{ type: "text", text: schedule.prompt }],
-        })
-      } catch (err: any) {
-        if (err?.message?.includes("already running")) {
-          log.warn("schedule skipped: session busy", { id: schedule.id, sessionID })
-          return
-        }
-        throw err
-      }
+      await SessionPrompt.prompt({
+        sessionID,
+        schedule_id: schedule.id,
+        parts: [{ type: "text", text: schedule.prompt }],
+      })
     }
     Schedule.setDispatch(_scheduleDispatch)
 
@@ -904,7 +900,7 @@ export namespace Server {
     }
 
     // Start Cron Scheduler Loop
-    const cronManager = new CronScheduler(Database.Client(), cronDispatch)
+    const cronManager = new CronScheduler(Database.Client(), cronDispatch, getGlobalTimezone)
     cronManager.start()
 
     // Start Browser Control Server

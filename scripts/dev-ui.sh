@@ -19,7 +19,10 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
-bun run serve </dev/null &
+LD_PRELOAD="$PWD/packages/tools/desktop/x11_nocrash.so" \
+OPENCODE_PROJECT_ROOT="$PWD" \
+OPENCODE_CONFIG_DIR="$PWD/.opendora" \
+bun run packages/opencode/src/index.ts serve --port 4097 --hostname 0.0.0.0 </dev/null &
 pids+=($!)
 
 bun run --cwd ui/web dev </dev/null &

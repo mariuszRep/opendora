@@ -1294,7 +1294,7 @@ export const Chatbot = () => {
                                 <Link2Icon className="size-4" />
                               </MessageAction>
                             )}
-                            <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground whitespace-nowrap">
+                            <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground max-w-[80%] truncate">
                               {isSchedulerAssistant
                                 ? `scheduler${userName ? `: ${userName}` : ""}`
                                 : (() => {
