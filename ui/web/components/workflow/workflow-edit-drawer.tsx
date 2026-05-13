@@ -31,7 +31,7 @@ import { getNodeTypeMetadata } from '@/components/react-flow/node-type-registry'
 import { resolveNodeType } from '@/components/react-flow/node-utils'
 import { useToolSchemas } from '@/hooks/use-tool-schemas'
 import { ToolParameterForm } from './tool-parameter-form'
-import type { ToolSchemaProperty } from '@/lib/opendora'
+import { type ToolSchemaProperty } from '@/lib/opendora'
 
 type EditType = 'workflow' | 'node' | 'edge'
 
@@ -120,7 +120,10 @@ export function WorkflowEditDrawer({
     if (open && data) {
       setActiveTab('general')
       if (editType === 'workflow') {
-        setFormData({ name: data.name || '', description: data.description || '' })
+        setFormData({
+          name: data.name || '',
+          description: data.description || '',
+        })
         setEditingNodeData(null)
       } else if (editType === 'node' && data.node) {
         const nodeData = data.node.data as UnifiedNodeData

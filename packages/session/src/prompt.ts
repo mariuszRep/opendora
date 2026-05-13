@@ -104,12 +104,6 @@ export namespace SessionPrompt {
     agent: z.string().optional(),
     noReply: z.boolean().optional(),
     noWait: z.boolean().optional(),
-    tools: z
-      .record(z.string(), z.boolean())
-      .optional()
-      .describe(
-        "@deprecated tools and permissions have been merged, you can set permissions on the session itself now",
-      ),
     format: MessageV2.Format.optional(),
     system: z.string().optional(),
     variant: z.string().optional(),
@@ -167,21 +161,6 @@ export namespace SessionPrompt {
 
     const message = await createUserMessage(input)
     await Session.touch(input.sessionID)
-
-    // backwards compatibility for allowing `tools` to be specified when prompting
-    const cfg = getConfig()
-    const permissions: any[] = []
-    for (const [t, enabled] of Object.entries(input.tools ?? {})) {
-      permissions.push({
-        permission: t,
-        action: enabled ? "allow" : "deny",
-        pattern: "*",
-      })
-    }
-    if (permissions.length > 0) {
-      session.permission = permissions
-      await Session.setPermission({ sessionID: session.id, permission: permissions })
-    }
 
     if (input.noReply === true) {
       return message
@@ -1138,9 +1117,22 @@ export namespace SessionPrompt {
 
   async function createUserMessage(input: PromptInput) {
     const cfg = getConfig()
-    const agentName = input.agent ?? await cfg.agent?.defaultAgent?.()
+    // Resolution order: explicit input.agent -> session.agentID -> defaultAgent
+    let agentName = input.agent
+    let source = "input.agent"
+    if (!agentName) {
+      const session = await Session.get(input.sessionID).catch(() => undefined)
+      agentName = session?.agentID
+      source = "session.agentID"
+    }
+    if (!agentName) {
+      agentName = await cfg.agent?.defaultAgent?.()
+      source = "defaultAgent"
+    }
+    console.log(`[prompt] createUserMessage sessionID=${input.sessionID} resolvedAgent=${agentName} source=${source}`)
     const agent = await (cfg.agent?.getByIdOrName?.(agentName) ?? cfg.agent?.get?.(agentName))
     if (!agent) throw new Error(`Unknown agent: ${input.agent}`)
+    console.log(`[prompt] createUserMessage resolved agent.id=${agent.id} agent.name=${agent.name}`)
 
     const model = input.model ?? agent.model ?? (await lastModel(input.sessionID))
     const full =

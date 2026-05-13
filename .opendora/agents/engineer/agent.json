@@ -47,7 +47,8 @@
     "frontend-design-impeccable",
     "nextjs",
     "shadcn-ui",
-    "vercel"
+    "vercel",
+    "playwright-browser"
   ],
   "toolConfig": {
     "reply": {

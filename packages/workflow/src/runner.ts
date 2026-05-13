@@ -21,17 +21,42 @@ import { Workflow, WorkflowEdge, resolveRefs, resolveTemplate } from "./schema.t
 // ─── Skill functions — wired at startup by the host package ──────────────────
 // Using a registry avoids a circular dependency (workflow ← core ← workflow).
 
-type SkillInfo = { name: string; content: string; location: string; tools?: string[] }
+type SkillInfo = { name: string; description?: string; content: string; location: string; tools?: string[] }
 
 let _skillGet: ((name: string) => Promise<SkillInfo | null | undefined>) | null = null
 let _addSkillTools: ((sessionId: string, tools: string[]) => void) | null = null
+let _skillList: (() => Promise<SkillInfo[]>) | null = null
 
 export function registerSkillFunctions(
   skillGet: (name: string) => Promise<SkillInfo | null | undefined>,
   addSkillTools: (sessionId: string, tools: string[]) => void,
+  skillList?: () => Promise<SkillInfo[]>,
 ) {
   _skillGet = skillGet
   _addSkillTools = addSkillTools
+  if (skillList) _skillList = skillList
+}
+
+// ─── Tool execution — wired at startup by the host package ───────────────────
+// Injection keeps workflow package free of tool-registry imports (no circular dep).
+
+export type WorkflowToolContext = {
+  sessionID: string
+  agent?: string
+  model?: { providerID: string; modelID: string }
+  abort?: AbortSignal
+}
+
+type ToolExecutor = (
+  toolId: string,
+  args: Record<string, unknown>,
+  ctx: WorkflowToolContext,
+) => Promise<string>
+
+let _toolExecutor: ToolExecutor | null = null
+
+export function registerToolExecutor(executor: ToolExecutor) {
+  _toolExecutor = executor
 }
 
 type Ctx = Record<string, unknown>
@@ -97,45 +122,9 @@ async function injectMessage(sessionId: string, parts: InjectedPart[], directory
 // ─── Session prompt helper ────────────────────────────────────────────────────
 
 async function agentPrompt(sessionId: string, text: string): Promise<string> {
-  // Find the model used in the session's most recent user message
-  const allMessages = await Session.messages({ sessionID: sessionId })
-  const lastUserMsg = allMessages.find((m) => m.info.role === "user")
-  const model = (lastUserMsg?.info as any)?.model
-
-  if (model) {
-    // Inject a user message attributed to the Workflow actor, then trigger the LLM loop
-    const msgId = Identifier.ascending("message")
-    const partId = Identifier.ascending("part")
-    const now = Date.now()
-
-    await Session.updateMessage({
-      id: msgId,
-      sessionID: sessionId,
-      role: "user",
-      from: { kind: "service", id: "workflow" },
-      time: { created: now },
-      agent: (lastUserMsg!.info as any).agent ?? "",
-      model,
-    } as MessageV2.Info)
-
-    await Session.updatePart({
-      id: partId,
-      sessionID: sessionId,
-      messageID: msgId,
-      type: "text",
-      text,
-    })
-
-    const result = await SessionPrompt.loop({ sessionID: sessionId })
-    const parts = (result as any).parts ?? []
-    return parts
-      .filter((p: any) => p.type === "text" && !p.synthetic)
-      .map((p: any) => p.text ?? "")
-      .join("")
-      .trim()
-  }
-
-  // Fallback when no prior user message exists (first turn): use prompt() directly
+  // SessionPrompt.prompt() falls back to session.agentID when agent is not specified
+  const session = await Session.get(sessionId)
+  console.log(`[workflow] agentPrompt session=${sessionId} session.agentID=${session.agentID}`)
   const result = await SessionPrompt.prompt({
     sessionID: sessionId,
     parts: [{ type: "text", text }],
@@ -153,6 +142,7 @@ async function agentPrompt(sessionId: string, text: string): Promise<string> {
 type NodeExec =
   | { kind: "input"; fields: Array<{ name: string; type: string; required: boolean; description?: string }> }
   | { kind: "skill_load"; skill: string; storeAs?: string }
+  | { kind: "skill_list_all"; output?: string }
   | { kind: "tool_call"; tool: string; args: Record<string, string>; output?: string }
   | { kind: "agent"; prompt: string; output?: string }
   | { kind: "decide"; prompt: string; branches: string[] }
@@ -195,6 +185,12 @@ function resolveNodeExec(node: WorkflowNode, allEdges: WorkflowEdge[]): NodeExec
         kind: "skill_load",
         skill: String(params.name ?? params.skill ?? ""),
         storeAs: params.storeAs != null ? String(params.storeAs) : undefined,
+      }
+    }
+    if (actionId === "skill_list") {
+      return {
+        kind: "skill_list_all",
+        output: params.output != null ? String(params.output) : undefined,
       }
     }
     if (actionId === "agent") {
@@ -360,6 +356,26 @@ export async function runWorkflow({
       }
       currentId = nextNode(adjacency, currentId)
 
+    } else if (exec.kind === "skill_list_all") {
+      const skills = _skillList ? await _skillList() : []
+      const formatted = [
+        "<skills>",
+        ...skills.flatMap((skill) => [
+          `  <skill>`,
+          `    <name>${skill.name}</name>`,
+          ...(skill.description ? [`    <description>${skill.description}</description>`] : []),
+          `  </skill>`,
+        ]),
+        "</skills>",
+        "",
+        `Total: ${skills.length} skill(s)`,
+      ].join("\n")
+      if (exec.output) ctx[exec.output] = formatted
+      await injectMessage(sessionId, [
+        { type: "tool", tool: "skill_list", input: {}, output: formatted },
+      ], directory)
+      currentId = nextNode(adjacency, currentId)
+
     } else if (exec.kind === "tool_call") {
       const resolvedArgs = resolveRefs(exec.args, input, ctx)
       if (exec.output) ctx[exec.output] = resolvedArgs
@@ -375,10 +391,7 @@ export async function runWorkflow({
 
     } else if (exec.kind === "agent") {
       const resolvedPrompt = resolveTemplate(exec.prompt, input, ctx)
-      const skillContext = buildSkillContext(ctx)
-      const fullPrompt = skillContext ? `${skillContext}\n\n---\n\n${resolvedPrompt}` : resolvedPrompt
-
-      const response = await agentPrompt(sessionId, fullPrompt)
+      const response = await agentPrompt(sessionId, resolvedPrompt)
       if (exec.output) ctx[exec.output] = response
       currentId = nextNode(adjacency, currentId)
 
@@ -417,12 +430,3 @@ export async function runWorkflow({
   }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function buildSkillContext(ctx: Ctx): string {
-  const entries = Object.entries(ctx).filter(([k]) => k.startsWith("skill_"))
-  if (entries.length === 0) return ""
-  return entries
-    .map(([k, v]) => `<skill name="${k.replace("skill_", "")}">\n${v}\n</skill>`)
-    .join("\n\n")
-}

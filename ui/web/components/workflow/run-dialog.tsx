@@ -50,9 +50,9 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
     opendora.agent
       .list()
       .then((list) => {
-        const runnable = list.filter((a) => a.mode !== "system")
+        const runnable = list.filter((a) => a.mode !== "system" && a.id)
         setAgents(runnable)
-        if (runnable.length > 0 && !agentId) setAgentId(runnable[0].id ?? runnable[0].name ?? "")
+        if (runnable.length > 0 && !agentId && runnable[0].id) setAgentId(runnable[0].id)
       })
       .catch(() => {})
   }, [open])
@@ -95,9 +95,9 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
                 </SelectTrigger>
                 <SelectContent>
                   {agents.map((a) => {
-                    const val = a.id ?? a.name ?? ""
+                    if (!a.id) return null
                     return (
-                      <SelectItem key={val} value={val}>
+                      <SelectItem key={a.id} value={a.id}>
                         <span className="capitalize">{a.name}</span>
                       </SelectItem>
                     )

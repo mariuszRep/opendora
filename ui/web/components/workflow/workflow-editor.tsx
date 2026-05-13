@@ -221,6 +221,15 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
     []
   )
 
+  const openWorkflowSettings = React.useCallback(() => {
+    setDrawerType('workflow')
+    setDrawerData({
+      name: workflowRef.current.name,
+      description: workflowRef.current.description,
+    } as any)
+    setDrawerOpen(true)
+  }, [])
+
   const onEdgeDoubleClick: EdgeMouseHandler = React.useCallback(
     (_event, edge) => {
       setDrawerType('edge')
@@ -322,6 +331,12 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
   const handleDrawerSave = React.useCallback(
     (formData: DrawerFormData) => {
       if (drawerType === 'workflow') {
+        // Update workflow metadata (name, description)
+        workflowRef.current = {
+          ...workflowRef.current,
+          name: formData.name ?? workflowRef.current.name,
+          description: formData.description,
+        }
         saveWorkflow(nodesRef.current, edgesRef.current)
         setDrawerOpen(false)
         return

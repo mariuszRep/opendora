@@ -134,6 +134,7 @@ export function WorkflowRoutes() {
 
     const input = body.input ?? {}
 
+    console.log(`[workflow execute] creating session with agentID=${agentId} body=${JSON.stringify(body)}`)
     const session = await Session.createNext({
       directory,
       title: `Workflow: ${workflow.name}`,
@@ -141,6 +142,7 @@ export function WorkflowRoutes() {
       agentID: agentId,
       ownerKind: "service",
     })
+    console.log(`[workflow execute] created session ${session.id} with session.agentID=${session.agentID}`)
 
     runWorkflow({ workflow, sessionId: session.id, input, directory }).catch((err) => {
       console.error(`[workflow execute] error in "${id}":`, err)

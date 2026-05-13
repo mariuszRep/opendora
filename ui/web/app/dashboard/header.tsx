@@ -16,11 +16,14 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +33,7 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { MessageResponse } from "@/components/ai-elements/message"
-import { ChevronDownIcon, ClockPlusIcon, ScrollTextIcon, Settings2Icon, ShieldIcon } from "lucide-react"
+import { ChevronDownIcon, ChevronRightIcon, ClockPlusIcon, ScrollTextIcon, Settings2Icon, ShieldIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { SessionSettingsSheet } from "@/components/sessions/session-settings-sheet"
 import { SessionSchedulesSheet } from "@/components/sessions/session-schedules-sheet"
@@ -59,7 +62,12 @@ export function Header() {
   const [schedulesOpen, setSchedulesOpen] = useState(false)
   const [permissionsOpen, setPermissionsOpen] = useState(false)
   const [promptOpen, setPromptOpen] = useState(false)
-  const [systemPromptSections, setSystemPromptSections] = useState<{ label: string; content: string }[]>([])
+  const [systemPromptData, setSystemPromptData] = useState<{
+    sections: { label: string; content: string }[]
+    injection: string
+    skills: { name: string; description: string; content: string; tools?: string[] }[]
+    tools: { id: string; description: string; source: "internal" | "mcp"; mcpServer?: string }[]
+  }>({ sections: [], injection: "", skills: [], tools: [] })
   const [hasSchedules, setHasSchedules] = useState(false)
 
   useEffect(() => {
@@ -67,25 +75,10 @@ export function Header() {
   }, [])
 
   useEffect(() => {
-    if (!selectedSession) { setSystemPromptSections([]); return }
-    let cancelled = false
-    opendora.session.systemPrompt(selectedSession.id)
-      .then((res) => { if (!cancelled) setSystemPromptSections(res.sections) })
-      .catch(() => { if (!cancelled) setSystemPromptSections([]) })
-    return () => { cancelled = true }
-  }, [
-    selectedSession?.id,
-    selectedSession?.agentID,
-    selectedSession?.cwd,
-    selectedSession?.path,
-    selectedSession?.systemPrompt,
-  ])
-
-  useEffect(() => {
     if (!promptOpen || !selectedSession) return
     opendora.session.systemPrompt(selectedSession.id)
-      .then((res) => setSystemPromptSections(res.sections))
-      .catch(() => setSystemPromptSections([]))
+      .then((res) => setSystemPromptData(res))
+      .catch(() => setSystemPromptData({ sections: [], injection: "", skills: [], tools: [] }))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [promptOpen])
 
@@ -260,29 +253,131 @@ export function Header() {
         onOpenChange={setPermissionsOpen}
       />
 
-      <Dialog open={promptOpen} onOpenChange={setPromptOpen}>
-        <DialogContent className="sm:max-w-[210mm] max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>System Prompt</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-6 pr-1">
-            {systemPromptSections.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No system prompt configured.</p>
-            ) : (
-              systemPromptSections.map((section, i) => (
-                <div key={i} className="flex flex-col gap-2">
-                  {systemPromptSections.length > 1 && (
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{section.label}</p>
-                  )}
-                  <MessageResponse className="prose dark:prose-invert max-w-none text-sm">
-                    {section.content}
-                  </MessageResponse>
+      <Sheet open={promptOpen} onOpenChange={setPromptOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-[700px] flex flex-col gap-0 p-0">
+          <SheetHeader className="px-6 py-4 border-b shrink-0">
+            <SheetTitle>Agent Context</SheetTitle>
+          </SheetHeader>
+          <Tabs defaultValue="prompt" className="flex flex-col flex-1 min-h-0">
+            <TabsList variant="line" className="px-6 shrink-0 border-b rounded-none w-full justify-start h-10 gap-4">
+              <TabsTrigger value="prompt">System Prompt</TabsTrigger>
+              <TabsTrigger value="injection">
+                Injection
+                {!systemPromptData.injection && <span className="ml-1 text-muted-foreground/50">·</span>}
+              </TabsTrigger>
+              <TabsTrigger value="skills">
+                Skills
+                {systemPromptData.skills.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{systemPromptData.skills.length}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="tools">
+                Tools
+                {systemPromptData.tools.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{systemPromptData.tools.length}</Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+            {/* System Prompt tab */}
+            <TabsContent value="prompt" className="flex-1 overflow-y-auto min-h-0 px-6 py-4">
+              {systemPromptData.sections.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No system prompt configured.</p>
+              ) : (
+                <div className="flex flex-col gap-6">
+                  {systemPromptData.sections.map((section, i) => (
+                    <div key={i} className="flex flex-col gap-2">
+                      {systemPromptData.sections.length > 1 && (
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{section.label}</p>
+                      )}
+                      <MessageResponse className="prose dark:prose-invert max-w-none text-sm">
+                        {section.content}
+                      </MessageResponse>
+                    </div>
+                  ))}
                 </div>
-              ))
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+              )}
+            </TabsContent>
+
+            {/* Injection tab */}
+            <TabsContent value="injection" className="flex-1 overflow-y-auto min-h-0 px-6 py-4">
+              {!systemPromptData.injection ? (
+                <p className="text-sm text-muted-foreground">No injection configured for this agent.</p>
+              ) : (
+                <MessageResponse className="prose dark:prose-invert max-w-none text-sm">
+                  {systemPromptData.injection}
+                </MessageResponse>
+              )}
+            </TabsContent>
+
+            {/* Skills tab */}
+            <TabsContent value="skills" className="flex-1 overflow-y-auto min-h-0 px-6 py-4">
+              {systemPromptData.skills.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No skills declared for this agent.</p>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {systemPromptData.skills.map((skill) => (
+                    <Collapsible key={skill.name}>
+                      <div className="rounded-lg border bg-card">
+                        <CollapsibleTrigger className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors rounded-lg [&[data-state=open]>svg]:rotate-90">
+                          <ChevronRightIcon className="size-4 shrink-0 mt-0.5 text-muted-foreground transition-transform" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-mono text-sm font-medium">{skill.name}</span>
+                              {skill.tools && skill.tools.length > 0 && (
+                                <div className="flex gap-1 flex-wrap">
+                                  {skill.tools.map((t) => (
+                                    <Badge key={t} variant="outline" className="text-[10px] h-4 px-1">{t}</Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            {skill.description && (
+                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{skill.description}</p>
+                            )}
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="border-t px-4 py-3">
+                            <MessageResponse className="prose dark:prose-invert max-w-none text-sm">
+                              {skill.content}
+                            </MessageResponse>
+                          </div>
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Tools tab */}
+            <TabsContent value="tools" className="flex-1 overflow-y-auto min-h-0 px-6 py-4">
+              {systemPromptData.tools.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No tools available for this agent.</p>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  {systemPromptData.tools.map((tool) => (
+                    <div key={tool.id} className="flex items-start gap-3 rounded-md border px-3 py-2.5">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-sm font-medium">{tool.id}</span>
+                          <Badge variant={tool.source === "mcp" ? "default" : "secondary"} className="text-[10px] h-4 px-1.5">
+                            {tool.source === "mcp" ? (tool.mcpServer ?? "mcp") : "built-in"}
+                          </Badge>
+                        </div>
+                        {tool.description && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{tool.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </SheetContent>
+      </Sheet>
     </>
   )
 }

@@ -15,6 +15,9 @@ import { SystemPrompt } from "@opendora/session/system"
 import { getConfig } from "@opendora/session/config"
 import { sessionManager } from "@opendora/session/session"
 import { Agent } from "../../agent"
+import { Skill } from "../../skill/skill"
+import { ToolRegistry } from "../../tool/registry"
+import { MCP } from "../../mcp"
 import { Snapshot } from "@/snapshot"
 import { Log } from "../../util/log"
 import { PermissionNext } from "@/permission/next"
@@ -245,14 +248,19 @@ export const SessionRoutes = lazy(() =>
       "/:sessionID/system-prompt",
       describeRoute({
         summary: "Get resolved system prompt",
-        description: "Returns the full system prompt the agent sees for this session: persona, session boundary prompt, and any instruction files (CLAUDE.md, AGENTS.md).",
+        description: "Returns the full system prompt the agent sees for this session: persona, session boundary prompt, instruction files, injection, skills, and tools.",
         operationId: "session.systemPrompt",
         responses: {
           200: {
             description: "Resolved system prompt sections",
             content: {
               "application/json": {
-                schema: resolver(z.object({ sections: z.array(z.object({ label: z.string(), content: z.string() })) })),
+                schema: resolver(z.object({
+                  sections: z.array(z.object({ label: z.string(), content: z.string() })),
+                  injection: z.string(),
+                  skills: z.array(z.object({ name: z.string(), description: z.string(), content: z.string(), tools: z.array(z.string()).optional() })),
+                  tools: z.array(z.object({ id: z.string(), description: z.string(), source: z.enum(["internal", "mcp"]), mcpServer: z.string().optional() })),
+                })),
               },
             },
           },
@@ -279,7 +287,7 @@ export const SessionRoutes = lazy(() =>
           return cfg.provider?.defaultModel?.().catch(() => undefined)
         })()
 
-        if (!model) return c.json({ sections: [] })
+        if (!model) return c.json({ sections: [], injection: "", skills: [], tools: [] })
 
         const sections = await SystemPrompt.build({
           agent,
@@ -288,7 +296,45 @@ export const SessionRoutes = lazy(() =>
           userSystem: sessionMeta?.systemPrompt,
         })
 
-        return c.json({ sections })
+        const injection = session.agentID && agent?.enableInjection
+          ? await Agent.getInjection(session.agentID).catch(() => "")
+          : ""
+
+        const skills = agent?.skills
+          ? (await Promise.all(
+              agent.skills.map((name) => Skill.get(name).catch(() => null))
+            )).filter((s): s is NonNullable<typeof s> => s != null).map((s) => ({
+              name: s.name,
+              description: s.description,
+              content: s.content,
+              tools: s.tools,
+            }))
+          : []
+
+        const dummyModel = { providerID: "anthropic", modelID: "claude-sonnet-4-6" }
+        const allInternal = await Promise.all(
+          ToolRegistry.all().map(async (t) => {
+            try {
+              const tool = await t.init({ model: dummyModel })
+              return { id: t.id, description: tool.description, source: "internal" as const }
+            } catch {
+              return { id: t.id, description: "", source: "internal" as const }
+            }
+          })
+        )
+        const allMcp = (await MCP.rawTools().catch(() => [])).map((t) => ({
+          id: t.id,
+          description: t.description,
+          source: "mcp" as const,
+          mcpServer: t.mcpServer,
+        }))
+        const allTools = [...allInternal, ...allMcp]
+
+        const tools = agent?.tools
+          ? allTools.filter((t) => (agent.tools as string[]).includes(t.id))
+          : allTools
+
+        return c.json({ sections, injection, skills, tools })
       },
     )
     .patch(
@@ -904,14 +950,12 @@ export const SessionRoutes = lazy(() =>
         if (status.type === "busy") {
           return c.json({ message: "Session is busy, please wait for the current response to finish." }, 409)
         }
-        c.status(204)
-        c.header("Content-Type", "application/json")
-        return stream(c, async () => {
-          const body = c.req.valid("json")
-          await SessionPrompt.prompt({ ...body, sessionID })
-        }, async (err) => {
-          log.error("prompt_async stream error", { sessionID, err })
-        })
+        const body = c.req.valid("json")
+        // noWait: creates the user message synchronously (fires SSE), then runs
+        // the agent loop in the background. Returns as soon as the message is
+        // persisted so the HTTP 204 reaches the browser immediately.
+        await SessionPrompt.prompt({ ...body, sessionID, noWait: true })
+        return c.body(null, 204)
       },
     )
     .post(

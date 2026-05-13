@@ -3,30 +3,8 @@
   "name": "Load Skill",
   "description": "this workflow loads the skill",
   "version": "1.0.0",
+  "agentID": "product-owner",
   "nodes": [
-    {
-      "id": "jRgh4KGsbN21x3AnoL2Co",
-      "type": "workflow",
-      "data": {
-        "nodeType": "tool",
-        "node": {
-          "label": "Tool",
-          "description": "",
-          "action_id": "skill_load",
-          "parameters": {
-            "name": "requirements"
-          }
-        },
-        "data": {
-          "inputs": [],
-          "outputs": []
-        }
-      },
-      "position": {
-        "x": 146.16298302977535,
-        "y": -743.9661065415847
-      }
-    },
     {
       "id": "1r644iQkreZcbsEc42Qbc",
       "type": "workflow",
@@ -40,18 +18,39 @@
           "inputs": [],
           "outputs": []
         },
-        "instructions": "what skills do we have loaded "
+        "instructions": "I need to build todo list app using shadcn what set of skills would you recommend"
       },
       "position": {
-        "x": 143.41643151610344,
-        "y": -620.360210545491
+        "x": -921.9298240922036,
+        "y": -1580.14411005145
+      }
+    },
+    {
+      "id": "t2kJcv4deCt9CF5LkpPUM",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Tool",
+          "description": "",
+          "action_id": "skill_list",
+          "parameters": {}
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
+      },
+      "position": {
+        "x": -968.1686517484987,
+        "y": -1717.5334522252965
       }
     }
   ],
   "edges": [
     {
-      "id": "xy-edge__jRgh4KGsbN21x3AnoL2Co-1r644iQkreZcbsEc42Qbc",
-      "source": "jRgh4KGsbN21x3AnoL2Co",
+      "id": "xy-edge__t2kJcv4deCt9CF5LkpPUM-1r644iQkreZcbsEc42Qbc",
+      "source": "t2kJcv4deCt9CF5LkpPUM",
       "target": "1r644iQkreZcbsEc42Qbc"
     }
   ]

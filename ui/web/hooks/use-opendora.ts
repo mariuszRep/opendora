@@ -368,8 +368,27 @@ export function useOpendora(): UseOpendoraResult {
     let cancelled = false
     opendora.session.messages(selectedSessionId).then((msgs) => {
       if (!cancelled) {
-        messageCacheRef.current.set(selectedSessionId, msgs)
-        setMessages(msgs)
+        setMessages((current) => {
+          // Merge fetched messages with any SSE updates that arrived during the fetch.
+          // For each message, keep whichever version has more parts (SSE may have
+          // added streaming parts that aren't in the fetch snapshot yet).
+          const currentById = new Map(current.map((m) => [m.info.id, m]))
+          const fetchedIds = new Set(msgs.map((m) => m.info.id))
+          const merged = msgs.map((fetchedMsg) => {
+            const currentMsg = currentById.get(fetchedMsg.info.id)
+            if (!currentMsg) return fetchedMsg
+            return currentMsg.parts.length > fetchedMsg.parts.length ? currentMsg : fetchedMsg
+          })
+          // Append any SSE-only messages not yet in the fetch snapshot (e.g. a new
+          // assistant message that started streaming between fetch-start and fetch-end)
+          for (const m of current) {
+            if (!fetchedIds.has(m.info.id) && !m.info.id.startsWith("_optimistic_")) {
+              merged.push(m)
+            }
+          }
+          messageCacheRef.current.set(selectedSessionId, merged)
+          return merged
+        })
       }
     }).catch((err) => { console.error("[messages] fetch failed", selectedSessionId, err) })
     return () => { cancelled = true }
@@ -384,7 +403,7 @@ export function useOpendora(): UseOpendoraResult {
     suppressUrlSyncRef.current = true
     setSelectedSessionId(targetSession.id)
     selectedSessionRef.current = targetSession
-    setStatus("ready")
+    setStatus(activeSessionsRef.current.has(targetSession.id) ? "streaming" : "ready")
     setError(null)
     if (targetSession.agentID) {
       setSelectedAgent(targetSession.agentID)
@@ -468,12 +487,16 @@ export function useOpendora(): UseOpendoraResult {
           
           if (info.sessionID !== selectedSessionRef.current?.id) break
           setMessages((prev) => {
-            const idx = prev.findIndex((m) => m.info.id === info.id)
+            // Replace the optimistic placeholder with the real user message
+            const withoutOptimistic = info.role === "user"
+              ? prev.filter((m) => !m.info.id.startsWith("_optimistic_"))
+              : prev
+            const idx = withoutOptimistic.findIndex((m) => m.info.id === info.id)
             if (idx === -1) {
               if (info.role === "assistant") setStatus("streaming")
-              return [...prev, { info, parts: [] }]
+              return [...withoutOptimistic, { info, parts: [] }]
             }
-            return prev.map((m, i) => (i === idx ? { ...m, info } : m))
+            return withoutOptimistic.map((m, i) => (i === idx ? { ...m, info } : m))
           })
           break
         }
@@ -704,6 +727,34 @@ export function useOpendora(): UseOpendoraResult {
       if (statusRef.current !== "ready") return
       setStatus("submitted")
       setError(null)
+
+      // Optimistically insert the user message so the chat updates instantly,
+      // before the SSE event for the real message arrives.
+      const optimisticId = `_optimistic_${Date.now()}`
+      setMessages((prev) => [
+        ...prev,
+        {
+          info: {
+            id: optimisticId,
+            sessionID: session.id,
+            role: "user" as const,
+            time: { created: Date.now() },
+            agent: options?.agent ?? selectedAgent,
+            model: options?.model ?? { providerID: "", modelID: "" },
+          },
+          parts: [
+            {
+              id: `${optimisticId}_0`,
+              type: "text" as const,
+              text,
+              messageID: optimisticId,
+              sessionID: session.id,
+              time: { created: Date.now() },
+            },
+          ],
+        },
+      ])
+
       try {
         const parts: Array<{ type: "text"; text: string } | { type: "file"; mime: string; filename?: string; url: string }> = [
           { type: "text", text },
@@ -717,6 +768,8 @@ export function useOpendora(): UseOpendoraResult {
         })
         // Status transitions to "ready" via SSE session.idle event
       } catch (err) {
+        // Remove the optimistic message on failure so the user can retry
+        setMessages((prev) => prev.filter((m) => m.info.id !== optimisticId))
         if (err instanceof SessionBusyError) {
           setStatus("ready")
           toast.warning("Session is busy — please wait for the current response to finish.")
