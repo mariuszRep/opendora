@@ -78,7 +78,6 @@ export default function WorkflowEditorPage() {
 
   function handleSessionCreated(sessionId: string) {
     ctx.selectSession(sessionId)
-    router.push("/dashboard")
   }
 
   if (loading) {
