@@ -3,7 +3,6 @@
   "name": "Load Skill",
   "description": "this workflow loads the skill",
   "version": "1.0.0",
-  "agentID": "product-owner",
   "nodes": [
     {
       "id": "1r644iQkreZcbsEc42Qbc",
@@ -21,8 +20,8 @@
         "instructions": "I need to build todo list app using shadcn what set of skills would you recommend"
       },
       "position": {
-        "x": -921.9298240922036,
-        "y": -1580.14411005145
+        "x": -2022.5679012229411,
+        "y": -2283.3183922991334
       }
     },
     {
@@ -42,8 +41,8 @@
         }
       },
       "position": {
-        "x": -968.1686517484987,
-        "y": -1717.5334522252965
+        "x": -1952.6744783507465,
+        "y": -2492.6220025414955
       }
     }
   ],

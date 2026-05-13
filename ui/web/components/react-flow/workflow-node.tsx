@@ -7,6 +7,7 @@ import {
   WorkflowNodeHeader,
   WorkflowNodeTitle,
   WorkflowNodeDescription,
+  WorkflowNodeFooter,
 } from './workflow-node-base'
 import { Badge } from '@/components/ui/badge'
 import { getHandlesForNodeType } from './node-handles'
@@ -42,36 +43,44 @@ export function WorkflowNode({ data, selected }: NodeProps) {
   return (
     <WorkflowNodeBase
       handles={{ target: false, source: false }}
-      className={`min-w-[220px] ${selected ? 'ring-[3px] ring-ring/50 border-ring' : ''}`}
+      className={`min-w-[80px] ${selected ? 'ring-[3px] ring-ring/50 border-ring' : ''}`}
     >
       {renderHandles()}
-      <WorkflowNodeHeader className="pb-3 bg-secondary/50">
-        <div className="flex items-center gap-3">
-          <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-          <div className="flex-1 min-w-0">
-            <WorkflowNodeTitle className="text-sm font-medium leading-tight">
+      <WorkflowNodeHeader className="pb-2 flex-1 bg-secondary/50">
+        <div className="min-w-0 flex-1">
+          <WorkflowNodeTitle className="text-base leading-tight">
+            {nodeType === 'tool' && nodeData.node.action_id
+              ? nodeData.node.action_id
+              : nodeData.node.label}
+          </WorkflowNodeTitle>
+          {nodeType === 'tool' && nodeData.node.action_id ? (
+            <WorkflowNodeDescription className="text-sm line-clamp-2 mt-1">
               {nodeData.node.label}
-            </WorkflowNodeTitle>
-            {nodeType === 'tool' && nodeData.node.action_id ? (
-              <Badge variant="secondary" className="mt-1.5 text-xs font-mono">
-                {nodeData.node.action_id}
-              </Badge>
-            ) : nodeType === 'tool' ? (
-              <div className="text-xs text-muted-foreground mt-0.5">No tool selected</div>
-            ) : nodeType === 'start' ? (
-              <div className="text-xs text-muted-foreground mt-0.5">Entry point</div>
-            ) : nodeType === 'prompt' ? (
-              nodeData.instructions ? (
-                <div className="text-xs text-muted-foreground mt-1 line-clamp-3 whitespace-pre-wrap break-words">
-                  {nodeData.instructions as string}
-                </div>
-              ) : (
-                <div className="text-xs text-muted-foreground mt-0.5">No prompt set</div>
-              )
-            ) : null}
-          </div>
+            </WorkflowNodeDescription>
+          ) : nodeType === 'start' ? (
+            <WorkflowNodeDescription className="text-sm line-clamp-2 mt-1">
+              Entry point
+            </WorkflowNodeDescription>
+          ) : nodeType === 'prompt' ? (
+            nodeData.instructions ? (
+              <WorkflowNodeDescription className="text-sm line-clamp-2 mt-1 whitespace-pre-wrap break-words">
+                {nodeData.instructions as string}
+              </WorkflowNodeDescription>
+            ) : (
+              <WorkflowNodeDescription className="text-sm line-clamp-2 mt-1">
+                No prompt set
+              </WorkflowNodeDescription>
+            )
+          ) : null}
         </div>
       </WorkflowNodeHeader>
+
+      <WorkflowNodeFooter className="border-t bg-muted/30 pt-3 mt-auto">
+        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <Icon className="size-3 shrink-0" />
+          {nodeType}
+        </span>
+      </WorkflowNodeFooter>
 
     </WorkflowNodeBase>
   )
