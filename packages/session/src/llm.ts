@@ -97,7 +97,7 @@ export namespace LLM {
       }
       system.push(
         [
-          ...(input.agent.prompt ? [input.agent.prompt] : isCodex ? [] : SystemPrompt.provider(input.model)),
+          ...(input.agent.prompt ? [input.agent.prompt] : (isCodex || input.agent?.injectInstructions === false) ? [] : SystemPrompt.provider(input.model)),
           ...input.system,
           ...(input.user.system ? [input.user.system] : []),
           ...(delegateNotice ? [delegateNotice] : []),
@@ -136,7 +136,7 @@ export namespace LLM {
       mergeDeep(variant ?? {}),
     )
     if (isCodex) {
-      options.instructions = SystemPrompt.instructions()
+      options.instructions = input.agent?.injectInstructions !== false ? SystemPrompt.instructions() : ""
     }
 
     const params = await cfg.plugin?.trigger(

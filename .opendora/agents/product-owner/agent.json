@@ -43,6 +43,7 @@
     }
   },
   "enableInjection": true,
+  "injectInstructions": false,
   "defaultPaths": [
     "/home/mariu/projects"
   ]

@@ -53,6 +53,7 @@ export namespace Agent {
       steps: z.number().int().positive().optional(),
       tools: z.array(z.string()).optional(),
       enableInjection: z.boolean().optional(),
+      injectInstructions: z.boolean().optional(),
       config: AgentStorage.Config.optional(),
     })
     .meta({
@@ -141,6 +142,7 @@ export namespace Agent {
       permission,
       options: {},
       enableInjection: entry.config.enableInjection,
+      injectInstructions: entry.config.injectInstructions,
       config: entry.config,
     }
   }

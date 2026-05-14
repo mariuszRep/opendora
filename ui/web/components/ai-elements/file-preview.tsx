@@ -65,7 +65,7 @@ const EXT_TO_LANG: Record<string, BundledLanguage> = {
   dockerfile: "docker",
 }
 
-function detectLanguage(path: string): BundledLanguage {
+export function detectLanguage(path: string): BundledLanguage {
   const name = path.split("/").pop() ?? path
   if (name.toLowerCase() === "dockerfile") return "docker"
   const ext = name.includes(".") ? name.split(".").pop()!.toLowerCase() : ""
@@ -82,9 +82,11 @@ export type FilePreviewProps = {
   displayPath?: string
   onClose?: () => void
   className?: string
+  /** Hide the built-in header (filename, refresh, close buttons). */
+  hideHeader?: boolean
 }
 
-export function FilePreview({ path, displayPath, onClose, className }: FilePreviewProps) {
+export function FilePreview({ path, displayPath, onClose, className, hideHeader }: FilePreviewProps) {
   const [data, setData] = useState<FileContent | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -114,34 +116,36 @@ export function FilePreview({ path, displayPath, onClose, className }: FilePrevi
   return (
     <div className={cn("flex size-full flex-col bg-card", className)}>
       {/* Header */}
-      <div className="flex items-center gap-2 border-b px-3 py-2">
-        <FileIcon className="size-4 shrink-0 text-muted-foreground" />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm font-medium">{name}</span>
-          <span className="truncate text-[10px] font-mono text-muted-foreground">{headerPath}</span>
-        </div>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          className="size-7 shrink-0"
-          onClick={load}
-          title="Refresh"
-          disabled={loading}
-        >
-          <RefreshCwIcon className={cn("size-4", loading && "animate-spin")} />
-        </Button>
-        {onClose && (
+      {!hideHeader && (
+        <div className="flex items-center gap-2 border-b px-3 py-2">
+          <FileIcon className="size-4 shrink-0 text-muted-foreground" />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-sm font-medium">{name}</span>
+            <span className="truncate text-[10px] font-mono text-muted-foreground">{headerPath}</span>
+          </div>
           <Button
             size="icon-sm"
             variant="ghost"
             className="size-7 shrink-0"
-            onClick={onClose}
-            title="Close"
+            onClick={load}
+            title="Refresh"
+            disabled={loading}
           >
-            <XIcon className="size-4" />
+            <RefreshCwIcon className={cn("size-4", loading && "animate-spin")} />
           </Button>
-        )}
-      </div>
+          {onClose && (
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              className="size-7 shrink-0"
+              onClick={onClose}
+              title="Close"
+            >
+              <XIcon className="size-4" />
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Body */}
       <div className="min-h-0 flex-1 overflow-auto">

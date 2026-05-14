@@ -44,16 +44,25 @@ export namespace SystemPrompt {
     }
   }
 
-  export async function environment(model: any, sessionID?: string) {
+  export async function environment(model: any, sessionID?: string, agent?: any) {
     let session: Awaited<ReturnType<typeof Session.get>> | undefined
     if (sessionID) {
       session = await Session.get(sessionID).catch(() => undefined)
     }
 
     const lines: string[] = [
-      `**Model:** ${model.api.id} \`${model.providerID}/${model.api.id}\``,
       `**Date:** ${new Date().toDateString()}`,
     ]
+
+    if (agent) {
+      lines.push(``, `**Agent**`, ``)
+      lines.push(`- **ID:** \`${agent.id}\``)
+      lines.push(`- **Name:** ${agent.name}`)
+      if (agent.description) lines.push(`- **Description:** ${agent.description}`)
+      lines.push(`- **Model:** ${model.api.id} \`${model.providerID}/${model.api.id}\``)
+    } else {
+      lines.push(`**Model:** ${model.api.id} \`${model.providerID}/${model.api.id}\``)
+    }
 
     if (session?.cwd) {
       const git = await isGitRepo(session.cwd).catch(() => false)
@@ -71,7 +80,6 @@ export namespace SystemPrompt {
       if (session.title) lines.push(`- **Title:** ${session.title}`)
       if (session.sessionType || session.sessionStatus)
         lines.push(`- **Type:** ${session.sessionType ?? "—"} · **Status:** ${session.sessionStatus ?? "—"}`)
-      if (session.agentID) lines.push(`- **Agent:** ${session.agentID}`)
       if (session.parentSessionID) lines.push(`- **Parent:** \`${session.parentSessionID}\``)
     }
 
@@ -98,23 +106,26 @@ export namespace SystemPrompt {
     // 1. Agent persona OR provider base prompt
     if (input.agent?.prompt) {
       sections.push({ label: "Agent Persona", content: input.agent.prompt })
-    } else if (!input.isCodex) {
+    } else if (!input.agent && !input.isCodex) {
       for (const part of provider(input.model)) {
         if (part) sections.push({ label: "Base Prompt", content: part })
       }
     }
 
     // 2. Environment
-    for (const part of await environment(input.model, input.sessionID)) {
+    for (const part of await environment(input.model, input.sessionID, input.agent)) {
       if (part) sections.push({ label: "Environment", content: part })
     }
 
     // 3. Instruction files (AGENTS.md, CLAUDE.md) — loaded from session cwd only
-    const sessionCwd = input.sessionID
-      ? await Session.get(input.sessionID).then((s) => s.cwd).catch(() => undefined)
-      : undefined
-    for (const part of await InstructionPrompt.system(sessionCwd).catch(() => [] as string[])) {
-      if (part) sections.push({ label: "Instructions", content: part })
+    // Skipped when agent explicitly sets injectInstructions: false
+    if (input.agent?.injectInstructions !== false) {
+      const sessionCwd = input.sessionID
+        ? await Session.get(input.sessionID).then((s) => s.cwd).catch(() => undefined)
+        : undefined
+      for (const part of await InstructionPrompt.system(sessionCwd).catch(() => [] as string[])) {
+        if (part) sections.push({ label: "Instructions", content: part })
+      }
     }
 
     // 4. (Skills are listed in the skill_load tool description — no separate system prompt section needed)

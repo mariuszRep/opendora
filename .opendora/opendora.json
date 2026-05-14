@@ -43,7 +43,7 @@
       ]
     }
   ],
-  "model": "updated/model",
+  "model": "opencode/minimax-m2.5-free",
   "provider": {
     "ollama": {
       "name": "Ollama (local)",

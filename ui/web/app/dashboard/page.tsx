@@ -3,13 +3,7 @@
 import { Chatbot } from './chatbot'
 import { Header } from './header'
 import { useOpendoraContext } from './opendora-context'
-import {
-  WebPreview,
-  WebPreviewBody,
-  WebPreviewNavigation,
-  WebPreviewUrl,
-} from "@/components/ai-elements/web-preview"
-import { FilePreview } from "@/components/ai-elements/file-preview"
+import { PreviewPanel } from "@/components/ai-elements/preview-panel"
 
 export default function Page() {
   const {
@@ -18,7 +12,7 @@ export default function Page() {
     filePreviewOpen,
     filePreviewPath,
     filePreviewDisplay,
-    closeFilePreview,
+    closePreview,
   } = useOpendoraContext()
 
   const sidePanelOpen = webPreviewOpen || filePreviewOpen
@@ -36,21 +30,14 @@ export default function Page() {
           <>
             <div className="w-px bg-border shrink-0" />
             <div className="flex flex-col min-h-0 overflow-hidden w-1/2 shrink-0 bg-background">
-              {filePreviewOpen ? (
-                <FilePreview
-                  key={filePreviewPath}
-                  path={filePreviewPath}
-                  displayPath={filePreviewDisplay}
-                  onClose={closeFilePreview}
-                />
-              ) : (
-                <WebPreview key={webPreviewUrl} defaultUrl={webPreviewUrl}>
-                  <WebPreviewNavigation>
-                    <WebPreviewUrl />
-                  </WebPreviewNavigation>
-                  <WebPreviewBody />
-                </WebPreview>
-              )}
+              <PreviewPanel
+                key={filePreviewOpen ? filePreviewPath : webPreviewUrl}
+                defaultMode={filePreviewOpen ? "sandbox" : "web"}
+                defaultUrl={webPreviewUrl}
+                defaultPath={filePreviewPath}
+                defaultDisplayPath={filePreviewDisplay}
+                onClose={closePreview}
+              />
             </div>
           </>
         )}

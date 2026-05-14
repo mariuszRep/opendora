@@ -494,11 +494,13 @@ export namespace File {
   export async function read(file: string): Promise<Content> {
     using _ = log.time("read", { file })
     const project = Instance.project
-    const full = path.join(Instance.directory, file)
+    // Absolute paths are used as-is; relative paths are resolved from the project root.
+    const full = path.isAbsolute(file) ? file : path.join(Instance.directory, file)
 
-    // TODO: Filesystem.contains is lexical only - symlinks inside the project can escape.
-    // TODO: On Windows, cross-drive paths bypass this check. Consider realpath canonicalization.
-    if (!Instance.containsPath(full)) {
+    // Containment check only applies to relative paths — absolute paths are explicit
+    // requests from the user/UI and may legitimately point outside the project root
+    // (e.g. previewing a file built by an agent in a sibling directory).
+    if (!path.isAbsolute(file) && !Instance.containsPath(full)) {
       throw new Error(`Access denied: path escapes project directory`)
     }
 

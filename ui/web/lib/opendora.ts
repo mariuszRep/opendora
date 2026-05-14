@@ -316,6 +316,7 @@ export type AgentConfig = {
     reply?: { stopAfterReply?: boolean }
   }
   enableInjection?: boolean
+  injectInstructions?: boolean
   /** New unified path entries. Replaces defaultPaths. */
   paths?: PathEntry[]
   /** @deprecated Use paths instead. */

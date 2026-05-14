@@ -34,6 +34,7 @@ const AgentConfigCreate = z.object({
     }).optional(),
   }).optional(),
   enableInjection: z.boolean().optional(),
+  injectInstructions: z.boolean().optional(),
   defaultPaths: z.array(z.string()).optional(),
   sandbox: z.boolean().optional(),
 })
@@ -60,6 +61,7 @@ const AgentConfigPatch = z.object({
     }).optional(),
   }).optional(),
   enableInjection: z.boolean().optional(),
+  injectInstructions: z.boolean().optional(),
   defaultPaths: z.array(z.string()).nullable().optional(),
   sandbox: z.boolean().optional(),
 })

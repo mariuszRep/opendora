@@ -115,6 +115,7 @@ export type UseOpendoraResult = {
   filePreviewDisplay: string
   openFilePreview: (path: string, displayPath?: string) => void
   closeFilePreview: () => void
+  closePreview: () => void
   schedules: Schedule[]
   refreshSchedules: () => Promise<void>
 }
@@ -943,6 +944,11 @@ export function useOpendora(): UseOpendoraResult {
     setFilePreviewOpen(false)
   }, [])
 
+  const closePreview = useCallback(() => {
+    setFilePreviewOpen(false)
+    setWebPreviewOpen(false)
+  }, [])
+
   const refreshModelGroups = useCallback(async () => {
     const configData = await opendora.config.get()
     if (configData.model_groups) {
@@ -1024,6 +1030,7 @@ export function useOpendora(): UseOpendoraResult {
     filePreviewDisplay,
     openFilePreview,
     closeFilePreview,
+    closePreview,
     schedules,
     refreshSchedules,
   }

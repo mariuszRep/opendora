@@ -130,6 +130,7 @@ export default function AgentSettingsPage() {
   const [defaultPaths, setDefaultPaths] = useState<string[]>([])
   const [newPathInput, setNewPathInput] = useState("")
   const [persona, setPersona] = useState("")
+  const [injectInstructions, setInjectInstructions] = useState(true)
   const [enableInjection, setEnableInjection] = useState(false)
   const [injection, setInjection] = useState("")
   const [saving, setSaving] = useState(false)
@@ -209,6 +210,7 @@ export default function AgentSettingsPage() {
     setReplyStopAfterReply((agent as any).config?.toolConfig?.reply?.stopAfterReply ?? agent.toolConfig?.reply?.stopAfterReply ?? false)
     setDefaultPaths((agent as any).config?.defaultPaths ?? (agent as any).defaultPaths ?? [])
     setNewPathInput("")
+    setInjectInstructions((agent as any).config?.injectInstructions ?? (agent as any).injectInstructions ?? true)
     setEnableInjection((agent as any).enableInjection ?? false)
     setInjection((agent as any).injection ?? "")
   }, [agentId, agent]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -285,6 +287,7 @@ export default function AgentSettingsPage() {
           }
           return Object.keys(tc).length > 0 ? tc : undefined
         })(),
+        injectInstructions: injectInstructions ? undefined : false,
         enableInjection: enableInjection || undefined,
         defaultPaths: defaultPaths.length > 0 ? defaultPaths : undefined,
       }
@@ -541,6 +544,15 @@ export default function AgentSettingsPage() {
                 <p className="text-xs text-muted-foreground">Hide this agent from the sidebar</p>
               </div>
               <Switch checked={hidden} onCheckedChange={setHidden} />
+            </div>
+
+            {/* Inject instructions toggle */}
+            <div className="flex items-center justify-between rounded-md border px-4 py-3">
+              <div>
+                <p className="text-sm font-medium">Inject instructions</p>
+                <p className="text-xs text-muted-foreground">Load AGENTS.md / CLAUDE.md from the project into the system prompt</p>
+              </div>
+              <Switch checked={injectInstructions} onCheckedChange={setInjectInstructions} />
             </div>
 
             {/* Persona */}

@@ -136,6 +136,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [mode, setMode] = useState<AgentConfig["mode"]>("all")
   const [color, setColor] = useState("")
   const [hidden, setHidden] = useState(false)
+  const [injectInstructions, setInjectInstructions] = useState(true)
   const [temperature, setTemperature] = useState("")
   const [steps, setSteps] = useState("")
   const [model, setModel] = useState<string>(NONE)
@@ -174,6 +175,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setMode(agent.mode ?? "all")
       setColor(a.color ?? "")
       setHidden(a.hidden ?? false)
+      setInjectInstructions((a as any).config?.injectInstructions ?? a.injectInstructions ?? true)
       setTemperature(a.temperature != null ? String(a.temperature) : "")
       setSteps(a.steps != null ? String(a.steps) : "")
       setModel(modelToValue(a.model))
@@ -200,6 +202,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setSelectedSkills([])
       setDelegateAllowedAgents([])
       setReplyStopAfterReply(false)
+      setInjectInstructions(true)
       setPersona("")
       setDefaultPaths([])
       setNewPathInput("")
@@ -274,6 +277,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
           return Object.keys(config).length > 0 ? config : undefined
         })(),
         defaultPaths: defaultPaths.length > 0 ? defaultPaths : undefined,
+        injectInstructions: injectInstructions ? undefined : false,
       }
       if (isEdit && agentId) {
         await updateAgent(agentId, config, persona)
@@ -520,6 +524,15 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                   <p className="text-xs text-muted-foreground">Hide this agent from the sidebar</p>
                 </div>
                 <Switch checked={hidden} onCheckedChange={setHidden} />
+              </div>
+
+              {/* Inject instructions toggle */}
+              <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                <div>
+                  <p className="text-sm font-medium">Inject instructions</p>
+                  <p className="text-xs text-muted-foreground">Load AGENTS.md / CLAUDE.md from the project into the system prompt</p>
+                </div>
+                <Switch checked={injectInstructions} onCheckedChange={setInjectInstructions} />
               </div>
 
               {/* Persona */}

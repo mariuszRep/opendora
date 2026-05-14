@@ -24,6 +24,7 @@ export const AgentConfig = z.object({
     }).optional(),
   }).optional(),
   enableInjection: z.boolean().optional(),
+  injectInstructions: z.boolean().optional(),
   defaultPaths: z.array(z.string()).optional(),
   sandbox: z.boolean().optional(),
 })
