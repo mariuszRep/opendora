@@ -25,7 +25,7 @@ OPENCODE_CONFIG_DIR="$PWD/.opendora" \
 bun run packages/opencode/src/index.ts serve --port 4097 --hostname 0.0.0.0 </dev/null &
 pids+=($!)
 
-bun run --cwd ui/web dev </dev/null &
+bun run --cwd ui/web dev --hostname 0.0.0.0 </dev/null &
 pids+=($!)
 
 wait -n "${pids[@]}"

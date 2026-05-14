@@ -16,6 +16,7 @@ import { Identifier } from "@opendora/util/id"
 import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
 import { LLM } from "./llm.ts"
+import { FallbackManager } from "./fallback.ts"
 
 // Token.estimate — rough approximation: 1 token ≈ 4 chars
 function estimateTokens(text: any): number {
@@ -62,6 +63,17 @@ export namespace SessionCompaction {
   export const PRUNE_PROTECT = 40_000
 
   const PRUNE_PROTECTED_TOOLS = ["skill"]
+
+  async function resolveModel(input: {
+    model: { providerID: string; modelID: string }
+    provider: NonNullable<ReturnType<typeof getConfig>["provider"]>
+  }) {
+    if (input.model.providerID === "fallback") {
+      const slot = await FallbackManager.resolve(input.model.modelID)
+      return input.provider.getModel(slot.providerID, slot.modelID)
+    }
+    return input.provider.getModel(input.model.providerID, input.model.modelID)
+  }
 
   export async function prune(input: {
     sessionID: string
@@ -137,9 +149,12 @@ export namespace SessionCompaction {
 
     const userMessage = input.messages.findLast((m) => m.info.id === input.parentID)!.info as MessageV2.User
     const agent = await agentSvc.get("compaction")
-    const model = agent.model
-      ? await providerSvc.getModel(agent.model.providerID, agent.model.modelID)
-      : await providerSvc.getModel(userMessage.model.providerID, userMessage.model.modelID)
+    if (!agent) {
+      console.warn("[session-core] compaction.process: compaction agent not configured")
+      return "stop"
+    }
+    const modelRef = agent.model ?? userMessage.model
+    const model = await resolveModel({ model: modelRef, provider: providerSvc })
 
     const msg = (await input.updateMessage({
       id: Identifier.ascending("message"),
@@ -180,6 +195,7 @@ export namespace SessionCompaction {
       updatePart: input.updatePart,
       updatePartDelta: input.updatePartDelta,
       getUsage: input.getUsage,
+      fallbackGroupID: modelRef.providerID === "fallback" ? modelRef.modelID : undefined,
     })
 
     const pluginSvc = cfg.plugin

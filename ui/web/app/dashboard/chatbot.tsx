@@ -52,12 +52,31 @@ import {
   usePromptInputAttachments,
 } from "@/components/ai-elements/prompt-input"
 import {
+  Attachments,
+  Attachment,
+  AttachmentPreview,
+  AttachmentInfo,
+  AttachmentRemove,
+} from "@/components/ai-elements/attachments"
+import {
   Reasoning,
   ReasoningContent,
   ReasoningTrigger,
 } from "@/components/ai-elements/reasoning"
 import { SpeechInput } from "@/components/ai-elements/speech-input"
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion"
+import {
+  Context,
+  ContextCacheUsage,
+  ContextContent,
+  ContextContentBody,
+  ContextContentFooter,
+  ContextContentHeader,
+  ContextInputUsage,
+  ContextOutputUsage,
+  ContextReasoningUsage,
+  ContextTrigger,
+} from "@/components/ai-elements/context"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 
 import { QuestionTool, QuestionStep } from "@/components/questions/question-tool"
@@ -181,13 +200,20 @@ const AttachmentsDisplay = () => {
   const attachments = usePromptInputAttachments()
   if (attachments.files.length === 0) return null
   return (
-    <div className="flex flex-wrap gap-2 p-2">
-      {attachments.files.map((f) => (
-        <div key={f.id} className="flex items-center gap-1 rounded border px-2 py-1 text-xs">
-          {(f as { name?: string }).name ?? "file"}
-          <button onClick={() => attachments.remove(f.id)} className="ml-1 opacity-60 hover:opacity-100">×</button>
-        </div>
-      ))}
+    <div className="p-2">
+      <Attachments variant="inline">
+        {attachments.files.map((f) => (
+          <Attachment
+            key={f.id}
+            data={f as any}
+            onRemove={() => attachments.remove(f.id)}
+          >
+            <AttachmentPreview />
+            <AttachmentInfo />
+            <AttachmentRemove />
+          </Attachment>
+        ))}
+      </Attachments>
     </div>
   )
 }
@@ -223,6 +249,7 @@ export const Chatbot = () => {
     updateAgent,
     isChatCentered,
     selectSession,
+    selectAgent,
     sessions,
     webPreviewOpen,
     toggleWebPreview,
@@ -257,6 +284,65 @@ export const Chatbot = () => {
   const [questionSelections, setQuestionSelections] = useState<string[][]>([])
 
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  const [slashCommandIdx, setSlashCommandIdx] = useState(0)
+
+  const slashCommands = useMemo(() => {
+    const query = text.startsWith("/") ? text.slice(1).toLowerCase() : ""
+    const base = [
+      { id: "new", label: "new", description: "Create a new session" },
+      { id: "model", label: "model", description: "Switch model" },
+      ...agents.map((a) => ({
+        id: `agent:${(a as any)._id}`,
+        label: `agent ${a.name}`,
+        description: `Switch to ${a.name}`,
+      })),
+    ]
+    if (!query) return base
+    return base.filter((c) => c.label.toLowerCase().startsWith(query))
+  }, [text, agents])
+
+  const slashMenuOpen =
+    text.startsWith("/") &&
+    slashCommands.length > 0 &&
+    status !== "streaming" &&
+    status !== "submitted"
+
+  // Use actual token usage from session (provider-accurate)
+  const tokenUsage = useMemo(() => {
+    // First try to use session tokens
+    if (selectedSession?.tokens && (selectedSession.tokens.input > 0 || selectedSession.tokens.output > 0)) {
+      return {
+        inputTokens: selectedSession.tokens.input,
+        outputTokens: selectedSession.tokens.output,
+        cachedTokens: selectedSession.tokens.cacheRead,
+        reasoningTokens: 0, // Backend doesn't track reasoning separately yet
+        totalTokens: selectedSession.tokens.input + selectedSession.tokens.output,
+      }
+    }
+
+    // Fallback: estimate tokens from messages
+    let inputTokens = 0
+    let outputTokens = 0
+
+    for (const message of messages) {
+      if (message.info.role === "user") {
+        const text = getMessageText(message.parts)
+        inputTokens += Math.ceil(text.length / 4)
+      } else if (message.info.role === "assistant") {
+        const text = getMessageText(message.parts)
+        outputTokens += Math.ceil(text.length / 4)
+      }
+    }
+
+    return {
+      inputTokens,
+      outputTokens,
+      cachedTokens: 0,
+      reasoningTokens: 0,
+      totalTokens: inputTokens + outputTokens,
+    }
+  }, [selectedSession, messages])
 
   useEffect(() => {
     const agent = agents.find((a) => (a as any)._id === selectedAgent)
@@ -353,6 +439,23 @@ export const Chatbot = () => {
     const defaultModel = defaultModels[firstConnected]
     return modelList.find((m) => m.providerID === firstConnected && m.modelID === defaultModel) ?? modelList[0]
   }, [selectedGroupId, selectedProviderID, selectedModelID, modelList, connectedProviders, defaultModels, modelGroups])
+
+  // Get actual model context limit from provider data
+  const modelContextLimit = useMemo(() => {
+    if (!selectedModel) return 200000
+    const provider = providers.find((p) => p.id === selectedModel.providerID)
+    if (!provider) return 200000
+    const providerModel = provider.models[selectedModel.modelID]
+    if (!providerModel) return 200000
+    // Check if the model has limit information
+    const modelLimit = (providerModel as any).limit
+    if (modelLimit && modelLimit.context) return modelLimit.context
+    if (modelLimit && modelLimit.input) return modelLimit.input
+    // Fallback to model ID detection
+    if (selectedModel.modelID.includes("32k")) return 32000
+    if (selectedModel.modelID.includes("128k")) return 128000
+    return 200000
+  }, [selectedModel, providers])
 
   const modelsByProvider = useMemo(() => {
     const groups = new Map<string, typeof modelList>()
@@ -497,6 +600,45 @@ export const Chatbot = () => {
       }
     },
     [sendMessage, selectedModel, selectedGroupId, selectedAgent, selectedSession, createSession, userName, questionRequests, handleQuestionAdvance],
+  )
+
+  useEffect(() => {
+    setSlashCommandIdx(0)
+  }, [text])
+
+  const executeSlashCommand = useCallback(
+    (id: string) => {
+      setText("")
+      if (id === "new") {
+        createSession()
+      } else if (id === "model") {
+        setModelSelectorOpen(true)
+      } else if (id.startsWith("agent:")) {
+        selectAgent(id.slice(6))
+      }
+    },
+    [createSession, selectAgent],
+  )
+
+  const handleTextareaKeyDown = useCallback(
+    (e: { key: string; preventDefault: () => void }) => {
+      if (!slashMenuOpen) return
+      if (e.key === "ArrowDown") {
+        e.preventDefault()
+        setSlashCommandIdx((i) => Math.min(i + 1, slashCommands.length - 1))
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault()
+        setSlashCommandIdx((i) => Math.max(i - 1, 0))
+      } else if (e.key === "Escape") {
+        e.preventDefault()
+        setText("")
+      } else if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault()
+        const cmd = slashCommands[slashCommandIdx]
+        if (cmd) executeSlashCommand(cmd.id)
+      }
+    },
+    [slashMenuOpen, slashCommands, slashCommandIdx, executeSlashCommand],
   )
 
   const handleSuggestionClick = useCallback(
@@ -775,31 +917,48 @@ export const Chatbot = () => {
                           </div>
                           <div className="flex flex-col gap-2">
                             <MessageContent className="!ml-0">
-                              {content ? <MessageResponse>{content}</MessageResponse> : null}
                               {(() => {
                                 const fileParts = getFileParts(parts)
-                                if (!fileParts.length) return null
+                                const imageParts = fileParts.filter(fp => fp.mime?.startsWith("image/"))
+                                const nonImageParts = fileParts.filter(fp => !fp.mime?.startsWith("image/"))
+                                
                                 return (
-                                  <div className="mt-2 flex flex-wrap gap-2">
-                                    {fileParts.map((fp) => {
-                                      const isImage = fp.mime?.startsWith("image/")
-                                      // Skip inline rendering for very large data URLs (>500KB) to avoid browser hang
-                                      const isSafeToInline = !fp.url?.startsWith("data:") || fp.url.length < 524288
-                                      return isImage && isSafeToInline ? (
-                                        <img
-                                          key={fp.id}
-                                          src={fp.url}
-                                          alt={fp.filename ?? "image"}
-                                          className="max-h-48 max-w-48 rounded border object-contain"
-                                        />
-                                      ) : (
-                                        <div key={fp.id} className="flex items-center gap-1 rounded border bg-muted/50 px-2 py-1 text-xs">
-                                          <FileIcon className="size-3 shrink-0" />
-                                          {fp.filename ?? "image"}
-                                        </div>
-                                      )
-                                    })}
-                                  </div>
+                                  <>
+                                    {imageParts.length > 0 && (
+                                      <div className="mb-2 flex flex-wrap gap-2">
+                                        {imageParts.map((fp) => (
+                                          <img
+                                            key={fp.id}
+                                            src={fp.url}
+                                            alt={fp.filename ?? "image"}
+                                            className="max-h-32 max-w-full rounded-lg object-contain"
+                                          />
+                                        ))}
+                                      </div>
+                                    )}
+                                    {content ? <MessageResponse>{content}</MessageResponse> : null}
+                                    {nonImageParts.length > 0 && (
+                                      <div className="mt-2">
+                                        <Attachments variant="inline">
+                                          {nonImageParts.map((fp) => (
+                                            <Attachment
+                                              key={fp.id}
+                                              data={{
+                                                type: "file",
+                                                id: fp.id,
+                                                url: fp.url,
+                                                filename: fp.filename,
+                                                mediaType: fp.mime,
+                                              } as any}
+                                            >
+                                              <AttachmentPreview />
+                                              <AttachmentInfo />
+                                            </Attachment>
+                                          ))}
+                                        </Attachments>
+                                      </div>
+                                    )}
+                                  </>
                                 )
                               })()}
                             </MessageContent>
@@ -1342,7 +1501,32 @@ export const Chatbot = () => {
       )}
 
       <div className="grid shrink-0 gap-4 pt-4">
-        <div className={cn("w-full px-4 pb-4 transition-all duration-300", isChatCentered && "max-w-3xl mx-auto")}>
+        <div className={cn("relative w-full px-4 pb-4 transition-all duration-300", isChatCentered && "max-w-3xl mx-auto")}>
+          {slashMenuOpen && (
+            <div className="absolute bottom-full left-4 right-4 mb-1 z-50 rounded-lg border bg-popover shadow-lg overflow-hidden">
+              <div className="px-3 py-1.5 text-[11px] font-medium text-muted-foreground border-b">Commands</div>
+              <div className="max-h-60 overflow-y-auto py-1">
+                {slashCommands.map((cmd, idx) => (
+                  <button
+                    key={cmd.id}
+                    type="button"
+                    className={cn(
+                      "flex w-full items-center gap-3 px-3 py-2 text-sm text-left",
+                      idx === slashCommandIdx ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
+                    )}
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      executeSlashCommand(cmd.id)
+                    }}
+                    onMouseEnter={() => setSlashCommandIdx(idx)}
+                  >
+                    <span className="font-mono text-xs font-semibold text-foreground shrink-0">/{cmd.label}</span>
+                    <span className="text-xs text-muted-foreground">{cmd.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <PromptInput globalDrop multiple onSubmit={handleSubmit}>
             <PromptInputHeader>
               <AttachmentsDisplay />
@@ -1388,8 +1572,9 @@ export const Chatbot = () => {
               <PromptInputTextarea
                 ref={inputRef}
                 onChange={(e) => setText(e.target.value)}
+                onKeyDown={handleTextareaKeyDown}
                 value={text}
-                placeholder={selectedSession ? (isRecording ? "Listening..." : isTranscribing ? "Transcribing..." : "Type a message…") : "Create or select a session to chat"}
+                placeholder={selectedSession ? (isRecording ? "Listening..." : isTranscribing ? "Transcribing..." : "Type a message… (/ for commands)") : "Create or select a session to chat"}
                 disabled={isRecording}
               />
             </PromptInputBody>
@@ -1511,6 +1696,34 @@ export const Chatbot = () => {
 
               </PromptInputTools>
               <div className="flex items-center gap-1">
+                {selectedModel && selectedSession && (
+                  <Context
+                    usedTokens={tokenUsage.totalTokens}
+                    maxTokens={modelContextLimit}
+                    usage={
+                      {
+                        cachedInputTokens: tokenUsage.cachedTokens,
+                        inputTokens: tokenUsage.inputTokens,
+                        outputTokens: tokenUsage.outputTokens,
+                        reasoningTokens: tokenUsage.reasoningTokens,
+                        totalTokens: tokenUsage.totalTokens,
+                      }
+                    }
+                    modelId={selectedModel.modelID}
+                  >
+                    <ContextTrigger />
+                    <ContextContent>
+                      <ContextContentHeader />
+                      <ContextContentBody>
+                        <ContextInputUsage />
+                        <ContextOutputUsage />
+                        <ContextReasoningUsage />
+                        <ContextCacheUsage />
+                      </ContextContentBody>
+                      <ContextContentFooter />
+                    </ContextContent>
+                  </Context>
+                )}
                 {questionRequests.length > 0 && (
                   <button
                     type="button"
