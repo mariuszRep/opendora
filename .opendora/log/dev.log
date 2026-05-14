@@ -348,3 +348,754 @@ INFO  2026-05-14T09:44:56 +1ms service=server status=started method=GET path=/pr
 INFO  2026-05-14T09:44:56 +306ms service=provider.routes count=5 codex models fetched
 INFO  2026-05-14T09:44:56 +0ms service=provider.routes codex models updated in provider list response
 INFO  2026-05-14T09:44:56 +39ms service=server status=completed duration=345 method=GET path=/provider request
+INFO  2026-05-14T10:06:51 +1314281ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:06:51 +1ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:06:51 +269ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:06:51 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:06:51 +42ms service=server status=completed duration=311 method=GET path=/provider request
+INFO  2026-05-14T10:07:23 +32543ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:07:23 +1ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:07:24 +312ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:07:24 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:07:24 +44ms service=server status=completed duration=356 method=GET path=/provider request
+INFO  2026-05-14T10:10:55 +211237ms service=server method=GET path=/user request
+INFO  2026-05-14T10:10:55 +0ms service=server status=started method=GET path=/user request
+INFO  2026-05-14T10:10:55 +3ms service=server status=completed duration=3 method=GET path=/user request
+INFO  2026-05-14T10:10:55 +2ms service=server method=GET path=/general request
+INFO  2026-05-14T10:10:55 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:10:55 +2ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:10:55 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:10:55 +29ms service=server status=completed duration=31 method=GET path=/general request
+INFO  2026-05-14T10:10:55 +2ms service=server method=GET path=/session request
+INFO  2026-05-14T10:10:55 +1ms service=server status=started method=GET path=/session request
+INFO  2026-05-14T10:10:55 +22ms service=server status=completed duration=22 method=GET path=/session request
+INFO  2026-05-14T10:10:55 +19ms service=server method=GET path=/agent request
+INFO  2026-05-14T10:10:55 +1ms service=server status=started method=GET path=/agent request
+INFO  2026-05-14T10:10:55 +55ms service=server status=completed duration=55 method=GET path=/agent request
+INFO  2026-05-14T10:10:55 +136ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:10:55 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:10:55 +59ms service=server status=completed duration=324 method=GET path=/provider request
+INFO  2026-05-14T10:10:56 +282ms service=server method=GET path=/config request
+INFO  2026-05-14T10:10:56 +0ms service=server status=started method=GET path=/config request
+INFO  2026-05-14T10:10:56 +2ms service=server status=completed duration=2 method=GET path=/config request
+INFO  2026-05-14T10:10:56 +1ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:10:56 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:10:56 +4ms service=server status=completed duration=4 method=GET path=/schedule request
+INFO  2026-05-14T10:10:56 +1ms service=server method=GET path=/question request
+INFO  2026-05-14T10:10:56 +0ms service=server status=started method=GET path=/question request
+INFO  2026-05-14T10:10:56 +0ms service=server status=completed duration=0 method=GET path=/question request
+INFO  2026-05-14T10:10:56 +312ms service=server method=GET path=/event request
+INFO  2026-05-14T10:10:56 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-14T10:10:56 +0ms service=server event connected
+INFO  2026-05-14T10:10:56 +2ms service=bus type=* subscribing
+INFO  2026-05-14T10:10:56 +0ms service=server status=completed duration=2 method=GET path=/event request
+INFO  2026-05-14T10:11:00 +3834ms service=server method=GET path=/user request
+INFO  2026-05-14T10:11:00 +0ms service=server status=started method=GET path=/user request
+INFO  2026-05-14T10:11:00 +1ms service=server status=completed duration=0 method=GET path=/user request
+INFO  2026-05-14T10:11:00 +0ms service=server method=GET path=/question request
+INFO  2026-05-14T10:11:00 +1ms service=server status=started method=GET path=/question request
+INFO  2026-05-14T10:11:00 +0ms service=server status=completed duration=0 method=GET path=/question request
+INFO  2026-05-14T10:11:00 +1ms service=server method=GET path=/config request
+INFO  2026-05-14T10:11:00 +0ms service=server status=started method=GET path=/config request
+INFO  2026-05-14T10:11:00 +1ms service=server status=completed duration=1 method=GET path=/config request
+INFO  2026-05-14T10:11:00 +1ms service=server method=GET path=/general request
+INFO  2026-05-14T10:11:00 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:11:00 +0ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:11:00 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:11:00 +18ms service=server status=completed duration=18 method=GET path=/general request
+INFO  2026-05-14T10:11:00 +2ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:11:00 +5ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:11:00 +9ms service=server status=completed duration=8 method=GET path=/schedule request
+INFO  2026-05-14T10:11:00 +211ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:11:00 +1ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:11:00 +68ms service=server status=completed duration=314 method=GET path=/provider request
+INFO  2026-05-14T10:11:00 +233ms service=server method=GET path=/session/status request
+INFO  2026-05-14T10:11:00 +0ms service=server status=started method=GET path=/session/status request
+INFO  2026-05-14T10:11:00 +1ms service=server status=completed duration=1 method=GET path=/session/status request
+INFO  2026-05-14T10:11:00 +0ms service=server method=GET path=/agent request
+INFO  2026-05-14T10:11:00 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-05-14T10:11:00 +7ms service=server method=GET path=/session request
+INFO  2026-05-14T10:11:00 +0ms service=server status=started method=GET path=/session request
+INFO  2026-05-14T10:11:00 +4ms service=server status=completed duration=4 method=GET path=/session request
+INFO  2026-05-14T10:11:00 +3ms service=server method=GET path=/event request
+INFO  2026-05-14T10:11:00 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-14T10:11:00 +0ms service=server event connected
+INFO  2026-05-14T10:11:00 +1ms service=bus type=* subscribing
+INFO  2026-05-14T10:11:00 +0ms service=server status=completed duration=1 method=GET path=/event request
+INFO  2026-05-14T10:11:00 +36ms service=server status=completed duration=51 method=GET path=/agent request
+INFO  2026-05-14T10:11:01 +239ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:11:01 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:11:01 +28ms service=server method=GET path=/general request
+INFO  2026-05-14T10:11:01 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:11:01 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:11:01 +95ms service=server method=GET path=/general request
+INFO  2026-05-14T10:11:01 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:11:01 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:11:01 +95ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:11:01 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:11:01 +3ms service=server status=completed duration=3 method=GET path=/schedule request
+INFO  2026-05-14T10:11:01 +0ms service=server method=GET path=/session/ses_1da32b4a3ffeefzCz8FvoogE6N/message request
+INFO  2026-05-14T10:11:01 +0ms service=server status=started method=GET path=/session/ses_1da32b4a3ffeefzCz8FvoogE6N/message request
+INFO  2026-05-14T10:11:01 +19ms service=server status=completed duration=19 method=GET path=/session/ses_1da32b4a3ffeefzCz8FvoogE6N/message request
+INFO  2026-05-14T10:11:01 +4ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:11:01 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:11:01 +85ms service=server status=completed duration=331 method=GET path=/provider request
+INFO  2026-05-14T10:11:44 +42751ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:11:44 +1ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:11:44 +233ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:11:44 +1ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:11:44 +39ms service=server status=completed duration=273 method=GET path=/provider request
+INFO  2026-05-14T10:11:51 +7345ms service=server method=POST path=/session request
+INFO  2026-05-14T10:11:51 +1ms service=server status=started method=POST path=/session request
+INFO  2026-05-14T10:11:51 +13ms service=bus type=session.created publishing
+INFO  2026-05-14T10:11:51 +3ms service=server status=completed duration=16 method=POST path=/session request
+INFO  2026-05-14T10:11:52 +206ms service=server method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:11:52 +0ms service=server status=started method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:11:52 +2ms service=server status=completed duration=2 method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:11:52 +1ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:11:52 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:11:52 +1ms service=server status=completed duration=1 method=GET path=/schedule request
+INFO  2026-05-14T10:11:52 +0ms service=server method=GET path=/session/ses_1da32b4a3ffeefzCz8FvoogE6N/message request
+INFO  2026-05-14T10:11:52 +0ms service=server status=started method=GET path=/session/ses_1da32b4a3ffeefzCz8FvoogE6N/message request
+INFO  2026-05-14T10:11:52 +13ms service=server status=completed duration=13 method=GET path=/session/ses_1da32b4a3ffeefzCz8FvoogE6N/message request
+INFO  2026-05-14T10:11:52 +233ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:11:52 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:11:52 +1ms service=server status=completed duration=1 method=GET path=/schedule request
+INFO  2026-05-14T10:11:52 +291ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:11:52 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:11:52 +1ms service=server status=completed duration=1 method=GET path=/schedule request
+INFO  2026-05-14T10:11:52 +2ms service=server method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:11:52 +0ms service=server status=started method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:11:52 +1ms service=server status=completed duration=1 method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:12:11 +18481ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:12:11 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:12:11 +219ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:12:11 +1ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:12:11 +42ms service=server status=completed duration=262 method=GET path=/provider request
+INFO  2026-05-14T10:12:59 +48185ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:12:59 +1ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:12:59 +271ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:12:59 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:12:59 +41ms service=server status=completed duration=312 method=GET path=/provider request
+INFO  2026-05-14T10:13:01 +1241ms service=server method=POST path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/prompt_async request
+INFO  2026-05-14T10:13:01 +0ms service=server status=started method=POST path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/prompt_async request
+INFO  2026-05-14T10:13:01 +10ms service=bus type=message.updated publishing
+INFO  2026-05-14T10:13:01 +2ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:01 +4ms service=bus type=session.updated publishing
+INFO  2026-05-14T10:13:01 +2ms service=bus type=session.status publishing
+INFO  2026-05-14T10:13:01 +5ms service=server status=completed duration=23 method=POST path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/prompt_async request
+INFO  2026-05-14T10:13:03 +2472ms service=bus type=session.updated publishing
+INFO  2026-05-14T10:13:03 +11ms service=bus type=message.updated publishing
+INFO  2026-05-14T10:13:03 +120ms service=bus type=session.status publishing
+INFO  2026-05-14T10:13:04 +872ms service=snapshot hash=7f4d291fc71b1c254827e2e78ae4441657be4efe
+ cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-05-14T10:13:04 +1ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:04 +137ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:06 +2134ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:06 +16ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:06 +136ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:07 +164ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:07 +261ms service=snapshot hash=00139012789f9712a4da38b755e900abfc53cd9f
+ cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-05-14T10:13:07 +2ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:07 +0ms service=bus type=message.updated publishing
+INFO  2026-05-14T10:13:07 +196ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:07 +2ms service=bus type=message.updated publishing
+INFO  2026-05-14T10:13:07 +1ms service=bus type=session.status publishing
+INFO  2026-05-14T10:13:07 +33ms service=bus type=message.updated publishing
+INFO  2026-05-14T10:13:07 +129ms service=bus type=session.status publishing
+INFO  2026-05-14T10:13:08 +810ms service=snapshot hash=1146f57c0df15483a1faba69335f476133379e45
+ cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-05-14T10:13:08 +1ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:08 +115ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:12 +3464ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:12 +3ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:12 +118ms service=permission permission=skill pattern=requirements action={"permission":"*","pattern":"*","action":"allow"} evaluated
+INFO  2026-05-14T10:13:12 +2ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:12 +4ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:12 +311ms service=snapshot hash=a192e9070fc9aed476cf8c4ea7920231d2d1833a
+ cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-05-14T10:13:12 +2ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:12 +1ms service=bus type=message.updated publishing
+INFO  2026-05-14T10:13:12 +280ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:12 +2ms service=bus type=message.updated publishing
+INFO  2026-05-14T10:13:12 +1ms service=bus type=session.status publishing
+INFO  2026-05-14T10:13:12 +19ms service=bus type=message.updated publishing
+INFO  2026-05-14T10:13:12 +124ms service=bus type=session.status publishing
+INFO  2026-05-14T10:13:13 +786ms service=snapshot hash=e8af017ff5d23d4491abb42eba497e6313026d4d
+ cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-05-14T10:13:13 +1ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:14 +415ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:15 +1396ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +9ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +15ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +0ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +18ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +8ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +7ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +22ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +3ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +21ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +0ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +21ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +18ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +0ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +24ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +10ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +16ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +3ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +12ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +6ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +12ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +23ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +9ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +8ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +11ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +13ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +4ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +23ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +10ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +5ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +14ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:15 +21ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +25ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +44ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +7ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +10ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +9ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +7ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +20ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +0ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +5ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +14ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +13ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +4ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +14ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +14ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +17ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +10ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +18ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +11ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +7ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +12ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +19ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +12ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +4ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +11ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +3ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +14ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +18ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +12ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +7ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +24ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +17ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +6ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +10ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +66ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:16 +35ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:16 +17ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +10ms service=server method=GET path=/user request
+INFO  2026-05-14T10:13:16 +0ms service=server status=started method=GET path=/user request
+INFO  2026-05-14T10:13:16 +1ms service=server method=GET path=/general request
+INFO  2026-05-14T10:13:16 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:13:16 +0ms service=server status=completed duration=1 method=GET path=/user request
+INFO  2026-05-14T10:13:16 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:13:16 +0ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:13:16 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:13:16 +37ms service=server method=GET path=/session request
+INFO  2026-05-14T10:13:16 +0ms service=server status=started method=GET path=/session request
+INFO  2026-05-14T10:13:16 +6ms service=server status=completed duration=6 method=GET path=/session request
+INFO  2026-05-14T10:13:16 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +0ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +0ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +3ms service=server method=GET path=/agent request
+INFO  2026-05-14T10:13:16 +1ms service=server status=started method=GET path=/agent request
+INFO  2026-05-14T10:13:16 +12ms service=server method=GET path=/question request
+INFO  2026-05-14T10:13:16 +0ms service=server status=started method=GET path=/question request
+INFO  2026-05-14T10:13:16 +0ms service=server status=completed duration=0 method=GET path=/question request
+INFO  2026-05-14T10:13:16 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +12ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +23ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +29ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +0ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +33ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +0ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +11ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +15ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +5ms service=server status=completed duration=142 method=GET path=/agent request
+INFO  2026-05-14T10:13:16 +13ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +23ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:13:16 +1ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:13:16 +0ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +63ms service=server status=completed duration=294 method=GET path=/provider request
+INFO  2026-05-14T10:13:16 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +0ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +11ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +15ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +16ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +16ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +18ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +15ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +15ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +17ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +18ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:16 +20ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +17ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +13ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +26ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +32ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +14ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +16ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +3ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +12ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +17ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +14ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +12ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +15ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +4ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +13ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +21ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +3ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +4ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +10ms service=server method=GET path=/config request
+INFO  2026-05-14T10:13:17 +0ms service=server status=started method=GET path=/config request
+INFO  2026-05-14T10:13:17 +2ms service=server status=completed duration=2 method=GET path=/config request
+INFO  2026-05-14T10:13:17 +0ms service=server method=GET path=/general request
+INFO  2026-05-14T10:13:17 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:13:17 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +1ms service=server status=completed duration=3 method=GET path=/general request
+INFO  2026-05-14T10:13:17 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +1ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:13:17 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:13:17 +1ms service=server status=completed duration=1 method=GET path=/schedule request
+INFO  2026-05-14T10:13:17 +1ms service=server method=GET path=/session/status request
+INFO  2026-05-14T10:13:17 +0ms service=server status=started method=GET path=/session/status request
+INFO  2026-05-14T10:13:17 +0ms service=server status=completed duration=0 method=GET path=/session/status request
+INFO  2026-05-14T10:13:17 +13ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +0ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +1ms service=server method=GET path=/event request
+INFO  2026-05-14T10:13:17 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-14T10:13:17 +1ms service=server event connected
+INFO  2026-05-14T10:13:17 +1ms service=bus type=* subscribing
+INFO  2026-05-14T10:13:17 +0ms service=server status=completed duration=2 method=GET path=/event request
+INFO  2026-05-14T10:13:17 +15ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +13ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +14ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +30ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +4ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +14ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +10ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +11ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +10ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +28ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +1ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +0ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +47ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +37ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +41ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +25ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +12ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +23ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +78ms service=server method=GET path=/general request
+INFO  2026-05-14T10:13:17 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:13:17 +3ms service=server status=completed duration=3 method=GET path=/general request
+INFO  2026-05-14T10:13:17 +113ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:17 +104ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:18 +105ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:13:18 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:13:18 +3ms service=server status=completed duration=2 method=GET path=/schedule request
+INFO  2026-05-14T10:13:18 +0ms service=server method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:13:18 +0ms service=server status=started method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:13:18 +7ms service=server status=completed duration=7 method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:13:18 +2ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:18 +40ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:18 +24ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:18 +17ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:18 +34ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:18 +20ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:18 +16ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:18 +19ms service=bus type=message.part.delta publishing
+INFO  2026-05-14T10:13:18 +74ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:18 +308ms service=snapshot hash=328836fd204b0ec320c18a6ae807fe1a29506aaa
+ cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
+INFO  2026-05-14T10:13:18 +1ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:18 +2ms service=bus type=message.updated publishing
+INFO  2026-05-14T10:13:18 +241ms service=bus type=message.part.updated publishing
+INFO  2026-05-14T10:13:18 +4ms service=bus type=message.updated publishing
+INFO  2026-05-14T10:13:18 +1ms service=bus type=session.status publishing
+INFO  2026-05-14T10:13:18 +14ms service=bus type=session.status publishing
+INFO  2026-05-14T10:13:18 +1ms service=bus type=session.idle publishing
+INFO  2026-05-14T10:13:34 +15573ms service=server method=GET path=/user request
+INFO  2026-05-14T10:13:34 +0ms service=server status=started method=GET path=/user request
+INFO  2026-05-14T10:13:34 +2ms service=server status=completed duration=1 method=GET path=/user request
+INFO  2026-05-14T10:13:34 +0ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:13:34 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:13:34 +37ms service=server method=GET path=/general request
+INFO  2026-05-14T10:13:34 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:13:34 +1ms service=server method=GET path=/agent request
+INFO  2026-05-14T10:13:34 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-05-14T10:13:34 +0ms service=server method=GET path=/question request
+INFO  2026-05-14T10:13:34 +0ms service=server status=started method=GET path=/question request
+INFO  2026-05-14T10:13:34 +1ms service=server status=completed duration=1 method=GET path=/question request
+INFO  2026-05-14T10:13:34 +0ms service=server method=GET path=/session request
+INFO  2026-05-14T10:13:34 +0ms service=server status=started method=GET path=/session request
+INFO  2026-05-14T10:13:34 +3ms service=server status=completed duration=3 method=GET path=/session request
+INFO  2026-05-14T10:13:34 +4ms service=server status=completed duration=9 method=GET path=/general request
+INFO  2026-05-14T10:13:34 +30ms service=server status=completed duration=38 method=GET path=/agent request
+INFO  2026-05-14T10:13:34 +94ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:13:34 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:13:34 +41ms service=server status=completed duration=211 method=GET path=/provider request
+INFO  2026-05-14T10:13:34 +226ms service=server method=GET path=/config request
+INFO  2026-05-14T10:13:34 +0ms service=server status=started method=GET path=/config request
+INFO  2026-05-14T10:13:34 +1ms service=server status=completed duration=1 method=GET path=/config request
+INFO  2026-05-14T10:13:34 +1ms service=server method=GET path=/session/status request
+INFO  2026-05-14T10:13:34 +1ms service=server status=started method=GET path=/session/status request
+INFO  2026-05-14T10:13:34 +0ms service=server status=completed duration=0 method=GET path=/session/status request
+INFO  2026-05-14T10:13:34 +2ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:13:34 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:13:34 +2ms service=server status=completed duration=1 method=GET path=/schedule request
+INFO  2026-05-14T10:13:35 +225ms service=server method=GET path=/general request
+INFO  2026-05-14T10:13:35 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:13:35 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:13:35 +6ms service=server method=GET path=/event request
+INFO  2026-05-14T10:13:35 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-14T10:13:35 +0ms service=server event connected
+INFO  2026-05-14T10:13:35 +1ms service=bus type=* subscribing
+INFO  2026-05-14T10:13:35 +0ms service=server status=completed duration=1 method=GET path=/event request
+INFO  2026-05-14T10:13:35 +89ms service=server method=GET path=/general request
+INFO  2026-05-14T10:13:35 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:13:35 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:13:35 +238ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:13:35 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:13:35 +2ms service=server status=completed duration=2 method=GET path=/schedule request
+INFO  2026-05-14T10:13:35 +0ms service=server method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:13:35 +0ms service=server status=started method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:13:35 +2ms service=server status=completed duration=2 method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:13:50 +14591ms service=server method=GET path=/user request
+INFO  2026-05-14T10:13:50 +0ms service=server status=started method=GET path=/user request
+INFO  2026-05-14T10:13:50 +2ms service=server status=completed duration=2 method=GET path=/user request
+INFO  2026-05-14T10:13:50 +1ms service=server method=GET path=/agent request
+INFO  2026-05-14T10:13:50 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-05-14T10:13:50 +1ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:13:50 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:13:50 +27ms service=server method=GET path=/general request
+INFO  2026-05-14T10:13:50 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:13:50 +1ms service=server method=GET path=/question request
+INFO  2026-05-14T10:13:50 +0ms service=server status=started method=GET path=/question request
+INFO  2026-05-14T10:13:50 +0ms service=server status=completed duration=0 method=GET path=/question request
+INFO  2026-05-14T10:13:50 +1ms service=server method=GET path=/session request
+INFO  2026-05-14T10:13:50 +0ms service=server status=started method=GET path=/session request
+INFO  2026-05-14T10:13:50 +6ms service=server status=completed duration=6 method=GET path=/session request
+INFO  2026-05-14T10:13:50 +1ms service=server status=completed duration=9 method=GET path=/general request
+INFO  2026-05-14T10:13:50 +33ms service=server status=completed duration=70 method=GET path=/agent request
+INFO  2026-05-14T10:13:50 +87ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:13:50 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:13:50 +50ms service=server status=completed duration=206 method=GET path=/provider request
+INFO  2026-05-14T10:13:50 +236ms service=server method=GET path=/config request
+INFO  2026-05-14T10:13:50 +1ms service=server status=started method=GET path=/config request
+INFO  2026-05-14T10:13:50 +1ms service=server status=completed duration=1 method=GET path=/config request
+INFO  2026-05-14T10:13:50 +0ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:13:50 +1ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:13:50 +1ms service=server status=completed duration=2 method=GET path=/schedule request
+INFO  2026-05-14T10:13:50 +1ms service=server method=GET path=/session/status request
+INFO  2026-05-14T10:13:50 +0ms service=server status=started method=GET path=/session/status request
+INFO  2026-05-14T10:13:50 +0ms service=server status=completed duration=0 method=GET path=/session/status request
+INFO  2026-05-14T10:13:50 +217ms service=server method=GET path=/general request
+INFO  2026-05-14T10:13:50 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:13:50 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:13:50 +6ms service=server method=GET path=/event request
+INFO  2026-05-14T10:13:50 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-14T10:13:50 +1ms service=server event connected
+INFO  2026-05-14T10:13:50 +0ms service=bus type=* subscribing
+INFO  2026-05-14T10:13:50 +0ms service=server status=completed duration=1 method=GET path=/event request
+INFO  2026-05-14T10:13:50 +93ms service=server method=GET path=/general request
+INFO  2026-05-14T10:13:50 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:13:50 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:13:51 +226ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:13:51 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:13:51 +2ms service=server status=completed duration=2 method=GET path=/schedule request
+INFO  2026-05-14T10:13:51 +2ms service=server method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:13:51 +0ms service=server status=started method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:13:51 +4ms service=server status=completed duration=4 method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:14:03 +12059ms service=server method=GET path=/user request
+INFO  2026-05-14T10:14:03 +0ms service=server status=started method=GET path=/user request
+INFO  2026-05-14T10:14:03 +1ms service=server status=completed duration=1 method=GET path=/user request
+INFO  2026-05-14T10:14:03 +0ms service=server method=GET path=/agent request
+INFO  2026-05-14T10:14:03 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-05-14T10:14:03 +2ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:14:03 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:14:03 +30ms service=server method=GET path=/general request
+INFO  2026-05-14T10:14:03 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:14:03 +0ms service=server method=GET path=/question request
+INFO  2026-05-14T10:14:03 +0ms service=server status=started method=GET path=/question request
+INFO  2026-05-14T10:14:03 +1ms service=server status=completed duration=1 method=GET path=/question request
+INFO  2026-05-14T10:14:03 +0ms service=server method=GET path=/session request
+INFO  2026-05-14T10:14:03 +0ms service=server status=started method=GET path=/session request
+INFO  2026-05-14T10:14:03 +3ms service=server status=completed duration=3 method=GET path=/session request
+INFO  2026-05-14T10:14:03 +1ms service=server status=completed duration=5 method=GET path=/general request
+INFO  2026-05-14T10:14:03 +30ms service=server status=completed duration=67 method=GET path=/agent request
+INFO  2026-05-14T10:14:03 +183ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:14:03 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:14:03 +46ms service=server status=completed duration=294 method=GET path=/provider request
+INFO  2026-05-14T10:14:03 +163ms service=server method=GET path=/config request
+INFO  2026-05-14T10:14:03 +0ms service=server status=started method=GET path=/config request
+INFO  2026-05-14T10:14:03 +1ms service=server status=completed duration=1 method=GET path=/config request
+INFO  2026-05-14T10:14:03 +1ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:14:03 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:14:03 +2ms service=server status=completed duration=2 method=GET path=/schedule request
+INFO  2026-05-14T10:14:03 +1ms service=server method=GET path=/session/status request
+INFO  2026-05-14T10:14:03 +0ms service=server status=started method=GET path=/session/status request
+INFO  2026-05-14T10:14:03 +0ms service=server status=completed duration=0 method=GET path=/session/status request
+INFO  2026-05-14T10:14:03 +2ms service=server method=GET path=/general request
+INFO  2026-05-14T10:14:03 +1ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:14:03 +0ms service=server status=completed duration=0 method=GET path=/general request
+INFO  2026-05-14T10:14:03 +81ms service=server method=GET path=/event request
+INFO  2026-05-14T10:14:03 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-14T10:14:03 +0ms service=server event connected
+INFO  2026-05-14T10:14:03 +0ms service=bus type=* subscribing
+INFO  2026-05-14T10:14:03 +0ms service=server status=completed duration=0 method=GET path=/event request
+INFO  2026-05-14T10:14:03 +245ms service=server method=GET path=/general request
+INFO  2026-05-14T10:14:03 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:14:03 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:14:04 +299ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:14:04 +1ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:14:04 +1ms service=server status=completed duration=1 method=GET path=/schedule request
+INFO  2026-05-14T10:14:04 +2ms service=server method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:14:04 +0ms service=server status=started method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:14:04 +4ms service=server status=completed duration=4 method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:14:04 +226ms service=server method=GET path=/user request
+INFO  2026-05-14T10:14:04 +0ms service=server status=started method=GET path=/user request
+INFO  2026-05-14T10:14:04 +1ms service=server status=completed duration=1 method=GET path=/user request
+INFO  2026-05-14T10:14:04 +1ms service=server method=GET path=/general request
+INFO  2026-05-14T10:14:04 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:14:04 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:14:04 +169ms service=server method=GET path=/general request
+INFO  2026-05-14T10:14:04 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:14:04 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:14:04 +79ms service=server method=GET path=/general request
+INFO  2026-05-14T10:14:04 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:14:04 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:16:14 +130000ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:16:14 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:16:14 +214ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:16:14 +1ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:16:14 +42ms service=server status=completed duration=257 method=GET path=/provider request
+INFO  2026-05-14T10:16:37 +22392ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:16:37 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:16:37 +256ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:16:37 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:16:37 +55ms service=server status=completed duration=311 method=GET path=/provider request
+INFO  2026-05-14T10:17:44 +66566ms service=server method=GET path=/user request
+INFO  2026-05-14T10:17:44 +1ms service=server status=started method=GET path=/user request
+INFO  2026-05-14T10:17:44 +3ms service=server status=completed duration=3 method=GET path=/user request
+INFO  2026-05-14T10:17:44 +2ms service=server method=GET path=/general request
+INFO  2026-05-14T10:17:44 +1ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:17:44 +0ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:17:44 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:17:44 +26ms service=server status=completed duration=26 method=GET path=/general request
+INFO  2026-05-14T10:17:44 +4ms service=server method=GET path=/agent request
+INFO  2026-05-14T10:17:44 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-05-14T10:17:44 +63ms service=server status=completed duration=63 method=GET path=/agent request
+INFO  2026-05-14T10:17:44 +118ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:17:44 +1ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:17:44 +77ms service=server status=completed duration=289 method=GET path=/provider request
+INFO  2026-05-14T10:17:44 +329ms service=server method=GET path=/session request
+INFO  2026-05-14T10:17:44 +0ms service=server status=started method=GET path=/session request
+INFO  2026-05-14T10:17:44 +8ms service=server status=completed duration=8 method=GET path=/session request
+INFO  2026-05-14T10:17:44 +1ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:17:44 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:17:44 +5ms service=server status=completed duration=5 method=GET path=/schedule request
+INFO  2026-05-14T10:17:44 +1ms service=server method=GET path=/config request
+INFO  2026-05-14T10:17:44 +0ms service=server status=started method=GET path=/config request
+INFO  2026-05-14T10:17:44 +2ms service=server status=completed duration=2 method=GET path=/config request
+INFO  2026-05-14T10:17:44 +1ms service=server method=GET path=/question request
+INFO  2026-05-14T10:17:44 +0ms service=server status=started method=GET path=/question request
+INFO  2026-05-14T10:17:44 +1ms service=server status=completed duration=1 method=GET path=/question request
+INFO  2026-05-14T10:17:49 +4951ms service=server method=GET path=/user request
+INFO  2026-05-14T10:17:49 +0ms service=server status=started method=GET path=/user request
+INFO  2026-05-14T10:17:49 +1ms service=server status=completed duration=1 method=GET path=/user request
+INFO  2026-05-14T10:17:49 +0ms service=server method=GET path=/general request
+INFO  2026-05-14T10:17:49 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:17:49 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:17:49 +83ms service=server method=GET path=/question request
+INFO  2026-05-14T10:17:49 +0ms service=server status=started method=GET path=/question request
+INFO  2026-05-14T10:17:49 +0ms service=server status=completed duration=0 method=GET path=/question request
+INFO  2026-05-14T10:17:49 +1ms service=server method=GET path=/session request
+INFO  2026-05-14T10:17:49 +0ms service=server status=started method=GET path=/session request
+INFO  2026-05-14T10:17:49 +6ms service=server status=completed duration=6 method=GET path=/session request
+INFO  2026-05-14T10:17:49 +0ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:17:49 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:17:49 +82ms service=server method=GET path=/agent request
+INFO  2026-05-14T10:17:49 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-05-14T10:17:50 +32ms service=server status=completed duration=32 method=GET path=/agent request
+INFO  2026-05-14T10:17:50 +182ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:17:50 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:17:50 +49ms service=server status=completed duration=345 method=GET path=/provider request
+INFO  2026-05-14T10:17:50 +14ms service=server method=GET path=/session/status request
+INFO  2026-05-14T10:17:50 +0ms service=server status=started method=GET path=/session/status request
+INFO  2026-05-14T10:17:50 +0ms service=server status=completed duration=0 method=GET path=/session/status request
+INFO  2026-05-14T10:17:50 +0ms service=server method=GET path=/config request
+INFO  2026-05-14T10:17:50 +1ms service=server status=started method=GET path=/config request
+INFO  2026-05-14T10:17:50 +0ms service=server status=completed duration=0 method=GET path=/config request
+INFO  2026-05-14T10:17:50 +0ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:17:50 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:17:50 +1ms service=server status=completed duration=1 method=GET path=/schedule request
+INFO  2026-05-14T10:17:50 +1ms service=server method=GET path=/general request
+INFO  2026-05-14T10:17:50 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:17:50 +0ms service=server method=GET path=/event request
+INFO  2026-05-14T10:17:50 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-14T10:17:50 +0ms service=server event connected
+INFO  2026-05-14T10:17:50 +1ms service=bus type=* subscribing
+INFO  2026-05-14T10:17:50 +1ms service=server status=completed duration=2 method=GET path=/event request
+INFO  2026-05-14T10:17:50 +0ms service=server status=completed duration=2 method=GET path=/general request
+INFO  2026-05-14T10:17:50 +372ms service=server method=GET path=/general request
+INFO  2026-05-14T10:17:50 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:17:50 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:17:51 +426ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:17:51 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:17:51 +1ms service=server status=completed duration=1 method=GET path=/schedule request
+INFO  2026-05-14T10:17:51 +90ms service=server method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:17:51 +0ms service=server status=started method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:17:51 +3ms service=server status=completed duration=3 method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:17:51 +469ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:17:51 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:17:51 +264ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:17:51 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:17:51 +38ms service=server status=completed duration=302 method=GET path=/provider request
+INFO  2026-05-14T10:18:44 +52403ms service=server method=GET path=/user request
+INFO  2026-05-14T10:18:44 +0ms service=server status=started method=GET path=/user request
+INFO  2026-05-14T10:18:44 +2ms service=server status=completed duration=2 method=GET path=/user request
+INFO  2026-05-14T10:18:44 +1ms service=server method=GET path=/agent request
+INFO  2026-05-14T10:18:44 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-05-14T10:18:44 +3ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:18:44 +1ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:18:44 +57ms service=server method=GET path=/general request
+INFO  2026-05-14T10:18:44 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:18:44 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:18:44 +19ms service=server status=completed duration=81 method=GET path=/agent request
+INFO  2026-05-14T10:18:44 +74ms service=server method=GET path=/session request
+INFO  2026-05-14T10:18:44 +0ms service=server status=started method=GET path=/session request
+INFO  2026-05-14T10:18:44 +4ms service=server status=completed duration=4 method=GET path=/session request
+INFO  2026-05-14T10:18:45 +1353ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:18:45 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:18:45 +71ms service=server status=completed duration=1579 method=GET path=/provider request
+INFO  2026-05-14T10:18:49 +3381ms service=server method=GET path=/user request
+INFO  2026-05-14T10:18:49 +1ms service=server status=started method=GET path=/user request
+INFO  2026-05-14T10:18:49 +0ms service=server status=completed duration=1 method=GET path=/user request
+INFO  2026-05-14T10:18:49 +1ms service=server method=GET path=/question request
+INFO  2026-05-14T10:18:49 +0ms service=server status=started method=GET path=/question request
+INFO  2026-05-14T10:18:49 +0ms service=server status=completed duration=0 method=GET path=/question request
+INFO  2026-05-14T10:18:49 +0ms service=server method=GET path=/agent request
+INFO  2026-05-14T10:18:49 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-05-14T10:18:49 +1ms service=server method=GET path=/session request
+INFO  2026-05-14T10:18:49 +0ms service=server status=started method=GET path=/session request
+INFO  2026-05-14T10:18:49 +3ms service=server status=completed duration=3 method=GET path=/session request
+INFO  2026-05-14T10:18:49 +0ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:18:49 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:18:49 +16ms service=server method=GET path=/general request
+INFO  2026-05-14T10:18:49 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:18:49 +12ms service=server status=completed duration=12 method=GET path=/general request
+INFO  2026-05-14T10:18:49 +31ms service=server status=completed duration=63 method=GET path=/agent request
+INFO  2026-05-14T10:18:49 +255ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:18:49 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:18:49 +45ms service=server status=completed duration=359 method=GET path=/provider request
+INFO  2026-05-14T10:18:49 +124ms service=server method=GET path=/config request
+INFO  2026-05-14T10:18:49 +0ms service=server status=started method=GET path=/config request
+INFO  2026-05-14T10:18:49 +1ms service=server status=completed duration=1 method=GET path=/config request
+INFO  2026-05-14T10:18:49 +1ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:18:49 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:18:49 +1ms service=server status=completed duration=1 method=GET path=/schedule request
+INFO  2026-05-14T10:18:49 +1ms service=server method=GET path=/session/status request
+INFO  2026-05-14T10:18:49 +0ms service=server status=started method=GET path=/session/status request
+INFO  2026-05-14T10:18:49 +1ms service=server status=completed duration=1 method=GET path=/session/status request
+INFO  2026-05-14T10:18:50 +231ms service=server method=GET path=/general request
+INFO  2026-05-14T10:18:50 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:18:50 +0ms service=server status=completed duration=0 method=GET path=/general request
+INFO  2026-05-14T10:18:50 +7ms service=server method=GET path=/event request
+INFO  2026-05-14T10:18:50 +1ms service=server status=started method=GET path=/event request
+INFO  2026-05-14T10:18:50 +0ms service=server event connected
+INFO  2026-05-14T10:18:50 +1ms service=bus type=* subscribing
+INFO  2026-05-14T10:18:50 +0ms service=server status=completed duration=1 method=GET path=/event request
+INFO  2026-05-14T10:18:50 +100ms service=server method=GET path=/general request
+INFO  2026-05-14T10:18:50 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-14T10:18:50 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-14T10:18:50 +235ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:18:50 +1ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:18:50 +1ms service=server status=completed duration=1 method=GET path=/schedule request
+INFO  2026-05-14T10:18:50 +1ms service=server method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:18:50 +0ms service=server status=started method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:18:50 +4ms service=server status=completed duration=4 method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:19:31 +41231ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:19:31 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:19:31 +162ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:19:31 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:19:31 +2ms service=server status=completed duration=2 method=GET path=/schedule request
+INFO  2026-05-14T10:19:31 +10ms service=server method=GET path=/session/ses_1da420079ffePTWZ8DZDZZRznf/message request
+INFO  2026-05-14T10:19:31 +0ms service=server status=started method=GET path=/session/ses_1da420079ffePTWZ8DZDZZRznf/message request
+INFO  2026-05-14T10:19:31 +2ms service=server status=completed duration=2 method=GET path=/session/ses_1da420079ffePTWZ8DZDZZRznf/message request
+INFO  2026-05-14T10:19:31 +31ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:19:31 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:19:31 +45ms service=server status=completed duration=252 method=GET path=/provider request
+INFO  2026-05-14T10:19:33 +1439ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:19:33 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:19:33 +2ms service=server status=completed duration=2 method=GET path=/schedule request
+INFO  2026-05-14T10:19:33 +0ms service=server method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:19:33 +0ms service=server status=started method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:19:33 +3ms service=server status=completed duration=3 method=GET path=/session/ses_1da075e90ffejf0fOL7aM0LGY0/message request
+INFO  2026-05-14T10:19:35 +1978ms service=server method=GET path=/session/ses_1de9431c1ffe1ZCUoynorqN69r/message request
+INFO  2026-05-14T10:19:35 +0ms service=server status=started method=GET path=/session/ses_1de9431c1ffe1ZCUoynorqN69r/message request
+INFO  2026-05-14T10:19:35 +4ms service=server status=completed duration=4 method=GET path=/session/ses_1de9431c1ffe1ZCUoynorqN69r/message request
+INFO  2026-05-14T10:19:35 +0ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:19:35 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:19:35 +1ms service=server status=completed duration=1 method=GET path=/schedule request
+INFO  2026-05-14T10:19:37 +2506ms service=server method=GET path=/schedule request
+INFO  2026-05-14T10:19:37 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-14T10:19:37 +2ms service=server status=completed duration=2 method=GET path=/schedule request
+INFO  2026-05-14T10:19:37 +2ms service=server method=GET path=/session/ses_1da420079ffePTWZ8DZDZZRznf/message request
+INFO  2026-05-14T10:19:37 +0ms service=server status=started method=GET path=/session/ses_1da420079ffePTWZ8DZDZZRznf/message request
+INFO  2026-05-14T10:19:37 +2ms service=server status=completed duration=2 method=GET path=/session/ses_1da420079ffePTWZ8DZDZZRznf/message request
+INFO  2026-05-14T10:22:44 +186712ms service=server method=GET path=/provider request
+INFO  2026-05-14T10:22:44 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-14T10:22:44 +155ms service=provider.routes count=5 codex models fetched
+INFO  2026-05-14T10:22:44 +0ms service=provider.routes codex models updated in provider list response
+INFO  2026-05-14T10:22:44 +43ms service=server status=completed duration=198 method=GET path=/provider request

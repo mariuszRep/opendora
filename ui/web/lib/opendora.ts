@@ -434,6 +434,11 @@ export const opendora = {
     messages: (sessionID: string) => req<MessageWithParts[]>(`/session/${sessionID}/message`),
     abort: (sessionID: string) =>
       req<boolean>(`/session/${sessionID}/abort`, { method: "POST", body: JSON.stringify({}) }),
+    compact: (sessionID: string, model: { providerID: string; modelID: string }) =>
+      req<boolean>(`/session/${sessionID}/summarize`, {
+        method: "POST",
+        body: JSON.stringify({ providerID: model.providerID, modelID: model.modelID, auto: false }),
+      }),
     update: (
       sessionID: string,
       updates: {

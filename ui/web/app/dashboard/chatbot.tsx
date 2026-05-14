@@ -94,7 +94,7 @@ import { SessionTreeToolContent, isSessionTreeTool, getSessionTreeToolTitle } fr
 import { WebFetchToolContent, isWebFetchTool, getWebFetchToolTitle, getWebFetchUrl } from "@/components/ai-elements/webfetch-tool"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BellIcon, CheckIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, FileIcon, Link2Icon, PanelRightIcon, Volume2Icon, VolumeXIcon } from "lucide-react"
+import { BellIcon, CheckIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, FileIcon, Link2Icon, PanelRightIcon, SquareSlash, Volume2Icon, VolumeXIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
@@ -250,6 +250,7 @@ export const Chatbot = () => {
     isChatCentered,
     selectSession,
     selectAgent,
+    compact,
     sessions,
     webPreviewOpen,
     toggleWebPreview,
@@ -291,6 +292,7 @@ export const Chatbot = () => {
     const query = text.startsWith("/") ? text.slice(1).toLowerCase() : ""
     const base = [
       { id: "new", label: "new", description: "Create a new session" },
+      { id: "compact", label: "compact", description: "Compact context with a summary" },
       { id: "model", label: "model", description: "Switch model" },
       ...agents.map((a) => ({
         id: `agent:${(a as any)._id}`,
@@ -611,13 +613,17 @@ export const Chatbot = () => {
       setText("")
       if (id === "new") {
         createSession()
+      } else if (id === "compact") {
+        if (selectedModel) {
+          compact({ providerID: selectedModel.providerID, modelID: selectedModel.modelID }).catch(() => {})
+        }
       } else if (id === "model") {
         setModelSelectorOpen(true)
       } else if (id.startsWith("agent:")) {
         selectAgent(id.slice(6))
       }
     },
-    [createSession, selectAgent],
+    [createSession, compact, selectAgent, selectedModel],
   )
 
   const handleTextareaKeyDown = useCallback(
@@ -1587,6 +1593,15 @@ export const Chatbot = () => {
                     <PromptInputActionAddScreenshot />
                   </PromptInputActionMenuContent>
                 </PromptInputActionMenu>
+                <PromptInputButton
+                  tooltip="Slash commands"
+                  onClick={() => {
+                    setText("/")
+                    setTimeout(() => inputRef.current?.focus(), 0)
+                  }}
+                >
+                  <SquareSlash className="size-4" />
+                </PromptInputButton>
                 <SpeechInput
                   key={settings.stt.provider}
                   className="shrink-0"

@@ -69,6 +69,7 @@ export type UseOpendoraResult = {
   sendMessage: (text: string, options?: { model?: { providerID: string; modelID: string }; fallbackGroupID?: string; agent?: string; files?: Array<{ type: "file"; mime: string; filename?: string; url: string }> }) => Promise<void>
   abort: () => void
   abortSession: (sessionID: string) => void
+  compact: (model: { providerID: string; modelID: string }) => Promise<void>
   // Agents — read
   agents: (Agent & { _id: string })[]
   allAgents: (Agent & { _id: string })[]
@@ -792,6 +793,12 @@ export function useOpendora(): UseOpendoraResult {
     opendora.session.abort(sessionID).catch(() => { })
   }, [])
 
+  const compact = useCallback(async (model: { providerID: string; modelID: string }) => {
+    const session = selectedSessionRef.current
+    if (!session) return
+    await opendora.session.compact(session.id, model)
+  }, [])
+
   // ── Agent CRUD ────────────────────────────────────────────────────────────
 
   const createAgent = useCallback(async (config: AgentConfig, persona?: string, injection?: string) => {
@@ -979,6 +986,7 @@ export function useOpendora(): UseOpendoraResult {
     sendMessage,
     abort,
     abortSession,
+    compact,
     agents,
     allAgents,
     selectedAgent,

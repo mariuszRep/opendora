@@ -356,6 +356,12 @@ export namespace SessionPrompt {
             cfg.provider!.getModel(slot.providerID, slot.modelID)
           )
         : null
+      if (!lastUser.model?.providerID || !lastUser.model?.modelID) {
+        throw new Error(
+          `No valid model in user message for session ${sessionID}. ` +
+          `providerID=${String(lastUser.model?.providerID)} modelID=${String(lastUser.model?.modelID)}`,
+        )
+      }
       const model = _resolvedModel ?? await cfg.provider?.getModel(lastUser.model.providerID, lastUser.model.modelID).catch((e: any) => {
         if (cfg.provider?.ModelNotFoundError?.isInstance?.(e)) {
           const hint = e.data.suggestions?.length ? ` Did you mean: ${e.data.suggestions.join(", ")}?` : ""
@@ -796,7 +802,14 @@ export namespace SessionPrompt {
     for await (const item of MessageV2.stream(sessionID)) {
       if (item.info.role === "user" && item.info.model) return item.info.model
     }
-    return cfg.provider?.defaultModel?.()
+    const fallback = await cfg.provider?.defaultModel?.()
+    if (!fallback?.providerID || !fallback?.modelID) {
+      throw new Error(
+        `No default model available for session ${sessionID}. ` +
+        `provider=${String(fallback?.providerID)} model=${String(fallback?.modelID)}`,
+      )
+    }
+    return fallback
   }
 
   /** @internal Exported for testing */
@@ -1135,6 +1148,12 @@ export namespace SessionPrompt {
     console.log(`[prompt] createUserMessage resolved agent.id=${agent.id} agent.name=${agent.name}`)
 
     const model = input.model ?? agent.model ?? (await lastModel(input.sessionID))
+    if (!model?.providerID || !model?.modelID) {
+      throw new Error(
+        `Could not resolve model for session ${input.sessionID}. ` +
+        `providerID=${String(model?.providerID)} modelID=${String(model?.modelID)}`,
+      )
+    }
     const full =
       !input.variant && agent.variant
         ? await cfg.provider?.getModel(model.providerID, model.modelID).catch(() => undefined)
@@ -1611,6 +1630,12 @@ export namespace SessionPrompt {
     const agent = await (cfg.agent?.getByIdOrName?.(input.agent) ?? cfg.agent?.get?.(input.agent))
     if (!agent) throw new Error(`Unknown agent: ${input.agent}`)
     const model = input.model ?? agent.model ?? (await lastModel(input.sessionID))
+    if (!model?.providerID || !model?.modelID) {
+      throw new Error(
+        `Could not resolve model for session ${input.sessionID}. ` +
+        `providerID=${String(model?.providerID)} modelID=${String(model?.modelID)}`,
+      )
+    }
     const userMsg: MessageV2.User = {
       id: Identifier.ascending("message"),
       sessionID: input.sessionID,
