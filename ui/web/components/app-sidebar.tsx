@@ -504,8 +504,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         onOpenChange={setSessionCreateOpen}
         onCreateSession={async (sessionType: SessionType, openSettings: boolean) => {
           await createSession(sessionType)
-          // Navigate to conversation - the session should already be selected
-          router.push("/dashboard")
         }}
       />
     </>

@@ -16,7 +16,9 @@
     "reply",
     "question",
     "todowrite",
-    "log"
+    "log",
+    "memory_write",
+    "memory_read"
   ],
   "skills": [
     "requirements",

@@ -68,11 +68,6 @@
       "mode": "worker"
     },
     {
-      "id": "desktop-agent",
-      "name": "Desktop Agent",
-      "mode": "worker"
-    },
-    {
       "id": "office-clip",
       "name": "Office Clip",
       "mode": "worker"

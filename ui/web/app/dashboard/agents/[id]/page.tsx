@@ -96,10 +96,12 @@ type ModelValue = { providerID: string; modelID: string } | undefined
 export default function AgentSettingsPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const { updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, modelFilters, allAgents, refreshProviders, sessions, setAgentMainSession, selectSession } =
+  const { createAgent, updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, modelFilters, allAgents, refreshProviders, sessions, setAgentMainSession, selectSession } =
     useOpendoraContext()
 
-  const agent = allAgents.find((a) => (a as any)._id === id || (a as any).id === id || a.name === id) as any
+  const isNew = id === "new"
+
+  const agent = isNew ? undefined : allAgents.find((a) => (a as any)._id === id || (a as any).id === id || a.name === id) as any
 
   // Get the actual agent ID (either _id or name match)
   const agentId = useMemo(() => {
@@ -191,7 +193,7 @@ export default function AgentSettingsPage() {
 
   // Load agent data — re-run when agent loads (agents list may arrive after mount)
   useEffect(() => {
-    if (!id || !agent) return
+    if (!id || !agent || isNew) return
     setName(agent.name)
     setDescription(agent.description ?? "")
     setMode(agent.mode ?? "all")
@@ -213,13 +215,13 @@ export default function AgentSettingsPage() {
 
   // Load persona separately (network call, only on id change)
   useEffect(() => {
-    if (!id) return
+    if (!id || isNew) return
     getAgentPersona(agentId).then(setPersona).catch(() => { })
   }, [agentId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load injection separately (network call, only on id change)
   useEffect(() => {
-    if (!id) return
+    if (!id || isNew) return
     opendora.agent.getInjection(agentId).then(setInjection).catch(() => { })
   }, [agentId]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -252,6 +254,10 @@ export default function AgentSettingsPage() {
   }
 
   async function handleSave() {
+    if (!name.trim()) {
+      setError("Name is required")
+      return
+    }
     setSaving(true)
     setError(null)
     try {
@@ -270,25 +276,27 @@ export default function AgentSettingsPage() {
         tools: selectedTools.length > 0 ? selectedTools : undefined,
         skills: selectedSkills.length > 0 ? selectedSkills : undefined,
         toolConfig: (() => {
-          const config: any = {}
+          const tc: any = {}
           if (delegateAllowedAgents.length > 0) {
-            config.delegate = { allowedAgents: delegateAllowedAgents }
+            tc.delegate = { allowedAgents: delegateAllowedAgents }
           }
           if (selectedTools.includes("reply")) {
-            config.reply = { stopAfterReply: replyStopAfterReply }
+            tc.reply = { stopAfterReply: replyStopAfterReply }
           }
-          return Object.keys(config).length > 0 ? config : undefined
+          return Object.keys(tc).length > 0 ? tc : undefined
         })(),
         enableInjection: enableInjection || undefined,
         defaultPaths: defaultPaths.length > 0 ? defaultPaths : undefined,
       }
-      console.log('[DEBUG] Saving agent config:', JSON.stringify(config, null, 2))
-      console.log('[DEBUG] toolConfig:', config.toolConfig)
-      console.log('[DEBUG] replyStopAfterReply state:', replyStopAfterReply)
-      await updateAgent(agentId, config, persona, enableInjection ? injection : undefined)
-      router.push("/dashboard")
+      if (isNew) {
+        const entry = await createAgent(config, persona, enableInjection ? injection : undefined)
+        router.push(`/dashboard/agents/${entry.id}`)
+      } else {
+        await updateAgent(agentId, config, persona, enableInjection ? injection : undefined)
+        router.push("/dashboard")
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save")
+      setError(err instanceof Error ? err.message : isNew ? "Failed to create" : "Failed to save")
     } finally {
       setSaving(false)
     }
@@ -390,24 +398,24 @@ export default function AgentSettingsPage() {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage className="capitalize">{agent?.name || id}</BreadcrumbPage>
+              <BreadcrumbPage className="capitalize">{isNew ? "New agent" : (agent?.name || id)}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
 
         <div className="flex gap-2">
-          {!agent?.native && (
+          {!isNew && !agent?.native && (
             <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)} disabled={saving}>
               <Trash2Icon className="mr-1.5 size-3.5" />
               Delete
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={() => router.push("/dashboard")} disabled={saving}>
+          <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/settings/agents")} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={saving} size="sm">
+          <Button onClick={handleSave} disabled={saving || !name.trim()} size="sm">
             {saving && <Loader2Icon className="mr-1.5 size-3.5 animate-spin" />}
-            Save changes
+            {isNew ? "Create agent" : "Save changes"}
           </Button>
         </div>
       </div>
@@ -577,7 +585,7 @@ export default function AgentSettingsPage() {
             )}
 
             {/* Sessions */}
-            <div className="flex flex-col gap-2">
+            {!isNew && <div className="flex flex-col gap-2">
               <Label>Sessions</Label>
               <p className="-mt-1 text-xs text-muted-foreground">
                 Sessions that belong to this agent. The <span className="font-medium text-primary">main</span> session is opened automatically when you switch to this agent.
@@ -632,7 +640,7 @@ export default function AgentSettingsPage() {
                   })}
                 </div>
               )}
-            </div>
+            </div>}
 
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>

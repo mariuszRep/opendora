@@ -93,6 +93,65 @@ class TestTodo(unittest.TestCase):
             # Test through CLI parsing
             pass
 
+    def test_mark_uncomplete(self):
+        """Test marking a task as uncomplete (active)."""
+        todo.add_task("Test task")
+        todo.mark_done(1)
+        result = todo.mark_uncomplete(1)
+        self.assertTrue(result)
+        tasks = todo.load_tasks()
+        self.assertFalse(tasks[0]["done"])
+
+    def test_mark_uncomplete_invalid_id(self):
+        """Test marking uncomplete with invalid ID."""
+        result = todo.mark_uncomplete(999)
+        self.assertFalse(result)
+
+    def test_edit_task(self):
+        """Test editing a task description."""
+        todo.add_task("Original description")
+        result = todo.edit_task(1, "Updated description")
+        self.assertTrue(result)
+        tasks = todo.load_tasks()
+        self.assertEqual(tasks[0]["description"], "Updated description")
+
+    def test_edit_task_invalid_id(self):
+        """Test editing with invalid ID."""
+        result = todo.edit_task(999, "New description")
+        self.assertFalse(result)
+
+    def test_edit_task_empty_description(self):
+        """Test editing with empty description."""
+        todo.add_task("Test task")
+        result = todo.edit_task(1, "")
+        self.assertFalse(result)
+        result = todo.edit_task(1, "   ")
+        self.assertFalse(result)
+
+    def test_delete_task(self):
+        """Test deleting a task."""
+        todo.add_task("Task to delete")
+        result = todo.delete_task(1)
+        self.assertTrue(result)
+        tasks = todo.load_tasks()
+        self.assertEqual(len(tasks), 0)
+
+    def test_delete_task_invalid_id(self):
+        """Test deleting with invalid ID."""
+        result = todo.delete_task(999)
+        self.assertFalse(result)
+
+    def test_delete_task_updates_ids(self):
+        """Test that deleting a task doesn't affect other task IDs."""
+        todo.add_task("Task 1")
+        todo.add_task("Task 2")
+        todo.add_task("Task 3")
+        todo.delete_task(2)
+        tasks = todo.load_tasks()
+        self.assertEqual(len(tasks), 2)
+        self.assertEqual(tasks[0]["id"], 1)
+        self.assertEqual(tasks[1]["id"], 3)
+
 
 if __name__ == "__main__":
     unittest.main()
