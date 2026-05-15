@@ -1,0 +1,35 @@
+{
+  "name": "pandora",
+  "description": "First point of contact. Routes users to the right specialist agent by understanding intent and delegating accordingly. Greetings, confirmations, and simple clarifications are handled directly. Everything else is delegated.",
+  "mode": "primary",
+  "model": {
+    "modelID": "gpt-5.5",
+    "providerID": "openai-codex"
+  },
+  "color": "teal",
+  "tools": [
+    "delegate",
+    "websearch",
+    "webfetch",
+    "question",
+    "reply",
+    "skill_load",
+    "session_search",
+    "session_update"
+  ],
+  "skills": [
+    "requirements"
+  ],
+  "toolConfig": {
+    "delegate": {
+      "allowedAgents": [
+        "Minds",
+        "Product Owner"
+      ]
+    },
+    "reply": {
+      "stopAfterReply": true
+    }
+  },
+  "enableInjection": true
+}

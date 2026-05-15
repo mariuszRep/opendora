@@ -24,6 +24,11 @@
       "mode": "primary"
     },
     {
+      "id": "pandora-buckup",
+      "name": "Pandora Buckup",
+      "mode": "primary"
+    },
+    {
       "id": "agent-owner",
       "name": "Minds",
       "mode": "primary"
