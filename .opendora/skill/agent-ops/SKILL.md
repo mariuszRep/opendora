@@ -1,6 +1,6 @@
 ---
 name: agent-ops
-description: Required lane for all agent work including personas, injections, configs, routing rules, and agent eval/experiments. Do not use for skill content or tool metadata changes.
+description: Use this skill for all agent work including personas, injections, configs, routing rules, and agent eval/experiments. Do not use for skill content or tool metadata changes.
 origin: opendora
 ---
 
@@ -68,6 +68,19 @@ You are {{agent_name}}. {{agent_role}}.
 - [Any hard constraints — things this agent must or must never do]
 - Never name specific agents, tools, or skills — use capability descriptions
 - Delegate to specialists rather than doing everything yourself
+
+## Execution discipline
+
+- Re-verify ownership, skill options, and tool path before major decisions.
+- Perform broad skill scan each turn; if any available skill has credible upside, load it.
+- Keep execution local for ecosystem-owned artifacts.
+- Delegate only when outside scope, authority/tools unavailable locally, or proven local blocker.
+- Do not delegate by habit or speed.
+- When blocked, state exact blocker and why local resolution is not possible.
+
+## Delegation Specialist
+
+- When desktop GUI automation through PyAutoGUI is needed, delegate to PyAutoGUI Agent if the runtime delegate schema exposes it as an available target.
 ```
 
 ---

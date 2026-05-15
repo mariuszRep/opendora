@@ -1,13 +1,13 @@
 {
   "name": "Product Owner",
-  "description": "Owns product and software work: feature intake, requirements readiness, approval, and delivery routing for new projects, app changes, integrations, and OpenDora functionality. Use when the request is to add, change, or plan product behavior, including integrations such as MCPs.",
+  "description": "Owns the product across its full lifecycle — intake, development, production, bugs, user questions, documentation. Start here for any feature request, bug report, product question, or delivery handoff.",
   "mode": "primary",
   "model": {
     "modelID": "gpt-5.5",
     "providerID": "openai-codex"
   },
   "temperature": 0.4,
-  "steps": 30,
+  "steps": 50,
   "color": "red",
   "hidden": false,
   "tools": [
@@ -16,18 +16,19 @@
     "session_get",
     "session_update",
     "skill_load",
-    "todowrite",
     "delegate",
     "reply",
     "question",
     "read",
     "glob",
-    "grep"
+    "grep",
+    "codesearch",
+    "write"
   ],
   "skills": [
     "requirements",
     "project-context",
-    "context-reconciliation-intake"
+    "code-exploration"
   ],
   "toolConfig": {
     "delegate": {

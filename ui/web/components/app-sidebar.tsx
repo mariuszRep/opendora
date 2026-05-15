@@ -452,11 +452,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={toggleWebPreview}
-                tooltip={webPreviewOpen ? "Close Web Preview" : "Open Web Preview"}
+                tooltip={webPreviewOpen ? "Close Preview" : "Open Preview"}
                 isActive={webPreviewOpen}
               >
                 <GlobeIcon className="size-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Web Preview</span>
+                <span className="group-data-[collapsible=icon]:hidden">Preview</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

@@ -92,6 +92,7 @@ import { DelegateToolContent, isDelegateTool, getDelegateToolTitle } from "@/com
 import { TodoToolContent, isTodoTool, getTodoToolTitle } from "@/components/ai-elements/todo-tool"
 import { SessionTreeToolContent, isSessionTreeTool, getSessionTreeToolTitle } from "@/components/ai-elements/session-tree-tool"
 import { WebFetchToolContent, isWebFetchTool, getWebFetchToolTitle, getWebFetchUrl } from "@/components/ai-elements/webfetch-tool"
+import { isSkillLoadTool, getSkillLoadToolTitle, getSkillLoadDefinition } from "@/components/ai-elements/skill-load-tool"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAgentColor } from "@/lib/agent-colors"
 import { BellIcon, CheckIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, FileIcon, Link2Icon, PanelRightIcon, SquareSlash, Volume2Icon, VolumeXIcon } from "lucide-react"
@@ -255,6 +256,7 @@ export const Chatbot = () => {
     webPreviewOpen,
     toggleWebPreview,
     setWebPreviewUrl,
+    openFilePreview,
   } = useOpendoraContext()
 
   const { userName, userColor } = useUserProfile()
@@ -1152,6 +1154,8 @@ export const Chatbot = () => {
                                         setWebfetchViewModes(prev => ({ ...prev, [tool.id]: mode }))
                                       }
                                       const webFetchToolUrl = isWebFetchToolCall ? getWebFetchUrl(tool) : undefined
+                                      const isSkillLoadToolCall = isSkillLoadTool(tool.tool)
+                                      const skillLoadDefinitionPath = isSkillLoadToolCall ? getSkillLoadDefinition(tool) : undefined
                                       const webFetchActions = isWebFetchToolCall ? (
                                         <TooltipProvider>
                                           <Tooltip>
@@ -1171,14 +1175,24 @@ export const Chatbot = () => {
                                             <TooltipContent>Open</TooltipContent>
                                           </Tooltip>
                                         </TooltipProvider>
+                                      ) : isSkillLoadToolCall && skillLoadDefinitionPath ? (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); openFilePreview(skillLoadDefinitionPath, skillLoadDefinitionPath) }}>
+                                                <PanelRightIcon className="size-4 text-muted-foreground" />
+                                              </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Open in Panel</TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
                                       ) : undefined
 
                                       return (
-                                        <Tool defaultOpen={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}>
+                                        <Tool defaultOpen={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall || isSkillLoadToolCall}>
                                           <ToolHeader
                                             state={state}
-                                            title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : tool.tool}
-                                            centerTitle={!!questionRequest}
+                                            title={isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : isSkillLoadToolCall ? getSkillLoadToolTitle(tool) : tool.tool}
                                             toolName={tool.tool}
                                             type="dynamic-tool"
                                             viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : isWebFetchToolCall ? currentWebFetchViewMode : undefined}
@@ -1327,6 +1341,8 @@ export const Chatbot = () => {
                                     setWebfetchViewModes(prev => ({ ...prev, [tool.id]: mode }))
                                   }
                                   const webFetchToolUrl = isWebFetchToolCall ? getWebFetchUrl(tool) : undefined
+                                  const isSkillLoadToolCall = isSkillLoadTool(tool.tool)
+                                  const skillLoadDefinitionPath = isSkillLoadToolCall ? getSkillLoadDefinition(tool) : undefined
                                   const webFetchActions = isWebFetchToolCall ? (
                                     <TooltipProvider>
                                       <Tooltip>
@@ -1346,16 +1362,26 @@ export const Chatbot = () => {
                                         <TooltipContent>Open</TooltipContent>
                                       </Tooltip>
                                     </TooltipProvider>
+                                  ) : isSkillLoadToolCall && skillLoadDefinitionPath ? (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); openFilePreview(skillLoadDefinitionPath, skillLoadDefinitionPath) }}>
+                                            <PanelRightIcon className="size-4 text-muted-foreground" />
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Open in Panel</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   ) : undefined
                                   return (
                                     <Tool
-                                      defaultOpen={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}
+                                      defaultOpen={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall || isSkillLoadToolCall}
                                       key={tool.id}
                                     >
                                       <ToolHeader
                                         state={state}
-                                        title={questionRequest ? (questionRequest.questions[0]?.header ?? tool.tool) : isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : tool.tool}
-                                        centerTitle={!!questionRequest}
+                                        title={isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : isSkillLoadToolCall ? getSkillLoadToolTitle(tool) : tool.tool}
                                         toolName={tool.tool}
                                         type="dynamic-tool"
                                         viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : isWebFetchToolCall ? currentWebFetchViewMode : undefined}

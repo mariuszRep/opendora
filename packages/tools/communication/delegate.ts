@@ -15,11 +15,11 @@ const parameters = z
       .optional(),
     session_type: z
       .enum(["worker", "scope", "scratchpad", "role"])
-      .describe("Create a new session of this type. Choose based on task: role=ongoing relationship, scope=project-based, worker=quick task, scratchpad=experimental. Mutually exclusive with session_id.")
+      .describe("Type of new session to create for the target agent. worker=short-lived job, scope=project-scoped session, role=long-lived agent session, scratchpad=temporary throwaway session. Requires agent. Mutually exclusive with session_id.")
       .optional(),
     title: z
       .string()
-      .describe("Title for the new session. Highly recommended for clarity when session_type is provided. Make it descriptive of the task.")
+      .describe("Human-readable name for the new session. Recommended when using session_type — without it the session gets an auto-generated title. Has no effect when session_id is provided.")
       .optional(),
     prompt: z.string().describe("Message to send to the target session. Be clear and specific about what you want the agent to do."),
     description: z.string().describe("Short label for this delegation (appears in logs and UI). Optional but helpful for tracking.").optional(),
@@ -51,7 +51,7 @@ const parameters = z
       .array(z.string())
       .optional()
       .describe(
-        "List of skill names to preload into the new session. Skills are loaded before the delegated task executes, making their instructions and tools available. Only applies when creating a new session (session_type or self-delegation). Ignored for existing sessions.",
+        "Skill names to preload into the new session before the prompt is posted. Each skill's tools are added to the session's allowed toolset and the skill content is injected into the prompt — the downstream agent has full skill context from the first turn. Only applies when creating a new session (session_type or self-delegation). Cannot be used with session_id.",
       ),
   })
   .superRefine((value, ctx) => {
@@ -76,13 +76,7 @@ const parameters = z
         message: "agent is required when using session_type. You need to specify which agent should handle the new session.",
       })
     }
-    if (value.session_type && !value.title) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["title"],
-        message: "title is highly recommended when creating new sessions. Without it, sessions get generic names and are hard to identify.",
-      })
-    }
+
     if (value.mode === "async" && !value.reply_to) {
       ctx.addIssue({
         code: "custom",
@@ -331,6 +325,8 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
         },
       })
 
+      const promptParts = (await resolvePromptParts(params.prompt)) as any[]
+
       // ── SKILL PRELOADING FOR NEW SESSIONS ─────────────────────────────────
       const skillsToPreload = params.skills && params.skills.length > 0 ? params.skills : []
       let skillPreloadErrors: string[] = []
@@ -421,8 +417,6 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
           promptParts.unshift(...skillContentParts)
         }
       }
-
-      const promptParts = (await resolvePromptParts(params.prompt)) as any[]
 
       if (replyToSessionID) {
         promptParts.push({

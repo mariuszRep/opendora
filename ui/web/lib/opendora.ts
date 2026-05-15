@@ -430,7 +430,8 @@ export const opendora = {
       sections: { label: string; content: string }[]
       injection: string
       skills: { name: string; description: string; content: string; tools?: string[] }[]
-      tools: { id: string; description: string; source: "internal" | "mcp"; mcpServer?: string }[]
+      tools: { id: string; description: string; source: "internal" | "mcp"; mcpServer?: string; agentManaged: boolean; skillUnlocked: boolean }[]
+      loadedSkillNames: string[]
     }>(`/session/${sessionID}/system-prompt`),
     messages: (sessionID: string) => req<MessageWithParts[]>(`/session/${sessionID}/message`),
     abort: (sessionID: string) =>

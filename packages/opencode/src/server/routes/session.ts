@@ -18,6 +18,7 @@ import { Agent } from "../../agent"
 import { Skill } from "../../skill/skill"
 import { ToolRegistry } from "../../tool/registry"
 import { MCP } from "../../mcp"
+import { getSkillTools } from "../../session-skill-tools"
 import { Snapshot } from "@/snapshot"
 import { Log } from "../../util/log"
 import { PermissionNext } from "@/permission/next"
@@ -259,7 +260,8 @@ export const SessionRoutes = lazy(() =>
                   sections: z.array(z.object({ label: z.string(), content: z.string() })),
                   injection: z.string(),
                   skills: z.array(z.object({ name: z.string(), description: z.string(), content: z.string(), tools: z.array(z.string()).optional() })),
-                  tools: z.array(z.object({ id: z.string(), description: z.string(), source: z.enum(["internal", "mcp"]), mcpServer: z.string().optional() })),
+                  tools: z.array(z.object({ id: z.string(), description: z.string(), source: z.enum(["internal", "mcp"]), mcpServer: z.string().optional(), agentManaged: z.boolean(), skillUnlocked: z.boolean() })),
+                  loadedSkillNames: z.array(z.string()),
                 })),
               },
             },
@@ -287,7 +289,7 @@ export const SessionRoutes = lazy(() =>
           return cfg.provider?.defaultModel?.().catch(() => undefined)
         })()
 
-        if (!model) return c.json({ sections: [], injection: "", skills: [], tools: [] })
+        if (!model) return c.json({ sections: [], injection: "", skills: [], tools: [], loadedSkillNames: [] })
 
         const sections = await SystemPrompt.build({
           agent,
@@ -300,9 +302,38 @@ export const SessionRoutes = lazy(() =>
           ? await Agent.getInjection(session.agentID).catch(() => "")
           : ""
 
-        const skills = agent?.skills
+        // Derive loaded skill names from two sources and merge them:
+        // 1. Session message history — skill_load tool stores metadata.name on every completed call.
+        //    This is the ground truth the agent itself uses (works across server restarts).
+        // 2. "__skill__:<name>" markers in unlocked_tools — written by new skill_load code,
+        //    acts as a fast cache and covers skills loaded via delegate preloading.
+        const sessionUnlockedEarly = getSkillTools(sessionID)
+
+        const fromMarkers = Array.from(sessionUnlockedEarly)
+          .filter((e) => e.startsWith("__skill__:"))
+          .map((e) => e.slice("__skill__:".length))
+
+        const messages = await Session.messages({ sessionID }).catch(() => [] as any[])
+        const fromHistory = new Set<string>()
+        for (const msg of messages) {
+          if (!Array.isArray(msg.parts)) continue
+          for (const part of msg.parts as any[]) {
+            if (part.type === "tool" && part.tool === "skill_load" && part.state?.status === "completed") {
+              const name = part.state.metadata?.name as string | undefined
+              if (name) fromHistory.add(name)
+            }
+          }
+        }
+
+        const loadedSkillNames = Array.from(new Set([...fromMarkers, ...fromHistory]))
+
+        const agentSkillNames: string[] = (agent?.skills as string[] | undefined) ?? []
+        const extraSkillNames = loadedSkillNames.filter((n) => !agentSkillNames.includes(n))
+        const allSkillNames = [...agentSkillNames, ...extraSkillNames]
+
+        const skills = allSkillNames.length > 0
           ? (await Promise.all(
-              agent.skills.map((name) => Skill.get(name).catch(() => null))
+              allSkillNames.map((name: string) => Skill.get(name).catch(() => null))
             )).filter((s): s is NonNullable<typeof s> => s != null).map((s) => ({
               name: s.name,
               description: s.description,
@@ -330,11 +361,38 @@ export const SessionRoutes = lazy(() =>
         }))
         const allTools = [...allInternal, ...allMcp]
 
-        const tools = agent?.tools
-          ? allTools.filter((t) => (agent.tools as string[]).includes(t.id))
-          : allTools
+        const sessionUnlocked = sessionUnlockedEarly
+        const agentToolIds = agent?.tools as string[] | undefined
 
-        return c.json({ sections, injection, skills, tools })
+        // agentManaged is only meaningful when the agent has an explicit tools list.
+        // When there's no restriction every tool is accessible, so we don't tag it.
+        const hasToolRestriction = Array.isArray(agentToolIds)
+        const taggedTools = allTools.map((t) => ({
+          ...t,
+          agentManaged: hasToolRestriction ? agentToolIds!.includes(t.id) : false,
+          skillUnlocked: sessionUnlocked.has(t.id),
+        }))
+
+        // Also surface skill-unlocked tool IDs that aren't in the registry
+        const unknownSkillTools = Array.from(sessionUnlocked)
+          .filter((id) => id.startsWith("__skill__:") || !allTools.some((t) => t.id === id))
+          .filter((id) => !id.startsWith("__skill__:"))
+          .map((id) => ({
+            id,
+            description: "",
+            source: "internal" as const,
+            agentManaged: hasToolRestriction ? agentToolIds!.includes(id) : false,
+            skillUnlocked: true,
+          }))
+
+        const allTagged = [...taggedTools, ...unknownSkillTools]
+
+        // When restricted, show only tools the agent can reach; otherwise show all
+        const tools = hasToolRestriction
+          ? allTagged.filter((t) => t.agentManaged || t.skillUnlocked)
+          : allTagged
+
+        return c.json({ sections, injection, skills, tools, loadedSkillNames })
       },
     )
     .patch(

@@ -7,6 +7,7 @@ import { titleTemplate } from "./title"
 import { summaryTemplate } from "./summary"
 import { pmTemplate } from "./pm"
 import { agentOwnerTemplate } from "./agent-owner"
+import { productOwnerTemplate } from "./product-owner"
 import type { AgentTemplate } from "./types"
 
 export { AgentConfig, type AgentTemplate } from "./types"
@@ -25,6 +26,7 @@ export const templates: Record<string, AgentTemplate> = {
   summary: summaryTemplate,
   pm: pmTemplate,
   "agent-owner": agentOwnerTemplate,
+  "product-owner": productOwnerTemplate,
 }
 
 /**

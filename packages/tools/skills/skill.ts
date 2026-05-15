@@ -36,10 +36,11 @@ export const SkillLoadTool = Tool.define("skill_load", async (_initCtx) => {
 
       // Unlock any tools this skill declares (from skill.json) for the current session,
       // so the agent's effective allowlist expands beyond its static agent.json tools array.
+      // Also store a name marker so the session endpoint can detect this skill was loaded
+      // even when the skill has no tools.
       const skillTools = (skill as { tools?: string[] }).tools
-      if (skillTools && skillTools.length > 0) {
-        host(ctx).skillTools?.add(ctx.sessionID, skillTools)
-      }
+      const toRegister = [`__skill__:${params.name}`, ...(skillTools ?? [])]
+      host(ctx).skillTools?.add(ctx.sessionID, toRegister)
 
       const dir = path.dirname(skill.location)
       const base = pathToFileURL(dir).href
@@ -91,6 +92,7 @@ export const SkillLoadTool = Tool.define("skill_load", async (_initCtx) => {
         metadata: {
           name: skill.name,
           dir,
+          parameter: params.name,
         },
       }
     },

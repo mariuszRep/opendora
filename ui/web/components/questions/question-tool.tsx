@@ -20,26 +20,31 @@ export function QuestionStep(props: {
 }) {
   const multi = props.question.multiple === true
   const allowCustom = !props.hideCustomInput && props.question.custom !== false
+  const hasOptions = (props.question.options ?? []).length > 0
+  const hasDescriptions = (props.question.options ?? []).some((o) => o.description)
 
   return (
-    <div className="grid gap-4">
-      <div className="space-y-1.5">
+    <div className="grid gap-3">
+      <div className="space-y-0.5">
         <p className="text-sm font-medium leading-relaxed text-foreground">{props.question.question}</p>
-        <p className="text-muted-foreground text-xs">
-          {multi ? "Select all that apply." : "Select one answer."}
-        </p>
+        {hasOptions ? (
+          <p className="text-muted-foreground text-xs">
+            {multi ? "Select all that apply." : "Select one answer."}
+          </p>
+        ) : null}
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className={cn("grid gap-2", hasDescriptions ? "sm:grid-cols-2 xl:grid-cols-4" : "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4")}>
         {(props.question.options ?? []).map((option) => {
           const checked = props.value.includes(option.label)
           return (
             <button
               className={cn(
-                "group flex min-h-32 items-start justify-between gap-3 rounded-lg border px-4 py-4 text-left transition-all",
+                "group flex w-full rounded-lg border text-left transition-all duration-150",
+                hasDescriptions ? "items-start gap-3 px-4 py-3" : "items-center gap-2.5 px-3 py-2",
                 props.submitted
                   ? checked
                     ? "border-accent bg-accent/15"
-                    : "border-border bg-secondary/30 opacity-60"
+                    : "border-border bg-secondary/30 opacity-50"
                   : checked
                     ? "border-accent bg-accent/10"
                     : "border-border bg-secondary/50 hover:border-accent/50 hover:bg-secondary",
@@ -53,37 +58,62 @@ export function QuestionStep(props: {
               }}
               type="button"
             >
-              <div className="flex min-w-0 flex-1 items-start gap-3">
-                <div className="flex h-5 w-5 shrink-0 items-center justify-center pt-0.5">
+              <div className={cn("flex min-w-0 flex-1 gap-2", hasDescriptions ? "items-start" : "items-center")}>
+                <div className="flex h-4 w-4 shrink-0 items-center justify-center">
                   {checked ? (
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                      <CheckIcon className="h-3 w-3" />
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                      <CheckIcon className="h-2.5 w-2.5" />
                     </span>
-                  ) : null}
+                  ) : (
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full border border-border/50" />
+                  )}
                 </div>
-                <div className="min-w-0 flex-1 space-y-1">
-                  <span className={cn("block text-sm font-medium", props.submitted && !checked ? "text-muted-foreground" : "text-foreground")}>
+                <div className="min-w-0 flex-1">
+                  <span
+                    className={cn(
+                      "block text-sm font-medium",
+                      props.submitted && !checked ? "text-muted-foreground" : "text-foreground",
+                    )}
+                  >
                     {option.label}
                   </span>
-                  <span className={cn("block text-xs", props.submitted && !checked ? "text-muted-foreground/60" : "text-muted-foreground")}>
-                    {option.description}
-                  </span>
+                  {option.description ? (
+                    <span
+                      className={cn(
+                        "mt-0.5 block text-xs",
+                        props.submitted && !checked ? "text-muted-foreground/60" : "text-muted-foreground",
+                      )}
+                    >
+                      {option.description}
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </button>
           )
         })}
       </div>
+
       {allowCustom ? (
-        <div className="space-y-3">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
+        props.submitted ? (
+          props.customValue ? (
+            <div className="rounded-md border border-accent/25 bg-accent/5 px-3 py-2">
+              <p className="mb-0.5 text-xs text-muted-foreground/70">Custom response</p>
+              <p className="text-sm text-foreground">{props.customValue}</p>
             </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-card px-2 text-muted-foreground">or type your response</span>
-            </div>
+          ) : null
+        ) : hasOptions ? (
+          <div className="space-y-1.5">
+            <p className="text-xs text-muted-foreground/60">or type your response</p>
+            <Input
+              className="w-full border-border bg-input text-foreground placeholder:text-muted-foreground"
+              disabled={props.submitted}
+              onChange={(e) => props.onCustomChange(e.target.value)}
+              placeholder="Type your response..."
+              value={props.customValue}
+            />
           </div>
+        ) : (
           <Input
             className="w-full border-border bg-input text-foreground placeholder:text-muted-foreground"
             disabled={props.submitted}
@@ -91,7 +121,7 @@ export function QuestionStep(props: {
             placeholder="Type your response..."
             value={props.customValue}
           />
-        </div>
+        )
       ) : null}
     </div>
   )
@@ -111,11 +141,11 @@ export function QuestionTool(props: {
   const [custom, setCustom] = useState<string[]>(() => props.request.questions.map(() => ""))
   const submittedAnswers = props.answered
   const isSubmitted = Boolean(submittedAnswers)
-  
-  const mode = props.viewMode === "code" ? "json" : "interactive"
 
+  const mode = props.viewMode === "code" ? "json" : "interactive"
+  const totalSteps = props.request.questions.length
   const question = props.request.questions[step]
-  const isLast = step === props.request.questions.length - 1
+  const isLast = step === totalSteps - 1
   const currentValue = answers[step] ?? []
   const customValue = custom[step] ?? ""
   const canContinue = useMemo(() => currentValue.length > 0 || customValue.trim().length > 0, [currentValue, customValue])
@@ -159,27 +189,53 @@ export function QuestionTool(props: {
       {mode === "json" ? (
         props.json
       ) : isSubmitted ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {props.request.questions.map((question, index) => {
             const value = submittedAnswers?.[index] ?? []
             const customValue =
               value.find((item) => !(question.options ?? []).some((option) => option.label === item)) ?? ""
+            const optionValues = value.filter((item) =>
+              (question.options ?? []).some((option) => option.label === item),
+            )
             return (
-              <QuestionStep
-                customValue={customValue}
+              <div
                 key={`${props.request.id}:${index}`}
-                onCustomChange={() => {}}
-                onPickSingle={() => {}}
-                onToggle={() => {}}
-                question={question}
-                submitted
-                value={value}
-              />
+                className={cn(totalSteps > 1 && "rounded-lg border border-border bg-card px-4 py-3")}
+              >
+                {totalSteps > 1 ? (
+                  <p className="mb-3 text-xs font-semibold text-muted-foreground">
+                    {index + 1} of {totalSteps}
+                  </p>
+                ) : null}
+                <QuestionStep
+                  customValue={customValue}
+                  onCustomChange={() => {}}
+                  onPickSingle={() => {}}
+                  onToggle={() => {}}
+                  question={question}
+                  submitted
+                  value={optionValues}
+                />
+              </div>
             )
           })}
         </div>
       ) : (
         <div className="space-y-4">
+          {totalSteps > 1 ? (
+            <div className="flex items-center gap-1.5">
+              {props.request.questions.map((_, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "h-1 rounded-full transition-all duration-300",
+                    i === step ? "w-5 bg-accent" : i < step ? "w-2 bg-accent/40" : "w-2 bg-border",
+                  )}
+                />
+              ))}
+              <span className="ml-1 text-xs text-muted-foreground">{step + 1} of {totalSteps}</span>
+            </div>
+          ) : null}
           <QuestionStep
             customValue={customValue}
             onCustomChange={setCustomValue}

@@ -1,6 +1,6 @@
 {
   "name": "delegate",
-  "description": "Send a message to another agent session when you want that agent to act, think, answer, or continue a conversation.\n\nUse delegate for agent-to-agent communication that should trigger the target agent's LLM. This includes assigning work, asking another agent a follow-up question, continuing an existing agent session, or posting a message that needs an agent response. If you only need to record a result or status in an upstream session without triggering action, use reply instead. If you need input from the human user, use question instead.\n\nCORE BOUNDARY\n\n- delegate = agent-to-agent message WITH intent to trigger the receiving agent.\n- reply = silent upstream post WITHOUT triggering the receiving agent.\n- question = direct human-user input request.\n\nIf you are asking another agent a question and expect that agent to answer, use delegate - even when you are \"replying\" to something that agent previously asked. If you are answering another agent's prior request and do not need them to act immediately, use reply.\n\nBEFORE YOU DELEGATE\n\nBefore calling delegate, reason in this order:\n\n1. What is the request or message?\n2. Is it for another agent to act on, answer, or continue?\n3. Is there a better-suited available agent for this work or answer?\n4. Do you need the result back before your next decision?\n5. If yes, omit reply_to for a synchronous blocking delegation.\n6. If no, provide reply_to so the target agent can surface results to the correct upstream session.\n\nCHOOSING reply_to\n\nreply_to establishes where the delegated agent should post silent results or status using reply. It does not make reply interactive and does not replace question for human input.\n\nIf your session context shows \"Reply to session ID: ses_xxx\", that is the upstream return path. You have exactly two valid choices:\n\n1. Use reply to post your result or status to that upstream session.\n2. Delegate further while preserving that same reply_to value.\n\nOmit reply_to when you want the agent to reply inline (synchronous blocking). Provide reply_to when you want the agent to post results to a specific session without waiting.\n\nSKILL PRELOADING\n\nWhen creating a new session (via session_type or self-delegation), you can optionally specify a list of skill names to preload. The skills are loaded into the new session before the delegated task executes, making their instructions and tools available. This is useful when you want the downstream agent to work with specific skill guidance from the start.\n\nExample:\n  delegate({\n    agent: \"build\",\n    session_type: \"worker\",\n    title: \"Implement feature X\",\n    prompt: \"Build the new feature\",\n    skills: [\"project-context\", \"code-exploration\"]\n  })",
+  "description": "Send work to another agent or ask another agent a question. The receiving agent acts on the message immediately.\n\nWHEN TO USE\n- delegate: you want another agent to act, respond, or continue a task\n- reply: you are posting a result silently to an upstream session — no action needed from the receiver\n- question: you need input from the human user\n\nRETURN-PATH CONTRACT\nIf your session context shows \"Reply to session ID: ses_xxx\" and you are delegating async, forward that same ID as reply_to. Breaking this chain is a runtime error.",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -20,11 +20,11 @@
           "scratchpad",
           "role"
         ],
-        "description": "New session type to create for the target agent; use only when starting a new delegated conversation."
+        "description": "Type of new session to create for the target agent. worker=short-lived job, scope=project-scoped session, role=long-lived agent session, scratchpad=temporary throwaway session. Requires agent. Mutually exclusive with session_id."
       },
       "title": {
         "type": "string",
-        "description": "Short human-readable title for a newly created delegated session; required by policy when session_type is used."
+        "description": "Human-readable name for the new session. Recommended when using session_type — without it the session gets an auto-generated title. Has no effect when session_id is provided."
       },
       "prompt": {
         "type": "string",
@@ -57,7 +57,7 @@
         "items": {
           "type": "string"
         },
-        "description": "List of skill names to preload into the new session. Skills are loaded before the delegated task executes, making their instructions and tools available. Only applies when creating a new session (session_type or self-delegation). Ignored for existing sessions."
+        "description": "Skill names to preload into the new session before the prompt is posted. Each skill's tools are added to the session's allowed toolset and the skill content is injected into the prompt — the downstream agent has full skill context from the first turn. Only applies when creating a new session (session_type or self-delegation). Cannot be used with session_id."
       }
     },
     "required": [

@@ -33,8 +33,8 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { MessageResponse } from "@/components/ai-elements/message"
-import { ChevronDownIcon, ChevronRightIcon, ClockPlusIcon, ScrollTextIcon, Settings2Icon, ShieldIcon } from "lucide-react"
-import { useEffect, useState } from "react"
+import { ChevronDownIcon, ChevronRightIcon, ClockPlusIcon, ScrollTextIcon, ServerIcon, Settings2Icon, ShieldIcon, WrenchIcon } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 import { SessionSettingsSheet } from "@/components/sessions/session-settings-sheet"
 import { SessionSchedulesSheet } from "@/components/sessions/session-schedules-sheet"
 import { SessionPermissionsSheet } from "@/components/sessions/session-permissions-sheet"
@@ -66,21 +66,42 @@ export function Header() {
     sections: { label: string; content: string }[]
     injection: string
     skills: { name: string; description: string; content: string; tools?: string[] }[]
-    tools: { id: string; description: string; source: "internal" | "mcp"; mcpServer?: string }[]
-  }>({ sections: [], injection: "", skills: [], tools: [] })
+    tools: { id: string; description: string; source: "internal" | "mcp"; mcpServer?: string; agentManaged: boolean; skillUnlocked: boolean }[]
+    loadedSkillNames: string[]
+  }>({ sections: [], injection: "", skills: [], tools: [], loadedSkillNames: [] })
   const [hasSchedules, setHasSchedules] = useState(false)
+  const promptOpenRef = useRef(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  function fetchPromptData(sessionID: string) {
+    opendora.session.systemPrompt(sessionID)
+      .then((res) => setSystemPromptData({
+        ...res,
+        loadedSkillNames: res.loadedSkillNames ?? [],
+        tools: (res.tools ?? []).map((t) => ({ ...t, agentManaged: t.agentManaged ?? true, skillUnlocked: t.skillUnlocked ?? false })),
+      }))
+      .catch(() => setSystemPromptData({ sections: [], injection: "", skills: [], tools: [], loadedSkillNames: [] }))
+  }
+
   useEffect(() => {
-    if (!promptOpen || !selectedSession) return
-    opendora.session.systemPrompt(selectedSession.id)
-      .then((res) => setSystemPromptData(res))
-      .catch(() => setSystemPromptData({ sections: [], injection: "", skills: [], tools: [] }))
+    promptOpenRef.current = promptOpen
+    if (promptOpen && selectedSession) fetchPromptData(selectedSession.id)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [promptOpen])
+
+  // Re-fetch whenever the session goes idle (tool calls finished) and the panel is open
+  useEffect(() => {
+    return opendora.events.subscribe((event) => {
+      if (event.type !== "session.idle") return
+      const ev = event as { type: string; properties: { sessionID: string } }
+      if (!promptOpenRef.current || ev.properties.sessionID !== selectedSession?.id) return
+      fetchPromptData(ev.properties.sessionID)
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSession?.id])
 
   useEffect(() => {
     if (!selectedSession) { setHasSchedules(false); return }
@@ -316,7 +337,9 @@ export function Header() {
                 <p className="text-sm text-muted-foreground">No skills declared for this agent.</p>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {systemPromptData.skills.map((skill) => (
+                  {systemPromptData.skills.map((skill) => {
+                    const isLoaded = systemPromptData.loadedSkillNames.includes(skill.name)
+                    return (
                     <Collapsible key={skill.name}>
                       <div className="rounded-lg border bg-card">
                         <CollapsibleTrigger className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors rounded-lg [&[data-state=open]>svg]:rotate-90">
@@ -324,6 +347,9 @@ export function Header() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-mono text-sm font-medium">{skill.name}</span>
+                              {isLoaded && (
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1.5">loaded</Badge>
+                              )}
                               {skill.tools && skill.tools.length > 0 && (
                                 <div className="flex gap-1 flex-wrap">
                                   {skill.tools.map((t) => (
@@ -346,7 +372,7 @@ export function Header() {
                         </CollapsibleContent>
                       </div>
                     </Collapsible>
-                  ))}
+                  )})}
                 </div>
               )}
             </TabsContent>
@@ -359,12 +385,30 @@ export function Header() {
                 <div className="flex flex-col gap-1.5">
                   {systemPromptData.tools.map((tool) => (
                     <div key={tool.id} className="flex items-start gap-3 rounded-md border px-3 py-2.5">
+                      <div className="mt-0.5 shrink-0 text-muted-foreground">
+                        {tool.source === "mcp" ? (
+                          <ServerIcon className="size-3.5" />
+                        ) : (
+                          <WrenchIcon className="size-3.5" />
+                        )}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono text-sm font-medium">{tool.id}</span>
-                          <Badge variant={tool.source === "mcp" ? "default" : "secondary"} className="text-[10px] h-4 px-1.5">
-                            {tool.source === "mcp" ? (tool.mcpServer ?? "mcp") : "built-in"}
-                          </Badge>
+                          {tool.source === "mcp" ? (
+                            <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                              {tool.mcpServer ?? "mcp"}
+                            </Badge>
+                          ) : (
+                            <>
+                              {tool.agentManaged && (
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1.5">agent</Badge>
+                              )}
+                              {tool.skillUnlocked && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1.5">skill</Badge>
+                              )}
+                            </>
+                          )}
                         </div>
                         {tool.description && (
                           <p className="text-xs text-muted-foreground mt-0.5">{tool.description}</p>
