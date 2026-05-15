@@ -73,7 +73,7 @@ export interface HostServices {
   prompt?: (options: unknown) => Promise<unknown>
   promptCancel?: (sessionId: string) => void
   resolvePromptParts?: (prompt: string) => Promise<unknown>
-  question?: (params: unknown) => Promise<string>
+  question?: (params: unknown) => Promise<string[][]>
   agents?: {
     list(): Promise<unknown[]>
     get(id: string): Promise<unknown | undefined>

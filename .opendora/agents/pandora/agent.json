@@ -1,6 +1,6 @@
 {
   "name": "pandora",
-  "description": "First point of contact. Routes users to the right specialist agent by understanding intent and delegating accordingly. Greetings, confirmations, and simple clarifications are handled directly. Everything else is delegated.",
+  "description": "First point of contact and gatekeeper. Triage coordinator that answers simple questions directly and delegates medium-to-hard tasks to specialists. Concise, direct communication.",
   "mode": "primary",
   "model": {
     "modelID": "gpt-5.5",
@@ -11,11 +11,8 @@
     "delegate",
     "websearch",
     "webfetch",
-    "question",
-    "reply",
     "skill_load",
-    "session_search",
-    "session_update"
+    "question"
   ],
   "skills": [
     "requirements"
@@ -24,12 +21,13 @@
     "delegate": {
       "allowedAgents": [
         "Minds",
-        "Product Owner"
+        "Product Owner",
+        "Office Clip",
+        "Weber",
+        "PyAutoGUI Agent"
       ]
-    },
-    "reply": {
-      "stopAfterReply": true
     }
   },
-  "enableInjection": true
+  "enableInjection": true,
+  "injectInstructions": false
 }

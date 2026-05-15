@@ -6,6 +6,8 @@ import toolDef from "./question.json"
 const QuestionInfo = z.object({
   question: z.string(),
   header: z.string().optional(),
+  multiple: z.boolean().optional(),
+  custom: z.boolean().optional(),
   options: z
     .array(
       z.object({
