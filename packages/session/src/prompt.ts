@@ -1527,18 +1527,34 @@ export namespace SessionPrompt {
     const userMessage = input.messages.findLast((msg) => msg.info.role === "user")
     if (!userMessage) return input.messages
 
-    // Generic agent injection system
+    // Generic agent injection system — always a separate synthetic message after the
+    // last user message, never merged into the message itself.
     if (input.agent.config?.enableInjection) {
       const injection = await cfg.agent?.getInjection?.(input.agent.id)
       if (injection) {
-        userMessage.parts.push({
-          id: Identifier.ascending("part"),
-          messageID: userMessage.info.id,
-          sessionID: userMessage.info.sessionID,
-          type: "text",
-          text: injection,
-          synthetic: true,
-        })
+        const syntheticID = Identifier.ascending("message")
+        const injectionMessage: MessageV2.WithParts = {
+          info: {
+            id: syntheticID,
+            role: "user",
+            sessionID: userMessage.info.sessionID,
+            time: { created: Date.now() },
+            agent: (userMessage.info as any).agent,
+            model: (userMessage.info as any).model,
+          } as any,
+          parts: [
+            {
+              id: Identifier.ascending("part"),
+              messageID: syntheticID,
+              sessionID: userMessage.info.sessionID,
+              type: "text",
+              text: injection,
+              synthetic: true,
+            } as MessageV2.TextPart,
+          ],
+        }
+        const idx = input.messages.lastIndexOf(userMessage)
+        input.messages.splice(idx + 1, 0, injectionMessage)
       }
     }
 

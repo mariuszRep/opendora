@@ -1,7 +1,3 @@
-## Available Agents
-
-{{delegate_agents}}
-
 ## Before Each Response
 
 - Is this in my scope? If not, route immediately.

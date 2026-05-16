@@ -92,8 +92,8 @@ export namespace LLM {
         const allAgents = await cfg.agent?.list?.() ?? []
         const entries = (allAgents as any[])
           .filter((a) => allowedAgentNames.includes(a.name))
-          .map((a) => `- ${a.name}${a.description ? `: ${a.description}` : ""}`)
-        delegateNotice = `\n\n# IMPORTANT: DELEGATION RESTRICTIONS\nYou may only delegate to the following agents:\n${entries.join("\n")}\nDo not delegate to any other agent. If your persona mentions other agents, disregard those names.`
+          .map((a) => `- **${a.name}**${a.description ? `: ${a.description}` : ""}`)
+        delegateNotice = `\n\n# Available Delegations\nUse the \`delegate\` tool to delegate to any of these agents when the task matches:\n\n${entries.join("\n")}\nDo not delegate to any other agent. If your persona mentions other agents, disregard those names.`
       }
       system.push(
         [

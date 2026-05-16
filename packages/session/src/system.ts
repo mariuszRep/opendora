@@ -128,8 +128,26 @@ export namespace SystemPrompt {
       }
     }
 
-    // 4. (Skills are listed in the skill_load tool description — no separate system prompt section needed)
-    const agentTools = input.agent?.tools as string[] | undefined
+    // 4. Available Skills — list assigned skills so the agent knows what to load
+    const agentToolsList = input.agent?.tools as string[] | undefined
+    const hasSkillLoadTool = agentToolsList?.includes("skill_load") ?? false
+    const hasSkillListTool = agentToolsList?.includes("skill_list") ?? false
+    if (hasSkillLoadTool) {
+      const agentSkillNames = input.agent?.config?.skills as string[] | undefined
+      const allSkills: any[] = await cfg.skill?.all?.() ?? []
+      const visibleSkills = hasSkillListTool
+        ? allSkills
+        : agentSkillNames?.length
+        ? allSkills.filter((s: any) => agentSkillNames.includes(s.name))
+        : []
+      if (visibleSkills.length > 0) {
+        const entries = visibleSkills.map((s: any) => `- **${s.name}**: ${s.description}`)
+        sections.push({
+          label: "Available Skills",
+          content: `# Available Skills\nUse the \`skill_load\` tool to load any of these skills when the task matches:\n\n${entries.join("\n")}`,
+        })
+      }
+    }
 
     // 5. Session/user system override (mirrors user.system in llm.ts)
     if (input.userSystem) {
@@ -146,11 +164,11 @@ export namespace SystemPrompt {
       const allAgents = await cfg.agent?.list?.() ?? []
       const entries = (allAgents as any[])
         .filter((a) => allowedAgentNames.includes(a.name))
-        .map((a: any) => `- ${a.name}${a.description ? `: ${a.description}` : ""}`)
+        .map((a: any) => `- **${a.name}**${a.description ? `: ${a.description}` : ""}`)
       if (entries.length > 0) {
         sections.push({
-          label: "Delegation Restrictions",
-          content: `# IMPORTANT: DELEGATION RESTRICTIONS\nYou may only delegate to the following agents:\n${entries.join("\n")}\nDo not delegate to any other agent. If your persona mentions other agents, disregard those names.`,
+          label: "Available Delegations",
+          content: `# Available Delegations\nUse the \`delegate\` tool to delegate to any of these agents when the task matches:\n\n${entries.join("\n")}\nDo not delegate to any other agent. If your persona mentions other agents, disregard those names.`,
         })
       }
     }

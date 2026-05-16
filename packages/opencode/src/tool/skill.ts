@@ -28,27 +28,19 @@ export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
       })
     : allSkills
 
-  const examples = accessibleSkills
-    .map((skill) => `'${skill.name}'`)
-    .slice(0, 3)
-    .join(", ")
-  const hint = examples.length > 0 ? ` (e.g., ${examples}, ...)` : ""
-
   const description = [
     "Load a specialized skill that provides domain-specific instructions and workflows.",
     "",
-    "When you recognize that a task matches one of the available skills, use this tool to load the full skill instructions.",
+    "Your available skills are listed in the system prompt under 'Available Skills'.",
+    "When a task matches one of those skills, use this tool to load the full instructions.",
     "",
     "The skill will inject detailed instructions, workflows, and access to bundled resources (scripts, references, templates) into the conversation context.",
     "",
     'Tool output includes a `<skill_content name="...">` block with the loaded content.',
-    "",
-    "Available skills:",
-    ...accessibleSkills.map((skill) => `  - ${skill.name}: ${skill.description}`),
   ].join("\n")
 
   const parameters = z.object({
-    name: z.string().describe(`The name of the skill to load${hint}`),
+    name: z.string().describe("The name of the skill to load (see Available Skills in system prompt)"),
   })
 
   return {
