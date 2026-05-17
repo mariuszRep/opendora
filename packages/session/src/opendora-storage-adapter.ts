@@ -26,7 +26,7 @@ export type CreateContext = {
   directory: string
   version: string
   slug: string
-  permission?: Permission.Ruleset
+  permission?: Permission.LegacyRuleset
 }
 
 // ─── Row ↔ SessionMeta mapping ───────────────────────────────────────────────

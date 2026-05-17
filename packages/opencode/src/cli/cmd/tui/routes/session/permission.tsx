@@ -17,7 +17,7 @@ import { Global } from "@/global"
 import { useDialog } from "../../ui/dialog"
 import { useTuiConfig } from "../../context/tui-config"
 
-type PermissionStage = "permission" | "always" | "reject"
+type PermissionStage = "permission" | "agent" | "reject"
 
 function normalizePath(input?: string) {
   if (!input) return ""
@@ -133,14 +133,14 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
     stage: "permission" as PermissionStage,
   })
 
-  const session = createMemo(() => sync.data.session.find((s) => s.id === props.request.sessionID))
+  const session = createMemo(() => sync.data.session.find((s) => s.id === props.request.session_id))
 
   const input = createMemo(() => {
     const tool = props.request.tool
     if (!tool) return {}
-    const parts = sync.data.part[tool.messageID] ?? []
+    const parts = sync.data.part[tool.message_id] ?? []
     for (const part of parts) {
-      if (part.type === "tool" && part.callID === tool.callID && part.state.status !== "pending") {
+      if (part.type === "tool" && part.callID === tool.call_id && part.state.status !== "pending") {
         return part.state.input ?? {}
       }
     }
@@ -151,19 +151,19 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
 
   return (
     <Switch>
-      <Match when={store.stage === "always"}>
+      <Match when={store.stage === "agent"}>
         <Prompt
-          title="Always allow"
+          title="Allow for agent"
           body={
             <Switch>
-              <Match when={props.request.always.length === 1 && props.request.always[0] === "*"}>
-                <TextBody title={"This will allow " + props.request.permission + " until OpenCode is restarted."} />
+              <Match when={props.request.agent_patterns.length === 1 && props.request.agent_patterns[0] === "*"}>
+                <TextBody title={"This will allow " + props.request.resource + ":" + props.request.access + " for this agent across all sessions."} />
               </Match>
               <Match when={true}>
                 <box paddingLeft={1} gap={1}>
-                  <text fg={theme.textMuted}>This will allow the following patterns until OpenCode is restarted</text>
+                  <text fg={theme.textMuted}>This will allow the following patterns for this agent across all sessions</text>
                   <box>
-                    <For each={props.request.always}>
+                    <For each={props.request.agent_patterns}>
                       {(pattern) => (
                         <text fg={theme.text}>
                           {"- "}
@@ -182,7 +182,7 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
             setStore("stage", "permission")
             if (option === "cancel") return
             sdk.client.permission.reply({
-              reply: "always",
+              reply: "agent",
               requestID: props.request.id,
             })
           }}
@@ -205,10 +205,11 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
       <Match when={store.stage === "permission"}>
         {(() => {
           const info = () => {
-            const permission = props.request.permission
+            const resource = props.request.resource
+            const access = props.request.access
             const data = input()
 
-            if (permission === "edit") {
+            if (resource === "file" && access === "write") {
               const raw = props.request.metadata?.filepath
               const filepath = typeof raw === "string" ? raw : ""
               return {
@@ -218,8 +219,8 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
               }
             }
 
-            if (permission === "read") {
-              const raw = data.filePath
+            if (resource === "file" && access === "read") {
+              const raw = data.filePath ?? data.pattern
               const filePath = typeof raw === "string" ? raw : ""
               return {
                 icon: "→",
@@ -234,37 +235,7 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
               }
             }
 
-            if (permission === "glob") {
-              const pattern = typeof data.pattern === "string" ? data.pattern : ""
-              return {
-                icon: "✱",
-                title: `Glob "${pattern}"`,
-                body: (
-                  <Show when={pattern}>
-                    <box paddingLeft={1}>
-                      <text fg={theme.textMuted}>{"Pattern: " + pattern}</text>
-                    </box>
-                  </Show>
-                ),
-              }
-            }
-
-            if (permission === "grep") {
-              const pattern = typeof data.pattern === "string" ? data.pattern : ""
-              return {
-                icon: "✱",
-                title: `Grep "${pattern}"`,
-                body: (
-                  <Show when={pattern}>
-                    <box paddingLeft={1}>
-                      <text fg={theme.textMuted}>{"Pattern: " + pattern}</text>
-                    </box>
-                  </Show>
-                ),
-              }
-            }
-
-            if (permission === "list") {
+            if (resource === "directory" && access === "read") {
               const raw = data.path
               const dir = typeof raw === "string" ? raw : ""
               return {
@@ -280,7 +251,7 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
               }
             }
 
-            if (permission === "bash") {
+            if (resource === "bash") {
               const title =
                 typeof data.description === "string" && data.description ? data.description : "Shell command"
               const command = typeof data.command === "string" ? data.command : ""
@@ -297,7 +268,7 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
               }
             }
 
-            if (permission === "task") {
+            if (resource === "tool" && typeof data.subagent_type === "string") {
               const type = typeof data.subagent_type === "string" ? data.subagent_type : "Unknown"
               const desc = typeof data.description === "string" ? data.description : ""
               return {
@@ -313,7 +284,7 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
               }
             }
 
-            if (permission === "webfetch") {
+            if (resource === "network" && typeof data.url === "string") {
               const url = typeof data.url === "string" ? data.url : ""
               return {
                 icon: "%",
@@ -328,11 +299,11 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
               }
             }
 
-            if (permission === "websearch") {
-              const query = typeof data.query === "string" ? data.query : ""
+            if (resource === "network" && typeof data.query === "string") {
+              const query = data.query
               return {
                 icon: "◈",
-                title: `Exa Web Search "${query}"`,
+                title: `Web Search "${query}"`,
                 body: (
                   <Show when={query}>
                     <box paddingLeft={1}>
@@ -343,22 +314,7 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
               }
             }
 
-            if (permission === "codesearch") {
-              const query = typeof data.query === "string" ? data.query : ""
-              return {
-                icon: "◇",
-                title: `Exa Code Search "${query}"`,
-                body: (
-                  <Show when={query}>
-                    <box paddingLeft={1}>
-                      <text fg={theme.textMuted}>{"Query: " + query}</text>
-                    </box>
-                  </Show>
-                ),
-              }
-            }
-
-            if (permission === "external_directory") {
+            if (resource === "directory" && access === "*") {
               const meta = props.request.metadata ?? {}
               const parent = typeof meta["parentDir"] === "string" ? meta["parentDir"] : undefined
               const filepath = typeof meta["filepath"] === "string" ? meta["filepath"] : undefined
@@ -386,7 +342,7 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
               }
             }
 
-            if (permission === "doom_loop") {
+            if (resource === "tool" && typeof data.loop_count === "number") {
               return {
                 icon: "⟳",
                 title: "Continue after repeated failures",
@@ -398,7 +354,7 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
               }
             }
 
-            if (permission === "desktop") {
+            if (resource === "tool" && typeof props.request.metadata?.kind === "string" && ["mouse", "keyboard", "screen", "app"].includes(props.request.metadata.kind as string)) {
               const summary = typeof props.request.metadata?.summary === "string"
                 ? props.request.metadata.summary
                 : "Desktop automation"
@@ -419,10 +375,10 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
 
             return {
               icon: "⚙",
-              title: `Call tool ${permission}`,
+              title: `Use ${resource} (${access})`,
               body: (
                 <box paddingLeft={1}>
-                  <text fg={theme.textMuted}>{"Tool: " + permission}</text>
+                  <text fg={theme.textMuted}>{`Resource: ${resource}, Access: ${access}`}</text>
                 </box>
               ),
             }
@@ -450,16 +406,16 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
               title="Permission required"
               header={header()}
               body={current.body}
-              options={{ once: "Allow once", always: "Allow always", reject: "Reject" }}
+              options={{ session: "Allow session", agent: "Allow agent", reject: "Reject" }}
               escapeKey="reject"
               fullscreen
               onSelect={(option) => {
-                if (option === "always") {
-                  setStore("stage", "always")
+                if (option === "agent") {
+                  setStore("stage", "agent")
                   return
                 }
                 if (option === "reject") {
-                  if (session()?.parentID) {
+                  if (session()?.agentID) {
                     setStore("stage", "reject")
                     return
                   }
@@ -470,7 +426,7 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
                   return
                 }
                 sdk.client.permission.reply({
-                  reply: "once",
+                  reply: "session",
                   requestID: props.request.id,
                 })
               }}

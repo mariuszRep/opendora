@@ -139,7 +139,9 @@ export const BashTool = Tool.define("bash", async (ctx) => {
       }
       const directories = new Set<string>()
       const containsPath = h.containsPath ?? ((p: string) => !path.relative(h.worktree ?? dir, p).startsWith(".."))
-      if (!containsPath(cwd)) directories.add(cwd)
+      // The session's own working directory is always allowed — no external_directory prompt needed.
+      // Only flag paths the user explicitly passed as workdir that lie outside the project.
+      if (!containsPath(cwd) && cwd !== dir) directories.add(cwd)
       const patterns = new Set<string>()
       const always = new Set<string>()
 

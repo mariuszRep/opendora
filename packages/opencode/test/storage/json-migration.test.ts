@@ -8,7 +8,7 @@ import { readFileSync, readdirSync } from "fs"
 import { JsonMigration } from "../../src/storage/json-migration"
 import { Global } from "../../src/global"
 import { ProjectTable } from "../../src/project/project.sql"
-import { SessionTable, MessageTable, PartTable, TodoTable, PermissionTable } from "../../src/session/session.sql"
+import { SessionTable, MessageTable, PartTable, TodoTable } from "../../src/session/session.sql"
 import { SessionShareTable } from "../../src/share/share.sql"
 
 // Test fixtures
@@ -551,31 +551,17 @@ describe("JSON to SQLite migration", () => {
     expect(todos[2].position).toBe(2)
   })
 
-  test("migrates permissions", async () => {
+  test("skips legacy permission files (table removed)", async () => {
     await writeProject(storageDir, {
       id: "proj_test123abc",
       worktree: "/",
       time: { created: Date.now(), updated: Date.now() },
       sandboxes: [],
     })
-
-    // Create permission file (named by projectID, contains array of rules)
-    const permissionData = [
-      { permission: "file.read", pattern: "/test/file1.ts", action: "allow" as const },
-      { permission: "file.write", pattern: "/test/file2.ts", action: "ask" as const },
-      { permission: "command.run", pattern: "npm install", action: "deny" as const },
-    ]
-    await Bun.write(path.join(storageDir, "permission", "proj_test123abc.json"), JSON.stringify(permissionData))
-
+    // Old permission JSON files are no longer migrated; just verify migration completes without error.
+    await Bun.write(path.join(storageDir, "permission", "proj_test123abc.json"), JSON.stringify([]))
     const stats = await JsonMigration.run(sqlite)
-
-    expect(stats?.permissions).toBe(1)
-
-    const db = drizzle({ client: sqlite })
-    const permissions = db.select().from(PermissionTable).all()
-    expect(permissions.length).toBe(1)
-    expect(permissions[0].project_id).toBe("proj_test123abc")
-    expect(permissions[0].data).toEqual(permissionData)
+    expect(stats).toBeDefined()
   })
 
   test("migrates session shares", async () => {
@@ -620,7 +606,6 @@ describe("JSON to SQLite migration", () => {
     expect(stats.messages).toBe(0)
     expect(stats.parts).toBe(0)
     expect(stats.todos).toBe(0)
-    expect(stats.permissions).toBe(0)
     expect(stats.shares).toBe(0)
     expect(stats.errors).toEqual([])
   })
@@ -714,12 +699,10 @@ describe("JSON to SQLite migration", () => {
     const stats = await JsonMigration.run(sqlite)
 
     expect(stats.todos).toBe(1)
-    expect(stats.permissions).toBe(1)
     expect(stats.shares).toBe(1)
 
     const db = drizzle({ client: sqlite })
     expect(db.select().from(TodoTable).all().length).toBe(1)
-    expect(db.select().from(PermissionTable).all().length).toBe(1)
     expect(db.select().from(SessionShareTable).all().length).toBe(1)
   })
 
@@ -830,7 +813,6 @@ describe("JSON to SQLite migration", () => {
     expect(stats.messages).toBe(1)
     expect(stats.parts).toBe(1)
     expect(stats.todos).toBe(1)
-    expect(stats.permissions).toBe(1)
     expect(stats.shares).toBe(1)
     expect(stats.errors.length).toBeGreaterThanOrEqual(6)
 
@@ -840,7 +822,6 @@ describe("JSON to SQLite migration", () => {
     expect(db.select().from(MessageTable).all().length).toBe(1)
     expect(db.select().from(PartTable).all().length).toBe(1)
     expect(db.select().from(TodoTable).all().length).toBe(1)
-    expect(db.select().from(PermissionTable).all().length).toBe(1)
     expect(db.select().from(SessionShareTable).all().length).toBe(1)
   })
 })

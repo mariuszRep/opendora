@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/bun-sqlite"
 import { Global } from "../global"
 import { Log } from "../util/log"
 import { ProjectTable } from "../project/project.sql"
-import { SessionTable, MessageTable, PartTable, TodoTable, PermissionTable } from "@opendora/session/sql"
+import { SessionTable, MessageTable, PartTable, TodoTable } from "@opendora/session/sql"
 import { SessionShareTable } from "../share/share.sql"
 import path from "path"
 import { existsSync } from "fs"
@@ -34,7 +34,6 @@ export namespace JsonMigration {
         messages: 0,
         parts: 0,
         todos: 0,
-        permissions: 0,
         shares: 0,
         errors: [] as string[],
       }
@@ -56,14 +55,12 @@ export namespace JsonMigration {
       messages: 0,
       parts: 0,
       todos: 0,
-      permissions: 0,
       shares: 0,
       errors: [] as string[],
     }
     const orphans = {
       sessions: 0,
       todos: 0,
-      permissions: 0,
       shares: 0,
     }
     const errs = stats.errors
@@ -107,13 +104,12 @@ export namespace JsonMigration {
 
     // Pre-scan all files upfront to avoid repeated glob operations
     log.info("scanning files...")
-    const [projectFiles, sessionFiles, messageFiles, partFiles, todoFiles, permFiles, shareFiles] = await Promise.all([
+    const [projectFiles, sessionFiles, messageFiles, partFiles, todoFiles, shareFiles] = await Promise.all([
       list("project/*.json"),
       list("session/*/*.json"),
       list("message/*/*.json"),
       list("part/*/*.json"),
       list("todo/*.json"),
-      list("permission/*.json"),
       list("session_share/*.json"),
     ])
 
@@ -123,7 +119,6 @@ export namespace JsonMigration {
       messages: messageFiles.length,
       parts: partFiles.length,
       todos: todoFiles.length,
-      permissions: permFiles.length,
       shares: shareFiles.length,
     })
 
@@ -134,7 +129,6 @@ export namespace JsonMigration {
         messageFiles.length +
         partFiles.length +
         todoFiles.length +
-        permFiles.length +
         shareFiles.length,
     )
     const progress = options?.progress
@@ -346,31 +340,6 @@ export namespace JsonMigration {
       log.warn("skipped orphaned todos", { count: orphans.todos })
     }
 
-    // Migrate permissions
-    const permProjects = permFiles.map((file) => path.basename(file, ".json"))
-    const permValues = [] as any[]
-    for (let i = 0; i < permFiles.length; i += batchSize) {
-      const end = Math.min(i + batchSize, permFiles.length)
-      const batch = await read(permFiles, i, end)
-      permValues.length = 0
-      for (let j = 0; j < batch.length; j++) {
-        const data = batch[j]
-        if (!data) continue
-        const projectID = permProjects[i + j]
-        if (!projectIds.has(projectID)) {
-          orphans.permissions++
-          continue
-        }
-        permValues.push({ project_id: projectID, data })
-      }
-      stats.permissions += insert(permValues, PermissionTable, "permission")
-      step("permissions", end - i)
-    }
-    log.info("migrated permissions", { count: stats.permissions })
-    if (orphans.permissions > 0) {
-      log.warn("skipped orphaned permissions", { count: orphans.permissions })
-    }
-
     // Migrate session shares
     const shareSessions = shareFiles.map((file) => path.basename(file, ".json"))
     const shareValues = [] as any[]
@@ -408,7 +377,6 @@ export namespace JsonMigration {
       messages: stats.messages,
       parts: stats.parts,
       todos: stats.todos,
-      permissions: stats.permissions,
       shares: stats.shares,
       errorCount: stats.errors.length,
       duration: Math.round(performance.now() - start),

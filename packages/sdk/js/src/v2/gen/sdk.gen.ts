@@ -2030,7 +2030,7 @@ export class Permission extends HeyApiClient {
     parameters: {
       requestID: string
       directory?: string
-      reply?: "once" | "always" | "reject"
+      reply?: "session" | "agent" | "reject"
       message?: string
     },
     options?: Options<never, ThrowOnError>,
@@ -2049,7 +2049,7 @@ export class Permission extends HeyApiClient {
       ],
     )
     return (options?.client ?? this.client).post<PermissionReplyResponses, PermissionReplyErrors, ThrowOnError>({
-      url: "/permission/{requestID}/reply",
+      url: "/permission/pending/{requestID}/reply",
       ...options,
       ...params,
       headers: {
@@ -2073,7 +2073,7 @@ export class Permission extends HeyApiClient {
   ) {
     const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "directory" }] }])
     return (options?.client ?? this.client).get<PermissionListResponses, unknown, ThrowOnError>({
-      url: "/permission",
+      url: "/permission/pending",
       ...options,
       ...params,
     })

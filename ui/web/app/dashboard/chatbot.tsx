@@ -1121,7 +1121,7 @@ export const Chatbot = () => {
                                           )
                                         : undefined
                                       
-                                      const permissionRequest = permissionRequests.find((request) => request.tool?.callID === tool.callID)
+                                      const permissionRequest = permissionRequests.find((request) => request.tool?.call_id === tool.callID)
                                       const hasPermissionRequest = !!permissionRequest
                                       const isPermissionTool = hasPermissionRequest
                                       const permissionResponded = toolState.status === "completed" || toolState.status === "error"
@@ -1310,7 +1310,7 @@ export const Chatbot = () => {
                                       )
                                     : undefined
                                   
-                                  const permissionRequest = permissionRequests.find((request) => request.tool?.callID === tool.callID)
+                                  const permissionRequest = permissionRequests.find((request) => request.tool?.call_id === tool.callID)
                                   const hasPermissionRequest = !!permissionRequest
                                   const isPermissionTool = hasPermissionRequest
                                   const permissionResponded = toolState.status === "completed" || toolState.status === "error"

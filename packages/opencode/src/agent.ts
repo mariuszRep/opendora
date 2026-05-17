@@ -40,7 +40,7 @@ export namespace Agent {
       topP: z.number().optional(),
       temperature: z.number().optional(),
       color: z.string().optional(),
-      permission: PermissionNext.Ruleset,
+      permission: PermissionNext.LegacyRuleset,
       model: z
         .object({
           modelID: z.string(),
@@ -52,6 +52,7 @@ export namespace Agent {
       options: z.record(z.string(), z.any()),
       steps: z.number().int().positive().optional(),
       tools: z.array(z.string()).optional(),
+      skills: z.array(z.string()).optional(),
       enableInjection: z.boolean().optional(),
       injectInstructions: z.boolean().optional(),
       config: AgentStorage.Config.optional(),
@@ -64,7 +65,7 @@ export namespace Agent {
   /**
    * Build default permissions for agents
    */
-  async function buildDefaultPermissions(): Promise<PermissionNext.Ruleset> {
+  async function buildDefaultPermissions(): Promise<PermissionNext.LegacyRuleset> {
     const cfg = await Config.get()
     const skillDirs = await Skill.dirs()
     const whitelistedDirs = [Truncate.GLOB, ...skillDirs.map((dir) => path.join(dir, "*"))]
@@ -108,18 +109,12 @@ export namespace Agent {
     // - tools: [] -> NO tools
     // - tools: undefined -> NO OVERRIDE, use default permissions
     
-    // Merge agent-specific permissions with defaults
-    // Agent permissions take precedence (they come last in merge)
-    let permission = defaults
-    if (entry.config.permission && Array.isArray(entry.config.permission)) {
-      permission = PermissionNext.merge(defaults, entry.config.permission as PermissionNext.Ruleset)
-    }
-
     // Auto-inject path.write / path.read rules from defaultPaths so that path
     // boundaries are first-class permission rules rather than side-channel fields.
+    let permission = defaults
     const projectPath = entry.config.defaultPaths?.[0]
     if (projectPath) {
-      permission = PermissionNext.merge(permission, [
+      permission = PermissionNext.merge(defaults, [
         { permission: "path.write", pattern: projectPath, action: "allow" },
         { permission: "path.read", pattern: projectPath, action: "allow" },
       ])

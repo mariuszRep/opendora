@@ -8,6 +8,7 @@ import { Identifier } from "../../../id/id"
 import { ToolRegistry } from "../../../tool/registry"
 import { Instance } from "../../../project/instance"
 import { PermissionNext } from "../../../permission/next"
+import type { Tool } from "../../../tool/tool"
 import { iife } from "../../../util/iife"
 import { bootstrap } from "../../bootstrap"
 import { cmd } from "../cmd"
@@ -164,7 +165,7 @@ async function createToolContext(agent: Agent.Info) {
   }
   await Session.updateMessage(message)
 
-  const ruleset = PermissionNext.merge(agent.permission, session.permission ?? [])
+  const ruleset = agent.permission
 
   return {
     sessionID: session.id,
@@ -174,11 +175,11 @@ async function createToolContext(agent: Agent.Info) {
     abort: new AbortController().signal,
     messages: [],
     metadata: () => {},
-    async ask(req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) {
-      for (const pattern of req.patterns) {
+    async ask(req: Tool.AskInput) {
+      for (const pattern of req.patterns ?? []) {
         const rule = PermissionNext.evaluate(req.permission, pattern, ruleset)
         if (rule.action === "deny") {
-          throw new PermissionNext.DeniedError(ruleset)
+          throw new PermissionNext.DeniedError([])
         }
       }
     },

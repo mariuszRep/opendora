@@ -111,13 +111,13 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           bootstrap()
           break
         case "permission.replied": {
-          const requests = store.permission[event.properties.sessionID]
+          const requests = store.permission[event.properties.session_id]
           if (!requests) break
-          const match = Binary.search(requests, event.properties.requestID, (r) => r.id)
+          const match = Binary.search(requests, event.properties.request_id, (r) => r.id)
           if (!match.found) break
           setStore(
             "permission",
-            event.properties.sessionID,
+            event.properties.session_id,
             produce((draft) => {
               draft.splice(match.index, 1)
             }),
@@ -127,19 +127,19 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
 
         case "permission.asked": {
           const request = event.properties
-          const requests = store.permission[request.sessionID]
+          const requests = store.permission[request.session_id]
           if (!requests) {
-            setStore("permission", request.sessionID, [request])
+            setStore("permission", request.session_id, [request])
             break
           }
           const match = Binary.search(requests, request.id, (r) => r.id)
           if (match.found) {
-            setStore("permission", request.sessionID, match.index, reconcile(request))
+            setStore("permission", request.session_id, match.index, reconcile(request))
             break
           }
           setStore(
             "permission",
-            request.sessionID,
+            request.session_id,
             produce((draft) => {
               draft.splice(match.index, 0, request)
             }),

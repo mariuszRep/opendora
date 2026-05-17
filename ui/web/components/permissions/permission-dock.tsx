@@ -5,64 +5,44 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import type { PermissionRequest, PermissionReply } from "@/lib/opendora"
 
 function getPermissionInfo(request: PermissionRequest) {
-  const permission = request.permission
-  const metadata = request.metadata || {}
+  const { resource, access, metadata = {}, patterns = [] } = request
 
-  if (permission === "edit") {
-    const filepath = metadata.filepath as string
+  if (resource === "file" && access === "write") {
     return {
-      title: `Edit ${filepath}`,
+      title: `Edit ${(metadata.filepath as string) || patterns[0] || "file"}`,
       description: "This tool wants to modify a file",
     }
   }
 
-  if (permission === "read") {
-    const patterns = request.patterns || []
+  if (resource === "file" && access === "read") {
     return {
       title: `Read ${patterns[0] || "file"}`,
       description: "This tool wants to read a file or directory",
     }
   }
 
-  if (permission === "glob") {
-    const patterns = request.patterns || []
+  if (resource === "directory") {
     return {
-      title: `Search files matching "${patterns[0] || ""}"`,
-      description: "This tool wants to find files by pattern",
+      title: `Access directory ${patterns[0] || ""}`,
+      description: "This tool wants to access a directory",
     }
   }
 
-  if (permission === "grep") {
-    const patterns = request.patterns || []
-    return {
-      title: `Search for "${patterns[0] || ""}"`,
-      description: "This tool wants to search file contents",
-    }
-  }
-
-  if (permission === "list") {
-    const patterns = request.patterns || []
-    return {
-      title: `List directory ${patterns[0] || ""}`,
-      description: "This tool wants to list directory contents",
-    }
-  }
-
-  if (permission === "bash") {
+  if (resource === "bash") {
     return {
       title: "Run shell command",
       description: metadata.command ? `$ ${metadata.command}` : "This tool wants to execute a shell command",
     }
   }
 
-  if (permission === "task") {
+  if (resource === "tool" && typeof metadata.description === "string") {
     return {
       title: "Create task",
-      description: metadata.description as string || "This tool wants to create a subtask",
+      description: metadata.description || "This tool wants to create a subtask",
     }
   }
 
-  if (permission === "external_directory") {
+  if (resource === "directory" && access === "*") {
     const filepath = metadata.filepath as string
     const parentDir = metadata.parentDir as string
     const dir = parentDir || filepath || request.patterns[0] || ""
@@ -72,22 +52,15 @@ function getPermissionInfo(request: PermissionRequest) {
     }
   }
 
-  if (permission === "webfetch") {
+  if (resource === "network") {
     return {
-      title: "Fetch web content",
-      description: metadata.url ? `URL: ${metadata.url}` : "This tool wants to fetch content from the web",
-    }
-  }
-
-  if (permission === "websearch" || permission === "codesearch") {
-    return {
-      title: permission === "websearch" ? "Web search" : "Code search",
-      description: metadata.query ? `Query: ${metadata.query}` : "This tool wants to search",
+      title: "Network access",
+      description: (metadata.url as string) ? `URL: ${metadata.url}` : (metadata.query as string) ? `Query: ${metadata.query}` : "This tool wants to access the network",
     }
   }
 
   return {
-    title: `Use ${permission} tool`,
+    title: `Use ${resource} (${access})`,
     description: "This tool requires permission to execute",
   }
 }
@@ -97,7 +70,7 @@ export function PermissionDock(props: {
   onReply: (requestID: string, reply: PermissionReply) => Promise<void>
 }) {
   const info = getPermissionInfo(props.request)
-  const hasAlways = props.request.always && props.request.always.length > 0
+  const hasAgentPatterns = props.request.agent_patterns && props.request.agent_patterns.length > 0
 
   return (
     <Card className="border-warning/30 bg-background/95 shadow-sm">
@@ -134,19 +107,19 @@ export function PermissionDock(props: {
           Reject
         </Button>
         <div className="flex gap-2">
-          <Button 
-            onClick={() => props.onReply(props.request.id, "once")} 
-            type="button" 
+          <Button
+            onClick={() => props.onReply(props.request.id, "session")}
+            type="button"
             variant="outline"
           >
-            Allow once
+            Allow session
           </Button>
-          {hasAlways && (
-            <Button 
-              onClick={() => props.onReply(props.request.id, "always")} 
+          {hasAgentPatterns && (
+            <Button
+              onClick={() => props.onReply(props.request.id, "agent")}
               type="button"
             >
-              Allow always
+              Allow agent
             </Button>
           )}
         </div>

@@ -350,7 +350,7 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
 
           // Check permission using the target agent's permission context
           // The target session's agentID determines what skills are accessible
-          const permissionSvc = h.permission as any
+          const permissionSvc = (h as any).permission
           if (permissionSvc) {
             // Get the target agent's permission config
             const targetAgentData = await (h.agents as any)?.get(targetAgentName)

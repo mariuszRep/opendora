@@ -551,16 +551,18 @@ export type EventMessagePartRemoved = {
 
 export type PermissionRequest = {
   id: string
-  sessionID: string
-  permission: string
+  session_id: string
+  agent_id: string
+  resource: string
+  access: string
   patterns: Array<string>
+  agent_patterns: Array<string>
   metadata: {
     [key: string]: unknown
   }
-  always: Array<string>
   tool?: {
-    messageID: string
-    callID: string
+    message_id: string
+    call_id: string
   }
 }
 
@@ -572,9 +574,17 @@ export type EventPermissionAsked = {
 export type EventPermissionReplied = {
   type: "permission.replied"
   properties: {
-    sessionID: string
-    requestID: string
-    reply: "once" | "always" | "reject"
+    session_id: string
+    request_id: string
+    reply: "session" | "agent" | "reject"
+  }
+}
+
+export type EventPermissionRulesUpdated = {
+  type: "permission.rules.updated"
+  properties: {
+    scope: "session" | "agent"
+    scope_id: string
   }
 }
 
@@ -917,6 +927,7 @@ export type Event =
   | EventMessagePartRemoved
   | EventPermissionAsked
   | EventPermissionReplied
+  | EventPermissionRulesUpdated
   | EventSessionStatus
   | EventSessionIdle
   | EventQuestionAsked
@@ -3656,7 +3667,7 @@ export type PermissionRespondResponse = PermissionRespondResponses[keyof Permiss
 
 export type PermissionReplyData = {
   body?: {
-    reply: "once" | "always" | "reject"
+    reply: "session" | "agent" | "reject"
     message?: string
   }
   path: {
@@ -3665,7 +3676,7 @@ export type PermissionReplyData = {
   query?: {
     directory?: string
   }
-  url: "/permission/{requestID}/reply"
+  url: "/permission/pending/{requestID}/reply"
 }
 
 export type PermissionReplyErrors = {
@@ -3696,7 +3707,7 @@ export type PermissionListData = {
   query?: {
     directory?: string
   }
-  url: "/permission"
+  url: "/permission/pending"
 }
 
 export type PermissionListResponses = {

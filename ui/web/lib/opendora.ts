@@ -208,21 +208,29 @@ export type QuestionRequest = {
 
 export type PermissionRequest = {
   id: string
-  sessionID: string
-  permission: string
+  session_id: string
+  agent_id: string
+  resource: string
+  access: "read" | "write" | "execute" | "*"
   patterns: string[]
+  agent_patterns: string[]
   metadata: Record<string, any>
-  always: string[]
-  tool?: { messageID: string; callID: string }
+  tool?: { message_id: string; call_id: string }
 }
 
 export type PermissionRule = {
-  permission: string
+  id: string
+  scope: "session" | "agent"
+  scope_id: string
+  resource: string
+  access: "read" | "write" | "execute" | "*"
   pattern: string
   action: "allow" | "deny" | "ask"
+  time_created: number
+  time_updated: number
 }
 
-export type PermissionReply = "once" | "always" | "reject"
+export type PermissionReply = "session" | "agent" | "reject"
 
 export type Provider = {
   id: string
@@ -380,12 +388,14 @@ export type Event =
   | { type: "question.replied"; properties: { sessionID: string; requestID: string; answers: QuestionAnswer[] } }
   | { type: "question.rejected"; properties: { sessionID: string; requestID: string } }
   | { type: "permission.asked"; properties: PermissionRequest }
-  | { type: "permission.replied"; properties: { sessionID: string; requestID: string; reply: PermissionReply } }
+  | { type: "permission.replied"; properties: { session_id: string; request_id: string; reply: PermissionReply } }
+  | { type: "permission.rules.updated"; properties: { scope: "session" | "agent"; scope_id: string } }
   | { type: "session.created"; properties: { info: Session } }
   | { type: "session.updated"; properties: { info: Session } }
   | { type: "session.deleted"; properties: { sessionID: string } }
   | { type: "session.idle"; properties: { sessionID: string } }
   | { type: "session.status"; properties: { sessionID: string; status: { type: "idle" | "busy" | "retry"; attempt?: number; message?: string; next?: number } } }
+  | { type: "session.error"; properties: { sessionID?: string; error?: { name: string; message: string; data?: Record<string, unknown> } } }
   | { type: string; properties: unknown }
 
 export class SessionBusyError extends Error {
@@ -514,20 +524,28 @@ export const opendora = {
       }),
   },
   permission: {
-    list: () => req<PermissionRequest[]>("/permission"),
-    listApproved: () => req<PermissionRule[]>("/permission/approved"),
-    addRule: (rule: { permission: string; pattern: string; action: "allow" | "deny" | "ask" }) =>
-      req<boolean>("/permission/approved", {
+    listPending: () => req<PermissionRequest[]>("/permission/pending"),
+    listRules: (scope: "session" | "agent", scope_id: string) =>
+      req<PermissionRule[]>(`/permission/rules?scope=${scope}&scope_id=${encodeURIComponent(scope_id)}`),
+    addRule: (rule: {
+      scope: "session" | "agent"
+      scope_id: string
+      resource: string
+      access: "read" | "write" | "execute" | "*"
+      pattern: string
+      action: "allow" | "deny" | "ask"
+    }) =>
+      req<PermissionRule>("/permission/rules", {
         method: "POST",
         body: JSON.stringify(rule),
       }),
-    removeRule: (rule: { permission: string; pattern: string }) =>
-      req<boolean>("/permission/approved", {
+    removeRule: (id: string, scope: "session" | "agent", scope_id: string) =>
+      req<boolean>(`/permission/rules/${id}`, {
         method: "DELETE",
-        body: JSON.stringify(rule),
+        body: JSON.stringify({ scope, scope_id }),
       }),
     reply: (requestID: string, reply: PermissionReply, message?: string) =>
-      req<boolean>(`/permission/${requestID}/reply`, {
+      req<boolean>(`/permission/pending/${requestID}/reply`, {
         method: "POST",
         body: JSON.stringify({ reply, message }),
       }),

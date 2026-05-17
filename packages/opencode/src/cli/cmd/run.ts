@@ -364,7 +364,7 @@ export const RunCommand = cmd({
       process.exit(1)
     }
 
-    const rules: PermissionNext.Ruleset = [
+    const rules: PermissionNext.LegacyRuleset = [
       {
         permission: "question",
         action: "deny",
@@ -554,11 +554,11 @@ export const RunCommand = cmd({
 
           if (event.type === "permission.asked") {
             const permission = event.properties
-            if (permission.sessionID !== sessionID) continue
+            if (permission.session_id !== sessionID) continue
             UI.println(
               UI.Style.TEXT_WARNING_BOLD + "!",
               UI.Style.TEXT_NORMAL +
-                `permission requested: ${permission.permission} (${permission.patterns.join(", ")}); auto-rejecting`,
+                `permission requested: ${permission.resource}:${permission.access} (${permission.patterns.join(", ")}); auto-rejecting`,
             )
             await sdk.permission.reply({
               requestID: permission.id,

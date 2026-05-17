@@ -10,6 +10,7 @@
     "generate-tool-json": "bun scripts/generate-tool-json.ts"
   },
   "exports": {
+    "./shell": "./shell/index.ts",
     "./filesystem": "./filesystem/index.ts",
     "./filesystem/*": "./filesystem/*.ts",
     "./filesystem/lib/*": "./filesystem/lib/*.ts",

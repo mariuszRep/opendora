@@ -478,7 +478,8 @@ export namespace SessionPrompt {
             await cfg.permissionNext?.ask({
               ...req,
               sessionID: sessionID,
-              ruleset: cfg.permissionNext?.merge?.(taskAgent.permission, session.permission ?? []),
+              agentID: taskAgent.id,
+              ruleset: cfg.permissionNext?.merge?.(taskAgent.permission, []),
             })
           },
         }
@@ -918,8 +919,9 @@ export namespace SessionPrompt {
         await cfg.permissionNext?.ask({
           ...req,
           sessionID: input.session.id,
+          agentID: input.agent.id,
           tool: { messageID: input.processor.message.id, callID: options.toolCallId },
-          ruleset: cfg.permissionNext?.merge?.(input.agent.permission, input.session.permission ?? []),
+          ruleset: cfg.permissionNext?.merge?.(input.agent.permission, []),
         })
       },
     })
@@ -980,7 +982,7 @@ export namespace SessionPrompt {
       input.session.id,
       input.agent,
       input.model,
-      input.session.permission,
+      undefined,
       new AbortController().signal,
     ) ?? {}
 

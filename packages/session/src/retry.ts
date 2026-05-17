@@ -108,6 +108,10 @@ export namespace SessionRetry {
     })
   }
 
+  function clampDelay(ms: number): number {
+    return Math.min(ms, MAX_RETRYABLE_DELAY_MS)
+  }
+
   export function delay(attempt: number, error?: MessageV2.APIError) {
     if (error) {
       const headers = error.data.responseHeaders
@@ -117,15 +121,15 @@ export namespace SessionRetry {
         const retryAfterMs = headers["retry-after-ms"]
         if (retryAfterMs) {
           const parsedMs = Number.parseFloat(retryAfterMs)
-          if (!Number.isNaN(parsedMs)) return parsedMs
+          if (!Number.isNaN(parsedMs)) return clampDelay(parsedMs)
         }
 
         const retryAfter = headers["retry-after"]
         if (retryAfter) {
           const parsedSeconds = Number.parseFloat(retryAfter)
-          if (!Number.isNaN(parsedSeconds)) return Math.ceil(parsedSeconds * 1000)
+          if (!Number.isNaN(parsedSeconds)) return clampDelay(Math.ceil(parsedSeconds * 1000))
           const parsed = Date.parse(retryAfter) - Date.now()
-          if (!Number.isNaN(parsed) && parsed > 0) return Math.ceil(parsed)
+          if (!Number.isNaN(parsed) && parsed > 0) return clampDelay(Math.ceil(parsed))
         }
       }
 
@@ -136,7 +140,7 @@ export namespace SessionRetry {
         const retryInfo = details.find((d): d is RetryInfoDetail => d["@type"] === GOOGLE_RPC_RETRY_INFO)
         if (retryInfo?.retryDelay) {
           const ms = parseDurationMs(retryInfo.retryDelay)
-          if (ms !== null) return ms + 1000 // +1s buffer
+          if (ms !== null) return clampDelay(ms + 1000) // +1s buffer
         }
 
         // 3. CloudCode RATE_LIMIT_EXCEEDED with no RetryInfo: default to 10s (matches Gemini CLI)
@@ -146,7 +150,7 @@ export namespace SessionRetry {
           const msgMatch = (error.data.message ?? "").match(/reset after (\d+(?:\.\d+)?)s/i)
           if (msgMatch) {
             const ms = parseFloat(msgMatch[1]) * 1000
-            if (!isNaN(ms)) return Math.ceil(ms) + 1000 // +1s buffer
+            if (!isNaN(ms)) return clampDelay(Math.ceil(ms) + 1000) // +1s buffer
           }
           return 10_000
         }
@@ -158,13 +162,13 @@ export namespace SessionRetry {
       const retryInMatch = message.match(/Please retry in ([0-9.]+(?:ms|s))/i)
       if (retryInMatch?.[1]) {
         const ms = parseDurationMs(retryInMatch[1])
-        if (ms !== null) return Math.ceil(ms) + 1000
+        if (ms !== null) return clampDelay(Math.ceil(ms) + 1000)
       }
 
       const resetMatch = message.match(/reset after (\d+(?:\.\d+)?)s/i)
       if (resetMatch) {
         const ms = parseFloat(resetMatch[1]) * 1000
-        if (!isNaN(ms)) return Math.ceil(ms) + 1000
+        if (!isNaN(ms)) return clampDelay(Math.ceil(ms) + 1000)
       }
 
       // 6. Exponential backoff if we had headers but nothing matched
@@ -182,8 +186,14 @@ export namespace SessionRetry {
       if (!error.data.isRetryable) return undefined
       // QUOTA_EXHAUSTED from CloudCode is a hard limit — not retryable
       if (isTerminalQuotaError(error.data.responseBody)) return undefined
-      if (error.data.responseBody?.includes("FreeUsageLimitError"))
-        return `Free usage exceeded, add credits https://opencode.ai/zen`
+      // FreeUsageLimitError requires user action (add credits) — not retryable
+      if (error.data.responseBody?.includes("FreeUsageLimitError")) return undefined
+      // Check retry-after header: delays longer than MAX_RETRYABLE_DELAY_MS are terminal
+      const retryAfterSec = error.data.responseHeaders?.["retry-after"]
+      if (retryAfterSec) {
+        const seconds = Number.parseFloat(retryAfterSec)
+        if (!Number.isNaN(seconds) && seconds * 1000 > MAX_RETRYABLE_DELAY_MS) return undefined
+      }
       return error.data.message.includes("Overloaded") ? "Provider is overloaded" : error.data.message
     }
 

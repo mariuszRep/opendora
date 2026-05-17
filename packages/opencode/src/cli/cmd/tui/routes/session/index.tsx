@@ -1448,7 +1448,7 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
     },
     get permission() {
       const permissions = sync.data.permission[props.message.sessionID] ?? []
-      const permissionIndex = permissions.findIndex((x) => x.tool?.callID === props.part.callID)
+      const permissionIndex = permissions.findIndex((x) => x.tool?.call_id === props.part.callID)
       return permissions[permissionIndex]
     },
     get tool() {
@@ -1589,7 +1589,7 @@ function InlineTool(props: {
   const sync = useSync()
 
   const permission = createMemo(() => {
-    const callID = sync.data.permission[ctx.sessionID]?.at(0)?.tool?.callID
+    const callID = sync.data.permission[ctx.sessionID]?.at(0)?.tool?.call_id
     if (!callID) return false
     return callID === props.part.callID
   })

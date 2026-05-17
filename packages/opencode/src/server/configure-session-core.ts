@@ -153,7 +153,7 @@ export function configureSessionCore() {
         return PermissionNext.merge(a, b)
       },
       evaluate(permission: string, name: string, ruleset: any) {
-        return PermissionNext.evaluate(permission, name, ruleset)
+        return PermissionNext.evaluate(permission, name, ruleset) ?? { action: "ask" }
       },
       extractPathBoundaries(ruleset: any) {
         return PermissionNext.extractPathBoundaries(ruleset)

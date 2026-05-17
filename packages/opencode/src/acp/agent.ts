@@ -149,8 +149,8 @@ export namespace ACP {
     private messageParts = new Map<string, { type: SessionMessageResponse["parts"][number]["type"]; ignored?: boolean }>()
     private permissionQueues = new Map<string, Promise<void>>()
     private permissionOptions: PermissionOption[] = [
-      { optionId: "once", kind: "allow_once", name: "Allow once" },
-      { optionId: "always", kind: "allow_always", name: "Always allow" },
+      { optionId: "session", kind: "allow_once", name: "Allow session" },
+      { optionId: "agent", kind: "allow_always", name: "Allow agent" },
       { optionId: "reject", kind: "reject_once", name: "Reject" },
     ]
 
@@ -200,24 +200,34 @@ export namespace ACP {
 
         case "permission.asked": {
           const permission = event.properties
-          const session = this.sessionManager.tryGet(permission.sessionID)
-          if (!session) return
+          const session = this.sessionManager.tryGet(permission.session_id)
+          if (!session) {
+            log.warn("permission.asked for unknown session — rejecting to unblock tool", {
+              permissionID: permission.id,
+              sessionID: permission.session_id,
+            })
+            await this.sdk.permission.reply({
+              requestID: permission.id,
+              reply: "reject",
+            })
+            return
+          }
 
-          const prev = this.permissionQueues.get(permission.sessionID) ?? Promise.resolve()
+          const prev = this.permissionQueues.get(permission.session_id) ?? Promise.resolve()
           const next = prev
             .then(async () => {
               const directory = session.cwd
 
               const res = await this.connection
                 .requestPermission({
-                  sessionId: permission.sessionID,
+                  sessionId: permission.session_id,
                   toolCall: {
-                    toolCallId: permission.tool?.callID ?? permission.id,
+                    toolCallId: permission.tool?.call_id ?? permission.id,
                     status: "pending",
-                    title: permission.permission,
+                    title: `${permission.resource}:${permission.access}`,
                     rawInput: permission.metadata,
-                    kind: toToolKind(permission.permission),
-                    locations: toLocations(permission.permission, permission.metadata),
+                    kind: toToolKind(permission.resource),
+                    locations: toLocations(permission.resource, permission.metadata),
                   },
                   options: this.permissionOptions,
                 })
@@ -225,7 +235,7 @@ export namespace ACP {
                   log.error("failed to request permission from ACP", {
                     error,
                     permissionID: permission.id,
-                    sessionID: permission.sessionID,
+                    sessionID: permission.session_id,
                   })
                   await this.sdk.permission.reply({
                     requestID: permission.id,
@@ -245,7 +255,7 @@ export namespace ACP {
                 return
               }
 
-              if (res.outcome.optionId !== "reject" && permission.permission == "edit") {
+              if (res.outcome.optionId !== "reject" && permission.resource === "file" && permission.access === "write") {
                 const metadata = permission.metadata || {}
                 const filepath = typeof metadata["filepath"] === "string" ? metadata["filepath"] : ""
                 const diff = typeof metadata["diff"] === "string" ? metadata["diff"] : ""
@@ -263,7 +273,7 @@ export namespace ACP {
 
               await this.sdk.permission.reply({
                 requestID: permission.id,
-                reply: res.outcome.optionId as "once" | "always" | "reject",
+                reply: res.outcome.optionId as "session" | "agent" | "reject",
                 directory,
               })
             })
@@ -271,11 +281,11 @@ export namespace ACP {
               log.error("failed to handle permission", { error, permissionID: permission.id })
             })
             .finally(() => {
-              if (this.permissionQueues.get(permission.sessionID) === next) {
-                this.permissionQueues.delete(permission.sessionID)
+              if (this.permissionQueues.get(permission.session_id) === next) {
+                this.permissionQueues.delete(permission.session_id)
               }
             })
-          this.permissionQueues.set(permission.sessionID, next)
+          this.permissionQueues.set(permission.session_id, next)
           return
         }
 

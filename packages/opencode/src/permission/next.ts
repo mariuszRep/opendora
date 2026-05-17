@@ -1,311 +1,215 @@
-import { Bus } from "@/bus"
-import { BusEvent } from "@/bus/bus-event"
-import { Identifier } from "@/id/id"
-import { Instance } from "@/project/instance"
-import { Database, eq } from "@/storage/db"
-import { PermissionTable } from "@opendora/session/sql"
-import { fn } from "@/util/fn"
-import { Log } from "@/util/log"
-import z from "zod"
-import { Wildcard } from "@/util/wildcard"
-import { Permission } from "@opendora/permission"
-import { Plugin } from "@/plugin"
+/**
+ * Thin adapter wiring @opendora/permission into the opencode runtime.
+ *
+ * Responsibilities:
+ *  - Provide the Permission.DB implementation using the project DB
+ *  - Provide the Permission.Emitter implementation using GlobalBus
+ *  - Map old-style "permission" strings to { resource, access } for the store
+ *  - Re-export legacy helpers (fromConfig, merge, evaluate, disabled) used by agent.ts
+ */
+import {
+  Permission,
+  createStore,
+  createRouter,
+  fromLegacyConfig,
+  mergeLegacy,
+  evaluateLegacy,
+  disabledLegacy,
+  extractPathBoundaries as _extractPathBoundaries,
+  type AskInput,
+  type PermissionStore,
+} from "@opendora/permission"
+import { Database, eq, and } from "@/storage/db"
+import { PermissionRuleTable } from "@/storage/permission.sql"
+import { GlobalBus } from "@/bus/global"
+import type { Hono } from "hono"
+
+// ── DB adapter ────────────────────────────────────────────────────────────────
+
+const permissionDB: Permission.DB = {
+  getRules(scope, scope_id) {
+    return Database.use((db) =>
+      db
+        .select()
+        .from(PermissionRuleTable)
+        .where(
+          and(
+            eq(PermissionRuleTable.scope, scope),
+            eq(PermissionRuleTable.scope_id, scope_id),
+          ),
+        )
+        .all(),
+    )
+  },
+  saveRule(rule) {
+    Database.use((db) =>
+      db
+        .insert(PermissionRuleTable)
+        .values(rule)
+        .onConflictDoUpdate({
+          target: PermissionRuleTable.id,
+          set: {
+            action: rule.action,
+            time_updated: rule.time_updated,
+          },
+        })
+        .run(),
+    )
+  },
+  removeRule(id) {
+    Database.use((db) => db.delete(PermissionRuleTable).where(eq(PermissionRuleTable.id, id)).run())
+  },
+}
+
+// ── Emitter adapter ───────────────────────────────────────────────────────────
+
+const permissionEmitter: Permission.Emitter = {
+  emit(type, payload) {
+    GlobalBus.emit("event", { payload: { type, properties: payload } })
+  },
+}
+
+// ── Singleton store + router ──────────────────────────────────────────────────
+
+let _store: PermissionStore | undefined
+let _router: Hono | undefined
+
+function store(): PermissionStore {
+  if (!_store) _store = createStore(permissionDB, permissionEmitter)
+  return _store
+}
+
+function router(): Hono {
+  if (!_router) _router = createRouter(store())
+  return _router!
+}
+
+// ── Permission string → resource/access mapping ───────────────────────────────
+
+const PERMISSION_MAP: Record<string, { resource: string; access: Permission.Access }> = {
+  bash: { resource: "bash", access: "execute" },
+  read: { resource: "file", access: "read" },
+  edit: { resource: "file", access: "write" },
+  write: { resource: "file", access: "write" },
+  patch: { resource: "file", access: "write" },
+  multiedit: { resource: "file", access: "write" },
+  glob: { resource: "file", access: "read" },
+  grep: { resource: "file", access: "read" },
+  list: { resource: "directory", access: "read" },
+  external_directory: { resource: "directory", access: "*" },
+  webfetch: { resource: "network", access: "read" },
+  websearch: { resource: "network", access: "read" },
+  codesearch: { resource: "network", access: "read" },
+  task: { resource: "tool", access: "execute" },
+  question: { resource: "tool", access: "execute" },
+  doom_loop: { resource: "tool", access: "execute" },
+  skill: { resource: "tool", access: "execute" },
+  "path.write": { resource: "directory", access: "write" },
+  "path.read": { resource: "directory", access: "read" },
+}
+
+function mapPermission(permission: string): { resource: string; access: Permission.Access } {
+  if (PERMISSION_MAP[permission]) return PERMISSION_MAP[permission]
+  if (permission.startsWith("agent_")) return { resource: "agent", access: "execute" }
+  return { resource: permission, access: "*" }
+}
+
+/** Convert an old-style LegacyRuleset to StaticRule[] for the new store. */
+function toStaticRules(ruleset: Permission.LegacyRuleset): Permission.StaticRule[] {
+  return ruleset.map((r) => ({
+    ...mapPermission(r.permission),
+    pattern: r.pattern,
+    action: r.action,
+  }))
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
 
 export namespace PermissionNext {
-  const log = Log.create({ service: "permission" })
-
-  // Re-export pure types and functions from @opendora/permission
+  // Re-export legacy types and helpers (used by agent.ts and other config consumers)
   export import Action = Permission.Action
-  export import Rule = Permission.Rule
-  export import Ruleset = Permission.Ruleset
+  export import LegacyRule = Permission.LegacyRule
+  export import LegacyRuleset = Permission.LegacyRuleset
   export import Reply = Permission.Reply
   export import RejectedError = Permission.RejectedError
   export import CorrectedError = Permission.CorrectedError
   export import DeniedError = Permission.DeniedError
-  export const fromConfig = Permission.fromConfig
-  export const merge = Permission.merge
-  export const evaluate = Permission.evaluate
-  export const disabled = Permission.disabled
+  export import Rule = Permission.Rule
 
-  export const Request = z
-    .object({
-      id: Identifier.schema("permission"),
-      sessionID: Identifier.schema("session"),
-      permission: z.string(),
-      patterns: z.string().array(),
-      metadata: z.record(z.string(), z.any()),
-      always: z.string().array(),
-      tool: z
-        .object({
-          messageID: z.string(),
-          callID: z.string(),
-        })
-        .optional(),
-    })
-    .meta({
-      ref: "PermissionRequest",
-    })
-
-  export type Request = z.infer<typeof Request>
-
-  export const Approval = z.object({
-    projectID: z.string(),
-    patterns: z.string().array(),
-  })
-
-  export const Event = {
-    Asked: BusEvent.define("permission.asked", Request),
-    Replied: BusEvent.define(
-      "permission.replied",
-      z.object({
-        sessionID: z.string(),
-        requestID: z.string(),
-        reply: Reply,
-      }),
-    ),
-  }
-
-  const state = Instance.state(() => {
-    const projectID = Instance.project.id
-    const row = Database.use((db) =>
-      db.select().from(PermissionTable).where(eq(PermissionTable.project_id, projectID)).get(),
-    )
-    const stored = row?.data ?? ([] as Ruleset)
-
-    const pending: Record<
-      string,
-      {
-        info: Request
-        resolve: () => void
-        reject: (e: any) => void
-      }
-    > = {}
-
-    return {
-      pending,
-      approved: stored,
-    }
-  })
-
-  export const ask = fn(
-    Request.partial({ id: true }).extend({
-      ruleset: Ruleset,
-    }),
-    async (input) => {
-      const s = await state()
-      const { ruleset, ...request } = input
-      for (const pattern of request.patterns ?? []) {
-        const rule = evaluate(request.permission, pattern, ruleset, s.approved)
-        log.info("evaluated", { permission: request.permission, pattern, action: rule })
-        if (rule.action === "deny")
-          throw new DeniedError(ruleset.filter((r) => Wildcard.match(request.permission, r.permission)))
-        if (rule.action === "ask") {
-          const id = input.id ?? Identifier.ascending("permission")
-          const info: Request = {
-            id,
-            ...request,
-          }
-          
-          // Allow plugins to intercept and auto-approve before blocking
-          const pluginResult = await Plugin.trigger("permission.ask", info, {
-            status: "ask" as "ask" | "allow" | "deny",
-          })
-          
-          // If a plugin changed the status, respect it
-          if (pluginResult.status === "deny") {
-            throw new DeniedError(ruleset.filter((r) => Wildcard.match(request.permission, r.permission)))
-          }
-          if (pluginResult.status === "allow") {
-            continue
-          }
-          
-          // Status is still "ask" - create blocking promise for user approval
-          return new Promise<void>((resolve, reject) => {
-            s.pending[id] = {
-              info,
-              resolve,
-              reject,
-            }
-            Bus.publish(Event.Asked, info)
-          })
-        }
-        if (rule.action === "allow") continue
-      }
-    },
-  )
-
-  export const reply = fn(
-    z.object({
-      requestID: Identifier.schema("permission"),
-      reply: Reply,
-      message: z.string().optional(),
-    }),
-    async (input) => {
-      const s = await state()
-      const existing = s.pending[input.requestID]
-      if (!existing) return
-      delete s.pending[input.requestID]
-      Bus.publish(Event.Replied, {
-        sessionID: existing.info.sessionID,
-        requestID: existing.info.id,
-        reply: input.reply,
-      })
-      if (input.reply === "reject") {
-        existing.reject(input.message ? new CorrectedError(input.message) : new RejectedError())
-        const sessionID = existing.info.sessionID
-        for (const [id, pending] of Object.entries(s.pending)) {
-          if (pending.info.sessionID === sessionID) {
-            delete s.pending[id]
-            Bus.publish(Event.Replied, {
-              sessionID: pending.info.sessionID,
-              requestID: pending.info.id,
-              reply: "reject",
-            })
-            pending.reject(new RejectedError())
-          }
-        }
-        return
-      }
-      if (input.reply === "once") {
-        existing.resolve()
-        return
-      }
-      if (input.reply === "always") {
-        for (const pattern of existing.info.always) {
-          s.approved.push({
-            permission: existing.info.permission,
-            pattern,
-            action: "allow",
-          })
-        }
-
-        // Persist approved permissions to database
-        const projectID = Instance.project.id
-        Database.use((db) => {
-          const existing = db.select().from(PermissionTable).where(eq(PermissionTable.project_id, projectID)).get()
-          if (existing) {
-            db.update(PermissionTable)
-              .set({ data: s.approved, time_updated: Date.now() })
-              .where(eq(PermissionTable.project_id, projectID))
-              .run()
-          } else {
-            db.insert(PermissionTable)
-              .values({ project_id: projectID, data: s.approved, time_created: Date.now(), time_updated: Date.now() })
-              .run()
-          }
-        })
-
-        existing.resolve()
-
-        const sessionID = existing.info.sessionID
-        for (const [id, pending] of Object.entries(s.pending)) {
-          if (pending.info.sessionID !== sessionID) continue
-          const ok = pending.info.patterns.every(
-            (pattern) => evaluate(pending.info.permission, pattern, s.approved).action === "allow",
-          )
-          if (!ok) continue
-          delete s.pending[id]
-          Bus.publish(Event.Replied, {
-            sessionID: pending.info.sessionID,
-            requestID: pending.info.id,
-            reply: "always",
-          })
-          pending.resolve()
-        }
-        return
-      }
-    },
-  )
-
-  export async function list() {
-    const s = await state()
-    return Object.values(s.pending).map((x) => x.info)
-  }
-
-  export async function listApproved() {
-    const s = await state()
-    return s.approved
-  }
-
-  export const AddRule = z.object({
-    permission: z.string(),
-    pattern: z.string(),
-    action: z.enum(["allow", "deny", "ask"]),
-  })
-
-  export async function addRule(input: z.infer<typeof AddRule>) {
-    const s = await state()
-    s.approved.push(input)
-
-    // Persist to database
-    const projectID = Instance.project.id
-    Database.use((db) => {
-      const existing = db.select().from(PermissionTable).where(eq(PermissionTable.project_id, projectID)).get()
-      if (existing) {
-        db.update(PermissionTable)
-          .set({ data: s.approved, time_updated: Date.now() })
-          .where(eq(PermissionTable.project_id, projectID))
-          .run()
-      } else {
-        db.insert(PermissionTable)
-          .values({ project_id: projectID, data: s.approved, time_created: Date.now(), time_updated: Date.now() })
-          .run()
-      }
-    })
-  }
-
-  export const RemoveRule = z.object({
-    permission: z.string(),
-    pattern: z.string(),
-  })
-
-  export async function removeRule(input: z.infer<typeof RemoveRule>) {
-    const s = await state()
-    s.approved = s.approved.filter(
-      (rule) => !(rule.permission === input.permission && rule.pattern === input.pattern),
-    )
-
-    // Persist to database
-    const projectID = Instance.project.id
-    Database.use((db) => {
-      const existing = db.select().from(PermissionTable).where(eq(PermissionTable.project_id, projectID)).get()
-      if (existing) {
-        db.update(PermissionTable)
-          .set({ data: s.approved, time_updated: Date.now() })
-          .where(eq(PermissionTable.project_id, projectID))
-          .run()
-      }
-    })
-  }
+  // Keep old aliases for agent.ts compatibility
+  export type Ruleset = Permission.LegacyRuleset
+  export const fromConfig = fromLegacyConfig
+  export const merge = mergeLegacy
+  export const evaluate = evaluateLegacy
+  export const disabled = disabledLegacy
+  export const extractPathBoundaries = _extractPathBoundaries
 
   /**
-   * Extract path boundary settings from a ruleset.
-   *
-   * Rules with permission "path.write" / "path.read" and action "allow" define
-   * the directories an agent is scoped to. The last matching allow rule wins
-   * (consistent with evaluate()). Deny rules remove a previously allowed path.
+   * Called by configure-session-core via ctx.ask().
+   * Accepts old-style tool ask input and translates it to the new store format.
    */
-  export function extractPathBoundaries(ruleset: Ruleset): {
-    writePaths: string[]
-    readPath: string | undefined
-  } {
-    const writePaths: string[] = []
-    const readPaths: string[] = []
-
-    for (const rule of ruleset) {
-      if (rule.permission === "path.write") {
-        if (rule.action === "allow") writePaths.push(rule.pattern)
-        else writePaths.splice(writePaths.indexOf(rule.pattern), 1)
-      }
-      if (rule.permission === "path.read") {
-        if (rule.action === "allow") readPaths.push(rule.pattern)
-        else readPaths.splice(readPaths.indexOf(rule.pattern), 1)
-      }
+  export async function ask(input: {
+    permission: string
+    patterns?: string[]
+    always?: string[]
+    metadata?: Record<string, unknown>
+    sessionID: string
+    agentID?: string
+    ruleset: Permission.LegacyRuleset
+    tool?: { messageID: string; callID: string }
+    id?: string
+  }): Promise<void> {
+    const { resource, access } = mapPermission(input.permission)
+    const askInput: AskInput = {
+      id: input.id,
+      session_id: input.sessionID,
+      agent_id: input.agentID ?? "unknown",
+      resource,
+      access,
+      patterns: input.patterns ?? ["*"],
+      agent_patterns: input.always ?? [],
+      metadata: input.metadata ?? {},
+      static_rules: toStaticRules(input.ruleset),
+      tool: input.tool
+        ? { message_id: input.tool.messageID, call_id: input.tool.callID }
+        : undefined,
     }
+    return store().ask(askInput)
+  }
 
-    return {
-      writePaths,
-      readPath: readPaths[readPaths.length - 1],
-    }
+  export function reply(input: {
+    requestID: string
+    reply: Permission.Reply
+    message?: string
+  }): void {
+    store().reply({ request_id: input.requestID, reply: input.reply, message: input.message })
+  }
+
+  export function list(): Permission.Request[] {
+    return store().listPending()
+  }
+
+  export function listRules(scope: Permission.Scope, scope_id: string): Permission.Rule[] {
+    return store().listRules(scope, scope_id)
+  }
+
+  export function addRule(
+    rule: Omit<Permission.Rule, "id" | "time_created" | "time_updated">,
+  ): Permission.Rule {
+    return store().addRule(rule)
+  }
+
+  export function removeRule(id: string, scope: Permission.Scope, scope_id: string): void {
+    store().removeRule(id, scope, scope_id)
+  }
+
+  export function getRouter(): Hono {
+    return router()
+  }
+
+  /** Drop the singleton store and router. Intended for test isolation only. */
+  export function _resetForTesting() {
+    _store = undefined
+    _router = undefined
   }
 }

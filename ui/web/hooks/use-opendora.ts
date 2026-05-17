@@ -524,7 +524,7 @@ export function useOpendora(): UseOpendoraResult {
           break
         }
         case "session.status": {
-          const { sessionID, status } = (event as { type: string; properties: { sessionID: string; status: { type: string } } }).properties
+          const { sessionID, status } = (event as { type: string; properties: { sessionID: string; status: { type: "idle" | "busy" | "retry"; attempt?: number; message?: string; next?: number } } }).properties
           if (status.type === "idle") {
             setActiveSessions((prev) => {
               const next = new Set(prev)
@@ -537,12 +537,31 @@ export function useOpendora(): UseOpendoraResult {
             if (selectedSessionRef.current?.id === sessionID) {
               setStatus("ready")
             }
+          } else if (status.type === "retry" && selectedSessionRef.current?.id === sessionID) {
+            setActiveSessions((prev) => new Set(prev).add(sessionID))
+            const retryMsg = status.message ?? "Retrying..."
+            const delayMs = status.next ? Math.max(0, status.next - Date.now()) : 0
+            const delaySec = Math.ceil(delayMs / 1000)
+            const label = delaySec > 0
+              ? `${retryMsg} (retry ${status.attempt ?? "?"} in ${delaySec}s)`
+              : retryMsg
+            toast.warning(label, { id: `retry-${sessionID}`, duration: Math.min(delayMs, 30000) })
           } else {
             const completedAt = recentlyCompletedRef.current[sessionID]
             const isRecentlyCompleted = completedAt && (Date.now() - completedAt) < 2000
             if (!isRecentlyCompleted) {
               setActiveSessions((prev) => new Set(prev).add(sessionID))
             }
+          }
+          break
+        }
+        case "session.error": {
+          const { sessionID, error } = (event as { type: string; properties: { sessionID?: string; error?: { name: string; message: string; data?: Record<string, unknown> } } }).properties
+          if (sessionID && selectedSessionRef.current?.id === sessionID && error) {
+            const msg = (error.data as { message?: string })?.message ?? error.message
+            toast.error(msg, { id: `error-${sessionID}`, duration: 8000 })
+            setStatus("error")
+            setError(msg)
           }
           break
         }
@@ -601,24 +620,29 @@ export function useOpendora(): UseOpendoraResult {
         case "permission.asked": {
           const request = event.properties as PermissionRequest
           setPermissionRequests((prev) => {
-            const existing = prev[request.sessionID] ?? []
+            const existing = prev[request.session_id] ?? []
             const idx = existing.findIndex((item) => item.id === request.id)
             const next = idx === -1
               ? [...existing, request]
               : existing.map((item, index) => (index === idx ? request : item))
-            return { ...prev, [request.sessionID]: next }
+            return { ...prev, [request.session_id]: next }
           })
           break
         }
         case "permission.replied": {
-          const { sessionID, requestID } = event.properties as { sessionID: string; requestID: string }
+          const { session_id, request_id } = event.properties as { session_id: string; request_id: string }
           setPermissionRequests((prev) => {
-            const existing = prev[sessionID] ?? []
+            const existing = prev[session_id] ?? []
             return {
               ...prev,
-              [sessionID]: existing.filter((item) => item.id !== requestID),
+              [session_id]: existing.filter((item) => item.id !== request_id),
             }
           })
+          break
+        }
+        case "permission.rules.updated": {
+          // Trigger blade refresh if it is currently open — handled via refreshRef in the sheet.
+          // No state update needed here; the sheet itself listens to this event via its refreshRef.
           break
         }
         case "provider.auth.expired": {

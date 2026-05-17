@@ -23,7 +23,7 @@ export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
         if (hasUnrestrictedDiscovery) return true
         if (agentSkills?.length) return agentSkills.includes(skill.name)
         // No skills assigned — fall back to permission check
-        const rule = PermissionNext.evaluate("skill", skill.name, agent.permission)
+        const rule = PermissionNext.evaluate("skill", skill.name, (agent.permission as PermissionNext.LegacyRuleset) ?? [])
         return rule.action !== "deny"
       })
     : allSkills

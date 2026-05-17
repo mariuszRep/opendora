@@ -137,7 +137,6 @@ export namespace Session {
       summary_files: info.summary?.files,
       summary_diffs: info.summary?.diffs,
       revert: info.revert ?? null,
-      permission: info.permission,
       time_created: info.time.created,
       time_updated: info.time.updated,
       time_compacting: info.time.compacting,
@@ -204,7 +203,6 @@ export namespace Session {
         compacting: z.number().optional(),
         archived: z.number().optional(),
       }),
-      permission: z.any().optional(),
       revert: z
         .object({
           messageID: z.string(),
@@ -278,7 +276,6 @@ export namespace Session {
       .object({
         title: z.string().optional(),
         directory: z.string().optional(),
-        permission: Info.shape.permission,
         sessionType: Info.shape.sessionType,
         agentID: Info.shape.agentID,
         ownerID: Info.shape.ownerID,
@@ -304,7 +301,6 @@ export namespace Session {
       return createNext({
         directory,
         title: input?.title,
-        permission: input?.permission,
         sessionType: input?.sessionType,
         agentID: input?.agentID,
         ownerID: input?.ownerID,
@@ -370,7 +366,6 @@ export namespace Session {
     id?: string
     title?: string
     directory: string
-    permission?: any
     sessionType?: SessionType
     agentID?: string
     ownerID?: string
@@ -395,7 +390,6 @@ export namespace Session {
       directory: input.directory,
       version: cfg.installationVersion ?? "local",
       slug,
-      permission: input.permission,
     })
 
     const ppOpts: CreateSessionOptions = {
@@ -606,26 +600,6 @@ export namespace Session {
     if (!row) throw new NotFoundError({ message: `Session not found: ${sessionID}` })
     return fromRow(row)
   })
-
-  export const setPermission = fn(
-    z.object({
-      sessionID: Identifier.schema("session"),
-      permission: z.any(),
-    }),
-    async (input) => {
-      const db = getConfig().db
-      const row = db
-        .update(SessionTable)
-        .set({ permission: input.permission, time_updated: Date.now() })
-        .where(eq(SessionTable.id, input.sessionID))
-        .returning()
-        .get()
-      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
-      const info = fromRow(row)
-      getConfig().bus?.publish(Event.Updated, { info })
-      return info
-    },
-  )
 
   export const setRevert = fn(
     z.object({
@@ -958,7 +932,7 @@ export namespace Session {
       status: z.enum(["active", "archived", "closed", "waiting"])
     }),
     async (input) => {
-      await sessionManager.update(input.sessionID, { status: input.status as SessionStatus })
+      await sessionManager.update(input.sessionID, { status: input.status as "active" | "archived" | "closed" | "waiting" })
       const db = getConfig().db
       const row = db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get()
       if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })

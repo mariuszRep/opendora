@@ -6,6 +6,7 @@ import { Filesystem } from "../../src/util/filesystem"
 import { tmpdir } from "../fixture/fixture"
 import { PermissionNext } from "../../src/permission/next"
 import { Agent } from "../../src/agent/agent"
+import type { Tool } from "@opendora/tools/tool"
 
 const FIXTURES_DIR = path.join(import.meta.dir, "fixtures")
 
@@ -64,10 +65,10 @@ describe("tool.read external_directory permission", () => {
       directory: tmp.path,
       fn: async () => {
         const read = await ReadTool.init()
-        const requests: Array<Omit<PermissionNext.Request, "id" | "sessionID" | "tool">> = []
+        const requests: Array<Tool.AskInput> = []
         const testCtx = {
           ...ctx,
-          ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
+          ask: async (req: Tool.AskInput) => {
             requests.push(req)
           },
         }
@@ -90,10 +91,10 @@ describe("tool.read external_directory permission", () => {
       directory: tmp.path,
       fn: async () => {
         const read = await ReadTool.init()
-        const requests: Array<Omit<PermissionNext.Request, "id" | "sessionID" | "tool">> = []
+        const requests: Array<Tool.AskInput> = []
         const testCtx = {
           ...ctx,
-          ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
+          ask: async (req: Tool.AskInput) => {
             requests.push(req)
           },
         }
@@ -111,10 +112,10 @@ describe("tool.read external_directory permission", () => {
       directory: tmp.path,
       fn: async () => {
         const read = await ReadTool.init()
-        const requests: Array<Omit<PermissionNext.Request, "id" | "sessionID" | "tool">> = []
+        const requests: Array<Tool.AskInput> = []
         const testCtx = {
           ...ctx,
-          ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
+          ask: async (req: Tool.AskInput) => {
             requests.push(req)
           },
         }
@@ -137,10 +138,10 @@ describe("tool.read external_directory permission", () => {
       directory: tmp.path,
       fn: async () => {
         const read = await ReadTool.init()
-        const requests: Array<Omit<PermissionNext.Request, "id" | "sessionID" | "tool">> = []
+        const requests: Array<Tool.AskInput> = []
         const testCtx = {
           ...ctx,
-          ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
+          ask: async (req: Tool.AskInput) => {
             requests.push(req)
           },
         }
@@ -175,7 +176,7 @@ describe("tool.read env file permissions", () => {
           let askedForEnv = false
           const ctxWithPermissions = {
             ...ctx,
-            ask: async (req: Omit<PermissionNext.Request, "id" | "sessionID" | "tool">) => {
+            ask: async (req: Tool.AskInput) => {
               for (const pattern of req.patterns) {
                 if (!agent) throw new Error("Agent not found")
                 const rule = PermissionNext.evaluate(req.permission, pattern, agent.permission)

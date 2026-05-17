@@ -1,24 +1,86 @@
-INFO  2026-04-28T06:15:22 +316ms service=default version=local args=["session","list","--format","json","--max-count","3"] opencode
-INFO  2026-04-28T06:15:22 +1ms service=default directory=/home/mariu/projects/opendora/packages/opencode creating instance
-INFO  2026-04-28T06:15:22 +0ms service=project directory=/home/mariu/projects/opendora/packages/opencode fromDirectory
-INFO  2026-04-28T06:15:22 +36ms service=db path=/home/mariu/projects/opendora/packages/opencode/.opendora/storage/opendora.db opening database
-INFO  2026-04-28T06:15:22 +6ms service=db count=15 mode=dev applying migrations
-INFO  2026-04-28T06:15:22 +67ms service=default directory=/home/mariu/projects/opendora/packages/opencode bootstrapping
-INFO  2026-04-28T06:15:22 +12ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/config.json loading
-INFO  2026-04-28T06:15:22 +1ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opencode.json loading
-INFO  2026-04-28T06:15:22 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opencode.jsonc loading
-DEBUG 2026-04-28T06:15:22 +3ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc
-INFO  2026-04-28T06:15:22 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.jsonc loading
-DEBUG 2026-04-28T06:15:22 +0ms service=config loading config from /home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json
-INFO  2026-04-28T06:15:22 +0ms service=config path=/home/mariu/projects/opendora/packages/opencode/.opendora/opendora.json loading
-DEBUG 2026-04-28T06:15:22 +24ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.jsonc
-INFO  2026-04-28T06:15:22 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.jsonc loading
-DEBUG 2026-04-28T06:15:22 +0ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.json
-INFO  2026-04-28T06:15:22 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.json loading
-INFO  2026-04-28T06:15:22 +73ms service=plugin name=CodexAuthPlugin loading internal plugin
-INFO  2026-04-28T06:15:22 +1ms service=plugin name=CopilotAuthPlugin loading internal plugin
-INFO  2026-04-28T06:15:22 +0ms service=plugin name=gitlabAuthPlugin loading internal plugin
-INFO  2026-04-28T06:15:22 +1ms service=plugin name=googleOAuthPlugin loading internal plugin
-INFO  2026-04-28T06:15:22 +0ms service=plugin path=opencode-anthropic-auth@0.0.13 loading plugin
-INFO  2026-04-28T06:15:22 +19ms service=bus type=* subscribing
-INFO  2026-04-28T06:15:22 +1ms service=bus type=session.updated subscribing
+INFO  2026-05-17T12:44:26 +1274ms service=default directory=/tmp/opencode-test-fr3ssh3yc2 creating instance
+INFO  2026-05-17T12:44:26 +8ms service=project directory=/tmp/opencode-test-fr3ssh3yc2 fromDirectory
+INFO  2026-05-17T12:44:26 +2ms service=db path=/home/mariu/projects/opendora/packages/opencode/.opendora/storage/opendora.db opening database
+INFO  2026-05-17T12:44:26 +4ms service=db count=18 mode=dev applying migrations
+INFO  2026-05-17T12:44:26 +18ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:26.810Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:26 +1ms service=acp-agent sessionId=ses_1 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:26 +1ms service=acp-session-manager state={"id":"ses_2","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:26.812Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-agent sessionId=ses_2 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:26 +13ms service=default directory=/tmp/opencode-test-ff4vdm3c3dm creating instance
+INFO  2026-05-17T12:44:26 +1ms service=project directory=/tmp/opencode-test-ff4vdm3c3dm fromDirectory
+INFO  2026-05-17T12:44:26 +18ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:26.844Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-session-manager state={"id":"ses_2","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:26.844Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-agent sessionId=ses_2 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:26 +28ms service=default directory=/tmp/opencode-test-75sti3ecklw creating instance
+INFO  2026-05-17T12:44:26 +1ms service=project directory=/tmp/opencode-test-75sti3ecklw fromDirectory
+INFO  2026-05-17T12:44:26 +1ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:26.874Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:26 +1ms service=acp-agent sessionId=ses_1 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-agent event={"part":{"id":"part_cached","sessionID":"ses_1","messageID":"msg_cached","type":"text","text":""}} message part updated
+INFO  2026-05-17T12:44:26 +24ms service=default directory=/tmp/opencode-test-etmkaxmo1cl creating instance
+INFO  2026-05-17T12:44:26 +1ms service=project directory=/tmp/opencode-test-etmkaxmo1cl fromDirectory
+INFO  2026-05-17T12:44:26 +1ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:26.901Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:26 +1ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:26.902Z","model":{"providerID":"opencode","modelID":"big-pickle"}} loading_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 load_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:26.902Z","model":{"providerID":"opencode","modelID":"big-pickle"}} loading_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 load_session
+INFO  2026-05-17T12:44:26 +1ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:26.903Z","model":{"providerID":"opencode","modelID":"big-pickle"}} loading_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 load_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:26.903Z","model":{"providerID":"opencode","modelID":"big-pickle"}} loading_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 load_session
+INFO  2026-05-17T12:44:26 +1ms service=default directory=/tmp/opencode-test-o0mbjtfizwi creating instance
+INFO  2026-05-17T12:44:26 +0ms service=project directory=/tmp/opencode-test-o0mbjtfizwi fromDirectory
+INFO  2026-05-17T12:44:26 +1ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:26.905Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:26 +26ms service=default directory=/tmp/opencode-test-6cbulu2etan creating instance
+INFO  2026-05-17T12:44:26 +0ms service=project directory=/tmp/opencode-test-6cbulu2etan fromDirectory
+INFO  2026-05-17T12:44:26 +2ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:26.933Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-session-manager state={"id":"ses_2","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:26.933Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:26 +0ms service=acp-agent sessionId=ses_2 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:27 +70ms service=default directory=/tmp/opencode-test-1z6jx68ngiq creating instance
+INFO  2026-05-17T12:44:27 +1ms service=project directory=/tmp/opencode-test-1z6jx68ngiq fromDirectory
+INFO  2026-05-17T12:44:27 +3ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:27.007Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:27 +1ms service=acp-agent sessionId=ses_1 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:27 +0ms service=acp-agent event={"part":{"id":"part_call_1","sessionID":"ses_1","messageID":"msg_call_1","type":"tool","callID":"call_1","tool":"bash","state":{"status":"running","input":{"command":"echo hello","description":"run command"},"metadata":{"output":"a"},"time":{"start":1779021867008}}}} message part updated
+INFO  2026-05-17T12:44:27 +2ms service=acp-agent event={"part":{"id":"part_call_1","sessionID":"ses_1","messageID":"msg_call_1","type":"tool","callID":"call_1","tool":"bash","state":{"status":"running","input":{"command":"echo hello","description":"run command"},"metadata":{"output":"a"},"time":{"start":1779021867008}}}} message part updated
+INFO  2026-05-17T12:44:27 +0ms service=acp-agent event={"part":{"id":"part_call_1","sessionID":"ses_1","messageID":"msg_call_1","type":"tool","callID":"call_1","tool":"bash","state":{"status":"running","input":{"command":"echo hello","description":"run command"},"metadata":{"output":"ab"},"time":{"start":1779021867008}}}} message part updated
+INFO  2026-05-17T12:44:27 +28ms service=default directory=/tmp/opencode-test-mz7125jl4gb creating instance
+INFO  2026-05-17T12:44:27 +0ms service=project directory=/tmp/opencode-test-mz7125jl4gb fromDirectory
+INFO  2026-05-17T12:44:27 +2ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:27.040Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:27 +1ms service=acp-agent sessionId=ses_1 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:27 +0ms service=acp-agent event={"part":{"id":"part_call_bash","sessionID":"ses_1","messageID":"msg_call_bash","type":"tool","callID":"call_bash","tool":"bash","state":{"status":"running","input":{"command":"echo hi","description":"run command"},"metadata":{"output":"hi\n"},"time":{"start":1779021867041}}}} message part updated
+INFO  2026-05-17T12:44:27 +0ms service=acp-agent event={"part":{"id":"part_call_read","sessionID":"ses_1","messageID":"msg_call_read","type":"tool","callID":"call_read","tool":"read","state":{"status":"running","input":{"filePath":"/tmp/example.txt"},"time":{"start":1779021867041}}}} message part updated
+INFO  2026-05-17T12:44:27 +33ms service=default directory=/tmp/opencode-test-z0gor5iflt creating instance
+INFO  2026-05-17T12:44:27 +0ms service=project directory=/tmp/opencode-test-z0gor5iflt fromDirectory
+INFO  2026-05-17T12:44:27 +4ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:27.078Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:27 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:27 +1ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:27.079Z","model":{"providerID":"opencode","modelID":"big-pickle"}} loading_session
+INFO  2026-05-17T12:44:27 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 load_session
+INFO  2026-05-17T12:44:27 +2ms service=acp-agent event={"part":{"id":"part_call_1","sessionID":"ses_1","messageID":"msg_call_1","type":"tool","callID":"call_1","tool":"bash","state":{"status":"running","input":{"command":"echo hi","description":"run command"},"metadata":{"output":"hi\nthere\n"},"time":{"start":1779021867081}}}} message part updated
+INFO  2026-05-17T12:44:27 +30ms service=default directory=/tmp/opencode-test-ps8ewx09m1e creating instance
+INFO  2026-05-17T12:44:27 +0ms service=project directory=/tmp/opencode-test-ps8ewx09m1e fromDirectory
+INFO  2026-05-17T12:44:27 +1ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:27.112Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:27 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:27 +1ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:27.113Z","model":{"providerID":"opencode","modelID":"big-pickle"}} loading_session
+INFO  2026-05-17T12:44:27 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 load_session
+INFO  2026-05-17T12:44:27 +1ms service=default directory=/tmp/opencode-test-8tmxt0ywvvp creating instance
+INFO  2026-05-17T12:44:27 +0ms service=project directory=/tmp/opencode-test-8tmxt0ywvvp fromDirectory
+INFO  2026-05-17T12:44:27 +1ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:27.115Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:27 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:27 +2ms service=default directory=/tmp/opencode-test-2hsu4nzjsdu creating instance
+INFO  2026-05-17T12:44:27 +0ms service=project directory=/tmp/opencode-test-2hsu4nzjsdu fromDirectory
+INFO  2026-05-17T12:44:27 +1ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:27.118Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:27 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:27 +2ms service=default directory=/tmp/opencode-test-452ivicjtf creating instance
+INFO  2026-05-17T12:44:27 +0ms service=project directory=/tmp/opencode-test-452ivicjtf fromDirectory
+INFO  2026-05-17T12:44:27 +2ms service=acp-session-manager state={"id":"ses_1","cwd":"/tmp/opencode-acp-test","mcpServers":[],"createdAt":"2026-05-17T12:44:27.122Z","model":{"providerID":"opencode","modelID":"big-pickle"}} creating_session
+INFO  2026-05-17T12:44:27 +0ms service=acp-agent sessionId=ses_1 mcpServers=0 creating_session
+INFO  2026-05-17T12:44:27 +0ms service=acp-agent event={"part":{"id":"part_call_1","sessionID":"ses_1","messageID":"msg_call_1","type":"tool","callID":"call_1","tool":"bash","state":{"status":"running","input":{"command":"echo hello","description":"run command"},"metadata":{"output":"a"},"time":{"start":1779021867122}}}} message part updated
+INFO  2026-05-17T12:44:27 +0ms service=acp-agent event={"part":{"id":"part_call_1","sessionID":"ses_1","messageID":"msg_call_1","type":"tool","callID":"call_1","tool":"bash","state":{"status":"pending","input":{"command":"echo hello","description":"run command"},"raw":"{\"command\":\"echo hello\"}"}}} message part updated
+INFO  2026-05-17T12:44:27 +0ms service=acp-agent event={"part":{"id":"part_call_1","sessionID":"ses_1","messageID":"msg_call_1","type":"tool","callID":"call_1","tool":"bash","state":{"status":"running","input":{"command":"echo hello","description":"run command"},"metadata":{"output":"a"},"time":{"start":1779021867122}}}} message part updated
+INFO  2026-05-17T12:44:27 +40ms service=default directory=/tmp creating instance
+INFO  2026-05-17T12:44:27 +0ms service=project directory=/tmp fromDirectory
+INFO  2026-05-17T12:44:27 +2ms service=default directory=/tmp/project creating instance
+INFO  2026-05-17T12:44:27 +0ms service=project directory=/tmp/project fromDirectory

@@ -1,7 +1,19 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Loader2Icon, ShieldIcon, Trash2Icon, PlusIcon, FolderIcon, TerminalIcon, GlobeIcon, FileIcon, FilePenIcon } from "lucide-react"
+import { useEffect, useState, useCallback } from "react"
+import {
+  Loader2Icon,
+  ShieldIcon,
+  Trash2Icon,
+  PlusIcon,
+  FolderIcon,
+  TerminalIcon,
+  GlobeIcon,
+  FileIcon,
+  FilePenIcon,
+  BotIcon,
+  WrenchIcon,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -34,83 +46,110 @@ interface SessionPermissionsSheetProps {
   session: Session | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** Call this to trigger a refresh from outside (e.g. on permission.rules.updated event). */
+  refreshRef?: React.MutableRefObject<(() => void) | null>
 }
 
-type Scope = "session" | "global"
+type ScopedRule = PermissionRule & { _scope: "session" | "agent" }
 
-type UnifiedRule = {
-  scope: Scope
-  permission: string
+type NewRule = {
+  scope: "session" | "agent"
+  resource: string
+  access: "read" | "write" | "execute" | "*"
   pattern: string
-  action: PermissionRule["action"]
+  action: "allow" | "deny" | "ask"
 }
 
-export function SessionPermissionsSheet({ session, open, onOpenChange }: SessionPermissionsSheetProps) {
-  const [permissions, setPermissions] = useState<PermissionRule[]>([])
-  const [sessionData, setSessionData] = useState<Session | null>(null)
+const RESOURCE_OPTIONS = [
+  { value: "bash", label: "Shell command", icon: TerminalIcon },
+  { value: "file", label: "File", icon: FileIcon },
+  { value: "directory", label: "Directory", icon: FolderIcon },
+  { value: "network", label: "Network", icon: GlobeIcon },
+  { value: "tool", label: "Tool", icon: WrenchIcon },
+  { value: "agent", label: "Agent", icon: BotIcon },
+]
+
+const ACCESS_OPTIONS = [
+  { value: "read", label: "Read" },
+  { value: "write", label: "Write" },
+  { value: "execute", label: "Execute" },
+  { value: "*", label: "Any" },
+]
+
+function resourceMeta(resource: string) {
+  const found = RESOURCE_OPTIONS.find((r) => r.value === resource)
+  return found ?? { value: resource, label: resource, icon: ShieldIcon }
+}
+
+function scopeBadge(scope: "session" | "agent") {
+  return (
+    <Badge variant="outline" className="text-[10px] capitalize">
+      {scope}
+    </Badge>
+  )
+}
+
+function actionBadge(action: PermissionRule["action"]) {
+  if (action === "allow") return <Badge variant="default">Allow</Badge>
+  if (action === "deny") return <Badge variant="destructive">Deny</Badge>
+  return <Badge variant="secondary">Ask</Badge>
+}
+
+export function SessionPermissionsSheet({
+  session,
+  open,
+  onOpenChange,
+  refreshRef,
+}: SessionPermissionsSheetProps) {
+  const [rules, setRules] = useState<ScopedRule[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
-  const [newRule, setNewRule] = useState<{
-    scope: Scope
-    permission: string
-    pattern: string
-    action: PermissionRule["action"]
-  }>({ scope: "session", permission: "path.write", pattern: "", action: "allow" })
+  const [newRule, setNewRule] = useState<NewRule>({
+    scope: "session",
+    resource: "bash",
+    access: "execute",
+    pattern: "*",
+    action: "allow",
+  })
   const [adding, setAdding] = useState(false)
 
-  // Load approved permissions and session when sheet opens
+  const refresh = useCallback(async () => {
+    if (!session) return
+    setError(null)
+    try {
+      const [sessionRules, agentRules] = await Promise.all([
+        opendora.permission.listRules("session", session.id),
+        session.agentID
+          ? opendora.permission.listRules("agent", session.agentID)
+          : Promise.resolve([]),
+      ])
+      setRules([
+        ...sessionRules.map((r) => ({ ...r, _scope: "session" as const })),
+        ...agentRules.map((r) => ({ ...r, _scope: "agent" as const })),
+      ])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load permissions")
+    }
+  }, [session])
+
+  // Expose refresh to parent (for SSE-triggered refreshes)
+  useEffect(() => {
+    if (refreshRef) refreshRef.current = refresh
+    return () => {
+      if (refreshRef) refreshRef.current = null
+    }
+  }, [refresh, refreshRef])
+
   useEffect(() => {
     if (!open) return
     setLoading(true)
-    setError(null)
-    Promise.all([
-      opendora.permission.listApproved(),
-      session ? opendora.session.list() : Promise.resolve([]),
-    ])
-      .then(([approved, sessions]) => {
-        setPermissions(approved)
-        if (session) {
-          const updated = sessions.find((s) => s.id === session.id)
-          setSessionData(updated ?? session)
-        }
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : "Failed to load permissions")
-      })
-      .finally(() => setLoading(false))
-  }, [open, session])
+    refresh().finally(() => setLoading(false))
+  }, [open, refresh])
 
-  const refresh = async () => {
-    setError(null)
+  const handleRemove = async (rule: ScopedRule) => {
     try {
-      const [approved, sessions] = await Promise.all([
-        opendora.permission.listApproved(),
-        session ? opendora.session.list() : Promise.resolve([]),
-      ])
-      setPermissions(approved)
-      if (session) {
-        const updated = sessions.find((s) => s.id === session.id)
-        setSessionData(updated ?? session)
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to refresh")
-    }
-  }
-
-  const handleRemove = async (rule: UnifiedRule) => {
-    try {
-      if (rule.scope === "global") {
-        await opendora.permission.removeRule({ permission: rule.permission, pattern: rule.pattern })
-      } else {
-        // Session-specific: clear the corresponding path field
-        if (!sessionData) return
-        if (rule.permission === "path.write") {
-          await opendora.session.update(sessionData.id, { path: null })
-        } else if (rule.permission === "path.read") {
-          await opendora.session.update(sessionData.id, { readPath: null })
-        }
-      }
+      await opendora.permission.removeRule(rule.id, rule.scope, rule.scope_id)
       await refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to remove permission")
@@ -118,29 +157,21 @@ export function SessionPermissionsSheet({ session, open, onOpenChange }: Session
   }
 
   const handleAdd = async () => {
-    if (!newRule.permission || !newRule.pattern) return
+    if (!newRule.resource || !newRule.pattern || !session) return
     setAdding(true)
     setError(null)
     try {
-      if (newRule.scope === "global") {
-        await opendora.permission.addRule({
-          permission: newRule.permission,
-          pattern: newRule.pattern,
-          action: newRule.action,
-        })
-      } else {
-        // Session-specific: only path.write and path.read supported
-        if (!sessionData) throw new Error("No session selected")
-        if (newRule.permission === "path.write") {
-          await opendora.session.update(sessionData.id, { path: newRule.pattern })
-        } else if (newRule.permission === "path.read") {
-          await opendora.session.update(sessionData.id, { readPath: newRule.pattern })
-        } else {
-          throw new Error("Session-specific permissions only support path.write and path.read")
-        }
-      }
+      const scope_id = newRule.scope === "session" ? session.id : (session.agentID ?? session.id)
+      await opendora.permission.addRule({
+        scope: newRule.scope,
+        scope_id,
+        resource: newRule.resource,
+        access: newRule.access,
+        pattern: newRule.pattern,
+        action: newRule.action,
+      })
       setAddDialogOpen(false)
-      setNewRule({ scope: "session", permission: "path.write", pattern: "", action: "allow" })
+      setNewRule({ scope: "session", resource: "bash", access: "execute", pattern: "*", action: "allow" })
       await refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add permission")
@@ -149,61 +180,15 @@ export function SessionPermissionsSheet({ session, open, onOpenChange }: Session
     }
   }
 
-  // Build unified list of rules
-  const unifiedRules: UnifiedRule[] = []
-
-  // Add session-specific path rules
-  if (sessionData?.path) {
-    unifiedRules.push({ scope: "session", permission: "path.write", pattern: sessionData.path, action: "allow" })
-  }
-  if (sessionData?.readPath) {
-    unifiedRules.push({ scope: "session", permission: "path.read", pattern: sessionData.readPath, action: "allow" })
-  }
-  // Add global permission rules
-  for (const p of permissions) {
-    unifiedRules.push({ scope: "global", permission: p.permission, pattern: p.pattern, action: p.action })
-  }
-
-  // Get icon and label for permission type
-  const getPermissionMeta = (permission: string) => {
-    if (permission === "path.write") return { icon: FilePenIcon, label: "Write" }
-    if (permission === "path.read") return { icon: FileIcon, label: "Read" }
-    if (permission === "bash" || permission === "shell") return { icon: TerminalIcon, label: "Shell" }
-    if (permission === "external_directory") return { icon: FolderIcon, label: "External" }
-    if (permission === "network") return { icon: GlobeIcon, label: "Network" }
-    return { icon: ShieldIcon, label: permission }
-  }
-
-  const getActionBadge = (action: PermissionRule["action"]) => {
-    switch (action) {
-      case "allow":
-        return <Badge variant="default">Allow</Badge>
-      case "deny":
-        return <Badge variant="destructive">Deny</Badge>
-      case "ask":
-        return <Badge variant="secondary">Ask</Badge>
-    }
-  }
-
-  const permissionOptions = [
-    { value: "path.write", label: "File Write" },
-    { value: "path.read", label: "File Read" },
-    { value: "bash", label: "Shell Command" },
-    { value: "external_directory", label: "External Directory" },
-    { value: "network", label: "Network Access" },
-  ]
-
-  // For session scope, only path.write/path.read make sense
-  const sessionPermissionOptions = permissionOptions.filter((p) => p.value === "path.write" || p.value === "path.read")
-  const availableOptions = newRule.scope === "session" ? sessionPermissionOptions : permissionOptions
-
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="right" className="flex flex-col sm:max-w-md">
           <SheetHeader>
             <SheetTitle>Permissions</SheetTitle>
-            <SheetDescription className="sr-only">View and manage permissions for this session and project</SheetDescription>
+            <SheetDescription className="sr-only">
+              View and manage session and agent permissions
+            </SheetDescription>
           </SheetHeader>
 
           <div className="flex flex-col flex-1 min-h-0">
@@ -225,19 +210,19 @@ export function SessionPermissionsSheet({ session, open, onOpenChange }: Session
                 <div className="flex items-center justify-center py-8">
                   <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
                 </div>
-              ) : unifiedRules.length === 0 ? (
+              ) : rules.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <ShieldIcon className="size-12 text-muted-foreground mb-3" />
                   <p className="text-sm text-muted-foreground">
-                    No permissions yet. Add one manually or approve a request from the AI assistant.
+                    No permissions yet. Allow a tool request to create one automatically.
                   </p>
                 </div>
               ) : (
-                unifiedRules.map((rule, idx) => {
-                  const { icon: Icon, label } = getPermissionMeta(rule.permission)
+                rules.map((rule) => {
+                  const { icon: Icon, label } = resourceMeta(rule.resource)
                   return (
                     <div
-                      key={`${rule.scope}-${rule.permission}-${rule.pattern}-${idx}`}
+                      key={rule.id}
                       className="flex items-start gap-3 p-3 border rounded-md bg-card hover:bg-accent transition-colors"
                     >
                       <div className="mt-0.5 text-muted-foreground">
@@ -246,10 +231,9 @@ export function SessionPermissionsSheet({ session, open, onOpenChange }: Session
                       <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-semibold">{label}</span>
-                          {getActionBadge(rule.action)}
-                          <Badge variant="outline" className="text-[10px] capitalize">
-                            {rule.scope}
-                          </Badge>
+                          <Badge variant="secondary" className="text-[10px]">{rule.access}</Badge>
+                          {actionBadge(rule.action)}
+                          {scopeBadge(rule._scope)}
                         </div>
                         <span className="font-mono text-xs text-muted-foreground break-all">{rule.pattern}</span>
                       </div>
@@ -271,7 +255,8 @@ export function SessionPermissionsSheet({ session, open, onOpenChange }: Session
 
           <div className="px-6 py-4 border-t shrink-0">
             <p className="text-[11px] text-muted-foreground">
-              <strong>Session</strong> permissions apply only to this session (inherited by children). <strong>Global</strong> permissions apply to all sessions in the project.
+              <strong>Session</strong> rules apply only to this session.{" "}
+              <strong>Agent</strong> rules apply to all sessions using this agent.
             </p>
           </div>
         </SheetContent>
@@ -287,44 +272,46 @@ export function SessionPermissionsSheet({ session, open, onOpenChange }: Session
               <Label>Scope</Label>
               <Select
                 value={newRule.scope}
-                onValueChange={(value: Scope) => {
-                  // If switching to session scope, ensure permission is path-related
-                  const nextPerm = value === "session" && !["path.write", "path.read"].includes(newRule.permission)
-                    ? "path.write"
-                    : newRule.permission
-                  setNewRule({ ...newRule, scope: value, permission: nextPerm })
-                }}
+                onValueChange={(v: "session" | "agent") => setNewRule({ ...newRule, scope: v })}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="session" disabled={!sessionData}>
-                    Session — only this session
+                  <SelectItem value="session">Session — only this session</SelectItem>
+                  <SelectItem value="agent" disabled={!session?.agentID}>
+                    Agent — all sessions using this agent
                   </SelectItem>
-                  <SelectItem value="global">Global — all sessions in project</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="permission">Permission Type</Label>
+              <Label>Resource</Label>
               <Select
-                value={newRule.permission}
-                onValueChange={(value) => setNewRule({ ...newRule, permission: value })}
+                value={newRule.resource}
+                onValueChange={(v) => setNewRule({ ...newRule, resource: v })}
               >
-                <SelectTrigger id="permission"><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {availableOptions.map((perm) => (
-                    <SelectItem key={perm.value} value={perm.value}>
-                      {perm.label}
-                    </SelectItem>
+                  {RESOURCE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {newRule.scope === "session" && (
-                <p className="text-[11px] text-muted-foreground">
-                  Session scope only supports path.write and path.read.
-                </p>
-              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>Access</Label>
+              <Select
+                value={newRule.access}
+                onValueChange={(v: "read" | "write" | "execute" | "*") => setNewRule({ ...newRule, access: v })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ACCESS_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -333,36 +320,32 @@ export function SessionPermissionsSheet({ session, open, onOpenChange }: Session
                 id="pattern"
                 value={newRule.pattern}
                 onChange={(e) => setNewRule({ ...newRule, pattern: e.target.value })}
-                placeholder="e.g., /home/user/project/* or *"
+                placeholder="e.g. * or /home/user/project/* or rm *"
                 className="font-mono text-xs"
               />
-              <p className="text-[11px] text-muted-foreground">
-                Use * as wildcard. For paths, use absolute paths or patterns like /home/user/project/*
-              </p>
+              <p className="text-[11px] text-muted-foreground">Use * as wildcard.</p>
             </div>
 
-            {newRule.scope === "global" && (
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="action">Action</Label>
-                <Select
-                  value={newRule.action}
-                  onValueChange={(value: "allow" | "deny" | "ask") => setNewRule({ ...newRule, action: value })}
-                >
-                  <SelectTrigger id="action"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="allow">Allow — Always permit</SelectItem>
-                    <SelectItem value="deny">Deny — Always block</SelectItem>
-                    <SelectItem value="ask">Ask — Prompt for approval</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="flex flex-col gap-2">
+              <Label>Action</Label>
+              <Select
+                value={newRule.action}
+                onValueChange={(v: "allow" | "deny" | "ask") => setNewRule({ ...newRule, action: v })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="allow">Allow — always permit</SelectItem>
+                  <SelectItem value="deny">Deny — always block</SelectItem>
+                  <SelectItem value="ask">Ask — prompt each time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialogOpen(false)} disabled={adding}>
               Cancel
             </Button>
-            <Button onClick={handleAdd} disabled={adding || !newRule.permission || !newRule.pattern}>
+            <Button onClick={handleAdd} disabled={adding || !newRule.resource || !newRule.pattern}>
               {adding && <Loader2Icon className="mr-2 size-3.5 animate-spin" />}
               Add Rule
             </Button>

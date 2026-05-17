@@ -523,15 +523,7 @@ export const GithubRunCommand = cmd({
 
         // Setup opencode session
         const repoData = await fetchRepo()
-        session = await Session.create({
-          permission: [
-            {
-              permission: "question",
-              action: "deny",
-              pattern: "*",
-            },
-          ],
-        })
+        session = await Session.create({})
         subscribeSessionEvents()
         shareId = await (async () => {
           if (share === false) return

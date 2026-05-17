@@ -1,8 +1,22 @@
-import { test, expect } from "bun:test"
+import { test, expect, beforeEach } from "bun:test"
 import os from "os"
 import { PermissionNext } from "../../src/permission/next"
 import { Instance } from "../../src/project/instance"
 import { tmpdir } from "../fixture/fixture"
+import { Database } from "../../src/storage/db"
+import { PermissionRuleTable } from "../../src/storage/permission.sql"
+
+// Reset the singleton store + clean persisted DB rules before each test.
+// Without this, session/agent rules saved by one test pollute subsequent tests
+// both via the in-memory sessionCache and via the global opendora.db.
+beforeEach(() => {
+  PermissionNext._resetForTesting()
+  try {
+    Database.use((db) => db.delete(PermissionRuleTable).run())
+  } catch {
+    // DB not yet initialised – nothing to clean
+  }
+})
 
 // fromConfig tests
 
@@ -145,8 +159,8 @@ test("merge - preserves rule order", () => {
 
 test("merge - config permission overrides default ask", () => {
   // Simulates: defaults have "*": "ask", config sets bash: "allow"
-  const defaults: PermissionNext.Ruleset = [{ permission: "*", pattern: "*", action: "ask" }]
-  const config: PermissionNext.Ruleset = [{ permission: "bash", pattern: "*", action: "allow" }]
+  const defaults: PermissionNext.LegacyRuleset = [{ permission: "*", pattern: "*", action: "ask" }]
+  const config: PermissionNext.LegacyRuleset = [{ permission: "bash", pattern: "*", action: "allow" }]
   const merged = PermissionNext.merge(defaults, config)
 
   // Config's bash allow should override default ask
@@ -157,8 +171,8 @@ test("merge - config permission overrides default ask", () => {
 
 test("merge - config ask overrides default allow", () => {
   // Simulates: defaults have bash: "allow", config sets bash: "ask"
-  const defaults: PermissionNext.Ruleset = [{ permission: "bash", pattern: "*", action: "allow" }]
-  const config: PermissionNext.Ruleset = [{ permission: "bash", pattern: "*", action: "ask" }]
+  const defaults: PermissionNext.LegacyRuleset = [{ permission: "bash", pattern: "*", action: "allow" }]
+  const config: PermissionNext.LegacyRuleset = [{ permission: "bash", pattern: "*", action: "ask" }]
   const merged = PermissionNext.merge(defaults, config)
 
   // Config's ask should override default allow
@@ -338,10 +352,11 @@ test("evaluate - permission patterns sorted by length regardless of object order
 })
 
 test("evaluate - merges multiple rulesets", () => {
-  const config: PermissionNext.Ruleset = [{ permission: "bash", pattern: "*", action: "allow" }]
-  const approved: PermissionNext.Ruleset = [{ permission: "bash", pattern: "rm", action: "deny" }]
+  const config: PermissionNext.LegacyRuleset = [{ permission: "bash", pattern: "*", action: "allow" }]
+  const approved: PermissionNext.LegacyRuleset = [{ permission: "bash", pattern: "rm", action: "deny" }]
   // approved comes after config, so rm should be denied
-  const result = PermissionNext.evaluate("bash", "rm", config, approved)
+  const merged = PermissionNext.merge(config, approved)
+  const result = PermissionNext.evaluate("bash", "rm", merged)
   expect(result.action).toBe("deny")
 })
 
@@ -515,7 +530,7 @@ test("ask - returns pending promise when action is ask", async () => {
 
 // reply tests
 
-test("reply - once resolves the pending ask", async () => {
+test("reply - session resolves the pending ask", async () => {
   await using tmp = await tmpdir({ git: true })
   await Instance.provide({
     directory: tmp.path,
@@ -532,7 +547,7 @@ test("reply - once resolves the pending ask", async () => {
 
       await PermissionNext.reply({
         requestID: "permission_test1",
-        reply: "once",
+        reply: "session",
       })
 
       await expect(askPromise).resolves.toBeUndefined()
@@ -565,7 +580,7 @@ test("reply - reject throws RejectedError", async () => {
   })
 })
 
-test("reply - always persists approval and resolves", async () => {
+test("reply - agent persists approval and resolves", async () => {
   await using tmp = await tmpdir({ git: true })
   await Instance.provide({
     directory: tmp.path,
@@ -582,7 +597,7 @@ test("reply - always persists approval and resolves", async () => {
 
       await PermissionNext.reply({
         requestID: "permission_test3",
-        reply: "always",
+        reply: "agent",
       })
 
       await expect(askPromise).resolves.toBeUndefined()

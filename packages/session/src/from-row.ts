@@ -4,7 +4,6 @@
 
 import type { SessionTable } from "./session.sql"
 import type { RetentionPolicy, SendPolicy, SessionType, SessionStatus } from "./types"
-import type { Permission } from "@opendora/permission"
 
 type SessionRow = typeof SessionTable.$inferSelect
 
@@ -19,7 +18,6 @@ export type SessionInfo = {
   summary?: { additions: number; deletions: number; files: number; diffs?: unknown[] }
   share?: { url: string }
   revert?: { messageID: string; partID?: string; snapshot?: string; diff?: string }
-  permission?: Permission.Ruleset
   time: { created: number; updated: number; compacting?: number; archived?: number }
   // PingPong fields
   sessionType?: SessionType
@@ -62,7 +60,6 @@ export function fromRow(row: SessionRow): SessionInfo {
     summary,
     share,
     revert,
-    permission: row.permission ?? undefined,
     time: {
       created: row.time_created,
       updated: row.time_updated,

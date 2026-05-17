@@ -399,6 +399,13 @@ export namespace SessionProcessor {
               if (needsCompaction) break
             }
           } catch (e: any) {
+            // Suppress AbortError — user-initiated cancellation is not an error
+            if (e instanceof DOMException && e.name === "AbortError") {
+              input.assistantMessage.time.completed = Date.now()
+              await input.updateMessage(input.assistantMessage)
+              SessionStatus.set(input.sessionID, { type: "idle" })
+              return "stop"
+            }
             console.error("[session-core] processor error:", e)
             const error = MessageV2.fromError(e, { providerID: input.model.providerID })
             if (MessageV2.ContextOverflowError.isInstance(error)) {

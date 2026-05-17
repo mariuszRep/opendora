@@ -142,7 +142,7 @@ function createFakeAgent() {
       }
     },
     async requestPermission(_params: RequestPermissionParams): Promise<RequestPermissionResult> {
-      return { outcome: { outcome: "selected", optionId: "once" } } as RequestPermissionResult
+      return { outcome: { outcome: "selected", optionId: "session" } } as RequestPermissionResult
     },
   } as unknown as AgentSideConnection
 
