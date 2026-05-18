@@ -10,7 +10,6 @@ import {
   TerminalIcon,
   GlobeIcon,
   FileIcon,
-  FilePenIcon,
   BotIcon,
   WrenchIcon,
 } from "lucide-react"
@@ -214,7 +213,7 @@ export function SessionPermissionsSheet({
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <ShieldIcon className="size-12 text-muted-foreground mb-3" />
                   <p className="text-sm text-muted-foreground">
-                    No permissions yet. Allow a tool request to create one automatically.
+                    No saved rules yet. Rules are created when you approve or deny a permission request.
                   </p>
                 </div>
               ) : (

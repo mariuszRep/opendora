@@ -1504,7 +1504,10 @@ export const Chatbot = () => {
                 </div>
               )
           })}
-          {status === "submitted" && (
+          {(status === "submitted" || (status === "streaming" && (() => {
+            const last = messages[messages.length - 1]
+            return !last || last.info.role === "user" || (last.info.role === "assistant" && last.parts.length === 0)
+          })())) && (
             <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3 w-full">
               <div className="relative size-4 mt-[3px]">
                 <div
@@ -1512,8 +1515,8 @@ export const Chatbot = () => {
                   style={{ backgroundColor: agentDotColor }}
                 />
               </div>
-              <div className="flex items-center h-5">
-                <div className="relative size-4">
+              <div className="flex items-center gap-2 h-5">
+                <div className="relative size-4 shrink-0">
                   <div
                     className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
                     style={{ borderTopColor: agentDotColor }}
@@ -1524,6 +1527,7 @@ export const Chatbot = () => {
                     style={{ backgroundColor: agentDotColor }}
                   />
                 </div>
+                <span className="text-xs text-muted-foreground">Thinking…</span>
               </div>
             </div>
           )}

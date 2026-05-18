@@ -399,7 +399,12 @@ export function useOpendora(): UseOpendoraResult {
   useEffect(() => {
     const requestedSessionID = searchParams.get("session")
     if (!requestedSessionID || requestedSessionID === selectedSessionRef.current?.id) return
-    const targetSession = sessions.find((session) => session.id === requestedSessionID)
+    // Use sessionsRef.current (always current) instead of the sessions state value.
+    // sessions must NOT be in the dep array: if it were, this effect would re-run whenever
+    // sessions state changes (e.g. from an SSE event) while searchParams still holds the
+    // previous session ID — causing it to override a just-created session selection before
+    // router.push has had a chance to update the URL.
+    const targetSession = sessionsRef.current.find((session) => session.id === requestedSessionID)
     if (!targetSession) return
 
     suppressUrlSyncRef.current = true
@@ -410,7 +415,8 @@ export function useOpendora(): UseOpendoraResult {
     if (targetSession.agentID) {
       setSelectedAgent(targetSession.agentID)
     }
-  }, [searchParams, sessions])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   useEffect(() => {
     if (!selectedSessionId) return
@@ -488,18 +494,23 @@ export function useOpendora(): UseOpendoraResult {
           }
           
           if (info.sessionID !== selectedSessionRef.current?.id) break
+          // Check before the state update so we can call setStatus outside the updater.
+          // Calling setState inside a setState updater is a React anti-pattern that can
+          // behave unreliably in Concurrent Mode.
+          const isNewIncompleteAssistant =
+            info.role === "assistant" &&
+            !(info as { time: { completed?: number } }).time.completed &&
+            !messagesRef.current.find((m) => m.info.id === info.id)
           setMessages((prev) => {
             // Replace the optimistic placeholder with the real user message
             const withoutOptimistic = info.role === "user"
               ? prev.filter((m) => !m.info.id.startsWith("_optimistic_"))
               : prev
             const idx = withoutOptimistic.findIndex((m) => m.info.id === info.id)
-            if (idx === -1) {
-              if (info.role === "assistant") setStatus("streaming")
-              return [...withoutOptimistic, { info, parts: [] }]
-            }
+            if (idx === -1) return [...withoutOptimistic, { info, parts: [] }]
             return withoutOptimistic.map((m, i) => (i === idx ? { ...m, info } : m))
           })
+          if (isNewIncompleteAssistant) setStatus("streaming")
           break
         }
         case "session.idle": {
