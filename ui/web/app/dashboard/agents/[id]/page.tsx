@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { CheckIcon, ExternalLinkIcon, Loader2Icon, MessageSquareIcon, SparklesIcon, StarIcon, Trash2Icon } from "lucide-react"
+import { CheckIcon, ClockAlertIcon, ExternalLinkIcon, Loader2Icon, MessageSquareIcon, SparklesIcon, StarIcon, Trash2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -96,7 +96,7 @@ type ModelValue = { providerID: string; modelID: string } | undefined
 export default function AgentSettingsPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const { createAgent, updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, modelFilters, allAgents, refreshProviders, modelGroups, refreshModelGroups, sessions, setAgentMainSession, selectSession } =
+  const { createAgent, updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, modelFilters, allAgents, refreshProviders, modelGroups, refreshModelGroups, providerTimeouts, refreshProviderTimeouts, sessions, setAgentMainSession, selectSession } =
     useOpendoraContext()
 
   const isNew = id === "new"
@@ -330,6 +330,7 @@ export default function AgentSettingsPage() {
             if (nextOpen) {
               refreshProviders().catch(() => { })
               refreshModelGroups().catch(() => { })
+              refreshProviderTimeouts().catch(() => { })
             }
           }}
         >
@@ -395,6 +396,9 @@ export default function AgentSettingsPage() {
                       >
                         <ModelSelectorLogo provider={m.providerID} />
                         <ModelSelectorName>{m.modelName}</ModelSelectorName>
+                        {providerTimeouts[m.providerID]?.timedOut && (
+                          <ClockAlertIcon className="size-3 text-red-500 shrink-0" />
+                        )}
                         {active ? <CheckIcon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}
                       </ModelSelectorItem>
                     )

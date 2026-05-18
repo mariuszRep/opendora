@@ -131,6 +131,21 @@ export namespace SessionRetry {
           const parsed = Date.parse(retryAfter) - Date.now()
           if (!Number.isNaN(parsed) && parsed > 0) return clampDelay(Math.ceil(parsed))
         }
+
+        // Codex-specific: x-codex-primary-reset-after-seconds
+        const codexResetAfter = headers["x-codex-primary-reset-after-seconds"]
+        if (codexResetAfter) {
+          const seconds = Number.parseFloat(codexResetAfter)
+          if (!Number.isNaN(seconds) && seconds > 0) return clampDelay(Math.ceil(seconds * 1000))
+        }
+
+        // Codex-specific: x-codex-primary-reset-at (Unix timestamp in seconds)
+        const codexResetAt = headers["x-codex-primary-reset-at"]
+        if (codexResetAt) {
+          const ts = Number.parseFloat(codexResetAt) * 1000
+          const delayMs = ts - Date.now()
+          if (!Number.isNaN(ts) && delayMs > 0) return clampDelay(Math.ceil(delayMs))
+        }
       }
 
       // 2. Google structured error details: RetryInfo.retryDelay (protobuf duration string)
@@ -188,10 +203,18 @@ export namespace SessionRetry {
       if (isTerminalQuotaError(error.data.responseBody)) return undefined
       // FreeUsageLimitError requires user action (add credits) — not retryable
       if (error.data.responseBody?.includes("FreeUsageLimitError")) return undefined
+      // Codex usage_limit_reached — not retryable, wait for reset window
+      if (error.data.responseBody?.includes("usage_limit_reached")) return undefined
       // Check retry-after header: delays longer than MAX_RETRYABLE_DELAY_MS are terminal
       const retryAfterSec = error.data.responseHeaders?.["retry-after"]
       if (retryAfterSec) {
         const seconds = Number.parseFloat(retryAfterSec)
+        if (!Number.isNaN(seconds) && seconds * 1000 > MAX_RETRYABLE_DELAY_MS) return undefined
+      }
+      // Check Codex reset headers: delays longer than MAX_RETRYABLE_DELAY_MS are terminal
+      const codexResetAfter = error.data.responseHeaders?.["x-codex-primary-reset-after-seconds"]
+      if (codexResetAfter) {
+        const seconds = Number.parseFloat(codexResetAfter)
         if (!Number.isNaN(seconds) && seconds * 1000 > MAX_RETRYABLE_DELAY_MS) return undefined
       }
       return error.data.message.includes("Overloaded") ? "Provider is overloaded" : error.data.message

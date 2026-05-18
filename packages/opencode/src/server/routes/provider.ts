@@ -7,6 +7,7 @@ import { ModelsDev } from "@opendora/provider/models"
 import { ProviderAuth } from "@opendora/provider/auth"
 import { Auth } from "../../auth"
 import { ProviderFallback } from "@opendora/provider/fallback"
+import { ProviderTimeout } from "@opendora/provider/timeout"
 import { mapValues } from "remeda"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
@@ -219,6 +220,36 @@ export const ProviderRoutes = lazy(() =>
           default: mapValues(providers, (item) => Provider.sort(Object.values(item.models))[0]?.id ?? ""),
           connected: Object.keys(connected),
         })
+      },
+    )
+    .get(
+      "/timeout",
+      describeRoute({
+        summary: "Get provider timeout status",
+        description: "Get timeout status for all providers that have been rate-limited.",
+        operationId: "provider.timeout",
+        responses: {
+          200: {
+            description: "Provider timeout statuses",
+            content: {
+              "application/json": {
+                schema: resolver(
+                  z.record(z.string(), z.object({
+                    timedOut: z.boolean(),
+                    until: z.number().nullable(),
+                    reason: z.string().nullable(),
+                    resetInSeconds: z.number().nullable(),
+                    failedModels: z.array(z.string()),
+                  })),
+                ),
+              },
+            },
+          },
+        },
+      }),
+      async (c) => {
+        const info = await ProviderTimeout.allTimeoutInfo()
+        return c.json(info)
       },
     )
     .get(

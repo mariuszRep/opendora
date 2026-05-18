@@ -8,6 +8,7 @@
 import { readFile, writeFile, mkdir } from "fs/promises"
 import { join, dirname } from "path"
 import { Global } from "@opendora/core/global"
+import { ProviderTimeout } from "./timeout"
 
 export namespace ProviderFallback {
   export type Slot = {
@@ -140,14 +141,28 @@ export namespace ProviderFallback {
     slot: Slot,
     statusCode: number | undefined,
     reason: string,
-  ): Promise<Slot | null> {
+    responseHeaders?: Record<string, string>,
+    responseBody?: string,
+  ): Promise<{ nextSlot: Slot | null; providerTimedOut: boolean }> {
     const group = getGroup(groupID)
-    if (!group) return null
+    if (!group) return { nextSlot: null, providerTimedOut: false }
 
     const state = await loadState()
     const now = Date.now()
 
-    state.cooldowns[cooldownKey(slot)] = { until: now + COOLDOWN_MS, reason }
+    // Use actual reset timestamp from API headers, fall back to fixed cooldown
+    const resetAt = ProviderTimeout.parseResetFromHeaders(responseHeaders, responseBody)
+    const until = resetAt ?? now + COOLDOWN_MS
+    state.cooldowns[cooldownKey(slot)] = { until, reason }
+
+    // Also report to ProviderTimeout for provider-level tracking
+    const timeoutResult = await ProviderTimeout.reportError(
+      slot,
+      statusCode,
+      reason,
+      responseHeaders,
+      responseBody,
+    )
 
     const currentIdx = group.slots.findIndex(
       (item) => item.providerID === slot.providerID && item.modelID === slot.modelID,
@@ -157,13 +172,13 @@ export namespace ProviderFallback {
     const nextIdx = nextAvailableSlot(group, state, searchFrom)
     if (nextIdx === null) {
       await saveState(state)
-      return null
+      return { nextSlot: null, providerTimedOut: timeoutResult.providerTimedOut }
     }
 
     state.rotations[groupID] = { slotIndex: nextIdx, activeSince: now, lastUsed: now }
     await saveState(state)
 
-    return group.slots[nextIdx]
+    return { nextSlot: group.slots[nextIdx], providerTimedOut: timeoutResult.providerTimedOut }
   }
 
   export async function getCurrentSlot(groupID: string): Promise<Slot | null> {

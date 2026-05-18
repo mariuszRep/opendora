@@ -509,6 +509,8 @@ export const opendora = {
         method: "POST",
         body: JSON.stringify({ method, code }),
       }),
+    timeout: () =>
+      req<Record<string, { timedOut: boolean; until: number | null; reason: string | null; resetInSeconds: number | null; failedModels: string[] }>>("/provider/timeout"),
   },
   question: {
     list: () => req<QuestionRequest[]>("/question"),

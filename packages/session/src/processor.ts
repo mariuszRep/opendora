@@ -427,19 +427,34 @@ export namespace SessionProcessor {
               await SessionRetry.sleep(delay, input.abort).catch(() => {})
               continue
             }
+            // Report provider timeout for rate limit errors (429) regardless of fallback
+            const apiError = error.name === "APIError" ? (error as any) : null
+            const statusCode = statusCodeForFallback
+            if (statusCode === 429) {
+              await getConfig().provider?.reportProviderTimeout?.(
+                streamInput.model.providerID,
+                streamInput.model.id,
+                (error as any)?.message ?? String(error),
+                apiError?.data?.responseHeaders,
+                apiError?.data?.responseBody,
+              )
+            }
+
             // Fallback: if this is a fallback group, try next provider before hard-failing
             if (input.fallbackGroupID) {
-              const statusCode = statusCodeForFallback
               const isFallbackEligible = statusCode === undefined || [400, 404, 429, 500, 502, 503].includes(statusCode)
               if (isFallbackEligible) {
                 const currentSlot = { providerID: streamInput.model.providerID, modelID: streamInput.model.id }
-                const nextSlot = await getConfig().provider?.reportFallbackError?.(
+                const result = await getConfig().provider?.reportFallbackError?.(
                   input.fallbackGroupID,
                   currentSlot,
                   statusCode,
                   (error as any)?.message ?? String(error),
+                  apiError?.data?.responseHeaders,
+                  apiError?.data?.responseBody,
                 )
-                if (nextSlot) {
+                const nextSlot = result?.nextSlot ?? (result && "providerID" in result ? result : null)
+                if (nextSlot && "providerID" in nextSlot) {
                   const nextModel = await getConfig().provider?.getModel(nextSlot.providerID, nextSlot.modelID)
                   if (nextModel) {
                     streamInput = { ...streamInput, model: nextModel }

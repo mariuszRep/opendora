@@ -23,6 +23,26 @@ export namespace BusEvent {
     z.object({ providerID: z.string(), providerName: z.string() }),
   )
 
+  export const ProviderTimedOut = define(
+    "provider.timeout",
+    z.object({
+      providerID: z.string(),
+      providerName: z.string(),
+      reason: z.string(),
+      resetAt: z.number(),
+      resetInSeconds: z.number(),
+      failedModels: z.array(z.string()),
+    }),
+  )
+
+  export const ProviderRecovered = define(
+    "provider.recovered",
+    z.object({
+      providerID: z.string(),
+      providerName: z.string(),
+    }),
+  )
+
   export function payloads() {
     return z
       .discriminatedUnion(

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2Icon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon, BrainIcon, WrenchIcon, PlusIcon, LayersIcon, DatabaseIcon, PencilIcon } from "lucide-react"
+import { CheckCircle2Icon, ClockAlertIcon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon, BrainIcon, WrenchIcon, PlusIcon, LayersIcon, DatabaseIcon, PencilIcon } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -49,7 +49,7 @@ function providerLogoID(providerID: string) {
 
 export default function ProvidersPage() {
   const router = useRouter()
-  const { providers, connectedProviders, modelFilters, setModelFilter, defaultModels, refreshProviders, modelGroups, refreshModelGroups } = useOpendoraContext()
+  const { providers, connectedProviders, modelFilters, setModelFilter, defaultModels, refreshProviders, modelGroups, refreshModelGroups, providerTimeouts, refreshProviderTimeouts } = useOpendoraContext()
   const [authMethods, setAuthMethods] = useState<Record<string, AuthMethod[]>>({})
   const [apiKeyForm, setApiKeyForm] = useState<ApiKeyFormState | null>(null)
   const [removing, setRemoving] = useState<string | null>(null)
@@ -323,6 +323,7 @@ export default function ProvidersPage() {
                       setDefaultModelOpen(nextOpen)
                       if (nextOpen) {
                         refreshProviders().catch(() => { })
+                        refreshProviderTimeouts().catch(() => { })
                       }
                     }}
                   >
@@ -373,6 +374,9 @@ export default function ProvidersPage() {
                                 >
                                   <ModelSelectorLogo provider={m.providerID} />
                                   <ModelSelectorName>{m.modelName}</ModelSelectorName>
+                                  {providerTimeouts[m.providerID]?.timedOut && (
+                                    <ClockAlertIcon className="size-3 text-red-500 shrink-0" />
+                                  )}
                                   {active ? <CheckCircle2Icon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}
                                 </ModelSelectorItem>
                               )

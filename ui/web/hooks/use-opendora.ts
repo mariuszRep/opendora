@@ -97,6 +97,9 @@ export type UseOpendoraResult = {
   // Fallback groups
   modelGroups: { id: string; name: string; models: { providerID: string; modelID: string }[] }[]
   refreshModelGroups: () => Promise<void>
+  // Provider timeout status
+  providerTimeouts: Record<string, { timedOut: boolean; until: number | null; reason: string | null; resetInSeconds: number | null; failedModels: string[] }>
+  refreshProviderTimeouts: () => Promise<void>
   // Error
   error: string | null
   // UI Layout
@@ -138,6 +141,7 @@ export function useOpendora(): UseOpendoraResult {
   const [fallbackActiveSlots, setFallbackActiveSlots] = useState<Record<string, { providerID: string; modelID: string }>>({})
   const [modelFilters, setModelFilters] = useState<Record<string, "all" | "free" | "none">>({})
   const [modelGroups, setModelGroups] = useState<{ id: string; name: string; models: { providerID: string; modelID: string }[] }[]>([])
+  const [providerTimeouts, setProviderTimeouts] = useState<Record<string, { timedOut: boolean; until: number | null; reason: string | null; resetInSeconds: number | null; failedModels: string[] }>>({})
   const [allAgents, setAllAgents] = useState<(Agent & { _id: string })[]>([])
   const [selectedAgent, setSelectedAgent] = useState<string>("")
   const [isChatCentered, setIsChatCentered] = useState(false)
@@ -202,6 +206,11 @@ export function useOpendora(): UseOpendoraResult {
     setDefaultModels(providerData.default)
   }, [])
 
+  const refreshProviderTimeouts = useCallback(async () => {
+    const data = await opendora.provider.timeout()
+    setProviderTimeouts(data)
+  }, [])
+
   const refreshSchedules = useCallback(async () => {
     const data = await opendora.schedule.list()
     setSchedules(data)
@@ -241,6 +250,7 @@ export function useOpendora(): UseOpendoraResult {
   useEffect(() => {
     const interval = setInterval(() => {
       refreshProviders().catch(() => {})
+      refreshProviderTimeouts().catch(() => {})
     }, 60 * 60 * 1000) // 1 hour
     return () => clearInterval(interval)
   }, [refreshProviders])
@@ -251,7 +261,7 @@ export function useOpendora(): UseOpendoraResult {
 
     async function init() {
       try {
-        const [providerData, agentData, sessionData, questionData, configData, scheduleData, sessionStatusData] = await Promise.all([
+        const [providerData, agentData, sessionData, questionData, configData, scheduleData, sessionStatusData, timeoutData] = await Promise.all([
           opendora.provider.list(),
           opendora.agent.list(),
           opendora.session.list(),
@@ -259,12 +269,14 @@ export function useOpendora(): UseOpendoraResult {
           opendora.config.get(),
           opendora.schedule.list(),
           opendora.session.status().catch(() => ({} as Record<string, { type: string }>)),
+          opendora.provider.timeout().catch(() => ({})),
         ])
         if (cancelled) return
 
         setProviders(providerData.all)
         setConnectedProviders(providerData.connected)
         setDefaultModels(providerData.default)
+        setProviderTimeouts(timeoutData)
 
         // Load model filters from backend config
         if (configData.model_filters) {
@@ -349,6 +361,7 @@ export function useOpendora(): UseOpendoraResult {
   useEffect(() => {
     function handleFocus() {
       refreshProviders().catch(() => { })
+      refreshProviderTimeouts().catch(() => { })
     }
 
     window.addEventListener("focus", handleFocus)
@@ -596,6 +609,31 @@ export function useOpendora(): UseOpendoraResult {
         case "session.fallback.switched": {
           const { groupID, newSlot } = (event as { type: string; properties: { groupID: string; newSlot: { providerID: string; modelID: string } } }).properties
           setFallbackActiveSlots((prev) => ({ ...prev, [groupID]: newSlot }))
+          break
+        }
+        case "provider.timeout": {
+          const { providerID, reason, resetInSeconds } = (event as { type: string; properties: { providerID: string; reason: string; resetInSeconds: number; failedModels: string[] } }).properties
+          setProviderTimeouts((prev) => ({
+            ...prev,
+            [providerID]: {
+              timedOut: true,
+              until: Date.now() + resetInSeconds * 1000,
+              reason,
+              resetInSeconds,
+              failedModels: (event as any).properties.failedModels ?? [],
+            },
+          }))
+          toast.warning(`${providerID} timed out: ${reason}`, { duration: 8000 })
+          break
+        }
+        case "provider.recovered": {
+          const { providerID } = (event as { type: string; properties: { providerID: string } }).properties
+          setProviderTimeouts((prev) => {
+            const next = { ...prev }
+            delete next[providerID]
+            return next
+          })
+          toast.success(`${providerID} recovered`, { duration: 4000 })
           break
         }
         case "question.asked": {
@@ -1049,6 +1087,8 @@ export function useOpendora(): UseOpendoraResult {
     setModelFilter,
     modelGroups,
     refreshModelGroups,
+    providerTimeouts,
+    refreshProviderTimeouts,
     error,
     isChatCentered,
     toggleChatLayout,

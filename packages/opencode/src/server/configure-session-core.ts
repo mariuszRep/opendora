@@ -6,6 +6,7 @@ import { configure } from "@opendora/session"
 import { Database } from "@/storage/db"
 import { Global } from "@/global"
 import { Bus } from "@/bus"
+import { BusEvent } from "@/bus/bus-event"
 import { Config } from "@/config/config"
 import { Storage } from "@/storage/storage"
 import { Snapshot } from "@/snapshot"
@@ -18,6 +19,7 @@ import { LSP } from "@/lsp"
 import { Provider } from "@opendora/provider/provider"
 import { ProviderTransform } from "@opendora/provider/transform"
 import { ProviderFallback } from "@opendora/provider/fallback"
+import { ProviderTimeout } from "@opendora/provider/timeout"
 import { Installation } from "@/installation"
 import { ToolRegistry } from "@/tool/registry"
 import { MCP } from "@/mcp"
@@ -243,9 +245,47 @@ export function configureSessionCore() {
         slot: { providerID: string; modelID: string },
         statusCode: number | undefined,
         reason: string,
+        responseHeaders?: Record<string, string>,
+        responseBody?: string,
       ) {
         await syncProviderFallbackGroups()
-        return ProviderFallback.reportError(groupID, slot, statusCode, reason)
+        const result = await ProviderFallback.reportError(groupID, slot, statusCode, reason, responseHeaders, responseBody)
+        if (result.providerTimedOut) {
+          const info = await ProviderTimeout.getTimeoutInfo(slot.providerID)
+          if (info?.timedOut) {
+            Bus.publish(BusEvent.ProviderTimedOut, {
+              providerID: slot.providerID,
+              providerName: slot.providerID,
+              reason: info.reason ?? reason,
+              resetAt: info.until!,
+              resetInSeconds: info.resetInSeconds!,
+              failedModels: info.failedModels,
+            })
+          }
+        }
+        return result
+      },
+      async reportProviderTimeout(
+        providerID: string,
+        modelID: string,
+        reason: string,
+        responseHeaders?: Record<string, string>,
+        responseBody?: string,
+      ) {
+        // Report the error directly to ProviderTimeout
+        await ProviderTimeout.reportError(providerID, modelID, 429, reason, responseHeaders, responseBody)
+        // Check if provider is now timed out and publish event
+        const info = await ProviderTimeout.getTimeoutInfo(providerID)
+        if (info?.timedOut) {
+          Bus.publish(BusEvent.ProviderTimedOut, {
+            providerID,
+            providerName: providerID,
+            reason: info.reason ?? reason,
+            resetAt: info.until!,
+            resetInSeconds: info.resetInSeconds!,
+            failedModels: info.failedModels,
+          })
+        }
       },
       ModelNotFoundError: {
         isInstance(e: unknown) {

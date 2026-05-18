@@ -29,7 +29,9 @@ export interface SessionCoreConfig {
       slot: { providerID: string; modelID: string },
       statusCode: number | undefined,
       reason: string,
-    ): Promise<{ providerID: string; modelID: string } | null>
+      responseHeaders?: Record<string, string>,
+      responseBody?: string,
+    ): Promise<{ nextSlot: { providerID: string; modelID: string } | null; providerTimedOut: boolean }>
     ModelNotFoundError?: { isInstance(e: unknown): boolean }
     isWorkerMode?(mode: string): boolean
   }

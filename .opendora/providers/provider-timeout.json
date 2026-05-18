@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "providers": {
+    "openrouter": {
+      "until": null,
+      "reason": null,
+      "modelFailures": {
+        "minimax/minimax-m2.5:free": {
+          "modelID": "minimax/minimax-m2.5:free",
+          "until": 1779120517594,
+          "reason": "[object Object]",
+          "statusCode": 429
+        }
+      }
+    },
+    "opencode": {
+      "until": null,
+      "reason": null,
+      "modelFailures": {
+        "minimax-m2.5-free": {
+          "modelID": "minimax-m2.5-free",
+          "until": 1779148801453,
+          "reason": "[object Object]",
+          "statusCode": 429
+        }
+      }
+    }
+  }
+}
