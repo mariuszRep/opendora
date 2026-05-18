@@ -78,8 +78,6 @@ export namespace Agent {
         ...Object.fromEntries(whitelistedDirs.map((dir) => [dir, "allow"])),
       },
       question: "deny",
-      plan_enter: "deny",
-      plan_exit: "deny",
       read: {
         "*": "allow",
         "*.env": "ask",

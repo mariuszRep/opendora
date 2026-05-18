@@ -185,6 +185,7 @@ export namespace Server {
             const providerID = c.req.valid("param").providerID
             const info = c.req.valid("json")
             await Auth.set(providerID, info)
+            await Instance.disposeAll().catch(() => undefined)
             return c.json(true)
           },
         )
@@ -215,6 +216,7 @@ export namespace Server {
           async (c) => {
             const providerID = c.req.valid("param").providerID
             await Auth.remove(providerID)
+            await Instance.disposeAll().catch(() => undefined)
             return c.json(true)
           },
         )
@@ -725,7 +727,10 @@ export namespace Server {
         }
 
         // Resolve source session (where the tool call appears in the UI)
-        let sourceSessionID = schedule.session_id
+        let sourceSessionID: string | undefined = schedule.session_id ?? undefined
+        if (sourceSessionID) {
+          try { await Session.get(sourceSessionID) } catch { sourceSessionID = undefined }
+        }
         if (!sourceSessionID && schedule.agent_id) {
           const src = await Session.ensureMainSession(schedule.agent_id)
           sourceSessionID = src.id
@@ -845,7 +850,10 @@ export namespace Server {
       }
 
       // Default: message action — send text to the schedule's own session/agent
-      let sessionID = schedule.session_id
+      let sessionID: string | undefined = schedule.session_id ?? undefined
+      if (sessionID) {
+        try { await Session.get(sessionID) } catch { sessionID = undefined }
+      }
       if (!sessionID && schedule.agent_id) {
         const session = await Session.ensureMainSession(schedule.agent_id)
         sessionID = session.id

@@ -282,6 +282,7 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
         await sessionSvc.setReplyToSessionID({ sessionID: targetSession.id, replyToSessionID })
       }
 
+      let isPreAuthorized = false
       if (targetAgentName) {
         const callerData = await (h.agents as any)?.get(ctx.agent) as any
         const allowedAgents = callerData?.config?.toolConfig?.delegate?.allowedAgents as string[] | undefined
@@ -292,10 +293,12 @@ export const DelegateTool = Tool.define("delegate", async (initCtx?) => {
               `Agent "${targetName}" is not in this agent's allowed delegation list. ` + `Allowed: ${allowedAgents.join(", ")}`,
             )
           }
+          isPreAuthorized = true
         }
       }
 
-      if (targetAgentName) {
+      // allowedAgents in agent config is the permission grant — only ask for open delegation
+      if (targetAgentName && !isPreAuthorized) {
         await ctx.ask({
           permission: "task",
           patterns: [targetAgentName],

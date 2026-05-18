@@ -81,11 +81,6 @@
       "id": "pyautogui-agent",
       "name": "PyAutoGUI Agent",
       "mode": "worker"
-    },
-    {
-      "id": "clean-guy",
-      "name": "Clean Guy",
-      "mode": "worker"
     }
   ]
 }

@@ -284,19 +284,25 @@ export const SessionRoutes = lazy(() =>
         const model = await (async () => {
           const agentModel = agent?.model
           if (agentModel) {
+            // Fallback group: resolve to actual provider/model before calling getModel
+            if (agentModel.providerID === "fallback") {
+              const slot = await cfg.provider?.resolveFallback?.(agentModel.modelID).catch(() => undefined)
+              if (slot) return cfg.provider?.getModel(slot.providerID, slot.modelID).catch(() => undefined)
+              return undefined
+            }
             return cfg.provider?.getModel(agentModel.providerID, agentModel.modelID).catch(() => undefined)
           }
           return cfg.provider?.defaultModel?.().catch(() => undefined)
         })()
 
-        if (!model) return c.json({ sections: [], injection: "", skills: [], tools: [], loadedSkillNames: [] })
-
-        const sections = await SystemPrompt.build({
-          agent,
-          model,
-          sessionID,
-          userSystem: sessionMeta?.systemPrompt,
-        })
+        const sections = model
+          ? await SystemPrompt.build({
+              agent,
+              model,
+              sessionID,
+              userSystem: sessionMeta?.systemPrompt,
+            }).catch(() => [])
+          : []
 
         const injection = session.agentID && agent?.enableInjection
           ? await Agent.getInjection(session.agentID).catch(() => "")

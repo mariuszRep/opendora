@@ -17,6 +17,7 @@ import { Scheduler } from "@/scheduler"
 import { LSP } from "@/lsp"
 import { Provider } from "@opendora/provider/provider"
 import { ProviderTransform } from "@opendora/provider/transform"
+import { ProviderFallback } from "@opendora/provider/fallback"
 import { Installation } from "@/installation"
 import { ToolRegistry } from "@/tool/registry"
 import { MCP } from "@/mcp"
@@ -47,6 +48,17 @@ async function enrichAgent(agent: any): Promise<any> {
 }
 
 let configured = false
+
+async function syncProviderFallbackGroups() {
+  const config = await Config.get()
+  ProviderFallback.setCustomGroups(
+    (config.model_groups ?? []).map((group: any) => ({
+      id: group.id,
+      displayName: group.name,
+      slots: group.models,
+    })),
+  )
+}
 
 export function configureSessionCore() {
   if (configured) return
@@ -221,6 +233,19 @@ export function configureSessionCore() {
       },
       parseModel(model: string) {
         return Provider.parseModel(model)
+      },
+      async resolveFallback(groupID: string) {
+        await syncProviderFallbackGroups()
+        return ProviderFallback.resolve(groupID)
+      },
+      async reportFallbackError(
+        groupID: string,
+        slot: { providerID: string; modelID: string },
+        statusCode: number | undefined,
+        reason: string,
+      ) {
+        await syncProviderFallbackGroups()
+        return ProviderFallback.reportError(groupID, slot, statusCode, reason)
       },
       ModelNotFoundError: {
         isInstance(e: unknown) {

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2Icon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon, BrainIcon, WrenchIcon, PlusIcon, LayersIcon, DatabaseIcon } from "lucide-react"
+import { CheckCircle2Icon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon, BrainIcon, WrenchIcon, PlusIcon, LayersIcon, DatabaseIcon, PencilIcon } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -43,6 +43,10 @@ type ApiKeyFormState = {
   error: string | null
 }
 
+function providerLogoID(providerID: string) {
+  return providerID === "opencode-private" ? "opencode" : providerID
+}
+
 export default function ProvidersPage() {
   const router = useRouter()
   const { providers, connectedProviders, modelFilters, setModelFilter, defaultModels, refreshProviders, modelGroups, refreshModelGroups } = useOpendoraContext()
@@ -58,6 +62,7 @@ export default function ProvidersPage() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [globalConfig, setGlobalConfig] = useState<{ model?: string; model_filters?: Record<string, "all" | "free" | "none">; tool_config?: Record<string, { apiKey?: string; useApiKey?: boolean }>; [k: string]: unknown } | null>(null)
   const [groupDialogOpen, setGroupDialogOpen] = useState(false)
+  const [editingGroup, setEditingGroup] = useState<ModelGroup | null>(null)
 
   useEffect(() => {
     opendora.provider.authMethods().then(setAuthMethods).catch(() => {})
@@ -87,21 +92,33 @@ export default function ProvidersPage() {
   }, [globalConfig, connectedProviders, defaultModels])
 
   async function handleSaveGroup(group: Omit<ModelGroup, "id">) {
-    const newGroup: ModelGroup = { ...group, id: crypto.randomUUID() }
-    const updated = [...modelGroups, newGroup]
+    const updated = editingGroup
+      ? modelGroups.map((existing) => existing.id === editingGroup.id ? { ...group, id: editingGroup.id } : existing)
+      : [...modelGroups, { ...group, id: crypto.randomUUID() }]
     await opendora.config.update({ model_groups: updated })
-    await refreshModelGroups()
+    await Promise.all([refreshModelGroups(), refreshProviders()])
   }
 
   async function handleDeleteGroup(id: string) {
     const updated = modelGroups.filter((g) => g.id !== id)
     await opendora.config.update({ model_groups: updated })
-    await refreshModelGroups()
+    await Promise.all([refreshModelGroups(), refreshProviders()])
+    if (editingGroup?.id === id) setEditingGroup(null)
+  }
+
+  function handleNewGroup() {
+    setEditingGroup(null)
+    setGroupDialogOpen(true)
+  }
+
+  function handleEditGroup(group: ModelGroup) {
+    setEditingGroup(group)
+    setGroupDialogOpen(true)
   }
 
   const modelList = useMemo(() => {
     const isFreeModel = (m: { id: string; [k: string]: unknown }) => {
-      const cost = (m as any).cost as { input: number; output: number } | undefined
+      const cost = m.cost as { input: number; output: number } | undefined
       if (cost && cost.input === 0 && cost.output === 0) return true
       return m.id.endsWith(":free") || m.id.endsWith("-free")
     }
@@ -157,7 +174,7 @@ export default function ProvidersPage() {
 
   function hasFreeModels(provider: Provider): boolean {
     return Object.values(provider.models).some((m) => {
-      const cost = (m as any).cost as { input: number; output: number } | undefined
+      const cost = m.cost as { input: number; output: number } | undefined
       if (cost && cost.input === 0 && cost.output === 0) return true
       return m.id.endsWith(":free") || m.id.endsWith("-free")
     })
@@ -169,7 +186,10 @@ export default function ProvidersPage() {
     try {
       await opendora.auth.set(apiKeyForm.providerID, { type: "api", key: apiKeyForm.key.trim() })
       setApiKeyForm(null)
-      // Reload the page to refresh connected providers
+      await Promise.all([
+        refreshProviders(),
+        opendora.provider.authMethods().then(setAuthMethods),
+      ])
       router.refresh()
     } catch (err) {
       setApiKeyForm((f) => f && { ...f, saving: false, error: err instanceof Error ? err.message : "Failed to save" })
@@ -191,6 +211,10 @@ export default function ProvidersPage() {
     setRemoving(providerID)
     try {
       await opendora.auth.remove(providerID)
+      await Promise.all([
+        refreshProviders(),
+        opendora.provider.authMethods().then(setAuthMethods),
+      ])
       router.refresh()
     } catch {
       // ignore
@@ -244,16 +268,20 @@ export default function ProvidersPage() {
       title="Providers"
       headerAction={
         <>
-          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setGroupDialogOpen(true)}>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={handleNewGroup}>
             <PlusIcon className="size-3.5" />
             New group
           </Button>
           <GroupBuilderDialog
             open={groupDialogOpen}
-            onOpenChange={setGroupDialogOpen}
+            onOpenChange={(open) => {
+              setGroupDialogOpen(open)
+              if (!open) setEditingGroup(null)
+            }}
             providers={providers}
             connectedProviders={connectedProviders}
             modelFilters={modelFilters}
+            initialGroup={editingGroup}
             onSave={handleSaveGroup}
           />
         </>
@@ -282,7 +310,7 @@ export default function ProvidersPage() {
                 <CardTitle className="text-lg">Default Model</CardTitle>
               </div>
               <CardDescription>
-                Set the default AI model used when agents don't have a specific model configured.
+                Set the default AI model used when agents don&apos;t have a specific model configured.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -398,18 +426,39 @@ export default function ProvidersPage() {
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
                 {modelGroups.map((group) => (
-                  <div key={group.id} className="rounded-md border p-3 flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
+                  <div
+                    key={group.id}
+                    role="button"
+                    tabIndex={0}
+                    className="rounded-md border p-3 flex flex-col gap-2 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => handleEditGroup(group)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault()
+                        handleEditGroup(group)
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-3">
                       <span className="text-sm font-medium">{group.name}</span>
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDeleteGroup(group.id)}
-                        title="Delete group"
-                      >
-                        <Trash2Icon className="size-3.5" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <PencilIcon className="size-3.5" />
+                          Edit
+                        </span>
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            handleDeleteGroup(group.id)
+                          }}
+                          title="Delete group"
+                        >
+                          <Trash2Icon className="size-3.5" />
+                        </Button>
+                      </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
                       {group.models.map((m, idx) => {
@@ -459,7 +508,7 @@ export default function ProvidersPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <img
-                    src={`https://models.dev/logos/${provider.id}.svg`}
+                    src={`https://models.dev/logos/${providerLogoID(provider.id)}.svg`}
                     alt={provider.name}
                     className="size-4 dark:invert"
                     width={16}
@@ -603,7 +652,7 @@ export default function ProvidersPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <img
-                    src={`https://models.dev/logos/${provider.id}.svg`}
+                    src={`https://models.dev/logos/${providerLogoID(provider.id)}.svg`}
                     alt={provider.name}
                     className="size-4 dark:invert"
                     width={16}

@@ -6,7 +6,7 @@ import { Provider } from "@opendora/provider/provider"
 import { ModelsDev } from "@opendora/provider/models"
 import { ProviderAuth } from "@opendora/provider/auth"
 import { Auth } from "../../auth"
-import { FallbackManager } from "@opendora/session/fallback"
+import { ProviderFallback } from "@opendora/provider/fallback"
 import { mapValues } from "remeda"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
@@ -43,15 +43,13 @@ export const ProviderRoutes = lazy(() =>
       async (c) => {
         const config = await Config.get()
 
-        if (config.model_groups?.length) {
-          FallbackManager.setCustomGroups(
-            config.model_groups.map((g) => ({
-              id: g.id,
-              displayName: g.name,
-              slots: g.models,
-            })),
-          )
-        }
+        ProviderFallback.setCustomGroups(
+          (config.model_groups ?? []).map((g) => ({
+            id: g.id,
+            displayName: g.name,
+            slots: g.models,
+          })),
+        )
 
         const disabled = new Set(config.disabled_providers ?? [])
         const enabled = config.enabled_providers ? new Set(config.enabled_providers) : undefined
@@ -69,6 +67,19 @@ export const ProviderRoutes = lazy(() =>
           mapValues(filteredProviders, (x) => Provider.fromModelsDevProvider(x)),
           connected,
         )
+
+        if (providers["opencode"] && !providers["opencode-private"]) {
+          providers["opencode-private"] = {
+            ...providers["opencode"],
+            id: "opencode-private",
+            name: "OpenCode Zen (API key)",
+            env: ["OPENCODE_PRIVATE_API_KEY", "OPENCODE_ZEN_API_KEY"],
+            models: mapValues(providers["opencode"].models, (model: any) => ({
+              ...model,
+              providerID: "opencode-private",
+            })),
+          } as any
+        }
 
         // Fetch fresh Codex models if authenticated
         async function fetchCodexModels() {
@@ -141,8 +152,10 @@ export const ProviderRoutes = lazy(() =>
           }
         }
 
-        // Inject synthetic provider entries for plugins with auth methods not yet in the list
         const authMethodMap = await ProviderAuth.methods()
+        authMethodMap["opencode-private"] ??= [{ type: "api", label: "Enter OpenCode Zen API key" }]
+
+        // Inject synthetic provider entries for plugins with auth methods not yet in the list
         for (const [providerID, methods] of Object.entries(authMethodMap)) {
           if (!providers[providerID] && methods.length > 0) {
             const name =
@@ -174,7 +187,7 @@ export const ProviderRoutes = lazy(() =>
         // Inject synthetic "fallback" provider for cross-provider free model groups
         const connectedSet = new Set(Object.keys(connected))
         const fallbackModels: Record<string, any> = {}
-        for (const group of FallbackManager.allGroups()) {
+        for (const group of ProviderFallback.allGroups()) {
           const connectedSlots = group.slots.filter((s) => connectedSet.has(s.providerID))
           if (connectedSlots.length < 2) continue
           fallbackModels[group.id] = {
@@ -226,7 +239,9 @@ export const ProviderRoutes = lazy(() =>
         },
       }),
       async (c) => {
-        return c.json(await ProviderAuth.methods())
+        const methods = await ProviderAuth.methods()
+        methods["opencode-private"] ??= [{ type: "api", label: "Enter OpenCode Zen API key" }]
+        return c.json(methods)
       },
     )
     .post(

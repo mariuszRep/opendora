@@ -5,6 +5,15 @@
 
 ---
 
+## Completed: Fallback manager moved to provider
+
+Provider/model fallback state was removed from `packages/session` and moved to
+`packages/provider/src/provider/fallback.ts`.
+
+Session now receives fallback resolution/reporting through the injected provider
+service in `src/config.ts`, so session no longer imports or exports a fallback
+manager directly.
+
 ## Planned: Single system prompt
 
 ### Why

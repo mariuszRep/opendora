@@ -54,17 +54,22 @@ export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
         throw new Error(`Skill "${params.name}" not found. Available skills: ${available || "none"}`)
       }
 
-      if (!hasUnrestrictedDiscovery && agentSkills?.length && !agentSkills.includes(params.name)) {
+      const isAssigned = agentSkills?.includes(params.name)
+
+      if (!hasUnrestrictedDiscovery && agentSkills?.length && !isAssigned) {
         const available = accessibleSkills.map(s => s.name).join(", ")
         throw new Error(`Skill "${params.name}" is not assigned to this agent. Assigned skills: ${available || "none"}`)
       }
 
-      await ctx.ask({
-        permission: "skill",
-        patterns: [params.name],
-        always: [params.name],
-        metadata: {},
-      })
+      // Assignment in agent config is the permission grant — only ask for unassigned discovery
+      if (!isAssigned) {
+        await ctx.ask({
+          permission: "skill",
+          patterns: [params.name],
+          always: [params.name],
+          metadata: {},
+        })
+      }
 
       if (skill.tools?.length) {
         addSkillTools(ctx.sessionID, skill.tools)

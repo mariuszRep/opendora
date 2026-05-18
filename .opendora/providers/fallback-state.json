@@ -1,6 +1,15 @@
 {
   "version": 1,
-  "cooldowns": {},
+  "cooldowns": {
+    "opencode:minimax-m2.5-free": {
+      "until": 1779101280421,
+      "reason": "[object Object]"
+    },
+    "openrouter:minimax/minimax-m2.5:free": {
+      "until": 1779101571354,
+      "reason": "[object Object]"
+    }
+  },
   "rotations": {
     "minimax-m2.5": {
       "slotIndex": 0,
@@ -14,8 +23,18 @@
     },
     "e2daea63-4ca4-4817-9978-14baecf5612d": {
       "slotIndex": 1,
-      "activeSince": 1777285907665,
-      "lastUsed": 1777285939485
+      "activeSince": 1779094080421,
+      "lastUsed": 1779094370304
+    },
+    "a103f2b7-43fc-4ce3-9e8d-7dce786c0c31": {
+      "slotIndex": 1,
+      "activeSince": 1779098502542,
+      "lastUsed": 1779098529676
+    },
+    "auto": {
+      "slotIndex": 0,
+      "activeSince": 1779098203887,
+      "lastUsed": 1779098203887
     }
   }
 }

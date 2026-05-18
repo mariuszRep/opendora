@@ -23,6 +23,13 @@ export interface SessionCoreConfig {
     defaultModel?(): any
     getSmallModel?(providerID: string): Promise<any>
     parseModel?(model: string): { providerID: string; modelID: string }
+    resolveFallback?(groupID: string): Promise<{ providerID: string; modelID: string }>
+    reportFallbackError?(
+      groupID: string,
+      slot: { providerID: string; modelID: string },
+      statusCode: number | undefined,
+      reason: string,
+    ): Promise<{ providerID: string; modelID: string } | null>
     ModelNotFoundError?: { isInstance(e: unknown): boolean }
     isWorkerMode?(mode: string): boolean
   }

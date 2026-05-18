@@ -3,8 +3,8 @@
   "description": "Full-stack engineering orchestrator. Runs a skill-driven delivery workflow across intake, context, isolated research/planning sessions, synthesis, implementation, verification, and reporting.",
   "mode": "primary",
   "model": {
-    "modelID": "minimax-m2.5-free",
-    "providerID": "opencode"
+    "modelID": "a103f2b7-43fc-4ce3-9e8d-7dce786c0c31",
+    "providerID": "fallback"
   },
   "temperature": 0.25,
   "steps": 120,

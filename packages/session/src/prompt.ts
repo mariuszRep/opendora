@@ -17,7 +17,6 @@ import { NamedError } from "@opendora/util/error"
 import { SessionProcessor } from "./processor.ts"
 import { SessionStatus } from "./status.ts"
 import { LLM } from "./llm.ts"
-import { FallbackManager } from "./fallback.ts"
 import { ulid } from "ulid"
 import { spawn } from "child_process"
 import { $, fileURLToPath, pathToFileURL } from "bun"
@@ -342,26 +341,19 @@ export namespace SessionPrompt {
         break
       }
 
-      step++
-      if (step === 1)
-        await ensureTitle({
-          session,
-          modelID: lastUser.model.modelID,
-          providerID: lastUser.model.providerID,
-          history: msgs,
-        })
-
-      const _resolvedModel = lastUser.model.providerID === "fallback"
-        ? await FallbackManager.resolve(lastUser.model.modelID).then((slot) =>
-            cfg.provider!.getModel(slot.providerID, slot.modelID)
-          )
-        : null
       if (!lastUser.model?.providerID || !lastUser.model?.modelID) {
         throw new Error(
           `No valid model in user message for session ${sessionID}. ` +
           `providerID=${String(lastUser.model?.providerID)} modelID=${String(lastUser.model?.modelID)}`,
         )
       }
+      const _resolvedModel = lastUser.model.providerID === "fallback"
+        ? await (async () => {
+            const slot = await cfg.provider?.resolveFallback?.(lastUser.model.modelID)
+            if (!slot) throw new Error("fallback model resolution is not configured")
+            return cfg.provider!.getModel(slot.providerID, slot.modelID)
+          })()
+        : null
       const model = _resolvedModel ?? await cfg.provider?.getModel(lastUser.model.providerID, lastUser.model.modelID).catch((e: any) => {
         if (cfg.provider?.ModelNotFoundError?.isInstance?.(e)) {
           const hint = e.data.suggestions?.length ? ` Did you mean: ${e.data.suggestions.join(", ")}?` : ""
@@ -374,6 +366,17 @@ export namespace SessionPrompt {
         }
         throw e
       })
+
+      step++
+      if (step === 1)
+        await ensureTitle({
+          session,
+          modelID: model.id,
+          providerID: model.providerID,
+          history: msgs,
+        }).catch((error) => {
+          log.error("failed to ensure title", { sessionID, error })
+        })
       const task = tasks.pop()
       const effectiveDirectory = await Session.effectiveDefaultPath(sessionID)
       const rootDirectory = cfg.instance?.worktree ?? process.cwd()
@@ -2068,7 +2071,14 @@ export namespace SessionPrompt {
     }
     log.info("ensureTitle: title agent found", { sessionID: input.session.id, agentModel: agent.model })
     const model = await iife(async () => {
-      if (agent.model) return await cfg.provider?.getModel(agent.model.providerID, agent.model.modelID)
+      if (agent.model) {
+        if (agent.model.providerID === "fallback") {
+          const slot = await cfg.provider?.resolveFallback?.(agent.model.modelID)
+          if (!slot) throw new Error("fallback model resolution is not configured")
+          return await cfg.provider?.getModel(slot.providerID, slot.modelID)
+        }
+        return await cfg.provider?.getModel(agent.model.providerID, agent.model.modelID)
+      }
       return (
         (await cfg.provider?.getSmallModel?.(input.providerID)) ??
         (await cfg.provider?.getModel(input.providerID, input.modelID))

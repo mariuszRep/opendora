@@ -15,7 +15,6 @@ import { SessionRetry } from "./retry.ts"
 import { SessionStatus } from "./status.ts"
 import { Identifier } from "@opendora/util/id"
 import { LLM } from "./llm.ts"
-import { FallbackManager } from "./fallback.ts"
 import { SessionEvents } from "./events.ts"
 
 // Inline iife helper
@@ -412,10 +411,10 @@ export namespace SessionProcessor {
               // TODO: Handle context overflow error
             }
             const retry = SessionRetry.retryable(error)
-            // When in a fallback group, provider-level failures (502/503) should
+            // When in a fallback group, provider-level failures (429/502/503) should
             // switch slots immediately rather than retrying the same dead upstream.
             const statusCodeForFallback = (error as any)?.data?.statusCode as number | undefined
-            const isProviderDown = [502, 503].includes(statusCodeForFallback ?? 0)
+            const isProviderDown = [429, 502, 503].includes(statusCodeForFallback ?? 0)
             if (retry !== undefined && !(input.fallbackGroupID && isProviderDown)) {
               attempt++
               const delay = SessionRetry.delay(attempt, error.name === "APIError" ? (error as any) : undefined)
@@ -431,10 +430,10 @@ export namespace SessionProcessor {
             // Fallback: if this is a fallback group, try next provider before hard-failing
             if (input.fallbackGroupID) {
               const statusCode = statusCodeForFallback
-              const isFallbackEligible = statusCode === undefined || [400, 404, 500, 502, 503].includes(statusCode)
+              const isFallbackEligible = statusCode === undefined || [400, 404, 429, 500, 502, 503].includes(statusCode)
               if (isFallbackEligible) {
                 const currentSlot = { providerID: streamInput.model.providerID, modelID: streamInput.model.id }
-                const nextSlot = await FallbackManager.reportError(
+                const nextSlot = await getConfig().provider?.reportFallbackError?.(
                   input.fallbackGroupID,
                   currentSlot,
                   statusCode,

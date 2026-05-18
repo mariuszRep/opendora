@@ -96,7 +96,7 @@ type ModelValue = { providerID: string; modelID: string } | undefined
 export default function AgentSettingsPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const { createAgent, updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, modelFilters, allAgents, refreshProviders, sessions, setAgentMainSession, selectSession } =
+  const { createAgent, updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, modelFilters, allAgents, refreshProviders, modelGroups, refreshModelGroups, sessions, setAgentMainSession, selectSession } =
     useOpendoraContext()
 
   const isNew = id === "new"
@@ -149,7 +149,7 @@ export default function AgentSettingsPage() {
       return m.id.endsWith(":free") || m.id.endsWith("-free")
     }
     return providers
-      .filter((p) => connectedProviders.includes(p.id))
+      .filter((p) => connectedProviders.includes(p.id) && p.id !== "fallback")
       .flatMap((p) => {
         const filter = modelFilters[p.id] ?? "all"
         if (filter === "none") return []
@@ -316,6 +316,9 @@ export default function AgentSettingsPage() {
     const selected = value
       ? modelList.find((m) => m.providerID === value.providerID && m.modelID === value.modelID)
       : undefined
+    const selectedGroup = value?.providerID === "fallback"
+      ? modelGroups.find((group) => group.id === value.modelID)
+      : undefined
 
     return (
       <div className="flex flex-col gap-1.5">
@@ -326,12 +329,15 @@ export default function AgentSettingsPage() {
             onOpenChange(nextOpen)
             if (nextOpen) {
               refreshProviders().catch(() => { })
+              refreshModelGroups().catch(() => { })
             }
           }}
         >
           <ModelSelectorTrigger asChild>
             <Button variant="outline" className="w-full justify-start font-normal">
-              {selected ? (
+              {selectedGroup ? (
+                <ModelSelectorName>{selectedGroup.name}</ModelSelectorName>
+              ) : selected ? (
                 <>
                   <ModelSelectorLogo provider={selected.providerID} />
                   <ModelSelectorName>{selected.modelName}</ModelSelectorName>
@@ -354,6 +360,26 @@ export default function AgentSettingsPage() {
                   {!value && <CheckIcon className="ml-auto size-4" />}
                 </ModelSelectorItem>
               </ModelSelectorGroup>
+              {modelGroups.length > 0 && (
+                <ModelSelectorGroup heading="Fallback Groups">
+                  {modelGroups.map((group) => {
+                    const active = value?.providerID === "fallback" && value.modelID === group.id
+                    return (
+                      <ModelSelectorItem
+                        key={`fallback:${group.id}`}
+                        value={`fallback:${group.name} ${group.id}`}
+                        onSelect={() => {
+                          onChange({ providerID: "fallback", modelID: group.id })
+                          onOpenChange(false)
+                        }}
+                      >
+                        <ModelSelectorName>{group.name}</ModelSelectorName>
+                        {active ? <CheckIcon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}
+                      </ModelSelectorItem>
+                    )
+                  })}
+                </ModelSelectorGroup>
+              )}
               {[...modelsByProvider.entries()].map(([providerName, models]) => (
                 <ModelSelectorGroup heading={providerName} key={providerName}>
                   {models.map((m) => {

@@ -178,17 +178,20 @@ export const ModelSelectorLogo = ({
   provider,
   className,
   ...props
-}: ModelSelectorLogoProps) => (
-  <img
-    {...props}
-    alt={`${provider} logo`}
-    className={cn("size-3 dark:invert", className)}
-    height={12}
-    onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-    src={`https://models.dev/logos/${provider}.svg`}
-    width={12}
-  />
-);
+}: ModelSelectorLogoProps) => {
+  const logoProvider = provider === "opencode-private" ? "opencode" : provider
+  return (
+    <img
+      {...props}
+      alt={`${provider} logo`}
+      className={cn("size-3 dark:invert", className)}
+      height={12}
+      onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+      src={`https://models.dev/logos/${logoProvider}.svg`}
+      width={12}
+    />
+  )
+}
 
 export type ModelSelectorLogoGroupProps = ComponentProps<"div">;
 

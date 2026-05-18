@@ -116,6 +116,29 @@ export namespace Provider {
     options?: Record<string, any>
   }>
 
+  async function loadOpencodeProvider(input: Info) {
+    const hasKey = await (async () => {
+      const env = Env.all()
+      if (input.env.some((item) => env[item])) return true
+      if (await Auth.get(input.id)) return true
+      const config = await Config.get()
+      if (config.provider?.[input.id]?.options?.apiKey) return true
+      return false
+    })()
+
+    if (!hasKey) {
+      for (const [key, value] of Object.entries(input.models)) {
+        if (value.cost.input === 0 && value.cost.output === 0) continue
+        delete input.models[key]
+      }
+    }
+
+    return {
+      autoload: Object.keys(input.models).length > 0 && (input.id === "opencode" || hasKey),
+      options: hasKey ? {} : { apiKey: "public" },
+    }
+  }
+
   const CUSTOM_LOADERS: Record<string, CustomLoader> = {
     async anthropic() {
       return {
@@ -128,28 +151,8 @@ export namespace Provider {
         },
       }
     },
-    async opencode(input) {
-      const hasKey = await (async () => {
-        const env = Env.all()
-        if (input.env.some((item) => env[item])) return true
-        if (await Auth.get(input.id)) return true
-        const config = await Config.get()
-        if (config.provider?.["opencode"]?.options?.apiKey) return true
-        return false
-      })()
-
-      if (!hasKey) {
-        for (const [key, value] of Object.entries(input.models)) {
-          if (value.cost.input === 0) continue
-          delete input.models[key]
-        }
-      }
-
-      return {
-        autoload: Object.keys(input.models).length > 0,
-        options: hasKey ? {} : { apiKey: "public" },
-      }
-    },
+    opencode: loadOpencodeProvider,
+    "opencode-private": loadOpencodeProvider,
     openai: async () => {
       return {
         autoload: false,
@@ -793,6 +796,21 @@ export namespace Provider {
         models: mapValues(openai.models, (model) => ({
           ...model,
           providerID: "openai-codex",
+        })),
+      }
+    }
+
+    if (database["opencode"] && !database["opencode-private"]) {
+      const opencode = database["opencode"]
+      database["opencode-private"] = {
+        ...opencode,
+        id: "opencode-private",
+        name: "OpenCode Zen (API key)",
+        env: ["OPENCODE_PRIVATE_API_KEY", "OPENCODE_ZEN_API_KEY"],
+        options: { ...opencode.options },
+        models: mapValues(opencode.models, (model) => ({
+          ...model,
+          providerID: "opencode-private",
         })),
       }
     }

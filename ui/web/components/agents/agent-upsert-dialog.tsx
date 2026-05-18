@@ -102,6 +102,7 @@ function resolveModelLabel(
 
 function buildModelOptions(providers: Provider[], connected: string[]) {
   return connected.flatMap((pid) => {
+    if (pid === "fallback") return []
     const provider = providers.find((p) => p.id === pid)
     if (!provider) return []
     return Object.entries(provider.models).map(([modelID, m]) => ({
@@ -114,12 +115,13 @@ function buildModelOptions(providers: Provider[], connected: string[]) {
 }
 
 function modelToValue(m?: { providerID: string; modelID: string }) {
+  if (m?.providerID === "fallback") return `group::${m.modelID}`
   return m ? `${m.providerID}::${m.modelID}` : NONE
 }
 
 function valueToModel(v: string) {
   if (v === NONE) return undefined
-  if (v.startsWith("group::")) return undefined
+  if (v.startsWith("group::")) return { providerID: "fallback", modelID: v.slice("group::".length) }
   const [providerID, modelID] = v.split("::")
   return { providerID, modelID }
 }

@@ -16,7 +16,6 @@ import { Identifier } from "@opendora/util/id"
 import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
 import { LLM } from "./llm.ts"
-import { FallbackManager } from "./fallback.ts"
 
 // Token.estimate — rough approximation: 1 token ≈ 4 chars
 function estimateTokens(text: any): number {
@@ -69,7 +68,8 @@ export namespace SessionCompaction {
     provider: NonNullable<ReturnType<typeof getConfig>["provider"]>
   }) {
     if (input.model.providerID === "fallback") {
-      const slot = await FallbackManager.resolve(input.model.modelID)
+      const slot = await input.provider.resolveFallback?.(input.model.modelID)
+      if (!slot) throw new Error("fallback model resolution is not configured")
       return input.provider.getModel(slot.providerID, slot.modelID)
     }
     return input.provider.getModel(input.model.providerID, input.model.modelID)

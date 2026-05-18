@@ -350,10 +350,16 @@ export const Chatbot = () => {
 
   useEffect(() => {
     const agent = agents.find((a) => (a as any)._id === selectedAgent)
-    if (agent?.model) {
+    if (agent?.model?.providerID === "fallback") {
+      setSelectedGroupId(agent.model.modelID)
+      setSelectedProviderID(null)
+      setSelectedModelID(null)
+    } else if (agent?.model) {
+      setSelectedGroupId(null)
       setSelectedProviderID(agent.model.providerID)
       setSelectedModelID(agent.model.modelID)
     } else {
+      setSelectedGroupId(null)
       setSelectedProviderID(null)
       setSelectedModelID(null)
     }
@@ -584,9 +590,11 @@ export const Chatbot = () => {
         return
       }
       if (!message.text?.trim() && !message.files?.length) return
-      const model = selectedModel && !selectedGroupId
-        ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
-        : undefined
+      const model = selectedGroupId
+        ? { providerID: "fallback", modelID: selectedGroupId }
+        : selectedModel
+          ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
+          : undefined
       const fallbackGroupID = selectedGroupId ?? undefined
       const content = userName ? `user: ${userName}\n\n${message.text}` : message.text
       const files = (message.files ?? []).map((f) => ({
@@ -651,9 +659,11 @@ export const Chatbot = () => {
 
   const handleSuggestionClick = useCallback(
     (suggestion: string) => {
-      const model = selectedModel && !selectedGroupId
-        ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
-        : undefined
+      const model = selectedGroupId
+        ? { providerID: "fallback", modelID: selectedGroupId }
+        : selectedModel
+          ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
+          : undefined
       const fallbackGroupID = selectedGroupId ?? undefined
       if (!selectedSession) {
         createSession().then(() => {
@@ -699,9 +709,11 @@ export const Chatbot = () => {
       const currentMessageCount = messages.length
       
       // Submit the transcribed message
-      const model = selectedModel && !selectedGroupId
-        ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
-        : undefined
+      const model = selectedGroupId
+        ? { providerID: "fallback", modelID: selectedGroupId }
+        : selectedModel
+          ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
+          : undefined
       const fallbackGroupID = selectedGroupId ?? undefined
 
       // We'll identify the next assistant message by its position
@@ -1692,6 +1704,7 @@ export const Chatbot = () => {
                                     setSelectedProviderID(null)
                                     setSelectedModelID(null)
                                     setModelSelectorOpen(false)
+                                    updateAgentModel("fallback", g.id)
                                   }}
                                 >
                                   <ModelSelectorName>{g.name}</ModelSelectorName>

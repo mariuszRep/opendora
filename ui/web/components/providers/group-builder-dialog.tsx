@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { ChevronDownIcon, ChevronUpIcon, XIcon } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { ArrowDownIcon, ArrowUpIcon, PlusIcon, XIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Command,
@@ -45,13 +45,18 @@ type Props = {
   providers: Provider[]
   connectedProviders: string[]
   modelFilters: Record<string, "all" | "free" | "none">
-  onSave: (group: Omit<ModelGroup, "id">) => void
+  initialGroup?: ModelGroup | null
+  onSave: (group: Omit<ModelGroup, "id">) => void | Promise<void>
 }
 
 function isFreeModel(m: { id: string; [k: string]: unknown }): boolean {
-  const cost = (m as any).cost as { input: number; output: number } | undefined
+  const cost = m.cost as { input: number; output: number } | undefined
   if (cost && cost.input === 0 && cost.output === 0) return true
   return m.id.endsWith(":free") || m.id.endsWith("-free")
+}
+
+function isSelectableProvider(provider: Provider, connectedProviders: string[]): boolean {
+  return provider.id !== "fallback" && connectedProviders.includes(provider.id)
 }
 
 export function GroupBuilderDialog({
@@ -60,15 +65,30 @@ export function GroupBuilderDialog({
   providers,
   connectedProviders,
   modelFilters,
+  initialGroup,
   onSave,
 }: Props) {
   const [name, setName] = useState("")
   const [filter, setFilter] = useState<FilterOption>("selected")
   const [selected, setSelected] = useState<{ providerID: string; modelID: string }[]>([])
+  const [addingModel, setAddingModel] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const wasOpen = useRef(false)
+
+  useEffect(() => {
+    if (open && !wasOpen.current) {
+      setName(initialGroup?.name ?? "")
+      setSelected(initialGroup?.models.map((model) => ({ ...model })) ?? [])
+      setFilter("selected")
+      setAddingModel(false)
+      setSaving(false)
+    }
+    wasOpen.current = open
+  }, [initialGroup, open])
 
   const allModels = useMemo<ModelEntry[]>(() => {
     return providers
-      .filter((p) => connectedProviders.includes(p.id))
+      .filter((p) => isSelectableProvider(p, connectedProviders))
       .flatMap((p) =>
         Object.values(p.models).map((m) => ({
           providerID: p.id,
@@ -85,7 +105,7 @@ export function GroupBuilderDialog({
     let pool: ModelEntry[]
     if (filter === "free") {
       pool = providers
-        .filter((p) => connectedProviders.includes(p.id))
+        .filter((p) => isSelectableProvider(p, connectedProviders))
         .flatMap((p) =>
           Object.values(p.models)
             .filter(isFreeModel)
@@ -98,7 +118,7 @@ export function GroupBuilderDialog({
         )
     } else if (filter === "selected") {
       pool = providers
-        .filter((p) => connectedProviders.includes(p.id))
+        .filter((p) => isSelectableProvider(p, connectedProviders))
         .flatMap((p) => {
           const pFilter = modelFilters[p.id] ?? "all"
           if (pFilter === "none") return []
@@ -143,6 +163,7 @@ export function GroupBuilderDialog({
 
   function add(providerID: string, modelID: string) {
     setSelected((prev) => [...prev, { providerID, modelID }])
+    setAddingModel(false)
   }
 
   function remove(idx: number) {
@@ -167,16 +188,23 @@ export function GroupBuilderDialog({
     })
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!name.trim() || selected.length === 0) return
-    onSave({ name: name.trim(), models: selected })
-    reset()
+    setSaving(true)
+    try {
+      await onSave({ name: name.trim(), models: selected })
+      handleOpenChange(false)
+    } finally {
+      setSaving(false)
+    }
   }
 
   function reset() {
     setName("")
     setFilter("selected")
     setSelected([])
+    setAddingModel(false)
+    setSaving(false)
   }
 
   function handleOpenChange(next: boolean) {
@@ -186,14 +214,13 @@ export function GroupBuilderDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl gap-0 p-0">
-        <DialogHeader className="px-6 pt-6 pb-4">
-          <DialogTitle>New fallback group</DialogTitle>
+      <DialogContent className="w-[min(calc(100vw-2rem),56rem)] max-w-none gap-0 overflow-hidden p-0">
+        <DialogHeader className="min-w-0 px-6 pt-6 pb-4">
+          <DialogTitle>{initialGroup ? "Edit fallback group" : "New fallback group"}</DialogTitle>
         </DialogHeader>
 
-        {/* Name + filters */}
-        <div className="flex flex-col gap-4 px-6 pb-4">
-          <div className="flex flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-4 px-6 pb-4">
+          <div className="flex min-w-0 flex-col gap-1.5">
             <Label htmlFor="group-name" className="text-xs">
               Group name
             </Label>
@@ -207,98 +234,142 @@ export function GroupBuilderDialog({
             />
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted-foreground">Show:</span>
-            {(["selected", "free", "all"] as FilterOption[]).map((opt) => (
-              <button
-                key={opt}
-                onClick={() => setFilter(opt)}
-                className={cn(
-                  "px-2 py-0.5 text-xs rounded border transition-colors capitalize",
-                  filter === opt
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
-                )}
+          <div className="flex min-w-0 flex-col gap-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-0.5">
+                <Label className="text-xs">Fallback models</Label>
+                <span className="text-xs text-muted-foreground">Fallback order</span>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => {
+                  setFilter("selected")
+                  setAddingModel((value) => !value)
+                }}
               >
-                {opt}
-              </button>
-            ))}
+                <PlusIcon className="size-3.5" />
+                Add model
+              </Button>
+            </div>
+
+            {selectedEntries.length === 0 ? (
+              <div className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
+                No fallback models added.
+              </div>
+            ) : (
+              <div className="min-w-0 divide-y overflow-hidden rounded-md border">
+                  {selectedEntries.map((m, idx) => (
+                    <div
+                      key={`${m.providerID}:${m.modelID}:${idx}`}
+                      className="grid min-w-0 grid-cols-[8rem_minmax(0,1fr)_2rem] items-center gap-3 px-3 py-2"
+                    >
+                      <div className="flex items-center gap-1">
+                        <span className="w-5 text-right text-xs tabular-nums text-muted-foreground">
+                          {idx + 1}
+                        </span>
+                        <Button
+                          type="button"
+                          size="icon-xs"
+                          variant="outline"
+                          onClick={() => moveUp(idx)}
+                          disabled={idx === 0}
+                          title="Promote priority"
+                        >
+                          <ArrowUpIcon className="size-3.5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon-xs"
+                          variant="outline"
+                          onClick={() => moveDown(idx)}
+                          disabled={idx === selectedEntries.length - 1}
+                          title="Demote priority"
+                        >
+                          <ArrowDownIcon className="size-3.5" />
+                        </Button>
+                      </div>
+
+                      <div className="flex min-w-0 items-center gap-2">
+                        <ModelSelectorLogo provider={m.providerID} />
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium">{m.modelName}</div>
+                          <div className="truncate text-xs text-muted-foreground">{m.providerName}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          size="icon-xs"
+                          variant="ghost"
+                          onClick={() => remove(idx)}
+                          className="text-muted-foreground hover:text-destructive"
+                          title="Remove model"
+                        >
+                          <XIcon className="size-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
+
+          {addingModel && (
+            <div className="flex min-w-0 flex-col overflow-hidden rounded-md border">
+              <div className="flex flex-wrap items-center gap-1.5 border-b px-3 py-2">
+                <span className="text-xs text-muted-foreground">Show:</span>
+                {(["selected", "free", "all"] as FilterOption[]).map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setFilter(opt)}
+                    className={cn(
+                      "rounded border px-2 py-0.5 text-xs capitalize transition-colors",
+                      filter === opt
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground",
+                    )}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+
+              <Command className="min-w-0 rounded-none">
+                <CommandInput placeholder="Search models..." className="h-9" />
+                <CommandList className="max-h-64">
+                  <CommandEmpty>No models found.</CommandEmpty>
+                  {[...modelsByProvider.entries()].map(([providerName, models]) => (
+                    <CommandGroup key={providerName} heading={providerName}>
+                      {models.map((m) => (
+                        <CommandItem
+                          key={`${m.providerID}:${m.modelID}`}
+                          value={`${m.providerName} ${m.modelName} ${m.modelID}`}
+                          onSelect={() => add(m.providerID, m.modelID)}
+                          className="min-w-0 gap-2"
+                        >
+                          <ModelSelectorLogo provider={m.providerID} />
+                          <ModelSelectorName className="min-w-0">{m.modelName}</ModelSelectorName>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  ))}
+                </CommandList>
+              </Command>
+            </div>
+          )}
         </div>
 
-        {/* Search — full-width between dividers so bg-popover blends flush */}
-        <Command className="rounded-none border-y">
-          <CommandInput placeholder="Search models…" className="h-9" />
-          <CommandList className="max-h-52">
-            <CommandEmpty>No models found.</CommandEmpty>
-            {[...modelsByProvider.entries()].map(([providerName, models]) => (
-              <CommandGroup key={providerName} heading={providerName}>
-                {models.map((m) => (
-                  <CommandItem
-                    key={`${m.providerID}:${m.modelID}`}
-                    value={`${m.providerName} ${m.modelName} ${m.modelID}`}
-                    onSelect={() => add(m.providerID, m.modelID)}
-                    className="gap-2"
-                  >
-                    <ModelSelectorLogo provider={m.providerID} />
-                    <ModelSelectorName>{m.modelName}</ModelSelectorName>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            ))}
-          </CommandList>
-        </Command>
-
-        {/* Fallback chain */}
-        {selectedEntries.length > 0 && (
-          <div className="flex flex-col gap-1.5 px-6 pt-4 pb-4">
-            <span className="text-xs text-muted-foreground">Fallback order</span>
-            <div className="divide-y rounded-md border">
-              {selectedEntries.map((m, idx) => (
-                <div
-                  key={`${m.providerID}:${m.modelID}:${idx}`}
-                  className="flex items-center gap-2 px-3 py-2"
-                >
-                  <span className="w-4 shrink-0 text-right text-xs text-muted-foreground">
-                    {idx + 1}
-                  </span>
-                  <ModelSelectorLogo provider={m.providerID} />
-                  <span className="flex-1 truncate text-sm">{m.modelName}</span>
-                  <span className="text-xs text-muted-foreground">{m.providerName}</span>
-                  <div className="ml-auto flex items-center gap-0.5">
-                    <button
-                      onClick={() => moveUp(idx)}
-                      disabled={idx === 0}
-                      className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
-                    >
-                      <ChevronUpIcon className="size-3.5" />
-                    </button>
-                    <button
-                      onClick={() => moveDown(idx)}
-                      disabled={idx === selectedEntries.length - 1}
-                      className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
-                    >
-                      <ChevronDownIcon className="size-3.5" />
-                    </button>
-                    <button
-                      onClick={() => remove(idx)}
-                      className="rounded p-0.5 text-muted-foreground hover:text-destructive"
-                    >
-                      <XIcon className="size-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <DialogFooter className="border-t px-6 py-4">
+        <DialogFooter className="mx-0 mb-0 w-full min-w-0 border-t px-6 py-4">
           <Button variant="ghost" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!name.trim() || selected.length === 0}>
-            Save group
+          <Button onClick={handleSave} disabled={saving || !name.trim() || selected.length === 0}>
+            {saving ? "Saving..." : initialGroup ? "Save changes" : "Save group"}
           </Button>
         </DialogFooter>
       </DialogContent>
