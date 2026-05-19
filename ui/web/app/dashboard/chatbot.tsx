@@ -1869,6 +1869,15 @@ export const Chatbot = () => {
                         outputTokens: tokenUsage.outputTokens,
                         reasoningTokens: tokenUsage.reasoningTokens,
                         totalTokens: tokenUsage.totalTokens,
+                        inputTokenDetails: {
+                          noCacheTokens: tokenUsage.inputTokens - tokenUsage.cachedTokens,
+                          cacheReadTokens: tokenUsage.cachedTokens,
+                          cacheWriteTokens: 0,
+                        },
+                        outputTokenDetails: {
+                          textTokens: tokenUsage.outputTokens,
+                          reasoningTokens: tokenUsage.reasoningTokens,
+                        },
                       }
                     }
                     modelId={selectedModel.modelID}

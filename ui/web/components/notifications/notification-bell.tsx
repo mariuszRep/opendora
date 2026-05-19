@@ -101,7 +101,7 @@ export function NotificationPanel({
                 <p className="text-sm font-medium leading-none">{n.title}</p>
                 <p className="text-xs text-muted-foreground">{n.message}</p>
                 <p className="text-[10px] text-muted-foreground">
-                  {formatDistanceToNow(n.timestamp, { addSuffix: true })}
+                  {formatDistanceToNow(new Date(n.timestamp))}
                 </p>
               </div>
               <div className="flex items-center gap-1">

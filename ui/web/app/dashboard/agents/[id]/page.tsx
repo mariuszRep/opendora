@@ -728,7 +728,7 @@ export default function AgentSettingsPage() {
               const isExpanded = expandedGroup === group
 
               return (
-                <Card key={group} size="sm" className="cursor-pointer">
+                <Card key={group} className="cursor-pointer">
                   <CardHeader
                     className="flex-row items-center justify-between"
                     onClick={() => setExpandedGroup(isExpanded ? null : group)}
@@ -891,7 +891,7 @@ export default function AgentSettingsPage() {
               const isExpanded = expandedGroup === groupKey
 
               return (
-                <Card key={groupKey} size="sm" className="cursor-pointer">
+                <Card key={groupKey} className="cursor-pointer">
                   <CardHeader
                     className="flex-row items-center justify-between"
                     onClick={() => setExpandedGroup(isExpanded ? null : groupKey)}

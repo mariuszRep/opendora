@@ -2,12 +2,12 @@
   "version": 1,
   "cooldowns": {
     "opencode:minimax-m2.5-free": {
-      "until": 1779148801453,
-      "reason": "[object Object]"
+      "until": 1779235200365,
+      "reason": "Rate limit exceeded. Please try again later."
     },
     "openrouter:minimax/minimax-m2.5:free": {
-      "until": 1779120517593,
-      "reason": "[object Object]"
+      "until": 1779195834810,
+      "reason": "Provider returned error"
     }
   },
   "rotations": {
@@ -22,9 +22,9 @@
       "lastUsed": 1776071740954
     },
     "e2daea63-4ca4-4817-9978-14baecf5612d": {
-      "slotIndex": 0,
-      "activeSince": 1779113317593,
-      "lastUsed": 1779113342362
+      "slotIndex": 1,
+      "activeSince": 1779188610365,
+      "lastUsed": 1779188634075
     },
     "a103f2b7-43fc-4ce3-9e8d-7dce786c0c31": {
       "slotIndex": 0,

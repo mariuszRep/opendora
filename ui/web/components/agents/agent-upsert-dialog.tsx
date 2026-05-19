@@ -583,7 +583,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                 const isExpanded = expandedGroup === group
 
                 return (
-                  <Card key={group} size="sm" className="cursor-pointer">
+                  <Card key={group} className="cursor-pointer">
                     <CardHeader
                       className="flex-row items-center justify-between"
                       onClick={() => setExpandedGroup(isExpanded ? null : group)}

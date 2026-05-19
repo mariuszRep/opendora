@@ -7,8 +7,8 @@
       "modelFailures": {
         "minimax/minimax-m2.5:free": {
           "modelID": "minimax/minimax-m2.5:free",
-          "until": 1779120517594,
-          "reason": "[object Object]",
+          "until": 1779195834810,
+          "reason": "Provider returned error",
           "statusCode": 429
         }
       }
@@ -19,9 +19,20 @@
       "modelFailures": {
         "minimax-m2.5-free": {
           "modelID": "minimax-m2.5-free",
-          "until": 1779148801453,
-          "reason": "[object Object]",
+          "until": 1779235200365,
+          "reason": "Rate limit exceeded. Please try again later.",
           "statusCode": 429
+        }
+      }
+    },
+    "undefined": {
+      "until": null,
+      "reason": null,
+      "modelFailures": {
+        "undefined": {
+          "until": 1779195834808,
+          "reason": 429,
+          "statusCode": "minimax/minimax-m2.5:free"
         }
       }
     }
