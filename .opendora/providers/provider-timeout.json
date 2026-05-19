@@ -12,6 +12,18 @@
           "statusCode": 429
         }
       }
+    },
+    "openrouter": {
+      "until": null,
+      "reason": null,
+      "modelFailures": {
+        "minimax/minimax-m2.5:free": {
+          "modelID": "minimax/minimax-m2.5:free",
+          "until": 1779214287632,
+          "reason": "Provider returned error",
+          "statusCode": 429
+        }
+      }
     }
   }
 }

@@ -6,7 +6,7 @@
       "reason": "Rate limit exceeded. Please try again later."
     },
     "openrouter:minimax/minimax-m2.5:free": {
-      "until": 1779197315015,
+      "until": 1779214287632,
       "reason": "Provider returned error"
     }
   },
@@ -24,7 +24,7 @@
     "e2daea63-4ca4-4817-9978-14baecf5612d": {
       "slotIndex": 1,
       "activeSince": 1779188610365,
-      "lastUsed": 1779190114210
+      "lastUsed": 1779207086658
     },
     "a103f2b7-43fc-4ce3-9e8d-7dce786c0c31": {
       "slotIndex": 0,
