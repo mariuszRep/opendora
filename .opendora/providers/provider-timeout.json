@@ -1,38 +1,15 @@
 {
   "version": 1,
   "providers": {
-    "openrouter": {
-      "until": null,
-      "reason": null,
-      "modelFailures": {
-        "minimax/minimax-m2.5:free": {
-          "modelID": "minimax/minimax-m2.5:free",
-          "until": 1779197315015,
-          "reason": "Provider returned error",
-          "statusCode": 429
-        }
-      }
-    },
     "opencode": {
       "until": null,
       "reason": null,
       "modelFailures": {
         "minimax-m2.5-free": {
           "modelID": "minimax-m2.5-free",
-          "until": 1779235200365,
+          "until": 1779235200581,
           "reason": "Rate limit exceeded. Please try again later.",
           "statusCode": 429
-        }
-      }
-    },
-    "undefined": {
-      "until": null,
-      "reason": null,
-      "modelFailures": {
-        "undefined": {
-          "until": 1779197315014,
-          "reason": 429,
-          "statusCode": "minimax/minimax-m2.5:free"
         }
       }
     }

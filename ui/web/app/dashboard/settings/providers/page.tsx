@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2Icon, ClockAlertIcon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon, BrainIcon, WrenchIcon, PlusIcon, LayersIcon, DatabaseIcon, PencilIcon } from "lucide-react"
+import { CheckCircle2Icon, ClockAlertIcon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon, BrainIcon, WrenchIcon, PlusIcon, LayersIcon, DatabaseIcon, PencilIcon, RefreshCwIcon } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -54,6 +54,7 @@ export default function ProvidersPage() {
   const [apiKeyForm, setApiKeyForm] = useState<ApiKeyFormState | null>(null)
   const [removing, setRemoving] = useState<string | null>(null)
   const [oauthLoading, setOauthLoading] = useState<string | null>(null)
+  const [resettingTimeout, setResettingTimeout] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [defaultModel, setDefaultModel] = useState<ModelValue>(undefined)
   const [defaultModelOpen, setDefaultModelOpen] = useState(false)
@@ -232,6 +233,18 @@ export default function ProvidersPage() {
       // ignore
     } finally {
       setOauthLoading(null)
+    }
+  }
+
+  async function handleResetTimeout(providerID: string) {
+    setResettingTimeout(providerID)
+    try {
+      await opendora.provider.clearTimeout(providerID)
+      await refreshProviderTimeouts()
+    } catch (err) {
+      console.error("Failed to reset timeout:", err)
+    } finally {
+      setResettingTimeout(null)
     }
   }
 
@@ -529,6 +542,20 @@ export default function ProvidersPage() {
                         <CheckCircle2Icon className="size-3.5" />
                         Connected
                       </span>
+                      {providerTimeouts[provider.id]?.timedOut && (
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          className="text-orange-600 hover:text-orange-700 dark:text-orange-500 dark:hover:text-orange-400"
+                          onClick={() => handleResetTimeout(provider.id)}
+                          disabled={resettingTimeout === provider.id}
+                          title="Reset timeout"
+                        >
+                          {resettingTimeout === provider.id
+                            ? <Loader2Icon className="size-3.5 animate-spin" />
+                            : <RefreshCwIcon className="size-3.5" />}
+                        </Button>
+                      )}
                       <Button
                         size="icon-sm"
                         variant="ghost"
@@ -671,6 +698,20 @@ export default function ProvidersPage() {
                     <CircleIcon className="size-3.5" />
                     Not connected
                   </span>
+                  {providerTimeouts[provider.id]?.timedOut && (
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      className="text-orange-600 hover:text-orange-700 dark:text-orange-500 dark:hover:text-orange-400"
+                      onClick={() => handleResetTimeout(provider.id)}
+                      disabled={resettingTimeout === provider.id}
+                      title="Reset timeout"
+                    >
+                      {resettingTimeout === provider.id
+                        ? <Loader2Icon className="size-3.5 animate-spin" />
+                        : <RefreshCwIcon className="size-3.5" />}
+                    </Button>
+                  )}
                 </div>
               </div>
 

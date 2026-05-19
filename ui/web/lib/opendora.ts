@@ -525,6 +525,8 @@ export const opendora = {
       }),
     timeout: () =>
       req<Record<string, { timedOut: boolean; until: number | null; reason: string | null; resetInSeconds: number | null; failedModels: string[] }>>("/provider/timeout"),
+    clearTimeout: (providerID: string) =>
+      req<boolean>(`/provider/${providerID}/timeout`, { method: "DELETE" }),
   },
   question: {
     list: () => req<QuestionRequest[]>("/question"),

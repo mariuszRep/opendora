@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
+import type { NotifyOptions } from "@/hooks/use-notify"
 import {
   opendora,
   SessionBusyError,
@@ -100,6 +101,8 @@ export type UseOpendoraResult = {
   // Provider timeout status
   providerTimeouts: Record<string, { timedOut: boolean; until: number | null; reason: string | null; resetInSeconds: number | null; failedModels: string[] }>
   refreshProviderTimeouts: () => Promise<void>
+  // Auth expired providers
+  authExpiredProviders: Record<string, boolean>
   // Session retry status
   sessionRetryStatus: Record<string, { attempt: number; message: string; next: number }>
   // Error
@@ -125,7 +128,8 @@ export type UseOpendoraResult = {
   refreshSchedules: () => Promise<void>
 }
 
-export function useOpendora(): UseOpendoraResult {
+export function useOpendora(opts?: { notify?: (opts: NotifyOptions) => void }): UseOpendoraResult {
+  const { notify } = opts ?? {}
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -144,6 +148,7 @@ export function useOpendora(): UseOpendoraResult {
   const [modelFilters, setModelFilters] = useState<Record<string, "all" | "free" | "none">>({})
   const [modelGroups, setModelGroups] = useState<{ id: string; name: string; models: { providerID: string; modelID: string }[] }[]>([])
   const [providerTimeouts, setProviderTimeouts] = useState<Record<string, { timedOut: boolean; until: number | null; reason: string | null; resetInSeconds: number | null; failedModels: string[] }>>({})
+  const [authExpiredProviders, setAuthExpiredProviders] = useState<Record<string, boolean>>({})
   const [allAgents, setAllAgents] = useState<(Agent & { _id: string })[]>([])
   const [selectedAgent, setSelectedAgent] = useState<string>("")
   const [isChatCentered, setIsChatCentered] = useState(false)
@@ -593,7 +598,7 @@ export function useOpendora(): UseOpendoraResult {
           const { sessionID, error } = (event as { type: string; properties: { sessionID?: string; error?: { name: string; message: string; data?: Record<string, unknown> } } }).properties
           if (sessionID && selectedSessionRef.current?.id === sessionID && error) {
             const msg = (error.data as { message?: string })?.message ?? error.message
-            toast.error(msg, { id: `error-${sessionID}`, duration: 8000 })
+            notify?.({ type: "error", title: "Session error", message: msg }) ?? toast.error(msg, { id: `error-${sessionID}`, duration: 8000 })
             setStatus("error")
             setError(msg)
           }
@@ -633,7 +638,9 @@ export function useOpendora(): UseOpendoraResult {
               failedModels: (event as any).properties.failedModels ?? [],
             },
           }))
-          toast.warning(`${providerID} timed out: ${reason}`, { duration: 8000 })
+          notify
+            ? notify({ type: "provider_timeout", title: `${providerID} timed out`, message: reason, providerID })
+            : toast.warning(`${providerID} timed out: ${reason}`, { duration: 8000 })
           break
         }
         case "provider.recovered": {
@@ -643,7 +650,14 @@ export function useOpendora(): UseOpendoraResult {
             delete next[providerID]
             return next
           })
-          toast.success(`${providerID} recovered`, { duration: 4000 })
+          setAuthExpiredProviders((prev) => {
+            const next = { ...prev }
+            delete next[providerID]
+            return next
+          })
+          notify
+            ? notify({ type: "provider_recovered", title: `${providerID} recovered`, message: "Provider is now available", providerID })
+            : toast.success(`${providerID} recovered`, { duration: 4000 })
           break
         }
         case "question.asked": {
@@ -705,12 +719,15 @@ export function useOpendora(): UseOpendoraResult {
           break
         }
         case "provider.auth.expired": {
-          const { providerName } = (event as { type: string; properties: { providerID: string; providerName: string } }).properties
-          toast.error(`${providerName} authentication expired`, {
-            description: "Go to Settings → Providers to re-authenticate.",
-            duration: 10000,
-            action: { label: "Settings", onClick: () => router.push("/dashboard/settings/providers") },
-          })
+          const { providerID, providerName } = (event as { type: string; properties: { providerID: string; providerName: string } }).properties
+          setAuthExpiredProviders((prev) => ({ ...prev, [providerID]: true }))
+          notify
+            ? notify({ type: "error", title: `${providerName} authentication expired`, message: "Go to Settings → Providers to re-authenticate.", action: { label: "Settings", href: "/dashboard/settings/providers" } })
+            : toast.error(`${providerName} authentication expired`, {
+                description: "Go to Settings → Providers to re-authenticate.",
+                duration: 10000,
+                action: { label: "Settings", onClick: () => router.push("/dashboard/settings/providers") },
+              })
           break
         }
       }
@@ -1099,6 +1116,7 @@ export function useOpendora(): UseOpendoraResult {
     refreshModelGroups,
     providerTimeouts,
     refreshProviderTimeouts,
+    authExpiredProviders,
     sessionRetryStatus,
     error,
     isChatCentered,

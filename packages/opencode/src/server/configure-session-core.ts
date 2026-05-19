@@ -273,7 +273,7 @@ export function configureSessionCore() {
         responseBody?: string,
       ) {
         // Report the error directly to ProviderTimeout
-        await ProviderTimeout.reportError(providerID, modelID, 429, reason, responseHeaders, responseBody)
+        await ProviderTimeout.reportError({ providerID, modelID }, 429, reason, responseHeaders, responseBody)
         // Check if provider is now timed out and publish event
         const info = await ProviderTimeout.getTimeoutInfo(providerID)
         if (info?.timedOut) {

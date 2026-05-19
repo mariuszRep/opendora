@@ -2,15 +2,40 @@
 
 import { createContext, useContext, type ReactNode } from "react"
 import { useOpendora, type UseOpendoraResult } from "@/hooks/use-opendora"
+import { useNotify, type NotifyOptions } from "@/hooks/use-notify"
+import type { Notification } from "@/hooks/use-notifications"
 
-const OpendoraContext = createContext<UseOpendoraResult | null>(null)
+export type { NotifyOptions }
+
+export type OpendoraContextValue = UseOpendoraResult & {
+  notify: (opts: NotifyOptions) => void
+  notifications: Notification[]
+  unreadCount: number
+  markRead: (id: string) => void
+  markAllRead: () => void
+  removeNotification: (id: string) => void
+  clearAll: () => void
+}
+
+const OpendoraContext = createContext<OpendoraContextValue | null>(null)
 
 export function OpendoraProvider({ children }: { children: ReactNode }) {
-  const value = useOpendora()
+  const { notify, notifications, unreadCount, markRead, markAllRead, removeNotification, clearAll } = useNotify()
+  const opendoraValue = useOpendora({ notify })
+  const value: OpendoraContextValue = {
+    ...opendoraValue,
+    notify,
+    notifications,
+    unreadCount,
+    markRead,
+    markAllRead,
+    removeNotification,
+    clearAll,
+  }
   return <OpendoraContext.Provider value={value}>{children}</OpendoraContext.Provider>
 }
 
-export function useOpendoraContext(): UseOpendoraResult {
+export function useOpendoraContext(): OpendoraContextValue {
   const ctx = useContext(OpendoraContext)
   if (!ctx) throw new Error("useOpendoraContext must be used inside OpendoraProvider")
   return ctx

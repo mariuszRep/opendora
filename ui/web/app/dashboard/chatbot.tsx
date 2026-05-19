@@ -86,8 +86,6 @@ import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, Tool
 import { opendora } from "@/lib/opendora"
 import { useUserProfile } from "@/hooks/use-user-profile"
 import { ScheduleDialog } from "@/components/sessions/schedule-dialog"
-import { useNotifications } from "@/hooks/use-notifications"
-import { NotificationBell, NotificationPanel } from "@/components/notifications/notification-bell"
 import { useVoiceSettings, formatHotkey } from "@/hooks/use-voice-settings"
 import { useTextToSpeech } from "@/hooks/use-text-to-speech"
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder"
@@ -99,7 +97,7 @@ import { WebFetchToolContent, isWebFetchTool, getWebFetchToolTitle, getWebFetchU
 import { isSkillLoadTool, getSkillLoadToolTitle, getSkillLoadDefinition } from "@/components/ai-elements/skill-load-tool"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BellIcon, CheckIcon, ClockAlertIcon, ComponentIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, FileIcon, Link2Icon, PanelRightIcon, SquareSlash, Volume2Icon, VolumeXIcon } from "lucide-react"
+import { BellIcon, CheckIcon, ClockAlertIcon, ComponentIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, FileIcon, KeyIcon, Link2Icon, PanelRightIcon, SquareSlash, Volume2Icon, VolumeXIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
@@ -270,6 +268,7 @@ export const Chatbot = () => {
     modelGroups,
     refreshModelGroups,
     providerTimeouts,
+    authExpiredProviders,
     refreshProviderTimeouts,
     sessionRetryStatus,
     createSession,
@@ -288,40 +287,9 @@ export const Chatbot = () => {
   const { userName, userColor } = useUserProfile()
   const { settings } = useVoiceSettings()
   const { speak, playingId, isLoading: isTtsLoading, isEnabled: isTtsEnabled, error: ttsError } = useTextToSpeech()
-  const { notifications, unreadCount, addNotification, markRead, markAllRead, removeNotification, clearAll } = useNotifications()
-
   useEffect(() => {
     if (ttsError) toast.error(`TTS: ${ttsError}`)
   }, [ttsError])
-
-  // Listen for provider timeout/recovery events and add notifications
-  useEffect(() => {
-    const unsubscribe = opendora.events.subscribe((event) => {
-      switch (event.type) {
-        case "provider.timeout": {
-          const props = (event as any).properties
-          addNotification({
-            type: "provider_timeout",
-            title: `${props.providerID} timed out`,
-            message: props.reason,
-            providerID: props.providerID,
-          })
-          break
-        }
-        case "provider.recovered": {
-          const props = (event as any).properties
-          addNotification({
-            type: "provider_recovered",
-            title: `${props.providerID} recovered`,
-            message: "Provider is now available",
-            providerID: props.providerID,
-          })
-          break
-        }
-      }
-    })
-    return unsubscribe
-  }, [addNotification])
 
   const { isRecording, isTranscribing, startRecording, stopRecording } = useVoiceRecorder()
   const [autoVoiceNextMessage, setAutoVoiceNextMessage] = useState(false)
@@ -1175,7 +1143,7 @@ export const Chatbot = () => {
                                           providerID: step.content.previousSlot.providerID,
                                           modelID: step.content.previousSlot.modelID,
                                           statusCode: step.content.statusCode,
-                                          resetAt: step.content.resetAt,
+                                          resetAt: step.content.resetAt ?? undefined,
                                         }]}
                                         retryAttempt={sessionRetryStatus[selectedSession?.id ?? ""]?.attempt}
                                         retryDelay={sessionRetryStatus[selectedSession?.id ?? ""]?.next ? sessionRetryStatus[selectedSession?.id ?? ""]!.next - Date.now() : undefined}
@@ -1834,7 +1802,21 @@ export const Chatbot = () => {
                                 >
                                   <ComponentIcon className="size-3 shrink-0" />
                                   <ModelSelectorName>{g.name}</ModelSelectorName>
-                                  {active ? <CheckIcon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}
+                                  {(() => {
+                                    const minReset = g.models.reduce<number | null>((min, m) => {
+                                      const pt = providerTimeouts[m.providerID]
+                                      if (!pt?.timedOut || !pt.resetInSeconds) return min
+                                      return min === null || pt.resetInSeconds < min ? pt.resetInSeconds : min
+                                    }, null)
+                                    if (minReset === null) return null
+                                    return (
+                                      <span className="ml-auto flex items-center gap-1 text-[10px] text-red-500 shrink-0">
+                                        <ClockAlertIcon className="size-3" />
+                                        {Math.ceil(minReset / 60)}m
+                                      </span>
+                                    )
+                                  })()}
+                                  {active && <CheckIcon className="size-4 shrink-0" />}
                                 </ModelSelectorItem>
                               )
                             })}
@@ -1867,9 +1849,13 @@ export const Chatbot = () => {
                                     }
                                   />
                                   <ModelSelectorName>{m.modelName}</ModelSelectorName>
-                                  {providerTimeouts[m.providerID]?.timedOut && (
-                                    <ClockAlertIcon className="size-3 text-red-500 shrink-0" />
-                                  )}
+                                  {(() => {
+                                    const pt = providerTimeouts[m.providerID]
+                                    const timedOut = pt?.timedOut && (pt.failedModels.length === 0 || pt.failedModels.includes(m.modelID))
+                                    if (authExpiredProviders[m.providerID]) return <KeyIcon className="size-3 shrink-0 text-amber-500" />
+                                    if (timedOut) return <ClockAlertIcon className="size-3 shrink-0 text-red-500" />
+                                    return null
+                                  })()}
                                   {active ? <CheckIcon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}
                                 </ModelSelectorItem>
                               )
@@ -1880,17 +1866,6 @@ export const Chatbot = () => {
                     </ModelSelectorContent>
                   </ModelSelector>
                 )}
-
-                {/* Notification bell */}
-                <NotificationBell unreadCount={unreadCount}>
-                  <NotificationPanel
-                    notifications={notifications}
-                    onMarkRead={markRead}
-                    onMarkAllRead={markAllRead}
-                    onRemove={removeNotification}
-                    onClearAll={clearAll}
-                  />
-                </NotificationBell>
 
               </PromptInputTools>
               <div className="flex items-center gap-1">

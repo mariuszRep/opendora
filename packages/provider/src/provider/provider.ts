@@ -117,14 +117,13 @@ export namespace Provider {
   }>
 
   async function loadOpencodeProvider(input: Info) {
-    const hasKey = await (async () => {
-      const env = Env.all()
-      if (input.env.some((item) => env[item])) return true
-      if (await Auth.get(input.id)) return true
-      const config = await Config.get()
-      if (config.provider?.[input.id]?.options?.apiKey) return true
-      return false
-    })()
+    const auth = await Auth.get(input.id)
+    const env = Env.all()
+    const envKey = input.env.map((item) => env[item]).find(Boolean)
+    const config = await Config.get()
+    const configKey = config.provider?.[input.id]?.options?.apiKey
+
+    const hasKey = !!(envKey || auth || configKey)
 
     if (!hasKey) {
       for (const [key, value] of Object.entries(input.models)) {
@@ -133,9 +132,19 @@ export namespace Provider {
       }
     }
 
+    // Resolve the actual bearer token for all auth types so Authorization is always sent
+    const apiKey = (() => {
+      if (auth?.type === "oauth") return auth.access
+      if (auth?.type === "api") return auth.key
+      if (auth?.type === "wellknown") return auth.key
+      if (envKey) return envKey
+      if (configKey) return configKey
+      return null
+    })()
+
     return {
       autoload: Object.keys(input.models).length > 0 && (input.id === "opencode" || hasKey),
-      options: hasKey ? {} : { apiKey: "public" },
+      options: apiKey ? { apiKey } : hasKey ? {} : { apiKey: "public" },
     }
   }
 

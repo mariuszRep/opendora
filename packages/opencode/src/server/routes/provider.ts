@@ -388,5 +388,35 @@ export const ProviderRoutes = lazy(() =>
         })
         return c.json(result)
       },
-    ),
+    )
+    .delete(
+      "/:providerID/timeout",
+      describeRoute({
+        summary: "Clear provider timeout",
+        description: "Clear the timeout for a specific provider, allowing it to be used again.",
+        operationId: "provider.timeout.clear",
+        responses: {
+          200: {
+            description: "Timeout cleared successfully",
+            content: {
+              "application/json": {
+                schema: resolver(z.boolean()),
+              },
+            },
+          },
+          ...errors(400),
+        },
+      }),
+      validator(
+        "param",
+        z.object({
+          providerID: z.string().meta({ description: "Provider ID" }),
+        }),
+      ),
+      async (c) => {
+        const providerID = c.req.valid("param").providerID
+        await ProviderTimeout.clearTimeout(providerID)
+        return c.json(true)
+      },
+    )
 )

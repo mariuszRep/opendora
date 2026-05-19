@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { CheckIcon, ClockAlertIcon, ComponentIcon, ExternalLinkIcon, Loader2Icon, MessageSquareIcon, SparklesIcon, StarIcon, Trash2Icon } from "lucide-react"
+import { CheckIcon, ClockAlertIcon, ComponentIcon, ExternalLinkIcon, KeyIcon, Loader2Icon, MessageSquareIcon, SparklesIcon, StarIcon, Trash2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -96,7 +96,7 @@ type ModelValue = { providerID: string; modelID: string } | undefined
 export default function AgentSettingsPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const { createAgent, updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, modelFilters, allAgents, refreshProviders, modelGroups, refreshModelGroups, providerTimeouts, refreshProviderTimeouts, sessions, setAgentMainSession, selectSession } =
+  const { createAgent, updateAgent, getAgentPersona, generateAgent, providers, connectedProviders, modelFilters, allAgents, refreshProviders, modelGroups, refreshModelGroups, providerTimeouts, authExpiredProviders, refreshProviderTimeouts, sessions, setAgentMainSession, selectSession } =
     useOpendoraContext()
 
   const isNew = id === "new"
@@ -379,7 +379,21 @@ export default function AgentSettingsPage() {
                       >
                         <ComponentIcon className="size-3 shrink-0" />
                         <ModelSelectorName>{group.name}</ModelSelectorName>
-                        {active ? <CheckIcon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}
+                        {(() => {
+                          const minReset = group.models.reduce<number | null>((min, m) => {
+                            const pt = providerTimeouts[m.providerID]
+                            if (!pt?.timedOut || !pt.resetInSeconds) return min
+                            return min === null || pt.resetInSeconds < min ? pt.resetInSeconds : min
+                          }, null)
+                          if (minReset === null) return null
+                          return (
+                            <span className="ml-auto flex items-center gap-1 text-[10px] text-red-500 shrink-0">
+                              <ClockAlertIcon className="size-3" />
+                              {Math.ceil(minReset / 60)}m
+                            </span>
+                          )
+                        })()}
+                        {active && <CheckIcon className="size-4 shrink-0" />}
                       </ModelSelectorItem>
                     )
                   })}
@@ -400,9 +414,13 @@ export default function AgentSettingsPage() {
                       >
                         <ModelSelectorLogo provider={m.providerID} />
                         <ModelSelectorName>{m.modelName}</ModelSelectorName>
-                        {providerTimeouts[m.providerID]?.timedOut && (
-                          <ClockAlertIcon className="size-3 text-red-500 shrink-0" />
-                        )}
+                        {(() => {
+                          const pt = providerTimeouts[m.providerID]
+                          const timedOut = pt?.timedOut && (pt.failedModels.length === 0 || pt.failedModels.includes(m.modelID))
+                          if (authExpiredProviders[m.providerID]) return <KeyIcon className="size-3 shrink-0 text-amber-500" />
+                          if (timedOut) return <ClockAlertIcon className="size-3 shrink-0 text-red-500" />
+                          return null
+                        })()}
                         {active ? <CheckIcon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}
                       </ModelSelectorItem>
                     )

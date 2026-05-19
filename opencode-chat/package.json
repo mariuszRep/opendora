@@ -1,0 +1,16 @@
+{
+  "name": "opencode-chat-cli",
+  "version": "1.0.0",
+  "description": "CLI to send messages to OpenCode sessions",
+  "type": "module",
+  "bin": {
+    "opencode-chat": "./cli.ts"
+  },
+  "scripts": {
+    "start": "bun run cli.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

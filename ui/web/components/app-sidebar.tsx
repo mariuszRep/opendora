@@ -1,6 +1,7 @@
 "use client"
 
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
+import { NotificationBlade } from "@/components/notifications/notification-blade"
 import { SessionEditSheet } from "@/components/sessions/session-edit-sheet"
 import { SessionCreateDialog, SESSION_TYPE_CONFIG } from "@/components/sessions/session-create-dialog"
 import { Button } from "@/components/ui/button"
@@ -23,7 +24,7 @@ import { getAgentColor } from "@/lib/agent-colors"
 import { BellIcon, BotIcon, FolderTreeIcon, MessageSquareIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, NetworkIcon, GalleryHorizontalIcon, GlobeIcon, CreditCardIcon, WorkflowIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 function formatSessionTitle(session: { title?: string; time: { created: number } }): string {
   if (session.title && !session.title.startsWith("New session")) return session.title
@@ -64,8 +65,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     toggleChatLayout,
     webPreviewOpen,
     toggleWebPreview,
+    notifications,
+    unreadCount,
+    markRead,
+    markAllRead,
+    removeNotification,
+    clearAll,
   } = useOpendoraContext()
 
+  const [notificationBladeOpen, setNotificationBladeOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
   const visibleAgents = agents.filter((a) => !a.hidden)
   
   // Track which agents are currently working based on active sessions
@@ -481,6 +491,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
+                onClick={() => setNotificationBladeOpen(true)}
+                tooltip="Notifications"
+                isActive={notificationBladeOpen}
+              >
+                <div className="relative shrink-0">
+                  <BellIcon className="size-4" />
+                  {mounted && unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white leading-none">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </div>
+                <span className="group-data-[collapsible=icon]:hidden">Notifications</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
                 onClick={() => router.push("/dashboard/settings")}
                 tooltip="Settings"
               >
@@ -493,6 +520,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarRail />
       </Sidebar>
 
+      <NotificationBlade
+        open={notificationBladeOpen}
+        onOpenChange={setNotificationBladeOpen}
+        notifications={notifications}
+        onMarkRead={markRead}
+        onMarkAllRead={markAllRead}
+        onRemove={removeNotification}
+        onClearAll={clearAll}
+      />
       <SessionEditSheet
         session={editingSession}
         open={sessionEditOpen}

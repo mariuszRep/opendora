@@ -32,6 +32,13 @@ export interface SessionCoreConfig {
       responseHeaders?: Record<string, string>,
       responseBody?: string,
     ): Promise<{ nextSlot: { providerID: string; modelID: string } | null; providerTimedOut: boolean; resetAt: number | null }>
+    reportProviderTimeout?(
+      providerID: string,
+      modelID: string,
+      reason: string,
+      responseHeaders?: Record<string, string>,
+      responseBody?: string,
+    ): Promise<void>
     ModelNotFoundError?: { isInstance(e: unknown): boolean }
     isWorkerMode?(mode: string): boolean
   }

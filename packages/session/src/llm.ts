@@ -241,7 +241,8 @@ export namespace LLM {
               "x-opencode-project": cfg.instance?.project?.id ?? "unknown",
               "x-opencode-session": input.sessionID,
               "x-opencode-request": input.user.id,
-              "x-opencode-client": process.env.OPENCODE_CLIENT ?? "",
+              "x-opencode-client": process.env.OPENCODE_CLIENT ?? "cli",
+              "User-Agent": `opencode/${cfg.installationVersion ?? "local"}`,
             }
           : input.model.providerID !== "anthropic"
             ? {

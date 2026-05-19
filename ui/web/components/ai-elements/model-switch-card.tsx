@@ -196,18 +196,18 @@ export function ModelSwitchCard({
 
   return (
     <div className="not-prose overflow-hidden rounded-md border bg-background text-foreground">
-      {/* Header — mirrors ToolHeader style with centered error label */}
-      <div className="relative flex items-center justify-between bg-muted/80 px-4 py-3">
-        <div className="flex items-center gap-2 shrink-0">
+      {/* Header: 3-col grid so center text is truly centered without clipping */}
+      <div className="grid grid-cols-[1.5rem_1fr_1.5rem] items-center gap-2 bg-muted/80 px-4 py-3">
+        <div className="flex items-center justify-start">
           {isRetrying
             ? <RotateCwIcon className="size-4 animate-spin text-amber-500" />
             : <AlertTriangleIcon className="size-4 text-red-500" />
           }
         </div>
-        <span className="absolute left-1/2 -translate-x-1/2 truncate text-sm font-medium text-foreground">
+        <p className="truncate text-center text-sm font-medium text-foreground">
           {errorLabel}
-        </span>
-        <div className="shrink-0 w-4" />
+        </p>
+        <div />
       </div>
 
       {/* Content */}
