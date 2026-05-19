@@ -415,7 +415,7 @@ export namespace SessionProcessor {
             // switch slots immediately rather than retrying the same dead upstream.
             const statusCodeForFallback = (error as any)?.data?.statusCode as number | undefined
             const isProviderDown = [429, 502, 503].includes(statusCodeForFallback ?? 0)
-            if (retry !== undefined && !(input.fallbackGroupID && isProviderDown)) {
+            if (retry !== undefined && !(input.fallbackGroupID && isProviderDown) && attempt < SessionRetry.MAX_RETRY_ATTEMPTS) {
               attempt++
               const delay = SessionRetry.delay(attempt, error.name === "APIError" ? (error as any) : undefined)
               SessionStatus.set(input.sessionID, {

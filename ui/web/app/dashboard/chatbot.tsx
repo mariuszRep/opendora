@@ -81,6 +81,7 @@ import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 
 import { QuestionTool, QuestionStep } from "@/components/questions/question-tool"
 import { PermissionTool } from "@/components/permissions/permission-tool"
+import { ModelSwitchCard } from "@/components/ai-elements/model-switch-card"
 import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart, FallbackSwitchPart } from "@/lib/opendora"
 import { opendora } from "@/lib/opendora"
 import { useUserProfile } from "@/hooks/use-user-profile"
@@ -98,7 +99,7 @@ import { WebFetchToolContent, isWebFetchTool, getWebFetchToolTitle, getWebFetchU
 import { isSkillLoadTool, getSkillLoadToolTitle, getSkillLoadDefinition } from "@/components/ai-elements/skill-load-tool"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BellIcon, CheckIcon, ClockAlertIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, FileIcon, Link2Icon, PanelRightIcon, SquareSlash, Volume2Icon, VolumeXIcon } from "lucide-react"
+import { BellIcon, CheckIcon, ClockAlertIcon, ComponentIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, FileIcon, Link2Icon, PanelRightIcon, SquareSlash, Volume2Icon, VolumeXIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
@@ -270,6 +271,7 @@ export const Chatbot = () => {
     refreshModelGroups,
     providerTimeouts,
     refreshProviderTimeouts,
+    sessionRetryStatus,
     createSession,
     updateAgent,
     isChatCentered,
@@ -1162,24 +1164,22 @@ export const Chatbot = () => {
                                       </Reasoning>
                                     ) : null}
                                     {step.kind === "fallback-switch" ? (
-                                      <div className="flex flex-col gap-1 rounded-lg border border-amber-200/70 bg-amber-50/60 dark:border-amber-700/40 dark:bg-amber-950/20 px-3 py-2 text-xs my-0.5">
-                                        <div className="font-medium text-amber-700 dark:text-amber-400">
-                                          ⚡ Model switched
-                                        </div>
-                                        <div className="flex flex-col gap-0.5 text-muted-foreground">
-                                          <div className="flex items-center gap-1.5">
-                                            <span className="line-through text-red-500/80">{step.content.previousSlot.providerID}/{step.content.previousSlot.modelID}</span>
-                                            <span className="text-[10px]">rate limited{step.content.statusCode ? ` (${step.content.statusCode})` : ""}</span>
-                                          </div>
-                                          {step.content.resetAt ? (
-                                            <span className="text-[10px]">back {formatResetAt(step.content.resetAt)}</span>
-                                          ) : null}
-                                        </div>
-                                        <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                                          <span>→</span>
-                                          <span>{step.content.newSlot.providerID}/{step.content.newSlot.modelID}</span>
-                                        </div>
-                                      </div>
+                                      <ModelSwitchCard
+                                        fallbackGroup={selectedGroupId && modelGroups.find(g => g.id === selectedGroupId) ? {
+                                          id: selectedGroupId,
+                                          name: modelGroups.find(g => g.id === selectedGroupId)!.name,
+                                          slots: modelGroups.find(g => g.id === selectedGroupId)!.models.map(m => ({ providerID: m.providerID, modelID: m.modelID, modelName: modelList.find(ml => ml.providerID === m.providerID && ml.modelID === m.modelID)?.modelName })),
+                                        } : undefined}
+                                        currentSlot={step.content.newSlot}
+                                        failedSlots={[{
+                                          providerID: step.content.previousSlot.providerID,
+                                          modelID: step.content.previousSlot.modelID,
+                                          statusCode: step.content.statusCode,
+                                          resetAt: step.content.resetAt,
+                                        }]}
+                                        retryAttempt={sessionRetryStatus[selectedSession?.id ?? ""]?.attempt}
+                                        retryDelay={sessionRetryStatus[selectedSession?.id ?? ""]?.next ? sessionRetryStatus[selectedSession?.id ?? ""]!.next - Date.now() : undefined}
+                                      />
                                     ) : null}
                                     {step.kind === "tool" ? (() => {
                                       const tool = step.content
@@ -1338,9 +1338,29 @@ export const Chatbot = () => {
                                     {step.kind === "reply" ? (
                                       <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
                                         {step.error ? (
-                                          <p className="text-destructive text-sm">
-                                            {String((step.error.data as { message?: string })?.message ?? step.error.name)}
-                                          </p>
+                                          <>
+                                            {((step.error.data as { message?: string })?.message?.toLowerCase().includes("provider") || (step.error.data as { message?: string })?.message?.toLowerCase().includes("rate limit")) ? (
+                                              <ModelSwitchCard
+                                                fallbackGroup={selectedGroupId && modelGroups.find(g => g.id === selectedGroupId) ? {
+                                                  id: selectedGroupId,
+                                                  name: modelGroups.find(g => g.id === selectedGroupId)!.name,
+                                                  slots: modelGroups.find(g => g.id === selectedGroupId)!.models.map(m => ({ providerID: m.providerID, modelID: m.modelID, modelName: modelList.find(ml => ml.providerID === m.providerID && ml.modelID === m.modelID)?.modelName })),
+                                                } : undefined}
+                                                currentSlot={selectedModel ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID, modelName: selectedModel.modelName } : undefined}
+                                                failedSlots={selectedModel ? [{
+                                                  providerID: selectedModel.providerID,
+                                                  modelID: selectedModel.modelID,
+                                                }] : []}
+                                                errorMessage={(step.error.data as { message?: string })?.message ?? step.error.name}
+                                                retryAttempt={sessionRetryStatus[selectedSession?.id ?? ""]?.attempt}
+                                                retryDelay={sessionRetryStatus[selectedSession?.id ?? ""]?.next ? sessionRetryStatus[selectedSession?.id ?? ""]!.next - Date.now() : undefined}
+                                              />
+                                            ) : (
+                                              <p className="text-destructive text-sm">
+                                                {String((step.error.data as { message?: string })?.message ?? step.error.name)}
+                                              </p>
+                                            )}
+                                          </>
                                         ) : null}
                                         {step.content ? <MessageResponse>{step.content}</MessageResponse> : null}
                                       </MessageContent>
@@ -1366,9 +1386,21 @@ export const Chatbot = () => {
                             )}
                             {msgError ? (
                               <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
-                                <p className="text-destructive text-sm">
-                                  {String((msgError.data as { message?: string })?.message ?? msgError.name)}
-                                </p>
+                                <ModelSwitchCard
+                                  fallbackGroup={selectedGroupId && modelGroups.find(g => g.id === selectedGroupId) ? {
+                                    id: selectedGroupId,
+                                    name: modelGroups.find(g => g.id === selectedGroupId)!.name,
+                                    slots: modelGroups.find(g => g.id === selectedGroupId)!.models.map(m => ({ providerID: m.providerID, modelID: m.modelID, modelName: modelList.find(ml => ml.providerID === m.providerID && ml.modelID === m.modelID)?.modelName })),
+                                  } : undefined}
+                                  currentSlot={selectedModel ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID, modelName: selectedModel.modelName } : undefined}
+                                  failedSlots={selectedModel ? [{
+                                    providerID: selectedModel.providerID,
+                                    modelID: selectedModel.modelID,
+                                  }] : []}
+                                  errorMessage={(msgError?.data as { message?: string })?.message ?? msgError?.name}
+                                  retryAttempt={sessionRetryStatus[selectedSession?.id ?? ""]?.attempt}
+                                  retryDelay={sessionRetryStatus[selectedSession?.id ?? ""]?.next ? sessionRetryStatus[selectedSession?.id ?? ""]!.next - Date.now() : undefined}
+                                />
                               </MessageContent>
                             ) : (
                               <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
@@ -1751,7 +1783,10 @@ export const Chatbot = () => {
                     <ModelSelectorTrigger asChild>
                       <PromptInputButton>
                         {selectedGroup ? (
-                          <ModelSelectorName>{selectedGroup.name}</ModelSelectorName>
+                          <>
+                            <ComponentIcon className="size-3 shrink-0" />
+                            <ModelSelectorName>{selectedGroup.name}</ModelSelectorName>
+                          </>
                         ) : selectedModel?.isFallback
                           ? (() => {
                               const activeSlot = fallbackActiveSlots[selectedModel.modelID]
@@ -1797,6 +1832,7 @@ export const Chatbot = () => {
                                     updateAgentModel("fallback", g.id)
                                   }}
                                 >
+                                  <ComponentIcon className="size-3 shrink-0" />
                                   <ModelSelectorName>{g.name}</ModelSelectorName>
                                   {active ? <CheckIcon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}
                                 </ModelSelectorItem>

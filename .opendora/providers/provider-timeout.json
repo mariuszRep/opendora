@@ -7,7 +7,7 @@
       "modelFailures": {
         "minimax/minimax-m2.5:free": {
           "modelID": "minimax/minimax-m2.5:free",
-          "until": 1779195834810,
+          "until": 1779197315015,
           "reason": "Provider returned error",
           "statusCode": 429
         }
@@ -30,7 +30,7 @@
       "reason": null,
       "modelFailures": {
         "undefined": {
-          "until": 1779195834808,
+          "until": 1779197315014,
           "reason": 429,
           "statusCode": "minimax/minimax-m2.5:free"
         }

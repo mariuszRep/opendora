@@ -100,6 +100,8 @@ export type UseOpendoraResult = {
   // Provider timeout status
   providerTimeouts: Record<string, { timedOut: boolean; until: number | null; reason: string | null; resetInSeconds: number | null; failedModels: string[] }>
   refreshProviderTimeouts: () => Promise<void>
+  // Session retry status
+  sessionRetryStatus: Record<string, { attempt: number; message: string; next: number }>
   // Error
   error: string | null
   // UI Layout
@@ -156,6 +158,7 @@ export function useOpendora(): UseOpendoraResult {
   const [activeSessions, setActiveSessions] = useState<Set<string>>(new Set())
   const [defaultAgentId, setDefaultAgentId] = useState<string | null>(() => getStoredDefaultAgent())
   const [lastSessionByAgent, setLastSessionByAgent] = useState<Record<string, string>>(() => getStoredLastSessionByAgent())
+  const [sessionRetryStatus, setSessionRetryStatus] = useState<Record<string, { attempt: number; message: string; next: number }>>({})
 
   const selectedSessionRef = useRef<Session | null>(null)
   const statusRef = useRef<ChatStatus>("ready")
@@ -558,18 +561,25 @@ export function useOpendora(): UseOpendoraResult {
             recentlyCompletedRef.current[sessionID] = Date.now()
             questionRequestsRef.current[sessionID] = []
             setQuestionRequests((prev) => ({ ...prev, [sessionID]: [] }))
+            setSessionRetryStatus((prev) => {
+              const next = { ...prev }
+              delete next[sessionID]
+              return next
+            })
             if (selectedSessionRef.current?.id === sessionID) {
               setStatus("ready")
             }
           } else if (status.type === "retry" && selectedSessionRef.current?.id === sessionID) {
             setActiveSessions((prev) => new Set(prev).add(sessionID))
             const retryMsg = status.message ?? "Retrying..."
-            const delayMs = status.next ? Math.max(0, status.next - Date.now()) : 0
-            const delaySec = Math.ceil(delayMs / 1000)
-            const label = delaySec > 0
-              ? `${retryMsg} (retry ${status.attempt ?? "?"} in ${delaySec}s)`
-              : retryMsg
-            toast.warning(label, { id: `retry-${sessionID}`, duration: Math.min(delayMs, 30000) })
+            setSessionRetryStatus((prev) => ({
+              ...prev,
+              [sessionID]: {
+                attempt: status.attempt ?? 0,
+                message: retryMsg,
+                next: status.next ?? 0,
+              },
+            }))
           } else {
             const completedAt = recentlyCompletedRef.current[sessionID]
             const isRecentlyCompleted = completedAt && (Date.now() - completedAt) < 2000
@@ -1089,6 +1099,7 @@ export function useOpendora(): UseOpendoraResult {
     refreshModelGroups,
     providerTimeouts,
     refreshProviderTimeouts,
+    sessionRetryStatus,
     error,
     isChatCentered,
     toggleChatLayout,

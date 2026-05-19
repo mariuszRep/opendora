@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { CheckIcon, ClockAlertIcon, ExternalLinkIcon, Loader2Icon, MessageSquareIcon, SparklesIcon, StarIcon, Trash2Icon } from "lucide-react"
+import { CheckIcon, ClockAlertIcon, ComponentIcon, ExternalLinkIcon, Loader2Icon, MessageSquareIcon, SparklesIcon, StarIcon, Trash2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -337,7 +337,10 @@ export default function AgentSettingsPage() {
           <ModelSelectorTrigger asChild>
             <Button variant="outline" className="w-full justify-start font-normal">
               {selectedGroup ? (
-                <ModelSelectorName>{selectedGroup.name}</ModelSelectorName>
+                <>
+                  <ComponentIcon className="size-3 shrink-0" />
+                  <ModelSelectorName>{selectedGroup.name}</ModelSelectorName>
+                </>
               ) : selected ? (
                 <>
                   <ModelSelectorLogo provider={selected.providerID} />
@@ -374,6 +377,7 @@ export default function AgentSettingsPage() {
                           onOpenChange(false)
                         }}
                       >
+                        <ComponentIcon className="size-3 shrink-0" />
                         <ModelSelectorName>{group.name}</ModelSelectorName>
                         {active ? <CheckIcon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}
                       </ModelSelectorItem>

@@ -90,6 +90,8 @@ export namespace SessionRetry {
   export const RETRY_MAX_DELAY = 2_147_483_647 // max 32-bit signed integer for setTimeout
   // Matches Gemini CLI: delays longer than 5 min are treated as terminal
   export const MAX_RETRYABLE_DELAY_MS = 300_000
+  // Maximum number of retry attempts before giving up
+  export const MAX_RETRY_ATTEMPTS = 1
 
   export async function sleep(ms: number, signal: AbortSignal): Promise<void> {
     return new Promise((resolve, reject) => {
