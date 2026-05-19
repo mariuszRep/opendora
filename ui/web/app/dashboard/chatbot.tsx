@@ -81,7 +81,7 @@ import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 
 import { QuestionTool, QuestionStep } from "@/components/questions/question-tool"
 import { PermissionTool } from "@/components/permissions/permission-tool"
-import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart } from "@/lib/opendora"
+import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart, FallbackSwitchPart } from "@/lib/opendora"
 import { opendora } from "@/lib/opendora"
 import { useUserProfile } from "@/hooks/use-user-profile"
 import { ScheduleDialog } from "@/components/sessions/schedule-dialog"
@@ -130,6 +130,19 @@ function getToolParts(parts: Part[]): ToolPart[] {
   return parts.filter((p): p is ToolPart => p.type === "tool")
 }
 
+function getFallbackSwitchParts(parts: Part[]): FallbackSwitchPart[] {
+  return parts.filter((p): p is FallbackSwitchPart => p.type === "fallback-switch")
+}
+
+function formatResetAt(resetAt: number): string {
+  const diffMs = resetAt - Date.now()
+  if (diffMs <= 0) return "soon"
+  const h = Math.floor(diffMs / 3_600_000)
+  const m = Math.floor((diffMs % 3_600_000) / 60_000)
+  if (h > 0) return `in ${h}h ${m}m`
+  return `in ${m}m`
+}
+
 type FilePart = { type: "file"; id: string; sessionID: string; messageID: string; url: string; mime?: string; filename?: string }
 function getFileParts(parts: Part[]): FilePart[] {
   return parts.filter((p): p is FilePart => p.type === "file")
@@ -167,11 +180,13 @@ function toToolState(status: ToolPart["state"]["status"], hasPermissionRequest?:
 type TimelineStep =
   | { key: string; kind: "reasoning"; content: ReasoningPart }
   | { key: string; kind: "tool"; content: ToolPart }
+  | { key: string; kind: "fallback-switch"; content: FallbackSwitchPart }
   | { key: string; kind: "reply"; content?: string; error?: AssistantMessage["error"] }
 
 function getTimelineSteps(parts: Part[], error?: AssistantMessage["error"]): TimelineStep[] {
   const reasoning = getReasoningPart(parts)
   const tools = getToolParts(parts)
+  const fallbackSwitches = getFallbackSwitchParts(parts)
   const reply = getMessageText(parts)
   const steps: TimelineStep[] = []
 
@@ -181,6 +196,10 @@ function getTimelineSteps(parts: Part[], error?: AssistantMessage["error"]): Tim
 
   for (const tool of tools) {
     steps.push({ key: tool.id, kind: "tool", content: tool })
+  }
+
+  for (const fs of fallbackSwitches) {
+    steps.push({ key: fs.id, kind: "fallback-switch", content: fs })
   }
 
   if (error || reply) {
@@ -1141,6 +1160,26 @@ export const Chatbot = () => {
                                         <ReasoningTrigger />
                                         <ReasoningContent>{step.content.text}</ReasoningContent>
                                       </Reasoning>
+                                    ) : null}
+                                    {step.kind === "fallback-switch" ? (
+                                      <div className="flex flex-col gap-1 rounded-lg border border-amber-200/70 bg-amber-50/60 dark:border-amber-700/40 dark:bg-amber-950/20 px-3 py-2 text-xs my-0.5">
+                                        <div className="font-medium text-amber-700 dark:text-amber-400">
+                                          ⚡ Model switched
+                                        </div>
+                                        <div className="flex flex-col gap-0.5 text-muted-foreground">
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="line-through text-red-500/80">{step.content.previousSlot.providerID}/{step.content.previousSlot.modelID}</span>
+                                            <span className="text-[10px]">rate limited{step.content.statusCode ? ` (${step.content.statusCode})` : ""}</span>
+                                          </div>
+                                          {step.content.resetAt ? (
+                                            <span className="text-[10px]">back {formatResetAt(step.content.resetAt)}</span>
+                                          ) : null}
+                                        </div>
+                                        <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                                          <span>→</span>
+                                          <span>{step.content.newSlot.providerID}/{step.content.newSlot.modelID}</span>
+                                        </div>
+                                      </div>
                                     ) : null}
                                     {step.kind === "tool" ? (() => {
                                       const tool = step.content

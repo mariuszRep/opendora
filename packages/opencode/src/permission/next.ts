@@ -3,7 +3,7 @@
  *
  * Responsibilities:
  *  - Provide the Permission.DB implementation using the project DB
- *  - Provide the Permission.Emitter implementation using GlobalBus
+ *  - Provide the Permission.Emitter implementation using Bus.publish
  *  - Map old-style "permission" strings to { resource, access } for the store
  *  - Re-export legacy helpers (fromConfig, merge, evaluate, disabled) used by agent.ts
  */
@@ -21,8 +21,29 @@ import {
 } from "@opendora/permission"
 import { Database, eq, and } from "@/storage/db"
 import { PermissionRuleTable } from "@/storage/permission.sql"
-import { GlobalBus } from "@/bus/global"
+import { Bus } from "@/bus"
+import { BusEvent } from "@/bus/bus-event"
+import z from "zod"
 import type { Hono } from "hono"
+
+// ── Bus event definitions ─────────────────────────────────────────────────────
+
+const PermissionAskedEvent = BusEvent.define("permission.asked", Permission.Request)
+const PermissionRepliedEvent = BusEvent.define(
+  "permission.replied",
+  z.object({
+    session_id: z.string(),
+    request_id: z.string(),
+    reply: Permission.Reply,
+  }),
+)
+const PermissionRulesUpdatedEvent = BusEvent.define(
+  "permission.rules.updated",
+  z.object({
+    scope: Permission.Scope,
+    scope_id: z.string(),
+  }),
+)
 
 // ── DB adapter ────────────────────────────────────────────────────────────────
 
@@ -65,7 +86,13 @@ const permissionDB: Permission.DB = {
 
 const permissionEmitter: Permission.Emitter = {
   emit(type, payload) {
-    GlobalBus.emit("event", { payload: { type, properties: payload } })
+    if (type === "permission.asked") {
+      Bus.publish(PermissionAskedEvent, payload as Permission.Request).catch(() => {})
+    } else if (type === "permission.replied") {
+      Bus.publish(PermissionRepliedEvent, payload as { session_id: string; request_id: string; reply: Permission.Reply }).catch(() => {})
+    } else if (type === "permission.rules.updated") {
+      Bus.publish(PermissionRulesUpdatedEvent, payload as { scope: Permission.Scope; scope_id: string }).catch(() => {})
+    }
   },
 }
 

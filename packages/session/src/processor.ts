@@ -430,11 +430,12 @@ export namespace SessionProcessor {
             // Report provider timeout for rate limit errors (429) regardless of fallback
             const apiError = error.name === "APIError" ? (error as any) : null
             const statusCode = statusCodeForFallback
+            const errorMessage = (error as any)?.data?.message ?? String(error)
             if (statusCode === 429) {
               await getConfig().provider?.reportProviderTimeout?.(
                 streamInput.model.providerID,
                 streamInput.model.id,
-                (error as any)?.message ?? String(error),
+                errorMessage,
                 apiError?.data?.responseHeaders,
                 apiError?.data?.responseBody,
               )
@@ -449,7 +450,7 @@ export namespace SessionProcessor {
                   input.fallbackGroupID,
                   currentSlot,
                   statusCode,
-                  (error as any)?.message ?? String(error),
+                  errorMessage,
                   apiError?.data?.responseHeaders,
                   apiError?.data?.responseBody,
                 )
@@ -464,6 +465,18 @@ export namespace SessionProcessor {
                       groupID: input.fallbackGroupID,
                       previousSlot: currentSlot,
                       newSlot: nextSlot,
+                    })
+                    await input.updatePart({
+                      id: Identifier.ascending("part"),
+                      sessionID: input.sessionID,
+                      messageID: input.assistantMessage.id,
+                      type: "fallback-switch",
+                      previousSlot: currentSlot,
+                      newSlot: nextSlot,
+                      groupID: input.fallbackGroupID,
+                      resetAt: result?.resetAt ?? null,
+                      statusCode,
+                      time: { created: Date.now() },
                     })
                     attempt = 0
                     continue

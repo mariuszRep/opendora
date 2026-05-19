@@ -155,10 +155,24 @@ export type ToolPart = {
   metadata?: Record<string, unknown>
 }
 
+export type FallbackSwitchPart = {
+  id: string
+  sessionID: string
+  messageID: string
+  type: "fallback-switch"
+  previousSlot: { providerID: string; modelID: string }
+  newSlot: { providerID: string; modelID: string }
+  groupID: string
+  resetAt: number | null
+  statusCode?: number
+  time: { created: number }
+}
+
 export type Part =
   | TextPart
   | ReasoningPart
   | ToolPart
+  | FallbackSwitchPart
   | { id: string; sessionID: string; messageID: string; type: string; [k: string]: unknown }
 
 export type MessageWithParts = {

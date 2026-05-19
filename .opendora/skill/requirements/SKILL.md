@@ -40,18 +40,19 @@ This skill defines what VISION.md and requirements artifacts are, and enforces s
 - A task list or backlog
 - A status update
 
-### Mandatory Sync Gate
+### Conditional VISION Sync Gate
 
 Before any implementation begins:
 
-1. **Check VISION.md exists** in the relevant folder (agent or skill folder)
-2. **Verify alignment**: confirmed requirements must match VISION.md approved behaviors
-3. **Block on mismatch**: if requirements drift from VISION.md, halt and request clarification
-4. **Log the sync**: record VISION.md version/commit in readiness outcome
+1. **Look for VISION.md** in the relevant folder, agent, skill, package, or project scope
+2. **If present, verify alignment**: confirmed requirements must match VISION.md approved behaviors
+3. **If absent, do not block solely on absence**: continue from user-supplied intent and other available context
+4. **Block on mismatch**: if requirements drift from an existing VISION.md, halt and request clarification or user-approved vision update
+5. **Log the sync**: record the VISION.md path/version/commit when one was present, or `not present` when absent
 
 ### Strict Mismatch Block
 
-If implementation would violate VISION.md:
+If implementation would violate an existing VISION.md:
 - Do not proceed
 - Report the specific mismatch to the user
 - Request VISION.md update through user-approved intent before continuing

@@ -1,18 +1,15 @@
 import path from "path"
-import { pathToFileURL } from "url"
 import z from "zod"
 import { Tool } from "./tool"
 import { Skill } from "../skill"
 import { PermissionNext } from "../permission/next"
-import { Ripgrep } from "../file/ripgrep"
-import { iife } from "@/util/iife"
 import { addSkillTools } from "../session-skill-tools"
 
 // Tool to load and use a specific skill
 export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
   const agent = ctx?.agent
-  const agentSkills = agent?.config?.skills as string[] | undefined
-  const agentToolsList = agent?.tools as string[] | undefined
+  const agentSkills = agent?.skills as string[] | undefined
+  const agentToolsList = agent?.config?.toolConfig?.delegate?.allowedAgents as string[] | undefined
   // Agents with skill_list tool bypass the assignment restriction and can discover any skill
   const hasUnrestrictedDiscovery = agentToolsList?.includes("skill_list") ?? false
 
@@ -76,45 +73,10 @@ export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
       }
 
       const dir = path.dirname(skill.location)
-      const base = pathToFileURL(dir).href
-
-      const limit = 10
-      const files = await iife(async () => {
-        const arr = []
-        for await (const file of Ripgrep.files({
-          cwd: dir,
-          follow: false,
-          hidden: true,
-          signal: ctx.abort,
-        })) {
-          if (file.includes("SKILL.md")) {
-            continue
-          }
-          arr.push(path.resolve(dir, file))
-          if (arr.length >= limit) {
-            break
-          }
-        }
-        return arr
-      }).then((f) => f.map((file) => `<file>${file}</file>`).join("\n"))
 
       return {
         title: `Loaded skill: ${skill.name}`,
-        output: [
-          `<skill_content name="${skill.name}">`,
-          `# Skill: ${skill.name}`,
-          "",
-          skill.content.trim(),
-          "",
-          `Base directory for this skill: ${base}`,
-          "Relative paths in this skill (e.g., scripts/, reference/) are relative to this base directory.",
-          "Note: file list is sampled.",
-          "",
-          "<skill_files>",
-          files,
-          "</skill_files>",
-          "</skill_content>",
-        ].join("\n"),
+        output: `Skill "${skill.name}" loaded from ${dir}/SKILL.md`,
         metadata: {
           name: skill.name,
           dir,

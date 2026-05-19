@@ -83,24 +83,11 @@ export namespace LLM {
     } else {
       // Title generation and compaction pass an explicit system array (often []).
       // They manage their own minimal context; run the old inline path.
-      let delegateNotice = ""
-      const hasDelegateTool = (input.agent.tools as string[] | undefined)?.includes("delegate")
-      const allowedAgentNames: string[] | undefined = hasDelegateTool
-        ? input.agent.config?.toolConfig?.delegate?.allowedAgents
-        : undefined
-      if (allowedAgentNames && allowedAgentNames.length > 0) {
-        const allAgents = await cfg.agent?.list?.() ?? []
-        const entries = (allAgents as any[])
-          .filter((a) => allowedAgentNames.includes(a.name))
-          .map((a) => `- **${a.name}**${a.description ? `: ${a.description}` : ""}`)
-        delegateNotice = `\n\n# Available Delegations\nUse the \`delegate\` tool to delegate to any of these agents when the task matches:\n\n${entries.join("\n")}\nDo not delegate to any other agent. If your persona mentions other agents, disregard those names.`
-      }
       system.push(
         [
           ...(input.agent.prompt ? [input.agent.prompt] : (isCodex || input.agent?.injectInstructions === false) ? [] : SystemPrompt.provider(input.model)),
           ...input.system,
           ...(input.user.system ? [input.user.system] : []),
-          ...(delegateNotice ? [delegateNotice] : []),
         ]
           .filter((x) => x)
           .join("\n"),

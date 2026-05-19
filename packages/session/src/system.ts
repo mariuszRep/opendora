@@ -131,13 +131,10 @@ export namespace SystemPrompt {
     // 4. Available Skills — list assigned skills so the agent knows what to load
     const agentToolsList = input.agent?.tools as string[] | undefined
     const hasSkillLoadTool = agentToolsList?.includes("skill_load") ?? false
-    const hasSkillListTool = agentToolsList?.includes("skill_list") ?? false
     if (hasSkillLoadTool) {
       const agentSkillNames = input.agent?.config?.skills as string[] | undefined
       const allSkills: any[] = await cfg.skill?.all?.() ?? []
-      const visibleSkills = hasSkillListTool
-        ? allSkills
-        : agentSkillNames?.length
+      const visibleSkills = agentSkillNames?.length
         ? allSkills.filter((s: any) => agentSkillNames.includes(s.name))
         : []
       if (visibleSkills.length > 0) {
@@ -168,7 +165,7 @@ export namespace SystemPrompt {
       if (entries.length > 0) {
         sections.push({
           label: "Available Delegations",
-          content: `# Available Delegations\nUse the \`delegate\` tool to delegate to any of these agents when the task matches:\n\n${entries.join("\n")}\nDo not delegate to any other agent. If your persona mentions other agents, disregard those names.`,
+          content: `${entries.join("\n")}`,
         })
       }
     }

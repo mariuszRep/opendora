@@ -4,12 +4,13 @@ Repository-wide instructions for agents working in `opendora`.
 
 ## Read order
 
-Before changing code in any scope, read:
+Before changing code or documentation in any scope, look for and read the context files that exist for that scope:
 
 1. This root `AGENTS.md`
-2. [`VISION.md`](/home/mariu/projects/opendora/VISION.md) — target architecture, human-owned, never edit during migration
-3. [`MIGRATION.md`](/home/mariu/projects/opendora/MIGRATION.md) — current migration progress, update as work happens
-4. The nearest nested `AGENTS.md` for the package or app you are editing
+2. Root `VISION.md`, if present — target intent, human-owned where intent changes
+3. Root `README.md`, if present — human-facing setup and usage
+4. Relevant `MIGRATION.md`, if present and the work touches an area being moved, retired, replaced, or reworked
+5. The nearest nested `AGENTS.md`, `VISION.md`, and `README.md`, if present, for the package, app, agent, or skill you are editing
 
 Nested files inherit parent context by default. Treat nested files as stricter or more specific.
 
@@ -24,7 +25,7 @@ Nested files inherit parent context by default. Treat nested files as stricter o
 
 ## Application & Package map
 
-See `VISION.md` for the target architecture. During migration, the actual structure is in flux — consult `MIGRATION.md` for current state.
+See the nearest `VISION.md` where present for target intent. During migration, the actual structure may be in flux — consult the relevant `MIGRATION.md` where present.
 
 **Target applications:**
 - `apps/web` — web frontend
@@ -41,17 +42,17 @@ See `VISION.md` for the target architecture. During migration, the actual struct
 
 ## Documentation maintenance
 
-- `VISION.md` is human-owned. Never modify it during migration or implementation work.
-- `MIGRATION.md` is agent-owned. Update it as steps complete, start, or get blocked.
+- `VISION.md` is optional but authoritative where present. It captures desired intent, not status. Update it only when the user supplies or approves intent changes.
+- `MIGRATION.md` is agent-owned transition memory. Update it as migration steps complete, start, or get blocked.
 - If you add or tighten workflow constraints for agents, update the relevant `AGENTS.md`.
-- Code is the source of truth for current state — do not maintain parallel state documents.
+- Code is the source of truth for current implementation state — do not maintain parallel `STATE.md` or `ROADMAP.md` status documents.
 
 ## Folder documentation
 
-Each meaningful folder or subtree should contain local context files that describe or reference its own structure:
+Each meaningful folder or subtree may contain local context files that describe or reference its own structure. Always look for and read them when working inside that folder; absence is not automatically debt.
 
 - **`AGENTS.md`** — operating rules for agents working in that folder or subtree.
-- **`VISION.md`** — desired target state for that folder or subtree; human-owned where intent changes.
+- **`VISION.md`** — optional desired target state for that folder or subtree; human-owned where intent changes.
 - **`MIGRATION.md`** — required once a migration, refactor, replacement, retirement, or structural change is decided. Include the planning and discussion phase before any code changes begin.
 
 Nested documentation inherits parent context by default. Treat nested files as stricter or more specific than their parents.

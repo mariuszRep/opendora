@@ -273,6 +273,19 @@ export namespace MessageV2 {
   })
   export type RetryPart = z.infer<typeof RetryPart>
 
+  export const FallbackSwitchPart = PartBase.extend({
+    type: z.literal("fallback-switch"),
+    previousSlot: z.object({ providerID: z.string(), modelID: z.string() }),
+    newSlot: z.object({ providerID: z.string(), modelID: z.string() }),
+    groupID: z.string(),
+    resetAt: z.number().nullable(),
+    statusCode: z.number().optional(),
+    time: z.object({ created: z.number() }),
+  }).meta({
+    ref: "FallbackSwitchPart",
+  })
+  export type FallbackSwitchPart = z.infer<typeof FallbackSwitchPart>
+
   export const StepStartPart = PartBase.extend({
     type: z.literal("step-start"),
     snapshot: z.string().optional(),
@@ -428,6 +441,7 @@ export namespace MessageV2 {
       AgentPart,
       RetryPart,
       CompactionPart,
+      FallbackSwitchPart,
     ])
     .meta({
       ref: "Part",

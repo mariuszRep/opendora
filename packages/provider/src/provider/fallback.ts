@@ -172,13 +172,13 @@ export namespace ProviderFallback {
     const nextIdx = nextAvailableSlot(group, state, searchFrom)
     if (nextIdx === null) {
       await saveState(state)
-      return { nextSlot: null, providerTimedOut: timeoutResult.providerTimedOut }
+      return { nextSlot: null, providerTimedOut: timeoutResult.providerTimedOut, resetAt: until }
     }
 
     state.rotations[groupID] = { slotIndex: nextIdx, activeSince: now, lastUsed: now }
     await saveState(state)
 
-    return { nextSlot: group.slots[nextIdx], providerTimedOut: timeoutResult.providerTimedOut }
+    return { nextSlot: group.slots[nextIdx], providerTimedOut: timeoutResult.providerTimedOut, resetAt: until }
   }
 
   export async function getCurrentSlot(groupID: string): Promise<Slot | null> {

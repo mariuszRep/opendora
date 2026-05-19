@@ -1,6 +1,6 @@
 ---
 name: project-context
-description: Load before project intake, onboarding, implementation, review, or context-doc updates to read and maintain mandatory project context while treating MIGRATION.md as scoped legacy-area migration memory.
+description: Load before project intake, onboarding, implementation, review, or context-doc updates to read available project context while treating MIGRATION.md as scoped legacy-area migration memory.
 origin: opendora
 ---
 
@@ -14,9 +14,9 @@ Keep project work aligned with durable context so future agents understand what 
 
 ## Context Files
 
-- `VISION.md` - mandatory project intent for the application or folder: what it should be, how it should behave, important requirements, product shape, and architectural intent when relevant. It is not a completion checklist and must not record done/not-done status.
-- `AGENTS.md` - mandatory operational guidance for agents working in a folder: read order, boundaries, local rules, pitfalls, and workflow expectations.
-- `README.md` - mandatory human-facing setup, onboarding, usage, and practical commands. Keep it aligned with verified behavior.
+- `VISION.md` - optional but authoritative project intent for the application or folder when present: what it should be, how it should behave, important requirements, product shape, and architectural intent when relevant. It is not a completion checklist and must not record done/not-done status.
+- `AGENTS.md` - optional but authoritative operational guidance when present for agents working in a folder: read order, boundaries, local rules, pitfalls, and workflow expectations.
+- `README.md` - optional human-facing setup, onboarding, usage, and practical commands. Keep it aligned with verified behavior.
 - `MIGRATION.md` - optional, scoped transition memory for a legacy source folder or area being moved, reworked, retired, or replaced. It belongs with the code being migrated from, not in the target destination just because code is moving there.
 
 ## Migration Placement Rule
@@ -31,7 +31,7 @@ Use `MIGRATION.md` only when there is an active rework, relocation, retirement, 
 
 ## Read Order
 
-Before project work, identify the active project root and relevant subfolder, then read context in this order where present:
+Before project work, identify the active project root and relevant subfolder, then look for and read context in this order where present:
 
 1. Root `AGENTS.md`
 2. Root `VISION.md`
@@ -41,7 +41,7 @@ Before project work, identify the active project root and relevant subfolder, th
 6. Relevant `MIGRATION.md` only when the work touches or depends on a legacy/source area under migration
 7. Package or app manifests and scripts when setup, onboarding, validation, or delivery is involved
 
-If a mandatory context file is missing from an active project root or folder, report that as project-context debt instead of inventing its contents. Missing optional migration files are not debt unless the current work needs them.
+Missing `VISION.md`, `AGENTS.md`, or `README.md` is not automatically project-context debt. Report absence only when the current work explicitly requires that document or when a local rule says it must exist. Missing optional migration files are not debt unless the current work needs them.
 
 ## Decision Rules
 
@@ -66,7 +66,7 @@ If a mandatory context file is missing from an active project root or folder, re
 
 Before reporting project work as ready, check:
 
-- Did the work read mandatory project context first: `AGENTS.md`, `VISION.md`, and `README.md` where present?
+- Did the work look for and read available project context first: `AGENTS.md`, `VISION.md`, and `README.md` where present?
 - Is `MIGRATION.md` relevant because the touched code is legacy/source code being migrated away from?
 - Does the request align with `VISION.md`, or does the vision need an approved update?
 - Did implementation happen in the right location for the migration direction?
@@ -77,7 +77,7 @@ Before reporting project work as ready, check:
 
 When this skill affects the task, report briefly:
 
-- which mandatory context files were read
+- which available context files were read
 - whether migration context was applicable and where it lives
 - any missing or conflicting context
 - which files need updates, if any

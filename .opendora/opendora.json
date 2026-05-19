@@ -45,6 +45,24 @@
           "modelID": "openrouter/free"
         }
       ]
+    },
+    {
+      "id": "3957ba01-cf45-4ecb-9b39-2acda3ca530a",
+      "name": "Nemotron 3 Super (free)",
+      "models": [
+        {
+          "providerID": "opencode",
+          "modelID": "nemotron-3-super-free"
+        },
+        {
+          "providerID": "kilo",
+          "modelID": "nvidia/nemotron-3-super-120b-a12b:free"
+        },
+        {
+          "providerID": "openrouter",
+          "modelID": "nvidia/nemotron-3-super-120b-a12b:free"
+        }
+      ]
     }
   ],
   "model": "fallback/a103f2b7-43fc-4ce3-9e8d-7dce786c0c31",
