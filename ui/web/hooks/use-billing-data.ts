@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { opendora, type Session } from "@/lib/opendora"
+import { opendora, type TokenUsageRecord } from "@/lib/opendora"
 
 export type TimeRange = "7d" | "30d" | "90d" | "12m"
 
@@ -21,13 +21,26 @@ export type TopSession = {
   tokens: number
 }
 
+export type ProviderRow = {
+  providerID: string
+  modelID: string
+  calls: number
+  totalTokens: number
+  costUsd: number
+  estimatedCostUsd: number
+  isFree: boolean
+}
+
 export type BillingData = {
-  sessions: Session[]
+  records: TokenUsageRecord[]
   buckets: BucketData[]
   distribution: TokenDistribution[]
   topSessions: TopSession[]
+  providerRows: ProviderRow[]
   totalTokens: number
   totalSessions: number
+  totalCostUsd: number
+  totalEstimatedCostUsd: number
   avgDailyTokens: number
   weekOverWeek: number
   isLoading: boolean
@@ -57,72 +70,56 @@ function bucketLabel(ts: number, range: TimeRange): string {
   return d.toLocaleDateString("en", { month: "short" })
 }
 
-function sessionTokens(s: Session): number {
-  return (s.tokens?.input ?? 0) + (s.tokens?.output ?? 0) + (s.tokens?.cacheRead ?? 0) + (s.tokens?.cacheWrite ?? 0)
-}
-
-function aggregate(sessions: Session[], range: TimeRange): BucketData[] {
-  const now = Date.now()
-  const start = now - getRangeMs(range)
-  const map = new Map<string, BucketData>()
-  for (const s of sessions) {
-    if (s.time.created < start) continue
-    const key = bucketKey(s.time.created, range)
-    const label = bucketLabel(s.time.created, range)
-    const existing = map.get(key)
-    if (existing) {
-      existing.tokens += sessionTokens(s)
-      existing.sessions += 1
-    } else {
-      map.set(key, { date: label, tokens: sessionTokens(s), sessions: 1 })
-    }
-  }
-  return Array.from(map.values())
+function recordTokens(r: TokenUsageRecord): number {
+  return r.input_tokens + r.output_tokens + r.cache_read_tokens + r.cache_write_tokens
 }
 
 export function useBillingData(range: TimeRange): BillingData {
-  const [sessions, setSessions] = useState<Session[]>([])
+  const [records, setRecords] = useState<TokenUsageRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     setIsLoading(true)
     setError(null)
-    opendora.session
-      .list()
-      .then(setSessions)
+    opendora.usage
+      .records(range)
+      .then((r) => setRecords(r.records))
       .catch((e) => setError(e instanceof Error ? e.message : String(e)))
       .finally(() => setIsLoading(false))
-  }, [])
+  }, [range])
 
   return useMemo(() => {
     const now = Date.now()
-    const rangeMs = getRangeMs(range)
     const weekMs = 7 * 24 * 60 * 60 * 1000
+    const days = getRangeMs(range) / (24 * 60 * 60 * 1000)
 
-    const inRange = sessions.filter((s) => s.time.created >= now - rangeMs && s.tokens != null)
-
-    const totalTokens = inRange.reduce((sum, s) => sum + sessionTokens(s), 0)
-    const totalSessions = inRange.length
-    const days = rangeMs / (24 * 60 * 60 * 1000)
+    // Totals
+    const totalTokens = records.reduce((sum, r) => sum + recordTokens(r), 0)
+    const uniqueSessions = new Set(records.map((r) => r.session_id).filter(Boolean))
+    const totalSessions = uniqueSessions.size
     const avgDailyTokens = days > 0 ? totalTokens / days : 0
+    const totalCostUsd = records.reduce((sum, r) => sum + (r.cost_usd ?? 0), 0)
+    const totalEstimatedCostUsd = records.reduce((sum, r) => sum + (r.estimated_cost_usd ?? 0), 0)
 
-    const currentWeekTokens = sessions
-      .filter((s) => s.time.created >= now - weekMs && s.tokens != null)
-      .reduce((sum, s) => sum + (s.tokens?.input ?? 0) + (s.tokens?.output ?? 0), 0)
-    const prevWeekTokens = sessions
-      .filter((s) => {
-        const age = now - s.time.created
-        return age >= weekMs && age < weekMs * 2 && s.tokens != null
+    // Week-over-week (uses already-filtered records + previous week outside range)
+    const currentWeekTokens = records
+      .filter((r) => r.time >= now - weekMs)
+      .reduce((sum, r) => sum + r.input_tokens + r.output_tokens, 0)
+    // For prev-week we can approximate from current records older than 7 days
+    const prevWeekTokens = records
+      .filter((r) => {
+        const age = now - r.time
+        return age >= weekMs && age < weekMs * 2
       })
-      .reduce((sum, s) => sum + (s.tokens?.input ?? 0) + (s.tokens?.output ?? 0), 0)
+      .reduce((sum, r) => sum + r.input_tokens + r.output_tokens, 0)
     const weekOverWeek = prevWeekTokens > 0 ? ((currentWeekTokens - prevWeekTokens) / prevWeekTokens) * 100 : 0
 
-    const totalInput = inRange.reduce((s, sess) => s + (sess.tokens?.input ?? 0), 0)
-    const totalOutput = inRange.reduce((s, sess) => s + (sess.tokens?.output ?? 0), 0)
-    const totalCacheRead = inRange.reduce((s, sess) => s + (sess.tokens?.cacheRead ?? 0), 0)
-    const totalCacheWrite = inRange.reduce((s, sess) => s + (sess.tokens?.cacheWrite ?? 0), 0)
-
+    // Token distribution
+    const totalInput = records.reduce((s, r) => s + r.input_tokens, 0)
+    const totalOutput = records.reduce((s, r) => s + r.output_tokens, 0)
+    const totalCacheRead = records.reduce((s, r) => s + r.cache_read_tokens, 0)
+    const totalCacheWrite = records.reduce((s, r) => s + r.cache_write_tokens, 0)
     const distribution: TokenDistribution[] = [
       { name: "Input", value: totalInput },
       { name: "Output", value: totalOutput },
@@ -130,20 +127,77 @@ export function useBillingData(range: TimeRange): BillingData {
       { name: "Cache Write", value: totalCacheWrite },
     ].filter((d) => d.value > 0)
 
-    const topSessions: TopSession[] = [...inRange]
-      .sort((a, b) => {
-        const ta = (a.tokens?.input ?? 0) + (a.tokens?.output ?? 0)
-        const tb = (b.tokens?.input ?? 0) + (b.tokens?.output ?? 0)
-        return tb - ta
-      })
+    // Buckets (tokens + session count per period)
+    const bucketMap = new Map<string, BucketData>()
+    const sessionPerBucket = new Map<string, Set<string>>()
+    for (const r of records) {
+      const key = bucketKey(r.time, range)
+      const label = bucketLabel(r.time, range)
+      const existing = bucketMap.get(key)
+      if (existing) {
+        existing.tokens += recordTokens(r)
+      } else {
+        bucketMap.set(key, { date: label, tokens: recordTokens(r), sessions: 0 })
+      }
+      if (r.session_id) {
+        if (!sessionPerBucket.has(key)) sessionPerBucket.set(key, new Set())
+        sessionPerBucket.get(key)!.add(r.session_id)
+      }
+    }
+    for (const [key, data] of bucketMap) {
+      data.sessions = sessionPerBucket.get(key)?.size ?? 0
+    }
+    const buckets = Array.from(bucketMap.values())
+
+    // Top sessions by token volume
+    const sessionTokenMap = new Map<string, number>()
+    for (const r of records) {
+      if (!r.session_id) continue
+      sessionTokenMap.set(r.session_id, (sessionTokenMap.get(r.session_id) ?? 0) + r.input_tokens + r.output_tokens)
+    }
+    const topSessions: TopSession[] = Array.from(sessionTokenMap.entries())
+      .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
-      .map((s) => ({
-        name: (s.title ?? s.id).slice(0, 32),
-        tokens: (s.tokens?.input ?? 0) + (s.tokens?.output ?? 0),
-      }))
+      .map(([id, tokens]) => ({ name: id.slice(-12), tokens }))
 
-    const buckets = aggregate(sessions, range)
+    // Provider breakdown
+    const providerMap = new Map<string, ProviderRow>()
+    for (const r of records) {
+      const key = `${r.provider_id}::${r.model_id}`
+      const existing = providerMap.get(key)
+      if (existing) {
+        existing.calls += 1
+        existing.totalTokens += recordTokens(r)
+        existing.costUsd += r.cost_usd ?? 0
+        existing.estimatedCostUsd += r.estimated_cost_usd ?? 0
+      } else {
+        providerMap.set(key, {
+          providerID: r.provider_id,
+          modelID: r.model_id,
+          calls: 1,
+          totalTokens: recordTokens(r),
+          costUsd: r.cost_usd ?? 0,
+          estimatedCostUsd: r.estimated_cost_usd ?? 0,
+          isFree: r.is_free,
+        })
+      }
+    }
+    const providerRows = Array.from(providerMap.values()).sort((a, b) => b.totalTokens - a.totalTokens)
 
-    return { sessions, buckets, distribution, topSessions, totalTokens, totalSessions, avgDailyTokens, weekOverWeek, isLoading, error }
-  }, [sessions, range, isLoading, error])
+    return {
+      records,
+      buckets,
+      distribution,
+      topSessions,
+      providerRows,
+      totalTokens,
+      totalSessions,
+      totalCostUsd,
+      totalEstimatedCostUsd,
+      avgDailyTokens,
+      weekOverWeek,
+      isLoading,
+      error,
+    }
+  }, [records, range, isLoading, error])
 }

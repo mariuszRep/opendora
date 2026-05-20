@@ -1,35 +1,40 @@
 ---
 name: product-verify
-description: Use for browser-first, Playwright-heavy verification of user-visible behavior, regressions, and runtime issues with strict verdict output.
+description: Use for browser-first verification against the approved plan: validate implemented UI flows/pages with Playwright-focused evidence and strict verdict output.
 origin: opendora
 ---
 
 # Product Verify
 
-Use this skill when user-visible behavior must be validated through realistic browser flows.
+Use this skill when user-visible behavior must be verified against the plan.
 
 ## Objective
-- Verify UX-critical behavior using Playwright-first evidence when available.
+- Compare planned UI/flow outcomes with real browser behavior.
+- Produce observable evidence for pass/fail decisions.
+
+## Required Inputs
+- `product-plan` (expected pages/flows/outcomes)
+- `product-test` summary
+- Runtime access details
 
 ## Steps
-1. Confirm runtime is available and reachable.
-2. Execute core user journeys (navigation, auth/state transitions, forms, error paths).
-3. Check console/network for regressions.
-4. Run at least one adversarial UI probe (invalid input, interrupted flow, reload/state persistence, repeated action).
-5. Report evidence and strict verdict.
+1. Extract planned pages, journeys, and expected outcomes from `product-plan`.
+2. Ensure browser verification capability is available (load `playwright-browser` when needed).
+3. Execute planned journeys and key negative flows.
+4. Validate visible state, console/network health, and persistence/regression points.
+5. Report per-scenario evidence and verdict.
 
 ## Rules
-- Prefer Playwright/browser tool evidence over assumptions.
-- If Playwright is unavailable, state limitation and run best-possible runtime verification.
-- No PASS without observable evidence.
+- Verification scope is plan-driven; call out out-of-plan observations separately.
+- No PASS without observable browser/runtime evidence.
+- If Playwright/browser tooling is unavailable, state limitation and return PARTIAL unless alternate runtime proof is sufficient.
 
 ## Output Contract
-### Check: <scenario>
-**Tool/Command run:**
-  <exact action>
-**Evidence observed:**
-  <observable result>
-**Result:** PASS | FAIL
-
-Final line (required):
-VERDICT: PASS | FAIL | PARTIAL
+- Plan scenarios verified
+- Per-scenario evidence:
+  - Scenario
+  - Tool/Command run
+  - Evidence observed
+  - Result
+- Gaps between plan and implementation
+- Final line: `VERDICT: PASS | FAIL | PARTIAL`

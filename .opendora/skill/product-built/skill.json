@@ -3,6 +3,9 @@
     "read",
     "glob",
     "grep",
-    "bash"
+    "edit",
+    "write",
+    "bash",
+    "codesearch"
   ]
 }

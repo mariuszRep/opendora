@@ -1,31 +1,37 @@
 ---
 name: product-built
-description: Use to execute approved plans with minimal, convention-aligned code changes and explicit verification handoff.
+description: Use to implement approved plans end-to-end: create branch, apply code changes, commit coherent increments, and prepare a traceable handoff for testing.
 origin: opendora
 ---
 
 # Product Built
 
-Use this skill when plan approval exists and code changes are authorized.
+Use this skill when `product-plan` is READY and implementation is authorized.
 
 ## Objective
-- Implement only the approved scope with minimal, reviewable diffs.
+- Build the planned scope on an explicit branch.
+- Produce traceable commits that map to requirements and plan steps.
 
 ## Steps
-1. Reconfirm scope, non-goals, and affected files from plan.
-2. Implement changes incrementally and preserve established patterns.
-3. Validate locally with relevant checks (build/tests/lint/typecheck).
-4. Confirm no unintended scope expansion.
-5. Prepare structured handoff to test/verify.
+1. Confirm plan scope, non-goals, and acceptance criteria.
+2. Create/select working branch before code changes.
+3. Implement changes in focused increments by module/feature slice.
+4. Run targeted local checks after each meaningful increment.
+5. Commit in coherent units with clear why-focused messages.
+6. Produce implementation handoff for `product-test`.
 
-## Rules
-- No speculative features or opportunistic refactors.
-- Prefer small, auditable changes.
-- If uncertainty blocks correctness, stop and surface blocker.
+## Git/Commit Rules
+- Create a dedicated branch for the work (unless user specifies branch).
+- Do not commit unrelated changes.
+- Prefer multiple small logical commits over one opaque commit.
+- Each commit should map to one plan step or requirement slice.
+- Include commit list in handoff output.
 
 ## Output Contract
-- Scope implemented
-- Files changed (and why)
-- Checks run + outcomes
-- Known limitations/risks
-- Recommended next: `product-test` and/or `product-verify`
+- Branch name used/created
+- Scope implemented vs deferred
+- Files changed by area
+- Commit list (hash + message)
+- Checks run during implementation
+- Remaining risks
+- Next phase: `product-test`

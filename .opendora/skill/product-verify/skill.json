@@ -3,6 +3,8 @@
     "read",
     "glob",
     "grep",
-    "bash"
+    "bash",
+    "codesearch",
+    "skill_load"
   ]
 }

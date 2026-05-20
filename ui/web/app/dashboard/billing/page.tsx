@@ -37,11 +37,11 @@ import {
   Pie,
   Cell,
 } from "recharts"
-import { TrendingUpIcon, TrendingDownIcon, ActivityIcon, CalendarIcon, MessageSquareIcon, ShieldIcon } from "lucide-react"
+import { TrendingUpIcon, TrendingDownIcon, ActivityIcon, CalendarIcon, MessageSquareIcon, ShieldIcon, DollarSignIcon } from "lucide-react"
 import { useBillingData, type TimeRange } from "@/hooks/use-billing-data"
 import { ProviderUsagePanel } from "@/components/providers/provider-usage-panel"
-import type { Session } from "@/lib/opendora"
 
+// All chart colors come from the shadcn theme defined in globals.css
 const CHART_COLORS = [
   "var(--color-chart-1)",
   "var(--color-chart-2)",
@@ -51,47 +51,23 @@ const CHART_COLORS = [
 ]
 
 const TOOLTIP_STYLE = {
-  backgroundColor: "hsl(var(--card))",
-  border: "1px solid hsl(var(--border))",
-  borderRadius: "8px",
-  color: "hsl(var(--card-foreground))",
+  backgroundColor: "var(--color-card)",
+  border: "1px solid var(--color-border)",
+  borderRadius: "var(--radius-md)",
+  color: "var(--color-foreground)",
+  fontSize: "12px",
 }
 
 function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`
-  return String(n)
+  return String(Math.round(n))
 }
 
-type ModelCostRow = {
-  providerID: string
-  modelID: string
-  totalTokens: number
-  isFree: boolean
-}
-
-function buildCostBreakdown(sessions: Session[]): ModelCostRow[] {
-  const map = new Map<string, ModelCostRow>()
-  for (const s of sessions) {
-    if (!s.tokens || !s.model) continue
-    const parts = s.model.split(":")
-    const providerID = parts.length >= 2 ? parts[0] : "unknown"
-    const modelID = parts.length >= 2 ? parts.slice(1).join(":") : parts[0]
-    const key = `${providerID}:${modelID}`
-    const total = (s.tokens.input ?? 0) + (s.tokens.output ?? 0) + (s.tokens.cacheRead ?? 0) + (s.tokens.cacheWrite ?? 0)
-    const existing = map.get(key)
-    if (existing) {
-      existing.totalTokens += total
-    } else {
-      map.set(key, {
-        providerID,
-        modelID,
-        totalTokens: total,
-        isFree: providerID === "opencode" || providerID === "fallback",
-      })
-    }
-  }
-  return Array.from(map.values()).sort((a, b) => b.totalTokens - a.totalTokens)
+function formatCost(n: number): string {
+  if (n === 0) return "$0.00"
+  if (n < 0.01) return `$${n.toFixed(5)}`
+  return `$${n.toFixed(4)}`
 }
 
 export default function UsagePage() {
@@ -132,7 +108,7 @@ export default function UsagePage() {
             <h1 className="text-3xl font-bold">Usage</h1>
           </div>
           <p className="text-muted-foreground text-lg">
-            Token consumption across all sessions
+            Token consumption and costs across all sessions
           </p>
         </div>
 
@@ -172,7 +148,7 @@ export default function UsagePage() {
               ) : (
                 <>
                   <div className="text-2xl font-bold">{data.totalSessions}</div>
-                  <p className="text-xs text-muted-foreground mt-1">with token data</p>
+                  <p className="text-xs text-muted-foreground mt-1">unique sessions</p>
                 </>
               )}
             </CardContent>
@@ -233,7 +209,7 @@ export default function UsagePage() {
                   <div className="h-full w-full animate-pulse rounded bg-muted" />
                 ) : data.buckets.length === 0 ? (
                   <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                    No session data for this period
+                    No data for this period
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
@@ -244,15 +220,15 @@ export default function UsagePage() {
                           <stop offset="95%" style={{ stopColor: CHART_COLORS[0], stopOpacity: 0 }} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                       <XAxis
                         dataKey="date"
-                        tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                        tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
                         tickLine={false}
                         axisLine={false}
                       />
                       <YAxis
-                        tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                        tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={(v) => formatTokens(v)}
@@ -352,10 +328,10 @@ export default function UsagePage() {
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data.topSessions} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                       <XAxis
                         type="number"
-                        tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                        tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={(v) => formatTokens(v)}
@@ -363,10 +339,10 @@ export default function UsagePage() {
                       <YAxis
                         dataKey="name"
                         type="category"
-                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                        tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
                         tickLine={false}
                         axisLine={false}
-                        width={100}
+                        width={90}
                       />
                       <Tooltip
                         contentStyle={TOOLTIP_STYLE}
@@ -388,7 +364,7 @@ export default function UsagePage() {
             <CardDescription>Sessions created per period</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[250px]">
+            <div className="h-[220px]">
               {data.isLoading ? (
                 <div className="h-full w-full animate-pulse rounded bg-muted" />
               ) : data.buckets.length === 0 ? (
@@ -398,15 +374,15 @@ export default function UsagePage() {
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data.buckets}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                      tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
                       tickLine={false}
                       axisLine={false}
                     />
                     <YAxis
-                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                      tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
                       tickLine={false}
                       axisLine={false}
                       allowDecimals={false}
@@ -423,11 +399,16 @@ export default function UsagePage() {
           </CardContent>
         </Card>
 
-        {/* Provider breakdown */}
+        {/* Provider / model breakdown */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Provider Breakdown</CardTitle>
-            <CardDescription>Token consumption grouped by provider and model</CardDescription>
+            <div className="flex items-center gap-2">
+              <DollarSignIcon className="h-5 w-5 text-primary" />
+              <div>
+                <CardTitle>Provider Breakdown</CardTitle>
+                <CardDescription>Token consumption, costs, and call counts by provider and model</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {data.isLoading ? (
@@ -436,44 +417,51 @@ export default function UsagePage() {
                   <div key={i} className="h-8 animate-pulse rounded bg-muted" />
                 ))}
               </div>
-            ) : (() => {
-              const rows = buildCostBreakdown(data.sessions)
-              if (rows.length === 0) {
-                return (
-                  <p className="text-sm text-muted-foreground">No model data available for this period.</p>
-                )
-              }
-              return (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left text-xs text-muted-foreground">
-                        <th className="pb-2 pr-4 font-medium">Provider</th>
-                        <th className="pb-2 pr-4 font-medium">Model</th>
-                        <th className="pb-2 pr-4 font-medium text-right">Total Tokens</th>
-                        <th className="pb-2 font-medium text-right">Est. Cost</th>
+            ) : data.providerRows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No data available for this period.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs text-muted-foreground">
+                      <th className="pb-2 pr-4 font-medium">Provider</th>
+                      <th className="pb-2 pr-4 font-medium">Model</th>
+                      <th className="pb-2 pr-3 font-medium text-right">Calls</th>
+                      <th className="pb-2 pr-3 font-medium text-right">Tokens</th>
+                      <th className="pb-2 pr-3 font-medium text-right">Actual Cost</th>
+                      <th className="pb-2 font-medium text-right">Est. Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {data.providerRows.map((row) => (
+                      <tr key={`${row.providerID}::${row.modelID}`} className="hover:bg-muted/30 transition-colors">
+                        <td className="py-2 pr-4 font-mono text-xs text-muted-foreground">{row.providerID}</td>
+                        <td className="py-2 pr-4 font-medium">{row.modelID}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums text-muted-foreground">{row.calls}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums">{formatTokens(row.totalTokens)}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums">
+                          {row.isFree
+                            ? <span className="text-xs text-muted-foreground italic">free</span>
+                            : <span>{formatCost(row.costUsd)}</span>
+                          }
+                        </td>
+                        <td className="py-2 text-right tabular-nums text-muted-foreground">
+                          {row.estimatedCostUsd > 0 ? formatCost(row.estimatedCostUsd) : "—"}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {rows.map((row) => (
-                        <tr key={`${row.providerID}:${row.modelID}`} className="hover:bg-muted/30 transition-colors">
-                          <td className="py-2 pr-4 font-mono text-xs text-muted-foreground">{row.providerID}</td>
-                          <td className="py-2 pr-4 font-medium">{row.modelID}</td>
-                          <td className="py-2 pr-4 text-right tabular-nums">{formatTokens(row.totalTokens)}</td>
-                          <td className="py-2 text-right">
-                            {row.isFree ? (
-                              <span className="italic text-muted-foreground">free</span>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )
-            })()}
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-border font-medium">
+                      <td colSpan={3} className="pt-2 text-xs text-muted-foreground">Total</td>
+                      <td className="pt-2 text-right tabular-nums">{formatTokens(data.totalTokens)}</td>
+                      <td className="pt-2 text-right tabular-nums">{formatCost(data.totalCostUsd)}</td>
+                      <td className="pt-2 text-right tabular-nums text-muted-foreground">{formatCost(data.totalEstimatedCostUsd)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
 

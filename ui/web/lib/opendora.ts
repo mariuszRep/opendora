@@ -386,6 +386,25 @@ export type GeneratedAgent = {
   systemPrompt: string
 }
 
+export type TokenUsageRecord = {
+  id: string
+  time: number
+  session_id: string | null
+  agent_id: string | null
+  project_id: string | null
+  provider_id: string
+  model_id: string
+  purpose: "chat" | "title" | "compaction" | "schedule" | "tool" | "other"
+  input_tokens: number
+  output_tokens: number
+  cache_read_tokens: number
+  cache_write_tokens: number
+  reasoning_tokens: number
+  cost_usd: number | null
+  estimated_cost_usd: number | null
+  is_free: boolean
+}
+
 export type ModelUsageState = {
   updatedAt: number
   requests_limit?: number | null
@@ -716,6 +735,10 @@ export const opendora = {
     get: () => req<{ name: string; color: string }>("/user"),
     update: (patch: { name?: string; color?: string }) =>
       req<{ name: string; color: string }>("/user", { method: "PATCH", body: JSON.stringify(patch) }),
+  },
+  usage: {
+    records: (range: "7d" | "30d" | "90d" | "12m") =>
+      req<{ records: TokenUsageRecord[] }>(`/usage?range=${range}`),
   },
   general: {
     get: () =>

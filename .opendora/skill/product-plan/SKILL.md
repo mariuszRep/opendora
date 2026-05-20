@@ -1,35 +1,41 @@
 ---
 name: product-plan
-description: Use for read-only delivery planning to transform requirements and exploration findings into an ordered, testable implementation strategy.
+description: Use after setup/exploration to convert requirements and discovered system context into an ordered implementation plan with clear file targets, dependencies, and verification strategy.
 origin: opendora
 ---
 
 # Product Plan
 
-Use this skill when coding should not start until a concrete implementation plan exists.
+Use this skill after requirements and setup/exploration evidence are available, to design an executable delivery plan.
 
 ## READ-ONLY MODE
 Planning phase only. Do not modify files.
 
 ## Objective
-- Produce a stepwise implementation strategy aligned with architecture and constraints.
+- Transform requirements + workspace reality into a concrete build plan.
+
+## Inputs
+- Requirement artifacts (and `product-architecture` outputs when applicable)
+- `product-setup` and/or `product-explore` findings
 
 ## Steps
-1. Reconfirm requirements, non-goals, and acceptance checks.
-2. Revisit key exploration evidence and current project patterns.
-3. Design approach options and select one with explicit trade-offs.
-4. Define ordered implementation steps with dependencies.
-5. Define verification approach (what proves done).
+1. Reconfirm scope, non-goals, and acceptance criteria.
+2. Validate plan assumptions against setup/exploration evidence.
+3. Define implementation sequence by module/folder ownership.
+4. Identify extra dependencies, migrations, or preparatory tasks.
+5. Define verification strategy (test + verify criteria) and completion gates.
 
 ## Rules
-- Follow existing architecture unless deviation is justified.
-- Make trade-offs and risks explicit, not implicit.
-- Plan must be executable without reinterpretation.
+- Do not start implementation in this phase.
+- Make folder/module ownership explicit per planned step.
+- Include prerequisite tasks when setup/explore reveals gaps.
+- Keep plan directly executable by `product-built`.
 
 ## Output Contract
 - Plan Summary
-- Selected Approach + Why
-- Step-by-step Implementation Strategy
-- Critical Files for Implementation (3-7)
+- Ordered Implementation Steps (with file/module targets)
+- Dependency/Prerequisite Tasks
+- Critical Files for Implementation (3-10)
 - Risks + Mitigations
-- Verification Plan (commands/tests/user flows)
+- Verification Plan
+- Readiness for `product-built`: READY | BLOCKED

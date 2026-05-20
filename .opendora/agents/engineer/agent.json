@@ -32,23 +32,20 @@
     "workflow_run"
   ],
   "skills": [
-    "project-delivery",
-    "delivery-intake",
-    "delivery-session-handoff",
+    "product-orchestrator",
+    "product-setup",
+    "product-explore",
+    "product-plan",
+    "product-built",
+    "product-test",
+    "product-verify",
+    "product-architecture",
     "project-context",
-    "code-exploration",
-    "architecture-analysis",
-    "delivery-synthesis",
-    "delivery-implementation",
-    "review-gate",
-    "delivery-report",
-    "project-setup",
-    "impeccable",
-    "frontend-design-impeccable",
     "nextjs",
     "shadcn-ui",
     "vercel",
-    "playwright-browser"
+    "impeccable",
+    "product-report"
   ],
   "toolConfig": {
     "reply": {
