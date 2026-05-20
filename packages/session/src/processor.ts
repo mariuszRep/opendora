@@ -16,6 +16,7 @@ import { SessionStatus } from "./status.ts"
 import { Identifier } from "@opendora/util/id"
 import { LLM } from "./llm.ts"
 import { SessionEvents } from "./events.ts"
+import { TokenUsage } from "./token-usage.ts"
 
 // Inline iife helper
 function iife<T>(fn: () => T): T {
@@ -70,6 +71,7 @@ export namespace SessionProcessor {
           try {
             let currentText: MessageV2.TextPart | undefined
             let reasoningMap: Record<string, MessageV2.ReasoningPart> = {}
+            let capturedTokens = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0 }
 
             const stream = await LLM.stream(streamInput)
             for await (const value of stream.fullStream) {
@@ -290,6 +292,11 @@ export namespace SessionProcessor {
                   input.assistantMessage.finish = value.finishReason
                   input.assistantMessage.cost += usage.cost
                   input.assistantMessage.tokens = usage.tokens
+                  capturedTokens.input     += usage.tokens.input
+                  capturedTokens.output    += usage.tokens.output
+                  capturedTokens.cacheRead += usage.tokens.cache.read
+                  capturedTokens.cacheWrite+= usage.tokens.cache.write
+                  capturedTokens.reasoning += usage.tokens.reasoning
 
                   const snapshotSvc = getConfig().snapshot
                   const stepSnapshot = snapshotSvc ? await snapshotSvc.track() : undefined
@@ -397,6 +404,20 @@ export namespace SessionProcessor {
               }
               if (needsCompaction) break
             }
+            try {
+              const responseHeaders = (await stream.response.catch(() => null))?.headers
+              await TokenUsage.record({
+                sessionID:  input.sessionID,
+                agentID:    (input.assistantMessage as any).agent ?? undefined,
+                projectID:  getConfig().instance?.project?.id,
+                providerID: streamInput.model.providerID,
+                modelID:    streamInput.model.id,
+                purpose:    "chat",
+                tokens:     capturedTokens,
+                model:      streamInput.model,
+                headers:    responseHeaders ?? undefined,
+              })
+            } catch { /* never let token tracking break the main flow */ }
           } catch (e: any) {
             // Suppress AbortError — user-initiated cancellation is not an error
             if (e instanceof DOMException && e.name === "AbortError") {

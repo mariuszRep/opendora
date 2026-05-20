@@ -2108,6 +2108,18 @@ export namespace SessionPrompt {
       log.error("failed to generate title", { sessionID: input.session.id, error: err })
       return null
     })
+    result.usage.then(async (usage) => {
+      const { TokenUsage } = await import("./token-usage.ts")
+      await TokenUsage.record({
+        sessionID:  input.session.id,
+        providerID: model.providerID,
+        modelID:    model.id,
+        purpose:    "title",
+        tokens:     { input: usage.inputTokens ?? 0, output: usage.outputTokens ?? 0, cacheRead: usage.cachedInputTokens ?? 0, cacheWrite: 0, reasoning: 0 },
+        model,
+        headers:    (await result.response.catch(() => null))?.headers ?? undefined,
+      })
+    }).catch(() => {})
     
     if (text) {
       log.info("ensureTitle: generated text", { sessionID: input.session.id, text })

@@ -50,6 +50,17 @@ async function generateScheduleName(prompt: string): Promise<string | null> {
         { role: "user", content: `Generate a short title (3-7 words) for this scheduled task prompt:\n\n${prompt}` },
       ],
     })
+    result.usage.then(async (usage) => {
+      const { TokenUsage } = await import("@opendora/session/token-usage")
+      await TokenUsage.record({
+        providerID: model.providerID,
+        modelID:    model.id,
+        purpose:    "schedule",
+        tokens:     { input: usage.inputTokens ?? 0, output: usage.outputTokens ?? 0, cacheRead: usage.cachedInputTokens ?? 0, cacheWrite: 0, reasoning: 0 },
+        model,
+        headers:    (await result.response.catch(() => null))?.headers ?? undefined,
+      })
+    }).catch(() => {})
     const text = await result.text
     if (!text) return null
     const cleaned = text

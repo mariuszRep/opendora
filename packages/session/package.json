@@ -29,7 +29,9 @@
     "./llm":                    "./src/llm.ts",
     "./session":                "./src/session.ts",
     "./prompt":                 "./src/prompt.ts",
-    "./import":                 "./src/import/index.ts"
+    "./import":                 "./src/import/index.ts",
+    "./token-usage-sql":        "./src/token-usage.sql.ts",
+    "./token-usage":            "./src/token-usage.ts"
   },
   "devDependencies": {
     "@types/node": "catalog:",
