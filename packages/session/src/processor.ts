@@ -436,6 +436,19 @@ export namespace SessionProcessor {
             // switch slots immediately rather than retrying the same dead upstream.
             const statusCodeForFallback = (error as any)?.data?.statusCode as number | undefined
             const isProviderDown = [429, 502, 503].includes(statusCodeForFallback ?? 0)
+            if (statusCodeForFallback === 429) {
+              TokenUsage.record({
+                sessionID:  input.sessionID,
+                agentID:    (input.assistantMessage as any).agent ?? undefined,
+                projectID:  getConfig().instance?.project?.id,
+                providerID: streamInput.model.providerID,
+                modelID:    streamInput.model.id,
+                purpose:    "chat",
+                tokens:     capturedTokens,
+                model:      streamInput.model,
+                headers:    (error as any)?.data?.responseHeaders ?? undefined,
+              }).catch(() => {})
+            }
             if (retry !== undefined && !(input.fallbackGroupID && isProviderDown) && attempt < SessionRetry.MAX_RETRY_ATTEMPTS) {
               attempt++
               const delay = SessionRetry.delay(attempt, error.name === "APIError" ? (error as any) : undefined)
