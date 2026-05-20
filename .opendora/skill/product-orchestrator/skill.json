@@ -1,0 +1,9 @@
+{
+  "tools": [
+    "skill_load",
+    "read",
+    "glob",
+    "grep",
+    "bash"
+  ]
+}

@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
@@ -38,20 +37,31 @@ import {
   Pie,
   Cell,
 } from "recharts"
-import { TrendingUpIcon, TrendingDownIcon, ActivityIcon, CalendarIcon, MessageSquareIcon, RefreshCwIcon, ShieldIcon } from "lucide-react"
+import { TrendingUpIcon, TrendingDownIcon, ActivityIcon, CalendarIcon, MessageSquareIcon, ShieldIcon } from "lucide-react"
 import { useBillingData, type TimeRange } from "@/hooks/use-billing-data"
 import { ProviderUsagePanel } from "@/components/providers/provider-usage-panel"
 import type { Session } from "@/lib/opendora"
 
-const COLORS = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b"]
+const CHART_COLORS = [
+  "var(--color-chart-1)",
+  "var(--color-chart-2)",
+  "var(--color-chart-3)",
+  "var(--color-chart-4)",
+  "var(--color-chart-5)",
+]
+
+const TOOLTIP_STYLE = {
+  backgroundColor: "hsl(var(--card))",
+  border: "1px solid hsl(var(--border))",
+  borderRadius: "8px",
+  color: "hsl(var(--card-foreground))",
+}
 
 function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`
   return String(n)
 }
-
-// ─── Cost breakdown helpers ───────────────────────────────────────────────────
 
 type ModelCostRow = {
   providerID: string
@@ -64,7 +74,6 @@ function buildCostBreakdown(sessions: Session[]): ModelCostRow[] {
   const map = new Map<string, ModelCostRow>()
   for (const s of sessions) {
     if (!s.tokens || !s.model) continue
-    // s.model is a free-form string like "providerID:modelID" or just "modelID"
     const parts = s.model.split(":")
     const providerID = parts.length >= 2 ? parts[0] : "unknown"
     const modelID = parts.length >= 2 ? parts.slice(1).join(":") : parts[0]
@@ -78,7 +87,6 @@ function buildCostBreakdown(sessions: Session[]): ModelCostRow[] {
         providerID,
         modelID,
         totalTokens: total,
-        // Treat opencode / fallback providers as free
         isFree: providerID === "opencode" || providerID === "fallback",
       })
     }
@@ -86,13 +94,12 @@ function buildCostBreakdown(sessions: Session[]): ModelCostRow[] {
   return Array.from(map.values()).sort((a, b) => b.totalTokens - a.totalTokens)
 }
 
-export default function BillingPage() {
+export default function UsagePage() {
   const [timeRange, setTimeRange] = useState<TimeRange>("30d")
   const data = useBillingData(timeRange)
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="flex items-center justify-between border-b px-6 py-3 shrink-0">
         <Breadcrumb>
           <BreadcrumbList>
@@ -118,9 +125,7 @@ export default function BillingPage() {
         </Select>
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        {/* Page header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <ActivityIcon className="h-8 w-8 text-primary" />
@@ -131,7 +136,6 @@ export default function BillingPage() {
           </p>
         </div>
 
-        {/* Error state */}
         {data.error && (
           <div className="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {data.error}
@@ -142,9 +146,7 @@ export default function BillingPage() {
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Tokens
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Tokens</CardTitle>
               <ActivityIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -161,9 +163,7 @@ export default function BillingPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Sessions
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Sessions</CardTitle>
               <MessageSquareIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -180,9 +180,7 @@ export default function BillingPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Avg Daily
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Avg Daily</CardTitle>
               <CalendarIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -199,13 +197,11 @@ export default function BillingPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Week-over-Week
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Week-over-Week</CardTitle>
               {data.weekOverWeek >= 0 ? (
-                <TrendingUpIcon className="h-4 w-4 text-orange-500" />
+                <TrendingUpIcon className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <TrendingDownIcon className="h-4 w-4 text-green-500" />
+                <TrendingDownIcon className="h-4 w-4 text-muted-foreground" />
               )}
             </CardHeader>
             <CardContent>
@@ -213,7 +209,7 @@ export default function BillingPage() {
                 <div className="h-8 w-20 animate-pulse rounded bg-muted" />
               ) : (
                 <>
-                  <div className={`text-2xl font-bold ${data.weekOverWeek >= 0 ? "text-orange-500" : "text-green-500"}`}>
+                  <div className="text-2xl font-bold">
                     {data.weekOverWeek >= 0 ? "+" : ""}{data.weekOverWeek.toFixed(1)}%
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">vs previous week</p>
@@ -244,29 +240,25 @@ export default function BillingPage() {
                     <AreaChart data={data.buckets}>
                       <defs>
                         <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                          <stop offset="5%" style={{ stopColor: CHART_COLORS[0], stopOpacity: 0.3 }} />
+                          <stop offset="95%" style={{ stopColor: CHART_COLORS[0], stopOpacity: 0 }} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                       <XAxis
                         dataKey="date"
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
                         tickLine={false}
                         axisLine={false}
                       />
                       <YAxis
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={(v) => formatTokens(v)}
                       />
                       <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "8px",
-                        }}
+                        contentStyle={TOOLTIP_STYLE}
                         formatter={(value: number, name: string) => [
                           name === "tokens" ? formatTokens(value) : value,
                           name === "tokens" ? "Tokens" : "Sessions",
@@ -275,7 +267,7 @@ export default function BillingPage() {
                       <Area
                         type="monotone"
                         dataKey="tokens"
-                        stroke="#3b82f6"
+                        stroke={CHART_COLORS[0]}
                         fillOpacity={1}
                         fill="url(#colorTokens)"
                         strokeWidth={2}
@@ -314,15 +306,11 @@ export default function BillingPage() {
                         dataKey="value"
                       >
                         {data.distribution.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                         ))}
                       </Pie>
                       <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "8px",
-                        }}
+                        contentStyle={TOOLTIP_STYLE}
                         formatter={(value: number) => [formatTokens(value), "Tokens"]}
                       />
                     </PieChart>
@@ -335,7 +323,7 @@ export default function BillingPage() {
                     <div key={item.name} className="flex items-center gap-2">
                       <div
                         className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
                       />
                       <span className="text-sm text-muted-foreground">
                         {item.name}: {formatTokens(item.value)}
@@ -364,10 +352,10 @@ export default function BillingPage() {
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data.topSessions} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                       <XAxis
                         type="number"
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={(v) => formatTokens(v)}
@@ -375,20 +363,16 @@ export default function BillingPage() {
                       <YAxis
                         dataKey="name"
                         type="category"
-                        tick={{ fontSize: 11 }}
+                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                         tickLine={false}
                         axisLine={false}
                         width={100}
                       />
                       <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "8px",
-                        }}
+                        contentStyle={TOOLTIP_STYLE}
                         formatter={(value: number) => [formatTokens(value), "Tokens"]}
                       />
-                      <Bar dataKey="tokens" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="tokens" fill={CHART_COLORS[1]} radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -397,8 +381,8 @@ export default function BillingPage() {
           </Card>
         </div>
 
-        {/* Session activity line chart */}
-        <Card>
+        {/* Session activity */}
+        <Card className="mb-6">
           <CardHeader>
             <CardTitle>Session Activity</CardTitle>
             <CardDescription>Sessions created per period</CardDescription>
@@ -414,28 +398,24 @@ export default function BillingPage() {
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data.buckets}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
                       tickLine={false}
                       axisLine={false}
                     />
                     <YAxis
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
                       tickLine={false}
                       axisLine={false}
                       allowDecimals={false}
                     />
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
+                      contentStyle={TOOLTIP_STYLE}
                       formatter={(value: number) => [value, "Sessions"]}
                     />
-                    <Bar dataKey="sessions" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="sessions" fill={CHART_COLORS[2]} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -443,10 +423,10 @@ export default function BillingPage() {
           </CardContent>
         </Card>
 
-        {/* Provider Cost Breakdown */}
-        <Card className="mt-6">
+        {/* Provider breakdown */}
+        <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Provider Cost Breakdown</CardTitle>
+            <CardTitle>Provider Breakdown</CardTitle>
             <CardDescription>Token consumption grouped by provider and model</CardDescription>
           </CardHeader>
           <CardContent>
@@ -497,8 +477,8 @@ export default function BillingPage() {
           </CardContent>
         </Card>
 
-        {/* Quota Status */}
-        <Card className="mt-6">
+        {/* Quota status */}
+        <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <ShieldIcon className="h-5 w-5 text-primary" />

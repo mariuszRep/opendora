@@ -3,8 +3,8 @@
   "description": "General-purpose web research specialist for discovery, source verification, and concise synthesis from current web information.",
   "mode": "worker",
   "model": {
-    "modelID": "a103f2b7-43fc-4ce3-9e8d-7dce786c0c31",
-    "providerID": "fallback"
+    "modelID": "minimax-m2.5-free",
+    "providerID": "opencode"
   },
   "temperature": 0.3,
   "steps": 60,

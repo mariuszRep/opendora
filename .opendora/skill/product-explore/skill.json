@@ -1,0 +1,8 @@
+{
+  "tools": [
+    "read",
+    "glob",
+    "grep",
+    "bash"
+  ]
+}
