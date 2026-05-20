@@ -10,7 +10,8 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import type { LanguageModelUsage } from "ai";
 import type { ComponentProps } from "react";
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useProviderUsage } from "@/hooks/use-provider-usage";
 import { getUsage } from "tokenlens";
 
 const PERCENT_MAX = 100;
@@ -26,6 +27,7 @@ interface ContextSchema {
   maxTokens: number;
   usage?: LanguageModelUsage;
   modelId?: ModelId;
+  providerID?: string;
 }
 
 const ContextContext = createContext<ContextSchema | null>(null);
@@ -47,11 +49,12 @@ export const Context = ({
   maxTokens,
   usage,
   modelId,
+  providerID,
   ...props
 }: ContextProps) => {
   const contextValue = useMemo(
-    () => ({ maxTokens, modelId, usage, usedTokens }),
-    [maxTokens, modelId, usage, usedTokens]
+    () => ({ maxTokens, modelId, providerID, usage, usedTokens }),
+    [maxTokens, modelId, providerID, usage, usedTokens]
   );
 
   return (
@@ -404,6 +407,115 @@ export const ContextCacheUsage = ({
     >
       <span className="text-muted-foreground">Cache</span>
       <TokensWithCost costText={cacheCostText} tokens={cacheTokens} />
+    </div>
+  );
+};
+
+// ─── Quota usage section in the hover card ────────────────────────────────────
+
+function formatCountdownShort(resetAt: number | null | undefined): string | null {
+  if (resetAt == null) return null;
+  const diffMs = resetAt - Date.now();
+  if (diffMs <= 0) return "resetting…";
+  const totalSecs = Math.ceil(diffMs / 1000);
+  const mins = Math.floor(totalSecs / 60);
+  const secs = totalSecs % 60;
+  return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+}
+
+export type ContextQuotaUsageProps = ComponentProps<"div">;
+
+export const ContextQuotaUsage = ({
+  className,
+  ...props
+}: ContextQuotaUsageProps) => {
+  const { modelId, providerID } = useContextValue();
+  const { data } = useProviderUsage();
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!modelId || !providerID) return null;
+
+  const providerState = data[providerID];
+  if (!providerState) return null;
+
+  const state = providerState.models[modelId];
+  if (!state) return null;
+
+  const hasReqLimit = state.requests_limit != null && state.requests_limit > 0;
+  const hasTokLimit = state.tokens_limit != null && state.tokens_limit > 0;
+  const hasRemaining =
+    state.requests_remaining != null || state.tokens_remaining != null;
+
+  if (!hasReqLimit && !hasTokLimit && !hasRemaining) return null;
+
+  const reqResetIn = formatCountdownShort(state.requests_reset_at);
+  const tokResetIn = formatCountdownShort(state.tokens_reset_at);
+  const countdown = reqResetIn ?? tokResetIn;
+
+  return (
+    <div
+      className={cn("space-y-1.5 text-xs", className)}
+      {...props}
+    >
+      <div className="flex items-center justify-between text-muted-foreground">
+        <span className="font-medium">Rate limit</span>
+        {countdown && (
+          <span className="tabular-nums text-[10px]">resets in {countdown}</span>
+        )}
+      </div>
+
+      {/* Requests */}
+      {hasReqLimit ? (
+        <div className="space-y-0.5">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span>Requests</span>
+            <span className="tabular-nums">
+              {state.requests_used ?? 0} / {state.requests_limit}
+            </span>
+          </div>
+          <Progress
+            value={Math.min(
+              100,
+              ((state.requests_used ?? 0) / state.requests_limit!) * 100
+            )}
+            className="h-1"
+          />
+        </div>
+      ) : state.requests_remaining != null ? (
+        <div className="flex items-center justify-between text-muted-foreground">
+          <span>Requests remaining</span>
+          <span className="tabular-nums">{state.requests_remaining}</span>
+        </div>
+      ) : null}
+
+      {/* Tokens */}
+      {hasTokLimit ? (
+        <div className="space-y-0.5">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span>Tokens</span>
+            <span className="tabular-nums">
+              {state.tokens_used ?? 0} / {state.tokens_limit}
+            </span>
+          </div>
+          <Progress
+            value={Math.min(
+              100,
+              ((state.tokens_used ?? 0) / state.tokens_limit!) * 100
+            )}
+            className="h-1"
+          />
+        </div>
+      ) : state.tokens_remaining != null ? (
+        <div className="flex items-center justify-between text-muted-foreground">
+          <span>Tokens remaining</span>
+          <span className="tabular-nums">{state.tokens_remaining}</span>
+        </div>
+      ) : null}
     </div>
   );
 };

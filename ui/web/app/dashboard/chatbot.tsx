@@ -74,6 +74,7 @@ import {
   ContextContentHeader,
   ContextInputUsage,
   ContextOutputUsage,
+  ContextQuotaUsage,
   ContextReasoningUsage,
   ContextTrigger,
 } from "@/components/ai-elements/context"
@@ -1892,6 +1893,7 @@ export const Chatbot = () => {
                       }
                     }
                     modelId={selectedModel.modelID}
+                    providerID={selectedModel.providerID}
                   >
                     <ContextTrigger />
                     <ContextContent>
@@ -1901,6 +1903,7 @@ export const Chatbot = () => {
                         <ContextOutputUsage />
                         <ContextReasoningUsage />
                         <ContextCacheUsage />
+                        <ContextQuotaUsage className="mt-2 pt-2 border-t border-border/50" />
                       </ContextContentBody>
                       <ContextContentFooter />
                     </ContextContent>

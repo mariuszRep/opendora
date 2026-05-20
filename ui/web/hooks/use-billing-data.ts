@@ -22,6 +22,7 @@ export type TopSession = {
 }
 
 export type BillingData = {
+  sessions: Session[]
   buckets: BucketData[]
   distribution: TokenDistribution[]
   topSessions: TopSession[]
@@ -143,6 +144,6 @@ export function useBillingData(range: TimeRange): BillingData {
 
     const buckets = aggregate(sessions, range)
 
-    return { buckets, distribution, topSessions, totalTokens, totalSessions, avgDailyTokens, weekOverWeek, isLoading, error }
+    return { sessions, buckets, distribution, topSessions, totalTokens, totalSessions, avgDailyTokens, weekOverWeek, isLoading, error }
   }, [sessions, range, isLoading, error])
 }

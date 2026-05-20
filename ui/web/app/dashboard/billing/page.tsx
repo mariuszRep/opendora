@@ -38,8 +38,10 @@ import {
   Pie,
   Cell,
 } from "recharts"
-import { TrendingUpIcon, TrendingDownIcon, ActivityIcon, CalendarIcon, MessageSquareIcon, RefreshCwIcon } from "lucide-react"
+import { TrendingUpIcon, TrendingDownIcon, ActivityIcon, CalendarIcon, MessageSquareIcon, RefreshCwIcon, ShieldIcon } from "lucide-react"
 import { useBillingData, type TimeRange } from "@/hooks/use-billing-data"
+import { ProviderUsagePanel } from "@/components/providers/provider-usage-panel"
+import type { Session } from "@/lib/opendora"
 
 const COLORS = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b"]
 
@@ -47,6 +49,41 @@ function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`
   return String(n)
+}
+
+// ─── Cost breakdown helpers ───────────────────────────────────────────────────
+
+type ModelCostRow = {
+  providerID: string
+  modelID: string
+  totalTokens: number
+  isFree: boolean
+}
+
+function buildCostBreakdown(sessions: Session[]): ModelCostRow[] {
+  const map = new Map<string, ModelCostRow>()
+  for (const s of sessions) {
+    if (!s.tokens || !s.model) continue
+    // s.model is a free-form string like "providerID:modelID" or just "modelID"
+    const parts = s.model.split(":")
+    const providerID = parts.length >= 2 ? parts[0] : "unknown"
+    const modelID = parts.length >= 2 ? parts.slice(1).join(":") : parts[0]
+    const key = `${providerID}:${modelID}`
+    const total = (s.tokens.input ?? 0) + (s.tokens.output ?? 0) + (s.tokens.cacheRead ?? 0) + (s.tokens.cacheWrite ?? 0)
+    const existing = map.get(key)
+    if (existing) {
+      existing.totalTokens += total
+    } else {
+      map.set(key, {
+        providerID,
+        modelID,
+        totalTokens: total,
+        // Treat opencode / fallback providers as free
+        isFree: providerID === "opencode" || providerID === "fallback",
+      })
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => b.totalTokens - a.totalTokens)
 }
 
 export default function BillingPage() {
@@ -403,6 +440,76 @@ export default function BillingPage() {
                 </ResponsiveContainer>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Provider Cost Breakdown */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Provider Cost Breakdown</CardTitle>
+            <CardDescription>Token consumption grouped by provider and model</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data.isLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-8 animate-pulse rounded bg-muted" />
+                ))}
+              </div>
+            ) : (() => {
+              const rows = buildCostBreakdown(data.sessions)
+              if (rows.length === 0) {
+                return (
+                  <p className="text-sm text-muted-foreground">No model data available for this period.</p>
+                )
+              }
+              return (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-xs text-muted-foreground">
+                        <th className="pb-2 pr-4 font-medium">Provider</th>
+                        <th className="pb-2 pr-4 font-medium">Model</th>
+                        <th className="pb-2 pr-4 font-medium text-right">Total Tokens</th>
+                        <th className="pb-2 font-medium text-right">Est. Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {rows.map((row) => (
+                        <tr key={`${row.providerID}:${row.modelID}`} className="hover:bg-muted/30 transition-colors">
+                          <td className="py-2 pr-4 font-mono text-xs text-muted-foreground">{row.providerID}</td>
+                          <td className="py-2 pr-4 font-medium">{row.modelID}</td>
+                          <td className="py-2 pr-4 text-right tabular-nums">{formatTokens(row.totalTokens)}</td>
+                          <td className="py-2 text-right">
+                            {row.isFree ? (
+                              <span className="italic text-muted-foreground">free</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            })()}
+          </CardContent>
+        </Card>
+
+        {/* Quota Status */}
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ShieldIcon className="h-5 w-5 text-primary" />
+              <div>
+                <CardTitle>Quota Status</CardTitle>
+                <CardDescription>Real-time rate-limit windows per provider</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ProviderUsagePanel />
           </CardContent>
         </Card>
       </div>

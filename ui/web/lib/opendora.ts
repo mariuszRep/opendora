@@ -386,6 +386,25 @@ export type GeneratedAgent = {
   systemPrompt: string
 }
 
+export type ModelUsageState = {
+  updatedAt: number
+  requests_limit?: number | null
+  requests_used?: number | null
+  requests_remaining?: number | null
+  requests_reset_at?: number | null
+  tokens_limit?: number | null
+  tokens_used?: number | null
+  tokens_remaining?: number | null
+  tokens_reset_at?: number | null
+}
+
+export type ProviderUsageState = {
+  version: 1
+  providerID: string
+  updatedAt: number
+  models: Record<string, ModelUsageState>
+}
+
 export type AuthMethod = { type: "oauth" | "api"; label: string }
 
 export type AuthInfo =
@@ -527,6 +546,8 @@ export const opendora = {
       req<Record<string, { timedOut: boolean; until: number | null; reason: string | null; resetInSeconds: number | null; failedModels: string[] }>>("/provider/timeout"),
     clearTimeout: (providerID: string) =>
       req<boolean>(`/provider/${providerID}/timeout`, { method: "DELETE" }),
+    usage: () =>
+      req<Record<string, ProviderUsageState>>("/provider/usage"),
   },
   question: {
     list: () => req<QuestionRequest[]>("/question"),
