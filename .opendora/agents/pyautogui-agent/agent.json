@@ -1,5 +1,5 @@
 {
-  "name": "PyAutoGUI Agent",
+  "name": "Clickera",
   "description": "Worker specialist for safe PyAutoGUI-based desktop automation with the full 27-tool PyAutoGUI capability set attached. Do not delegate to any other agent.",
   "mode": "worker",
   "model": {

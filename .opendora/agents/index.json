@@ -79,7 +79,7 @@
     },
     {
       "id": "pyautogui-agent",
-      "name": "PyAutoGUI Agent",
+      "name": "Clickera",
       "mode": "worker"
     }
   ]

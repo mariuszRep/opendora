@@ -1,7 +1,7 @@
 ---
 name: requirements
 description: Conditional skill for unclear, incomplete, or risky requests. Uses iterative one-question-at-a-time fact-finding to reduce bias and remove unknowns. Produces concise readiness outcome for handoff. Enforces VISION.md sync gate and strict mismatch block before implementation. Applies to all artifact types including projects, agents, skills, and tools.
-last_updated: 2026-05-03T12:00:00Z
+last_updated: 2026-05-20T00:00:00Z
 ---
 
 # Requirements
@@ -87,13 +87,23 @@ Skip this skill when:
 
 ### Core Pattern
 
-1. **Identify the single most important blocker** - problem, scope, constraints, or acceptance criteria
-2. **Ask one targeted question** using `question` tool
-3. **Wait for reply** - do not assume or answer your own question
-4. **Adapt next question** based on the answer
-5. **Repeat until** sufficient clarity for delivery or clear blocker emerges
+1. **Ask an open idea-first question** and let the user brain-dump intent.
+2. **Lock intent**: restate exact build goal and expected outcome in one sentence.
+3. **Ask for explicit confirmation** ("Did I get this right?").
+4. **If corrected, loop steps 2-3** until confirmed.
+5. **Ask an exhaust check**: "Anything else important before I ask specific questions?"
+6. **Ask one targeted question** at a time to close remaining blockers.
+7. **Repeat** until sufficient clarity for delivery or clear blocker emerges.
 
 ### Question Strategy
+
+#### Idea-First Opening
+
+The FIRST question in any elicitation must ask the user to describe what they are trying to achieve/build/improve. Do not ask platform, repo, feature, or solution-framing questions before understanding the user's goal.
+
+**Example first question:** "What are you trying to build, improve, or achieve?"
+
+Only after the user describes their intent should you ask clarifying questions about implementation details, constraints, or scope.
 
 Focus on removing the highest-impact unknown:
 
@@ -104,6 +114,16 @@ Focus on removing the highest-impact unknown:
 5. What's out of scope? (boundaries)
 
 Ask one at a time. Never bundle. Never answer your own question.
+
+**Intent Lock Step:** After any ambiguity or correction, confirm the exact goal before moving forward. Restate what you understand the user wants to build and achieve, then ask for explicit confirmation.
+
+**Example confirmation question:** "To confirm, you want to build X and achieve Y, right?"
+
+**Exhaust Check:** After intent is confirmed, ask the user if there's anything else important before you ask specific implementation questions.
+
+**Example exhaust check:** "Anything else important before I ask specific questions?"
+
+**Rule:** Do not ask platform, repo, or feature solution-shaping questions until intent is confirmed.
 
 ### Bias Reduction
 

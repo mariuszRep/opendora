@@ -16,3 +16,17 @@ Post-failure recovery used extra discovery calls (`session_tree`, `session_searc
 _Context: ses_218e3a761ffeRvZBO9vJmeZU5N_
 
 ---
+### 2026-05-20 05:27:29 UTC [ADVISORY]
+
+Requirements elicitation started with implementation placement/platform questions before asking user to describe idea/goal. This biases discovery and can miss intent; should enforce idea-first opener in requirements flow.
+
+_Context: ses_1bc31f77dffeJiRNlO71N17CEZ_
+
+---
+### 2026-05-20 05:28:48 UTC [ADVISORY]
+
+When using requirements discovery, enforce idea-first user-led prompt before platform/repo/feature choices to reduce framing bias.
+
+_Context: ses_1bc31f77dffeJiRNlO71N17CEZ_
+
+---

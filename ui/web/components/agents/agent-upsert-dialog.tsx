@@ -148,6 +148,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
   const [expandedGroup, setExpandedGroup] = useState<"filesystem" | "shell" | "browse-and-web" | "sessions" | "agents" | "skills" | "schedule" | "desktop" | "pyautogui" | "others" | null>(null)
+  const [expandedSkill, setExpandedSkill] = useState<string | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
   const [defaultPaths, setDefaultPaths] = useState<string[]>([])
@@ -753,31 +754,49 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
               {availableSkills.length === 0 ? (
                 <p className="text-xs text-muted-foreground">No skills found.</p>
               ) : (
-                <div className="flex flex-col gap-2">
-                  {availableSkills.map((skill) => (
-                    <Label
-                      key={skill.name}
-                      className="flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2.5 font-normal hover:bg-muted/50"
-                    >
-                      <Checkbox
-                        className="mt-0.5"
-                        checked={selectedSkills.includes(skill.name)}
-                        onCheckedChange={() => toggleSkill(skill.name)}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="font-mono text-sm font-medium leading-none">{skill.name}</p>
-                        {skill.description && (
-                          <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{skill.description}</p>
+                availableSkills.map((skill) => {
+                  const checked = selectedSkills.includes(skill.name)
+                  const isExpanded = expandedSkill === skill.name
+                  return (
+                    <Card key={skill.name} className="cursor-pointer">
+                      <CardHeader
+                        className="flex-row items-center justify-between"
+                        onClick={() => setExpandedSkill(isExpanded ? null : skill.name)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleSkill(skill.name)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <div>
+                            <CardTitle className="font-mono">{skill.name}</CardTitle>
+                            {skill.tools && skill.tools.length > 0 && (
+                              <CardDescription>{skill.tools.length} tools</CardDescription>
+                            )}
+                          </div>
+                        </div>
+                        {checked && (
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                            selected
+                          </span>
                         )}
-                        {skill.tools && skill.tools.length > 0 && (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            Tools: <span className="font-mono">{skill.tools.join(", ")}</span>
-                          </p>
-                        )}
-                      </div>
-                    </Label>
-                  ))}
-                </div>
+                      </CardHeader>
+                      {isExpanded && (skill.description || (skill.tools && skill.tools.length > 0)) && (
+                        <CardContent className="border-t pt-3">
+                          {skill.description && (
+                            <p className="mb-2 text-xs text-muted-foreground">{skill.description}</p>
+                          )}
+                          {skill.tools && skill.tools.length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              Tools: <span className="font-mono">{skill.tools.join(", ")}</span>
+                            </p>
+                          )}
+                        </CardContent>
+                      )}
+                    </Card>
+                  )
+                })
               )}
               {selectedSkills.length > 0 && (
                 <Button

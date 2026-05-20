@@ -125,6 +125,7 @@ export default function AgentSettingsPage() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
+  const [expandedSkill, setExpandedSkill] = useState<string | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
   const [defaultPaths, setDefaultPaths] = useState<string[]>([])
@@ -288,7 +289,7 @@ export default function AgentSettingsPage() {
           return Object.keys(tc).length > 0 ? tc : undefined
         })(),
         injectInstructions: injectInstructions ? undefined : false,
-        enableInjection: enableInjection || undefined,
+        enableInjection: enableInjection ? true : false,
         defaultPaths: defaultPaths.length > 0 ? defaultPaths : undefined,
       }
       if (isNew) {
@@ -977,32 +978,49 @@ export default function AgentSettingsPage() {
             ) : (
               availableSkills.map((skill) => {
                 const checked = selectedSkills.includes(skill.name)
+                const isExpanded = expandedSkill === skill.name
                 return (
-                  <Label
-                    key={skill.name}
-                    className="flex cursor-pointer items-start gap-3 rounded-md border px-4 py-3 font-normal hover:bg-muted/50"
-                  >
-                    <Checkbox
-                      className="mt-0.5"
-                      checked={checked}
-                      onCheckedChange={() =>
-                        setSelectedSkills((prev) =>
-                          checked ? prev.filter((s) => s !== skill.name) : [...prev, skill.name]
-                        )
-                      }
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-mono text-sm font-medium leading-none">{skill.name}</p>
-                      {skill.description && (
-                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{skill.description}</p>
+                  <Card key={skill.name} className="cursor-pointer">
+                    <CardHeader
+                      className="flex-row items-center justify-between"
+                      onClick={() => setExpandedSkill(isExpanded ? null : skill.name)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() =>
+                            setSelectedSkills((prev) =>
+                              checked ? prev.filter((s) => s !== skill.name) : [...prev, skill.name]
+                            )
+                          }
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <div>
+                          <CardTitle className="font-mono">{skill.name}</CardTitle>
+                          {skill.tools && skill.tools.length > 0 && (
+                            <CardDescription>{skill.tools.length} tools</CardDescription>
+                          )}
+                        </div>
+                      </div>
+                      {checked && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                          selected
+                        </span>
                       )}
-                      {skill.tools && skill.tools.length > 0 && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Tools: <span className="font-mono">{skill.tools.join(", ")}</span>
-                        </p>
-                      )}
-                    </div>
-                  </Label>
+                    </CardHeader>
+                    {isExpanded && (skill.description || (skill.tools && skill.tools.length > 0)) && (
+                      <CardContent className="border-t pt-3">
+                        {skill.description && (
+                          <p className="mb-2 text-xs text-muted-foreground">{skill.description}</p>
+                        )}
+                        {skill.tools && skill.tools.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Tools: <span className="font-mono">{skill.tools.join(", ")}</span>
+                          </p>
+                        )}
+                      </CardContent>
+                    )}
+                  </Card>
                 )
               })
             )}

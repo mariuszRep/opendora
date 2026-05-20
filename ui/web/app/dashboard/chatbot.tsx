@@ -1244,7 +1244,7 @@ export const Chatbot = () => {
                                       ) : undefined
 
                                       return (
-                                        <Tool defaultOpen={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall || isSkillLoadToolCall}>
+                                        <Tool defaultOpen={false}>
                                           <ToolHeader
                                             state={state}
                                             title={isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : isSkillLoadToolCall ? getSkillLoadToolTitle(tool) : tool.tool}
@@ -1463,7 +1463,7 @@ export const Chatbot = () => {
                                   ) : undefined
                                   return (
                                     <Tool
-                                      defaultOpen={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall || isSkillLoadToolCall}
+                                      defaultOpen={false}
                                       key={tool.id}
                                     >
                                       <ToolHeader
