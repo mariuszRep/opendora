@@ -237,6 +237,33 @@ export namespace TokenUsage {
           rl_tokens_reset_at:    rl.rl_tokens_reset_at,
         })
         .run()
+
+      // Update the per-provider usage file when at least one rl_ field is present
+      const hasRlData =
+        rl.rl_requests_limit     != null ||
+        rl.rl_requests_used      != null ||
+        rl.rl_requests_remaining != null ||
+        rl.rl_requests_reset_at  != null ||
+        rl.rl_tokens_limit       != null ||
+        rl.rl_tokens_used        != null ||
+        rl.rl_tokens_remaining   != null ||
+        rl.rl_tokens_reset_at    != null
+      if (hasRlData) {
+        import("./token-usage-file.ts")
+          .then(({ ProviderUsageFile }) =>
+            ProviderUsageFile.update(input.providerID, input.modelID, {
+              requests_limit:     rl.rl_requests_limit,
+              requests_used:      rl.rl_requests_used,
+              requests_remaining: rl.rl_requests_remaining,
+              requests_reset_at:  rl.rl_requests_reset_at,
+              tokens_limit:       rl.rl_tokens_limit,
+              tokens_used:        rl.rl_tokens_used,
+              tokens_remaining:   rl.rl_tokens_remaining,
+              tokens_reset_at:    rl.rl_tokens_reset_at,
+            }),
+          )
+          .catch(() => {})
+      }
     } catch (err) {
       // Never throw from this helper — token tracking must not break the main flow
       console.error("[token-usage] failed to record token usage:", err)

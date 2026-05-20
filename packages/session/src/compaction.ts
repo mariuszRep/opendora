@@ -259,6 +259,31 @@ When constructing the summary, try to stick to this template:
       model,
     })
 
+    // Record token usage for compaction — fire-and-forget, best-effort
+    processor.message &&
+      void (async () => {
+        try {
+          const { TokenUsage } = await import("./token-usage.ts")
+          const tokens = processor.message.tokens
+          await TokenUsage.record({
+            sessionID:  input.sessionID,
+            agentID:    "compaction",
+            projectID:  getConfig().instance?.project?.id,
+            providerID: model.providerID,
+            modelID:    model.id,
+            purpose:    "compaction",
+            tokens: {
+              input:      tokens.input,
+              output:     tokens.output,
+              cacheRead:  tokens.cache?.read ?? 0,
+              cacheWrite: tokens.cache?.write ?? 0,
+              reasoning:  tokens.reasoning ?? 0,
+            },
+            model,
+          })
+        } catch { /* never let token tracking break compaction */ }
+      })()
+
     if (result === "continue" && input.auto) {
       const continueMsg = await input.updateMessage({
         id: Identifier.ascending("message"),

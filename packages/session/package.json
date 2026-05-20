@@ -31,7 +31,8 @@
     "./prompt":                 "./src/prompt.ts",
     "./import":                 "./src/import/index.ts",
     "./token-usage-sql":        "./src/token-usage.sql.ts",
-    "./token-usage":            "./src/token-usage.ts"
+    "./token-usage":            "./src/token-usage.ts",
+    "./token-usage-file":       "./src/token-usage-file.ts"
   },
   "devDependencies": {
     "@types/node": "catalog:",

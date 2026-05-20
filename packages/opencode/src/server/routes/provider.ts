@@ -8,6 +8,7 @@ import { ProviderAuth } from "@opendora/provider/auth"
 import { Auth } from "../../auth"
 import { ProviderFallback } from "@opendora/provider/fallback"
 import { ProviderTimeout } from "@opendora/provider/timeout"
+import { ProviderUsageFile } from "@opendora/session/token-usage-file"
 import { mapValues } from "remeda"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
@@ -250,6 +251,51 @@ export const ProviderRoutes = lazy(() =>
       async (c) => {
         const info = await ProviderTimeout.allTimeoutInfo()
         return c.json(info)
+      },
+    )
+    .get(
+      "/usage",
+      describeRoute({
+        summary: "Get provider rate-limit usage",
+        description: "Get the latest rate-limit window state for all providers, used by the UI to display quota progress bars.",
+        operationId: "provider.usage",
+        responses: {
+          200: {
+            description: "Per-provider usage state",
+            content: {
+              "application/json": {
+                schema: resolver(
+                  z.record(
+                    z.string(),
+                    z.object({
+                      version: z.literal(1),
+                      providerID: z.string(),
+                      updatedAt: z.number(),
+                      models: z.record(
+                        z.string(),
+                        z.object({
+                          updatedAt: z.number(),
+                          requests_limit: z.number().nullable().optional(),
+                          requests_used: z.number().nullable().optional(),
+                          requests_remaining: z.number().nullable().optional(),
+                          requests_reset_at: z.number().nullable().optional(),
+                          tokens_limit: z.number().nullable().optional(),
+                          tokens_used: z.number().nullable().optional(),
+                          tokens_remaining: z.number().nullable().optional(),
+                          tokens_reset_at: z.number().nullable().optional(),
+                        }),
+                      ),
+                    }),
+                  ),
+                ),
+              },
+            },
+          },
+        },
+      }),
+      async (c) => {
+        const usage = ProviderUsageFile.readAll()
+        return c.json(usage)
       },
     )
     .get(
