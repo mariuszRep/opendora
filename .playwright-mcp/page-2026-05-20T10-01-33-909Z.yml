@@ -1,0 +1,49 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e19]: My Lists
+      - button "◀" [ref=e7]
+    - navigation [ref=e20]:
+      - button "Search" [ref=e21]:
+        - img [ref=e22]
+        - text: Search
+      - generic [ref=e26] [cursor=pointer]:
+        - generic [ref=e27]: Work Tasks
+        - generic [ref=e78]:
+          - button "✎" [ref=e79]
+          - button "✕" [ref=e80]
+    - generic [ref=e68]:
+      - textbox "List name..." [ref=e69]
+      - generic [ref=e70]:
+        - button "Create" [ref=e71]
+        - button "Cancel" [ref=e72]
+  - main [ref=e15]:
+    - generic [ref=e81]:
+      - generic [ref=e82]:
+        - heading "Tasks" [level=2] [ref=e83]
+        - button "Add Task" [ref=e84]:
+          - img [ref=e85]
+          - text: Add Task
+      - generic [ref=e87]:
+        - checkbox [ref=e88] [cursor=pointer]
+        - generic [ref=e89]:
+          - paragraph [ref=e90]: test
+          - generic [ref=e92]: medium
+        - generic [ref=e93]:
+          - button "Edit" [ref=e94]
+          - button "Delete" [ref=e95]
+      - generic [ref=e96]:
+        - paragraph [ref=e97]: Completed (1)
+        - generic [ref=e99]:
+          - checkbox [checked] [ref=e100] [cursor=pointer]
+          - generic [ref=e101]:
+            - paragraph [ref=e102]: Review PR
+            - paragraph [ref=e103]: Check the new feature
+            - generic [ref=e104]:
+              - generic [ref=e105]: high
+              - generic [ref=e106]: "Due: 2026-05-25"
+              - generic [ref=e107]: review
+              - generic [ref=e108]: urgent
+          - generic [ref=e109]:
+            - button "Edit" [ref=e110]
+            - button "Delete" [ref=e111]

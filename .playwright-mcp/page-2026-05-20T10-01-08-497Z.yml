@@ -1,0 +1,19 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e19]: My Lists
+      - button "◀" [ref=e7]
+    - navigation [ref=e20]:
+      - button "Search" [ref=e21]:
+        - img [ref=e22]
+        - text: Search
+      - generic [ref=e27] [cursor=pointer]: Work Tasks
+    - generic [ref=e68]:
+      - textbox "List name..." [active] [ref=e69]
+      - generic [ref=e70]:
+        - button "Create" [ref=e71]
+        - button "Cancel" [ref=e72]
+  - main [ref=e15]:
+    - generic [ref=e74]:
+      - textbox "Search tasks..." [ref=e75]
+      - button "Search" [ref=e76]

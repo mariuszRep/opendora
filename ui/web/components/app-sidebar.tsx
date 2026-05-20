@@ -203,21 +203,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         </div>
                       </SidebarMenuButton>
 
-                      {/* Stop — slot 0, only shown when agent is working */}
-                      <SidebarMenuAction
-                        className="group-data-[collapsible=icon]:hidden transition-opacity"
-                        style={{ opacity: isWorking ? 1 : 0, right: actionRight(0), pointerEvents: isWorking ? 'auto' : 'none' }}
-                        title="Stop agent"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          sessions
-                            .filter((s) => s.agentID === agent._id && activeSessions.has(s.id))
-                            .forEach((s) => abortSession(s.id))
-                        }}
-                      >
-                        <SquareIcon className="size-3.5 fill-current" />
-                        <span className="sr-only">Stop {agent.name}</span>
-                      </SidebarMenuAction>
+                      {/* Stop — slot 0, only shown on hover when agent is working */}
+                      {isWorking && (
+                        <SidebarMenuAction
+                          data-hover-reveal="true"
+                          className="group-data-[collapsible=icon]:hidden transition-all"
+                          style={{ opacity: 0, right: actionRight(0) }}
+                          title="Stop agent"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            sessions
+                              .filter((s) => s.agentID === agent._id && activeSessions.has(s.id))
+                              .forEach((s) => abortSession(s.id))
+                          }}
+                        >
+                          <SquareIcon className="size-3.5 fill-current" />
+                          <span className="sr-only">Stop {agent.name}</span>
+                        </SidebarMenuAction>
+                      )}
 
                       {/* Star — slot 1, always visible if default; revealed on hover if not */}
                       <SidebarMenuAction
@@ -342,6 +345,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         )}
                       >
                         <div className="relative size-4 shrink-0 flex items-center justify-center">
+                          {isWorking && (
+                            <div
+                              className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
+                              style={{ borderTopColor: 'hsl(var(--primary))' }}
+                              aria-hidden="true"
+                            />
+                          )}
                           {(() => {
                             const sessionType = session.sessionType || "scope"
                             const Icon = SESSION_TYPE_CONFIG[sessionType]?.icon || MessageSquareIcon
@@ -369,19 +379,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <span className="sr-only">Waiting for answer in {formatSessionTitle(session)}</span>
                       </SidebarMenuAction>
 
-                      {/* Stop — slot 0, only shown when session is working */}
-                      <SidebarMenuAction
-                        className="group-data-[collapsible=icon]:hidden transition-opacity"
-                        style={{ opacity: isWorking ? 1 : 0, right: actionRight(0), pointerEvents: isWorking ? 'auto' : 'none' }}
-                        title="Stop session"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          abortSession(session.id)
-                        }}
-                      >
-                        <SquareIcon className="size-3.5 fill-current" />
-                        <span className="sr-only">Stop {formatSessionTitle(session)}</span>
-                      </SidebarMenuAction>
+                      {/* Stop — slot 0, only shown on hover when session is working */}
+                      {isWorking && (
+                        <SidebarMenuAction
+                          data-hover-reveal="true"
+                          className="group-data-[collapsible=icon]:hidden transition-all"
+                          style={{ opacity: 0, right: actionRight(0) }}
+                          title="Stop session"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            abortSession(session.id)
+                          }}
+                        >
+                          <SquareIcon className="size-3.5 fill-current" />
+                          <span className="sr-only">Stop {formatSessionTitle(session)}</span>
+                        </SidebarMenuAction>
+                      )}
 
                       {/* Star - clickable to make this session the main session */}
                       <SidebarMenuAction
