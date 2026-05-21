@@ -47,7 +47,7 @@ export const WorkflowRunTool = Tool.define("workflow_run", async () => {
       const workflow = Workflow.parse(raw)
       const input = params.input as Record<string, unknown>
 
-      const agentId = params.agentId ?? ctx.agentID ?? "engineer"
+      const agentId = params.agentId ?? ctx.agent ?? "engineer"
       const session = await Session.createNext({
         directory,
         title: `Workflow: ${workflow.name}`,
@@ -61,6 +61,7 @@ export const WorkflowRunTool = Tool.define("workflow_run", async () => {
       })
 
       return {
+        title: `Started workflow: ${workflow.name}`,
         output: [
           `Workflow "${workflow.name}" started.`,
           `Session: ${session.id}`,

@@ -77,7 +77,7 @@ const AGENT_TOOLS = new Set([
   "agent_create", "agent_delete", "agent_get", "agent_list", "agent_update",
 ])
 
-const SKILL_TOOLS = new Set(["skill_list", "skill_load", "skill_search", "skill_install", "skill_create", "skill_remove"])
+const SKILL_TOOLS = new Set(["skill_list", "skill_load", "skill_search", "skill_install", "skill_create", "skill_edit", "skill_remove"])
 
 const SCHEDULE_TOOLS = new Set(["schedule_list", "schedule_create", "schedule_update", "schedule_delete", "schedule_get", "schedule_run"])
 

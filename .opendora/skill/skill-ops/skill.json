@@ -5,6 +5,8 @@
     "skill_search",
     "skill_create",
     "skill_remove",
-    "todowrite"
+    "todowrite",
+    "skill_edit",
+    "skill_install"
   ]
 }

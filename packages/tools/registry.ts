@@ -14,7 +14,7 @@ import { TodoWriteTool, TodoReadTool } from "./system/todo.ts"
 import { WebFetchTool, WebSearchTool, CodeSearchTool } from "./browse-and-web/index.ts"
 import { InvalidTool } from "./system/invalid.ts"
 import { LspTool } from "./system/lsp.ts"
-import { SkillLoadTool, SkillListTool, SkillSearchTool, SkillInstallTool, SkillCreateTool, SkillRemoveTool } from "./skills/index.ts"
+import { SkillLoadTool, SkillListTool, SkillSearchTool, SkillInstallTool, SkillCreateTool, SkillEditTool, SkillRemoveTool } from "./skills/index.ts"
 import { LogLessonTool } from "./system/log-lesson.ts"
 import { AgentCreateTool } from "./agents/agent-create.ts"
 import { AgentUpdateTool } from "./agents/agent-update.ts"
@@ -136,6 +136,7 @@ export namespace ToolRegistry {
       SkillSearchTool,
       SkillInstallTool,
       SkillCreateTool,
+      SkillEditTool,
       SkillRemoveTool,
       LogLessonTool,
       ApplyPatchTool,

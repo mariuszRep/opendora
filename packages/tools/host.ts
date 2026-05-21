@@ -95,6 +95,8 @@ export interface HostServices {
     install?(source: string, options?: { registry?: string; version?: string; force?: boolean }): Promise<void>
     create?(params: { name: string; description: string; tools?: string[]; content?: string }): Promise<{ dir: string }>
     remove?(name: string): Promise<void>
+    save?(location: string, content: string): Promise<void>
+    saveConfig?(name: string, patch: { tools?: string[] }): Promise<void>
     update?(name: string): Promise<void>
     uninstall?(name: string): Promise<void>
     list?(): Promise<Array<{ name: string; version: string; source: string; sourceType: string }>>

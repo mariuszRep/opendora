@@ -16,7 +16,7 @@ import { Session } from "@opendora/session/session"
 import { SessionPrompt } from "@opendora/session/prompt"
 import { MessageV2 } from "@opendora/session/message"
 import { Identifier } from "@opendora/util/id"
-import { Workflow, WorkflowEdge, resolveRefs, resolveTemplate } from "./schema.ts"
+import { Workflow, WorkflowEdge, WorkflowNode, resolveRefs, resolveTemplate } from "./schema.ts"
 
 // ─── Skill functions — wired at startup by the host package ──────────────────
 // Using a registry avoids a circular dependency (workflow ← core ← workflow).

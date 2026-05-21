@@ -423,6 +423,12 @@ export function configureSessionCore() {
       async remove(name: string) {
         return Skill.remove(name)
       },
+      async save(location: string, content: string) {
+        return Skill.save(location, content)
+      },
+      async saveConfig(name: string, patch: { tools?: string[] }) {
+        return Skill.saveConfig(name, patch)
+      },
       async list() {
         return Skill.list()
       },
