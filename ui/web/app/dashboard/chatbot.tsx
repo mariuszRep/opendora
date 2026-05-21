@@ -426,8 +426,7 @@ export const Chatbot = () => {
   const modelList = useMemo(() => {
     const isFreeModel = (m: { id: string; [k: string]: unknown }) => {
       const cost = (m as any).cost as { input: number; output: number } | undefined
-      if (cost && cost.input === 0 && cost.output === 0) return true
-      return m.id.endsWith(":free") || m.id.endsWith("-free")
+      return !!(cost && cost.input === 0 && cost.output === 0)
     }
     const real = providers
       .filter((p) => connectedProviders.includes(p.id) && p.id !== "fallback")

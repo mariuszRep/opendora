@@ -120,8 +120,7 @@ export default function ProvidersPage() {
   const modelList = useMemo(() => {
     const isFreeModel = (m: { id: string; [k: string]: unknown }) => {
       const cost = m.cost as { input: number; output: number } | undefined
-      if (cost && cost.input === 0 && cost.output === 0) return true
-      return m.id.endsWith(":free") || m.id.endsWith("-free")
+      return !!(cost && cost.input === 0 && cost.output === 0)
     }
     return providers
       .filter((p) => connectedProviders.includes(p.id))

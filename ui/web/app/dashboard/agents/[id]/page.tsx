@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { CheckIcon, ClockAlertIcon, ComponentIcon, ExternalLinkIcon, KeyIcon, Loader2Icon, MessageSquareIcon, SparklesIcon, StarIcon, Trash2Icon } from "lucide-react"
+import { CheckIcon, ClockAlertIcon, ComponentIcon, ExternalLinkIcon, KeyIcon, Loader2Icon, MessageSquareIcon, SearchIcon, SparklesIcon, StarIcon, Trash2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -49,6 +49,7 @@ import {
 } from "@/components/ai-elements/model-selector"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { opendora, type AgentConfig, type Skill } from "@/lib/opendora"
+import { SettingsCard } from "@/components/settings/settings-card"
 
 const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
   { value: "primary", label: "Primary" },
@@ -125,7 +126,8 @@ export default function AgentSettingsPage() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
-  const [expandedSkill, setExpandedSkill] = useState<string | null>(null)
+  const [skillSearch, setSkillSearch] = useState("")
+  const [skillFilter, setSkillFilter] = useState<"all" | "selected" | "deselected">("all")
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
   const [defaultPaths, setDefaultPaths] = useState<string[]>([])
@@ -146,8 +148,7 @@ export default function AgentSettingsPage() {
   const modelList = useMemo(() => {
     const isFreeModel = (m: { id: string; [k: string]: unknown }) => {
       const cost = (m as any).cost as { input: number; output: number } | undefined
-      if (cost && cost.input === 0 && cost.output === 0) return true
-      return m.id.endsWith(":free") || m.id.endsWith("-free")
+      return !!(cost && cost.input === 0 && cost.output === 0)
     }
     return providers
       .filter((p) => connectedProviders.includes(p.id) && p.id !== "fallback")
@@ -969,72 +970,88 @@ export default function AgentSettingsPage() {
         </TabsContent>
         {/* ── Skills tab ── */}
         <TabsContent value="skills" className="flex-1 overflow-y-auto">
-          <div className="mx-auto flex max-w-2xl flex-col gap-4 px-6 py-8">
-            <p className="text-xs text-muted-foreground">
-              Attach skills to this agent. When a skill is loaded, its tools become available to the agent.
-            </p>
+          <div className="flex flex-col gap-6 px-6 py-8">
+            <div className="flex gap-3">
+              <div className="relative max-w-sm flex-1">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search skills…"
+                  value={skillSearch}
+                  onChange={(e) => setSkillSearch(e.target.value)}
+                  className="pl-9 h-9"
+                />
+              </div>
+              <div className="flex rounded-lg border p-1 h-9">
+                <Button
+                  size="sm"
+                  variant={skillFilter === "all" ? "secondary" : "ghost"}
+                  className="h-full text-xs"
+                  onClick={() => setSkillFilter("all")}
+                >
+                  All
+                </Button>
+                <Button
+                  size="sm"
+                  variant={skillFilter === "selected" ? "secondary" : "ghost"}
+                  className="h-full text-xs"
+                  onClick={() => setSkillFilter("selected")}
+                >
+                  Selected
+                </Button>
+                <Button
+                  size="sm"
+                  variant={skillFilter === "deselected" ? "secondary" : "ghost"}
+                  className="h-full text-xs"
+                  onClick={() => setSkillFilter("deselected")}
+                >
+                  Deselected
+                </Button>
+              </div>
+            </div>
             {availableSkills.length === 0 ? (
               <p className="text-xs text-muted-foreground">No skills found.</p>
-            ) : (
-              availableSkills.map((skill) => {
-                const checked = selectedSkills.includes(skill.name)
-                const isExpanded = expandedSkill === skill.name
-                return (
-                  <Card key={skill.name} className="cursor-pointer">
-                    <CardHeader
-                      className="flex-row items-center justify-between"
-                      onClick={() => setExpandedSkill(isExpanded ? null : skill.name)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={() =>
-                            setSelectedSkills((prev) =>
-                              checked ? prev.filter((s) => s !== skill.name) : [...prev, skill.name]
-                            )
-                          }
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <div>
-                          <CardTitle className="font-mono">{skill.name}</CardTitle>
-                          {skill.tools && skill.tools.length > 0 && (
-                            <CardDescription>{skill.tools.length} tools</CardDescription>
-                          )}
-                        </div>
-                      </div>
-                      {checked && (
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                          selected
-                        </span>
-                      )}
-                    </CardHeader>
-                    {isExpanded && (skill.description || (skill.tools && skill.tools.length > 0)) && (
-                      <CardContent className="border-t pt-3">
-                        {skill.description && (
-                          <p className="mb-2 text-xs text-muted-foreground">{skill.description}</p>
-                        )}
-                        {skill.tools && skill.tools.length > 0 && (
-                          <p className="text-xs text-muted-foreground">
-                            Tools: <span className="font-mono">{skill.tools.join(", ")}</span>
-                          </p>
-                        )}
-                      </CardContent>
-                    )}
-                  </Card>
-                )
-              })
-            )}
-            {selectedSkills.length > 0 && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-auto self-start px-0 text-xs text-muted-foreground"
-                onClick={() => setSelectedSkills([])}
-              >
-                Clear all
-              </Button>
-            )}
+            ) : (() => {
+              const filtered = skillSearch
+                ? availableSkills.filter((s) =>
+                    s.name.toLowerCase().includes(skillSearch.toLowerCase()) ||
+                    (s.description ?? "").toLowerCase().includes(skillSearch.toLowerCase())
+                  )
+                : availableSkills
+              const filterApplied = skillFilter === "selected"
+                ? filtered.filter((s) => selectedSkills.includes(s.name))
+                : skillFilter === "deselected"
+                  ? filtered.filter((s) => !selectedSkills.includes(s.name))
+                  : filtered
+              const sorted = [...filterApplied].sort((a, b) => a.name.localeCompare(b.name))
+              return sorted.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No skills match your search.</p>
+              ) : (
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {sorted.map((skill) => {
+                    const enabled = selectedSkills.includes(skill.name)
+                    return (
+                      <SettingsCard
+                        key={skill.name}
+                        title={skill.name}
+                        description={skill.description || "No description"}
+                        action={
+                          <Switch
+                            size="sm"
+                            checked={enabled}
+                            onCheckedChange={() =>
+                              setSelectedSkills((prev) =>
+                                enabled ? prev.filter((s) => s !== skill.name) : [...prev, skill.name]
+                              )
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        }
+                      />
+                    )
+                  })}
+                </div>
+              )
+            })()}
           </div>
         </TabsContent>
       </Tabs>

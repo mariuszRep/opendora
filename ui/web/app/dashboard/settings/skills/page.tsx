@@ -440,12 +440,13 @@ export default function SkillsPage() {
     setSelected((prev) => (prev?.name === name ? { ...prev, tools } : prev))
   }
 
-  const filtered = search
+  const filtered = (search
     ? skills.filter((s) =>
         s.name.toLowerCase().includes(search.toLowerCase()) ||
         s.description.toLowerCase().includes(search.toLowerCase())
       )
     : skills
+  ).slice().sort((a, b) => a.name.localeCompare(b.name))
 
   return (
     <SettingsPageLayout title="Skills">

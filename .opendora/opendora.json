@@ -11,7 +11,8 @@
     "openrouter": "free",
     "zenmux": "none",
     "ollama": "none",
-    "openai-codex": "all"
+    "openai-codex": "all",
+    "nvidia": "free"
   },
   "model_groups": [
     {
