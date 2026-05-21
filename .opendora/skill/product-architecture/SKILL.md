@@ -1,6 +1,6 @@
 ---
 name: product-architecture
-description: Use with requirements when product-level architecture decisions need structured discovery: ensure constraints, interfaces, NFRs, risks, and rollout decisions are complete before planning/implementation.
+description: "Use with requirements when product-level architecture decisions need structured discovery: ensure constraints, interfaces, NFRs, risks, and rollout decisions are complete before planning/implementation."
 origin: opendora
 ---
 

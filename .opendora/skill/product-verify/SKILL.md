@@ -1,6 +1,6 @@
 ---
 name: product-verify
-description: Use for browser-first verification against the approved plan: validate implemented UI flows/pages with Playwright-focused evidence and strict verdict output.
+description: "Use for browser-first verification against the approved plan: validate implemented UI flows/pages with Playwright-focused evidence and strict verdict output."
 origin: opendora
 ---
 

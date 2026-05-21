@@ -12,34 +12,21 @@
     "zenmux": "none",
     "ollama": "none",
     "openai-codex": "all",
-    "nvidia": "free"
+    "nvidia": "free",
+    "openai": "all"
   },
   "model_groups": [
-    {
-      "id": "e2daea63-4ca4-4817-9978-14baecf5612d",
-      "name": "MiniMax M2.5 (free)",
-      "models": [
-        {
-          "providerID": "opencode",
-          "modelID": "minimax-m2.5-free"
-        },
-        {
-          "providerID": "openrouter",
-          "modelID": "minimax/minimax-m2.5:free"
-        }
-      ]
-    },
     {
       "id": "a103f2b7-43fc-4ce3-9e8d-7dce786c0c31",
       "name": "Auto Router",
       "models": [
         {
-          "providerID": "openrouter",
-          "modelID": "openrouter/free"
-        },
-        {
           "providerID": "kilo",
           "modelID": "kilo-auto/free"
+        },
+        {
+          "providerID": "openrouter",
+          "modelID": "openrouter/free"
         },
         {
           "providerID": "kilo",
@@ -62,6 +49,24 @@
         {
           "providerID": "openrouter",
           "modelID": "nvidia/nemotron-3-super-120b-a12b:free"
+        }
+      ]
+    },
+    {
+      "id": "dc174962-f77f-4d0b-b0b4-0f1053ecb1e8",
+      "name": "deepseek-v4-flash",
+      "models": [
+        {
+          "providerID": "opencode",
+          "modelID": "deepseek-v4-flash-free"
+        },
+        {
+          "providerID": "kilo",
+          "modelID": "deepseek/deepseek-v4-flash:free"
+        },
+        {
+          "providerID": "openrouter",
+          "modelID": "deepseek/deepseek-v4-flash:free"
         }
       ]
     }

@@ -1,6 +1,6 @@
 ---
 name: product-setup
-description: Use when initializing or standardizing a product workspace before delivery: scaffold project structure, initialize repo/tooling, install core dependencies, and verify development readiness.
+description: "Use when initializing or standardizing a product workspace before delivery: scaffold project structure, initialize repo/tooling, install core dependencies, and verify development readiness."
 origin: opendora
 ---
 

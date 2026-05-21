@@ -448,6 +448,7 @@ export type Event =
   | { type: "session.idle"; properties: { sessionID: string } }
   | { type: "session.status"; properties: { sessionID: string; status: { type: "idle" | "busy" | "retry"; attempt?: number; message?: string; next?: number } } }
   | { type: "session.error"; properties: { sessionID?: string; error?: { name: string; message: string; data?: Record<string, unknown> } } }
+  | { type: "skill.updated"; properties: Record<string, never> }
   | { type: string; properties: unknown }
 
 export class SessionBusyError extends Error {

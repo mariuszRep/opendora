@@ -181,7 +181,7 @@ export default function AgentSettingsPage() {
       // Separate internal tools from MCP tools
       const internal = tools.filter((t) => t.source === "internal" && !HIDDEN_TOOLS.has(t.id)).map((t) => t.id)
       setAvailableTools(internal)
-      
+
       // Group MCP tools by server
       const mcpByServer: Record<string, string[]> = {}
       tools.filter((t) => t.source === "mcp").forEach((t) => {
@@ -192,6 +192,14 @@ export default function AgentSettingsPage() {
       setMcpToolsByServer(mcpByServer)
     }).catch(() => { })
     opendora.skill.list().then(setAvailableSkills).catch(() => { })
+
+    // Re-fetch skills whenever files change on disk
+    const unsub = opendora.events.subscribe((event) => {
+      if (event.type === "skill.updated") {
+        opendora.skill.list().then(setAvailableSkills).catch(() => {})
+      }
+    })
+    return unsub
   }, [])
 
   // Load agent data — re-run when agent loads (agents list may arrive after mount)
@@ -1008,9 +1016,7 @@ export default function AgentSettingsPage() {
                 </Button>
               </div>
             </div>
-            {availableSkills.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No skills found.</p>
-            ) : (() => {
+            {(() => {
               const filtered = skillSearch
                 ? availableSkills.filter((s) =>
                     s.name.toLowerCase().includes(skillSearch.toLowerCase()) ||
@@ -1018,7 +1024,13 @@ export default function AgentSettingsPage() {
                   )
                 : availableSkills
               const filterApplied = skillFilter === "selected"
-                ? filtered.filter((s) => selectedSkills.includes(s.name))
+                ? (() => {
+                    const selectedSet = new Set(selectedSkills)
+                    const selectedFromAvailable = filtered.filter((s) => selectedSet.has(s.name))
+                    const missingSkills = selectedSkills.filter((name) => !availableSkills.some((s) => s.name === name))
+                    const missingAsSkills = missingSkills.map((name) => ({ name, description: "Skill not found in available skills", location: "", content: "", origin: undefined, tools: undefined }))
+                    return [...selectedFromAvailable, ...missingAsSkills]
+                  })()
                 : skillFilter === "deselected"
                   ? filtered.filter((s) => !selectedSkills.includes(s.name))
                   : filtered

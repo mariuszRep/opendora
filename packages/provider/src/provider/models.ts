@@ -115,8 +115,10 @@ export namespace ModelsDev {
       })
     })
     if (result && result.ok) {
-      await Filesystem.write(filepath, await result.text())
-      ModelsDev.Data.reset()
+      const text = await result.text()
+      await Filesystem.write(filepath, text)
+      // Push parsed data directly into the lazy cache so the next get() is instant
+      ModelsDev.Data.set(Promise.resolve(JSON.parse(text)))
     }
   }
 }

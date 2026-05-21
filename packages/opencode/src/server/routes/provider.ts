@@ -17,6 +17,67 @@ import { Installation } from "../../installation"
 
 const log = Log.create({ service: "provider.routes" })
 
+// Codex models fetched from the live API, refreshed on startup and hourly.
+// Kept at module level so the route handler never blocks on a network call.
+type CodexModel = Record<string, unknown>
+let codexModelsCache: Record<string, CodexModel> | null = null
+
+async function refreshCodexModels() {
+  const auth = await Auth.get("openai-codex")
+  if (!auth || auth.type !== "oauth") {
+    codexModelsCache = null
+    return
+  }
+  const headers = new Headers({
+    authorization: `Bearer ${auth.access}`,
+    "User-Agent": Installation.USER_AGENT,
+  })
+  if (auth.accountId) headers.set("ChatGPT-Account-Id", auth.accountId)
+  const url = new URL("https://chatgpt.com/backend-api/codex/models")
+  const version = Installation.VERSION
+  url.searchParams.set("client_version", /^\d+\.\d+\.\d+/.test(version) ? version : "0.0.0")
+  try {
+    const response = await fetch(url, { headers, signal: AbortSignal.timeout(10_000) })
+    if (!response.ok) {
+      log.warn("codex models refresh failed", { status: response.status })
+      return
+    }
+    const payload = await response.json() as {
+      models: Array<{ slug: string; display_name: string; context_window?: number; visibility?: string; supported_in_api?: boolean }>
+    }
+    const models: Record<string, CodexModel> = {}
+    for (const model of payload.models ?? []) {
+      if (model.visibility === "hide" || model.supported_in_api === false) continue
+      models[model.slug] = {
+        id: model.slug,
+        name: model.display_name || model.slug,
+        providerID: "openai-codex",
+        api: { id: model.slug, url: "https://chatgpt.com/backend-api/codex", npm: "@ai-sdk/openai" },
+        cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+        limit: {
+          context: model.context_window ?? 400_000,
+          input: Math.floor((model.context_window ?? 400_000) * 0.68),
+          output: Math.min(128_000, Math.floor((model.context_window ?? 400_000) * 0.32)),
+        },
+        capabilities: { temperature: false, reasoning: true, attachment: false, toolcall: true },
+        status: "active",
+        options: {},
+        headers: {},
+        release_date: "",
+        variants: {},
+      }
+    }
+    codexModelsCache = models
+    log.info("codex models refreshed", { count: Object.keys(models).length })
+  } catch (error) {
+    log.warn("codex models refresh failed", { error })
+  }
+}
+
+// Refresh once on startup and then every hour, same cadence as models.dev
+refreshCodexModels().catch(() => {})
+setInterval(() => refreshCodexModels().catch(() => {}), 60 * 60 * 1000).unref()
+
 export const ProviderRoutes = lazy(() =>
   new Hono()
     .get(
@@ -43,7 +104,13 @@ export const ProviderRoutes = lazy(() =>
         },
       }),
       async (c) => {
-        const config = await Config.get()
+        const [config, allProviders, connected, authMethodMap, liveAuth] = await Promise.all([
+          Config.get(),
+          ModelsDev.get(),
+          Provider.list(),
+          ProviderAuth.methods(),
+          Auth.all(),
+        ])
 
         ProviderFallback.setCustomGroups(
           (config.model_groups ?? []).map((g) => ({
@@ -56,7 +123,6 @@ export const ProviderRoutes = lazy(() =>
         const disabled = new Set(config.disabled_providers ?? [])
         const enabled = config.enabled_providers ? new Set(config.enabled_providers) : undefined
 
-        const allProviders = await ModelsDev.get()
         const filteredProviders: Record<string, (typeof allProviders)[string]> = {}
         for (const [key, value] of Object.entries(allProviders)) {
           if ((enabled ? enabled.has(key) : true) && !disabled.has(key)) {
@@ -64,7 +130,6 @@ export const ProviderRoutes = lazy(() =>
           }
         }
 
-        const connected = await Provider.list()
         const providers = Object.assign(
           mapValues(filteredProviders, (x) => Provider.fromModelsDevProvider(x)),
           connected,
@@ -83,78 +148,17 @@ export const ProviderRoutes = lazy(() =>
           } as any
         }
 
-        // Fetch fresh Codex models if authenticated
-        async function fetchCodexModels() {
-          const auth = await Auth.get("openai-codex")
-          if (!auth || auth.type !== "oauth") return null
-
-          const CODEX_MODELS_ENDPOINT = "https://chatgpt.com/backend-api/codex/models"
-          const headers = new Headers({
-            authorization: `Bearer ${auth.access}`,
-            "User-Agent": Installation.USER_AGENT,
-          })
-          if (auth.accountId) {
-            headers.set("ChatGPT-Account-Id", auth.accountId)
+        // Merge Codex API cache with models.dev openai-codex models.
+        // Codex API models act as placeholders for models not yet in models.dev.
+        // models.dev metadata takes priority when both sources have the same model ID.
+        if (providers["openai-codex"] && codexModelsCache) {
+          const merged: Record<string, any> = { ...codexModelsCache }
+          for (const [id, model] of Object.entries(providers["openai-codex"].models)) {
+            merged[id] = model
           }
-
-          const url = new URL(CODEX_MODELS_ENDPOINT)
-          const version = Installation.VERSION
-          url.searchParams.set(
-            "client_version",
-            /^\d+\.\d+\.\d+/.test(version) ? version : "0.0.0",
-          )
-
-          try {
-            const response = await fetch(url, {
-              headers,
-              signal: AbortSignal.timeout(10_000),
-            })
-            if (!response.ok) {
-              log.warn("codex models fetch failed", { status: response.status })
-              return null
-            }
-
-            const payload = await response.json() as { models: Array<{ slug: string; display_name: string; context_window?: number; visibility?: string; supported_in_api?: boolean }> }
-            const models: Record<string, any> = {}
-            for (const model of payload.models ?? []) {
-              if (model.visibility === "hide" || model.supported_in_api === false) continue
-              models[model.slug] = {
-                id: model.slug,
-                name: model.display_name || model.slug,
-                providerID: "openai-codex",
-                api: { id: model.slug, url: "https://chatgpt.com/backend-api/codex", npm: "@ai-sdk/openai" },
-                cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-                limit: {
-                  context: model.context_window ?? 400_000,
-                  input: Math.floor((model.context_window ?? 400_000) * 0.68),
-                  output: Math.min(128_000, Math.floor((model.context_window ?? 400_000) * 0.32)),
-                },
-                capabilities: { temperature: false, reasoning: true, attachment: false, toolcall: true },
-                status: "active",
-                options: {},
-                headers: {},
-                release_date: "",
-                variants: {},
-              }
-            }
-            log.info("codex models fetched", { count: Object.keys(models).length })
-            return models
-          } catch (error) {
-            log.warn("codex models fetch failed", { error })
-            return null
-          }
+          providers["openai-codex"].models = merged
         }
 
-        // Refresh Codex models if authenticated
-        if (providers["openai-codex"]) {
-          const freshModels = await fetchCodexModels()
-          if (freshModels && Object.keys(freshModels).length > 0) {
-            providers["openai-codex"].models = freshModels
-            log.info("codex models updated in provider list response")
-          }
-        }
-
-        const authMethodMap = await ProviderAuth.methods()
         authMethodMap["opencode-private"] ??= [{ type: "api", label: "Enter OpenCode Zen API key" }]
 
         // Inject synthetic provider entries for plugins with auth methods not yet in the list
@@ -179,7 +183,6 @@ export const ProviderRoutes = lazy(() =>
         }
 
         // Supplement connected with fresh auth data (bypasses cached Provider.state)
-        const liveAuth = await Auth.all()
         for (const [providerID] of Object.entries(liveAuth)) {
           if (authMethodMap[providerID] && !connected[providerID] && providers[providerID]) {
             connected[providerID] = providers[providerID]

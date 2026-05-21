@@ -43,6 +43,11 @@ export namespace BusEvent {
     }),
   )
 
+  export const SkillsUpdated = define(
+    "skill.updated",
+    z.object({}),
+  )
+
   export function payloads() {
     return z
       .discriminatedUnion(

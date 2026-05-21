@@ -2,6 +2,7 @@ import z from "zod"
 import path from "path"
 import os from "os"
 import fs from "fs/promises"
+import { watch } from "chokidar"
 import { Config } from "../config/config"
 import { Instance } from "../project/instance"
 import { NamedError } from "@opendora/util/error"
@@ -11,6 +12,7 @@ import { Global } from "@/global"
 import { Filesystem } from "@/util/filesystem"
 import { Flag } from "@/flag/flag"
 import { Bus } from "@/bus"
+import { BusEvent } from "@/bus/bus-event"
 import { Session } from "@opendora/session/session"
 import { Discovery } from "./discovery"
 import { Glob } from "../util/glob"
@@ -202,6 +204,28 @@ export namespace Skill {
 
   export function reload() {
     State.reset(() => Instance.directory, stateInit)
+  }
+
+  let _watcher: ReturnType<typeof watch> | undefined
+
+  export async function watchDirs() {
+    if (_watcher) return
+    const dirs = await Config.directories()
+    const candidates = await Promise.all(
+      dirs.map(async (d) => {
+        const p = path.join(d, "skill")
+        return await Filesystem.isDir(p) ? p : undefined
+      }),
+    )
+    const skillDirs = candidates.filter((p): p is string => p !== undefined)
+    if (skillDirs.length === 0) return
+    _watcher = watch(skillDirs, { ignoreInitial: true, depth: 2 })
+    const onChange = () => {
+      reload()
+      Bus.publish(BusEvent.SkillsUpdated, {}).catch(() => {})
+    }
+    _watcher.on("add", onChange).on("change", onChange).on("unlink", onChange).on("addDir", onChange).on("unlinkDir", onChange)
+    log.info("watching skill directories", { dirs: skillDirs })
   }
 
   export async function get(name: string) {
@@ -553,9 +577,12 @@ export namespace Skill {
     const skillDir = path.join(installBase, params.name)
     await fs.mkdir(skillDir, { recursive: true })
 
+    const safeDesc = params.description.includes(":") || params.description.includes('"')
+      ? `"${params.description.replace(/"/g, '\\"')}"`
+      : params.description
     const fmLines: string[] = [
       `name: ${params.name}`,
-      `description: ${params.description}`,
+      `description: ${safeDesc}`,
       `origin: opendora`,
     ]
 

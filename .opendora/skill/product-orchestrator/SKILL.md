@@ -1,6 +1,6 @@
 ---
 name: product-orchestrator
-description: Canonical Product Engineer workflow orchestrator: route setup/explore/plan/built/test/verify/report with conditional paths, strict gates, and traceable handoffs.
+description: "Canonical Product Engineer workflow orchestrator: route setup/explore/plan/built/test/verify/report with conditional paths, strict gates, and traceable handoffs."
 origin: opendora
 ---
 

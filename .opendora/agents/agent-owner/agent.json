@@ -3,8 +3,8 @@
   "description": "Owns OpenDora agent, skill, and tool ecosystem governance: agent roles, personas, skills, tool metadata, tool assignment, routing rules, audits, and training. Use for ecosystem configuration/governance, not for product feature planning or adding OpenDora functionality.",
   "mode": "primary",
   "model": {
-    "modelID": "big-pickle",
-    "providerID": "opencode"
+    "modelID": "e2daea63-4ca4-4817-9978-14baecf5612d",
+    "providerID": "fallback"
   },
   "temperature": 0.7,
   "steps": 80,

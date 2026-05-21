@@ -1,6 +1,6 @@
 ---
 name: product-test
-description: Use to validate what was actually committed: inspect branch commits/diffs against requirements and plan, run evidence-based tests, and return strict PASS/FAIL/PARTIAL verdict.
+description: "Use to validate what was actually committed: inspect branch commits/diffs against requirements and plan, run evidence-based tests, and return strict PASS/FAIL/PARTIAL verdict."
 origin: opendora
 ---
 

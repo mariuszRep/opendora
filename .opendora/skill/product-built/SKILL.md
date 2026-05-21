@@ -1,6 +1,6 @@
 ---
 name: product-built
-description: Use to implement approved plans end-to-end: create branch, apply code changes, commit coherent increments, and prepare a traceable handoff for testing.
+description: "Use to implement approved plans end-to-end: create branch, apply code changes, commit coherent increments, and prepare a traceable handoff for testing."
 origin: opendora
 ---
 

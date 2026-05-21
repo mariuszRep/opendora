@@ -19,5 +19,10 @@ export function lazy<T>(fn: () => T) {
     value = undefined
   }
 
+  result.set = (v: T) => {
+    value = v
+    loaded = true
+  }
+
   return result
 }
