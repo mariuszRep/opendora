@@ -268,7 +268,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
         model: valueToModel(model),
         fallback_model: valueToModel(fallbackModel),
         tools: selectedTools.length > 0 ? selectedTools : undefined,
-        skills: selectedSkills.length > 0 ? selectedSkills : undefined,
+        skills: selectedSkills,
         toolConfig: (() => {
           const config: any = {}
           if (delegateAllowedAgents.length > 0) {

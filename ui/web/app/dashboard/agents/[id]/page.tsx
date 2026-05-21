@@ -277,7 +277,7 @@ export default function AgentSettingsPage() {
         model,
         fallback_model: fallbackModel,
         tools: selectedTools.length > 0 ? selectedTools : undefined,
-        skills: selectedSkills.length > 0 ? selectedSkills : undefined,
+        skills: selectedSkills,
         toolConfig: (() => {
           const tc: any = {}
           if (delegateAllowedAgents.length > 0) {

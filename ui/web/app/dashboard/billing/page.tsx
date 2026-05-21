@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import {
   Card,
   CardContent,
@@ -29,34 +29,23 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
   AreaChart,
   Area,
   PieChart,
   Pie,
-  Cell,
 } from "recharts"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig,
+} from "@/components/ui/chart"
 import { TrendingUpIcon, TrendingDownIcon, ActivityIcon, CalendarIcon, MessageSquareIcon, ShieldIcon, DollarSignIcon } from "lucide-react"
 import { useBillingData, type TimeRange } from "@/hooks/use-billing-data"
 import { ProviderUsagePanel } from "@/components/providers/provider-usage-panel"
 
-// All chart colors come from the shadcn theme defined in globals.css
-const CHART_COLORS = [
-  "var(--color-chart-1)",
-  "var(--color-chart-2)",
-  "var(--color-chart-3)",
-  "var(--color-chart-4)",
-  "var(--color-chart-5)",
-]
-
-const TOOLTIP_STYLE = {
-  backgroundColor: "var(--color-card)",
-  border: "1px solid var(--color-border)",
-  borderRadius: "var(--radius-md)",
-  color: "var(--color-foreground)",
-  fontSize: "12px",
-}
 
 function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
@@ -73,6 +62,47 @@ function formatCost(n: number): string {
 export default function UsagePage() {
   const [timeRange, setTimeRange] = useState<TimeRange>("30d")
   const data = useBillingData(timeRange)
+
+  // Chart configs
+  const chartConfig = {
+    tokens: {
+      label: "Tokens",
+      color: "var(--color-chart-1)",
+    },
+  } satisfies ChartConfig
+
+  const distributionConfig = useMemo(() => {
+    const config: Record<string, { label: string; color: string }> = {}
+    data.distribution.forEach((item, index) => {
+      config[item.name] = {
+        label: item.name,
+        color: `var(--color-chart-${(index % 5) + 1})`,
+      }
+    })
+    return config
+  }, [data.distribution])
+
+  // Add fill property to distribution data for pie chart
+  const distributionWithFill = useMemo(() => {
+    return data.distribution.map((item, index) => ({
+      ...item,
+      fill: `var(--color-chart-${(index % 5) + 1})`,
+    }))
+  }, [data.distribution])
+
+  const sessionsConfig = {
+    sessions: {
+      label: "Sessions",
+      color: "var(--color-chart-2)",
+    },
+  } satisfies ChartConfig
+
+  const activityConfig = {
+    activity: {
+      label: "Activity",
+      color: "var(--color-chart-3)",
+    },
+  } satisfies ChartConfig
 
   return (
     <div className="flex flex-col h-full">
@@ -212,44 +242,50 @@ export default function UsagePage() {
                     No data for this period
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ChartContainer config={chartConfig} className="h-full w-full">
                     <AreaChart data={data.buckets}>
                       <defs>
                         <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" style={{ stopColor: CHART_COLORS[0], stopOpacity: 0.3 }} />
-                          <stop offset="95%" style={{ stopColor: CHART_COLORS[0], stopOpacity: 0 }} />
+                          <stop offset="5%" stopColor="var(--color-tokens)" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="var(--color-tokens)" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis
                         dataKey="date"
-                        tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
                         tickLine={false}
                         axisLine={false}
+                        tickMargin={8}
+                        tickFormatter={(value) => value}
                       />
                       <YAxis
-                        tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
                         tickLine={false}
                         axisLine={false}
+                        tickMargin={8}
                         tickFormatter={(v) => formatTokens(v)}
                       />
-                      <Tooltip
-                        contentStyle={TOOLTIP_STYLE}
-                        formatter={(value: number, name: string) => [
-                          name === "tokens" ? formatTokens(value) : value,
-                          name === "tokens" ? "Tokens" : "Sessions",
-                        ]}
+                      <ChartTooltip
+                        cursor={false}
+                        content={
+                          <ChartTooltipContent
+                            labelFormatter={(value, payload) => value as string}
+                            formatter={(value: number) => [
+                              formatTokens(value),
+                              "Tokens",
+                            ]}
+                          />
+                        }
                       />
                       <Area
                         type="monotone"
                         dataKey="tokens"
-                        stroke={CHART_COLORS[0]}
+                        stroke="var(--color-tokens)"
                         fillOpacity={1}
                         fill="url(#colorTokens)"
                         strokeWidth={2}
                       />
                     </AreaChart>
-                  </ResponsiveContainer>
+                  </ChartContainer>
                 )}
               </div>
             </CardContent>
@@ -270,44 +306,27 @@ export default function UsagePage() {
                     No token data for this period
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ChartContainer config={distributionConfig} className="h-full w-full">
                     <PieChart>
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent hideLabel />}
+                      />
                       <Pie
-                        data={data.distribution}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
+                        data={distributionWithFill}
                         dataKey="value"
-                      >
-                        {data.distribution.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={TOOLTIP_STYLE}
-                        formatter={(value: number) => [formatTokens(value), "Tokens"]}
+                        nameKey="name"
+                        innerRadius={60}
+                        strokeWidth={5}
+                      />
+                      <ChartLegend
+                        content={<ChartLegendContent nameKey="name" />}
+                        className="-translate-y-2 flex-wrap gap-2 *:basis-1/4 *:justify-center"
                       />
                     </PieChart>
-                  </ResponsiveContainer>
+                  </ChartContainer>
                 )}
               </div>
-              {!data.isLoading && data.distribution.length > 0 && (
-                <div className="flex flex-wrap gap-4 mt-4">
-                  {data.distribution.map((item, index) => (
-                    <div key={item.name} className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        {item.name}: {formatTokens(item.value)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -326,31 +345,31 @@ export default function UsagePage() {
                     No sessions with token data
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ChartContainer config={sessionsConfig} className="h-full w-full">
                     <BarChart data={data.topSessions} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                       <XAxis
                         type="number"
-                        tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
                         tickLine={false}
                         axisLine={false}
+                        tickMargin={8}
                         tickFormatter={(v) => formatTokens(v)}
                       />
                       <YAxis
                         dataKey="name"
                         type="category"
-                        tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
                         tickLine={false}
                         axisLine={false}
+                        tickMargin={8}
                         width={90}
                       />
-                      <Tooltip
-                        contentStyle={TOOLTIP_STYLE}
-                        formatter={(value: number) => [formatTokens(value), "Tokens"]}
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent />}
                       />
-                      <Bar dataKey="tokens" fill={CHART_COLORS[1]} radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="tokens" fill="var(--color-sessions)" radius={[0, 4, 4, 0]} />
                     </BarChart>
-                  </ResponsiveContainer>
+                  </ChartContainer>
                 )}
               </div>
             </CardContent>
@@ -372,28 +391,34 @@ export default function UsagePage() {
                   No session data for this period
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
+                <ChartContainer config={activityConfig} className="h-full w-full">
                   <BarChart data={data.buckets}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
                       tickLine={false}
                       axisLine={false}
+                      tickMargin={8}
+                      tickFormatter={(value) => value}
                     />
                     <YAxis
-                      tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
                       tickLine={false}
                       axisLine={false}
+                      tickMargin={8}
                       allowDecimals={false}
                     />
-                    <Tooltip
-                      contentStyle={TOOLTIP_STYLE}
-                      formatter={(value: number) => [value, "Sessions"]}
+                    <ChartTooltip
+                      cursor={false}
+                      content={
+                        <ChartTooltipContent
+                          labelFormatter={(value, payload) => value as string}
+                          formatter={(value: number) => [value, "Sessions"]}
+                        />
+                      }
                     />
-                    <Bar dataKey="sessions" fill={CHART_COLORS[2]} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="sessions" fill="var(--color-activity)" radius={[4, 4, 0, 0]} />
                   </BarChart>
-                </ResponsiveContainer>
+                </ChartContainer>
               )}
             </div>
           </CardContent>

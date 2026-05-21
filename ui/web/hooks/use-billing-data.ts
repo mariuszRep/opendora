@@ -59,14 +59,14 @@ function getRangeMs(range: TimeRange): number {
 function bucketKey(ts: number, range: TimeRange): string {
   const d = new Date(ts)
   if (range === "7d") return d.toISOString().slice(0, 10)
-  if (range === "30d") return `${d.getFullYear()}-${d.getMonth()}-W${Math.ceil(d.getDate() / 7)}`
+  if (range === "30d") return d.toISOString().slice(0, 10)
   return `${d.getFullYear()}-${d.getMonth()}`
 }
 
 function bucketLabel(ts: number, range: TimeRange): string {
   const d = new Date(ts)
   if (range === "7d") return d.toLocaleDateString("en", { weekday: "short" })
-  if (range === "30d") return `Week ${Math.ceil(d.getDate() / 7)}`
+  if (range === "30d") return d.toLocaleDateString("en", { month: "short", day: "numeric" })
   return d.toLocaleDateString("en", { month: "short" })
 }
 

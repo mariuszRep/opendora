@@ -12,6 +12,9 @@
   "tools": [
     "skill_list",
     "skill_load",
+    "skill_create",
+    "skill_edit",
+    "skill_remove",
     "delegate",
     "reply",
     "question",
@@ -22,16 +25,15 @@
   ],
   "skills": [
     "requirements",
-    "session-management",
-    "code-exploration",
-    "agent-eval",
-    "skill-eval",
-    "tool-eval",
-    "session-eval",
-    "agent-ops",
-    "skill-ops",
-    "tool-meta-ops",
-    "scheduling"
+    "manage-session",
+    "evaluate-agent",
+    "evaluate-skill",
+    "evaluate-tool",
+    "evaluate-session",
+    "manage-agent",
+    "manage-skill",
+    "manage-tool",
+    "manage-schedule"
   ],
   "toolConfig": {
     "delegate": {

@@ -1,9 +1,0 @@
-{
-  "tools": [
-    "tool_list",
-    "tool_get",
-    "tool_update",
-    "session_search",
-    "todowrite"
-  ]
-}

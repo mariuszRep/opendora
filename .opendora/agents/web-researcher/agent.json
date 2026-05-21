@@ -3,8 +3,8 @@
   "description": "General-purpose web research specialist for discovery, source verification, and concise synthesis from current web information.",
   "mode": "worker",
   "model": {
-    "modelID": "minimax-m2.5-free",
-    "providerID": "opencode"
+    "modelID": "gpt-5.4-mini",
+    "providerID": "openai-codex"
   },
   "temperature": 0.3,
   "steps": 60,
@@ -23,5 +23,11 @@
     "ai-news-digest",
     "playwright-browser",
     "suno-auth-exploration"
-  ]
+  ],
+  "toolConfig": {
+    "reply": {
+      "stopAfterReply": false
+    }
+  },
+  "enableInjection": false
 }
