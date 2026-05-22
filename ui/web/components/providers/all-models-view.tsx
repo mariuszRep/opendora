@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react"
 import { SearchIcon, BrainIcon, WrenchIcon, ImageIcon, MicIcon, VideoIcon, FileTextIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ModelSelectorLogo } from "@/components/ai-elements/model-selector"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import type { Provider } from "@/lib/opendora"
 import { formatTokens, formatCost, type ProviderModel } from "./provider-models-panel"
@@ -17,11 +18,17 @@ interface AllModelsViewProps {
 }
 
 type ModelEntry = { provider: Provider; model: ProviderModel }
+type PricingFilter = "free" | "paid" | "all"
+
+function isFreeModel(model: ProviderModel): boolean {
+  return model.cost?.input === 0 && model.cost?.output === 0
+}
 
 export function AllModelsView({ providers, connectedProviders }: AllModelsViewProps) {
   const [search, setSearch] = useState("")
   const [filterProvider, setFilterProvider] = useState<string | null>(null)
-  const [connectedOnly, setConnectedOnly] = useState(false)
+  const [connectedOnly, setConnectedOnly] = useState(true)
+  const [pricingFilter, setPricingFilter] = useState<PricingFilter>("all")
 
   const activeProviders = useMemo(
     () => providers.filter((p) => Object.keys(p.models).length > 0),
@@ -43,18 +50,23 @@ export function AllModelsView({ providers, connectedProviders }: AllModelsViewPr
   }, [activeProviders, connectedProviders, filterProvider, connectedOnly])
 
   const filtered = useMemo<ModelEntry[]>(() => {
-    if (!search.trim()) return allModels
+    const priceFiltered = allModels.filter(({ model }) => {
+      if (pricingFilter === "all") return true
+      const isFree = isFreeModel(model)
+      return pricingFilter === "free" ? isFree : !isFree
+    })
+    if (!search.trim()) return priceFiltered
     const q = search.toLowerCase()
-    return allModels.filter(
+    return priceFiltered.filter(
       ({ provider, model }) =>
         (model.name ?? model.id).toLowerCase().includes(q) ||
         model.id.toLowerCase().includes(q) ||
         provider.name.toLowerCase().includes(q) ||
         model.family?.toLowerCase().includes(q),
     )
-  }, [allModels, search])
+  }, [allModels, pricingFilter, search])
 
-  const pillProviders = useMemo(
+  const providerOptions = useMemo(
     () =>
       connectedOnly
         ? activeProviders.filter((p) => connectedProviders.includes(p.id))
@@ -65,8 +77,7 @@ export function AllModelsView({ providers, connectedProviders }: AllModelsViewPr
   return (
     <TooltipProvider>
       <div className="flex flex-col gap-4">
-        {/* Search + toggle */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col gap-3">
           <div className="relative flex-1 min-w-48">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
             <Input
@@ -76,47 +87,66 @@ export function AllModelsView({ providers, connectedProviders }: AllModelsViewPr
               className="pl-8 text-sm h-8"
             />
           </div>
-          <button
-            onClick={() => { setConnectedOnly((v) => !v); setFilterProvider(null) }}
-            className={cn(
-              "px-2.5 py-1 text-xs rounded border transition-colors shrink-0",
-              connectedOnly
-                ? "bg-primary text-primary-foreground border-primary"
-                : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
-            )}
-          >
-            Connected only
-          </button>
-        </div>
 
-        {/* Provider filter pills */}
-        <div className="flex flex-wrap gap-1.5">
-          <button
-            onClick={() => setFilterProvider(null)}
-            className={cn(
-              "px-2.5 py-0.5 text-xs rounded-full border transition-colors",
-              !filterProvider
-                ? "bg-primary text-primary-foreground border-primary"
-                : "border-border text-muted-foreground hover:text-foreground",
-            )}
-          >
-            All
-          </button>
-          {pillProviders.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => setFilterProvider(filterProvider === p.id ? null : p.id)}
-              className={cn(
-                "flex items-center gap-1 px-2.5 py-0.5 text-xs rounded-full border transition-colors",
-                filterProvider === p.id
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border text-muted-foreground hover:text-foreground",
-              )}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1">
+              {[
+                { value: false, label: "All providers" },
+                { value: true, label: "Connected" },
+              ].map((option) => (
+                <Button
+                  key={option.label}
+                  type="button"
+                  size="sm"
+                  variant={connectedOnly === option.value ? "default" : "outline"}
+                  onClick={() => {
+                    setConnectedOnly(option.value)
+                    setFilterProvider(null)
+                  }}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1">
+              {[
+                { value: "free", label: "Free" },
+                { value: "paid", label: "Paid" },
+                { value: "all", label: "All" },
+              ].map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  size="sm"
+                  variant={pricingFilter === option.value ? "default" : "outline"}
+                  onClick={() => setPricingFilter(option.value as PricingFilter)}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+
+            <Select
+              value={filterProvider ?? "__all__"}
+              onValueChange={(value) => setFilterProvider(value === "__all__" ? null : value)}
             >
-              <ModelSelectorLogo provider={p.id} />
-              {p.name}
-            </button>
-          ))}
+              <SelectTrigger size="sm" className="min-w-48">
+                <SelectValue placeholder="Provider" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All providers</SelectItem>
+                {providerOptions.map((provider) => (
+                  <SelectItem key={provider.id} value={provider.id}>
+                    <span className="flex items-center gap-1.5">
+                      <ModelSelectorLogo provider={provider.id} />
+                      {provider.name}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <p className="text-xs text-muted-foreground -mt-1">
@@ -134,7 +164,7 @@ export function AllModelsView({ providers, connectedProviders }: AllModelsViewPr
             <span className="w-16 text-center">Caps</span>
           </div>
 
-          <ScrollArea className="max-h-[64vh]">
+          <div className="max-h-[64vh] overflow-y-auto">
             <div className="divide-y">
               {filtered.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-10">No models found.</p>
@@ -144,7 +174,7 @@ export function AllModelsView({ providers, connectedProviders }: AllModelsViewPr
                 ))
               )}
             </div>
-          </ScrollArea>
+          </div>
         </div>
       </div>
     </TooltipProvider>

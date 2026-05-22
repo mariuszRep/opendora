@@ -79,7 +79,7 @@ export function ProviderModelsPanel({ models }: ProviderModelsPanelProps) {
   )
 }
 
-function ModelRow({ model }: { model: ProviderModel }) {
+export function ModelRow({ model }: { model: ProviderModel }) {
   const isFree = model.cost?.input === 0 && model.cost?.output === 0
   const hasVision = model.capabilities?.input?.image || model.capabilities?.attachment
   const hasAudio = model.capabilities?.input?.audio

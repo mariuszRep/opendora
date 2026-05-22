@@ -2,12 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2Icon, ClockAlertIcon, CircleIcon, ExternalLinkIcon, KeyRoundIcon, Loader2Icon, SearchIcon, Trash2Icon, BrainIcon, WrenchIcon, PlusIcon, LayersIcon, DatabaseIcon, PencilIcon, RefreshCwIcon } from "lucide-react"
+import {
+  CheckCircle2Icon,
+  ClockAlertIcon,
+  DatabaseIcon,
+  LayersIcon,
+  PlusIcon,
+  SearchIcon,
+  Settings2Icon,
+  Trash2Icon,
+} from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import {
   ModelSelector,
@@ -22,8 +31,9 @@ import {
   ModelSelectorTrigger,
 } from "@/components/ai-elements/model-selector"
 import { GroupBuilderDialog, type ModelGroup } from "@/components/providers/group-builder-dialog"
-import { ProviderModelsPanel } from "@/components/providers/provider-models-panel"
 import { AllModelsView } from "@/components/providers/all-models-view"
+import { ProviderDetailDialog } from "@/components/providers/provider-detail-dialog"
+import { SettingsCard } from "@/components/settings/settings-card"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { opendora, type AuthMethod, type Provider } from "@/lib/opendora"
 import { cn } from "@/lib/utils"
@@ -36,32 +46,41 @@ type ProviderState = {
 
 type ModelValue = { providerID: string; modelID: string } | undefined
 
-type ApiKeyFormState = {
-  providerID: string
-  key: string
-  saving: boolean
-  error: string | null
-}
-
 function providerLogoID(providerID: string) {
   return providerID === "opencode-private" ? "opencode" : providerID
 }
 
 export default function ProvidersPage() {
   const router = useRouter()
-  const { providers, connectedProviders, modelFilters, setModelFilter, defaultModels, refreshProviders, modelGroups, refreshModelGroups, providerTimeouts, refreshProviderTimeouts } = useOpendoraContext()
+  const {
+    providers,
+    connectedProviders,
+    modelFilters,
+    setModelFilter,
+    defaultModels,
+    refreshProviders,
+    modelGroups,
+    refreshModelGroups,
+    providerTimeouts,
+    refreshProviderTimeouts,
+  } = useOpendoraContext()
+
   const [authMethods, setAuthMethods] = useState<Record<string, AuthMethod[]>>({})
-  const [apiKeyForm, setApiKeyForm] = useState<ApiKeyFormState | null>(null)
   const [removing, setRemoving] = useState<string | null>(null)
   const [oauthLoading, setOauthLoading] = useState<string | null>(null)
   const [resettingTimeout, setResettingTimeout] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [selectedProviderID, setSelectedProviderID] = useState<string | null>(null)
+
   const [defaultModel, setDefaultModel] = useState<ModelValue>(undefined)
+  const [defaultGroupID, setDefaultGroupID] = useState<string | null>(null)
   const [defaultModelOpen, setDefaultModelOpen] = useState(false)
-  const [savingDefaultModel, setSavingDefaultModel] = useState(false)
-  const [saveSuccess, setSaveSuccess] = useState(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
-  const [globalConfig, setGlobalConfig] = useState<{ model?: string; model_filters?: Record<string, "all" | "free" | "none">; tool_config?: Record<string, { apiKey?: string; useApiKey?: boolean }>; [k: string]: unknown } | null>(null)
+  const [globalConfig, setGlobalConfig] = useState<{
+    model?: string
+    model_filters?: Record<string, "all" | "free" | "none">
+    tool_config?: Record<string, { apiKey?: string; useApiKey?: boolean }>
+    [k: string]: unknown
+  } | null>(null)
   const [groupDialogOpen, setGroupDialogOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState<ModelGroup | null>(null)
 
@@ -70,31 +89,35 @@ export default function ProvidersPage() {
     opendora.config.get().then(setGlobalConfig).catch(() => {})
   }, [])
 
-  // Load default model from global config or provider defaults
   useEffect(() => {
     if (globalConfig?.model) {
-      // Parse global default model (e.g., "anthropic/claude-3-5-sonnet-20241022")
+      if (globalConfig.model.startsWith("group:")) {
+        setDefaultGroupID(globalConfig.model.slice(6))
+        setDefaultModel(undefined)
+        return
+      }
       const [providerID, ...modelParts] = globalConfig.model.split("/")
       if (providerID && modelParts.length > 0) {
-        const modelID = modelParts.join("/")
-        setDefaultModel({ providerID, modelID })
+        setDefaultModel({ providerID, modelID: modelParts.join("/") })
+        setDefaultGroupID(null)
         return
       }
     }
-    
-    // Fallback to first connected provider's default
     if (connectedProviders.length > 0 && defaultModels) {
       const firstProvider = connectedProviders[0]
       const defaultModelId = defaultModels[firstProvider]
       if (defaultModelId) {
         setDefaultModel({ providerID: firstProvider, modelID: defaultModelId })
+        setDefaultGroupID(null)
       }
     }
   }, [globalConfig, connectedProviders, defaultModels])
 
   async function handleSaveGroup(group: Omit<ModelGroup, "id">) {
     const updated = editingGroup
-      ? modelGroups.map((existing) => existing.id === editingGroup.id ? { ...group, id: editingGroup.id } : existing)
+      ? modelGroups.map((existing) =>
+          existing.id === editingGroup.id ? { ...group, id: editingGroup.id } : existing,
+        )
       : [...modelGroups, { ...group, id: crypto.randomUUID() }]
     await opendora.config.update({ model_groups: updated })
     await Promise.all([refreshModelGroups(), refreshProviders()])
@@ -117,104 +140,11 @@ export default function ProvidersPage() {
     setGroupDialogOpen(true)
   }
 
-  const modelList = useMemo(() => {
-    const isFreeModel = (m: { id: string; [k: string]: unknown }) => {
-      const cost = m.cost as { input: number; output: number } | undefined
-      return !!(cost && cost.input === 0 && cost.output === 0)
-    }
-    return providers
-      .filter((p) => connectedProviders.includes(p.id))
-      .flatMap((p) => {
-        const filter = modelFilters[p.id] ?? "all"
-        if (filter === "none") return []
-        const models = Object.values(p.models)
-        const filtered = filter === "free" ? models.filter(isFreeModel) : models
-        return filtered.map((m) => ({
-          providerID: p.id,
-          providerName: p.name,
-          modelID: m.id,
-          modelName: (m as { name?: string }).name ?? m.id,
-        }))
-      })
-  }, [providers, connectedProviders, modelFilters])
-
-  const modelsByProvider = useMemo(() => {
-    const groups = new Map<string, typeof modelList>()
-    for (const m of modelList) {
-      if (!groups.has(m.providerName)) groups.set(m.providerName, [])
-      groups.get(m.providerName)!.push(m)
-    }
-    return groups
-  }, [modelList])
-
-  const providerStates: ProviderState[] = providers.map((p) => ({
-    provider: p,
-    methods: authMethods[p.id] ?? [],
-    connected: connectedProviders.includes(p.id),
-  }))
-
-  const filteredStates = useMemo(() => {
-    if (!searchQuery.trim()) return providerStates
-    const q = searchQuery.toLowerCase()
-    return providerStates.filter(
-      ({ provider }) =>
-        provider.name.toLowerCase().includes(q) ||
-        provider.id.toLowerCase().includes(q),
-    )
-  }, [providerStates, searchQuery])
-
-  const connectedStates = useMemo(
-    () => [...filteredStates.filter((s) => s.connected)].sort((a, b) => a.provider.name.localeCompare(b.provider.name)),
-    [filteredStates],
-  )
-  const unconnectedStates = useMemo(
-    () => [...filteredStates.filter((s) => !s.connected)].sort((a, b) => a.provider.name.localeCompare(b.provider.name)),
-    [filteredStates],
-  )
-
-  function hasFreeModels(provider: Provider): boolean {
-    return Object.values(provider.models).some((m) => {
-      const cost = m.cost as { input: number; output: number } | undefined
-      if (cost && cost.input === 0 && cost.output === 0) return true
-      return m.id.endsWith(":free") || m.id.endsWith("-free")
-    })
-  }
-
-  async function handleSaveApiKey() {
-    if (!apiKeyForm || !apiKeyForm.key.trim()) return
-    setApiKeyForm((f) => f && { ...f, saving: true, error: null })
-    try {
-      await opendora.auth.set(apiKeyForm.providerID, { type: "api", key: apiKeyForm.key.trim() })
-      setApiKeyForm(null)
-      await Promise.all([
-        refreshProviders(),
-        opendora.provider.authMethods().then(setAuthMethods),
-      ])
-      router.refresh()
-    } catch (err) {
-      setApiKeyForm((f) => f && { ...f, saving: false, error: err instanceof Error ? err.message : "Failed to save" })
-    }
-  }
-
-  async function handleRemoveToolApiKey(toolID: string) {
-    try {
-      const currentToolConfig = { ...(globalConfig?.tool_config || {}) } as Record<string, { apiKey?: string }>
-      delete currentToolConfig[toolID]
-      await opendora.config.update({ tool_config: currentToolConfig })
-      opendora.config.get().then(setGlobalConfig).catch(() => {})
-    } catch (err) {
-      console.error("Failed to remove tool API key:", err)
-    }
-  }
-
   async function handleRemove(providerID: string) {
     setRemoving(providerID)
     try {
       await opendora.auth.remove(providerID)
-      await Promise.all([
-        refreshProviders(),
-        opendora.provider.authMethods().then(setAuthMethods),
-      ])
+      await Promise.all([refreshProviders(), opendora.provider.authMethods().then(setAuthMethods)])
       router.refresh()
     } catch {
       // ignore
@@ -247,43 +177,103 @@ export default function ProvidersPage() {
     }
   }
 
-  async function handleSaveDefaultModel() {
-    if (!defaultModel) return
-    setSavingDefaultModel(true)
-    setSaveSuccess(false)
-    setSaveError(null)
+  async function handleApiKey(providerID: string, key: string) {
+    await opendora.auth.set(providerID, { type: "api", key })
+    await Promise.all([refreshProviders(), opendora.provider.authMethods().then(setAuthMethods)])
+    router.refresh()
+  }
+
+  async function handleSelectDefault(modelString: string) {
     try {
-      // Save the default model configuration using the config API
-      const modelString = `${defaultModel.providerID}/${defaultModel.modelID}`
       await opendora.config.update({ model: modelString })
-      
-      // Refresh providers and global config to get updated defaults
-      await Promise.all([
-        refreshProviders(),
-        opendora.config.get().then(setGlobalConfig)
-      ])
-      
-      // Show success feedback
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3000) // Hide after 3 seconds
+      await Promise.all([refreshProviders(), opendora.config.get().then(setGlobalConfig)])
+      setDefaultModelOpen(false)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to save default model"
-      setSaveError(errorMessage)
-      setTimeout(() => setSaveError(null), 5000) // Hide after 5 seconds
-    } finally {
-      setSavingDefaultModel(false)
+      console.error("Failed to save default model:", err)
     }
   }
+
+  const modelList = useMemo(() => {
+    const isFreeModel = (m: { id: string; [k: string]: unknown }) => {
+      const cost = m.cost as { input: number; output: number } | undefined
+      return !!(cost && cost.input === 0 && cost.output === 0)
+    }
+    return providers
+      .filter((p) => connectedProviders.includes(p.id))
+      .flatMap((p) => {
+        const filter = modelFilters[p.id] ?? "all"
+        if (filter === "none") return []
+        const models = Object.values(p.models)
+        const filtered = filter === "free" ? models.filter(isFreeModel) : models
+        return filtered.map((m) => ({
+          providerID: p.id,
+          providerName: p.name,
+          modelID: m.id,
+          modelName: (m as { name?: string }).name ?? m.id,
+        }))
+      })
+  }, [providers, connectedProviders, modelFilters])
+
+  const modelsByProvider = useMemo(() => {
+    const groups = new Map<string, typeof modelList>()
+    for (const m of modelList) {
+      if (!groups.has(m.providerName)) groups.set(m.providerName, [])
+      groups.get(m.providerName)!.push(m)
+    }
+    return groups
+  }, [modelList])
+
+  const groupIDs = useMemo(() => new Set(modelGroups.map((g) => g.id)), [modelGroups])
+
+  const providerStates: ProviderState[] = providers
+    .filter((p) => !groupIDs.has(p.id))
+    .map((p) => ({
+      provider: p,
+      methods: authMethods[p.id] ?? [],
+      connected: connectedProviders.includes(p.id),
+    }))
+
+  const filteredStates = useMemo(() => {
+    if (!searchQuery.trim()) return providerStates
+    const q = searchQuery.toLowerCase()
+    return providerStates.filter(
+      ({ provider }) =>
+        provider.name.toLowerCase().includes(q) || provider.id.toLowerCase().includes(q),
+    )
+  }, [providerStates, searchQuery])
+
+  const connectedStates = useMemo(
+    () =>
+      [...filteredStates.filter((s) => s.connected)].sort((a, b) =>
+        a.provider.name.localeCompare(b.provider.name),
+      ),
+    [filteredStates],
+  )
+  const unconnectedStates = useMemo(
+    () =>
+      [...filteredStates.filter((s) => !s.connected)].sort((a, b) =>
+        a.provider.name.localeCompare(b.provider.name),
+      ),
+    [filteredStates],
+  )
+
+  function hasFreeModels(provider: Provider): boolean {
+    return Object.values(provider.models).some((m) => {
+      const cost = m.cost as { input: number; output: number } | undefined
+      if (cost && cost.input === 0 && cost.output === 0) return true
+      return m.id.endsWith(":free") || m.id.endsWith("-free")
+    })
+  }
+
+  const selectedState = selectedProviderID
+    ? providerStates.find((ps) => ps.provider.id === selectedProviderID) ?? null
+    : null
 
   return (
     <SettingsPageLayout
       title="Providers"
       headerAction={
         <>
-          <Button size="sm" variant="outline" className="gap-1.5" onClick={handleNewGroup}>
-            <PlusIcon className="size-3.5" />
-            New group
-          </Button>
           <GroupBuilderDialog
             open={groupDialogOpen}
             onOpenChange={(open) => {
@@ -296,542 +286,363 @@ export default function ProvidersPage() {
             initialGroup={editingGroup}
             onSave={handleSaveGroup}
           />
+          <ModelSelector
+            open={defaultModelOpen}
+            onOpenChange={(next) => {
+              setDefaultModelOpen(next)
+              if (next) {
+                refreshProviders().catch(() => {})
+                refreshProviderTimeouts().catch(() => {})
+              }
+            }}
+          >
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <ModelSelectorTrigger asChild>
+                    <Button size="icon-sm" variant="ghost">
+                      <Settings2Icon className="size-4" />
+                    </Button>
+                  </ModelSelectorTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Default model settings</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <ModelSelectorContent>
+              <ModelSelectorInput placeholder="Search models and groups…" />
+              <ModelSelectorList>
+                <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
+                <ModelSelectorGroup heading="">
+                  <ModelSelectorItem
+                    value="__none__ no default"
+                    onSelect={() => {
+                      setDefaultModel(undefined)
+                      setDefaultGroupID(null)
+                      setDefaultModelOpen(false)
+                    }}
+                  >
+                    <span className="text-muted-foreground">No default model</span>
+                    {!defaultModel && !defaultGroupID && <CheckCircle2Icon className="ml-auto size-4" />}
+                  </ModelSelectorItem>
+                </ModelSelectorGroup>
+                {modelGroups.length > 0 && (
+                  <ModelSelectorGroup heading="Fallback Groups">
+                    {modelGroups.map((group) => (
+                      <ModelSelectorItem
+                        key={`group:${group.id}`}
+                        value={`group:${group.id} ${group.name}`}
+                        onSelect={() => handleSelectDefault(`group:${group.id}`)}
+                      >
+                        <LayersIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                        <ModelSelectorName>{group.name}</ModelSelectorName>
+                        {defaultGroupID === group.id ? (
+                          <CheckCircle2Icon className="ml-auto size-4" />
+                        ) : (
+                          <div className="ml-auto size-4" />
+                        )}
+                      </ModelSelectorItem>
+                    ))}
+                  </ModelSelectorGroup>
+                )}
+                {[...modelsByProvider.entries()].map(([providerName, models]) => (
+                  <ModelSelectorGroup heading={providerName} key={providerName}>
+                    {models.map((m) => {
+                      const active =
+                        defaultModel?.providerID === m.providerID &&
+                        defaultModel?.modelID === m.modelID
+                      return (
+                        <ModelSelectorItem
+                          key={`${m.providerID}:${m.modelID}`}
+                          value={`${m.providerID}:${m.modelID}`}
+                          onSelect={() => handleSelectDefault(`${m.providerID}/${m.modelID}`)}
+                        >
+                          <ModelSelectorLogo provider={m.providerID} />
+                          <ModelSelectorName>{m.modelName}</ModelSelectorName>
+                          {providerTimeouts[m.providerID]?.timedOut && (
+                            <ClockAlertIcon className="size-3 text-red-500 shrink-0" />
+                          )}
+                          {active ? (
+                            <CheckCircle2Icon className="ml-auto size-4" />
+                          ) : (
+                            <div className="ml-auto size-4" />
+                          )}
+                        </ModelSelectorItem>
+                      )
+                    })}
+                  </ModelSelectorGroup>
+                ))}
+              </ModelSelectorList>
+            </ModelSelectorContent>
+          </ModelSelector>
         </>
       }
     >
       <Tabs defaultValue="providers" className="flex flex-col gap-6">
         <TabsList variant="line" className="w-fit">
+          <TabsTrigger value="groups">
+            <LayersIcon className="size-3.5" />
+            Groups
+          </TabsTrigger>
           <TabsTrigger value="providers">Providers</TabsTrigger>
           <TabsTrigger value="models">
             <DatabaseIcon className="size-3.5" />
-            All Models
+            Models
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="groups">
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">Model Groups</h3>
+                <p className="text-sm text-muted-foreground">
+                  Ordered model chains — if one model fails, the next is tried automatically.
+                </p>
+              </div>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={handleNewGroup}>
+                <PlusIcon className="size-3.5" />
+                New group
+              </Button>
+            </div>
+
+            {modelGroups.length === 0 ? (
+              <Card className="max-w-2xl">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <LayersIcon className="size-12 text-muted-foreground/40 mb-4" />
+                  <p className="text-sm text-muted-foreground mb-4">No groups yet</p>
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={handleNewGroup}>
+                    <PlusIcon className="size-3.5" />
+                    Create first group
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {modelGroups.map((group) => (
+                  <Card
+                    key={group.id}
+                    className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-md"
+                    onClick={() => handleEditGroup(group)}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <LayersIcon className="size-4 text-primary shrink-0" />
+                          <CardTitle className="text-base">{group.name}</CardTitle>
+                        </div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="icon-sm"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive shrink-0"
+                                onClick={(e) => { e.stopPropagation(); handleDeleteGroup(group.id) }}
+                              >
+                                <Trash2Icon className="size-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Delete group</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {group.models.map((m, idx) => {
+                          const prov = providers.find((p) => p.id === m.providerID)
+                          const modelName = (prov?.models[m.modelID] as { name?: string } | undefined)?.name ?? m.modelID
+                          return (
+                            <div key={`${m.providerID}:${m.modelID}`} className="flex items-center gap-1">
+                              {idx > 0 && <span className="text-xs text-muted-foreground">→</span>}
+                              <span className="flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs">
+                                <ModelSelectorLogo provider={m.providerID} />
+                                {modelName}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
 
         <TabsContent value="models">
           <AllModelsView providers={providers} connectedProviders={connectedProviders} />
         </TabsContent>
 
         <TabsContent value="providers">
-          <div className="mx-auto max-w-2xl flex flex-col gap-6">
-          {/* Default Model Configuration */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <BrainIcon className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Default Model</CardTitle>
-              </div>
-              <CardDescription>
-                Set the default AI model used when agents don&apos;t have a specific model configured.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label>Default Model</Label>
-                  <ModelSelector
-                    open={defaultModelOpen}
-                    onOpenChange={(nextOpen) => {
-                      setDefaultModelOpen(nextOpen)
-                      if (nextOpen) {
-                        refreshProviders().catch(() => { })
-                        refreshProviderTimeouts().catch(() => { })
-                      }
-                    }}
-                  >
-                    <ModelSelectorTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start font-normal" suppressHydrationWarning>
-                        {defaultModel ? (
-                          (() => {
-                            const selected = modelList.find((m) => m.providerID === defaultModel.providerID && m.modelID === defaultModel.modelID)
-                            return selected ? (
-                              <>
-                                <ModelSelectorLogo provider={selected.providerID} />
-                                <ModelSelectorName>{selected.modelName}</ModelSelectorName>
-                              </>
-                            ) : (
-                              <span className="text-muted-foreground">Select model...</span>
-                            )
-                          })()
-                        ) : (
-                          <span className="text-muted-foreground">Select default model...</span>
-                        )}
-                      </Button>
-                    </ModelSelectorTrigger>
-                    <ModelSelectorContent>
-                      <ModelSelectorInput placeholder="Search models…" />
-                      <ModelSelectorList>
-                        <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
-                        <ModelSelectorGroup heading="">
-                          <ModelSelectorItem
-                            value="__none__"
-                            onSelect={() => { setDefaultModel(undefined); setDefaultModelOpen(false) }}
-                          >
-                            <span className="text-muted-foreground">No default model</span>
-                            {!defaultModel && <CheckCircle2Icon className="ml-auto size-4" />}
-                          </ModelSelectorItem>
-                        </ModelSelectorGroup>
-                        {[...modelsByProvider.entries()].map(([providerName, models]) => (
-                          <ModelSelectorGroup heading={providerName} key={providerName}>
-                            {models.map((m) => {
-                              const active = defaultModel?.providerID === m.providerID && defaultModel?.modelID === m.modelID
-                              return (
-                                <ModelSelectorItem
-                                  key={`${m.providerID}:${m.modelID}`}
-                                  value={`${m.providerID}:${m.modelID}`}
-                                  onSelect={() => {
-                                    setDefaultModel({ providerID: m.providerID, modelID: m.modelID })
-                                    setDefaultModelOpen(false)
-                                  }}
-                                >
-                                  <ModelSelectorLogo provider={m.providerID} />
-                                  <ModelSelectorName>{m.modelName}</ModelSelectorName>
-                                  {providerTimeouts[m.providerID]?.timedOut && (
-                                    <ClockAlertIcon className="size-3 text-red-500 shrink-0" />
-                                  )}
-                                  {active ? <CheckCircle2Icon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}
-                                </ModelSelectorItem>
-                              )
-                            })}
-                          </ModelSelectorGroup>
-                        ))}
-                      </ModelSelectorList>
-                    </ModelSelectorContent>
-                  </ModelSelector>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col gap-1">
-                    <p className="text-xs text-muted-foreground">
-                      This model will be used as the default for new agents and sessions.
-                    </p>
-                    {saveSuccess && (
-                      <p className="text-xs text-green-600 dark:text-green-400">
-                        Default model saved successfully!
-                      </p>
-                    )}
-                    {saveError && (
-                      <p className="text-xs text-red-600 dark:text-red-400">
-                        {saveError}
-                      </p>
-                    )}
-                  </div>
-                  <Button 
-                    size="sm" 
-                    onClick={handleSaveDefaultModel}
-                    disabled={savingDefaultModel || !defaultModel}
-                  >
-                    {savingDefaultModel && <Loader2Icon className="mr-1.5 size-3.5 animate-spin" />}
-                    {savingDefaultModel ? "Saving..." : "Save Default"}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex flex-col gap-6">
+            {/* Search */}
+            <div className="relative max-w-sm">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search providers…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 text-sm"
+              />
+            </div>
 
-          {/* Fallback groups */}
-          {modelGroups.length > 0 && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <LayersIcon className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">Fallback Groups</CardTitle>
-                </div>
-                <CardDescription>
-                  Ordered model chains — if one model fails, the next is tried automatically.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                {modelGroups.map((group) => (
-                  <div
-                    key={group.id}
-                    role="button"
-                    tabIndex={0}
-                    className="rounded-md border p-3 flex flex-col gap-2 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    onClick={() => handleEditGroup(group)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault()
-                        handleEditGroup(group)
-                      }
-                    }}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium">{group.name}</span>
-                      <div className="flex items-center gap-1">
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <PencilIcon className="size-3.5" />
-                          Edit
-                        </span>
-                        <Button
-                          size="icon-sm"
-                          variant="ghost"
-                          className="text-destructive hover:text-destructive"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            handleDeleteGroup(group.id)
-                          }}
-                          title="Delete group"
-                        >
-                          <Trash2Icon className="size-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {group.models.map((m, idx) => {
-                        const provider = providers.find((p) => p.id === m.providerID)
-                        const modelObj = provider?.models[m.modelID]
-                        const modelName = (modelObj as { name?: string } | undefined)?.name ?? m.modelID
-                        return (
-                          <div key={`${m.providerID}:${m.modelID}`} className="flex items-center gap-1">
-                            {idx > 0 && <span className="text-xs text-muted-foreground">→</span>}
-                            <span className="flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs">
-                              <ModelSelectorLogo provider={m.providerID} />
-                              {modelName}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
+            {filteredStates.length === 0 && (
+              <p className="text-sm text-muted-foreground">No providers found.</p>
+            )}
+
+            {/* Connected providers */}
+            {connectedStates.length > 0 && (
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {connectedStates.map(({ provider, methods }) => (
+                  <ProviderCard
+                    key={provider.id}
+                    provider={provider}
+                    connected
+                    timedOut={!!providerTimeouts[provider.id]?.timedOut}
+                    modelFilter={modelFilters[provider.id] ?? "all"}
+                    hasFreeModels={hasFreeModels(provider)}
+                    onFilterChange={(opt) => setModelFilter(provider.id, opt)}
+                    onClick={() => setSelectedProviderID(provider.id)}
+                  />
                 ))}
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="flex flex-col gap-4">
-            <p className="text-sm text-muted-foreground">
-              Connect AI providers by adding API keys or signing in with OAuth.
-            </p>
-
-          {/* Search bar */}
-          <div className="relative">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
-            <Input
-              placeholder="Search providers…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 text-sm"
-            />
-          </div>
-
-          {filteredStates.length === 0 && (
-            <p className="text-sm text-muted-foreground">No providers found.</p>
-          )}
-
-          {/* Connected providers */}
-          {connectedStates.length > 0 && connectedStates.map(({ provider, methods, connected }) => (
-            <div key={provider.id} className="rounded-lg border p-4 flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <img
-                    src={`https://models.dev/logos/${providerLogoID(provider.id)}.svg`}
-                    alt={provider.name}
-                    className="size-4 dark:invert"
-                    width={16}
-                    height={16}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-                  />
-                  <span className="font-medium text-sm">{provider.name}</span>
-                  <span className="text-xs text-muted-foreground">({provider.id})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {connected ? (
-                    <>
-                      <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                        <CheckCircle2Icon className="size-3.5" />
-                        Connected
-                      </span>
-                      {providerTimeouts[provider.id]?.timedOut && (
-                        <Button
-                          size="icon-sm"
-                          variant="ghost"
-                          className="text-orange-600 hover:text-orange-700 dark:text-orange-500 dark:hover:text-orange-400"
-                          onClick={() => handleResetTimeout(provider.id)}
-                          disabled={resettingTimeout === provider.id}
-                          title="Reset timeout"
-                        >
-                          {resettingTimeout === provider.id
-                            ? <Loader2Icon className="size-3.5 animate-spin" />
-                            : <RefreshCwIcon className="size-3.5" />}
-                        </Button>
-                      )}
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleRemove(provider.id)}
-                        disabled={removing === provider.id}
-                        title="Disconnect"
-                      >
-                        {removing === provider.id
-                          ? <Loader2Icon className="size-3.5 animate-spin" />
-                          : <Trash2Icon className="size-3.5" />}
-                      </Button>
-                    </>
-                  ) : (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <CircleIcon className="size-3.5" />
-                      Not connected
-                    </span>
-                  )}
-                </div>
               </div>
+            )}
 
-              {/* Model filter toggle — only for providers with free models */}
-              {hasFreeModels(provider) && (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-muted-foreground">Models:</span>
-                  {(["all", "free", "none"] as const).map((opt) => {
-                    const current = modelFilters[provider.id] ?? "all"
-                    return (
-                      <button
-                        key={opt}
-                        onClick={() => setModelFilter(provider.id, opt)}
-                        className={cn(
-                          "px-2 py-0.5 text-xs rounded border transition-colors capitalize",
-                          current === opt
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
-                        )}
-                      >
-                        {opt}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-
-              {/* Auth method buttons */}
-              {!connected && methods.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {methods.map((method, idx) => (
-                    method.type === "api" ? (
-                      <Button
-                        key={idx}
-                        size="sm"
-                        variant="outline"
-                        className="gap-1.5"
-                        onClick={() => setApiKeyForm({ providerID: provider.id, key: "", saving: false, error: null })}
-                      >
-                        <KeyRoundIcon className="size-3.5" />
-                        {method.label ?? "Enter API key"}
-                      </Button>
-                    ) : (
-                      <Button
-                        key={idx}
-                        size="sm"
-                        variant="outline"
-                        className="gap-1.5"
-                        disabled={oauthLoading === provider.id}
-                        onClick={() => handleOAuth(provider.id, idx)}
-                      >
-                        {oauthLoading === provider.id
-                          ? <Loader2Icon className="size-3.5 animate-spin" />
-                          : <ExternalLinkIcon className="size-3.5" />}
-                        {method.label ?? "Sign in"}
-                      </Button>
-                    )
-                  ))}
-                </div>
-              )}
-
-              {/* Inline API key form */}
-              {apiKeyForm?.providerID === provider.id && (
-                <div className="flex flex-col gap-2 pt-1">
-                  <Label htmlFor={`key-${provider.id}`} className="text-xs">API key</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id={`key-${provider.id}`}
-                      type="password"
-                      placeholder="sk-…"
-                      value={apiKeyForm.key}
-                      onChange={(e) => setApiKeyForm((f) => f && { ...f, key: e.target.value })}
-                      onKeyDown={(e) => { if (e.key === "Enter") handleSaveApiKey() }}
-                      className="font-mono text-xs"
-                      autoFocus
-                    />
-                    <Button size="sm" onClick={handleSaveApiKey} disabled={apiKeyForm.saving || !apiKeyForm.key.trim()}>
-                      {apiKeyForm.saving && <Loader2Icon className="mr-1.5 size-3.5 animate-spin" />}
-                      Save
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setApiKeyForm(null)}>
-                      Cancel
-                    </Button>
-                  </div>
-                  {apiKeyForm.error && <p className="text-xs text-destructive">{apiKeyForm.error}</p>}
-                </div>
-              )}
-
-              {/* Models panel */}
-              <ProviderModelsPanel models={provider.models} />
-            </div>
-          ))}
-
-          {/* Divider between connected and unconnected */}
-          {connectedStates.length > 0 && unconnectedStates.length > 0 && (
-            <div className="flex items-center gap-3 py-1">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs text-muted-foreground select-none">Other providers</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-          )}
-
-          {/* Unconnected providers */}
-          {unconnectedStates.map(({ provider, methods, connected }) => (
-            <div key={provider.id} className="rounded-lg border p-4 flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <img
-                    src={`https://models.dev/logos/${providerLogoID(provider.id)}.svg`}
-                    alt={provider.name}
-                    className="size-4 dark:invert"
-                    width={16}
-                    height={16}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-                  />
-                  <span className="font-medium text-sm">{provider.name}</span>
-                  <span className="text-xs text-muted-foreground">({provider.id})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <CircleIcon className="size-3.5" />
-                    Not connected
-                  </span>
-                  {providerTimeouts[provider.id]?.timedOut && (
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      className="text-orange-600 hover:text-orange-700 dark:text-orange-500 dark:hover:text-orange-400"
-                      onClick={() => handleResetTimeout(provider.id)}
-                      disabled={resettingTimeout === provider.id}
-                      title="Reset timeout"
-                    >
-                      {resettingTimeout === provider.id
-                        ? <Loader2Icon className="size-3.5 animate-spin" />
-                        : <RefreshCwIcon className="size-3.5" />}
-                    </Button>
-                  )}
-                </div>
+            {/* Divider */}
+            {connectedStates.length > 0 && unconnectedStates.length > 0 && (
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground select-none">Other providers</span>
+                <div className="h-px flex-1 bg-border" />
               </div>
+            )}
 
-              {/* Model filter toggle — only for providers with free models */}
-              {hasFreeModels(provider) && (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-muted-foreground">Models:</span>
-                  {(["all", "free", "none"] as const).map((opt) => {
-                    const current = modelFilters[provider.id] ?? "all"
-                    return (
-                      <button
-                        key={opt}
-                        onClick={() => setModelFilter(provider.id, opt)}
-                        className={cn(
-                          "px-2 py-0.5 text-xs rounded border transition-colors capitalize",
-                          current === opt
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
-                        )}
-                      >
-                        {opt}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
+            {/* Unconnected providers */}
+            {unconnectedStates.length > 0 && (
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {unconnectedStates.map(({ provider }) => (
+                  <ProviderCard
+                    key={provider.id}
+                    provider={provider}
+                    connected={false}
+                    timedOut={false}
+                    modelFilter={modelFilters[provider.id] ?? "all"}
+                    hasFreeModels={hasFreeModels(provider)}
+                    onFilterChange={(opt) => setModelFilter(provider.id, opt)}
+                    onClick={() => setSelectedProviderID(provider.id)}
+                  />
+                ))}
+              </div>
+            )}
 
-              {/* Auth method buttons */}
-              {!connected && methods.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {methods.map((method, idx) => (
-                    method.type === "api" ? (
-                      <Button
-                        key={idx}
-                        size="sm"
-                        variant="outline"
-                        className="gap-1.5"
-                        onClick={() => setApiKeyForm({ providerID: provider.id, key: "", saving: false, error: null })}
-                      >
-                        <KeyRoundIcon className="size-3.5" />
-                        {method.label ?? "Enter API key"}
-                      </Button>
-                    ) : (
-                      <Button
-                        key={idx}
-                        size="sm"
-                        variant="outline"
-                        className="gap-1.5"
-                        disabled={oauthLoading === provider.id}
-                        onClick={() => handleOAuth(provider.id, idx)}
-                      >
-                        {oauthLoading === provider.id
-                          ? <Loader2Icon className="size-3.5 animate-spin" />
-                          : <ExternalLinkIcon className="size-3.5" />}
-                        {method.label ?? "Sign in"}
-                      </Button>
-                    )
-                  ))}
-                </div>
-              )}
-
-              {/* Inline API key form */}
-              {apiKeyForm?.providerID === provider.id && (
-                <div className="flex flex-col gap-2 pt-1">
-                  <Label htmlFor={`key-${provider.id}`} className="text-xs">API key</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id={`key-${provider.id}`}
-                      type="password"
-                      placeholder="sk-…"
-                      value={apiKeyForm.key}
-                      onChange={(e) => setApiKeyForm((f) => f && { ...f, key: e.target.value })}
-                      onKeyDown={(e) => { if (e.key === "Enter") handleSaveApiKey() }}
-                      className="font-mono text-xs"
-                      autoFocus
-                    />
-                    <Button size="sm" onClick={handleSaveApiKey} disabled={apiKeyForm.saving || !apiKeyForm.key.trim()}>
-                      {apiKeyForm.saving && <Loader2Icon className="mr-1.5 size-3.5 animate-spin" />}
-                      Save
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setApiKeyForm(null)}>
-                      Cancel
-                    </Button>
-                  </div>
-                  {apiKeyForm.error && <p className="text-xs text-destructive">{apiKeyForm.error}</p>}
-                </div>
-              )}
-
-              {/* Models panel */}
-              <ProviderModelsPanel models={provider.models} />
-            </div>
-          ))}
           </div>
-        </div>
-
-        {/* Tools Card */}
-        <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => router.push("/dashboard/settings/tools")}>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <WrenchIcon className="size-5 text-muted-foreground" />
-              <CardTitle>Tools</CardTitle>
-            </div>
-            <CardDescription>Configure API keys for web search and code search tools</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {globalConfig?.tool_config?.exa?.apiKey
-                  ? globalConfig?.tool_config?.exa?.useApiKey
-                    ? "EXA AI — using API key"
-                    : "EXA AI — API key configured"
-                  : "No API key configured"}
-              </span>
-              <Button size="sm" variant="outline">
-                Configure
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Provider detail dialog */}
+      <ProviderDetailDialog
+        provider={selectedState?.provider ?? null}
+        open={!!selectedProviderID}
+        onOpenChange={(open) => { if (!open) setSelectedProviderID(null) }}
+        connected={selectedState?.connected ?? false}
+        timedOut={selectedProviderID ? !!providerTimeouts[selectedProviderID]?.timedOut : false}
+        methods={selectedState?.methods ?? []}
+        removing={removing === selectedProviderID}
+        oauthLoading={oauthLoading === selectedProviderID}
+        resettingTimeout={resettingTimeout === selectedProviderID}
+        modelFilter={selectedProviderID ? (modelFilters[selectedProviderID] ?? "all") : "all"}
+        onRemove={() => selectedProviderID && handleRemove(selectedProviderID)}
+        onOAuth={(idx) => selectedProviderID && handleOAuth(selectedProviderID, idx)}
+        onApiKey={(key) => selectedProviderID ? handleApiKey(selectedProviderID, key) : Promise.resolve()}
+        onResetTimeout={() => selectedProviderID && handleResetTimeout(selectedProviderID)}
+      />
     </SettingsPageLayout>
+  )
+}
+
+interface ProviderCardProps {
+  provider: Provider
+  connected: boolean
+  timedOut: boolean
+  modelFilter: "all" | "free" | "none"
+  hasFreeModels: boolean
+  onFilterChange: (opt: "all" | "free" | "none") => void
+  onClick: () => void
+}
+
+function ProviderCard({
+  provider,
+  connected,
+  timedOut,
+  modelFilter,
+  hasFreeModels,
+  onFilterChange,
+  onClick,
+}: ProviderCardProps) {
+  const modelCount = Object.keys(provider.models).length
+
+  const statusAction = connected ? (
+    timedOut ? (
+      <span className="flex items-center gap-1 text-xs text-orange-600 dark:text-orange-500">
+        <ClockAlertIcon className="size-3.5" />
+      </span>
+    ) : (
+      <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+        <CheckCircle2Icon className="size-3.5" />
+      </span>
+    )
+  ) : null
+
+  const footer = hasFreeModels ? (
+    <div className="flex items-center gap-1.5 w-full">
+      <span className="text-xs text-muted-foreground">Models:</span>
+      {(["all", "free", "none"] as const).map((opt) => (
+        <button
+          key={opt}
+          onClick={(e) => {
+            e.stopPropagation()
+            onFilterChange(opt)
+          }}
+          className={cn(
+            "px-2 py-0.5 text-xs rounded border transition-colors capitalize",
+            modelFilter === opt
+              ? "bg-primary text-primary-foreground border-primary"
+              : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
+          )}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  ) : undefined
+
+  return (
+    <SettingsCard
+      title={
+        <span className="flex items-center gap-2">
+          <img
+            src={`https://models.dev/logos/${providerLogoID(provider.id)}.svg`}
+            alt={provider.name}
+            className="size-4 dark:invert shrink-0"
+            width={16}
+            height={16}
+            onError={(e) => {
+              ;(e.target as HTMLImageElement).style.display = "none"
+            }}
+          />
+          {provider.name}
+        </span>
+      }
+      description={
+        connected
+          ? `${modelCount} model${modelCount !== 1 ? "s" : ""} available`
+          : "Not connected"
+      }
+      action={statusAction}
+      footer={footer}
+      onClick={onClick}
+    />
   )
 }

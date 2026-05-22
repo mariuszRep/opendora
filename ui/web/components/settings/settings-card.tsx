@@ -52,7 +52,7 @@ export function SettingsCard({
       </CardHeader>
       {children}
       {footer && (
-        <CardFooter className="border-t bg-muted/30 pt-3 mt-auto">
+        <CardFooter className="border-t bg-muted/30 pt-4 pb-1 mt-auto">
           {footer}
         </CardFooter>
       )}

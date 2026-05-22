@@ -7,13 +7,14 @@
   "model_filters": {
     "fallback": "all",
     "kilo": "free",
-    "opencode": "all",
+    "opencode": "free",
     "openrouter": "free",
     "zenmux": "none",
     "ollama": "none",
     "openai-codex": "all",
     "nvidia": "free",
-    "openai": "all"
+    "openai": "none",
+    "google-gemini-cli": "all"
   },
   "model_groups": [
     {
@@ -71,7 +72,7 @@
       ]
     }
   ],
-  "model": "fallback/a103f2b7-43fc-4ce3-9e8d-7dce786c0c31",
+  "model": "opencode/big-pickle",
   "provider": {
     "ollama": {
       "name": "Ollama (local)",

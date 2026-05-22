@@ -465,29 +465,46 @@ export namespace SessionProcessor {
             const apiError = error.name === "APIError" ? (error as any) : null
             const statusCode = statusCodeForFallback
             const errorMessage = (error as any)?.data?.message ?? String(error)
+            console.log("[fallback-debug] statusCode=%s fallbackGroupID=%s hasReportTimeout=%s hasReportFallback=%s",
+              statusCode, input.fallbackGroupID,
+              typeof getConfig().provider?.reportProviderTimeout,
+              typeof getConfig().provider?.reportFallbackError,
+            )
             if (statusCode === 429) {
-              await getConfig().provider?.reportProviderTimeout?.(
-                streamInput.model.providerID,
-                streamInput.model.id,
-                errorMessage,
-                apiError?.data?.responseHeaders,
-                apiError?.data?.responseBody,
-              )
+              try {
+                await getConfig().provider?.reportProviderTimeout?.(
+                  streamInput.model.providerID,
+                  streamInput.model.id,
+                  errorMessage,
+                  apiError?.data?.responseHeaders,
+                  apiError?.data?.responseBody,
+                )
+                console.log("[fallback-debug] reportProviderTimeout OK for %s/%s", streamInput.model.providerID, streamInput.model.id)
+              } catch (e2) {
+                console.error("[fallback-debug] reportProviderTimeout THREW:", e2)
+              }
             }
 
             // Fallback: if this is a fallback group, try next provider before hard-failing
             if (input.fallbackGroupID) {
               const isFallbackEligible = statusCode === undefined || [400, 404, 429, 500, 502, 503].includes(statusCode)
+              console.log("[fallback-debug] isFallbackEligible=%s", isFallbackEligible)
               if (isFallbackEligible) {
                 const currentSlot = { providerID: streamInput.model.providerID, modelID: streamInput.model.id }
-                const result = await getConfig().provider?.reportFallbackError?.(
-                  input.fallbackGroupID,
-                  currentSlot,
-                  statusCode,
-                  errorMessage,
-                  apiError?.data?.responseHeaders,
-                  apiError?.data?.responseBody,
-                )
+                let result: any
+                try {
+                  result = await getConfig().provider?.reportFallbackError?.(
+                    input.fallbackGroupID,
+                    currentSlot,
+                    statusCode,
+                    errorMessage,
+                    apiError?.data?.responseHeaders,
+                    apiError?.data?.responseBody,
+                  )
+                  console.log("[fallback-debug] reportFallbackError result:", JSON.stringify(result))
+                } catch (e2) {
+                  console.error("[fallback-debug] reportFallbackError THREW:", e2)
+                }
                 const nextSlot = result?.nextSlot ?? (result && "providerID" in result ? result : null)
                 if (nextSlot && "providerID" in nextSlot) {
                   const nextModel = await getConfig().provider?.getModel(nextSlot.providerID, nextSlot.modelID)

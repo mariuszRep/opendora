@@ -27,11 +27,7 @@
   ],
   "skills": [
     "requirements",
-    "product-architecture",
-    "project-context",
-    "product-explore",
-    "product-plan",
-    "product-report"
+    "product-architecture"
   ],
   "toolConfig": {
     "delegate": {
