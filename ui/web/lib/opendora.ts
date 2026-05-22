@@ -165,7 +165,28 @@ export type FallbackSwitchPart = {
   groupID: string
   resetAt: number | null
   statusCode?: number
+  errorKind?: string
   time: { created: number }
+}
+
+export type GroupSlotState = {
+  providerID: string
+  modelID: string
+  active: boolean
+  cooled: boolean
+  cooldown: {
+    until: number
+    resetInSeconds: number
+    reason: string
+    kind: string
+  } | null
+}
+
+export type GroupState = {
+  groupID: string
+  displayName: string
+  activeSlot: { providerID: string; modelID: string } | null
+  slots: GroupSlotState[]
 }
 
 export type Part =
@@ -568,6 +589,12 @@ export const opendora = {
       req<boolean>(`/provider/${providerID}/timeout`, { method: "DELETE" }),
     usage: () =>
       req<Record<string, ProviderUsageState>>("/provider/usage"),
+    group: {
+      list: () => req<GroupState[]>("/provider/group"),
+      get: (groupID: string) => req<GroupState | null>(`/provider/group/${groupID}`),
+      clearCooldown: (groupID: string) =>
+        req<boolean>(`/provider/group/${groupID}/cooldown`, { method: "DELETE" }),
+    },
   },
   question: {
     list: () => req<QuestionRequest[]>("/question"),
@@ -692,6 +719,20 @@ export const opendora = {
     get: () => req<{ model_filters?: Record<string, "all" | "free" | "none">; [k: string]: unknown }>("/config"),
     update: (updates: { model_filters?: Record<string, "all" | "free" | "none">; [k: string]: unknown }) =>
       req<boolean>("/config", { method: "PATCH", body: JSON.stringify(updates) }),
+    modelGroups: {
+      create: (group: { name: string; models: { providerID: string; modelID: string }[] }) =>
+        req<{ id: string; name: string; models: { providerID: string; modelID: string }[] }>(
+          "/config/model-groups",
+          { method: "POST", body: JSON.stringify(group) },
+        ),
+      update: (id: string, group: { name: string; models: { providerID: string; modelID: string }[] }) =>
+        req<{ id: string; name: string; models: { providerID: string; modelID: string }[] }>(
+          `/config/model-groups/${id}`,
+          { method: "PUT", body: JSON.stringify(group) },
+        ),
+      delete: (id: string) =>
+        req<boolean>(`/config/model-groups/${id}`, { method: "DELETE" }),
+    },
   },
   workflow: {
     list: (directory?: string) =>

@@ -71,6 +71,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     markAllRead,
     removeNotification,
     clearAll,
+    replyPermission,
+    allPermissionRequests,
   } = useOpendoraContext()
 
   const [notificationBladeOpen, setNotificationBladeOpen] = useState(false)
@@ -541,6 +543,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         onMarkAllRead={markAllRead}
         onRemove={removeNotification}
         onClearAll={clearAll}
+        onPermissionReply={replyPermission}
+        hasAgentPattern={(requestID) => {
+          for (const list of Object.values(allPermissionRequests)) {
+            const found = list.find((r) => r.id === requestID)
+            if (found) return (found.agent_patterns?.length ?? 0) > 0
+          }
+          return false
+        }}
       />
       <SessionEditSheet
         session={editingSession}

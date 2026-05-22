@@ -188,7 +188,7 @@ export function GroupBuilderDialog({
   }
 
   async function handleSave() {
-    if (!name.trim() || selected.length === 0) return
+    if (!name.trim() || selected.length < 2) return
     setSaving(true)
     try {
       await onSave({ name: name.trim(), models: selected })
@@ -256,8 +256,67 @@ export function GroupBuilderDialog({
 
             {selectedEntries.length === 0 ? (
               <div className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
-                No fallback models added.
+                No fallback models added. Add at least 2 to enable switching.
               </div>
+            ) : selectedEntries.length === 1 ? (
+              <>
+                <div className="min-w-0 divide-y overflow-hidden rounded-md border">
+                  {selectedEntries.map((m, idx) => (
+                    <div
+                      key={`${m.providerID}:${m.modelID}:${idx}`}
+                      className="grid min-w-0 grid-cols-[8rem_minmax(0,1fr)_2rem] items-center gap-3 px-3 py-2"
+                    >
+                      <div className="flex items-center gap-1">
+                        <span className="w-5 text-right text-xs tabular-nums text-muted-foreground">
+                          {idx + 1}
+                        </span>
+                        <Button
+                          type="button"
+                          size="icon-xs"
+                          variant="outline"
+                          onClick={() => moveUp(idx)}
+                          disabled={idx === 0}
+                          title="Promote priority"
+                        >
+                          <ArrowUpIcon className="size-3.5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon-xs"
+                          variant="outline"
+                          onClick={() => moveDown(idx)}
+                          disabled={idx === selectedEntries.length - 1}
+                          title="Demote priority"
+                        >
+                          <ArrowDownIcon className="size-3.5" />
+                        </Button>
+                      </div>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <ModelSelectorLogo provider={m.providerID} />
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium">{m.modelName}</div>
+                          <div className="truncate text-xs text-muted-foreground">{m.providerName}</div>
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          size="icon-xs"
+                          variant="ghost"
+                          onClick={() => remove(idx)}
+                          className="text-muted-foreground hover:text-destructive"
+                          title="Remove model"
+                        >
+                          <XIcon className="size-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  Add at least one more model to enable fallback switching.
+                </p>
+              </>
             ) : (
               <div className="min-w-0 divide-y overflow-hidden rounded-md border">
                   {selectedEntries.map((m, idx) => (
@@ -367,7 +426,7 @@ export function GroupBuilderDialog({
           <Button variant="ghost" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={saving || !name.trim() || selected.length === 0}>
+          <Button onClick={handleSave} disabled={saving || !name.trim() || selected.length < 2}>
             {saving ? "Saving..." : initialGroup ? "Save changes" : "Save group"}
           </Button>
         </DialogFooter>

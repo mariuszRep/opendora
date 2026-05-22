@@ -9,6 +9,7 @@ export interface ProviderUsageBarProps {
   providerID: string
   modelID: string
   state: ModelUsageState
+  groupName?: string
 }
 
 function formatCountdown(resetAt: number | null | undefined): string | null {
@@ -28,7 +29,7 @@ function formatRemaining(n: number): string {
   return String(n)
 }
 
-export function ProviderUsageBar({ providerID, modelID, state }: ProviderUsageBarProps) {
+export function ProviderUsageBar({ providerID, modelID, state, groupName }: ProviderUsageBarProps) {
   const [, setTick] = useState(0)
 
   // Re-render every second to keep countdowns live
@@ -67,6 +68,11 @@ export function ProviderUsageBar({ providerID, modelID, state }: ProviderUsageBa
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="text-xs font-medium truncate">{modelID}</span>
           <span className="text-[10px] text-muted-foreground shrink-0">({providerID})</span>
+          {groupName && (
+            <span className="text-[10px] text-muted-foreground shrink-0 rounded border px-1 py-px">
+              {groupName}
+            </span>
+          )}
         </div>
         {countdown && (
           <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">

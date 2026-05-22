@@ -128,8 +128,44 @@ export type UseOpendoraResult = {
   refreshSchedules: () => Promise<void>
 }
 
-export function useOpendora(opts?: { notify?: (opts: NotifyOptions) => void }): UseOpendoraResult {
-  const { notify } = opts ?? {}
+function describePermissionTitle(req: PermissionRequest): string {
+  switch (req.resource) {
+    case "file":
+      return req.access === "write" ? "File write permission" : "File read permission"
+    case "bash":
+      return "Shell command permission"
+    case "directory":
+      return "Directory access permission"
+    case "network":
+      return "Network access permission"
+    case "tool":
+      return "Tool use permission"
+    case "agent":
+      return "Delegate agent permission"
+    default:
+      return "Permission request"
+  }
+}
+
+function describePermissionMessage(req: PermissionRequest): string {
+  const meta = req.metadata ?? {}
+  const first = req.patterns?.[0]
+  if (req.resource === "file" && req.access === "read") return `Read ${first ?? "file"}`
+  if (req.resource === "file" && req.access === "write") return `Edit ${meta.filepath ?? first ?? "file"}`
+  if (req.resource === "bash") return meta.command ? `Run: ${meta.command}` : "Run shell command"
+  if (req.resource === "directory") return `Access directory: ${first ?? ""}`
+  if (req.resource === "network") return `Fetch ${meta.url ?? meta.query ?? first ?? "resource"}`
+  if (req.resource === "tool") return `Use tool: ${first ?? req.resource}`
+  if (req.resource === "agent") return `Delegate to: ${first ?? "agent"}`
+  return `Use ${req.resource} (${req.access})`
+}
+
+export function useOpendora(opts?: {
+  notify?: (opts: NotifyOptions) => void
+  removeByPermissionID?: (permissionRequestID: string) => void
+  dismissPermissionToast?: (permissionRequestID: string) => void
+}): UseOpendoraResult {
+  const { notify, removeByPermissionID, dismissPermissionToast } = opts ?? {}
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -175,8 +211,6 @@ export function useOpendora(opts?: { notify?: (opts: NotifyOptions) => void }): 
   const activeSessionsRef = useRef<Set<string>>(new Set())
   const messagesRef = useRef<MessageWithParts[]>([])
   const questionRequestsRef = useRef<Record<string, QuestionRequest[]>>({})
-  // Track sessions that recently completed to prevent re-adding them immediately
-  const recentlyCompletedRef = useRef<Record<string, number>>({})
   // Per-session message cache: serve stale-while-revalidate on session switch
   const messageCacheRef = useRef<Map<string, MessageWithParts[]>>(new Map())
 
@@ -480,40 +514,13 @@ export function useOpendora(opts?: { notify?: (opts: NotifyOptions) => void }): 
         }
         case "message.updated": {
           const { info } = (event as { type: string; properties: { info: Message } }).properties
-          
-          // Track active sessions (sessions with incomplete assistant messages)
-          if (info.role === "assistant") {
-            const assistantInfo = info as { role: "assistant"; time: { created: number; completed?: number }; sessionID: string }
-            if (!assistantInfo.time.completed) {
-              // Assistant message started, mark session as active
-              // But only if it wasn't recently completed (prevent race conditions)
-              const completedAt = recentlyCompletedRef.current[info.sessionID]
-              const isRecentlyCompleted = completedAt && (Date.now() - completedAt) < 2000
-              if (!isRecentlyCompleted) {
-                setActiveSessions((prev) => new Set(prev).add(info.sessionID))
-              }
-            } else {
-              // Assistant message completed, remove from active sessions
-              setActiveSessions((prev) => {
-                const next = new Set(prev)
-                next.delete(info.sessionID)
-                return next
-              })
-              // Mark as recently completed to prevent immediate re-add
-              recentlyCompletedRef.current[info.sessionID] = Date.now()
-              // Clear question requests for this session as defensive measure
-              questionRequestsRef.current[info.sessionID] = []
-              setQuestionRequests((prev) => ({
-                ...prev,
-                [info.sessionID]: [],
-              }))
-              // Reset status to ready if this is the current session
-              if (info.sessionID === selectedSessionRef.current?.id) {
-                setStatus("ready")
-              }
-            }
-          }
-          
+
+          // NOTE: activeSessions is driven exclusively by `session.status` events.
+          // Message timestamps are not authoritative for loop activity — between
+          // iterations (e.g. tool calls) the assistant message completes while the
+          // loop is still running, which previously caused the side panel spinner
+          // to flicker off.
+
           if (info.sessionID !== selectedSessionRef.current?.id) break
           // Check before the state update so we can call setStatus outside the updater.
           // Calling setState inside a setState updater is a React anti-pattern that can
@@ -535,38 +542,23 @@ export function useOpendora(opts?: { notify?: (opts: NotifyOptions) => void }): 
           break
         }
         case "session.idle": {
-          const { sessionID } = (event as { type: string; properties: { sessionID: string } }).properties
-          // Remove from active sessions when idle
-          setActiveSessions((prev) => {
-            const next = new Set(prev)
-            next.delete(sessionID)
-            return next
-          })
-          // Mark as recently completed to prevent immediate re-add
-          recentlyCompletedRef.current[sessionID] = Date.now()
-          // Clear question requests for this session as defensive measure
-          questionRequestsRef.current[sessionID] = []
-          setQuestionRequests((prev) => ({
-            ...prev,
-            [sessionID]: [],
-          }))
-          if (selectedSessionRef.current?.id === sessionID) {
-            setStatus("ready")
-          }
+          // Deprecated: superseded by `session.status` { type: "idle" }.
+          // Kept as a no-op for older servers; the status handler below is authoritative.
           break
         }
         case "session.status": {
           const { sessionID, status } = (event as { type: string; properties: { sessionID: string; status: { type: "idle" | "busy" | "retry"; attempt?: number; message?: string; next?: number } } }).properties
           if (status.type === "idle") {
             setActiveSessions((prev) => {
+              if (!prev.has(sessionID)) return prev
               const next = new Set(prev)
               next.delete(sessionID)
               return next
             })
-            recentlyCompletedRef.current[sessionID] = Date.now()
             questionRequestsRef.current[sessionID] = []
             setQuestionRequests((prev) => ({ ...prev, [sessionID]: [] }))
             setSessionRetryStatus((prev) => {
+              if (!(sessionID in prev)) return prev
               const next = { ...prev }
               delete next[sessionID]
               return next
@@ -574,22 +566,31 @@ export function useOpendora(opts?: { notify?: (opts: NotifyOptions) => void }): 
             if (selectedSessionRef.current?.id === sessionID) {
               setStatus("ready")
             }
-          } else if (status.type === "retry" && selectedSessionRef.current?.id === sessionID) {
-            setActiveSessions((prev) => new Set(prev).add(sessionID))
-            const retryMsg = status.message ?? "Retrying..."
-            setSessionRetryStatus((prev) => ({
-              ...prev,
-              [sessionID]: {
-                attempt: status.attempt ?? 0,
-                message: retryMsg,
-                next: status.next ?? 0,
-              },
-            }))
+          } else if (status.type === "retry") {
+            setActiveSessions((prev) => prev.has(sessionID) ? prev : new Set(prev).add(sessionID))
+            if (selectedSessionRef.current?.id === sessionID) {
+              const retryMsg = status.message ?? "Retrying..."
+              setSessionRetryStatus((prev) => ({
+                ...prev,
+                [sessionID]: {
+                  attempt: status.attempt ?? 0,
+                  message: retryMsg,
+                  next: status.next ?? 0,
+                },
+              }))
+            }
           } else {
-            const completedAt = recentlyCompletedRef.current[sessionID]
-            const isRecentlyCompleted = completedAt && (Date.now() - completedAt) < 2000
-            if (!isRecentlyCompleted) {
-              setActiveSessions((prev) => new Set(prev).add(sessionID))
+            // busy
+            setActiveSessions((prev) => prev.has(sessionID) ? prev : new Set(prev).add(sessionID))
+            // Clear any retry banner now that we're back to a normal busy loop.
+            setSessionRetryStatus((prev) => {
+              if (!(sessionID in prev)) return prev
+              const next = { ...prev }
+              delete next[sessionID]
+              return next
+            })
+            if (selectedSessionRef.current?.id === sessionID && statusRef.current !== "streaming") {
+              setStatus("streaming")
             }
           }
           break
@@ -692,14 +693,32 @@ export function useOpendora(opts?: { notify?: (opts: NotifyOptions) => void }): 
         }
         case "permission.asked": {
           const request = event.properties as PermissionRequest
+          let isNew = false
           setPermissionRequests((prev) => {
             const existing = prev[request.session_id] ?? []
             const idx = existing.findIndex((item) => item.id === request.id)
+            isNew = idx === -1
             const next = idx === -1
               ? [...existing, request]
               : existing.map((item, index) => (index === idx ? request : item))
             return { ...prev, [request.session_id]: next }
           })
+          if (isNew && notify) {
+            const title = describePermissionTitle(request)
+            const message = describePermissionMessage(request)
+            const targetSessionID = request.session_id
+            notify({
+              type: "permission_request",
+              title,
+              message,
+              permissionRequestID: request.id,
+              sessionID: targetSessionID,
+              action: {
+                label: "View",
+                href: `/dashboard?session=${targetSessionID}`,
+              },
+            })
+          }
           break
         }
         case "permission.replied": {
@@ -711,6 +730,8 @@ export function useOpendora(opts?: { notify?: (opts: NotifyOptions) => void }): 
               [session_id]: existing.filter((item) => item.id !== request_id),
             }
           })
+          removeByPermissionID?.(request_id)
+          dismissPermissionToast?.(request_id)
           break
         }
         case "permission.rules.updated": {

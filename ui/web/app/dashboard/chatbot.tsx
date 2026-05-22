@@ -177,10 +177,12 @@ function toToolState(status: ToolPart["state"]["status"], hasPermissionRequest?:
   }
 }
 
+type FailedSlotInfo = { providerID: string; modelID: string; statusCode?: number; resetAt?: number }
+
 type TimelineStep =
   | { key: string; kind: "reasoning"; content: ReasoningPart }
   | { key: string; kind: "tool"; content: ToolPart }
-  | { key: string; kind: "fallback-switch"; content: FallbackSwitchPart }
+  | { key: string; kind: "fallback-switch"; content: FallbackSwitchPart; allFailedSlots: FailedSlotInfo[] }
   | { key: string; kind: "reply"; content?: string; error?: AssistantMessage["error"] }
 
 function getTimelineSteps(parts: Part[], error?: AssistantMessage["error"]): TimelineStep[] {
@@ -198,8 +200,19 @@ function getTimelineSteps(parts: Part[], error?: AssistantMessage["error"]): Tim
     steps.push({ key: tool.id, kind: "tool", content: tool })
   }
 
+  // Accumulate failed slots per group so each successive card shows the full failure chain
+  const accumulatedFailures = new Map<string, FailedSlotInfo[]>()
   for (const fs of fallbackSwitches) {
-    steps.push({ key: fs.id, kind: "fallback-switch", content: fs })
+    const prev = accumulatedFailures.get(fs.groupID) ?? []
+    const entry: FailedSlotInfo = {
+      providerID: fs.previousSlot.providerID,
+      modelID: fs.previousSlot.modelID,
+      statusCode: fs.statusCode,
+      resetAt: fs.resetAt ?? undefined,
+    }
+    const allFailedSlots = [...prev, entry]
+    accumulatedFailures.set(fs.groupID, allFailedSlots)
+    steps.push({ key: fs.id, kind: "fallback-switch", content: fs, allFailedSlots })
   }
 
   if (error || reply) {
@@ -1131,24 +1144,22 @@ export const Chatbot = () => {
                                         <ReasoningContent>{step.content.text}</ReasoningContent>
                                       </Reasoning>
                                     ) : null}
-                                    {step.kind === "fallback-switch" ? (
-                                      <ModelSwitchCard
-                                        fallbackGroup={selectedGroupId && modelGroups.find(g => g.id === selectedGroupId) ? {
-                                          id: selectedGroupId,
-                                          name: modelGroups.find(g => g.id === selectedGroupId)!.name,
-                                          slots: modelGroups.find(g => g.id === selectedGroupId)!.models.map(m => ({ providerID: m.providerID, modelID: m.modelID, modelName: modelList.find(ml => ml.providerID === m.providerID && ml.modelID === m.modelID)?.modelName })),
-                                        } : undefined}
-                                        currentSlot={step.content.newSlot}
-                                        failedSlots={[{
-                                          providerID: step.content.previousSlot.providerID,
-                                          modelID: step.content.previousSlot.modelID,
-                                          statusCode: step.content.statusCode,
-                                          resetAt: step.content.resetAt ?? undefined,
-                                        }]}
-                                        retryAttempt={sessionRetryStatus[selectedSession?.id ?? ""]?.attempt}
-                                        retryDelay={sessionRetryStatus[selectedSession?.id ?? ""]?.next ? sessionRetryStatus[selectedSession?.id ?? ""]!.next - Date.now() : undefined}
-                                      />
-                                    ) : null}
+                                    {step.kind === "fallback-switch" ? (() => {
+                                      const groupDef = modelGroups.find(g => g.id === step.content.groupID)
+                                      return (
+                                        <ModelSwitchCard
+                                          fallbackGroup={groupDef ? {
+                                            id: groupDef.id,
+                                            name: groupDef.name,
+                                            slots: groupDef.models.map(m => ({ providerID: m.providerID, modelID: m.modelID, modelName: modelList.find(ml => ml.providerID === m.providerID && ml.modelID === m.modelID)?.modelName })),
+                                          } : undefined}
+                                          currentSlot={step.content.newSlot}
+                                          failedSlots={step.allFailedSlots}
+                                          retryAttempt={sessionRetryStatus[selectedSession?.id ?? ""]?.attempt}
+                                          retryDelay={sessionRetryStatus[selectedSession?.id ?? ""]?.next ? sessionRetryStatus[selectedSession?.id ?? ""]!.next - Date.now() : undefined}
+                                        />
+                                      )
+                                    })() : null}
                                     {step.kind === "tool" ? (() => {
                                       const tool = step.content
                                       // Guard: legacy sessions stored state as a string ("result"/"call"); normalize to object

@@ -4,6 +4,7 @@ import { useCallback } from "react"
 import { toast } from "sonner"
 import { useNotifications, type Notification } from "@/hooks/use-notifications"
 import { useRouter } from "next/navigation"
+import { playNotificationSound } from "@/lib/notification-sound"
 
 export type NotifyOptions = {
   type: Notification["type"]
@@ -11,17 +12,28 @@ export type NotifyOptions = {
   message: string
   action?: { label: string; href?: string; onClick?: () => void }
   providerID?: string
+  permissionRequestID?: string
+  sessionID?: string
   duration?: number
+  silent?: boolean
 }
 
 export function useNotify() {
-  const { notifications, unreadCount, addNotification, markRead, markAllRead, removeNotification, clearAll } =
-    useNotifications()
+  const {
+    notifications,
+    unreadCount,
+    addNotification,
+    markRead,
+    markAllRead,
+    removeNotification,
+    removeByPermissionID,
+    clearAll,
+  } = useNotifications()
   const router = useRouter()
 
   const notify = useCallback(
     (opts: NotifyOptions) => {
-      const { type, title, message, action, providerID, duration } = opts
+      const { type, title, message, action, providerID, permissionRequestID, sessionID, duration, silent } = opts
 
       const notifAction = action
         ? {
@@ -30,7 +42,11 @@ export function useNotify() {
           }
         : undefined
 
-      addNotification({ type, title, message, action: notifAction, providerID })
+      addNotification({ type, title, message, action: notifAction, providerID, permissionRequestID, sessionID })
+
+      if (!silent) {
+        playNotificationSound({ variant: type === "permission_request" || type === "error" ? "alert" : "default" })
+      }
 
       const toastMessage = title
       const toastDescription = message !== title ? message : undefined
@@ -51,6 +67,16 @@ export function useNotify() {
         case "provider_recovered":
           toast.success(toastMessage, { description: toastDescription, action: toastAction, duration: toastDuration })
           break
+        case "permission_request":
+          toast(toastMessage, {
+            description: toastDescription,
+            action: toastAction,
+            // Permission requests are sticky — they should remain visible until
+            // the user responds (or the server signals `permission.replied`).
+            duration: duration ?? Infinity,
+            id: permissionRequestID ? `perm-${permissionRequestID}` : undefined,
+          })
+          break
         default:
           toast(toastMessage, { description: toastDescription, action: toastAction, duration: toastDuration })
       }
@@ -58,5 +84,19 @@ export function useNotify() {
     [addNotification, router],
   )
 
-  return { notify, notifications, unreadCount, markRead, markAllRead, removeNotification, clearAll }
+  const dismissPermissionToast = useCallback((permissionRequestID: string) => {
+    toast.dismiss(`perm-${permissionRequestID}`)
+  }, [])
+
+  return {
+    notify,
+    notifications,
+    unreadCount,
+    markRead,
+    markAllRead,
+    removeNotification,
+    removeByPermissionID,
+    dismissPermissionToast,
+    clearAll,
+  }
 }

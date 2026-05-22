@@ -31,6 +31,8 @@ export interface SessionCoreConfig {
       reason: string,
       responseHeaders?: Record<string, string>,
       responseBody?: string,
+      /** Semantic error kind — drives cooldown duration and fallback eligibility */
+      errorKind?: string,
     ): Promise<{ nextSlot: { providerID: string; modelID: string } | null; providerTimedOut: boolean; resetAt: number | null }>
     reportProviderTimeout?(
       providerID: string,
@@ -38,6 +40,8 @@ export interface SessionCoreConfig {
       reason: string,
       responseHeaders?: Record<string, string>,
       responseBody?: string,
+      /** Semantic error kind — drives cooldown duration */
+      errorKind?: string,
     ): Promise<void>
     ModelNotFoundError?: { isInstance(e: unknown): boolean }
     isWorkerMode?(mode: string): boolean

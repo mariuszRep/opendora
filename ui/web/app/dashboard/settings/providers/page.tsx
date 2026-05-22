@@ -8,6 +8,7 @@ import {
   DatabaseIcon,
   LayersIcon,
   PlusIcon,
+  RotateCwIcon,
   SearchIcon,
   Settings2Icon,
   Trash2Icon,
@@ -35,7 +36,7 @@ import { AllModelsView } from "@/components/providers/all-models-view"
 import { ProviderDetailDialog } from "@/components/providers/provider-detail-dialog"
 import { SettingsCard } from "@/components/settings/settings-card"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { opendora, type AuthMethod, type Provider } from "@/lib/opendora"
+import { opendora, type AuthMethod, type GroupState, type Provider } from "@/lib/opendora"
 import { cn } from "@/lib/utils"
 
 type ProviderState = {
@@ -48,6 +49,14 @@ type ModelValue = { providerID: string; modelID: string } | undefined
 
 function providerLogoID(providerID: string) {
   return providerID === "opencode-private" ? "opencode" : providerID
+}
+
+function formatCooldown(seconds: number): string {
+  if (seconds <= 0) return "soon"
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
 }
 
 export default function ProvidersPage() {
@@ -83,11 +92,19 @@ export default function ProvidersPage() {
   } | null>(null)
   const [groupDialogOpen, setGroupDialogOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState<ModelGroup | null>(null)
+  const [groupStates, setGroupStates] = useState<GroupState[]>([])
+  const [resettingCooldown, setResettingCooldown] = useState<string | null>(null)
 
   useEffect(() => {
     opendora.provider.authMethods().then(setAuthMethods).catch(() => {})
     opendora.config.get().then(setGlobalConfig).catch(() => {})
+    opendora.provider.group.list().then(setGroupStates).catch(() => {})
   }, [])
+
+  async function refreshGroupStates() {
+    const data = await opendora.provider.group.list().catch(() => [] as GroupState[])
+    setGroupStates(data)
+  }
 
   useEffect(() => {
     if (globalConfig?.model) {
@@ -114,20 +131,30 @@ export default function ProvidersPage() {
   }, [globalConfig, connectedProviders, defaultModels])
 
   async function handleSaveGroup(group: Omit<ModelGroup, "id">) {
-    const updated = editingGroup
-      ? modelGroups.map((existing) =>
-          existing.id === editingGroup.id ? { ...group, id: editingGroup.id } : existing,
-        )
-      : [...modelGroups, { ...group, id: crypto.randomUUID() }]
-    await opendora.config.update({ model_groups: updated })
-    await Promise.all([refreshModelGroups(), refreshProviders()])
+    if (editingGroup) {
+      await opendora.config.modelGroups.update(editingGroup.id, group)
+    } else {
+      await opendora.config.modelGroups.create(group)
+    }
+    await Promise.all([refreshModelGroups(), refreshProviders(), refreshGroupStates()])
   }
 
   async function handleDeleteGroup(id: string) {
-    const updated = modelGroups.filter((g) => g.id !== id)
-    await opendora.config.update({ model_groups: updated })
-    await Promise.all([refreshModelGroups(), refreshProviders()])
+    await opendora.config.modelGroups.delete(id)
+    await Promise.all([refreshModelGroups(), refreshProviders(), refreshGroupStates()])
     if (editingGroup?.id === id) setEditingGroup(null)
+  }
+
+  async function handleResetCooldown(groupID: string) {
+    setResettingCooldown(groupID)
+    try {
+      await opendora.provider.group.clearCooldown(groupID)
+      await refreshGroupStates()
+    } catch (err) {
+      console.error("Failed to reset cooldowns:", err)
+    } finally {
+      setResettingCooldown(null)
+    }
   }
 
   function handleNewGroup() {
@@ -224,6 +251,18 @@ export default function ProvidersPage() {
   }, [modelList])
 
   const groupIDs = useMemo(() => new Set(modelGroups.map((g) => g.id)), [modelGroups])
+
+  const providerGroupMembership = useMemo(() => {
+    const map = new Map<string, string[]>()
+    for (const group of modelGroups) {
+      const providerIDs = new Set(group.models.map((m) => m.providerID))
+      for (const pid of providerIDs) {
+        if (!map.has(pid)) map.set(pid, [])
+        map.get(pid)!.push(group.name)
+      }
+    }
+    return map
+  }, [modelGroups])
 
   const providerStates: ProviderState[] = providers
     .filter((p) => !groupIDs.has(p.id))
@@ -448,21 +487,58 @@ export default function ProvidersPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {group.models.map((m, idx) => {
-                          const prov = providers.find((p) => p.id === m.providerID)
-                          const modelName = (prov?.models[m.modelID] as { name?: string } | undefined)?.name ?? m.modelID
-                          return (
-                            <div key={`${m.providerID}:${m.modelID}`} className="flex items-center gap-1">
-                              {idx > 0 && <span className="text-xs text-muted-foreground">→</span>}
-                              <span className="flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs">
-                                <ModelSelectorLogo provider={m.providerID} />
-                                {modelName}
-                              </span>
+                      {(() => {
+                        const gs = groupStates.find((s) => s.groupID === group.id)
+                        const cooledCount = gs?.slots.filter((s) => s.cooled).length ?? 0
+                        return (
+                          <>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {group.models.map((m, idx) => {
+                                const prov = providers.find((p) => p.id === m.providerID)
+                                const modelName = (prov?.models[m.modelID] as { name?: string } | undefined)?.name ?? m.modelID
+                                const slotState = gs?.slots.find((s) => s.providerID === m.providerID && s.modelID === m.modelID)
+                                const isActive = slotState?.active ?? false
+                                const isCooled = slotState?.cooled ?? false
+                                const cooldown = slotState?.cooldown
+                                return (
+                                  <div key={`${m.providerID}:${m.modelID}`} className="flex items-center gap-1">
+                                    {idx > 0 && <span className="text-xs text-muted-foreground">→</span>}
+                                    <span className={cn(
+                                      "flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs",
+                                      isActive && "border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400",
+                                      isCooled && "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+                                    )}>
+                                      <ModelSelectorLogo provider={m.providerID} />
+                                      {modelName}
+                                      {isCooled && cooldown && (
+                                        <span className="opacity-70">· {formatCooldown(cooldown.resetInSeconds)}</span>
+                                      )}
+                                    </span>
+                                  </div>
+                                )
+                              })}
                             </div>
-                          )
-                        })}
-                      </div>
+                            {cooledCount > 0 && (
+                              <div className="mt-2 flex items-center justify-between">
+                                <span className="text-xs text-amber-600 dark:text-amber-400">
+                                  {cooledCount} slot{cooledCount > 1 ? "s" : ""} on cooldown
+                                </span>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                  onClick={(e) => { e.stopPropagation(); void handleResetCooldown(group.id) }}
+                                  disabled={resettingCooldown === group.id}
+                                >
+                                  <RotateCwIcon className={cn("size-3", resettingCooldown === group.id && "animate-spin")} />
+                                  Reset
+                                </Button>
+                              </div>
+                            )}
+                          </>
+                        )
+                      })()}
                     </CardContent>
                   </Card>
                 ))}
@@ -503,6 +579,7 @@ export default function ProvidersPage() {
                     timedOut={!!providerTimeouts[provider.id]?.timedOut}
                     modelFilter={modelFilters[provider.id] ?? "all"}
                     hasFreeModels={hasFreeModels(provider)}
+                    groupNames={providerGroupMembership.get(provider.id)}
                     onFilterChange={(opt) => setModelFilter(provider.id, opt)}
                     onClick={() => setSelectedProviderID(provider.id)}
                   />
@@ -530,6 +607,7 @@ export default function ProvidersPage() {
                     timedOut={false}
                     modelFilter={modelFilters[provider.id] ?? "all"}
                     hasFreeModels={hasFreeModels(provider)}
+                    groupNames={providerGroupMembership.get(provider.id)}
                     onFilterChange={(opt) => setModelFilter(provider.id, opt)}
                     onClick={() => setSelectedProviderID(provider.id)}
                   />
@@ -553,6 +631,7 @@ export default function ProvidersPage() {
         oauthLoading={oauthLoading === selectedProviderID}
         resettingTimeout={resettingTimeout === selectedProviderID}
         modelFilter={selectedProviderID ? (modelFilters[selectedProviderID] ?? "all") : "all"}
+        groupNames={selectedProviderID ? (providerGroupMembership.get(selectedProviderID) ?? []) : []}
         onRemove={() => selectedProviderID && handleRemove(selectedProviderID)}
         onOAuth={(idx) => selectedProviderID && handleOAuth(selectedProviderID, idx)}
         onApiKey={(key) => selectedProviderID ? handleApiKey(selectedProviderID, key) : Promise.resolve()}
@@ -568,6 +647,7 @@ interface ProviderCardProps {
   timedOut: boolean
   modelFilter: "all" | "free" | "none"
   hasFreeModels: boolean
+  groupNames?: string[]
   onFilterChange: (opt: "all" | "free" | "none") => void
   onClick: () => void
 }
@@ -578,6 +658,7 @@ function ProviderCard({
   timedOut,
   modelFilter,
   hasFreeModels,
+  groupNames,
   onFilterChange,
   onClick,
 }: ProviderCardProps) {
@@ -595,7 +676,7 @@ function ProviderCard({
     )
   ) : null
 
-  const footer = hasFreeModels ? (
+  const filterRow = hasFreeModels ? (
     <div className="flex items-center gap-1.5 w-full">
       <span className="text-xs text-muted-foreground">Models:</span>
       {(["all", "free", "none"] as const).map((opt) => (
@@ -615,6 +696,22 @@ function ProviderCard({
           {opt}
         </button>
       ))}
+    </div>
+  ) : null
+
+  const groupRow = groupNames && groupNames.length > 0 ? (
+    <div className="flex items-center gap-1 min-w-0 w-full overflow-hidden">
+      <LayersIcon className="size-3 shrink-0 text-muted-foreground" />
+      <span className="text-[10px] text-muted-foreground truncate">
+        {groupNames.length === 1 ? groupNames[0] : `${groupNames.length} groups`}
+      </span>
+    </div>
+  ) : null
+
+  const footer = filterRow || groupRow ? (
+    <div className={cn("flex flex-col w-full", filterRow && groupRow ? "gap-1.5" : "")}>
+      {filterRow}
+      {groupRow}
     </div>
   ) : undefined
 

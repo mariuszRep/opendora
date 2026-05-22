@@ -6,9 +6,10 @@ import { cn } from "@/lib/utils"
 
 export interface ProviderUsagePanelProps {
   className?: string
+  modelGroups?: { id: string; name: string; models: { providerID: string; modelID: string }[] }[]
 }
 
-export function ProviderUsagePanel({ className }: ProviderUsagePanelProps) {
+export function ProviderUsagePanel({ className, modelGroups }: ProviderUsagePanelProps) {
   const { data, isLoading, error } = useProviderUsage()
 
   if (isLoading) {
@@ -61,14 +62,20 @@ export function ProviderUsagePanel({ className }: ProviderUsagePanelProps) {
               {providerState.providerID}
             </p>
             <div className="divide-y rounded-md border px-3">
-              {models.map(([modelID, state]) => (
-                <ProviderUsageBar
-                  key={modelID}
-                  providerID={providerState.providerID}
-                  modelID={modelID}
-                  state={state}
-                />
-              ))}
+              {models.map(([modelID, state]) => {
+                const groupLabel = modelGroups?.find((g) =>
+                  g.models.some((m) => m.providerID === providerState.providerID && m.modelID === modelID),
+                )?.name
+                return (
+                  <ProviderUsageBar
+                    key={modelID}
+                    providerID={providerState.providerID}
+                    modelID={modelID}
+                    state={state}
+                    groupName={groupLabel}
+                  />
+                )
+              })}
             </div>
           </div>
         )

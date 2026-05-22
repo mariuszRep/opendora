@@ -5,6 +5,7 @@ import {
   CheckCircle2Icon,
   ExternalLinkIcon,
   KeyRoundIcon,
+  LayersIcon,
   Loader2Icon,
   RefreshCwIcon,
   SearchIcon,
@@ -33,6 +34,7 @@ export interface ProviderDetailDialogProps {
   oauthLoading: boolean
   resettingTimeout: boolean
   modelFilter: "all" | "free" | "none"
+  groupNames?: string[]
   onRemove: () => void
   onOAuth: (idx: number) => void
   onApiKey: (key: string) => Promise<void>
@@ -50,6 +52,7 @@ export function ProviderDetailDialog({
   oauthLoading,
   resettingTimeout,
   modelFilter,
+  groupNames,
   onRemove,
   onOAuth,
   onApiKey,
@@ -148,7 +151,12 @@ export function ProviderDetailDialog({
                             )}
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Reset timeout</TooltipContent>
+                        <TooltipContent>
+                          <p>Reset timeout</p>
+                          {groupNames && groupNames.length > 0 && (
+                            <p className="mt-0.5 opacity-80">Affects: {groupNames.join(", ")}</p>
+                          )}
+                        </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   )}
@@ -209,6 +217,19 @@ export function ProviderDetailDialog({
               )}
             </div>
           </div>
+
+          {/* Fallback group membership */}
+          {groupNames && groupNames.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-2">
+              <span className="text-xs text-muted-foreground">Groups:</span>
+              {groupNames.map((name) => (
+                <span key={name} className="flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs text-muted-foreground">
+                  <LayersIcon className="size-3 shrink-0" />
+                  {name}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* API key inline form */}
           {showKeyForm && (

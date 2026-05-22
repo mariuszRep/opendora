@@ -4,24 +4,31 @@
     "opencode": {
       "until": null,
       "reason": null,
-      "modelFailures": {
-        "minimax-m2.5-free": {
-          "modelID": "minimax-m2.5-free",
-          "until": 1779235200581,
-          "reason": "Rate limit exceeded. Please try again later.",
-          "statusCode": 429
-        }
-      }
+      "modelFailures": {}
     },
     "openrouter": {
       "until": null,
       "reason": null,
       "modelFailures": {
-        "minimax/minimax-m2.5:free": {
-          "modelID": "minimax/minimax-m2.5:free",
-          "until": 1779214287632,
+        "deepseek/deepseek-v4-flash:free": {
+          "modelID": "deepseek/deepseek-v4-flash:free",
+          "until": 1779455769141,
           "reason": "Provider returned error",
-          "statusCode": 429
+          "statusCode": 402,
+          "kind": "server"
+        }
+      }
+    },
+    "kilo": {
+      "until": null,
+      "reason": null,
+      "modelFailures": {
+        "deepseek/deepseek-v4-flash:free": {
+          "modelID": "deepseek/deepseek-v4-flash:free",
+          "until": 1779456113625,
+          "reason": "Service Unavailable",
+          "statusCode": 503,
+          "kind": "unavailable"
         }
       }
     }

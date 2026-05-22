@@ -8,6 +8,14 @@ origin: opendora
 
 Use this skill as a product-focused architecture companion to `requirements`.
 
+## Relationship to `requirements`
+
+This skill complements `requirements`; it does not replace it.
+
+- `requirements` defines the universal elicitation method (how to ask, confirm, and de-risk).
+- `product-architecture` defines product/software architecture completeness (what product-specific decisions must be captured).
+- Use both together for product work: keep the requirements loop active while expanding architecture coverage.
+
 ## When to Use
 - Requirements were gathered but architecture-critical decisions are still ambiguous.
 - Product Owner needs confidence that implementation planning will not miss key system constraints.
@@ -16,6 +24,7 @@ Use this skill as a product-focused architecture companion to `requirements`.
 ## Objective
 - Ensure architecture decisions are complete, explicit, and implementation-ready.
 - Surface missing decisions early to prevent costly rework.
+- Ensure handoff to delivery has architecture-grade completeness.
 
 ## Inputs
 - Problem statement and desired product outcomes
@@ -53,21 +62,44 @@ Use this skill as a product-focused architecture companion to `requirements`.
    - Open decisions and decision owners
    - Validation plan for highest-risk assumptions
 
+## Delivery Complexity Assessment
+Classify delivery size after architecture coverage is evaluated:
+
+- **easy**: single domain change, low integration risk, no material schema/interface redesign, fits single-session delivery
+- **medium**: multi-domain change (e.g., frontend+backend or backend+data), shared contracts needed, benefits from isolated delivery tracks
+- **hard**: multi-phase delivery, high uncertainty/risk, broad architecture impact, or substantial migration/rollout complexity
+
+## Delivery Brief (for Product Engineer handoff)
+Produce one handoff brief that downstream planning must treat as the governing contract:
+
+- **Goal**
+- **Classification**: easy | medium | hard
+- **Outcome / Acceptance Criteria**
+- **Scope Boundaries**: in-scope / out-of-scope
+- **Shared Contracts**: data model, interface/API expectations, key UI surfaces
+- **NFR/Constraints**: reliability, performance, security/compliance, cost/capacity
+- **Risks & Unknowns**: include owner and impact
+- **Recommended Delivery Shape**: single-session | split tracks | phased
+
 ## Steps
 1. Review available requirements and context evidence.
-2. Evaluate each checklist area and mark: Covered | Partial | Missing.
-3. Ask targeted architecture questions only for Partial/Missing areas.
-4. Consolidate decisions into explicit architecture notes.
-5. Produce readiness verdict for `product-plan`.
+2. Continue requirements-style clarification while evaluating architecture checklist coverage.
+3. Evaluate each checklist area and mark: Covered | Partial | Missing.
+4. Ask targeted architecture questions only for Partial/Missing areas.
+5. Consolidate decisions into explicit architecture notes.
+6. Produce readiness verdict for `product-plan` and delivery handoff.
 
 ## Rules
 - Do not jump to implementation details unless needed to resolve architecture risk.
 - Prefer explicit decision records over narrative text.
 - If critical architecture gaps remain, block planning and state exactly why.
+- Maintain consistency with already-confirmed requirements unless user explicitly changes intent.
 
 ## Output Contract
 - Architecture Decision Summary
 - Coverage Matrix (Covered/Partial/Missing per checklist area)
+- Delivery Complexity Classification: easy | medium | hard
+- Delivery Brief for Product Engineer handoff
 - Open Questions (owner + impact)
 - Risks and Mitigations
 - Readiness for `product-plan`: READY | BLOCKED

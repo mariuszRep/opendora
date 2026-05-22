@@ -3,8 +3,8 @@
   "description": "First point of contact and gatekeeper. Triage coordinator that answers simple questions directly and delegates medium-to-hard tasks to specialists. Concise, direct communication.",
   "mode": "primary",
   "model": {
-    "modelID": "gpt-5.4-mini",
-    "providerID": "openai-codex"
+    "modelID": "dc174962-f77f-4d0b-b0b4-0f1053ecb1e8",
+    "providerID": "fallback"
   },
   "color": "teal",
   "tools": [

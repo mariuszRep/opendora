@@ -45,6 +45,7 @@ import {
 import { TrendingUpIcon, TrendingDownIcon, ActivityIcon, CalendarIcon, MessageSquareIcon, ShieldIcon, DollarSignIcon } from "lucide-react"
 import { useBillingData, type TimeRange } from "@/hooks/use-billing-data"
 import { ProviderUsagePanel } from "@/components/providers/provider-usage-panel"
+import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 
 
 function formatTokens(n: number): string {
@@ -62,6 +63,7 @@ function formatCost(n: number): string {
 export default function UsagePage() {
   const [timeRange, setTimeRange] = useState<TimeRange>("30d")
   const data = useBillingData(timeRange)
+  const { modelGroups } = useOpendoraContext()
 
   // Chart configs
   const chartConfig = {
@@ -502,7 +504,7 @@ export default function UsagePage() {
             </div>
           </CardHeader>
           <CardContent>
-            <ProviderUsagePanel />
+            <ProviderUsagePanel modelGroups={modelGroups} />
           </CardContent>
         </Card>
       </div>

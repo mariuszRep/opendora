@@ -23,6 +23,32 @@ function iife<T>(fn: () => T): T {
   return fn()
 }
 
+/**
+ * Map an HTTP status code to a semantic error kind string.
+ * Mirrors ProviderError.classifyErrorKind() from @opendora/provider without
+ * creating a cross-package dependency from @opendora/session.
+ */
+function classifyErrorKind(statusCode: number | undefined): string {
+  switch (statusCode) {
+    case 401: case 403: return "auth"
+    case 404: return "not_found"
+    case 400: case 413: return "invalid"
+    case 429: return "quota"
+    case 500: return "server"
+    case 502: case 503: case 529: return "unavailable"
+  }
+  return "server"
+}
+
+/**
+ * Whether an error kind should skip waiting for retry and immediately switch
+ * to the next slot in a fallback group. Applies to errors where retrying the
+ * same model is definitively pointless.
+ */
+function shouldSwitchImmediately(kind: string): boolean {
+  return kind === "quota" || kind === "unavailable" || kind === "not_found" || kind === "auth"
+}
+
 // Inline SessionEvents.Error reference — matches events.ts
 const SessionErrorEvent = { type: "session.error" }
 
@@ -432,11 +458,13 @@ export namespace SessionProcessor {
               // TODO: Handle context overflow error
             }
             const retry = SessionRetry.retryable(error)
-            // When in a fallback group, provider-level failures (429/502/503) should
-            // switch slots immediately rather than retrying the same dead upstream.
-            const statusCodeForFallback = (error as any)?.data?.statusCode as number | undefined
-            const isProviderDown = [429, 502, 503].includes(statusCodeForFallback ?? 0)
-            if (statusCodeForFallback === 429) {
+            const statusCode = (error as any)?.data?.statusCode as number | undefined
+            const errorKind = classifyErrorKind(statusCode)
+            const apiError = error.name === "APIError" ? (error as any) : null
+            const errorMessage = (error as any)?.data?.message ?? String(error)
+
+            // For quota errors, record token usage (partial usage counts toward the cap)
+            if (errorKind === "quota") {
               TokenUsage.record({
                 sessionID:  input.sessionID,
                 agentID:    (input.assistantMessage as any).agent ?? undefined,
@@ -446,10 +474,14 @@ export namespace SessionProcessor {
                 purpose:    "chat",
                 tokens:     capturedTokens,
                 model:      streamInput.model,
-                headers:    (error as any)?.data?.responseHeaders ?? undefined,
+                headers:    apiError?.data?.responseHeaders ?? undefined,
               }).catch(() => {})
             }
-            if (retry !== undefined && !(input.fallbackGroupID && isProviderDown) && attempt < SessionRetry.MAX_RETRY_ATTEMPTS) {
+
+            // Skip same-model retry and switch slots immediately for errors where
+            // retrying the same upstream is definitively pointless.
+            const switchImmediately = input.fallbackGroupID && shouldSwitchImmediately(errorKind)
+            if (retry !== undefined && !switchImmediately && attempt < SessionRetry.MAX_RETRY_ATTEMPTS) {
               attempt++
               const delay = SessionRetry.delay(attempt, error.name === "APIError" ? (error as any) : undefined)
               SessionStatus.set(input.sessionID, {
@@ -461,77 +493,60 @@ export namespace SessionProcessor {
               await SessionRetry.sleep(delay, input.abort).catch(() => {})
               continue
             }
-            // Report provider timeout for rate limit errors (429) regardless of fallback
-            const apiError = error.name === "APIError" ? (error as any) : null
-            const statusCode = statusCodeForFallback
-            const errorMessage = (error as any)?.data?.message ?? String(error)
-            console.log("[fallback-debug] statusCode=%s fallbackGroupID=%s hasReportTimeout=%s hasReportFallback=%s",
-              statusCode, input.fallbackGroupID,
-              typeof getConfig().provider?.reportProviderTimeout,
-              typeof getConfig().provider?.reportFallbackError,
-            )
-            if (statusCode === 429) {
-              try {
-                await getConfig().provider?.reportProviderTimeout?.(
-                  streamInput.model.providerID,
-                  streamInput.model.id,
-                  errorMessage,
-                  apiError?.data?.responseHeaders,
-                  apiError?.data?.responseBody,
-                )
-                console.log("[fallback-debug] reportProviderTimeout OK for %s/%s", streamInput.model.providerID, streamInput.model.id)
-              } catch (e2) {
-                console.error("[fallback-debug] reportProviderTimeout THREW:", e2)
-              }
+
+            // Report quota errors to the provider-level timeout tracker regardless of fallback
+            if (errorKind === "quota") {
+              await getConfig().provider?.reportProviderTimeout?.(
+                streamInput.model.providerID,
+                streamInput.model.id,
+                errorMessage,
+                apiError?.data?.responseHeaders,
+                apiError?.data?.responseBody,
+                errorKind,
+              ).catch(() => {})
             }
 
-            // Fallback: if this is a fallback group, try next provider before hard-failing
-            if (input.fallbackGroupID) {
-              const isFallbackEligible = statusCode === undefined || [400, 404, 429, 500, 502, 503].includes(statusCode)
-              console.log("[fallback-debug] isFallbackEligible=%s", isFallbackEligible)
-              if (isFallbackEligible) {
-                const currentSlot = { providerID: streamInput.model.providerID, modelID: streamInput.model.id }
-                let result: any
-                try {
-                  result = await getConfig().provider?.reportFallbackError?.(
-                    input.fallbackGroupID,
-                    currentSlot,
+            // Fallback group: try next slot before hard-failing.
+            // All error kinds except overflow are eligible (overflow = context issue, not provider).
+            if (input.fallbackGroupID && errorKind !== "overflow") {
+              const currentSlot = { providerID: streamInput.model.providerID, modelID: streamInput.model.id }
+              const result = await getConfig().provider?.reportFallbackError?.(
+                input.fallbackGroupID,
+                currentSlot,
+                statusCode,
+                errorMessage,
+                apiError?.data?.responseHeaders,
+                apiError?.data?.responseBody,
+                errorKind,
+              ).catch(() => undefined)
+
+              const nextSlot = result?.nextSlot ?? (result && "providerID" in result ? result : null)
+              if (nextSlot && "providerID" in nextSlot) {
+                const nextModel = await getConfig().provider?.getModel(nextSlot.providerID, nextSlot.modelID)
+                if (nextModel) {
+                  streamInput = { ...streamInput, model: nextModel }
+                  input.model = nextModel
+                  getConfig().bus?.publish(SessionEvents.FallbackSwitched, {
+                    sessionID: input.sessionID,
+                    groupID: input.fallbackGroupID,
+                    previousSlot: currentSlot,
+                    newSlot: nextSlot,
+                  })
+                  await input.updatePart({
+                    id: Identifier.ascending("part"),
+                    sessionID: input.sessionID,
+                    messageID: input.assistantMessage.id,
+                    type: "fallback-switch",
+                    previousSlot: currentSlot,
+                    newSlot: nextSlot,
+                    groupID: input.fallbackGroupID,
+                    errorKind,
+                    resetAt: result?.resetAt ?? null,
                     statusCode,
-                    errorMessage,
-                    apiError?.data?.responseHeaders,
-                    apiError?.data?.responseBody,
-                  )
-                  console.log("[fallback-debug] reportFallbackError result:", JSON.stringify(result))
-                } catch (e2) {
-                  console.error("[fallback-debug] reportFallbackError THREW:", e2)
-                }
-                const nextSlot = result?.nextSlot ?? (result && "providerID" in result ? result : null)
-                if (nextSlot && "providerID" in nextSlot) {
-                  const nextModel = await getConfig().provider?.getModel(nextSlot.providerID, nextSlot.modelID)
-                  if (nextModel) {
-                    streamInput = { ...streamInput, model: nextModel }
-                    input.model = nextModel
-                    getConfig().bus?.publish(SessionEvents.FallbackSwitched, {
-                      sessionID: input.sessionID,
-                      groupID: input.fallbackGroupID,
-                      previousSlot: currentSlot,
-                      newSlot: nextSlot,
-                    })
-                    await input.updatePart({
-                      id: Identifier.ascending("part"),
-                      sessionID: input.sessionID,
-                      messageID: input.assistantMessage.id,
-                      type: "fallback-switch",
-                      previousSlot: currentSlot,
-                      newSlot: nextSlot,
-                      groupID: input.fallbackGroupID,
-                      resetAt: result?.resetAt ?? null,
-                      statusCode,
-                      time: { created: Date.now() },
-                    })
-                    attempt = 0
-                    continue
-                  }
+                    time: { created: Date.now() },
+                  })
+                  attempt = 0
+                  continue
                 }
               }
             }

@@ -8,6 +8,7 @@
 import { readFile, writeFile, mkdir } from "fs/promises"
 import { join, dirname } from "path"
 import { Global } from "@opendora/core/global"
+import { ProviderError } from "./error"
 import { ProviderTimeout } from "./timeout"
 
 export namespace ProviderFallback {
@@ -25,6 +26,12 @@ export namespace ProviderFallback {
   type CooldownEntry = {
     until: number
     reason: string
+    kind: ProviderError.ErrorKind
+  }
+
+  /** Re-export from ProviderError for callers that only depend on @opendora/provider/fallback. */
+  export function isFallbackEligible(kind: ProviderError.ErrorKind): boolean {
+    return ProviderError.isFallbackEligible(kind)
   }
 
   type RotationEntry = {
@@ -39,7 +46,6 @@ export namespace ProviderFallback {
     rotations: Record<string, RotationEntry>
   }
 
-  const COOLDOWN_MS = 2 * 60 * 60 * 1000
   const ROTATION_MS = 1 * 60 * 60 * 1000
   const IDLE_THRESHOLD = 5 * 60 * 1000
 
@@ -53,7 +59,12 @@ export namespace ProviderFallback {
     if (_state) return _state
     try {
       const raw = await readFile(statePath(), "utf-8")
-      _state = JSON.parse(raw) as State
+      const parsed = JSON.parse(raw) as State
+      // Backfill `kind` for entries written before ErrorKind was introduced
+      for (const entry of Object.values(parsed.cooldowns)) {
+        if (!entry.kind) entry.kind = "quota"
+      }
+      _state = parsed
     } catch {
       _state = { version: 1, cooldowns: {}, rotations: {} }
     }
@@ -143,17 +154,18 @@ export namespace ProviderFallback {
     reason: string,
     responseHeaders?: Record<string, string>,
     responseBody?: string,
-  ): Promise<{ nextSlot: Slot | null; providerTimedOut: boolean }> {
+    kind: ProviderError.ErrorKind = "quota",
+  ): Promise<{ nextSlot: Slot | null; providerTimedOut: boolean; resetAt: number | null }> {
     const group = getGroup(groupID)
-    if (!group) return { nextSlot: null, providerTimedOut: false }
+    if (!group) return { nextSlot: null, providerTimedOut: false, resetAt: null }
 
     const state = await loadState()
     const now = Date.now()
 
-    // Use actual reset timestamp from API headers, fall back to fixed cooldown
+    // Use API-provided reset time when available; fall back to kind-based default
     const resetAt = ProviderTimeout.parseResetFromHeaders(responseHeaders, responseBody)
-    const until = resetAt ?? now + COOLDOWN_MS
-    state.cooldowns[cooldownKey(slot)] = { until, reason }
+    const until = resetAt ?? now + ProviderError.COOLDOWN_BY_KIND[kind]
+    state.cooldowns[cooldownKey(slot)] = { until, reason, kind }
 
     // Also report to ProviderTimeout for provider-level tracking
     const timeoutResult = await ProviderTimeout.reportError(
@@ -162,6 +174,7 @@ export namespace ProviderFallback {
       reason,
       responseHeaders,
       responseBody,
+      kind,
     )
 
     const currentIdx = group.slots.findIndex(
@@ -188,5 +201,79 @@ export namespace ProviderFallback {
     const rotation = state.rotations[groupID]
     const idx = rotation?.slotIndex ?? 0
     return group.slots[idx] ?? null
+  }
+
+  export type SlotState = Slot & {
+    /** True if this slot is the current active choice for the group. */
+    active: boolean
+    /** True if this slot is currently in a cooldown window. */
+    cooled: boolean
+    cooldown: {
+      until: number
+      resetInSeconds: number
+      reason: string
+      kind: ProviderError.ErrorKind
+    } | null
+  }
+
+  export type GroupState = {
+    groupID: string
+    displayName: string
+    /** The slot currently chosen for requests (null if all slots are cooled). */
+    activeSlot: Slot | null
+    slots: SlotState[]
+  }
+
+  export async function getGroupState(groupID: string): Promise<GroupState | null> {
+    const group = getGroup(groupID)
+    if (!group) return null
+
+    const state = await loadState()
+    const now = Date.now()
+    const rotation = state.rotations[groupID]
+    const activeIdx = rotation?.slotIndex ?? 0
+
+    const slots: SlotState[] = group.slots.map((slot, idx) => {
+      const entry = state.cooldowns[cooldownKey(slot)]
+      const cooled = !!entry && now < entry.until
+      return {
+        ...slot,
+        active: idx === activeIdx && !cooled,
+        cooled,
+        cooldown: cooled
+          ? {
+              until: entry.until,
+              resetInSeconds: Math.ceil((entry.until - now) / 1000),
+              reason: entry.reason,
+              kind: entry.kind,
+            }
+          : null,
+      }
+    })
+
+    const activeSlot = slots.find((s) => s.active) ? group.slots[activeIdx] : null
+
+    return { groupID, displayName: group.displayName, activeSlot, slots }
+  }
+
+  export async function allGroupStates(): Promise<GroupState[]> {
+    const groups = allGroups()
+    const states = await Promise.all(groups.map((g) => getGroupState(g.id)))
+    return states.filter(Boolean) as GroupState[]
+  }
+
+  /** Clear all slot cooldowns for a group (does not affect provider-level timeout). */
+  export async function clearGroupCooldowns(groupID: string): Promise<boolean> {
+    const group = getGroup(groupID)
+    if (!group) return false
+
+    const state = await loadState()
+    for (const slot of group.slots) {
+      delete state.cooldowns[cooldownKey(slot)]
+    }
+    // Reset rotation so the first slot is tried next
+    delete state.rotations[groupID]
+    await saveState(state)
+    return true
   }
 }

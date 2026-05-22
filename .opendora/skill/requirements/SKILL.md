@@ -83,6 +83,14 @@ Skip this skill when:
 - Direct answer is possible without clarification
 - Work is routine maintenance with known scope
 
+## Complementarity with Domain Skills
+
+This skill is universal and remains active as the requirements method, regardless of domain.
+
+- Use this skill to control **how** requirements are elicited (question quality, confirmation loop, readiness discipline).
+- When the domain is identified (for example product/software delivery), load domain skill(s) to control **what additional domain-specific requirements** must be captured.
+- Do not treat domain skills as replacements for this skill; they are complementary extensions.
+
 ## Elicitation Loop
 
 ### Core Pattern
@@ -176,6 +184,8 @@ Use `question` for human input. Use `delegate` for agent-to-agent. Use `reply` o
 - Do not invent requirements the user didn't provide.
 - Do not assume technology or architecture before need is understood.
 - If delivery later uncovers gaps, receive escalation back into readiness.
+- Stay domain-neutral: do not perform deep product architecture, implementation planning, or execution routing in this skill.
+- For product/software delivery requests, continue using this skill's elicitation method while also loading `product-architecture` to capture domain-specific architecture requirements.
 
 ## Output
 

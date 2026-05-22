@@ -20,6 +20,7 @@ import { Provider } from "@opendora/provider/provider"
 import { ProviderTransform } from "@opendora/provider/transform"
 import { ProviderFallback } from "@opendora/provider/fallback"
 import { ProviderTimeout } from "@opendora/provider/timeout"
+import { ProviderError } from "@opendora/provider/error"
 import { Installation } from "@/installation"
 import { ToolRegistry } from "@/tool/registry"
 import { MCP } from "@/mcp"
@@ -247,9 +248,11 @@ export function configureSessionCore() {
         reason: string,
         responseHeaders?: Record<string, string>,
         responseBody?: string,
+        errorKind?: string,
       ) {
         await syncProviderFallbackGroups()
-        const result = await ProviderFallback.reportError(groupID, slot, statusCode, reason, responseHeaders, responseBody)
+        const kind = (errorKind as ProviderError.ErrorKind | undefined) ?? ProviderError.classifyErrorKind(statusCode, reason)
+        const result = await ProviderFallback.reportError(groupID, slot, statusCode, reason, responseHeaders, responseBody, kind)
         if (result.providerTimedOut) {
           const info = await ProviderTimeout.getTimeoutInfo(slot.providerID)
           if (info?.timedOut) {
@@ -271,10 +274,10 @@ export function configureSessionCore() {
         reason: string,
         responseHeaders?: Record<string, string>,
         responseBody?: string,
+        errorKind?: string,
       ) {
-        // Report the error directly to ProviderTimeout
-        await ProviderTimeout.reportError({ providerID, modelID }, 429, reason, responseHeaders, responseBody)
-        // Check if provider is now timed out and publish event
+        const kind = (errorKind as ProviderError.ErrorKind | undefined) ?? "quota"
+        await ProviderTimeout.reportError({ providerID, modelID }, 429, reason, responseHeaders, responseBody, kind)
         const info = await ProviderTimeout.getTimeoutInfo(providerID)
         if (info?.timedOut) {
           Bus.publish(BusEvent.ProviderTimedOut, {

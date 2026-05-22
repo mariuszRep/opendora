@@ -257,6 +257,130 @@ export const ProviderRoutes = lazy(() =>
       },
     )
     .get(
+      "/group",
+      describeRoute({
+        summary: "List group states",
+        description: "Get the live slot state for all model groups — which slot is active and which are in cooldown.",
+        operationId: "provider.group.list",
+        responses: {
+          200: {
+            description: "Group states",
+            content: {
+              "application/json": {
+                schema: resolver(
+                  z.array(
+                    z.object({
+                      groupID: z.string(),
+                      displayName: z.string(),
+                      activeSlot: z.object({ providerID: z.string(), modelID: z.string() }).nullable(),
+                      slots: z.array(
+                        z.object({
+                          providerID: z.string(),
+                          modelID: z.string(),
+                          active: z.boolean(),
+                          cooled: z.boolean(),
+                          cooldown: z.object({
+                            until: z.number(),
+                            resetInSeconds: z.number(),
+                            reason: z.string(),
+                            kind: z.string(),
+                          }).nullable(),
+                        }),
+                      ),
+                    }),
+                  ),
+                ),
+              },
+            },
+          },
+        },
+      }),
+      async (c) => {
+        const states = await ProviderFallback.allGroupStates()
+        return c.json(states)
+      },
+    )
+    .get(
+      "/group/:groupID",
+      describeRoute({
+        summary: "Get group state",
+        description: "Get the live slot state for a specific model group.",
+        operationId: "provider.group.get",
+        responses: {
+          200: {
+            description: "Group state",
+            content: {
+              "application/json": {
+                schema: resolver(
+                  z.object({
+                    groupID: z.string(),
+                    displayName: z.string(),
+                    activeSlot: z.object({ providerID: z.string(), modelID: z.string() }).nullable(),
+                    slots: z.array(
+                      z.object({
+                        providerID: z.string(),
+                        modelID: z.string(),
+                        active: z.boolean(),
+                        cooled: z.boolean(),
+                        cooldown: z.object({
+                          until: z.number(),
+                          resetInSeconds: z.number(),
+                          reason: z.string(),
+                          kind: z.string(),
+                        }).nullable(),
+                      }),
+                    ),
+                  }).nullable(),
+                ),
+              },
+            },
+          },
+        },
+      }),
+      validator(
+        "param",
+        z.object({
+          groupID: z.string().meta({ description: "Group ID" }),
+        }),
+      ),
+      async (c) => {
+        const { groupID } = c.req.valid("param")
+        const state = await ProviderFallback.getGroupState(groupID)
+        return c.json(state)
+      },
+    )
+    .delete(
+      "/group/:groupID/cooldown",
+      describeRoute({
+        summary: "Clear group cooldowns",
+        description: "Clear all slot cooldowns for a model group so every slot is eligible again on the next request.",
+        operationId: "provider.group.cooldown.clear",
+        responses: {
+          200: {
+            description: "Cooldowns cleared",
+            content: {
+              "application/json": {
+                schema: resolver(z.boolean()),
+              },
+            },
+          },
+          ...errors(400),
+        },
+      }),
+      validator(
+        "param",
+        z.object({
+          groupID: z.string().meta({ description: "Group ID" }),
+        }),
+      ),
+      async (c) => {
+        const { groupID } = c.req.valid("param")
+        const ok = await ProviderFallback.clearGroupCooldowns(groupID)
+        if (!ok) return c.json(false, 400)
+        return c.json(true)
+      },
+    )
+    .get(
       "/usage",
       describeRoute({
         summary: "Get provider rate-limit usage",

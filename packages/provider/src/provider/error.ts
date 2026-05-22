@@ -3,6 +3,61 @@ import { STATUS_CODES } from "http"
 import { iife } from "@opendora/core/util/iife"
 
 export namespace ProviderError {
+  /**
+   * Semantic classification of provider errors.
+   * Drives cooldown duration and fallback eligibility — not just HTTP status codes.
+   */
+  export type ErrorKind =
+    | "quota"      // 429: rate limit / quota exhausted — use API reset time or 2 h default
+    | "auth"       // 401, 403: auth failure — 24 h cooldown, user action required
+    | "not_found"  // 404: model/endpoint not found — 24 h cooldown
+    | "invalid"    // 400, 413: bad request — 5 min cooldown (possibly transient)
+    | "unavailable" // 502, 503, 529: service temporarily down — 10 min cooldown
+    | "server"     // 500: internal server error — 15 min cooldown
+    | "overflow"   // context length exceeded — no cooldown, fallback won't help
+
+  /** Default cooldown duration per error kind (milliseconds). */
+  export const COOLDOWN_BY_KIND: Record<ErrorKind, number> = {
+    quota:       2 * 60 * 60 * 1000,  // 2 h (usually overridden by API reset header)
+    auth:       24 * 60 * 60 * 1000,  // 24 h — credentials need fixing
+    not_found:  24 * 60 * 60 * 1000,  // 24 h — model simply doesn't exist here
+    invalid:     5 * 60 * 1000,       // 5 min — request may be transient
+    unavailable: 10 * 60 * 1000,      // 10 min — brief outage
+    server:      15 * 60 * 1000,      // 15 min — recoverable server error
+    overflow:    0,                    // N/A — not a provider issue
+  }
+
+  /**
+   * Whether an error kind should trigger trying the next slot in a fallback group.
+   * All kinds are eligible except overflow — context size is a user problem, not a
+   * provider problem, so switching providers won't help.
+   */
+  export function isFallbackEligible(kind: ErrorKind): boolean {
+    return kind !== "overflow"
+  }
+
+  /** Map HTTP status code (and optional message) to an ErrorKind. */
+  export function classifyErrorKind(statusCode?: number, message?: string): ErrorKind {
+    if (message && isOverflow(message)) return "overflow"
+    switch (statusCode) {
+      case 401:
+      case 403: return "auth"
+      case 404: return "not_found"
+      case 400:
+      case 413: return "invalid"
+      case 402: // Payment Required — quota/credits exhausted (e.g. OpenRouter, Kilo)
+      case 429: return "quota"
+      case 500: return "server"
+      case 502:
+      case 503:
+      case 529: return "unavailable"
+    }
+    // Unknown or missing status — check message for quota signals before defaulting
+    if (message && /insufficient.quota|out.of.credits|quota.exceeded|payment.required/i.test(message)) {
+      return "quota"
+    }
+    return "server"
+  }
   // Adapted from overflow detection patterns in:
   // https://github.com/badlogic/pi-mono/blob/main/packages/ai/src/utils/overflow.ts
   const OVERFLOW_PATTERNS = [
@@ -99,11 +154,13 @@ export namespace ProviderError {
   export type ParsedStreamError =
     | {
         type: "context_overflow"
+        errorKind: "overflow"
         message: string
         responseBody: string
       }
     | {
         type: "api_error"
+        errorKind: ErrorKind
         message: string
         isRetryable: false
         responseBody: string
@@ -120,12 +177,14 @@ export namespace ProviderError {
       case "context_length_exceeded":
         return {
           type: "context_overflow",
+          errorKind: "overflow" as const,
           message: "Input exceeds context window of this model",
           responseBody,
         }
       case "insufficient_quota":
         return {
           type: "api_error",
+          errorKind: "quota" as const,
           message: "Quota exceeded. Check your plan and billing details.",
           isRetryable: false,
           responseBody,
@@ -133,6 +192,7 @@ export namespace ProviderError {
       case "usage_not_included":
         return {
           type: "api_error",
+          errorKind: "quota" as const,
           message: "To use Codex with your ChatGPT plan, upgrade to Plus: https://chatgpt.com/explore/plus.",
           isRetryable: false,
           responseBody,
@@ -140,6 +200,7 @@ export namespace ProviderError {
       case "invalid_prompt":
         return {
           type: "api_error",
+          errorKind: "invalid" as const,
           message: typeof body?.error?.message === "string" ? body?.error?.message : "Invalid prompt.",
           isRetryable: false,
           responseBody,
@@ -150,11 +211,13 @@ export namespace ProviderError {
   export type ParsedAPICallError =
     | {
         type: "context_overflow"
+        errorKind: "overflow"
         message: string
         responseBody?: string
       }
     | {
         type: "api_error"
+        errorKind: ErrorKind
         message: string
         statusCode?: number
         isRetryable: boolean
@@ -168,6 +231,7 @@ export namespace ProviderError {
     if (isOverflow(m)) {
       return {
         type: "context_overflow",
+        errorKind: "overflow",
         message: m,
         responseBody: input.error.responseBody,
       }
@@ -176,6 +240,7 @@ export namespace ProviderError {
     const metadata = input.error.url ? { url: input.error.url } : undefined
     return {
       type: "api_error",
+      errorKind: classifyErrorKind(input.error.statusCode, m),
       message: m,
       statusCode: input.error.statusCode,
       isRetryable: input.providerID.startsWith("openai")

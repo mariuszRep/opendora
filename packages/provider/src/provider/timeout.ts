@@ -9,11 +9,12 @@
 import { readFile, writeFile, mkdir } from "fs/promises"
 import { join, dirname } from "path"
 import { Global } from "@opendora/core/global"
+import { ProviderError } from "./error"
 
 export namespace ProviderTimeout {
   export type Slot = { providerID: string; modelID: string }
 
-  type ModelFailure = { modelID: string; until: number; reason: string; statusCode?: number }
+  type ModelFailure = { modelID: string; until: number; reason: string; statusCode?: number; kind: ProviderError.ErrorKind }
 
   type ProviderEntry = {
     until: number | null
@@ -41,6 +42,8 @@ export namespace ProviderTimeout {
         if (entry.until && now >= entry.until) { entry.until = null; entry.reason = null }
         for (const [mid, mf] of Object.entries(entry.modelFailures)) {
           if (now >= mf.until) delete entry.modelFailures[mid]
+          // Backfill `kind` for entries written before ErrorKind was introduced
+          else if (!mf.kind) mf.kind = "quota"
         }
       }
       _state = parsed
@@ -116,19 +119,22 @@ export namespace ProviderTimeout {
     reason: string,
     headers?: Record<string, string>,
     responseBody?: string,
+    kind: ProviderError.ErrorKind = "quota",
   ): Promise<{ providerTimedOut: boolean; resetAt: number | null }> {
     const state = await loadState()
     const entry = ensureProvider(state, slot.providerID)
     const now = Date.now()
 
+    // Use API-provided reset time when available; fall back to kind-based default
     const resetAt = parseResetFromHeaders(headers, responseBody)
-    const until = resetAt ?? now + 2 * 60 * 60 * 1000 // fallback: 2h cooldown
+    const until = resetAt ?? now + ProviderError.COOLDOWN_BY_KIND[kind]
 
     entry.modelFailures[slot.modelID] = {
       modelID: slot.modelID,
       until,
       reason,
       statusCode,
+      kind,
     }
 
     const activeFailures = Object.values(entry.modelFailures).filter((mf) => mf.until > now)

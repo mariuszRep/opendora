@@ -3,11 +3,23 @@
   "cooldowns": {
     "opencode:minimax-m2.5-free": {
       "until": 1779235200365,
-      "reason": "Rate limit exceeded. Please try again later."
+      "reason": "Rate limit exceeded. Please try again later.",
+      "kind": "quota"
     },
     "openrouter:minimax/minimax-m2.5:free": {
       "until": 1779214287632,
-      "reason": "Provider returned error"
+      "reason": "Provider returned error",
+      "kind": "quota"
+    },
+    "kilo:deepseek/deepseek-v4-flash:free": {
+      "until": 1779456113625,
+      "reason": "Service Unavailable",
+      "kind": "unavailable"
+    },
+    "openrouter:deepseek/deepseek-v4-flash:free": {
+      "until": 1779455769141,
+      "reason": "Provider returned error",
+      "kind": "server"
     }
   },
   "rotations": {
@@ -42,9 +54,9 @@
       "lastUsed": 1779191672863
     },
     "dc174962-f77f-4d0b-b0b4-0f1053ecb1e8": {
-      "slotIndex": 1,
-      "activeSince": 1779372218845,
-      "lastUsed": 1779373513937
+      "slotIndex": 2,
+      "activeSince": 1779455513625,
+      "lastUsed": 1779455513625
     }
   }
 }

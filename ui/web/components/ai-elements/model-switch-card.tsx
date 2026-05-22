@@ -1,15 +1,18 @@
 "use client";
 
+import type React from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ChevronRightIcon, AlertTriangleIcon, RotateCwIcon, ComponentIcon } from "lucide-react";
 import { ModelSelectorLogo } from "@/components/ai-elements/model-selector";
 
+export type SlotStatus = "failed" | "active" | "retrying" | "standby";
+
 export interface ProviderModelCardProps {
   providerID: string;
   modelID: string;
   modelName?: string;
-  status: "failed" | "active" | "retrying";
+  status: SlotStatus;
   statusCode?: number;
   resetAt?: number;
   retryAttempt?: number;
@@ -35,22 +38,25 @@ export function ProviderModelCard({
     return `in ${m}m`;
   };
 
-  const containerCn = {
-    failed: "border-destructive/50 bg-destructive/5",
-    active: "border-accent bg-accent/10",
-    retrying: "border-amber-500/50 bg-amber-500/5",
+  const containerCn: Record<SlotStatus, string> = {
+    failed:  "border-destructive/50 bg-destructive/5",
+    active:  "border-accent bg-accent/10",
+    retrying:"border-amber-500/50 bg-amber-500/5",
+    standby: "border-border bg-background",
   };
 
-  const badgeCn = {
-    failed: "border-destructive/40 bg-destructive/10 text-destructive dark:text-red-400",
-    active: "border-accent/40 bg-accent/10 text-accent-foreground",
-    retrying: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  const badgeCn: Record<SlotStatus, string> = {
+    failed:  "border-destructive/40 bg-destructive/10 text-destructive dark:text-red-400",
+    active:  "border-accent/40 bg-accent/10 text-accent-foreground",
+    retrying:"border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    standby: "border-border text-muted-foreground",
   };
 
-  const statusIcon = {
-    failed: <AlertTriangleIcon className="size-3.5 shrink-0 text-destructive" />,
-    active: null,
-    retrying: <RotateCwIcon className="size-3.5 shrink-0 animate-spin text-amber-500" />,
+  const statusIcon: Record<SlotStatus, React.ReactNode> = {
+    failed:  <AlertTriangleIcon className="size-3.5 shrink-0 text-destructive" />,
+    active:  null,
+    retrying:<RotateCwIcon className="size-3.5 shrink-0 animate-spin text-amber-500" />,
+    standby: null,
   };
 
   const subtext =
@@ -136,14 +142,10 @@ export function ModelSwitchCard({
           (f) => f.providerID === slot.providerID && f.modelID === slot.modelID
         );
 
-        let status: "failed" | "active" | "retrying" = "active";
+        let status: SlotStatus = "standby";
         if (isFailed) status = "failed";
-        else if (
-          currentSlot?.providerID === slot.providerID &&
-          currentSlot?.modelID === slot.modelID &&
-          isRetrying
-        ) {
-          status = "retrying";
+        else if (currentSlot?.providerID === slot.providerID && currentSlot?.modelID === slot.modelID) {
+          status = isRetrying ? "retrying" : "active";
         }
 
         return (
@@ -173,9 +175,8 @@ export function ModelSwitchCard({
       const failedInfo = failedSlots.find(
         (f) => f.providerID === currentSlot.providerID && f.modelID === currentSlot.modelID
       );
-      let status: "failed" | "active" | "retrying" = "active";
+      let status: SlotStatus = isRetrying ? "retrying" : "active";
       if (isFailed) status = "failed";
-      else if (isRetrying) status = "retrying";
 
       return (
         <ProviderModelCard
