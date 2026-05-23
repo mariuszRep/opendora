@@ -17,7 +17,9 @@
     "reply",
     "question",
     "todowrite",
-    "skill_load"
+    "skill_load",
+    "webfetch",
+    "websearch"
   ],
   "skills": [
     "document-generation",
@@ -29,5 +31,6 @@
     "reply": {
       "stopAfterReply": false
     }
-  }
+  },
+  "enableInjection": false
 }

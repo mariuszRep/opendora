@@ -98,8 +98,8 @@ export type UseOpendoraResult = {
   // Fallback groups
   modelGroups: { id: string; name: string; models: { providerID: string; modelID: string }[] }[]
   refreshModelGroups: () => Promise<void>
-  // Provider timeout status
-  providerTimeouts: Record<string, { timedOut: boolean; until: number | null; reason: string | null; resetInSeconds: number | null; failedModels: string[] }>
+  // Provider timeout status (includes per-model cooldowns)
+  providerTimeouts: Record<string, import("@/lib/opendora").ProviderTimeoutInfo>
   refreshProviderTimeouts: () => Promise<void>
   // Auth expired providers
   authExpiredProviders: Record<string, boolean>
@@ -183,7 +183,7 @@ export function useOpendora(opts?: {
   const [fallbackActiveSlots, setFallbackActiveSlots] = useState<Record<string, { providerID: string; modelID: string }>>({})
   const [modelFilters, setModelFilters] = useState<Record<string, "all" | "free" | "none">>({})
   const [modelGroups, setModelGroups] = useState<{ id: string; name: string; models: { providerID: string; modelID: string }[] }[]>([])
-  const [providerTimeouts, setProviderTimeouts] = useState<Record<string, { timedOut: boolean; until: number | null; reason: string | null; resetInSeconds: number | null; failedModels: string[] }>>({})
+  const [providerTimeouts, setProviderTimeouts] = useState<Record<string, import("@/lib/opendora").ProviderTimeoutInfo>>({})
   const [authExpiredProviders, setAuthExpiredProviders] = useState<Record<string, boolean>>({})
   const [allAgents, setAllAgents] = useState<(Agent & { _id: string })[]>([])
   const [selectedAgent, setSelectedAgent] = useState<string>("")
@@ -623,20 +623,33 @@ export function useOpendora(opts?: {
           break
         }
         case "session.fallback.switched": {
-          const { groupID, newSlot } = (event as { type: string; properties: { groupID: string; newSlot: { providerID: string; modelID: string } } }).properties
+          const { groupID, newSlot, previousSlot } = (event as { type: string; properties: { groupID: string; previousSlot: { providerID: string; modelID: string }; newSlot: { providerID: string; modelID: string } } }).properties
           setFallbackActiveSlots((prev) => ({ ...prev, [groupID]: newSlot }))
+          notify
+            ? notify({ type: "warning", title: `${previousSlot.providerID} failed`, message: `Switched to ${newSlot.providerID}` })
+            : toast.warning(`${previousSlot.providerID} failed — switched to ${newSlot.providerID}`, { duration: 5000 })
           break
         }
         case "provider.timeout": {
           const { providerID, reason, resetInSeconds } = (event as { type: string; properties: { providerID: string; reason: string; resetInSeconds: number; failedModels: string[] } }).properties
+          const failedModels: string[] = (event as any).properties.failedModels ?? []
+          const until = Date.now() + resetInSeconds * 1000
           setProviderTimeouts((prev) => ({
             ...prev,
             [providerID]: {
               timedOut: true,
-              until: Date.now() + resetInSeconds * 1000,
+              until,
               reason,
               resetInSeconds,
-              failedModels: (event as any).properties.failedModels ?? [],
+              failedModels,
+              // Per-model details will be populated on next REST poll;
+              // seed with provider-wide until time for all failed models
+              modelCooldowns: Object.fromEntries(
+                failedModels.map((mid) => [
+                  mid,
+                  { until, resetInSeconds, reason, kind: "quota" },
+                ]),
+              ),
             },
           }))
           notify

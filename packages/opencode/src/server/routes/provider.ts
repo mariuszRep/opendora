@@ -244,6 +244,12 @@ export const ProviderRoutes = lazy(() =>
                     reason: z.string().nullable(),
                     resetInSeconds: z.number().nullable(),
                     failedModels: z.array(z.string()),
+                    modelCooldowns: z.record(z.string(), z.object({
+                      until: z.number(),
+                      resetInSeconds: z.number(),
+                      reason: z.string(),
+                      kind: z.string(),
+                    })),
                   })),
                 ),
               },
@@ -377,6 +383,27 @@ export const ProviderRoutes = lazy(() =>
         const { groupID } = c.req.valid("param")
         const ok = await ProviderFallback.clearGroupCooldowns(groupID)
         if (!ok) return c.json(false, 400)
+        return c.json(true)
+      },
+    )
+    .put(
+      "/group/:groupID/slot",
+      describeRoute({
+        summary: "Set active slot",
+        description: "Manually promote a specific slot to be the active one for the group, clearing its cooldown if any.",
+        operationId: "provider.group.setActiveSlot",
+        responses: {
+          200: { description: "Slot set", content: { "application/json": { schema: resolver(z.boolean()) } } },
+          ...errors(400, 404),
+        },
+      }),
+      validator("param", z.object({ groupID: z.string() })),
+      validator("json", z.object({ providerID: z.string(), modelID: z.string() })),
+      async (c) => {
+        const { groupID } = c.req.valid("param")
+        const slot = c.req.valid("json")
+        const ok = await ProviderFallback.setActiveSlot(groupID, slot)
+        if (!ok) return c.json(false, 404)
         return c.json(true)
       },
     )

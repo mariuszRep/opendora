@@ -8,10 +8,8 @@ import {
   DatabaseIcon,
   LayersIcon,
   PlusIcon,
-  RotateCwIcon,
   SearchIcon,
   Settings2Icon,
-  Trash2Icon,
 } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { Button } from "@/components/ui/button"
@@ -51,14 +49,6 @@ function providerLogoID(providerID: string) {
   return providerID === "opencode-private" ? "opencode" : providerID
 }
 
-function formatCooldown(seconds: number): string {
-  if (seconds <= 0) return "soon"
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  if (h > 0) return `${h}h ${m}m`
-  return `${m}m`
-}
-
 export default function ProvidersPage() {
   const router = useRouter()
   const {
@@ -93,7 +83,6 @@ export default function ProvidersPage() {
   const [groupDialogOpen, setGroupDialogOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState<ModelGroup | null>(null)
   const [groupStates, setGroupStates] = useState<GroupState[]>([])
-  const [resettingCooldown, setResettingCooldown] = useState<string | null>(null)
 
   useEffect(() => {
     opendora.provider.authMethods().then(setAuthMethods).catch(() => {})
@@ -146,15 +135,13 @@ export default function ProvidersPage() {
   }
 
   async function handleResetCooldown(groupID: string) {
-    setResettingCooldown(groupID)
-    try {
-      await opendora.provider.group.clearCooldown(groupID)
-      await refreshGroupStates()
-    } catch (err) {
-      console.error("Failed to reset cooldowns:", err)
-    } finally {
-      setResettingCooldown(null)
-    }
+    await opendora.provider.group.clearCooldown(groupID).catch((err) => console.error(err))
+    await refreshGroupStates()
+  }
+
+  async function handleSetActiveSlot(groupID: string, slot: { providerID: string; modelID: string }) {
+    await opendora.provider.group.setActiveSlot(groupID, slot).catch((err) => console.error(err))
+    await refreshGroupStates()
   }
 
   function handleNewGroup() {
@@ -323,7 +310,24 @@ export default function ProvidersPage() {
             connectedProviders={connectedProviders}
             modelFilters={modelFilters}
             initialGroup={editingGroup}
+            groupState={editingGroup ? (groupStates.find((gs) => gs.groupID === editingGroup.id) ?? null) : null}
             onSave={handleSaveGroup}
+            onDelete={
+              editingGroup
+                ? async () => {
+                    await handleDeleteGroup(editingGroup.id)
+                    setGroupDialogOpen(false)
+                  }
+                : undefined
+            }
+            onResetCooldowns={
+              editingGroup ? async () => handleResetCooldown(editingGroup.id) : undefined
+            }
+            onSetActiveSlot={
+              editingGroup
+                ? async (slot) => handleSetActiveSlot(editingGroup.id, slot)
+                : undefined
+            }
           />
           <ModelSelector
             open={defaultModelOpen}
@@ -397,9 +401,19 @@ export default function ProvidersPage() {
                         >
                           <ModelSelectorLogo provider={m.providerID} />
                           <ModelSelectorName>{m.modelName}</ModelSelectorName>
-                          {providerTimeouts[m.providerID]?.timedOut && (
-                            <ClockAlertIcon className="size-3 text-red-500 shrink-0" />
-                          )}
+                          {(() => {
+                            const pt = providerTimeouts[m.providerID]
+                            const mcd = pt?.modelCooldowns?.[m.modelID]
+                            const isCooled = pt?.timedOut || !!mcd
+                            if (!isCooled) return null
+                            const resetSecs = pt?.timedOut ? pt.resetInSeconds : (mcd?.resetInSeconds ?? null)
+                            return (
+                              <span className="flex items-center gap-0.5 text-[10px] text-red-500 shrink-0">
+                                <ClockAlertIcon className="size-3" />
+                                {resetSecs ? `${Math.ceil(resetSecs / 60)}m` : ""}
+                              </span>
+                            )
+                          })()}
                           {active ? (
                             <CheckCircle2Icon className="ml-auto size-4" />
                           ) : (
@@ -457,91 +471,62 @@ export default function ProvidersPage() {
               </Card>
             ) : (
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {modelGroups.map((group) => (
-                  <Card
-                    key={group.id}
-                    className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-md"
-                    onClick={() => handleEditGroup(group)}
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
+                {modelGroups.map((group) => {
+                  const gs = groupStates.find((s) => s.groupID === group.id)
+                  const cooledCount = gs?.slots.filter((s) => s.cooled).length ?? 0
+                  return (
+                    <Card
+                      key={group.id}
+                      className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-md"
+                      onClick={() => handleEditGroup(group)}
+                    >
+                      <CardHeader className="pb-3">
                         <div className="flex items-center gap-2">
                           <LayersIcon className="size-4 text-primary shrink-0" />
                           <CardTitle className="text-base">{group.name}</CardTitle>
                         </div>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="icon-sm"
-                                variant="ghost"
-                                className="text-destructive hover:text-destructive shrink-0"
-                                onClick={(e) => { e.stopPropagation(); handleDeleteGroup(group.id) }}
-                              >
-                                <Trash2Icon className="size-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Delete group</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      {(() => {
-                        const gs = groupStates.find((s) => s.groupID === group.id)
-                        const cooledCount = gs?.slots.filter((s) => s.cooled).length ?? 0
-                        return (
-                          <>
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              {group.models.map((m, idx) => {
-                                const prov = providers.find((p) => p.id === m.providerID)
-                                const modelName = (prov?.models[m.modelID] as { name?: string } | undefined)?.name ?? m.modelID
-                                const slotState = gs?.slots.find((s) => s.providerID === m.providerID && s.modelID === m.modelID)
-                                const isActive = slotState?.active ?? false
-                                const isCooled = slotState?.cooled ?? false
-                                const cooldown = slotState?.cooldown
-                                return (
-                                  <div key={`${m.providerID}:${m.modelID}`} className="flex items-center gap-1">
-                                    {idx > 0 && <span className="text-xs text-muted-foreground">→</span>}
-                                    <span className={cn(
-                                      "flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs",
-                                      isActive && "border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400",
-                                      isCooled && "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400",
-                                    )}>
-                                      <ModelSelectorLogo provider={m.providerID} />
-                                      {modelName}
-                                      {isCooled && cooldown && (
-                                        <span className="opacity-70">· {formatCooldown(cooldown.resetInSeconds)}</span>
-                                      )}
-                                    </span>
-                                  </div>
-                                )
-                              })}
-                            </div>
-                            {cooledCount > 0 && (
-                              <div className="mt-2 flex items-center justify-between">
-                                <span className="text-xs text-amber-600 dark:text-amber-400">
-                                  {cooledCount} slot{cooledCount > 1 ? "s" : ""} on cooldown
-                                </span>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-                                  onClick={(e) => { e.stopPropagation(); void handleResetCooldown(group.id) }}
-                                  disabled={resettingCooldown === group.id}
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {group.models.map((m, idx) => {
+                            const prov = providers.find((p) => p.id === m.providerID)
+                            const modelName =
+                              (prov?.models[m.modelID] as { name?: string } | undefined)?.name ?? m.modelID
+                            const slotState = gs?.slots.find(
+                              (s) => s.providerID === m.providerID && s.modelID === m.modelID,
+                            )
+                            const isActive = slotState?.active ?? false
+                            const isCooled = slotState?.cooled ?? false
+                            return (
+                              <div key={`${m.providerID}:${m.modelID}`} className="flex items-center gap-1">
+                                {idx > 0 && <span className="text-xs text-muted-foreground">→</span>}
+                                <span
+                                  className={cn(
+                                    "flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs",
+                                    isActive &&
+                                      "border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400",
+                                    isCooled &&
+                                      !isActive &&
+                                      "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+                                    !isActive && !isCooled && "border-border text-muted-foreground",
+                                  )}
                                 >
-                                  <RotateCwIcon className={cn("size-3", resettingCooldown === group.id && "animate-spin")} />
-                                  Reset
-                                </Button>
+                                  <ModelSelectorLogo provider={m.providerID} />
+                                  {modelName}
+                                </span>
                               </div>
-                            )}
-                          </>
-                        )
-                      })()}
-                    </CardContent>
-                  </Card>
-                ))}
+                            )
+                          })}
+                        </div>
+                        {cooledCount > 0 && (
+                          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                            {cooledCount} slot{cooledCount > 1 ? "s" : ""} on cooldown — open to reset
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             )}
           </div>

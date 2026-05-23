@@ -486,7 +486,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
-                onClick={() => router.push("/dashboard/billing")}
+                onClick={() => router.push("/dashboard/usage")}
                 tooltip="Usage"
                 isActive={false}
               >

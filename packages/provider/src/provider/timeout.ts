@@ -1,9 +1,9 @@
 /**
- * ProviderTimeout — provider-level rate-limit timeout tracking.
+ * ProviderTimeout — per-model and provider-level rate-limit timeout tracking.
  *
- * Tracks per-model failures and escalates to provider-wide timeout when
- * 2+ models from the same provider hit rate limits. Uses actual reset
- * timestamps from API response headers instead of fixed cooldowns.
+ * Single source of truth for all cooldown state. Groups and direct model
+ * selection both read from here so a failed model is always skipped regardless
+ * of how it was selected.
  */
 
 import { readFile, writeFile, mkdir } from "fs/promises"
@@ -42,8 +42,11 @@ export namespace ProviderTimeout {
         if (entry.until && now >= entry.until) { entry.until = null; entry.reason = null }
         for (const [mid, mf] of Object.entries(entry.modelFailures)) {
           if (now >= mf.until) delete entry.modelFailures[mid]
-          // Backfill `kind` for entries written before ErrorKind was introduced
           else if (!mf.kind) mf.kind = "quota"
+        }
+        // Remove empty provider entries so the file stays clean
+        if (!entry.until && Object.keys(entry.modelFailures).length === 0) {
+          delete parsed.providers[pid]
         }
       }
       _state = parsed
@@ -109,9 +112,8 @@ export namespace ProviderTimeout {
   }
 
   /**
-   * Report a model error. If 2+ models from the same provider fail,
-   * the entire provider is put on timeout until the latest reset time.
-   * Returns true if the provider just entered timeout (for event publishing).
+   * Report a model error. Records a per-model cooldown. If 2+ models from the
+   * same provider fail, the entire provider is also put on timeout.
    */
   export async function reportError(
     slot: Slot,
@@ -125,23 +127,15 @@ export namespace ProviderTimeout {
     const entry = ensureProvider(state, slot.providerID)
     const now = Date.now()
 
-    // Use API-provided reset time when available; fall back to kind-based default
     const resetAt = parseResetFromHeaders(headers, responseBody)
     const until = resetAt ?? now + ProviderError.COOLDOWN_BY_KIND[kind]
 
-    entry.modelFailures[slot.modelID] = {
-      modelID: slot.modelID,
-      until,
-      reason,
-      statusCode,
-      kind,
-    }
+    entry.modelFailures[slot.modelID] = { modelID: slot.modelID, until, reason, statusCode, kind }
 
     const activeFailures = Object.values(entry.modelFailures).filter((mf) => mf.until > now)
     const wasTimedOut = entry.until !== null && entry.until > now
 
     if (activeFailures.length >= PROVIDER_TIMEOUT_THRESHOLD && !wasTimedOut) {
-      // Find the latest reset time among all failures
       const latestReset = Math.max(...activeFailures.map((mf) => mf.until))
       entry.until = latestReset
       entry.reason = `Provider timeout: ${activeFailures.length} models rate-limited (${activeFailures.map((mf) => mf.modelID).join(", ")})`
@@ -161,67 +155,130 @@ export namespace ProviderTimeout {
     return Date.now() < entry.until
   }
 
-  /** Check if a specific model is in cooldown. */
+  /** Check if a specific model is in cooldown (includes provider-wide timeout). */
   export async function isModelCooled(slot: Slot): Promise<boolean> {
     const state = await loadState()
     const entry = state.providers[slot.providerID]
     if (!entry) return false
-    // Provider-wide timeout covers all models
-    if (entry.until && Date.now() < entry.until) return true
+    const now = Date.now()
+    if (entry.until && now < entry.until) return true
     const mf = entry.modelFailures[slot.modelID]
-    return !!mf && Date.now() < mf.until
+    return !!mf && now < mf.until
   }
 
-  /** Get timeout info for a provider (for UI display). */
-  export async function getTimeoutInfo(providerID: string): Promise<{
-    timedOut: boolean
-    until: number | null
-    reason: string | null
-    resetInSeconds: number | null
-    failedModels: string[]
-  } | null> {
-    const state = await loadState()
-    const entry = state.providers[providerID]
-    if (!entry) return null
-
-    const now = Date.now()
-    const timedOut = entry.until !== null && now < entry.until
-    const resetInSeconds = timedOut ? Math.ceil((entry.until! - now) / 1000) : null
-
-    const failedModels = Object.values(entry.modelFailures)
-      .filter((mf) => now < mf.until)
-      .map((mf) => mf.modelID)
-
-    return { timedOut, until: entry.until, reason: entry.reason, resetInSeconds, failedModels }
+  export type SlotCooldown = {
+    until: number
+    resetInSeconds: number
+    reason: string
+    kind: ProviderError.ErrorKind
   }
 
-  /** Get all provider timeout statuses (for UI listing). */
-  export async function allTimeoutInfo(): Promise<
-    Record<string, { timedOut: boolean; until: number | null; reason: string | null; resetInSeconds: number | null; failedModels: string[] }>
-  > {
+  /**
+   * Batch slot cooldown lookup — loads state once and checks all slots.
+   * Key format: "providerID:modelID".
+   */
+  export async function getSlotCooldowns(slots: Slot[]): Promise<Map<string, SlotCooldown>> {
     const state = await loadState()
     const now = Date.now()
-    const result: Record<string, any> = {}
-    for (const [pid, entry] of Object.entries(state.providers)) {
-      const timedOut = entry.until !== null && now < entry.until
-      if (!timedOut && Object.keys(entry.modelFailures).length === 0) continue
-      result[pid] = {
-        timedOut,
-        until: entry.until,
-        reason: entry.reason,
-        resetInSeconds: timedOut ? Math.ceil((entry.until! - now) / 1000) : null,
-        failedModels: Object.values(entry.modelFailures)
-          .filter((mf) => now < mf.until)
-          .map((mf) => mf.modelID),
+    const result = new Map<string, SlotCooldown>()
+    for (const slot of slots) {
+      const entry = state.providers[slot.providerID]
+      if (!entry) continue
+      const key = `${slot.providerID}:${slot.modelID}`
+      if (entry.until && now < entry.until) {
+        result.set(key, {
+          until: entry.until,
+          resetInSeconds: Math.ceil((entry.until - now) / 1000),
+          reason: entry.reason ?? "Provider timed out",
+          kind: "quota",
+        })
+      } else {
+        const mf = entry.modelFailures[slot.modelID]
+        if (mf && now < mf.until) {
+          result.set(key, {
+            until: mf.until,
+            resetInSeconds: Math.ceil((mf.until - now) / 1000),
+            reason: mf.reason,
+            kind: mf.kind,
+          })
+        }
       }
     }
     return result
   }
 
-  /** Clear timeout for a provider (e.g., after manual intervention). */
+  export type ProviderTimeoutInfo = {
+    timedOut: boolean
+    until: number | null
+    reason: string | null
+    resetInSeconds: number | null
+    /** Model IDs with active cooldowns (for backward compat) */
+    failedModels: string[]
+    /** Full per-model cooldown details keyed by modelID */
+    modelCooldowns: Record<string, { until: number; resetInSeconds: number; reason: string; kind: string }>
+  }
+
+  /** Get all provider timeout and per-model cooldown statuses. */
+  export async function allTimeoutInfo(): Promise<Record<string, ProviderTimeoutInfo>> {
+    const state = await loadState()
+    const now = Date.now()
+    const result: Record<string, ProviderTimeoutInfo> = {}
+    for (const [pid, entry] of Object.entries(state.providers)) {
+      const timedOut = entry.until !== null && now < entry.until
+      const activeFailures = Object.values(entry.modelFailures).filter((mf) => now < mf.until)
+      if (!timedOut && activeFailures.length === 0) continue
+
+      const modelCooldowns: Record<string, { until: number; resetInSeconds: number; reason: string; kind: string }> = {}
+      for (const mf of activeFailures) {
+        modelCooldowns[mf.modelID] = {
+          until: mf.until,
+          resetInSeconds: Math.ceil((mf.until - now) / 1000),
+          reason: mf.reason,
+          kind: mf.kind,
+        }
+      }
+
+      result[pid] = {
+        timedOut,
+        until: entry.until,
+        reason: entry.reason,
+        resetInSeconds: timedOut ? Math.ceil((entry.until! - now) / 1000) : null,
+        failedModels: activeFailures.map((mf) => mf.modelID),
+        modelCooldowns,
+      }
+    }
+    return result
+  }
+
+  /** Get timeout info for a single provider. */
+  export async function getTimeoutInfo(providerID: string): Promise<ProviderTimeoutInfo | null> {
+    const all = await allTimeoutInfo()
+    return all[providerID] ?? null
+  }
+
+  /** Clear all timeout/cooldown state for an entire provider. */
   export async function clearTimeout(providerID: string): Promise<void> {
     const state = await loadState()
     delete state.providers[providerID]
+    await saveState(state)
+  }
+
+  /**
+   * Clear cooldown for a specific model only. If the provider was in timeout
+   * because of this model and now falls below the threshold, the provider
+   * timeout is also cleared.
+   */
+  export async function clearModelCooldown(slot: Slot): Promise<void> {
+    const state = await loadState()
+    const entry = state.providers[slot.providerID]
+    if (!entry) return
+    delete entry.modelFailures[slot.modelID]
+    const now = Date.now()
+    const activeFailures = Object.values(entry.modelFailures).filter((mf) => now < mf.until)
+    if (activeFailures.length < PROVIDER_TIMEOUT_THRESHOLD) {
+      entry.until = null
+      entry.reason = null
+    }
     await saveState(state)
   }
 }

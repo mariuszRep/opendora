@@ -3,7 +3,7 @@
   "description": "First point of contact and gatekeeper. Triage coordinator that answers simple questions directly and delegates medium-to-hard tasks to specialists. Concise, direct communication.",
   "mode": "primary",
   "model": {
-    "modelID": "dc174962-f77f-4d0b-b0b4-0f1053ecb1e8",
+    "modelID": "3957ba01-cf45-4ecb-9b39-2acda3ca530a",
     "providerID": "fallback"
   },
   "color": "teal",

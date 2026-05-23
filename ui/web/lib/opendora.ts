@@ -169,6 +169,24 @@ export type FallbackSwitchPart = {
   time: { created: number }
 }
 
+export type ModelCooldown = {
+  until: number
+  resetInSeconds: number
+  reason: string
+  kind: string
+}
+
+export type ProviderTimeoutInfo = {
+  timedOut: boolean
+  until: number | null
+  reason: string | null
+  resetInSeconds: number | null
+  /** Model IDs with active cooldowns */
+  failedModels: string[]
+  /** Full per-model cooldown details keyed by modelID */
+  modelCooldowns: Record<string, ModelCooldown>
+}
+
 export type GroupSlotState = {
   providerID: string
   modelID: string
@@ -584,7 +602,7 @@ export const opendora = {
         body: JSON.stringify({ method, code }),
       }),
     timeout: () =>
-      req<Record<string, { timedOut: boolean; until: number | null; reason: string | null; resetInSeconds: number | null; failedModels: string[] }>>("/provider/timeout"),
+      req<Record<string, ProviderTimeoutInfo>>("/provider/timeout"),
     clearTimeout: (providerID: string) =>
       req<boolean>(`/provider/${providerID}/timeout`, { method: "DELETE" }),
     usage: () =>
@@ -594,6 +612,8 @@ export const opendora = {
       get: (groupID: string) => req<GroupState | null>(`/provider/group/${groupID}`),
       clearCooldown: (groupID: string) =>
         req<boolean>(`/provider/group/${groupID}/cooldown`, { method: "DELETE" }),
+      setActiveSlot: (groupID: string, slot: { providerID: string; modelID: string }) =>
+        req<boolean>(`/provider/group/${groupID}/slot`, { method: "PUT", body: JSON.stringify(slot) }),
     },
   },
   question: {

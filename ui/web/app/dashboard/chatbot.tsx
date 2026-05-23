@@ -1775,20 +1775,26 @@ export const Chatbot = () => {
                           : selectedModel?.providerID && <ModelSelectorLogo provider={selectedModel.providerID} />
                         }
                         {!selectedGroup && selectedModel?.modelName && <ModelSelectorName>{selectedModel.modelName}</ModelSelectorName>}
-                        {selectedModel?.providerID && providerTimeouts[selectedModel.providerID]?.timedOut && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <ClockAlertIcon className="size-3.5 text-red-500 shrink-0" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                Provider timed out: {providerTimeouts[selectedModel.providerID].reason}
-                                {providerTimeouts[selectedModel.providerID].resetInSeconds != null &&
-                                  ` (resets in ${Math.ceil(providerTimeouts[selectedModel.providerID].resetInSeconds! / 60)}m)`}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
+                        {selectedModel?.providerID && (() => {
+                          const pt = providerTimeouts[selectedModel.providerID]
+                          const mcd = pt?.modelCooldowns?.[selectedModel.modelID]
+                          const cd = pt?.timedOut ? pt : mcd ? { reason: mcd.reason, resetInSeconds: mcd.resetInSeconds } : null
+                          if (!cd) return null
+                          return (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <ClockAlertIcon className="size-3.5 text-red-500 shrink-0" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {cd.reason}
+                                  {cd.resetInSeconds != null &&
+                                    ` (resets in ${Math.ceil(cd.resetInSeconds / 60)}m)`}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )
+                        })()}
                       </PromptInputButton>
                     </ModelSelectorTrigger>
                     <ModelSelectorContent>
@@ -1816,8 +1822,11 @@ export const Chatbot = () => {
                                   {(() => {
                                     const minReset = g.models.reduce<number | null>((min, m) => {
                                       const pt = providerTimeouts[m.providerID]
-                                      if (!pt?.timedOut || !pt.resetInSeconds) return min
-                                      return min === null || pt.resetInSeconds < min ? pt.resetInSeconds : min
+                                      const reset = pt?.timedOut
+                                        ? pt.resetInSeconds
+                                        : (pt?.modelCooldowns?.[m.modelID]?.resetInSeconds ?? null)
+                                      if (!reset) return min
+                                      return min === null || reset < min ? reset : min
                                     }, null)
                                     if (minReset === null) return null
                                     return (
@@ -1862,9 +1871,18 @@ export const Chatbot = () => {
                                   <ModelSelectorName>{m.modelName}</ModelSelectorName>
                                   {(() => {
                                     const pt = providerTimeouts[m.providerID]
-                                    const timedOut = pt?.timedOut && (pt.failedModels.length === 0 || pt.failedModels.includes(m.modelID))
+                                    const mcd = pt?.modelCooldowns?.[m.modelID]
+                                    const isCooled = pt?.timedOut || !!mcd
                                     if (authExpiredProviders[m.providerID]) return <KeyIcon className="size-3 shrink-0 text-amber-500" />
-                                    if (timedOut) return <ClockAlertIcon className="size-3 shrink-0 text-red-500" />
+                                    if (isCooled) {
+                                      const resetSecs = pt?.timedOut ? pt.resetInSeconds : (mcd?.resetInSeconds ?? null)
+                                      return (
+                                        <span className="flex items-center gap-0.5 text-[10px] text-red-500 shrink-0">
+                                          <ClockAlertIcon className="size-3" />
+                                          {resetSecs ? `${Math.ceil(resetSecs / 60)}m` : ""}
+                                        </span>
+                                      )
+                                    }
                                     return null
                                   })()}
                                   {active ? <CheckIcon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}

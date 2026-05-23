@@ -1,10 +1,18 @@
 {
   "version": 1,
   "providers": {
-    "opencode": {
+    "kilo": {
       "until": null,
       "reason": null,
-      "modelFailures": {}
+      "modelFailures": {
+        "deepseek/deepseek-v4-flash:free": {
+          "modelID": "deepseek/deepseek-v4-flash:free",
+          "until": 1779513467735,
+          "reason": "Service Unavailable",
+          "statusCode": 503,
+          "kind": "unavailable"
+        }
+      }
     },
     "openrouter": {
       "until": null,
@@ -12,23 +20,10 @@
       "modelFailures": {
         "deepseek/deepseek-v4-flash:free": {
           "modelID": "deepseek/deepseek-v4-flash:free",
-          "until": 1779455769141,
+          "until": 1779513769025,
           "reason": "Provider returned error",
           "statusCode": 402,
           "kind": "server"
-        }
-      }
-    },
-    "kilo": {
-      "until": null,
-      "reason": null,
-      "modelFailures": {
-        "deepseek/deepseek-v4-flash:free": {
-          "modelID": "deepseek/deepseek-v4-flash:free",
-          "until": 1779456113625,
-          "reason": "Service Unavailable",
-          "statusCode": 503,
-          "kind": "unavailable"
         }
       }
     }

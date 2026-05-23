@@ -1,27 +1,5 @@
 {
   "version": 1,
-  "cooldowns": {
-    "opencode:minimax-m2.5-free": {
-      "until": 1779235200365,
-      "reason": "Rate limit exceeded. Please try again later.",
-      "kind": "quota"
-    },
-    "openrouter:minimax/minimax-m2.5:free": {
-      "until": 1779214287632,
-      "reason": "Provider returned error",
-      "kind": "quota"
-    },
-    "kilo:deepseek/deepseek-v4-flash:free": {
-      "until": 1779456113625,
-      "reason": "Service Unavailable",
-      "kind": "unavailable"
-    },
-    "openrouter:deepseek/deepseek-v4-flash:free": {
-      "until": 1779455769141,
-      "reason": "Provider returned error",
-      "kind": "server"
-    }
-  },
   "rotations": {
     "minimax-m2.5": {
       "slotIndex": 0,
@@ -39,9 +17,9 @@
       "lastUsed": 1779357673882
     },
     "a103f2b7-43fc-4ce3-9e8d-7dce786c0c31": {
-      "slotIndex": 1,
-      "activeSince": 1779264002541,
-      "lastUsed": 1779264075134
+      "slotIndex": 0,
+      "activeSince": 1779457596557,
+      "lastUsed": 1779457596557
     },
     "auto": {
       "slotIndex": 0,
@@ -49,14 +27,14 @@
       "lastUsed": 1779098203887
     },
     "3957ba01-cf45-4ecb-9b39-2acda3ca530a": {
-      "slotIndex": 1,
-      "activeSince": 1779191672863,
-      "lastUsed": 1779191672863
+      "slotIndex": 2,
+      "activeSince": 1779513377484,
+      "lastUsed": 1779513404394
     },
     "dc174962-f77f-4d0b-b0b4-0f1053ecb1e8": {
       "slotIndex": 2,
-      "activeSince": 1779455513625,
-      "lastUsed": 1779455513625
+      "activeSince": 1779512869026,
+      "lastUsed": 1779512869026
     }
   }
 }

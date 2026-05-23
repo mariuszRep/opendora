@@ -58,11 +58,11 @@
       "name": "deepseek-v4-flash",
       "models": [
         {
-          "providerID": "openrouter",
+          "providerID": "kilo",
           "modelID": "deepseek/deepseek-v4-flash:free"
         },
         {
-          "providerID": "kilo",
+          "providerID": "openrouter",
           "modelID": "deepseek/deepseek-v4-flash:free"
         },
         {
