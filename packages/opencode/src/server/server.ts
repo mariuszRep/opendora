@@ -32,12 +32,13 @@ import { startBrowserControlServiceFromConfig, stopBrowserControlService } from 
 import { AgentRoutes } from "./routes/agent"
 import { ScheduleRoutes } from "./routes/schedule"
 import { WorkflowRoutes } from "@opendora/workflow/routes"
-import { registerSkillFunctions } from "@opendora/workflow/runner"
+import { registerSkillFunctions, registerToolExecutor } from "@opendora/workflow/runner"
 import { addSkillTools } from "../session-skill-tools"
 import { CronScheduler, type ScheduleDispatchFn } from "@opendora/schedule/cron-scheduler"
 import { Schedule } from "../schedule"
 import { Database } from "../storage/db"
 import { Agent } from "../agent"
+import { ToolRegistry } from "../tool/registry"
 import { lazy } from "../util/lazy"
 import { InstanceBootstrap } from "../project/bootstrap"
 import { NotFoundError } from "../storage/db"
@@ -695,6 +696,31 @@ export namespace Server {
   }) {
     configureSessionCore()
     registerSkillFunctions(Skill.get, addSkillTools, Skill.all)
+    
+    // Wire tool registry to workflow package for tool_call node execution
+    registerToolExecutor(async (toolId, args, ctx) => {
+      const toolInfo = ToolRegistry.all().find((t) => t.id === toolId)
+      if (!toolInfo) {
+        throw new Error(`Tool "${toolId}" not found in registry`)
+      }
+      
+      const tool = await toolInfo.init({
+        model: ctx.model ?? { providerID: "fallback", modelID: "fallback" },
+        agent: ctx.agent ? { id: ctx.agent, name: ctx.agent } : undefined,
+      })
+      
+      const result = await tool.execute(args, {
+        sessionID: ctx.sessionID,
+        messageID: "workflow-runner",
+        agent: ctx.agent ?? "",
+        abort: ctx.abort ?? new AbortController().signal,
+        messages: [],
+        metadata: () => ({}),
+        ask: async () => ({ approved: true }),
+      })
+      
+      return { output: result.output }
+    })
     // Clear out any tool parts left in pending/running state by a previous
     // process that was killed mid-stream — otherwise the UI shows them stuck
     // at "Pending" forever with no way to approve, dismiss, or retry.

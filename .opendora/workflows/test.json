@@ -1,0 +1,79 @@
+{
+  "id": "test",
+  "name": "test",
+  "description": "test",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "workflow",
+      "data": {
+        "nodeType": "start",
+        "node": {
+          "label": "Start",
+          "description": "Workflow entry point"
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
+      },
+      "position": {
+        "x": -458.8395272934274,
+        "y": -209.2459916928726
+      }
+    },
+    {
+      "id": "process",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Process",
+          "description": "Process the input.",
+          "action_id": "agent"
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "instructions": "Process the input."
+      },
+      "position": {
+        "x": -234,
+        "y": 54
+      }
+    },
+    {
+      "id": "done",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Output",
+          "action_id": "output"
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
+      },
+      "position": {
+        "x": 26,
+        "y": 320
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "target": "process"
+    },
+    {
+      "id": "e2",
+      "source": "process",
+      "target": "done"
+    }
+  ]
+}
