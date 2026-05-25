@@ -49,9 +49,10 @@ export type WorkflowToolContext = {
 
 type ToolExecutor = (
   toolId: string,
-  args: Record<string, unknown>,
+  fixedArgs: Record<string, unknown>,
+  agentArgs: string[],
   ctx: WorkflowToolContext,
-) => Promise<string>
+) => Promise<{ output: string }>
 
 let _toolExecutor: ToolExecutor | null = null
 
@@ -143,7 +144,7 @@ type NodeExec =
   | { kind: "input"; fields: Array<{ name: string; type: string; required: boolean; description?: string }> }
   | { kind: "skill_load"; skill: string; storeAs?: string }
   | { kind: "skill_list_all"; output?: string }
-  | { kind: "tool_call"; tool: string; args: Record<string, string>; output?: string }
+  | { kind: "tool_call"; tool: string; args: Record<string, string>; agentArgs: string[]; output?: string }
   | { kind: "agent"; prompt: string; output?: string }
   | { kind: "decide"; prompt: string; branches: string[] }
   | { kind: "output"; message?: string }
@@ -155,7 +156,7 @@ function resolveNodeExec(node: WorkflowNode, allEdges: WorkflowEdge[]): NodeExec
   // ── Legacy format ────────────────────────────────────────────────────────────
   if (d.type === "input") return { kind: "input", fields: (d.fields as any[]) ?? [] }
   if (d.type === "skill_load") return { kind: "skill_load", skill: d.skill as string, storeAs: d.storeAs as string | undefined }
-  if (d.type === "tool_call") return { kind: "tool_call", tool: d.tool as string, args: (d.args as Record<string, string>) ?? {}, output: d.output as string | undefined }
+  if (d.type === "tool_call") return { kind: "tool_call", tool: d.tool as string, args: (d.args as Record<string, string>) ?? {}, agentArgs: (d.agentArgs as string[]) ?? [], output: d.output as string | undefined }
   if (d.type === "agent") return { kind: "agent", prompt: d.prompt as string, output: d.output as string | undefined }
   if (d.type === "decide") return { kind: "decide", prompt: d.prompt as string, branches: d.branches as string[] }
   if (d.type === "output") return { kind: "output", message: d.message as string | undefined }
@@ -210,12 +211,13 @@ function resolveNodeExec(node: WorkflowNode, allEdges: WorkflowEdge[]): NodeExec
     if (actionId) {
       const args: Record<string, string> = {}
       for (const [k, v] of Object.entries(params)) {
-        if (k !== "output") args[k] = String(v)
+        if (k !== "output" && k !== "agentArgs") args[k] = String(v)
       }
       return {
         kind: "tool_call",
         tool: actionId,
         args,
+        agentArgs: Array.isArray(nd.agentArgs) ? (nd.agentArgs as string[]) : [],
         output: params.output != null ? String(params.output) : undefined,
       }
     }
@@ -306,29 +308,46 @@ export async function runWorkflow({
   directory: string
 }): Promise<void> {
   const adjacency = buildAdjacency(workflow.edges)
+  const allTargetIds = new Set(workflow.edges.map((e) => e.target))
 
-  const findStartNode = (): WorkflowNode | undefined => {
-    const legacyStart = workflow.nodes.find((n) => n.type === "input")
-    if (legacyStart) return legacyStart
-    const unifiedStart = workflow.nodes.find(
-      (n) => (n as any).type === "workflow" && (n.data as any).nodeType === "start"
-    )
-    if (unifiedStart) return unifiedStart
-    const targetIds = new Set(workflow.edges.map((e) => e.target))
-    return workflow.nodes.find((n) => !targetIds.has((n as any).id))
+  // Collect root nodes (no incoming edges) in declaration order.
+  // Explicit start nodes come first, then any remaining roots.
+  const rootNodes: WorkflowNode[] = []
+  const legacyStart = workflow.nodes.find((n) => n.type === "input")
+  const unifiedStart = workflow.nodes.find(
+    (n) => (n as any).type === "workflow" && (n.data as any).nodeType === "start"
+  )
+  const explicitStart = legacyStart ?? unifiedStart
+  if (explicitStart) {
+    rootNodes.push(explicitStart)
   }
-
-  const startNode = findStartNode()
-  if (!startNode) throw new Error("Workflow has no start node and no root node can be determined")
+  // Add any other root nodes (tool nodes with no incoming edge, e.g. parallel setup steps)
+  for (const n of workflow.nodes) {
+    const id = (n as any).id
+    if (!allTargetIds.has(id) && id !== (explicitStart as any)?.id) {
+      rootNodes.push(n)
+    }
+  }
+  if (rootNodes.length === 0) throw new Error("Workflow has no root node")
 
   const ctx: Ctx = {}
-  let currentId: string | undefined = (startNode as any).id
 
-  while (currentId) {
+  // Queue-based traversal with visited tracking.
+  // Allows multiple root nodes (e.g. two parallel tool nodes with no Start node)
+  // and correctly handles convergent edges: a shared successor executes only once.
+  const visited = new Set<string>()
+  const queue: string[] = rootNodes.map((n) => (n as any).id as string)
+
+  while (queue.length > 0) {
+    const currentId = queue.shift()!
+    if (visited.has(currentId)) continue
+    visited.add(currentId)
+
     const node = workflow.nodes.find((n) => (n as any).id === currentId)
-    if (!node) break
+    if (!node) continue
 
     const exec = resolveNodeExec(node, workflow.edges)
+    const enqueue = (id: string | undefined) => { if (id) queue.push(id) }
 
     if (exec.kind === "input") {
       await injectMessage(sessionId, [
@@ -339,7 +358,7 @@ export async function runWorkflow({
           output: { status: "received", fields: Object.keys(input) },
         },
       ], directory)
-      currentId = nextNode(adjacency, currentId)
+      enqueue(nextNode(adjacency, currentId))
 
     } else if (exec.kind === "skill_load") {
       const storeKey = exec.storeAs ?? `skill_${exec.skill}`
@@ -354,7 +373,7 @@ export async function runWorkflow({
           { type: "tool", tool: "skill_load", input: { name: exec.skill }, output: `Skill "${exec.skill}" not found` },
         ], directory)
       }
-      currentId = nextNode(adjacency, currentId)
+      enqueue(nextNode(adjacency, currentId))
 
     } else if (exec.kind === "skill_list_all") {
       const skills = _skillList ? await _skillList() : []
@@ -374,26 +393,31 @@ export async function runWorkflow({
       await injectMessage(sessionId, [
         { type: "tool", tool: "skill_list", input: {}, output: formatted },
       ], directory)
-      currentId = nextNode(adjacency, currentId)
+      enqueue(nextNode(adjacency, currentId))
 
     } else if (exec.kind === "tool_call") {
       const resolvedArgs = resolveRefs(exec.args, input, ctx)
-      if (exec.output) ctx[exec.output] = resolvedArgs
+      const session = await Session.get(sessionId)
+      const toolCtx: WorkflowToolContext = {
+        sessionID: sessionId,
+        agent: session.agentID,
+        abort: new AbortController().signal,
+      }
+
+      if (!_toolExecutor) throw new Error("No tool executor registered — call registerToolExecutor() at startup")
+
+      const { output } = await _toolExecutor(exec.tool, resolvedArgs, exec.agentArgs, toolCtx)
+      if (exec.output) ctx[exec.output] = output
       await injectMessage(sessionId, [
-        {
-          type: "tool",
-          tool: exec.tool,
-          input: resolvedArgs,
-          output: { queued: true, note: "Deterministic tool call — result available to next agent node" },
-        },
+        { type: "tool", tool: exec.tool, input: resolvedArgs, output },
       ], directory)
-      currentId = nextNode(adjacency, currentId)
+      enqueue(nextNode(adjacency, currentId))
 
     } else if (exec.kind === "agent") {
       const resolvedPrompt = resolveTemplate(exec.prompt, input, ctx)
       const response = await agentPrompt(sessionId, resolvedPrompt)
       if (exec.output) ctx[exec.output] = response
-      currentId = nextNode(adjacency, currentId)
+      enqueue(nextNode(adjacency, currentId))
 
     } else if (exec.kind === "decide") {
       const resolvedPrompt = resolveTemplate(exec.prompt, input, ctx)
@@ -414,7 +438,8 @@ export async function runWorkflow({
         { type: "tool", tool: "workflow_decide", input: { branches: exec.branches }, output: { chosen: branch } },
       ], directory)
 
-      currentId = nextNode(adjacency, currentId, branch)
+      // Only enqueue the chosen branch — other branches are intentionally not visited
+      enqueue(nextNode(adjacency, currentId, branch))
 
     } else if (exec.kind === "output") {
       const message = exec.message
@@ -422,10 +447,10 @@ export async function runWorkflow({
         : `Workflow "${workflow.name}" completed.`
 
       await injectMessage(sessionId, [{ type: "text", text: message }], directory)
-      break
+      queue.length = 0 // output node terminates — discard remaining queue
 
     } else {
-      currentId = nextNode(adjacency, currentId)
+      enqueue(nextNode(adjacency, currentId))
     }
   }
 }

@@ -27,7 +27,7 @@ interface RunDialogProps {
   directory?: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSessionCreated?: (sessionId: string) => void
+  onSessionCreated?: (sessionId: string, agentId: string) => void
 }
 
 export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCreated }: RunDialogProps) {
@@ -37,12 +37,23 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const inputNode = workflow.nodes.find((n) => n.type === "input")
   type InputField = { name: string; type: string; required?: boolean; description?: string }
-  const inputFields: InputField[] =
-    inputNode && 'type' in inputNode.data && inputNode.data.type === "input"
-      ? (inputNode.data as { type: "input"; fields: InputField[] }).fields
-      : []
+
+  // Support both legacy (type: "input") and unified (type: "workflow", nodeType: "start") formats
+  const legacyInputNode = workflow.nodes.find((n) => n.type === "input")
+  const unifiedStartNode = workflow.nodes.find(
+    (n) => n.type === "workflow" && (n.data as any)?.nodeType === "start"
+  )
+  const inputNode = legacyInputNode ?? unifiedStartNode
+
+  const inputFields: InputField[] = (() => {
+    if (!inputNode) return []
+    const d = inputNode.data as any
+    if (d?.type === "input") return (d.fields as InputField[]) ?? []
+    // Unified start: fields live in data.data.inputs
+    const inputs = d?.data?.inputs as InputField[] | undefined
+    return inputs ?? []
+  })()
   const requiredFields = inputFields.filter((f) => f.required !== false).map((f) => f.name)
 
   useEffect(() => {
@@ -52,7 +63,13 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
       .then((list) => {
         const runnable = list.filter((a) => a.mode !== "system" && a.id)
         setAgents(runnable)
-        if (runnable.length > 0 && !agentId && runnable[0].id) setAgentId(runnable[0].id)
+        if (!agentId && runnable.length > 0) {
+          // Prefer a worker/engineer agent over orchestrators (pandora, agent-owner)
+          const orchestratorIds = new Set(["pandora", "agent-owner"])
+          const preferred = runnable.find((a) => a.id && !orchestratorIds.has(a.id))
+          const defaultAgent = preferred ?? runnable[0]
+          if (defaultAgent?.id) setAgentId(defaultAgent.id)
+        }
       })
       .catch(() => {})
   }, [open])
@@ -68,7 +85,7 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
       const input = Object.fromEntries(Object.entries(inputValues).filter(([, v]) => v !== ""))
       const result = await opendora.workflow.execute(workflow.id, agentId, input, directory)
       onOpenChange(false)
-      onSessionCreated?.(result.sessionId)
+      onSessionCreated?.(result.sessionId, agentId)
     } catch (e: any) {
       setError(e?.message ?? "Failed to start workflow")
     } finally {

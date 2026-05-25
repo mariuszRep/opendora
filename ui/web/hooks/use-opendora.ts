@@ -202,6 +202,7 @@ export function useOpendora(opts?: {
   const [sessionRetryStatus, setSessionRetryStatus] = useState<Record<string, { attempt: number; message: string; next: number }>>({})
 
   const selectedSessionRef = useRef<Session | null>(null)
+  const pendingSessionIdRef = useRef<string | null>(null)
   const statusRef = useRef<ChatStatus>("ready")
   const suppressUrlSyncRef = useRef(false)
   const lastSessionByAgentRef = useRef<Record<string, string>>(lastSessionByAgent)
@@ -495,7 +496,15 @@ export function useOpendora(opts?: {
             if (prev.find((s) => s.id === info.id)) return prev
             return [info, ...prev]
           })
-          // Don't change the selected session - let the creator handle selection
+          // Complete a pending selectSession call that arrived before this session was in the list
+          if (pendingSessionIdRef.current === info.id) {
+            pendingSessionIdRef.current = null
+            selectedSessionRef.current = info
+            setSelectedSessionId(info.id)
+            setStatus(activeSessionsRef.current.has(info.id) ? "streaming" : "ready")
+            setError(null)
+            if (info.agentID) setSelectedAgent(info.agentID)
+          }
           break
         }
         case "session.updated": {
@@ -819,7 +828,17 @@ export function useOpendora(opts?: {
     }
     // Update ref immediately so the URL sync effect doesn't fire an extra router.replace
     const session = sessionsRef.current.find((s) => s.id === id) ?? null
-    selectedSessionRef.current = session
+    if (!session) {
+      // Session not yet in the list (SSE hasn't arrived). Set a stub with just
+      // the id so the URL→state sync guard (selectedSessionRef.current?.id) still
+      // matches and doesn't revert back to the previously selected session.
+      // The session.created SSE handler upgrades this to the real object.
+      selectedSessionRef.current = { id } as Session
+      pendingSessionIdRef.current = id
+    } else {
+      selectedSessionRef.current = session
+      pendingSessionIdRef.current = null
+    }
     setSelectedSessionId(id)
     setStatus(activeSessionsRef.current.has(id) ? "streaming" : "ready")
     setError(null)

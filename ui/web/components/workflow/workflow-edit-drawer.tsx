@@ -77,6 +77,7 @@ export type DrawerFormData = {
   label?: string
   action_id?: string
   parameters?: Record<string, unknown>
+  agentArgs?: string[]
   inputs?: import('@/components/react-flow/unified-node').ParameterSchema[]
   instructions?: string
   nodeType?: NodeType
@@ -148,6 +149,7 @@ export function WorkflowEditDrawer({
         label: editingNodeData.node.label,
         action_id: editingNodeData.node.action_id,
         parameters: editingNodeData.node.parameters,
+        agentArgs: editingNodeData.agentArgs ?? [],
         inputs: editingNodeData.data.inputs,
         instructions: editingNodeData.instructions as string | undefined,
         nodeType: editingNodeData.nodeType,
@@ -166,10 +168,7 @@ export function WorkflowEditDrawer({
         ]
       }
       if (editingNodeData?.nodeType === 'prompt') {
-        return [
-          { value: 'general', label: 'General' },
-          { value: 'settings', label: 'Settings' },
-        ]
+        return [{ value: 'general', label: 'General' }]
       }
       return [
         { value: 'general', label: 'General' },
@@ -497,9 +496,13 @@ export function WorkflowEditDrawer({
                   properties={properties}
                   required={required}
                   values={parameters}
+                  agentArgs={editingNodeData.agentArgs ?? []}
                   onChange={(updated) => {
                     const next = { ...editingNodeData, node: { ...editingNodeData.node, parameters: updated } }
                     setEditingNodeData(next)
+                  }}
+                  onAgentArgsChange={(updated) => {
+                    setEditingNodeData({ ...editingNodeData, agentArgs: updated })
                   }}
                 />
               )}

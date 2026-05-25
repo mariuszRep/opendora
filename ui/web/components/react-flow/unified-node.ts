@@ -143,6 +143,7 @@ export interface UnifiedNodeData extends Record<string, unknown> {
   nodeType?: NodeType
   node: NodeProperties
   data: NodeDataConfig
+  agentArgs?: string[]
   conditions?: EdgeCondition[]
   annotations?: ToolAnnotations
   toolAnnotations?: ToolAnnotations

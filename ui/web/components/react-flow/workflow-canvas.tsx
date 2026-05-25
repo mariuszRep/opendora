@@ -5,7 +5,6 @@ type WorkflowCanvasProps = ComponentProps<typeof Canvas>
 
 export const WorkflowCanvas = ({ ...props }: WorkflowCanvasProps) => (
   <Canvas
-    panOnDrag={false}
     selectionOnDrag={true}
     {...props}
   />

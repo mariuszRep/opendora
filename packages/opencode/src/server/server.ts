@@ -62,6 +62,7 @@ import { openDoraStorageAdapter } from "@opendora/session/storage-adapter"
 import { Session } from "@opendora/session/session"
 import { SessionPrompt } from "@opendora/session/prompt"
 import { Identifier } from "@opendora/util/id"
+import { generateText, jsonSchema, tool as aiTool } from "ai"
 import { MessageV2 } from "@opendora/session/message"
 
 // @ts-ignore This global is needed to prevent ai-sdk from logging warnings to stdout https://github.com/vercel/ai/blob/2dc67e0ef538307f21368db32d5a12345d98831b/packages/ai/src/logger/log-warnings.ts#L85
@@ -698,27 +699,82 @@ export namespace Server {
     registerSkillFunctions(Skill.get, addSkillTools, Skill.all)
     
     // Wire tool registry to workflow package for tool_call node execution
-    registerToolExecutor(async (toolId, args, ctx) => {
+    registerToolExecutor(async (toolId, fixedArgs, agentArgs, ctx) => {
       const toolInfo = ToolRegistry.all().find((t) => t.id === toolId)
-      if (!toolInfo) {
-        throw new Error(`Tool "${toolId}" not found in registry`)
-      }
-      
-      const tool = await toolInfo.init({
+      if (!toolInfo) throw new Error(`Tool "${toolId}" not found in registry`)
+
+      const initCtx = {
         model: ctx.model ?? { providerID: "fallback", modelID: "fallback" },
-        agent: ctx.agent ? { id: ctx.agent, name: ctx.agent } : undefined,
-      })
-      
-      const result = await tool.execute(args, {
+      }
+      const toolDef = await toolInfo.init(initCtx)
+
+      const execCtx = {
         sessionID: ctx.sessionID,
         messageID: "workflow-runner",
         agent: ctx.agent ?? "",
         abort: ctx.abort ?? new AbortController().signal,
         messages: [],
-        metadata: () => ({}),
-        ask: async () => ({ approved: true }),
-      })
-      
+        metadata: (_input: { title?: string; metadata?: unknown }) => {},
+        ask: async (_input: unknown) => {},
+      }
+
+      let finalArgs = fixedArgs
+
+      if (agentArgs.length > 0) {
+        // Semi-deterministic: use one forced LLM call to fill agent-decided params.
+        // toolChoice forces the model to return exactly one tool call — no free text.
+        const fixedDesc = Object.entries(fixedArgs)
+          .map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`)
+          .join("\n")
+        const agentDesc = agentArgs.join(", ")
+        const prompt = [
+          `Call the tool \`${toolId}\` now.`,
+          fixedArgs && Object.keys(fixedArgs).length > 0
+            ? `The following parameters are already decided — use them exactly:\n${fixedDesc}`
+            : "",
+          `You must determine the value(s) for: ${agentDesc}`,
+          `Use the tool immediately.`,
+        ].filter(Boolean).join("\n\n")
+
+        const rawSchema = (toolDef as any).parameters
+        const toolSchema = rawSchema?._def
+          ? jsonSchema(rawSchema)
+          : jsonSchema(rawSchema ?? {})
+
+        let language: any
+        if (ctx.model) {
+          const modelInfo = await Provider.getModel(ctx.model.providerID, ctx.model.modelID)
+          language = await Provider.getLanguage(modelInfo)
+        } else {
+          const session = await Session.get(ctx.sessionID)
+          if (session.agentID) {
+            const agentCfg = await Agent.get(session.agentID)
+            if (agentCfg?.model) {
+              const modelInfo = await Provider.getModel(agentCfg.model.providerID, agentCfg.model.modelID)
+              language = await Provider.getLanguage(modelInfo)
+            }
+          }
+        }
+
+        if (language) {
+          const result = await generateText({
+            model: language,
+            toolChoice: { type: "tool", toolName: toolId },
+            tools: {
+              [toolId]: aiTool({
+                description: toolDef.description,
+                inputSchema: toolSchema,
+              }),
+            },
+            prompt,
+          })
+          const llmArgs = (result.toolCalls?.[0] as any)?.args ?? {}
+          // Fixed args always override LLM-provided values
+          finalArgs = { ...llmArgs, ...fixedArgs }
+        }
+      }
+
+      const result = await toolDef.execute(finalArgs, execCtx)
       return { output: result.output }
     })
     // Clear out any tool parts left in pending/running state by a previous

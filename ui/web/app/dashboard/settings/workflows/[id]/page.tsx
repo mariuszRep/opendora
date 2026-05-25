@@ -76,7 +76,10 @@ export default function WorkflowEditorPage() {
     router.replace("/dashboard/settings/workflows")
   }
 
-  function handleSessionCreated(sessionId: string) {
+  function handleSessionCreated(sessionId: string, agentId: string) {
+    // Switch agent first so the correct tab is active even before the session
+    // appears in the sessions list (worker sessions load asynchronously)
+    ctx.selectAgent(agentId)
     ctx.selectSession(sessionId)
   }
 

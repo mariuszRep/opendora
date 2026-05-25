@@ -29,6 +29,10 @@ export const ToolCallNodeData = z.object({
     .record(z.string(), z.string())
     .default({})
     .describe("Tool arguments. Values may reference $input.<field> or $ctx.<key>"),
+  agentArgs: z
+    .array(z.string())
+    .default([])
+    .describe("Parameter names the agent should populate. One forced LLM call fills all of them."),
   output: z.string().optional().describe("Context key to store the tool result under"),
 })
 

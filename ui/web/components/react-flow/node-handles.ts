@@ -68,9 +68,9 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
         type: 'target',
         connections: {
           canReceiveFrom: [
-            { nodeType: 'start', handleId: null, maxConnections: 1 },
-            { nodeType: 'tool', handleId: null, maxConnections: 1 },
-            { nodeType: 'prompt', handleId: null, maxConnections: 1 },
+            { nodeType: 'start', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
           ],
         },
       },
@@ -87,7 +87,7 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
       },
     ],
     constraints: {
-      allowedInboundEdges: 1,
+      allowedInboundEdges: 'unlimited',
       allowedOutboundEdges: 'unlimited',
       hiddenFields: [],
       requiredFields: ['label'],
@@ -102,9 +102,9 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
         type: 'target',
         connections: {
           canReceiveFrom: [
-            { nodeType: 'start', handleId: null, maxConnections: 1 },
-            { nodeType: 'tool', handleId: null, maxConnections: 1 },
-            { nodeType: 'prompt', handleId: null, maxConnections: 1 },
+            { nodeType: 'start', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
           ],
         },
       },
@@ -121,7 +121,7 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
       },
     ],
     constraints: {
-      allowedInboundEdges: 1,
+      allowedInboundEdges: 'unlimited',
       allowedOutboundEdges: 'unlimited',
       hiddenFields: [],
       requiredFields: ['label'],

@@ -10,6 +10,7 @@ import {
   WorkflowNodeFooter,
 } from './workflow-node-base'
 import { Badge } from '@/components/ui/badge'
+import { Bot } from 'lucide-react'
 import { getHandlesForNodeType } from './node-handles'
 import { getNodeTypeMetadata } from './node-type-registry'
 import { resolveNodeType } from './node-utils'
@@ -80,6 +81,12 @@ export function WorkflowNode({ data, selected }: NodeProps) {
           <Icon className="size-3 shrink-0" />
           {nodeType}
         </span>
+        {nodeType === 'tool' && nodeData.agentArgs && (nodeData.agentArgs as string[]).length > 0 && (
+          <span className="text-xs text-primary/70 flex items-center gap-1">
+            <Bot className="size-3 shrink-0" />
+            {(nodeData.agentArgs as string[]).length} agent
+          </span>
+        )}
       </WorkflowNodeFooter>
 
     </WorkflowNodeBase>

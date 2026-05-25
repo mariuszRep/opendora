@@ -20,8 +20,8 @@
         "instructions": "I need to build todo list app using shadcn what set of skills would you recommend"
       },
       "position": {
-        "x": -2022.5679012229411,
-        "y": -2283.3183922991334
+        "x": -2655.7293706675578,
+        "y": -2584.60634086855
       }
     },
     {
@@ -41,8 +41,32 @@
         }
       },
       "position": {
-        "x": -1952.6744783507465,
-        "y": -2492.6220025414955
+        "x": -2387.808238224279,
+        "y": -2877.0762727972065
+      }
+    },
+    {
+      "id": "a-HxQNfvmNOYvn_0NsDZY",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Tool",
+          "description": "",
+          "action_id": "skill_load",
+          "parameters": {
+            "name": "requierments"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "agentArgs": []
+      },
+      "position": {
+        "x": -2882.965198393803,
+        "y": -2844.9779337654727
       }
     }
   ],
@@ -50,6 +74,11 @@
     {
       "id": "xy-edge__t2kJcv4deCt9CF5LkpPUM-1r644iQkreZcbsEc42Qbc",
       "source": "t2kJcv4deCt9CF5LkpPUM",
+      "target": "1r644iQkreZcbsEc42Qbc"
+    },
+    {
+      "id": "xy-edge__a-HxQNfvmNOYvn_0NsDZY-1r644iQkreZcbsEc42Qbc",
+      "source": "a-HxQNfvmNOYvn_0NsDZY",
       "target": "1r644iQkreZcbsEc42Qbc"
     }
   ]
