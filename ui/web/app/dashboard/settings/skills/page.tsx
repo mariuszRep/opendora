@@ -18,6 +18,8 @@ import {
 import { MessageResponse } from "@/components/ai-elements/message"
 import { CodeViewToggle } from "@/components/ui/code-view-toggle"
 import { opendora, type Skill } from "@/lib/opendora"
+import { useToolSchemas } from "@/hooks/use-tool-schemas"
+import { HIDDEN_TOOLS } from "@/lib/tool-groups"
 
 function originFromLocation(location: string): string {
   if (location.includes("anthropic")) return "anthropic"
@@ -411,11 +413,10 @@ function SkillPreviewDialog({
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
-const HIDDEN_TOOLS = new Set(["invalid", "plan_exit"])
-
 export default function SkillsPage() {
   const [skills, setSkills] = useState<Skill[]>([])
-  const [availableTools, setAvailableTools] = useState<string[]>([])
+  const { schemas: toolSchemas } = useToolSchemas()
+  const availableTools = toolSchemas.map((t) => t.id).filter((id) => !HIDDEN_TOOLS.has(id))
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [selected, setSelected] = useState<Skill | null>(null)
@@ -425,9 +426,6 @@ export default function SkillsPage() {
       .then(setSkills)
       .catch(() => {})
       .finally(() => setLoading(false))
-    opendora.agent.tools()
-      .then((tools) => setAvailableTools(tools.map((t) => t.id).filter((id) => !HIDDEN_TOOLS.has(id))))
-      .catch(() => {})
   }, [])
 
   function handleSaved(location: string, content: string) {

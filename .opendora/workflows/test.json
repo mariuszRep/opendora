@@ -1,0 +1,58 @@
+{
+  "id": "test",
+  "name": "test",
+  "description": "test",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "09593AVsDAiL7nrPUx97o",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Tool",
+          "description": "",
+          "action_id": "skill_list",
+          "parameters": {}
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "agentArgs": []
+      },
+      "position": {
+        "x": -512.4165154264972,
+        "y": -612.8582639711522
+      }
+    },
+    {
+      "id": "YOdJeLLsEeDqBPepXHyXk",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "node": {
+          "label": "Prompt",
+          "description": ""
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "instructions": "what is your favourite skill ",
+        "agentArgs": []
+      },
+      "position": {
+        "x": -340.4165154264974,
+        "y": -418.9582700746678
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "xy-edge__09593AVsDAiL7nrPUx97o-YOdJeLLsEeDqBPepXHyXk",
+      "source": "09593AVsDAiL7nrPUx97o",
+      "target": "YOdJeLLsEeDqBPepXHyXk"
+    }
+  ]
+}

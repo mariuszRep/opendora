@@ -36,6 +36,19 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { opendora, type Agent, type AgentConfig, type Provider, type Skill } from "@/lib/opendora"
+import { useToolSchemas } from "@/hooks/use-tool-schemas"
+import {
+  HIDDEN_TOOLS,
+  FILESYSTEM_TOOLS,
+  SHELL_TOOLS,
+  BROWSE_AND_WEB_TOOLS,
+  SESSION_TOOLS,
+  AGENT_TOOLS,
+  SKILL_TOOLS,
+  SCHEDULE_TOOLS,
+  DESKTOP_TOOLS,
+  isPyAutoGUI,
+} from "@/lib/tool-groups"
 
 type Props = {
   open: boolean
@@ -51,39 +64,6 @@ const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
   { value: "subagent", label: "Sub-agent (Legacy)" },
   { value: "all", label: "All" },
 ]
-
-const HIDDEN_TOOLS = new Set(["invalid", "plan_exit"])
-
-const FILESYSTEM_TOOLS = new Set([
-  "read", "write", "edit", "list", "glob", "grep",
-  "apply_patch", "multiedit",
-])
-
-const SHELL_TOOLS = new Set(["bash", "batch"])
-
-const BROWSE_AND_WEB_TOOLS = new Set(["webfetch", "websearch", "browser", "codesearch"])
-
-const SESSION_TOOLS = new Set([
-  "delegate", "reply", "session_get", "session_search", "session_tree",
-])
-
-const AGENT_TOOLS = new Set([
-  "agent_create", "agent_delete", "agent_get", "agent_list", "agent_update",
-])
-
-const SKILL_TOOLS = new Set(["skill_list", "skill_load", "skill_search", "skill_install", "skill_create", "skill_edit", "skill_remove"])
-
-const SCHEDULE_TOOLS = new Set(["schedule_list", "schedule_create", "schedule_update", "schedule_delete", "schedule_get", "schedule_run"])
-
-const DESKTOP_TOOLS = new Set([
-  "desktop_mouse_move", "desktop_mouse_click", "desktop_mouse_drag", "desktop_mouse_scroll", "desktop_mouse_position",
-  "desktop_keyboard_type", "desktop_keyboard_press",
-  "desktop_screen_capture", "desktop_screen_find_image", "desktop_screen_wait_for_image", "desktop_screen_size", "desktop_screen_read_pixel",
-  "desktop_window_list", "desktop_window_active", "desktop_window_focus", "desktop_window_move", "desktop_window_resize",
-  "desktop_clipboard_read", "desktop_clipboard_write",
-])
-
-const isPyAutoGUI = (id: string) => id.startsWith("pyautogui_")
 
 const NONE = "__none__"
 
@@ -144,7 +124,8 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [model, setModel] = useState<string>(NONE)
   const [fallbackModel, setFallbackModel] = useState<string>(NONE)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
-  const [availableTools, setAvailableTools] = useState<string[]>([])
+  const { schemas: toolSchemas } = useToolSchemas()
+  const availableTools = toolSchemas.map((t) => t.id).filter((id) => !HIDDEN_TOOLS.has(id))
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
   const [expandedGroup, setExpandedGroup] = useState<"filesystem" | "shell" | "browse-and-web" | "sessions" | "agents" | "skills" | "schedule" | "desktop" | "pyautogui" | "others" | null>(null)
@@ -160,11 +141,8 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
 
   const modelOptions = buildModelOptions(providers, connectedProviders)
 
-  // Load available tools and skills once
+  // Load skills once
   useEffect(() => {
-    opendora.agent.tools().then((tools) => {
-      setAvailableTools(tools.map((t) => t.id).filter((id) => !HIDDEN_TOOLS.has(id)))
-    }).catch(() => {})
     opendora.skill.list().then(setAvailableSkills).catch(() => {})
   }, [])
 

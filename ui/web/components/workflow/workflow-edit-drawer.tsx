@@ -17,8 +17,10 @@ import {
   Combobox,
   ComboboxContent,
   ComboboxEmpty,
+  ComboboxGroup,
   ComboboxInput,
   ComboboxItem,
+  ComboboxLabel,
   ComboboxList,
 } from '@/components/ui/combobox'
 import { cn } from '@/lib/utils'
@@ -31,7 +33,8 @@ import { getNodeTypeMetadata } from '@/components/react-flow/node-type-registry'
 import { resolveNodeType } from '@/components/react-flow/node-utils'
 import { useToolSchemas } from '@/hooks/use-tool-schemas'
 import { ToolParameterForm } from './tool-parameter-form'
-import { type ToolSchemaProperty } from '@/lib/opendora'
+import { type ToolSchema, type ToolSchemaProperty } from '@/lib/opendora'
+import { TOOL_GROUP_ORDER, TOOL_GROUP_LABELS, getToolGroup, HIDDEN_TOOLS } from '@/lib/tool-groups'
 
 type EditType = 'workflow' | 'node' | 'edge'
 
@@ -101,6 +104,22 @@ interface WorkflowEditDrawerProps {
   setShowMiniMap?: (show: boolean) => void
 }
 
+function ToolComboboxItem({ schema, showMcp }: { schema: ToolSchema; showMcp?: boolean }) {
+  return (
+    <ComboboxItem value={schema.id}>
+      <div className="flex flex-col min-w-0 flex-1">
+        <span className="font-mono text-xs">{schema.id}</span>
+        {schema.description && (
+          <span className="text-xs text-muted-foreground truncate max-w-[280px]">{schema.description}</span>
+        )}
+      </div>
+      {showMcp && (
+        <Badge variant="secondary" className="ml-2 text-xs shrink-0">MCP</Badge>
+      )}
+    </ComboboxItem>
+  )
+}
+
 export function WorkflowEditDrawer({
   open,
   onOpenChange,
@@ -115,6 +134,7 @@ export function WorkflowEditDrawer({
   const [formData, setFormData] = React.useState<DrawerFormData>({})
   const [editingNodeData, setEditingNodeData] = React.useState<UnifiedNodeData | null>(null)
   const [activeTab, setActiveTab] = React.useState('general')
+  const [toolSearch, setToolSearch] = React.useState('')
   const { schemas, loading: loadingSchemas } = useToolSchemas()
 
   React.useEffect(() => {
@@ -287,6 +307,21 @@ export function WorkflowEditDrawer({
         }
 
         if (activeTab === 'general') {
+          const q = toolSearch.toLowerCase()
+          const visibleSchemas = schemas
+            .filter((s) => !HIDDEN_TOOLS.has(s.id))
+            .filter((s) => !q || s.id.includes(q) || s.description?.toLowerCase().includes(q))
+          const internalSchemas = visibleSchemas.filter((s) => s.source !== 'mcp')
+          const mcpSchemas = visibleSchemas.filter((s) => s.source === 'mcp')
+
+          const grouped = TOOL_GROUP_ORDER.map((groupId) => ({
+            groupId,
+            label: TOOL_GROUP_LABELS[groupId],
+            tools: internalSchemas.filter((s) => getToolGroup(s.id) === groupId),
+          })).filter((g) => g.tools.length > 0)
+
+          const mcpServers = Array.from(new Set(mcpSchemas.map((s) => s.mcpServer ?? 'MCP')))
+
           return (
             <div className="space-y-4">
               {!isStartNode && (
@@ -302,7 +337,7 @@ export function WorkflowEditDrawer({
                       })
                       if (toolId) setActiveTab('inputs')
                     }}
-                    items={schemas.map((s) => s.id)}
+                    onInputValueChange={(v) => setToolSearch(v)}
                   >
                     <ComboboxInput
                       placeholder={loadingSchemas ? 'Loading tools…' : 'Search tools…'}
@@ -313,24 +348,24 @@ export function WorkflowEditDrawer({
                     <ComboboxContent>
                       <ComboboxEmpty>No tools found.</ComboboxEmpty>
                       <ComboboxList>
-                        {(toolId) => {
-                          const s = schemas.find((x) => x.id === toolId)
-                          return (
-                            <ComboboxItem key={toolId} value={toolId}>
-                              <div className="flex flex-col min-w-0 flex-1">
-                                <span className="font-mono text-xs">{toolId}</span>
-                                {s?.description && (
-                                  <span className="text-xs text-muted-foreground truncate max-w-[280px]">
-                                    {s.description}
-                                  </span>
-                                )}
-                              </div>
-                              {s?.source === 'mcp' && (
-                                <Badge variant="secondary" className="ml-2 text-xs shrink-0">MCP</Badge>
-                              )}
-                            </ComboboxItem>
-                          )
-                        }}
+                        {grouped.map(({ groupId, label, tools }) => (
+                          <ComboboxGroup key={groupId}>
+                            <ComboboxLabel>{label}</ComboboxLabel>
+                            {tools.map((s) => (
+                              <ToolComboboxItem key={s.id} schema={s} />
+                            ))}
+                          </ComboboxGroup>
+                        ))}
+                        {mcpServers.map((server) => (
+                          <ComboboxGroup key={`mcp:${server}`}>
+                            <ComboboxLabel>{server}</ComboboxLabel>
+                            {mcpSchemas
+                              .filter((s) => (s.mcpServer ?? 'MCP') === server)
+                              .map((s) => (
+                                <ToolComboboxItem key={s.id} schema={s} showMcp />
+                              ))}
+                          </ComboboxGroup>
+                        ))}
                       </ComboboxList>
                     </ComboboxContent>
                   </Combobox>

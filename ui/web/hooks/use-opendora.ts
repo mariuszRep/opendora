@@ -1051,14 +1051,18 @@ export function useOpendora(opts?: {
 
     if (session?.id) {
       setSelectedSessionId(session.id)
-      router.replace(`/dashboard?session=${session.id}`, { scroll: false })
+      // Do NOT call router.replace here — the URL sync effect handles it after
+      // React commits the final batched state. An eager replace here races with
+      // any immediately-following selectSession call (e.g. after a workflow run)
+      // and triggers the URL→state effect with the wrong session id, reverting
+      // the selection before the workflow session even appears in the list.
       selectedSessionRef.current = session
       rememberSessionForAgent(session)
     } else {
       setSelectedSessionId(null)
       selectedSessionRef.current = null
     }
-  }, [rememberSessionForAgent, router, sortSessionsForAgent])
+  }, [rememberSessionForAgent, sortSessionsForAgent])
 
   const setDefaultAgent = useCallback((agentId: string) => {
     storeDefaultAgent(agentId)

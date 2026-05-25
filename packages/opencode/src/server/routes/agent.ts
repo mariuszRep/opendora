@@ -1,7 +1,6 @@
 import { Hono } from "hono"
 import { describeRoute, resolver, validator } from "hono-openapi"
 import z from "zod"
-import { zodToJsonSchema } from "zod-to-json-schema"
 import { Agent } from "../../agent"
 import { AgentStorage } from "@opendora/agent"
 import { ToolRegistry } from "../../tool/registry"
@@ -92,67 +91,6 @@ export const AgentRoutes = lazy(() =>
       },
     )
 
-    // GET /agent/tools — list all available tool ids with source info
-    .get(
-      "/tools",
-      describeRoute({
-        summary: "List available tools",
-        description: "Get a list of all tool IDs available in the runtime, including MCP tools.",
-        operationId: "agent.tools.list",
-        responses: {
-          200: {
-            description: "Tool IDs with source",
-            content: {
-              "application/json": {
-                schema: resolver(
-                  z.array(
-                    z.object({
-                      id: z.string(),
-                      source: z.enum(["internal", "mcp"]),
-                      mcpServer: z.string().optional(),
-                    }),
-                  ),
-                ),
-              },
-            },
-          },
-        },
-      }),
-      async (c) => {
-        const internalTools = await ToolRegistry.ids()
-        const mcpTools = await MCP.tools()
-        
-        // Convert internal tools
-        const result: Array<{ id: string; source: "internal" } | { id: string; source: "mcp"; mcpServer: string }> = internalTools.map((id) => ({
-          id,
-          source: "internal" as const,
-        }))
-        
-        // Add MCP tools with their server name
-        // MCP.tools() keys are "{sanitizedClientName}_{sanitizedToolName}" — we can't reliably
-        // re-parse the server name from the key because both parts may contain underscores.
-        // Instead, look up the server name from the MCP clients snapshot.
-        const mcpClients = await MCP.clients()
-        for (const [toolId] of Object.entries(mcpTools)) {
-          // Find which client owns this tool by checking the prefix
-          let mcpServer = "mcp"
-          for (const clientName of Object.keys(mcpClients)) {
-            const sanitized = clientName.replace(/[^a-zA-Z0-9_-]/g, "_")
-            if (toolId.startsWith(sanitized + "_")) {
-              mcpServer = clientName
-              break
-            }
-          }
-          result.push({
-            id: toolId,
-            source: "mcp" as const,
-            mcpServer,
-          })
-        }
-        
-        return c.json(result)
-      },
-    )
 
     // GET /agent/tools/schema — all tools with their JSON Schema input definitions
     .get(
@@ -183,26 +121,10 @@ export const AgentRoutes = lazy(() =>
         },
       }),
       async (c) => {
-        const dummyModel = { providerID: "anthropic", modelID: "claude-sonnet-4-6" }
-        const internalTools = await Promise.all(
-          ToolRegistry.all().map(async (t) => {
-            try {
-              const tool = await t.init({ model: dummyModel })
-              const schema = (tool.parameters as any)?._def
-                ? zodToJsonSchema(tool.parameters as any, { target: "jsonSchema7" })
-                : (tool.parameters ?? { type: "object", properties: {} })
-              return {
-                id: t.id,
-                description: tool.description,
-                source: "internal" as const,
-                inputSchema: schema as Record<string, unknown>,
-              }
-            } catch {
-              return { id: t.id, description: "", source: "internal" as const, inputSchema: { type: "object", properties: {} } as Record<string, unknown> }
-            }
-          })
-        )
-        const mcpTools = await MCP.rawTools()
+        const [internalTools, mcpTools] = await Promise.all([
+          ToolRegistry.schemas(),
+          MCP.rawTools(),
+        ])
         return c.json([
           ...internalTools,
           ...mcpTools.map((t) => ({ ...t, source: "mcp" as const })),

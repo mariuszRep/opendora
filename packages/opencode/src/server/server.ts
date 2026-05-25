@@ -7,7 +7,7 @@ import { cors } from "hono/cors"
 import { streamSSE } from "hono/streaming"
 import { proxy } from "hono/proxy"
 import { basicAuth } from "hono/basic-auth"
-import z from "zod"
+import z, { toJSONSchema as zodToJSONSchema } from "zod"
 import { Provider } from "@opendora/provider/provider"
 import { NamedError } from "@opendora/util/error"
 import { LSP } from "../lsp"
@@ -737,9 +737,8 @@ export namespace Server {
         ].filter(Boolean).join("\n\n")
 
         const rawSchema = (toolDef as any).parameters
-        const toolSchema = rawSchema?._def
-          ? jsonSchema(rawSchema)
-          : jsonSchema(rawSchema ?? {})
+        const isZodSchema = rawSchema?.def !== undefined || rawSchema?._def !== undefined
+        const toolSchema = jsonSchema(isZodSchema ? zodToJSONSchema(rawSchema) : (rawSchema ?? {}))
 
         let language: any
         if (ctx.model) {

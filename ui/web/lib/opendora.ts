@@ -385,12 +385,6 @@ export type AgentConfig = {
   sandbox?: boolean
 }
 
-export type AgentTool = {
-  id: string
-  source: "internal" | "mcp"
-  mcpServer?: string
-}
-
 export type ToolSchemaProperty = {
   type?: string
   description?: string
@@ -690,7 +684,6 @@ export const opendora = {
       req<boolean>(`/agent/${id}/injection`, { method: "PUT", body: JSON.stringify({ injection }) }),
     generate: (input: { description: string; model?: { providerID: string; modelID: string } }) =>
       req<GeneratedAgent>("/agent/generate", { method: "POST", body: JSON.stringify(input) }),
-    tools: () => req<AgentTool[]>("/agent/tools"),
     toolSchemas: () => req<ToolSchema[]>("/agent/tools/schema"),
   },
   voice: {

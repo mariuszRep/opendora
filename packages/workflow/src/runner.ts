@@ -217,7 +217,7 @@ function resolveNodeExec(node: WorkflowNode, allEdges: WorkflowEdge[]): NodeExec
         kind: "tool_call",
         tool: actionId,
         args,
-        agentArgs: Array.isArray(nd.agentArgs) ? (nd.agentArgs as string[]) : [],
+        agentArgs: Array.isArray(d.agentArgs) ? (d.agentArgs as string[]) : [],
         output: params.output != null ? String(params.output) : undefined,
       }
     }

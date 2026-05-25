@@ -28,6 +28,7 @@ import { PlaywrightModeTool } from "./browser/playwright-mode.ts"
 import { ToolListTool, ToolGetTool, ToolUpdateTool } from "./tool-registry/index.ts"
 import { WorkflowRunTool } from "./workflows/index.ts"
 import { MemoryWriteTool, MemoryReadTool } from "./memory/index.ts"
+import { toJSONSchema } from "zod"
 import type { Tool } from "./tool.ts"
 import path from "path"
 import { pathToFileURL } from "url"
@@ -187,5 +188,31 @@ export namespace ToolRegistry {
         }),
     )
     return result
+  }
+
+  export interface ToolSchemaEntry {
+    id: string
+    description: string
+    source: "internal"
+    inputSchema: Record<string, unknown>
+  }
+
+  export async function schemas(model = { providerID: "anthropic", modelID: "claude-sonnet-4-6" }): Promise<ToolSchemaEntry[]> {
+    return Promise.all(
+      all().map(async (t) => {
+        try {
+          const tool = await t.init({ model })
+          const params = tool.parameters as any
+          // Zod v4 uses .def; v3 uses ._def — detect which we have
+          const isZodSchema = params?.def !== undefined || params?._def !== undefined
+          const inputSchema = isZodSchema
+            ? toJSONSchema(params)
+            : (params ?? { type: "object", properties: {} })
+          return { id: t.id, description: tool.description, source: "internal" as const, inputSchema: inputSchema as Record<string, unknown> }
+        } catch {
+          return { id: t.id, description: "", source: "internal" as const, inputSchema: { type: "object", properties: {} } }
+        }
+      }),
+    )
   }
 }

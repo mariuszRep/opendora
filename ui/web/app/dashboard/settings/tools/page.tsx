@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { opendora, type ToolSchema } from "@/lib/opendora"
+import { useToolSchemas } from "@/hooks/use-tool-schemas"
 
 type GlobalConfig = {
   tool_config?: {
@@ -223,15 +224,10 @@ export default function ToolsPage() {
   const [exaKeyError, setExaKeyError] = useState<string | null>(null)
   const [savingExaToggle, setSavingExaToggle] = useState(false)
   const [savingDesktop, setSavingDesktop] = useState(false)
-  const [toolSchemas, setToolSchemas] = useState<ToolSchema[]>([])
-  const [loadingSchemas, setLoadingSchemas] = useState(true)
+  const { schemas: toolSchemas, loading: loadingSchemas } = useToolSchemas()
 
   useEffect(() => {
     opendora.config.get().then(setGlobalConfig).catch(() => {})
-    opendora.agent.toolSchemas()
-      .then(setToolSchemas)
-      .catch(() => {})
-      .finally(() => setLoadingSchemas(false))
   }, [])
 
   const exa = globalConfig?.tool_config?.exa

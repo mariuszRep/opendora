@@ -50,6 +50,19 @@ import {
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { opendora, type AgentConfig, type Skill } from "@/lib/opendora"
 import { SettingsCard } from "@/components/settings/settings-card"
+import { useToolSchemas } from "@/hooks/use-tool-schemas"
+import {
+  HIDDEN_TOOLS,
+  FILESYSTEM_TOOLS,
+  SHELL_TOOLS,
+  BROWSE_AND_WEB_TOOLS,
+  SESSION_TOOLS,
+  AGENT_TOOLS,
+  SKILL_TOOLS,
+  SCHEDULE_TOOLS,
+  DESKTOP_TOOLS,
+  isPyAutoGUI,
+} from "@/lib/tool-groups"
 
 const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
   { value: "primary", label: "Primary" },
@@ -58,39 +71,6 @@ const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
   { value: "subagent", label: "Sub-agent (Legacy)" },
   { value: "all", label: "All" },
 ]
-
-const HIDDEN_TOOLS = new Set(["invalid", "plan_exit"])
-
-const FILESYSTEM_TOOLS = new Set([
-  "read", "write", "edit", "list", "glob", "grep",
-  "apply_patch", "multiedit",
-])
-
-const SHELL_TOOLS = new Set(["bash", "batch"])
-
-const BROWSE_AND_WEB_TOOLS = new Set(["webfetch", "websearch", "browser", "codesearch"])
-
-const SESSION_TOOLS = new Set([
-  "delegate", "reply", "session_get", "session_search", "session_tree",
-])
-
-const AGENT_TOOLS = new Set([
-  "agent_create", "agent_delete", "agent_get", "agent_list", "agent_update",
-])
-
-const SKILL_TOOLS = new Set(["skill_list", "skill_load", "skill_search", "skill_install", "skill_create", "skill_edit", "skill_remove"])
-
-const SCHEDULE_TOOLS = new Set(["schedule_list", "schedule_create", "schedule_update", "schedule_delete", "schedule_get", "schedule_run"])
-
-const DESKTOP_TOOLS = new Set([
-  "desktop_mouse_move", "desktop_mouse_click", "desktop_mouse_drag", "desktop_mouse_scroll", "desktop_mouse_position",
-  "desktop_keyboard_type", "desktop_keyboard_press",
-  "desktop_screen_capture", "desktop_screen_find_image", "desktop_screen_wait_for_image", "desktop_screen_size", "desktop_screen_read_pixel",
-  "desktop_window_list", "desktop_window_active", "desktop_window_focus", "desktop_window_move", "desktop_window_resize",
-  "desktop_clipboard_read", "desktop_clipboard_write",
-])
-
-const isPyAutoGUI = (id: string) => id.startsWith("pyautogui_")
 
 type ModelValue = { providerID: string; modelID: string } | undefined
 
@@ -121,8 +101,15 @@ export default function AgentSettingsPage() {
   const [modelOpen, setModelOpen] = useState(false)
   const [fallbackModelOpen, setFallbackModelOpen] = useState(false)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
-  const [availableTools, setAvailableTools] = useState<string[]>([])
-  const [mcpToolsByServer, setMcpToolsByServer] = useState<Record<string, string[]>>({})
+  const { schemas: toolSchemas } = useToolSchemas()
+  const availableTools = toolSchemas.filter((t) => t.source === "internal" && !HIDDEN_TOOLS.has(t.id)).map((t) => t.id)
+  const mcpToolsByServer = toolSchemas
+    .filter((t) => t.source === "mcp")
+    .reduce<Record<string, string[]>>((acc, t) => {
+      const server = t.mcpServer || "unknown"
+      ;(acc[server] ??= []).push(t.id)
+      return acc
+    }, {})
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
@@ -175,22 +162,8 @@ export default function AgentSettingsPage() {
     return groups
   }, [modelList])
 
-  // Load available tools and skills
+  // Load skills
   useEffect(() => {
-    opendora.agent.tools().then((tools) => {
-      // Separate internal tools from MCP tools
-      const internal = tools.filter((t) => t.source === "internal" && !HIDDEN_TOOLS.has(t.id)).map((t) => t.id)
-      setAvailableTools(internal)
-
-      // Group MCP tools by server
-      const mcpByServer: Record<string, string[]> = {}
-      tools.filter((t) => t.source === "mcp").forEach((t) => {
-        const server = t.mcpServer || "unknown"
-        if (!mcpByServer[server]) mcpByServer[server] = []
-        mcpByServer[server].push(t.id)
-      })
-      setMcpToolsByServer(mcpByServer)
-    }).catch(() => { })
     opendora.skill.list().then(setAvailableSkills).catch(() => { })
 
     // Re-fetch skills whenever files change on disk
