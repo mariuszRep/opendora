@@ -32,8 +32,8 @@ import { startBrowserControlServiceFromConfig, stopBrowserControlService } from 
 import { AgentRoutes } from "./routes/agent"
 import { ScheduleRoutes } from "./routes/schedule"
 import { WorkflowRoutes } from "@opendora/workflow/routes"
-import { registerSkillFunctions, registerToolExecutor } from "@opendora/workflow/runner"
-import { addSkillTools } from "../session-skill-tools"
+import { registerToolExecutor } from "@opendora/workflow/runner"
+import { addSkillTools, getSkillTools } from "../session-skill-tools"
 import { CronScheduler, type ScheduleDispatchFn } from "@opendora/schedule/cron-scheduler"
 import { Schedule } from "../schedule"
 import { Database } from "../storage/db"
@@ -696,9 +696,6 @@ export namespace Server {
     cors?: string[]
   }) {
     configureSessionCore()
-    registerSkillFunctions(Skill.get, addSkillTools, Skill.all)
-    
-    // Wire tool registry to workflow package for tool_call node execution
     registerToolExecutor(async (toolId, fixedArgs, agentArgs, ctx) => {
       const toolInfo = ToolRegistry.all().find((t) => t.id === toolId)
       if (!toolInfo) throw new Error(`Tool "${toolId}" not found in registry`)
@@ -716,6 +713,28 @@ export namespace Server {
         messages: [],
         metadata: (_input: { title?: string; metadata?: unknown }) => {},
         ask: async (_input: unknown) => {},
+        extra: {
+          directory: Instance.directory,
+          worktree: Instance.worktree,
+          skillTools: {
+            get: (sid: string) => getSkillTools(sid),
+            add: (sid: string, toolIds: string[]) => addSkillTools(sid, toolIds),
+          },
+          skills: {
+            all: () => Skill.all(),
+            get: (name: string) => Skill.get(name),
+          },
+          agents: {
+            list: () => Agent.list(),
+            get: (id: string) => Agent.get(id),
+          },
+          session: {
+            list: (filter?: any) => Session.list(filter),
+            get: (id: string) => Session.get(id),
+            messages: (id: string) => Session.messages(id),
+            setTitle: (id: string, title: string) => Session.setTitle({ sessionID: id, title }),
+          },
+        },
       }
 
       let finalArgs = fixedArgs

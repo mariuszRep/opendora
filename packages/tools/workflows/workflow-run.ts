@@ -25,7 +25,7 @@ export const WorkflowRunTool = Tool.define("workflow_run", async () => {
     parameters,
     async execute(params: z.infer<typeof parameters>, ctx) {
       const h = host(ctx)
-      const directory = h.directory
+      const directory = h.worktree
 
       const workflow = await WorkflowStorage.get(directory, params.workflowId)
       if (!workflow) {

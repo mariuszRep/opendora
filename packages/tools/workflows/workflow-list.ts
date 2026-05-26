@@ -11,7 +11,7 @@ export const WorkflowListTool = Tool.define("workflow_list", async () => {
     description: toolDef.description,
     parameters,
     async execute(_params: z.infer<typeof parameters>, ctx) {
-      const directory = host(ctx).directory
+      const directory = host(ctx).worktree
       const workflows = await WorkflowStorage.list(directory)
 
       if (workflows.length === 0) {

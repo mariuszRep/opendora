@@ -360,7 +360,7 @@ export const Chatbot = () => {
         outputTokens: selectedSession.tokens.output,
         cachedTokens: selectedSession.tokens.cacheRead,
         reasoningTokens: 0, // Backend doesn't track reasoning separately yet
-        totalTokens: selectedSession.tokens.input + selectedSession.tokens.output,
+        totalTokens: selectedSession.tokens.input + selectedSession.tokens.output + (selectedSession.tokens.cacheRead ?? 0),
       }
     }
 

@@ -25,7 +25,7 @@ export const WorkflowUpdateTool = Tool.define("workflow_update", async () => {
         metadata: { workflowId: params.id },
       })
 
-      const directory = host(ctx).directory
+      const directory = host(ctx).worktree
 
       const existing = await WorkflowStorage.get(directory, params.id)
       if (!existing) {

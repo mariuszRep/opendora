@@ -26,7 +26,7 @@ import { DESKTOP_TOOLS } from "./desktop/index.ts"
 import { PYAUTOGUI_TOOLS } from "./pyautogui/index.ts"
 import { PlaywrightModeTool } from "./browser/playwright-mode.ts"
 import { ToolListTool, ToolGetTool, ToolUpdateTool } from "./tool-registry/index.ts"
-import { WorkflowRunTool } from "./workflows/index.ts"
+import { WorkflowRunTool, WorkflowCreateTool, WorkflowGetTool, WorkflowListTool, WorkflowUpdateTool, WorkflowDeleteTool } from "./workflows/index.ts"
 import { MemoryWriteTool, MemoryReadTool } from "./memory/index.ts"
 import { toJSONSchema } from "zod"
 import type { Tool } from "./tool.ts"
@@ -156,6 +156,11 @@ export namespace ToolRegistry {
       ToolGetTool,
       ToolUpdateTool,
       WorkflowRunTool,
+      WorkflowCreateTool,
+      WorkflowGetTool,
+      WorkflowListTool,
+      WorkflowUpdateTool,
+      WorkflowDeleteTool,
       MemoryWriteTool,
       MemoryReadTool,
       ...(cfg.flags.enableLspTool ? [LspTool] : []),

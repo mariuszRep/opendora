@@ -627,7 +627,11 @@ export namespace MCP {
     const connectedClients = Object.entries(clientsSnapshot).filter(
       ([clientName]) => s.status[clientName]?.status === "connected",
     )
-    for (const [clientName] of connectedClients) {
+    for (const [clientName, client] of connectedClients) {
+      if (!s.toolsCache[clientName]) {
+        const toolsResult = await client.listTools().catch(() => undefined)
+        if (toolsResult) s.toolsCache[clientName] = toolsResult.tools
+      }
       const toolList = s.toolsCache[clientName] ?? []
       for (const mcpTool of toolList) {
         const sanitizedClientName = clientName.replace(/[^a-zA-Z0-9_-]/g, "_")

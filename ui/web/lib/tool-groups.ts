@@ -7,10 +7,11 @@ export const FILESYSTEM_TOOLS = new Set([
 
 export const SHELL_TOOLS = new Set(["bash", "batch"])
 
-export const BROWSE_AND_WEB_TOOLS = new Set(["webfetch", "websearch", "browser", "codesearch"])
+export const BROWSE_AND_WEB_TOOLS = new Set(["webfetch", "websearch", "browser", "codesearch", "playwright_browser_mode"])
 
 export const SESSION_TOOLS = new Set([
-  "delegate", "reply", "session_get", "session_search", "session_tree",
+  "delegate", "reply", "notify", "question",
+  "session_get", "session_search", "session_tree", "session_update",
 ])
 
 export const AGENT_TOOLS = new Set([
@@ -23,6 +24,18 @@ export const SKILL_TOOLS = new Set([
 
 export const SCHEDULE_TOOLS = new Set([
   "schedule_list", "schedule_create", "schedule_update", "schedule_delete", "schedule_get", "schedule_run",
+])
+
+export const WORKFLOW_TOOLS = new Set([
+  "workflow_run", "workflow_create", "workflow_get", "workflow_list", "workflow_update", "workflow_delete",
+])
+
+export const TOOL_REGISTRY_TOOLS = new Set([
+  "tool_list", "tool_get", "tool_update",
+])
+
+export const MEMORY_TOOLS = new Set([
+  "memory_read", "memory_write",
 ])
 
 export const DESKTOP_TOOLS = new Set([
@@ -43,13 +56,16 @@ export type ToolGroupId =
   | "agents"
   | "skills"
   | "schedule"
+  | "workflows"
+  | "tool-registry"
+  | "memory"
   | "desktop"
   | "pyautogui"
   | "others"
 
 export const TOOL_GROUP_ORDER: ToolGroupId[] = [
   "filesystem", "shell", "browse-and-web", "sessions", "agents", "skills",
-  "schedule", "desktop", "pyautogui", "others",
+  "schedule", "workflows", "tool-registry", "memory", "desktop", "pyautogui", "others",
 ]
 
 export const TOOL_GROUP_LABELS: Record<ToolGroupId, string> = {
@@ -60,6 +76,9 @@ export const TOOL_GROUP_LABELS: Record<ToolGroupId, string> = {
   "agents": "Agents",
   "skills": "Skills",
   "schedule": "Schedule",
+  "workflows": "Workflows",
+  "tool-registry": "Tool Registry",
+  "memory": "Memory",
   "desktop": "Desktop",
   "pyautogui": "PyAutoGUI",
   "others": "Others",
@@ -73,6 +92,9 @@ export function getToolGroup(id: string): ToolGroupId {
   if (AGENT_TOOLS.has(id)) return "agents"
   if (SKILL_TOOLS.has(id)) return "skills"
   if (SCHEDULE_TOOLS.has(id)) return "schedule"
+  if (WORKFLOW_TOOLS.has(id)) return "workflows"
+  if (TOOL_REGISTRY_TOOLS.has(id)) return "tool-registry"
+  if (MEMORY_TOOLS.has(id)) return "memory"
   if (DESKTOP_TOOLS.has(id)) return "desktop"
   if (isPyAutoGUI(id)) return "pyautogui"
   return "others"

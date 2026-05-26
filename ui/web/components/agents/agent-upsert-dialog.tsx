@@ -40,14 +40,10 @@ import { useToolSchemas } from "@/hooks/use-tool-schemas"
 import {
   HIDDEN_TOOLS,
   FILESYSTEM_TOOLS,
-  SHELL_TOOLS,
-  BROWSE_AND_WEB_TOOLS,
-  SESSION_TOOLS,
-  AGENT_TOOLS,
-  SKILL_TOOLS,
-  SCHEDULE_TOOLS,
-  DESKTOP_TOOLS,
-  isPyAutoGUI,
+  TOOL_GROUP_ORDER,
+  TOOL_GROUP_LABELS,
+  getToolGroup,
+  type ToolGroupId,
 } from "@/lib/tool-groups"
 
 type Props = {
@@ -125,10 +121,12 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [fallbackModel, setFallbackModel] = useState<string>(NONE)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const { schemas: toolSchemas } = useToolSchemas()
-  const availableTools = toolSchemas.map((t) => t.id).filter((id) => !HIDDEN_TOOLS.has(id))
+  const availableTools = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id) && t.source !== 'mcp').map((t) => t.id)
+  const availableMcpSchemas = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id) && t.source === 'mcp')
+  const mcpServers = Array.from(new Set(availableMcpSchemas.map((t) => t.mcpServer ?? 'MCP')))
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
-  const [expandedGroup, setExpandedGroup] = useState<"filesystem" | "shell" | "browse-and-web" | "sessions" | "agents" | "skills" | "schedule" | "desktop" | "pyautogui" | "others" | null>(null)
+  const [expandedGroup, setExpandedGroup] = useState<ToolGroupId | string | null>(null)
   const [expandedSkill, setExpandedSkill] = useState<string | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
@@ -542,22 +540,8 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                 Leave all unchecked to allow all tools. Select specific tools to restrict this agent.
               </p>
 
-              {(["filesystem", "shell", "browse-and-web", "sessions", "agents", "skills", "schedule", "desktop", "pyautogui", "others"] as const).map((group) => {
-                const groupTools = availableTools.filter((id) => {
-                  if (group === "filesystem") return FILESYSTEM_TOOLS.has(id)
-                  if (group === "shell") return SHELL_TOOLS.has(id)
-                  if (group === "browse-and-web") return BROWSE_AND_WEB_TOOLS.has(id)
-                  if (group === "sessions") return SESSION_TOOLS.has(id)
-                  if (group === "agents") return AGENT_TOOLS.has(id)
-                  if (group === "skills") return SKILL_TOOLS.has(id)
-                  if (group === "schedule") return SCHEDULE_TOOLS.has(id)
-                  if (group === "desktop") return DESKTOP_TOOLS.has(id)
-                  if (group === "pyautogui") return isPyAutoGUI(id)
-                  // others: everything not in any specific group
-                  return !FILESYSTEM_TOOLS.has(id) && !SHELL_TOOLS.has(id) && !BROWSE_AND_WEB_TOOLS.has(id) &&
-                         !SESSION_TOOLS.has(id) && !AGENT_TOOLS.has(id) && !SKILL_TOOLS.has(id) && !SCHEDULE_TOOLS.has(id) &&
-                         !DESKTOP_TOOLS.has(id) && !isPyAutoGUI(id)
-                })
+              {TOOL_GROUP_ORDER.map((group) => {
+                const groupTools = availableTools.filter((id) => getToolGroup(id) === group)
                 const selectedCount = groupTools.filter((id) => selectedTools.includes(id)).length
                 const isExpanded = expandedGroup === group
 
@@ -568,7 +552,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                       onClick={() => setExpandedGroup(isExpanded ? null : group)}
                     >
                       <div>
-                        <CardTitle className="capitalize">{group}</CardTitle>
+                        <CardTitle>{TOOL_GROUP_LABELS[group]}</CardTitle>
                         <CardDescription>{groupTools.length} tools</CardDescription>
                       </div>
                       {selectedCount > 0 && (
@@ -715,6 +699,60 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                               </div>
                             </Label>
                           </div>
+                        )}
+                      </CardContent>
+                    )}
+                  </Card>
+                )
+              })}
+
+              {mcpServers.map((server) => {
+                const serverTools = availableMcpSchemas.filter((t) => (t.mcpServer ?? 'MCP') === server)
+                const serverKey = `mcp:${server}`
+                const selectedCount = serverTools.filter((t) => selectedTools.includes(t.id)).length
+                const isExpanded = expandedGroup === serverKey
+                return (
+                  <Card key={serverKey} className="cursor-pointer">
+                    <CardHeader
+                      className="flex-row items-center justify-between"
+                      onClick={() => setExpandedGroup(isExpanded ? null : serverKey)}
+                    >
+                      <div>
+                        <CardTitle>{server}</CardTitle>
+                        <CardDescription>{serverTools.length} tools · MCP</CardDescription>
+                      </div>
+                      {selectedCount > 0 && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                          {selectedCount} selected
+                        </span>
+                      )}
+                    </CardHeader>
+                    {isExpanded && (
+                      <CardContent className="border-t pt-2">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                          {serverTools.map((t) => (
+                            <Label key={t.id} className="flex cursor-pointer items-center gap-2 font-normal">
+                              <Checkbox
+                                checked={selectedTools.includes(t.id)}
+                                onCheckedChange={() => toggleTool(t.id)}
+                              />
+                              <span className="font-mono text-xs">{t.id}</span>
+                            </Label>
+                          ))}
+                        </div>
+                        {selectedCount > 0 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="mt-1 h-auto px-0 text-xs text-muted-foreground"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedTools((prev) => prev.filter((id) => !serverTools.find((t) => t.id === id)))
+                            }}
+                          >
+                            Clear group
+                          </Button>
                         )}
                       </CardContent>
                     )}

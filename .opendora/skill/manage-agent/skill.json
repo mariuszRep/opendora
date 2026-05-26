@@ -1,0 +1,9 @@
+{
+  "tools": [
+    "agent_create",
+    "agent_update",
+    "agent_delete",
+    "agent_list",
+    "agent_get"
+  ]
+}

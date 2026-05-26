@@ -20,7 +20,7 @@ export const WorkflowDeleteTool = Tool.define("workflow_delete", async () => {
         metadata: { workflowId: params.id },
       })
 
-      const directory = host(ctx).directory
+      const directory = host(ctx).worktree
       try {
         await WorkflowStorage.remove(directory, params.id)
       } catch (err) {

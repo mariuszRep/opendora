@@ -2,7 +2,6 @@
 name: manage-workflow
 description: Use this skill for all workflow work — creating, reading, editing, deleting, and running workflows. Guides you through composing workflows with existing node types. Explains when a task cannot be accomplished with current nodes and what would need to change to unlock it.
 origin: opendora
-tools: [workflow_create, workflow_get, workflow_list, workflow_update, workflow_delete, workflow_run]
 ---
 
 # Workflow Operations Skill
@@ -20,13 +19,15 @@ Use this skill whenever you need to create, inspect, modify, delete, or run a wo
 | `workflow_delete` | Permanently delete a workflow |
 | `workflow_run` | Start a workflow in a background session |
 
-`workflow_create` and `workflow_update` both accept a `workflow` field containing the complete JSON — exactly the same shape the UI editor produces and the HTTP API accepts.
+`workflow_create` and `workflow_update` both accept a `workflow` field containing the complete JSON — exactly the same shape the UI editor produces.
 
 ---
 
 ## Part 1: The Node Format
 
-Every workflow is a JSON object with `id`, `name`, `nodes`, and `edges`. All nodes use `type: "workflow"` — the node kind is encoded inside `data`.
+Every workflow is a JSON object with `id`, `name`, `nodes`, and `edges`. All nodes use `type: "workflow"`.
+
+There are exactly **two node kinds**: `prompt` and `tool`. The kind is set in `data.nodeType`.
 
 ### Node shape
 
@@ -35,113 +36,44 @@ Every workflow is a JSON object with `id`, `name`, `nodes`, and `edges`. All nod
   "id": "<unique-within-workflow>",
   "type": "workflow",
   "data": {
-    "nodeType": "<kind>",
-    "node": { "action_id": "<action>", "label": "...", "description": "..." },
-    "data": { ... },
-    "instructions": "..."
+    "nodeType": "prompt" | "tool",
+    "node": { "label": "...", "description": "", "action_id": "...", "parameters": {} },
+    "data": { "inputs": [], "outputs": [] },
+    "instructions": "...",
+    "agentArgs": []
   },
   "position": { "x": 0, "y": 0 }
 }
 ```
-
-### Node kinds
-
-#### Start (entry point)
-Every workflow has exactly one start node. Declares the input fields callers must provide.
-
-```json
-{
-  "id": "start",
-  "type": "workflow",
-  "data": {
-    "nodeType": "start",
-    "node": { "label": "Start", "description": "Workflow entry point" },
-    "data": {
-      "inputs": [
-        { "name": "topic", "type": "string", "required": true },
-        { "name": "depth", "type": "number", "required": false }
-      ],
-      "outputs": []
-    }
-  },
-  "position": { "x": 0, "y": 0 }
-}
-```
-
-Input field types: `string`, `number`, `boolean`, `object`. Reference them later with `$input.fieldName`.
 
 ---
 
-#### Agent (`action_id: "agent"`)
-Sends a prompt to the session's agent and captures the response.
+### Prompt node (`nodeType: "prompt"`)
+
+Sends a message to the agent and captures the response. Use `instructions` for the prompt text. Reference `$input.field` and `$ctx.key` for substitution.
 
 ```json
 {
   "id": "research",
   "type": "workflow",
   "data": {
-    "nodeType": "tool",
-    "node": { "action_id": "agent", "label": "Research", "description": "..." },
+    "nodeType": "prompt",
+    "node": { "label": "Research", "description": "" },
     "data": { "inputs": [], "outputs": [] },
-    "instructions": "Research the following topic thoroughly: $input.topic"
+    "instructions": "Research this topic thoroughly: $input.topic",
+    "agentArgs": []
   },
-  "position": { "x": 0, "y": 200 }
+  "position": { "x": 0, "y": 0 }
 }
 ```
 
-Use `instructions` for the prompt. Reference `$input.field` and `$ctx.key` values.
-To capture the response: add `"parameters": { "output": "keyName" }` inside `node`.
+To store the agent's response for later use, add `"output": "keyName"` inside `node.parameters`. The result is then available as `$ctx.keyName`.
 
 ---
 
-#### Decide (`action_id: "decide"`)
-Asks the agent to choose a named branch. The chosen branch determines which outgoing edge is followed.
+### Tool node (`nodeType: "tool"`)
 
-```json
-{
-  "id": "gate",
-  "type": "workflow",
-  "data": {
-    "nodeType": "tool",
-    "node": { "action_id": "decide", "label": "Severity Gate", "description": "..." },
-    "data": { "inputs": [], "outputs": [] },
-    "instructions": "Based on the findings, is this: critical, moderate, or low risk?"
-  },
-  "position": { "x": 0, "y": 400 }
-}
-```
-
-Outgoing edges from a `decide` node must each have a `label` matching one of the expected choices. The agent picks one.
-
----
-
-#### Skill Load (`action_id: "skill_load"`)
-Loads a skill into the workflow session, making its tools available to subsequent agent nodes.
-
-```json
-{
-  "id": "load-skill",
-  "type": "workflow",
-  "data": {
-    "nodeType": "tool",
-    "node": {
-      "action_id": "skill_load",
-      "label": "Load Skill",
-      "description": "Load skill \"product-explore\"",
-      "parameters": { "name": "product-explore" }
-    },
-    "data": { "inputs": [], "outputs": [] }
-  },
-  "position": { "x": 0, "y": 200 }
-}
-```
-
-Use `skill_discover` to find available skill names before authoring.
-
----
-
-#### Tool Call (`action_id: "<tool-name>"`)
-Runs any named tool directly using static parameters. Set `action_id` to the tool name.
+Runs any tool directly. Set `action_id` to the tool name. Pass fixed parameters in `node.parameters`. Parameter values may reference `$input.field` or `$ctx.key`.
 
 ```json
 {
@@ -150,39 +82,69 @@ Runs any named tool directly using static parameters. Set `action_id` to the too
   "data": {
     "nodeType": "tool",
     "node": {
-      "action_id": "read",
       "label": "Read Config",
-      "description": "Read the config file",
+      "description": "",
+      "action_id": "read",
       "parameters": { "file_path": "$input.config_path", "output": "configContent" }
     },
-    "data": { "inputs": [], "outputs": [] }
+    "data": { "inputs": [], "outputs": [] },
+    "agentArgs": []
   },
   "position": { "x": 0, "y": 200 }
 }
 ```
 
-Parameter values may reference `$input.field` or `$ctx.key`. Use `"output": "keyName"` in parameters to store the result in `$ctx`.
+Use `"output": "keyName"` in parameters to store the tool result in `$ctx.keyName`.
 
 ---
 
-#### Output (terminator, `action_id: "output"`)
-Ends a path through the workflow. Use `instructions` for an optional final message.
+### Special action_ids for tool nodes
+
+#### `skill_load` — Load a skill
 
 ```json
 {
-  "id": "done",
+  "id": "load-skill",
   "type": "workflow",
   "data": {
     "nodeType": "tool",
-    "node": { "action_id": "output", "label": "Output", "description": "Workflow complete" },
+    "node": {
+      "label": "Load Skill",
+      "description": "",
+      "action_id": "skill_load",
+      "parameters": { "name": "product-explore" }
+    },
     "data": { "inputs": [], "outputs": [] },
-    "instructions": "Done. Summary: $ctx.summary"
+    "agentArgs": []
   },
-  "position": { "x": 0, "y": 600 }
+  "position": { "x": 0, "y": 0 }
 }
 ```
 
-Multiple output nodes are allowed (one per branch).
+Any other `action_id` is the name of a registered tool — the runner calls it directly.
+
+---
+
+### Branching
+
+Use a `prompt` node with labeled outgoing edges. The runner matches the agent's response text against the edge labels to pick the next node.
+
+```json
+{
+  "id": "gate",
+  "type": "workflow",
+  "data": {
+    "nodeType": "prompt",
+    "node": { "label": "Branch Decision", "description": "" },
+    "data": { "inputs": [], "outputs": [] },
+    "instructions": "Based on the findings, reply with exactly one word: deep-dive or summarize",
+    "agentArgs": []
+  },
+  "position": { "x": 0, "y": 200 }
+}
+```
+
+Outgoing edges must each have a `label` matching one of the expected choices.
 
 ---
 
@@ -190,16 +152,16 @@ Multiple output nodes are allowed (one per branch).
 
 ### Rules
 
-1. Exactly one **start** node — always the entry point
-2. At least one **output** node — every path must terminate
-3. Every node must be reachable from start via edges
-4. Edges from **decide** nodes must have a `label` matching one of the expected branch choices
-5. No cycles — the schema does not support loops
+1. Workflows start from **root nodes** — nodes with no incoming edges.
+2. Workflows terminate naturally at any node with no outgoing edges — no special terminator node needed.
+3. Every node must be reachable from a root via edges.
+4. Edges from `decide` nodes must have a `label` matching one of the expected branch choices.
+5. No cycles.
 6. Reference syntax: `$input.fieldName` · `$ctx.keyName`
 
 ### Position convention
 
-Increment `y` by 200 per row. Branches share the same `y`, spread by `x`. Keeps the visual editor readable.
+Increment `y` by 200 per row. Branches share the same `y`, spread by `x`.
 
 ### Template: Linear workflow
 
@@ -211,41 +173,19 @@ Increment `y` by 200 per row. Branches share the same `y`, spread by `x`. Keeps 
   "version": "1.0.0",
   "nodes": [
     {
-      "id": "start",
+      "id": "step1",
       "type": "workflow",
       "data": {
-        "nodeType": "start",
-        "node": { "label": "Start", "description": "Entry point" },
-        "data": { "inputs": [{ "name": "topic", "type": "string", "required": true }], "outputs": [] }
+        "nodeType": "prompt",
+        "node": { "label": "Research", "description": "" },
+        "data": { "inputs": [], "outputs": [] },
+        "instructions": "Research this topic: $input.topic",
+        "agentArgs": []
       },
       "position": { "x": 0, "y": 0 }
-    },
-    {
-      "id": "research",
-      "type": "workflow",
-      "data": {
-        "nodeType": "tool",
-        "node": { "action_id": "agent", "label": "Research", "description": "Research the topic" },
-        "data": { "inputs": [], "outputs": [] },
-        "instructions": "Research this topic thoroughly: $input.topic"
-      },
-      "position": { "x": 0, "y": 200 }
-    },
-    {
-      "id": "done",
-      "type": "workflow",
-      "data": {
-        "nodeType": "tool",
-        "node": { "action_id": "output", "label": "Output", "description": "Complete" },
-        "data": { "inputs": [], "outputs": [] }
-      },
-      "position": { "x": 0, "y": 400 }
     }
   ],
-  "edges": [
-    { "id": "e1", "source": "start", "target": "research" },
-    { "id": "e2", "source": "research", "target": "done" }
-  ]
+  "edges": []
 }
 ```
 
@@ -253,13 +193,13 @@ Increment `y` by 200 per row. Branches share the same `y`, spread by `x`. Keeps 
 
 ```json
 "edges": [
-  { "id": "e1", "source": "start", "target": "gate" },
-  { "id": "e2", "source": "gate", "target": "handle-critical", "label": "critical" },
-  { "id": "e3", "source": "gate", "target": "handle-low",      "label": "low" },
-  { "id": "e4", "source": "handle-critical", "target": "done-urgent" },
-  { "id": "e5", "source": "handle-low",      "target": "done-quiet" }
+  { "id": "e1", "source": "research", "target": "gate" },
+  { "id": "e2", "source": "gate", "target": "handle-deep",    "label": "deep-dive" },
+  { "id": "e3", "source": "gate", "target": "handle-summary", "label": "summarize" }
 ]
 ```
+
+`handle-deep` and `handle-summary` have no outgoing edges — traversal ends there naturally.
 
 ---
 
@@ -267,32 +207,17 @@ Increment `y` by 200 per row. Branches share the same `y`, spread by `x`. Keeps 
 
 **Stop here if the task requires something none of the current node kinds can do.**
 
-Do not invent new node kinds. Do not approximate a blocked capability with a workaround that changes the semantic meaning. Clearly state the block and explain what would unlock it.
-
-### Common blocks and what unlocks them
+Do not invent new node kinds. Clearly state the block and explain what would unlock it.
 
 | Required Capability | Why blocked | What would unlock it |
 |---------------------|-------------|---------------------|
-| **Loop / iteration** | No loop node; `decide` can only branch forward | A `foreach` or `loop` node kind in the schema + runner |
-| **Parallel branches** | Edges are sequential; no fork-join | A `parallel` node with a corresponding merge node |
-| **Wait for external event** | Workflow runs to completion; no suspend/resume | A `wait` or `trigger` node that pauses session and resumes on signal |
-| **Sub-workflow call** (blocking) | `workflow_run` fires in background; output not capturable | A `workflow_call` node that blocks until child completes and captures its output |
-| **Typed / structured output** | Agent and output nodes emit free text | An `output` schema field or a `structured_call` node |
+| **Loop / iteration** | No loop node; `decide` can only branch forward | A `foreach` or `loop` node kind |
+| **Parallel branches** | Edges are sequential; no fork-join | A `parallel` node with a merge node |
+| **Wait for external event** | Workflow runs to completion; no suspend/resume | A `wait` or `trigger` node |
+| **Sub-workflow call** (blocking) | `workflow_run` fires in background; output not capturable | A `workflow_call` node that blocks until child completes |
+| **Workflow inputs declaration** | No start node to declare typed inputs | Inputs must be passed at runtime; use `$input.field` refs freely |
 | **Error handling / retry** | No try/catch construct | A `catch` edge type or `retry` wrapper |
-| **Human-in-the-loop approval** | No mechanism to pause and surface a question mid-workflow | A `checkpoint` node that suspends and waits for a human reply |
-| **Condition without LLM** | `decide` always costs an LLM call | A `condition` node with a static expression evaluator |
-
-### How to report a block
-
-> **Blocked: [capability name]**
->
-> This workflow requires [what the user needs]. No current node kind supports this because [reason].
->
-> **To unblock:** A `[node-kind]` node would be needed — it would [what it does and what changes are required in schema + runner].
->
-> **Workaround (if any):** [Partial approach using existing nodes — be explicit about what it cannot do.]
-
-Never silently fall back to an approximation that doesn't meet the user's intent.
+| **Human-in-the-loop approval** | No mechanism to pause mid-workflow | A `checkpoint` node that suspends for human reply |
 
 ---
 
@@ -302,7 +227,7 @@ Never silently fall back to an approximation that doesn't meet the user's intent
 
 1. `workflow_list` — check existing IDs
 2. Design the JSON (nodes + edges) before calling the tool
-3. Verify: every path reaches an output, every decide edge has a label
+3. Verify: every `decide` edge has a `label`, every path terminates
 4. `workflow_create { workflow: { ...full JSON... } }`
 5. On schema error: read the message, fix the offending node/edge, retry
 
@@ -323,12 +248,12 @@ Never silently fall back to an approximation that doesn't meet the user's intent
 ```
 workflow_run {
   workflowId: "my-workflow",
-  input: { topic: "quantum computing" },
+  input: { "topic": "quantum computing" },
   agentId: "engineer"
 }
 ```
 
-Returns a `sessionId` immediately. Navigate to that session to follow execution live. `agentId` is optional — defaults to the calling agent.
+Returns a `sessionId` immediately. Navigate to that session to follow execution live.
 
 ---
 
@@ -336,8 +261,7 @@ Returns a `sessionId` immediately. Navigate to that session to follow execution 
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
-| Schema validation error on create/update | A node is missing `type: "workflow"` or `data` is malformed | All nodes must have `type: "workflow"`; check the `data` shape matches the templates above |
+| Schema validation error | A node is missing `type: "workflow"` or `data` is malformed | Check the `data` shape matches the templates above |
 | `decide` follows wrong branch | Edge labels don't match what the agent outputs | Edge `label` values must exactly match the words the agent will choose between |
 | `$ctx.key` resolves empty | Prior node didn't store output under that key | Ensure the preceding node has `"output": "keyName"` in its `node.parameters` |
-| Agent node does nothing useful | Prompt doesn't include the context it needs | Add `$input.field` or `$ctx.key` refs to `instructions` |
-| Workflow starts but tool nodes do nothing | Tool executor not wired (known platform gap) | `agent` and `decide` nodes work; `tool_call` nodes require tool executor integration which is in progress |
+| Prompt node does nothing useful | `instructions` doesn't include the context it needs | Add `$input.field` or `$ctx.key` refs to `instructions` |

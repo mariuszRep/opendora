@@ -24,7 +24,7 @@ export const WorkflowCreateTool = Tool.define("workflow_create", async () => {
         metadata: { workflowId: params.workflow["id"] },
       })
 
-      const directory = host(ctx).directory
+      const directory = host(ctx).worktree
       let workflow
       try {
         workflow = await WorkflowStorage.create(directory, params.workflow)

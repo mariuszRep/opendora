@@ -10,18 +10,14 @@
   "steps": 80,
   "color": "cyan",
   "tools": [
-    "skill_list",
-    "skill_load",
-    "skill_create",
-    "skill_edit",
-    "skill_remove",
     "delegate",
     "reply",
     "question",
     "todowrite",
     "log",
     "memory_write",
-    "memory_read"
+    "memory_read",
+    "skill_load"
   ],
   "skills": [
     "requirements",
@@ -33,7 +29,8 @@
     "manage-agent",
     "manage-skill",
     "manage-tool",
-    "manage-schedule"
+    "manage-schedule",
+    "manage-workflow"
   ],
   "toolConfig": {
     "delegate": {
