@@ -1,0 +1,14 @@
+{
+  "name": "workflow_get",
+  "description": "Retrieve a single workflow definition by its ID. Returns the full workflow object including all nodes and edges.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The workflow ID to retrieve (matches the workflow file name without .json)"
+      }
+    },
+    "required": ["id"]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "workflow_create",
+  "description": "Create a new workflow. Pass the complete workflow JSON — exactly the same shape the UI editor creates and the HTTP API accepts. The workflow must have a unique id. Use workflow_list to check existing ids first.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "workflow": {
+        "type": "object",
+        "description": "Complete workflow JSON. Required fields: id (string), name (string), nodes (array), edges (array). Optional: description (string), version (string, defaults to '1.0.0'). Nodes use type 'workflow' with a nested data object containing nodeType and other fields, exactly as the UI produces.",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "version": { "type": "string" },
+          "nodes": { "type": "array" },
+          "edges": { "type": "array" }
+        },
+        "required": ["id", "name", "nodes", "edges"]
+      }
+    },
+    "required": ["workflow"]
+  }
+}

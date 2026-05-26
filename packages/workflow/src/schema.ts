@@ -1,85 +1,13 @@
 import { z } from "zod"
 
-// ─── Node data schemas ────────────────────────────────────────────────────────
-
-export const InputNodeData = z.object({
-  type: z.literal("input"),
-  fields: z
-    .array(
-      z.object({
-        name: z.string(),
-        type: z.enum(["string", "number", "boolean", "object"]).default("string"),
-        required: z.boolean().default(true),
-        description: z.string().optional(),
-      }),
-    )
-    .default([]),
-})
-
-export const SkillLoadNodeData = z.object({
-  type: z.literal("skill_load"),
-  skill: z.string().describe("Skill name (matches .opendora/skill/<name>/)"),
-  storeAs: z.string().optional().describe("Key name to store skill content in ctx (optional)"),
-})
-
-export const ToolCallNodeData = z.object({
-  type: z.literal("tool_call"),
-  tool: z.string().describe("Tool name to call (must be available in this session)"),
-  args: z
-    .record(z.string(), z.string())
-    .default({})
-    .describe("Tool arguments. Values may reference $input.<field> or $ctx.<key>"),
-  agentArgs: z
-    .array(z.string())
-    .default([])
-    .describe("Parameter names the agent should populate. One forced LLM call fills all of them."),
-  output: z.string().optional().describe("Context key to store the tool result under"),
-})
-
-export const AgentNodeData = z.object({
-  type: z.literal("agent"),
-  prompt: z.string().describe("Instruction sent to the agent. May reference $input.<field> or $ctx.<key>"),
-  output: z.string().optional().describe("Context key to store the agent's response text under"),
-})
-
-export const DecideNodeData = z.object({
-  type: z.literal("decide"),
-  prompt: z.string().describe("Question/instruction for the agent to decide between branches"),
-  branches: z.array(z.string()).describe("Branch labels — must match edge labels from this node"),
-})
-
-export const OutputNodeData = z.object({
-  type: z.literal("output"),
-  message: z.string().optional().describe("Final summary message (may reference $ctx.<key>)"),
-})
-
-export const NodeData = z.discriminatedUnion("type", [
-  InputNodeData,
-  SkillLoadNodeData,
-  ToolCallNodeData,
-  AgentNodeData,
-  DecideNodeData,
-  OutputNodeData,
-])
-export type NodeData = z.infer<typeof NodeData>
-
 // ─── Node + Edge ──────────────────────────────────────────────────────────────
 
-const LegacyWorkflowNode = z.object({
-  id: z.string(),
-  type: z.enum(["input", "skill_load", "tool_call", "agent", "decide", "output"]),
-  data: NodeData,
-  position: z.object({ x: z.number(), y: z.number() }).default({ x: 0, y: 0 }),
-})
-
-const VisualWorkflowNode = z.object({
+export const WorkflowNode = z.object({
   id: z.string(),
   type: z.literal("workflow"),
   data: z.record(z.string(), z.unknown()).default({}),
   position: z.object({ x: z.number(), y: z.number() }).default({ x: 0, y: 0 }),
 })
-
-export const WorkflowNode = z.union([LegacyWorkflowNode, VisualWorkflowNode])
 export type WorkflowNode = z.infer<typeof WorkflowNode>
 
 export const WorkflowEdge = z.object({

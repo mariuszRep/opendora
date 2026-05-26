@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "nodes": [
     {
-      "id": "09593AVsDAiL7nrPUx97o",
+      "id": "zcdlSGaGitdmE6rNj4qzK",
       "type": "workflow",
       "data": {
         "nodeType": "tool",
@@ -22,12 +22,12 @@
         "agentArgs": []
       },
       "position": {
-        "x": -512.4165154264972,
-        "y": -612.8582639711522
+        "x": -604.5205673282006,
+        "y": -291.1114047615676
       }
     },
     {
-      "id": "YOdJeLLsEeDqBPepXHyXk",
+      "id": "pI-_Ln7CFZrwGYtiPcxGu",
       "type": "workflow",
       "data": {
         "nodeType": "prompt",
@@ -39,20 +39,20 @@
           "inputs": [],
           "outputs": []
         },
-        "instructions": "what is your favourite skill ",
+        "instructions": "how many skills",
         "agentArgs": []
       },
       "position": {
-        "x": -340.4165154264974,
-        "y": -418.9582700746678
+        "x": -613.7582121282009,
+        "y": -129.23572894906755
       }
     }
   ],
   "edges": [
     {
-      "id": "xy-edge__09593AVsDAiL7nrPUx97o-YOdJeLLsEeDqBPepXHyXk",
-      "source": "09593AVsDAiL7nrPUx97o",
-      "target": "YOdJeLLsEeDqBPepXHyXk"
+      "id": "xy-edge__zcdlSGaGitdmE6rNj4qzK-pI-_Ln7CFZrwGYtiPcxGu",
+      "source": "zcdlSGaGitdmE6rNj4qzK",
+      "target": "pI-_Ln7CFZrwGYtiPcxGu"
     }
   ]
 }

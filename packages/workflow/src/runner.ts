@@ -152,74 +152,62 @@ type NodeExec =
 
 function resolveNodeExec(node: WorkflowNode, allEdges: WorkflowEdge[]): NodeExec {
   const d = node.data as Record<string, unknown>
+  const nodeType = d.nodeType as string | undefined
+  const nd = (d.node ?? {}) as Record<string, unknown>
+  const params = (nd.parameters ?? {}) as Record<string, unknown>
+  const instructions = d.instructions as string | undefined
 
-  // ── Legacy format ────────────────────────────────────────────────────────────
-  if (d.type === "input") return { kind: "input", fields: (d.fields as any[]) ?? [] }
-  if (d.type === "skill_load") return { kind: "skill_load", skill: d.skill as string, storeAs: d.storeAs as string | undefined }
-  if (d.type === "tool_call") return { kind: "tool_call", tool: d.tool as string, args: (d.args as Record<string, string>) ?? {}, agentArgs: (d.agentArgs as string[]) ?? [], output: d.output as string | undefined }
-  if (d.type === "agent") return { kind: "agent", prompt: d.prompt as string, output: d.output as string | undefined }
-  if (d.type === "decide") return { kind: "decide", prompt: d.prompt as string, branches: d.branches as string[] }
-  if (d.type === "output") return { kind: "output", message: d.message as string | undefined }
+  if (nodeType === "start") {
+    const inputData = d.data as Record<string, unknown> | undefined
+    return { kind: "input", fields: (inputData?.inputs as any[]) ?? [] }
+  }
 
-  // ── Unified / visual format (type: "workflow") ───────────────────────────────
-  if ((node as any).type === "workflow") {
-    const nodeType = d.nodeType as string | undefined
-    const nd = (d.node ?? {}) as Record<string, unknown>
-    const params = (nd.parameters ?? {}) as Record<string, unknown>
-    const instructions = d.instructions as string | undefined
+  if (nodeType === "prompt") {
+    const prompt = instructions ?? (nd.parameters != null ? String((nd as any).parameters?.prompt ?? "") : "")
+    const output = (nd as any).parameters?.output != null ? String((nd as any).parameters.output) : undefined
+    return { kind: "agent", prompt, output }
+  }
 
-    if (nodeType === "start") {
-      const inputData = d.data as Record<string, unknown> | undefined
-      return { kind: "input", fields: (inputData?.inputs as any[]) ?? [] }
-    }
+  const actionId = nd.action_id as string | undefined
 
-    if (nodeType === "prompt") {
-      const prompt = instructions ?? (nd.parameters != null ? String((nd as any).parameters?.prompt ?? "") : "")
-      const output = (nd as any).parameters?.output != null ? String((nd as any).parameters.output) : undefined
-      return { kind: "agent", prompt, output }
+  if (actionId === "skill_load") {
+    return {
+      kind: "skill_load",
+      skill: String(params.name ?? params.skill ?? ""),
+      storeAs: params.storeAs != null ? String(params.storeAs) : undefined,
     }
-
-    const actionId = nd.action_id as string | undefined
-
-    if (actionId === "skill_load") {
-      return {
-        kind: "skill_load",
-        skill: String(params.name ?? params.skill ?? ""),
-        storeAs: params.storeAs != null ? String(params.storeAs) : undefined,
-      }
+  }
+  if (actionId === "skill_list") {
+    return {
+      kind: "skill_list_all",
+      output: params.output != null ? String(params.output) : undefined,
     }
-    if (actionId === "skill_list") {
-      return {
-        kind: "skill_list_all",
-        output: params.output != null ? String(params.output) : undefined,
-      }
+  }
+  if (actionId === "agent") {
+    const prompt = instructions ?? (params.prompt != null ? String(params.prompt) : "")
+    return { kind: "agent", prompt, output: params.output != null ? String(params.output) : undefined }
+  }
+  if (actionId === "decide") {
+    const prompt = instructions ?? (params.prompt != null ? String(params.prompt) : "")
+    const outEdges = allEdges.filter((e) => e.source === node.id)
+    const branches = outEdges.map((e) => e.label).filter(Boolean) as string[]
+    return { kind: "decide", prompt, branches }
+  }
+  if (actionId === "output") {
+    const message = instructions ?? (params.message != null ? String(params.message) : undefined)
+    return { kind: "output", message: message || undefined }
+  }
+  if (actionId) {
+    const args: Record<string, string> = {}
+    for (const [k, v] of Object.entries(params)) {
+      if (k !== "output" && k !== "agentArgs") args[k] = String(v)
     }
-    if (actionId === "agent") {
-      const prompt = instructions ?? (params.prompt != null ? String(params.prompt) : "")
-      return { kind: "agent", prompt, output: params.output != null ? String(params.output) : undefined }
-    }
-    if (actionId === "decide") {
-      const prompt = instructions ?? (params.prompt != null ? String(params.prompt) : "")
-      const outEdges = allEdges.filter((e) => e.source === (node as any).id)
-      const branches = outEdges.map((e) => e.label).filter(Boolean) as string[]
-      return { kind: "decide", prompt, branches }
-    }
-    if (actionId === "output") {
-      const message = instructions ?? (params.message != null ? String(params.message) : undefined)
-      return { kind: "output", message: message || undefined }
-    }
-    if (actionId) {
-      const args: Record<string, string> = {}
-      for (const [k, v] of Object.entries(params)) {
-        if (k !== "output" && k !== "agentArgs") args[k] = String(v)
-      }
-      return {
-        kind: "tool_call",
-        tool: actionId,
-        args,
-        agentArgs: Array.isArray(d.agentArgs) ? (d.agentArgs as string[]) : [],
-        output: params.output != null ? String(params.output) : undefined,
-      }
+    return {
+      kind: "tool_call",
+      tool: actionId,
+      args,
+      agentArgs: Array.isArray(d.agentArgs) ? (d.agentArgs as string[]) : [],
+      output: params.output != null ? String(params.output) : undefined,
     }
   }
 
@@ -313,11 +301,7 @@ export async function runWorkflow({
   // Collect root nodes (no incoming edges) in declaration order.
   // Explicit start nodes come first, then any remaining roots.
   const rootNodes: WorkflowNode[] = []
-  const legacyStart = workflow.nodes.find((n) => n.type === "input")
-  const unifiedStart = workflow.nodes.find(
-    (n) => (n as any).type === "workflow" && (n.data as any).nodeType === "start"
-  )
-  const explicitStart = legacyStart ?? unifiedStart
+  const explicitStart = workflow.nodes.find((n) => (n.data as any).nodeType === "start")
   if (explicitStart) {
     rootNodes.push(explicitStart)
   }

@@ -1,0 +1,8 @@
+{
+  "name": "workflow_list",
+  "description": "List all workflow definitions available in this project. Returns an array of workflows with their id, name, description, and node/edge counts.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {}
+  }
+}

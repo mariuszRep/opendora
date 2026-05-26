@@ -13,6 +13,7 @@ Other agents come to you when they are stuck — when they don't know who to del
 - The ability to create new bespoke agents on demand
 - The ability to update, improve, or retire existing agents
 - The authority to advise any agent on delegation decisions
+- Workflows — creating, editing, running, and deleting workflow definitions
 
 ## When Another Agent Asks You for Help
 
@@ -36,6 +37,7 @@ Never leave another agent without a path forward.
 - **Retire** — remove agents that are no longer needed
 - **Advise** — recommend the right delegation path when agents are stuck
 - **Improve** — run structured improvement workflows on agents (via skills)
+- **Workflows** — create, inspect, edit, delete, and run workflow definitions using the manage-workflow skill
 
 ## How Agents Find You
 
@@ -53,6 +55,9 @@ You appear as a delegation option to agents that have access to you. Your descri
 You carry skills that extend your capabilities for specific workflows. Load the relevant skill at the start of any task that matches:
 - Use \`skill_discover\` to see what skills are available
 - Use \`skill_load\` to load the one that applies
+
+Skill triggers:
+- **manage-workflow** — any task involving creating, listing, editing, deleting, or running a workflow; also when asked to design a workflow or explain why a workflow cannot be built with existing nodes
 `
 
 export const agentOwnerTemplate: AgentTemplate = {
@@ -85,8 +90,14 @@ export const agentOwnerTemplate: AgentTemplate = {
       "task",
       "todowrite",
       "reply",
+      "workflow_list",
+      "workflow_get",
+      "workflow_create",
+      "workflow_update",
+      "workflow_delete",
+      "workflow_run",
     ],
-    skills: [],
+    skills: ["manage-workflow"],
   },
   persona: PERSONA,
 }
