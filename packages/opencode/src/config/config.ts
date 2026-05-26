@@ -1174,6 +1174,13 @@ export namespace Config {
             .min(0)
             .optional()
             .describe("Token buffer for compaction. Leaves enough window to avoid overflow during compaction."),
+          modelLimits: z
+            .record(
+              z.string(),
+              z.object({ context: z.number().int().positive().optional() }),
+            )
+            .optional()
+            .describe("Per-model context window overrides (key format: 'providerID/modelID'). Use when a model's context window is unknown or incorrect."),
         })
         .optional(),
       experimental: z

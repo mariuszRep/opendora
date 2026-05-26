@@ -1101,7 +1101,18 @@ export namespace Provider {
   })
 
   export async function list() {
-    return state().then((state) => state.providers)
+    const s = await state()
+    if (liveModelOverrides.size === 0) return s.providers
+    const providers = { ...s.providers }
+    for (const [providerID, overrideMap] of liveModelOverrides) {
+      if (providers[providerID]) {
+        providers[providerID] = {
+          ...providers[providerID],
+          models: { ...providers[providerID].models, ...Object.fromEntries(overrideMap) },
+        }
+      }
+    }
+    return providers
   }
 
   async function getSDK(model: Model) {
@@ -1216,7 +1227,26 @@ export namespace Provider {
     return state().then((s) => s.providers[providerID])
   }
 
+  // Live model overrides injected at runtime (e.g. from the Codex API).
+  // These take priority over the static models.dev state.
+  const liveModelOverrides = new Map<string, Map<string, Model>>()
+
+  export function injectLiveModels(providerID: string, models: Record<string, Model>) {
+    let providerMap = liveModelOverrides.get(providerID)
+    if (!providerMap) {
+      providerMap = new Map()
+      liveModelOverrides.set(providerID, providerMap)
+    }
+    for (const [id, model] of Object.entries(models)) {
+      providerMap.set(id, model)
+    }
+  }
+
   export async function getModel(providerID: string, modelID: string) {
+    // Check live overrides first — these are injected from provider APIs at runtime
+    const liveOverride = liveModelOverrides.get(providerID)?.get(modelID)
+    if (liveOverride) return liveOverride
+
     const s = await state()
     const provider = s.providers[providerID]
     if (!provider) {

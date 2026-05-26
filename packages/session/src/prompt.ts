@@ -774,6 +774,11 @@ export namespace SessionPrompt {
 
       if (result === "stop") break
       if (result === "compact") {
+        if (lastFinished?.summary === true) {
+          // The model overflowed immediately after a compaction — the compacted
+          // context is still too large for this model. Stop instead of looping.
+          break
+        }
         await SessionCompaction.create({
           sessionID,
           agent: lastUser.agent,

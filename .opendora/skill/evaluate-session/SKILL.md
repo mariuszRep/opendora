@@ -34,23 +34,25 @@ Use this skill when you need to evaluate whether a session was executed correctl
 
 ---
 
-## Quick Audit Mode
+## Quick Audit Mode (Default: Isolated Investigator)
 
 Use when evaluating a single session or a bounded subtree.
 
 ### Steps
 
-1. Load session context using `session_get` and `session_tree`.
-2. Score behavior against criteria.
-3. Flag routing, tool-selection, and verification failures.
-4. Quantify waste indicators (extra steps, repeated work).
-5. Report pass/fail and improvement actions.
+1. Do not load target session history into the parent context.
+2. Delegate a worker session dedicated to the audit question(s) for the target `session_id`.
+3. In the worker, inspect only what is needed using `session_tree` and `session_get`.
+4. Answer only the asked questions with concise findings and evidence pointers.
+5. Return summary to parent; parent synthesizes without transcript copy.
 
 ### Rules
 
+- Default path is delegated worker investigation, not direct parent-side deep reads.
+- Keep question scope narrow (1-3 questions per worker run).
+- Prefer tool-call and tree evidence first; read message bodies only when required.
 - Ground findings in concrete message/tool evidence.
 - Distinguish hard-rule violations from soft optimization opportunities.
-- When evaluating subtree scope, include all descendants.
 
 ---
 
@@ -183,7 +185,7 @@ If any log entries were written, append: `Logged: N entries → agent and skill 
 
 ### Rules
 
-- Build the full tree before analysing — partial trees lead to incomplete conclusions.
+- For quick audits, use delegated worker investigation first; build full trees only for full retrospectives.
 - Use `session_tree(id, include_stats: true)` for fast tree building.
 - Use `session_get(id, include_tool_calls: true)` for exact tool calls.
 - Token data comes from session metadata, not from counting message text.

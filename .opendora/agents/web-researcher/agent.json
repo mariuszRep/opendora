@@ -3,8 +3,8 @@
   "description": "General-purpose web research specialist for discovery, source verification, and concise synthesis from current web information.",
   "mode": "worker",
   "model": {
-    "modelID": "gpt-5.4-mini",
-    "providerID": "openai-codex"
+    "modelID": "3957ba01-cf45-4ecb-9b39-2acda3ca530a",
+    "providerID": "fallback"
   },
   "temperature": 0.3,
   "steps": 60,

@@ -19,7 +19,7 @@ const log = Log.create({ service: "provider.routes" })
 
 // Codex models fetched from the live API, refreshed on startup and hourly.
 // Kept at module level so the route handler never blocks on a network call.
-type CodexModel = Record<string, unknown>
+type CodexModel = Provider.Model
 let codexModelsCache: Record<string, CodexModel> | null = null
 
 async function refreshCodexModels() {
@@ -48,6 +48,7 @@ async function refreshCodexModels() {
     const models: Record<string, CodexModel> = {}
     for (const model of payload.models ?? []) {
       if (model.visibility === "hide" || model.supported_in_api === false) continue
+      const ctx = model.context_window ?? 400_000
       models[model.slug] = {
         id: model.slug,
         name: model.display_name || model.slug,
@@ -55,11 +56,19 @@ async function refreshCodexModels() {
         api: { id: model.slug, url: "https://chatgpt.com/backend-api/codex", npm: "@ai-sdk/openai" },
         cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
         limit: {
-          context: model.context_window ?? 400_000,
-          input: Math.floor((model.context_window ?? 400_000) * 0.68),
-          output: Math.min(128_000, Math.floor((model.context_window ?? 400_000) * 0.32)),
+          context: ctx,
+          input: Math.floor(ctx * 0.68),
+          output: Math.min(128_000, Math.floor(ctx * 0.32)),
         },
-        capabilities: { temperature: false, reasoning: true, attachment: false, toolcall: true },
+        capabilities: {
+          temperature: false,
+          reasoning: true,
+          attachment: false,
+          toolcall: true,
+          input: { text: true, audio: false, image: false, video: false, pdf: false },
+          output: { text: true, audio: false, image: false, video: false, pdf: false },
+          interleaved: false,
+        },
         status: "active",
         options: {},
         headers: {},
@@ -68,6 +77,7 @@ async function refreshCodexModels() {
       }
     }
     codexModelsCache = models
+    Provider.injectLiveModels("openai-codex", models)
     log.info("codex models refreshed", { count: Object.keys(models).length })
   } catch (error) {
     log.warn("codex models refresh failed", { error })

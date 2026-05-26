@@ -40,21 +40,34 @@ export namespace SessionCompaction {
       const config = await configSvc.get()
       if (config.compaction?.auto === false) return false
     }
-    const context = input.model.limit?.context
-    if (!context || context === 0) return false
+    const rawContext = input.model.limit?.context
+    const configSvc2 = cfg.config
+    const configVal = configSvc2 ? await configSvc2.get() : null
+
+    // Allow per-model context window overrides in config:
+    //   compaction.modelLimits: { "providerID/modelID": { context: 200000 } }
+    const modelKey = `${input.model.providerID}/${input.model.id}`
+    const configLimit = configVal?.compaction?.modelLimits?.[modelKey]?.context
+    const context = configLimit ?? rawContext
+
+    // When the model's context window is unknown (0 or missing), use a conservative
+    // 100K fallback rather than disabling the check entirely. This ensures proactive
+    // compaction still fires for models whose limits aren't in the database.
+    const FALLBACK_CONTEXT = 100_000
+    const effectiveContext = (!context || context === 0) ? FALLBACK_CONTEXT : context
 
     const count =
       input.tokens.total ||
       input.tokens.input + input.tokens.output + input.tokens.cache.read + input.tokens.cache.write
 
+    if (!count) return false   // no token data yet — can't determine overflow
+
     // maxOutputTokens approximation — clamp to OUTPUT_TOKEN_MAX to match what llm.ts actually requests
     const maxOutput = Math.min(input.model.limit?.output ?? COMPACTION_BUFFER, LLM.OUTPUT_TOKEN_MAX)
-    const configSvc2 = cfg.config
-    const configVal = configSvc2 ? await configSvc2.get() : null
     const reserved = configVal?.compaction?.reserved ?? Math.min(COMPACTION_BUFFER, maxOutput)
     const usable = input.model.limit?.input
       ? input.model.limit.input - reserved
-      : context - maxOutput
+      : effectiveContext - maxOutput
     return count >= usable
   }
 
@@ -283,6 +296,25 @@ When constructing the summary, try to stick to this template:
           })
         } catch { /* never let token tracking break compaction */ }
       })()
+
+    if (result === "compact") {
+      // The compaction model itself hit a context overflow — the conversation is
+      // too large to summarize. Add an explanatory message and stop to avoid an
+      // infinite compaction loop.
+      await input.updatePart({
+        id: Identifier.ascending("part"),
+        messageID: msg.id,
+        sessionID: input.sessionID,
+        type: "text",
+        text: "Context window limit reached during compaction. The conversation is too long for the model to summarize. Please start a new session.",
+        synthetic: false,
+        time: { start: Date.now(), end: Date.now() },
+      })
+      msg.finish = "stop"
+      msg.time = { ...msg.time, completed: Date.now() }
+      await input.updateMessage(msg)
+      return "stop"
+    }
 
     if (result === "continue" && input.auto) {
       const continueMsg = await input.updateMessage({

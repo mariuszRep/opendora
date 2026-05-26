@@ -2,6 +2,7 @@
   "tools": [
     "session_search",
     "session_get",
-    "session_tree"
+    "session_tree",
+    "delegate"
   ]
 }

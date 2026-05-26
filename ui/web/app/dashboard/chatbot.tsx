@@ -353,18 +353,39 @@ export const Chatbot = () => {
 
   // Use actual token usage from session (provider-accurate)
   const tokenUsage = useMemo(() => {
-    // First try to use session tokens
-    if (selectedSession?.tokens && (selectedSession.tokens.input > 0 || selectedSession.tokens.output > 0)) {
+    // Use the last completed assistant message's per-call token count.
+    // This is the same value isOverflow() uses for compaction decisions, so the
+    // display stays consistent with what the backend considers "full".
+    // The session-level accumulated total is deliberately NOT used here: it grows
+    // unboundedly (every API call adds the full context size again) and gives a
+    // meaningless percentage once the session has more than a handful of turns.
+    const lastAssistant = [...messages]
+      .reverse()
+      .find((m) => {
+        if (m.info.role !== "assistant") return false
+        if ((m.info as any).summary) return false  // skip compaction summaries
+        const t = (m.info as any).tokens
+        if (!t) return false
+        return (t.total ?? 0) > 0 || t.input > 0 || t.output > 0
+      })
+
+    if (lastAssistant) {
+      const t = (lastAssistant.info as any).tokens as {
+        input: number; output: number; reasoning?: number
+        cache?: { read: number; write: number }; total?: number
+      }
+      const total = t.total ?? (t.input + t.output + (t.cache?.read ?? 0) + (t.cache?.write ?? 0))
       return {
-        inputTokens: selectedSession.tokens.input,
-        outputTokens: selectedSession.tokens.output,
-        cachedTokens: selectedSession.tokens.cacheRead,
-        reasoningTokens: 0, // Backend doesn't track reasoning separately yet
-        totalTokens: selectedSession.tokens.input + selectedSession.tokens.output + (selectedSession.tokens.cacheRead ?? 0),
+        inputTokens: t.input,
+        outputTokens: t.output,
+        cachedTokens: t.cache?.read ?? 0,
+        reasoningTokens: t.reasoning ?? 0,
+        totalTokens: total,
       }
     }
 
-    // Fallback: estimate tokens from messages
+    // Fallback: text-length estimate from visible message content only.
+    // This misses system prompts and tool results, so it always underestimates.
     let inputTokens = 0
     let outputTokens = 0
 
@@ -385,7 +406,7 @@ export const Chatbot = () => {
       reasoningTokens: 0,
       totalTokens: inputTokens + outputTokens,
     }
-  }, [selectedSession, messages])
+  }, [messages])
 
   useEffect(() => {
     const agent = agents.find((a) => (a as any)._id === selectedAgent)

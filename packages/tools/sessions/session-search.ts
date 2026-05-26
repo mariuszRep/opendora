@@ -126,6 +126,14 @@ export const SessionSearchTool = Tool.define("session_search", {
       // Glob patterns need client-side matching; plain terms are handled server-side
       const useGlobMatching = params.query ? isGlobPattern(params.query) : false
 
+      // Whether any filter is applied client-side after sessionSvc.list returns
+      const hasClientSideFilter =
+        useGlobMatching ||
+        !!params.session_type ||
+        !!params.status ||
+        !!effectiveAgentId ||
+        excludeIds.size > 0
+
       // Search for sessions using filters
       const sessions: any[] = []
       const searchOptions: any = {
@@ -134,7 +142,10 @@ export const SessionSearchTool = Tool.define("session_search", {
         start: params.start_after,
         // Pass query to server only for plain substring search; glob queries are applied client-side
         search: params.query && !useGlobMatching ? params.query : undefined,
-        limit: params.limit,
+        // Only push limit down to storage when nothing is filtered client-side;
+        // otherwise the underlying LIMIT truncates before our filters run and we
+        // can lose matching sessions.
+        limit: hasClientSideFilter ? undefined : params.limit,
       }
 
       for await (const session of sessionSvc.list(searchOptions)) {
@@ -152,6 +163,7 @@ export const SessionSearchTool = Tool.define("session_search", {
         }
 
         sessions.push(session)
+        if (params.limit && sessions.length >= params.limit) break
       }
 
       if (sessions.length === 0) {
