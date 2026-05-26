@@ -1,4 +1,4 @@
-import { MessageSquare, Play, Wrench, type LucideIcon } from 'lucide-react'
+import { MessageSquare, Wrench, type LucideIcon } from 'lucide-react'
 import type { NodeType } from './unified-node'
 
 export interface NodeTypeMetadata {
@@ -13,16 +13,6 @@ export interface NodeTypeMetadata {
 }
 
 export const NODE_TYPE_REGISTRY: Record<NodeType, NodeTypeMetadata> = {
-  start: {
-    type: 'start',
-    label: 'Start',
-    description: 'Workflow entry point with input fields',
-    icon: Play,
-    defaultNodeData: {
-      node: { label: 'Start', description: 'Workflow entry point' },
-      data: { inputs: [], outputs: [] },
-    },
-  },
   tool: {
     type: 'tool',
     label: 'Tool',

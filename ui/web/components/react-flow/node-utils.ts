@@ -1,8 +1,7 @@
 import type { NodeType, WorkflowNodeData } from './unified-node'
 
 export function resolveNodeType(nodeData: WorkflowNodeData): NodeType {
-  if (nodeData.nodeType === 'start') return 'start'
-  return 'tool'
+  return nodeData.nodeType ?? 'tool'
 }
 
 export function normalizeNodeName(label: string): string {

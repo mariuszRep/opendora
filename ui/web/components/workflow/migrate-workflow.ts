@@ -1,5 +1,5 @@
 import type { Workflow } from '@/lib/opendora'
-import type { WorkflowNodeData, NodeType, ParameterSchema } from '@/components/react-flow/unified-node'
+import type { WorkflowNodeData, NodeType } from '@/components/react-flow/unified-node'
 
 const LEGACY_TYPES = new Set(['input', 'skill_load', 'tool_call', 'agent', 'decide', 'output', 'stage', 'action'])
 
@@ -21,21 +21,14 @@ function migrateNode(node: Workflow['nodes'][number]): Workflow['nodes'][number]
   let description: string | undefined
   let action_id: string | undefined
   let parameters: Record<string, unknown> | undefined
-  let inputs: ParameterSchema[] = []
+  const inputs: import('@/components/react-flow/unified-node').ParameterSchema[] = []
   let instructions: string | undefined
 
   switch (node.type) {
     case 'input': {
-      nodeType = 'start'
+      nodeType = 'prompt'
       label = 'Start'
       description = 'Workflow entry point'
-      const fields = (d.fields as Array<{ name: string; type: string; required?: boolean; description?: string }> | undefined) ?? []
-      inputs = fields.map((f) => ({
-        name: f.name,
-        type: (f.type ?? 'string') as ParameterSchema['type'],
-        required: f.required ?? true,
-        description: f.description,
-      }))
       break
     }
 

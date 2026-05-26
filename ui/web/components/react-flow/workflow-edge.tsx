@@ -13,8 +13,7 @@ import type { NodeType, WorkflowNodeData } from './unified-node'
 
 const getNodeTypeFromNode = (node: InternalNode<Node>): NodeType => {
   const data = node.data as WorkflowNodeData | null
-  if (data?.nodeType === 'start') return 'start'
-  return 'tool'
+  return data?.nodeType ?? 'tool'
 }
 
 const getHandleSchemaPosition = (

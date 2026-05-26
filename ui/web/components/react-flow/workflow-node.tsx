@@ -58,10 +58,6 @@ export function WorkflowNode({ data, selected }: NodeProps) {
             <WorkflowNodeDescription className="text-sm line-clamp-2 mt-1">
               {nodeData.node.label}
             </WorkflowNodeDescription>
-          ) : nodeType === 'start' ? (
-            <WorkflowNodeDescription className="text-sm line-clamp-2 mt-1">
-              Entry point
-            </WorkflowNodeDescription>
           ) : nodeType === 'prompt' ? (
             nodeData.instructions ? (
               <WorkflowNodeDescription className="text-sm line-clamp-2 mt-1 whitespace-pre-wrap break-words">

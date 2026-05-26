@@ -24,7 +24,7 @@ import {
   ComboboxList,
 } from '@/components/ui/combobox'
 import { cn } from '@/lib/utils'
-import { Trash2, Save, X, GitBranch, Workflow as WorkflowIcon, Map as MapIcon, PlusIcon } from 'lucide-react'
+import { Trash2, Save, X, GitBranch, Workflow as WorkflowIcon, Map as MapIcon } from 'lucide-react'
 import { WorkflowControls, WorkflowControlButton } from '@/components/react-flow'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Node, Edge } from '@xyflow/react'
@@ -181,12 +181,6 @@ export function WorkflowEditDrawer({
 
   const getAvailableTabs = () => {
     if (editType === 'node') {
-      if (editingNodeData?.nodeType === 'start') {
-        return [
-          { value: 'general', label: 'General' },
-          { value: 'inputs', label: 'Inputs' },
-        ]
-      }
       if (editingNodeData?.nodeType === 'prompt') {
         return [{ value: 'general', label: 'General' }]
       }
@@ -260,7 +254,6 @@ export function WorkflowEditDrawer({
           setFormData((prev) => ({ ...prev, label: updated.node.label, action_id: updated.node.action_id }))
         }
 
-        const isStartNode = editingNodeData.nodeType === 'start'
         const isPromptNode = editingNodeData.nodeType === 'prompt'
         const selectedSchema = schemas.find((s) => s.id === editingNodeData.node.action_id)
 
@@ -324,8 +317,7 @@ export function WorkflowEditDrawer({
 
           return (
             <div className="space-y-4">
-              {!isStartNode && (
-                <div className="space-y-2">
+              <div className="space-y-2">
                   <Label>Tool</Label>
                   <Combobox
                     value={editingNodeData.node.action_id ?? null}
@@ -373,7 +365,6 @@ export function WorkflowEditDrawer({
                     <p className="text-xs text-muted-foreground">{selectedSchema?.description ?? BUILTIN_SCHEMAS[editingNodeData.node.action_id ?? '']?.description}</p>
                   )}
                 </div>
-              )}
 
               <div className="space-y-2">
                 <Label htmlFor="node-label">Label</Label>
@@ -385,8 +376,7 @@ export function WorkflowEditDrawer({
                 />
               </div>
 
-              {!isStartNode && (
-                <div className="space-y-2">
+              <div className="space-y-2">
                   <Label htmlFor="node-description">Description</Label>
                   <Textarea
                     id="node-description"
@@ -396,119 +386,11 @@ export function WorkflowEditDrawer({
                     rows={2}
                   />
                 </div>
-              )}
-
-              {isStartNode && (
-                <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                  This is the workflow entry point. Define the fields users fill in when running this workflow in the <strong>Inputs</strong> tab.
-                </div>
-              )}
             </div>
           )
         }
 
         if (activeTab === 'inputs') {
-          if (isStartNode) {
-            const fields = editingNodeData.data.inputs
-            const setFields = (updated: typeof fields) => {
-              setEditingNodeData({ ...editingNodeData, data: { ...editingNodeData.data, inputs: updated } })
-            }
-            return (
-              <div className="space-y-3">
-                {fields.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-4">
-                    No input fields yet. Add one below.
-                  </p>
-                )}
-                {fields.map((field, i) => (
-                  <div key={i} className="rounded-md border p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 space-y-1">
-                        <Label className="text-xs">Name</Label>
-                        <Input
-                          className="h-7 text-xs font-mono"
-                          value={field.name}
-                          onChange={(e) => {
-                            const next = [...fields]
-                            next[i] = { ...next[i], name: e.target.value }
-                            setFields(next)
-                          }}
-                          placeholder="field_name"
-                        />
-                      </div>
-                      <div className="w-28 space-y-1">
-                        <Label className="text-xs">Type</Label>
-                        <Select
-                          value={field.type}
-                          onValueChange={(v) => {
-                            const next = [...fields]
-                            next[i] = { ...next[i], type: v as typeof field.type }
-                            setFields(next)
-                          }}
-                        >
-                          <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {(['string','number','boolean','object','array'] as const).map((t) => (
-                              <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Req.</Label>
-                        <div className="h-7 flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={field.required !== false}
-                            onChange={(e) => {
-                              const next = [...fields]
-                              next[i] = { ...next[i], required: e.target.checked }
-                              setFields(next)
-                            }}
-                            className="rounded"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs opacity-0 select-none">Del</Label>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => setFields(fields.filter((_, j) => j !== i))}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Description</Label>
-                      <Input
-                        className="h-7 text-xs"
-                        value={field.description ?? ''}
-                        onChange={(e) => {
-                          const next = [...fields]
-                          next[i] = { ...next[i], description: e.target.value || undefined }
-                          setFields(next)
-                        }}
-                        placeholder="Optional hint shown to the user"
-                      />
-                    </div>
-                  </div>
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-1.5"
-                  onClick={() => setFields([...fields, { name: '', type: 'string', required: true }])}
-                >
-                  <PlusIcon className="h-3.5 w-3.5" />
-                  Add field
-                </Button>
-              </div>
-            )
-          }
-
           const actionId = editingNodeData.node.action_id ?? ''
           const builtin = BUILTIN_SCHEMAS[actionId]
           const properties = selectedSchema?.inputSchema?.properties ?? builtin?.properties ?? {}
@@ -753,7 +635,7 @@ export function WorkflowEditDrawer({
 
               <div className="ml-auto flex items-center gap-1 min-w-0 shrink-0">
                 {onDelete && (editType === 'node' || editType === 'edge') &&
-                  !(editType === 'node' && data?.node && (data.node.data as WorkflowNodeData).nodeType === 'start') && (
+                  (editType === 'node' || editType === 'edge') && (
                     <Button variant="ghost" size="icon" onClick={onDelete} disabled={isSaving} title="Delete">
                       <Trash2 className="h-4 w-4" />
                     </Button>

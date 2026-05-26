@@ -34,32 +34,9 @@ export interface NodeConstraints {
   exposedFields: string[]
 }
 
-// start  → tool(s) via bottom handle (unlimited)
-// tool   ← start or tool via top handle (single input)
-// tool   → tool(s) via bottom handle (unlimited)
+// tool   ← tool or prompt via top handle
+// tool   → tool(s) or prompt(s) via bottom handle (unlimited)
 export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
-  start: {
-    handles: [
-      {
-        id: null,
-        position: 'bottom',
-        type: 'source',
-        connections: {
-          canConnectTo: [
-            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
-          ],
-        },
-      },
-    ],
-    constraints: {
-      allowedInboundEdges: 0,
-      allowedOutboundEdges: 'unlimited',
-      hiddenFields: [],
-      requiredFields: ['label'],
-      exposedFields: ['inputSchema'],
-    },
-  },
   tool: {
     handles: [
       {
@@ -68,7 +45,6 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
         type: 'target',
         connections: {
           canReceiveFrom: [
-            { nodeType: 'start', handleId: null, maxConnections: 'unlimited' },
             { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
             { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
           ],
@@ -102,7 +78,6 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
         type: 'target',
         connections: {
           canReceiveFrom: [
-            { nodeType: 'start', handleId: null, maxConnections: 'unlimited' },
             { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
             { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
           ],

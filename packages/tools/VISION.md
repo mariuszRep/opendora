@@ -12,6 +12,10 @@ Every tool in this package is described by a `tool.json` file that is fully comp
 
 ---
 
+## Package Boundary
+
+`packages/tools` owns tool definitions, schemas, registries, execution adapters, and tool-facing permission surfaces. It is used by `runtime` to execute tool calls and may use `storage` when tool definitions or tool state must be persisted. It does not own the public API server, agent run loop, workflow semantics, or physical storage backend choice.
+
 ## Target shape — per tool
 
 ```

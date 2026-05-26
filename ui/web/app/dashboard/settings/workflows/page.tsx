@@ -67,15 +67,8 @@ export default function WorkflowsPage() {
         name: newName.trim(),
         description: newDescription.trim() || undefined,
         version: "1.0.0",
-        nodes: [
-          { id: "start",   type: "input",  data: { type: "input",  fields: [] },                               position: { x: 200, y: 0   } },
-          { id: "process", type: "agent",  data: { type: "agent",  prompt: "Process the input.", output: "result" }, position: { x: 200, y: 140 } },
-          { id: "done",    type: "output", data: { type: "output" },                                            position: { x: 200, y: 280 } },
-        ],
-        edges: [
-          { id: "e1", source: "start",   target: "process" },
-          { id: "e2", source: "process", target: "done"    },
-        ],
+        nodes: [],
+        edges: [],
       }
       await opendora.workflow.create(stub)
       setCreateOpen(false)
