@@ -10,7 +10,7 @@
       },
       "include_messages": {
         "type": "boolean",
-        "default": true,
+        "default": false,
         "description": "Include the full message content of the session"
       },
       "message_limit": {

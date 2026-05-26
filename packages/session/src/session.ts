@@ -840,7 +840,12 @@ export namespace Session {
       await unshare(sessionID).catch(() => {})
       await sessionManager.delete(sessionID)
     } catch (e) {
+      if (NotFoundError.isInstance(e)) {
+        // Session already deleted - treat as success (idempotent)
+        return
+      }
       log.error("[session] remove error:", e)
+      throw e
     }
   })
 

@@ -858,6 +858,7 @@ export namespace Server {
             sessionType: params.session_type,
             agentID: resolvedAgentID,
             ownerKind: "service",
+            parentSessionID: sourceSessionID,
           })
         } else if (resolvedAgentID) {
           targetSession = await Session.ensureMainSession(resolvedAgentID)
