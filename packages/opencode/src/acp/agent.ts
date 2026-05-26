@@ -190,6 +190,14 @@ export namespace ACP {
 
     private async handleEvent(event: Event) {
       switch (event.type) {
+        case "session.updated": {
+          const info = (event.properties as any).info
+          if (info?.id && !this.sessionManager.tryGet(info.id)) {
+            this.sessionManager.register(info.id, info.directory ?? process.cwd())
+          }
+          return
+        }
+
         case "message.updated": {
           const info = event.properties.info
           if (info.role === "assistant" || info.role === "user") {

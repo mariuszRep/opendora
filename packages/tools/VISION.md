@@ -16,6 +16,15 @@ Every tool in this package is described by a `tool.json` file that is fully comp
 
 `packages/tools` owns tool definitions, schemas, registries, execution adapters, and tool-facing permission surfaces. It is used by `runtime` to execute tool calls and may use `storage` when tool definitions or tool state must be persisted. It does not own the public API server, agent run loop, workflow semantics, or physical storage backend choice.
 
+## Access Surface Boundary
+
+Tools are the LLM-facing access surface for managed package operations. When a tool manages agents, skills, schedules, workflows, sessions, tools, or similar domains, it must call the same canonical package operation used by server/SDK access instead of owning separate domain behavior.
+
+```
+LLM tool -> host/runtime/server -> canonical package operation
+SDK/API  -> server            -> same canonical package operation
+```
+
 ## Target shape — per tool
 
 ```

@@ -12,6 +12,7 @@ Workflow owns reusable process definitions and workflow domain behavior.
 - Workflow schema and validation.
 - Workflow steps, triggers, and execution rules.
 - Workflow run state contracts.
+- Workflow-run linkage to sessions.
 
 ## Does Not Own
 
@@ -33,5 +34,10 @@ Workflow owns reusable process definitions and workflow domain behavior.
 ## Boundary Rules
 
 - Workflow defines process structure.
+- Workflow runs are captured through sessions or session-linked run records.
 - Runtime coordinates live execution.
 - Storage persists definitions and run state through stable contracts.
+
+## Canonical Operations
+
+Workflow management tools, SDK routes, runtime flows, and package integrations must use the package-owned workflow operations for create, read, update, delete, list, validate, and run/dispatch behavior.

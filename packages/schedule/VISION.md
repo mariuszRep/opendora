@@ -12,6 +12,7 @@ Schedule owns time-based and recurring execution definitions for OpenDora.
 - Cron/time rules and trigger configuration.
 - Schedule lifecycle: create, enable, disable, update, delete.
 - Dispatch contracts for scheduled work.
+- Schedule-run linkage to sessions.
 
 ## Does Not Own
 
@@ -36,5 +37,10 @@ Schedule owns time-based and recurring execution definitions for OpenDora.
 ## Boundary Rules
 
 - Schedule decides when work should be triggered.
+- A schedule run creates or resumes a session so scheduled work is captured in the same format as normal agent work.
 - Runtime decides how triggered work is executed.
 - Storage decides where schedules and trigger history are persisted.
+
+## Canonical Operations
+
+Schedule management tools, SDK routes, runtime flows, and package integrations must use the package-owned schedule operations for create, read, update, delete, list, enable/disable, and trigger behavior.

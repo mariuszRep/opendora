@@ -34,3 +34,7 @@ Skills owns reusable capability definitions that can be loaded into agent/runtim
 
 - Skills describe reusable capability context.
 - Runtime decides when skills are loaded into a run.
+
+## Canonical Operations
+
+Skill management tools, SDK routes, runtime flows, and package integrations must use the package-owned skill operations for create, read, update, delete, list, search, install, and load behavior.

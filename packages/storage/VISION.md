@@ -12,10 +12,11 @@ Storage is the persistence abstraction layer for OpenDora domain packages.
 - Backend adapters such as JSON files, SQLite, Postgres, or future stores.
 - Storage selection and configuration.
 - Common persistence behavior needed across domains.
+- Persistence support for the universal session/run capture format.
 
 ## Does Not Own
 
-- Domain behavior for agents, skills, tools, workflows, schedules, or sessions.
+- Domain behavior for agents, skills, providers, tools, workflows, schedules, or sessions.
 - Runtime orchestration.
 - Public API routes.
 
@@ -27,6 +28,7 @@ Storage is the persistence abstraction layer for OpenDora domain packages.
 
 - agent
 - skills
+- provider
 - tools
 - workflow
 - schedule
@@ -39,3 +41,7 @@ Storage is the persistence abstraction layer for OpenDora domain packages.
 - Domain packages ask storage to persist domain records through stable contracts.
 - Domain packages should not care whether data is stored in JSON, SQLite, Postgres, or another backend.
 - Storage preserves persistence mechanics; domains preserve business meaning.
+
+## Canonical Operations
+
+Domain packages, tools, server routes, and runtime flows must use storage-owned persistence contracts instead of directly choosing JSON, SQLite, Postgres, or another backend.

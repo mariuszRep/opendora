@@ -32,3 +32,7 @@ Auth owns identity: who the caller is.
 
 - Auth answers identity questions only.
 - Permission answers access questions.
+
+## Canonical Operations
+
+Auth SDK routes, server checks, runtime flows, and package integrations must use the package-owned auth operations for identity extraction, token/API-key handling, and identity lifecycle behavior.

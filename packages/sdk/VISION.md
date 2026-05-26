@@ -9,7 +9,7 @@ The SDK is the typed client boundary used by apps and external consumers to comm
 ## Owns
 
 - API client construction and configuration.
-- Typed request/response methods.
+- Typed request/response methods over server endpoints backed by package-owned canonical operations.
 - Transport concerns such as base URL, auth headers, streaming helpers, and normalized API errors.
 
 ## Does Not Own
@@ -34,3 +34,4 @@ The SDK is the typed client boundary used by apps and external consumers to comm
 
 - Apps call the SDK instead of hand-writing server calls.
 - SDK talks to server APIs only.
+- SDK methods are app-facing wrappers over canonical package operations exposed through the server.

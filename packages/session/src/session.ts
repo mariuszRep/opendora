@@ -432,6 +432,9 @@ export namespace Session {
     if (!input.parentID && (process.env.OPENCODE_AUTO_SHARE || config.share === "auto"))
       share(id).catch(() => {})
 
+    // Publish so ACP can register the session and not drop subsequent message events.
+    cfg.bus?.publish(Event.Updated, { info: result })
+
     return result
   }
 

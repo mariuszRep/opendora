@@ -11,6 +11,7 @@ Agent owns OpenDora agent definitions and agent-facing metadata.
 - Agent definitions, roles, and metadata.
 - Agent templates and configuration shape.
 - Agent discovery/loading contracts.
+- Agent-run linkage to sessions.
 
 ## Does Not Own
 
@@ -33,3 +34,8 @@ Agent owns OpenDora agent definitions and agent-facing metadata.
 
 - Agent defines what an agent is.
 - Runtime decides when and how an agent runs.
+- Agent runs are captured through sessions or session-linked run records.
+
+## Canonical Operations
+
+Agent management tools, SDK routes, runtime flows, and package integrations must use the package-owned agent operations for create, read, update, delete, list, and load behavior.

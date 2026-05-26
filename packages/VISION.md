@@ -19,6 +19,7 @@ apps
       -> runtime
         -> agent
         -> skills
+        -> provider
         -> tools
         -> workflow
         -> schedule
@@ -26,6 +27,7 @@ apps
 
 agent     -> storage
 skills    -> storage
+provider  -> storage
 tools     -> storage
 workflow  -> storage
 schedule  -> storage
@@ -39,6 +41,21 @@ session   -> storage
 - Server is the public API boundary and coordinates auth, permission, and runtime.
 - Auth identifies the caller.
 - Permission decides what the caller may do across domains.
-- Runtime orchestrates execution across agents, skills, tools, workflows, schedules, and sessions.
+- Runtime orchestrates execution across agents, skills, providers, tools, workflows, schedules, and sessions.
+- Session is the universal run-capture format for agent runs, workflow runs, schedule-triggered runs, and other executable work.
 - Domain packages own their domain behavior and use storage through stable persistence contracts.
 - Storage decides physical persistence: JSON, SQLite, Postgres, or another backend.
+
+
+## Canonical Operations
+
+Managed packages expose canonical domain operations as the single source of behavior.
+SDK/API routes, LLM tools, runtime flows, and approved package integrations must reuse those operations instead of duplicating domain logic.
+
+```text
+UI/app -> SDK -> server route -> canonical package operation
+LLM tool -> host/runtime/server -> same canonical package operation
+runtime/internal flow -> same canonical package operation where allowed
+```
+
+Tools are an LLM-facing access surface. SDK methods are an app-facing access surface. Both must converge on the same package-owned operation.

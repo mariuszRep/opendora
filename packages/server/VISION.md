@@ -12,6 +12,7 @@ The server is the public backend API boundary for OpenDora.
 - Request validation and response shaping.
 - Coordination of auth, permission, runtime, and domain services.
 - API contract exposed to the SDK.
+- Server endpoints that wrap package-owned canonical operations.
 
 ## Does Not Own
 
@@ -35,3 +36,4 @@ The server is the public backend API boundary for OpenDora.
 
 - Server is the only backend surface the SDK talks to.
 - Server coordinates domains; it does not absorb their ownership.
+- Server routes must call package-owned canonical operations rather than reimplementing domain behavior.

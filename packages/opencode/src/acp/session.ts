@@ -17,6 +17,18 @@ export class ACPSessionManager {
     return this.sessions.get(sessionId)
   }
 
+  /** Lightweight registration — no API call. Used when the server creates a session proactively
+   * (e.g. workflow worker sessions) so that subsequent message events are not dropped. */
+  register(sessionId: string, cwd: string): void {
+    if (this.sessions.has(sessionId)) return
+    this.sessions.set(sessionId, {
+      id: sessionId,
+      cwd,
+      mcpServers: [],
+      createdAt: new Date(),
+    })
+  }
+
   async create(cwd: string, mcpServers: McpServer[], model?: ACPSessionState["model"]): Promise<ACPSessionState> {
     const session = await this.sdk.session
       .create(

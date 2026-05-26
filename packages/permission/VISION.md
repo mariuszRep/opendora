@@ -33,3 +33,7 @@ Permission owns authorization policy across OpenDora domains.
 
 - Permission receives an identity and an action/resource question.
 - Permission returns an authorization decision; it does not perform the action.
+
+## Canonical Operations
+
+Permission tools, SDK routes, server checks, runtime flows, and package integrations must use the package-owned permission operations for authorization decisions.
