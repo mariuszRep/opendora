@@ -16,17 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
 import { opendora, type Workflow } from "@/lib/opendora"
-
-const NODE_TYPE_COLORS: Record<string, string> = {
-  input:      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  skill_load: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
-  tool_call:  "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  agent:      "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  decide:     "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-  output:     "bg-muted text-muted-foreground",
-}
 
 export default function WorkflowsPage() {
   const router = useRouter()
@@ -114,35 +104,15 @@ export default function WorkflowsPage() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 items-stretch">
-            {filtered.map((w) => {
-              const types = Array.from(new Set(w.nodes.map((n) => n.type)))
-              return (
-                <SettingsCard
-                  key={w.id}
-                  title={w.name}
-                  description={w.description}
-                  onClick={() => router.push(`/dashboard/settings/workflows/${w.id}`)}
-                  footer={
-                    <div className="flex items-center justify-between gap-2 w-full">
-                      <span className="text-xs text-muted-foreground truncate">
-                        {w.nodes.length} nodes · {w.edges.length} edges · v{w.version}
-                      </span>
-                      <div className="flex flex-wrap items-center gap-1.5 justify-end">
-                        {types.map((t) => (
-                          <span
-                            key={t}
-                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${NODE_TYPE_COLORS[t] ?? "bg-muted text-muted-foreground"}`}
-                          >
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  }
-                />
-              )
-            })}
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {filtered.map((w) => (
+              <SettingsCard
+                key={w.id}
+                title={w.name}
+                description={w.description || "No description"}
+                onClick={() => router.push(`/dashboard/settings/workflows/${w.id}`)}
+              />
+            ))}
           </div>
         )}
       </div>

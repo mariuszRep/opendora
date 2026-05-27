@@ -1,5 +1,39 @@
 import { z } from "zod"
 
+// ─── Decide Node ──────────────────────────────────────────────────────────────
+
+export const DecideOp = z.enum([
+  "equals", "not_equals",
+  "in", "not_in",
+  "contains", "not_contains",
+  "matches", "not_matches",
+  "gt", "gte", "lt", "lte",
+  "exists", "not_exists",
+  "is_empty", "is_not_empty",
+])
+export type DecideOp = z.infer<typeof DecideOp>
+
+export const DecideWhen = z.object({
+  op: DecideOp,
+  value: z.unknown().optional(),
+})
+export type DecideWhen = z.infer<typeof DecideWhen>
+
+export const DecideCase = z.object({
+  label: z.string(),
+  when: DecideWhen.optional(),
+})
+export type DecideCase = z.infer<typeof DecideCase>
+
+export const DecideParameters = z.object({
+  mode: z.enum(["agent", "deterministic"]).default("agent"),
+  input: z.string().optional(),
+  cases: z.array(DecideCase).default([]),
+  default: z.string().optional(),
+  output: z.string().optional(),
+})
+export type DecideParameters = z.infer<typeof DecideParameters>
+
 // ─── Node + Edge ──────────────────────────────────────────────────────────────
 
 export const WorkflowNode = z.object({

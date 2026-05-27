@@ -1,7 +1,7 @@
 import { Session } from "@opendora/session/session"
 import { SessionPrompt } from "@opendora/session/prompt"
 import { Identifier } from "@opendora/util/id"
-import { Workflow, WorkflowEdge, resolveRefs, resolveTemplate } from "./schema.ts"
+import { Workflow, WorkflowEdge, resolveRef, resolveRefs, resolveTemplate } from "./schema.ts"
 
 export type WorkflowToolContext = {
   sessionID: string
@@ -79,6 +79,28 @@ async function agentPrompt(sessionId: string, text: string): Promise<string> {
     .map((p: any) => p.text ?? "")
     .join("")
     .trim()
+}
+
+function evaluateWhen(op: string, actual: unknown, expected: unknown): boolean {
+  switch (op) {
+    case "equals":      return actual === expected
+    case "not_equals":  return actual !== expected
+    case "in":          return Array.isArray(expected) && expected.includes(actual)
+    case "not_in":      return Array.isArray(expected) && !expected.includes(actual)
+    case "contains":    return typeof actual === "string" && typeof expected === "string" && actual.includes(expected)
+    case "not_contains":return typeof actual === "string" && typeof expected === "string" && !actual.includes(expected)
+    case "matches":     return typeof actual === "string" && typeof expected === "string" && new RegExp(expected).test(actual)
+    case "not_matches": return typeof actual === "string" && typeof expected === "string" && !new RegExp(expected).test(actual)
+    case "gt":          return typeof actual === "number" && typeof expected === "number" && actual > expected
+    case "gte":         return typeof actual === "number" && typeof expected === "number" && actual >= expected
+    case "lt":          return typeof actual === "number" && typeof expected === "number" && actual < expected
+    case "lte":         return typeof actual === "number" && typeof expected === "number" && actual <= expected
+    case "exists":      return actual != null
+    case "not_exists":  return actual == null
+    case "is_empty":    return (typeof actual === "string" || Array.isArray(actual)) ? actual.length === 0 : false
+    case "is_not_empty":return (typeof actual === "string" || Array.isArray(actual)) ? actual.length > 0 : false
+    default:            return false
+  }
 }
 
 function buildAdjacency(edges: WorkflowEdge[]): Map<string, WorkflowEdge[]> {
@@ -166,17 +188,60 @@ export async function runWorkflow({
       result = output
 
       await injectMessage(sessionId, [{ type: "tool", tool: actionId, input: resolvedArgs, output }], directory)
+
+    } else if (d.nodeType === "decide") {
+      const mode = (params.mode as string) ?? "agent"
+      const cases = Array.isArray(params.cases)
+        ? (params.cases as Array<{ label: string; when?: { op: string; value?: unknown } }>)
+        : []
+      const defaultLabel = params.default as string | undefined
+
+      if (mode === "deterministic") {
+        const inputExpr = params.input as string | undefined
+        if (!inputExpr) throw new Error(`Decide node "${currentId}": deterministic mode requires an input expression`)
+        const inputVal = resolveRef(inputExpr, input, ctx)
+        const matched = cases.find((c) => c.when && evaluateWhen(c.when.op, inputVal, c.when.value))
+        result = matched?.label ?? defaultLabel
+        if (!result) {
+          throw new Error(
+            `Decide node "${currentId}": no case matched for input "${String(inputVal)}" (expression: ${inputExpr}). ` +
+            `Cases: ${cases.map((c) => `${c.label}(${c.when?.op} ${JSON.stringify(c.when?.value)})`).join(", ")}`
+          )
+        }
+      } else {
+        const labelList = cases.map((c) => c.label).join(", ")
+        const inputContext = Object.keys(input).length > 0
+          ? `\nInput parameters: ${JSON.stringify(input)}`
+          : ""
+        const ctxContext = Object.keys(ctx).length > 0
+          ? `\nWorkflow context: ${JSON.stringify(ctx)}`
+          : ""
+        const raw = await agentPrompt(
+          sessionId,
+          `You are routing a workflow. Choose the correct branch based on the available data.${inputContext}${ctxContext}\n\nReply with exactly one of these labels (nothing else): ${labelList}`,
+        )
+        const normalizedRaw = raw.trim().toLowerCase()
+        const matched = cases.find((c) => c.label.toLowerCase() === normalizedRaw)
+        result = matched?.label ?? defaultLabel
+      }
+
+      if (!result) {
+        throw new Error(`Decide node "${currentId}": agent returned "${String(result)}" which matched no case label and no default is defined`)
+      }
     }
 
     if (storeAs !== undefined && result !== undefined) ctx[storeAs] = result
 
-    // Labeled edges support decide-style routing: match result to edge label
     const edges = adjacency.get(currentId) ?? []
-    const labeled = edges.filter((e) => e.label)
-    const next =
-      labeled.length > 0 && result
-        ? (labeled.find((e) => result!.toLowerCase().includes(e.label!.toLowerCase()))?.target ?? edges[0]?.target)
-        : edges[0]?.target
+    let next: string | undefined
+
+    if (d.nodeType === "decide") {
+      const chosen = result?.toLowerCase()
+      next = edges.find((e) => e.label?.toLowerCase() === chosen)?.target
+      if (!next) throw new Error(`Decide node "${currentId}": no outgoing edge for label "${result}"`)
+    } else {
+      next = edges[0]?.target
+    }
 
     if (next) queue.push(next)
   }

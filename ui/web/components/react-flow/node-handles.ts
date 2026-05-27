@@ -34,10 +34,10 @@ export interface NodeConstraints {
   exposedFields: string[]
 }
 
-// tool   ← tool, prompt, or parameters via top handle
-// tool   → tool(s) or prompt(s) via bottom handle (unlimited)
+// tool   ← tool, prompt, parameters, or decide via top handle
+// tool   → tool(s), prompt(s), or decide(s) via bottom handle (unlimited)
 export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
-  tool: {
+  decide: {
     handles: [
       {
         id: null,
@@ -48,6 +48,7 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
             { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
             { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
             { nodeType: 'parameters', handleId: null, maxConnections: 1 },
+            { nodeType: 'decide', handleId: null, maxConnections: 'unlimited' },
           ],
         },
       },
@@ -59,6 +60,43 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
           canConnectTo: [
             { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
             { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'decide', handleId: null, maxConnections: 'unlimited' },
+          ],
+        },
+      },
+    ],
+    constraints: {
+      allowedInboundEdges: 'unlimited',
+      allowedOutboundEdges: 'unlimited',
+      hiddenFields: [],
+      requiredFields: ['label'],
+      exposedFields: ['parameters'],
+    },
+  },
+  tool: {
+    handles: [
+      {
+        id: null,
+        position: 'top',
+        type: 'target',
+        connections: {
+          canReceiveFrom: [
+            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'parameters', handleId: null, maxConnections: 1 },
+            { nodeType: 'decide', handleId: null, maxConnections: 'unlimited' },
+          ],
+        },
+      },
+      {
+        id: null,
+        position: 'bottom',
+        type: 'source',
+        connections: {
+          canConnectTo: [
+            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'decide', handleId: null, maxConnections: 'unlimited' },
           ],
         },
       },
@@ -82,6 +120,7 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
             { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
             { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
             { nodeType: 'parameters', handleId: null, maxConnections: 1 },
+            { nodeType: 'decide', handleId: null, maxConnections: 'unlimited' },
           ],
         },
       },
@@ -93,6 +132,7 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
           canConnectTo: [
             { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
             { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'decide', handleId: null, maxConnections: 'unlimited' },
           ],
         },
       },
@@ -115,6 +155,7 @@ export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
           canConnectTo: [
             { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
             { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
+            { nodeType: 'decide', handleId: null, maxConnections: 'unlimited' },
           ],
         },
       },

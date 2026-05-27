@@ -1,4 +1,4 @@
-export type NodeType = 'tool' | 'prompt' | 'parameters'
+export type NodeType = 'tool' | 'prompt' | 'parameters' | 'decide'
 
 export type ExecutionMode = 'automatic' | 'manual'
 

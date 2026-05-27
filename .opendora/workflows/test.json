@@ -5,15 +5,62 @@
   "version": "1.0.0",
   "nodes": [
     {
-      "id": "zcdlSGaGitdmE6rNj4qzK",
+      "id": "F0RQjVTE6X0ojs6XOP9ER",
       "type": "workflow",
       "data": {
-        "nodeType": "tool",
+        "nodeType": "parameters",
         "node": {
-          "label": "Tool",
+          "label": "Parameters",
+          "description": ""
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "agentArgs": [],
+        "workflowParameters": [
+          {
+            "name": "Colour",
+            "type": "string",
+            "description": "",
+            "required": true
+          }
+        ]
+      },
+      "position": {
+        "x": -1256.4111358811156,
+        "y": -688.101720145507
+      }
+    },
+    {
+      "id": "r5hLwAqU_Jp3BP5GqWzXs",
+      "type": "workflow",
+      "data": {
+        "nodeType": "decide",
+        "node": {
+          "label": "Decide",
           "description": "",
-          "action_id": "skill_list",
-          "parameters": {}
+          "parameters": {
+            "mode": "deterministic",
+            "cases": [
+              {
+                "label": "Prompt1",
+                "when": {
+                  "op": "equals",
+                  "value": "red"
+                }
+              },
+              {
+                "label": "Prompt2",
+                "when": {
+                  "op": "equals",
+                  "value": "blue"
+                }
+              }
+            ],
+            "output": "",
+            "input": "$input.Colour"
+          }
         },
         "data": {
           "inputs": [],
@@ -22,12 +69,12 @@
         "agentArgs": []
       },
       "position": {
-        "x": -1021.3141673282005,
-        "y": -413.03908476156755
+        "x": -1142.0513333730682,
+        "y": -534.8551033268375
       }
     },
     {
-      "id": "pI-_Ln7CFZrwGYtiPcxGu",
+      "id": "GcDOImtMuOUa3OncSFWyb",
       "type": "workflow",
       "data": {
         "nodeType": "prompt",
@@ -39,20 +86,53 @@
           "inputs": [],
           "outputs": []
         },
-        "instructions": "how many skills",
+        "instructions": "why red is the best",
         "agentArgs": []
       },
       "position": {
-        "x": -940.9722921282007,
-        "y": -218.81524894906755
+        "x": -1273.0744171311153,
+        "y": -326.9157826455069
+      }
+    },
+    {
+      "id": "KGBDXud0COkqriWAm4QSE",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "node": {
+          "label": "Prompt",
+          "description": ""
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "instructions": "why blue is the best",
+        "agentArgs": []
+      },
+      "position": {
+        "x": -780.4650421311155,
+        "y": -324.5321888955069
       }
     }
   ],
   "edges": [
     {
-      "id": "xy-edge__zcdlSGaGitdmE6rNj4qzK-pI-_Ln7CFZrwGYtiPcxGu",
-      "source": "zcdlSGaGitdmE6rNj4qzK",
-      "target": "pI-_Ln7CFZrwGYtiPcxGu"
+      "id": "xy-edge__F0RQjVTE6X0ojs6XOP9ER-r5hLwAqU_Jp3BP5GqWzXs",
+      "source": "F0RQjVTE6X0ojs6XOP9ER",
+      "target": "r5hLwAqU_Jp3BP5GqWzXs"
+    },
+    {
+      "id": "xy-edge__r5hLwAqU_Jp3BP5GqWzXs-GcDOImtMuOUa3OncSFWyb",
+      "source": "r5hLwAqU_Jp3BP5GqWzXs",
+      "target": "GcDOImtMuOUa3OncSFWyb",
+      "label": "Prompt1"
+    },
+    {
+      "id": "xy-edge__r5hLwAqU_Jp3BP5GqWzXs-KGBDXud0COkqriWAm4QSE",
+      "source": "r5hLwAqU_Jp3BP5GqWzXs",
+      "target": "KGBDXud0COkqriWAm4QSE",
+      "label": "Prompt2"
     }
   ]
 }

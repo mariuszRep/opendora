@@ -1,561 +1,153 @@
-INFO  2026-05-27T06:31:36 +653ms service=default version=local args=["serve","--port","4097","--hostname","0.0.0.0"] opencode
-INFO  2026-05-27T06:31:36 +1ms service=config path=/home/mariu/projects/opendora/.opendora/config.json loading
-INFO  2026-05-27T06:31:36 +2ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.json loading
-INFO  2026-05-27T06:31:36 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.jsonc loading
-INFO  2026-05-27T06:31:36 +3ms service=db path=/home/mariu/projects/opendora/.opendora/storage/opendora.db opening database
-INFO  2026-05-27T06:31:36 +22ms service=db count=19 mode=dev applying migrations
-INFO  2026-05-27T06:31:36 +71ms service=server Browser control server started
-INFO  2026-05-27T06:31:36 +167ms service=provider.routes count=5 codex models refreshed
-INFO  2026-05-27T06:44:16 +760412ms service=server method=GET path=/workflow/product-orchestrator-deterministic-v1 request
-INFO  2026-05-27T06:44:16 +1ms service=server status=started method=GET path=/workflow/product-orchestrator-deterministic-v1 request
-INFO  2026-05-27T06:44:16 +1ms service=default directory=/home/mariu/projects/opendora creating instance
-INFO  2026-05-27T06:44:16 +0ms service=project directory=/home/mariu/projects/opendora fromDirectory
-INFO  2026-05-27T06:44:16 +2ms service=server method=GET path=/session request
-INFO  2026-05-27T06:44:16 +0ms service=server status=started method=GET path=/session request
-INFO  2026-05-27T06:44:16 +0ms service=server method=GET path=/provider request
-INFO  2026-05-27T06:44:16 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-05-27T06:44:16 +0ms service=server method=GET path=/agent request
-INFO  2026-05-27T06:44:16 +0ms service=server status=started method=GET path=/agent request
-INFO  2026-05-27T06:44:16 +0ms service=server method=GET path=/question request
-INFO  2026-05-27T06:44:16 +0ms service=server status=started method=GET path=/question request
-INFO  2026-05-27T06:44:16 +25ms service=default directory=/home/mariu/projects/opendora bootstrapping
-DEBUG 2026-05-27T06:44:16 +20ms service=config path=/home/mariu/projects/opendora/.opendora loading config from OPENCODE_CONFIG_DIR
-DEBUG 2026-05-27T06:44:16 +1ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.jsonc
-INFO  2026-05-27T06:44:16 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.jsonc loading
-DEBUG 2026-05-27T06:44:16 +0ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.json
-INFO  2026-05-27T06:44:16 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.json loading
-INFO  2026-05-27T06:44:16 +36ms service=server method=GET path=/config request
-INFO  2026-05-27T06:44:16 +0ms service=server status=started method=GET path=/config request
-INFO  2026-05-27T06:44:16 +45ms service=plugin name=CodexAuthPlugin loading internal plugin
-INFO  2026-05-27T06:44:16 +1ms service=plugin name=CopilotAuthPlugin loading internal plugin
-INFO  2026-05-27T06:44:16 +0ms service=plugin name=gitlabAuthPlugin loading internal plugin
-INFO  2026-05-27T06:44:16 +1ms service=plugin name=googleOAuthPlugin loading internal plugin
-INFO  2026-05-27T06:44:16 +0ms service=plugin path=opencode-anthropic-auth@0.0.13 loading plugin
-INFO  2026-05-27T06:44:16 +15ms service=bus type=* subscribing
-INFO  2026-05-27T06:44:16 +1ms service=bus type=session.updated subscribing
-INFO  2026-05-27T06:44:16 +0ms service=bus type=message.updated subscribing
-INFO  2026-05-27T06:44:16 +0ms service=bus type=message.part.updated subscribing
-INFO  2026-05-27T06:44:16 +0ms service=bus type=session.diff subscribing
-INFO  2026-05-27T06:44:16 +0ms service=format init
-INFO  2026-05-27T06:44:16 +0ms service=bus type=file.edited subscribing
-INFO  2026-05-27T06:44:16 +1ms service=lsp serverIds=deno, typescript, vue, eslint, oxlint, biome, gopls, ruby-lsp, pyright, elixir-ls, zls, csharp, fsharp, sourcekit-lsp, rust, clangd, svelte, astro, jdtls, kotlin-ls, yaml-ls, lua-ls, php intelephense, prisma, dart, ocaml-lsp, bash, terraform, texlab, dockerfile, gleam, clojure-lsp, nixd, tinymist, haskell-language-server, julials enabled LSP servers
-INFO  2026-05-27T06:44:16 +0ms service=file.watcher init
-INFO  2026-05-27T06:44:17 +208ms service=scheduler id=snapshot.cleanup run
-INFO  2026-05-27T06:44:17 +1ms service=scheduler id=tool.truncation.cleanup run
-INFO  2026-05-27T06:44:17 +1ms service=bus type=command.executed subscribing
-INFO  2026-05-27T06:44:17 +1ms service=file.watcher platform=linux backend=inotify watcher backend
-ERROR 2026-05-27T06:44:17 +1ms service=file.watcher error=OPENCODE_LIBC is not defined failed to load watcher binding
-INFO  2026-05-27T06:44:17 +8ms service=provider status=started state
-INFO  2026-05-27T06:44:17 +2ms service=skill dirs=["/home/mariu/projects/opendora/.opendora/skill"] watching skill directories
-INFO  2026-05-27T06:44:17 +36ms service=provider init
-INFO  2026-05-27T06:44:17 +1ms service=server status=completed duration=405 method=GET path=/question request
-INFO  2026-05-27T06:44:17 +0ms service=server status=completed duration=323 method=GET path=/config request
-INFO  2026-05-27T06:44:17 +1ms service=server status=completed duration=406 method=GET path=/session request
-INFO  2026-05-27T06:44:17 +7ms service=server status=completed duration=417 method=GET path=/workflow/product-orchestrator-deterministic-v1 request
-INFO  2026-05-27T06:44:17 +123ms service=vcs branch=demo initialized
-INFO  2026-05-27T06:44:17 +1ms service=bus type=file.watcher.updated subscribing
-INFO  2026-05-27T06:44:17 +174ms service=server method=GET path=/schedule request
-INFO  2026-05-27T06:44:17 +1ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-27T06:44:17 +3ms service=server status=completed duration=2 method=GET path=/schedule request
-INFO  2026-05-27T06:44:17 +12ms service=server method=GET path=/session/status request
-INFO  2026-05-27T06:44:17 +0ms service=server status=started method=GET path=/session/status request
-INFO  2026-05-27T06:44:17 +1ms service=server status=completed duration=1 method=GET path=/session/status request
-INFO  2026-05-27T06:44:17 +1ms service=server method=GET path=/provider/timeout request
-INFO  2026-05-27T06:44:17 +0ms service=server status=started method=GET path=/provider/timeout request
-INFO  2026-05-27T06:44:17 +4ms service=server status=completed duration=4 method=GET path=/provider/timeout request
-INFO  2026-05-27T06:44:17 +182ms service=server status=completed duration=915 method=GET path=/agent request
-INFO  2026-05-27T06:44:17 +108ms service=server method=GET path=/event request
-INFO  2026-05-27T06:44:17 +0ms service=server status=started method=GET path=/event request
-INFO  2026-05-27T06:44:17 +0ms service=server event connected
-INFO  2026-05-27T06:44:17 +5ms service=bus type=* subscribing
-INFO  2026-05-27T06:44:17 +1ms service=server status=completed duration=6 method=GET path=/event request
-INFO  2026-05-27T06:44:17 +99ms service=server method=GET path=/agent/tools/schema request
-INFO  2026-05-27T06:44:17 +0ms service=server status=started method=GET path=/agent/tools/schema request
-INFO  2026-05-27T06:44:17 +70ms service=mcp key=playwright type=local found
-INFO  2026-05-27T06:44:17 +26ms service=mcp key=playwright mcp stderr: [x11_nocrash] XSetErrorHandler installed
+INFO  2026-05-27T15:45:21 +987ms service=default version=local args=["serve","--port","4097","--hostname","0.0.0.0"] opencode
+INFO  2026-05-27T15:45:21 +1ms service=config path=/home/mariu/projects/opendora/.opendora/config.json loading
+INFO  2026-05-27T15:45:21 +3ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.json loading
+INFO  2026-05-27T15:45:21 +1ms service=config path=/home/mariu/projects/opendora/.opendora/opencode.jsonc loading
+INFO  2026-05-27T15:45:21 +28ms service=db path=/home/mariu/projects/opendora/.opendora/storage/opendora.db opening database
+INFO  2026-05-27T15:45:21 +26ms service=db count=19 mode=dev applying migrations
+INFO  2026-05-27T15:45:21 +139ms service=server Browser control server started
+INFO  2026-05-27T15:45:21 +100ms service=provider.routes count=5 codex models refreshed
+INFO  2026-05-27T15:46:23 +62498ms service=server method=GET path=/user request
+INFO  2026-05-27T15:46:23 +0ms service=server status=started method=GET path=/user request
+INFO  2026-05-27T15:46:23 +1ms service=default directory=/home/mariu/projects/opendora creating instance
+INFO  2026-05-27T15:46:23 +1ms service=project directory=/home/mariu/projects/opendora fromDirectory
+INFO  2026-05-27T15:46:23 +1ms service=server method=GET path=/general request
+INFO  2026-05-27T15:46:23 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-27T15:46:23 +1ms service=server method=GET path=/provider request
+INFO  2026-05-27T15:46:23 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-27T15:46:23 +25ms service=default directory=/home/mariu/projects/opendora bootstrapping
+DEBUG 2026-05-27T15:46:23 +7ms service=config path=/home/mariu/projects/opendora/.opendora loading config from OPENCODE_CONFIG_DIR
+DEBUG 2026-05-27T15:46:23 +0ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.jsonc
+INFO  2026-05-27T15:46:23 +0ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.jsonc loading
+DEBUG 2026-05-27T15:46:23 +2ms service=config loading config from /home/mariu/projects/opendora/.opendora/opendora.json
+INFO  2026-05-27T15:46:23 +5ms service=config path=/home/mariu/projects/opendora/.opendora/opendora.json loading
+INFO  2026-05-27T15:46:23 +61ms service=plugin name=CodexAuthPlugin loading internal plugin
+INFO  2026-05-27T15:46:23 +1ms service=plugin name=CopilotAuthPlugin loading internal plugin
+INFO  2026-05-27T15:46:23 +0ms service=plugin name=gitlabAuthPlugin loading internal plugin
+INFO  2026-05-27T15:46:23 +1ms service=plugin name=googleOAuthPlugin loading internal plugin
+INFO  2026-05-27T15:46:23 +0ms service=plugin path=opencode-anthropic-auth@0.0.13 loading plugin
+INFO  2026-05-27T15:46:23 +14ms service=bus type=* subscribing
+INFO  2026-05-27T15:46:23 +1ms service=bus type=session.updated subscribing
+INFO  2026-05-27T15:46:23 +0ms service=bus type=message.updated subscribing
+INFO  2026-05-27T15:46:23 +0ms service=bus type=message.part.updated subscribing
+INFO  2026-05-27T15:46:23 +0ms service=bus type=session.diff subscribing
+INFO  2026-05-27T15:46:23 +0ms service=format init
+INFO  2026-05-27T15:46:23 +0ms service=bus type=file.edited subscribing
+INFO  2026-05-27T15:46:23 +1ms service=lsp serverIds=deno, typescript, vue, eslint, oxlint, biome, gopls, ruby-lsp, pyright, elixir-ls, zls, csharp, fsharp, sourcekit-lsp, rust, clangd, svelte, astro, jdtls, kotlin-ls, yaml-ls, lua-ls, php intelephense, prisma, dart, ocaml-lsp, bash, terraform, texlab, dockerfile, gleam, clojure-lsp, nixd, tinymist, haskell-language-server, julials enabled LSP servers
+INFO  2026-05-27T15:46:23 +0ms service=file.watcher init
+INFO  2026-05-27T15:46:24 +198ms service=scheduler id=snapshot.cleanup run
+INFO  2026-05-27T15:46:24 +0ms service=scheduler id=tool.truncation.cleanup run
+INFO  2026-05-27T15:46:24 +1ms service=bus type=command.executed subscribing
+INFO  2026-05-27T15:46:24 +1ms service=file.watcher platform=linux backend=inotify watcher backend
+ERROR 2026-05-27T15:46:24 +1ms service=file.watcher error=OPENCODE_LIBC is not defined failed to load watcher binding
+INFO  2026-05-27T15:46:24 +6ms service=provider status=started state
+INFO  2026-05-27T15:46:24 +3ms service=skill dirs=["/home/mariu/projects/opendora/.opendora/skill"] watching skill directories
+INFO  2026-05-27T15:46:24 +25ms service=provider init
+INFO  2026-05-27T15:46:24 +4ms service=server status=completed duration=361 method=GET path=/user request
+INFO  2026-05-27T15:46:24 +2ms service=server status=completed duration=359 method=GET path=/general request
+INFO  2026-05-27T15:46:24 +77ms service=vcs branch=demo initialized
+INFO  2026-05-27T15:46:24 +0ms service=bus type=file.watcher.updated subscribing
+INFO  2026-05-27T15:46:24 +10ms service=server method=GET path=/session request
+INFO  2026-05-27T15:46:24 +0ms service=server status=started method=GET path=/session request
+INFO  2026-05-27T15:46:24 +17ms service=server status=completed duration=17 method=GET path=/session request
+INFO  2026-05-27T15:46:24 +13ms service=server method=GET path=/agent request
+INFO  2026-05-27T15:46:24 +0ms service=server status=started method=GET path=/agent request
+INFO  2026-05-27T15:46:24 +66ms service=server method=GET path=/question request
+INFO  2026-05-27T15:46:24 +0ms service=server status=started method=GET path=/question request
+INFO  2026-05-27T15:46:24 +1ms service=server status=completed duration=1 method=GET path=/question request
+INFO  2026-05-27T15:46:24 +0ms service=server method=GET path=/config request
+INFO  2026-05-27T15:46:24 +0ms service=server status=started method=GET path=/config request
+INFO  2026-05-27T15:46:24 +1ms service=server status=completed duration=1 method=GET path=/config request
+INFO  2026-05-27T15:46:24 +1ms service=server method=GET path=/schedule request
+INFO  2026-05-27T15:46:24 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-27T15:46:24 +1ms service=server status=completed duration=1 method=GET path=/schedule request
+INFO  2026-05-27T15:46:24 +0ms service=server method=GET path=/session/status request
+INFO  2026-05-27T15:46:24 +0ms service=server status=started method=GET path=/session/status request
+INFO  2026-05-27T15:46:24 +1ms service=server status=completed duration=1 method=GET path=/session/status request
+INFO  2026-05-27T15:46:24 +176ms service=server status=completed duration=247 method=GET path=/agent request
+INFO  2026-05-27T15:46:24 +203ms service=server method=GET path=/provider/timeout request
+INFO  2026-05-27T15:46:24 +0ms service=server status=started method=GET path=/provider/timeout request
+INFO  2026-05-27T15:46:24 +4ms service=server status=completed duration=4 method=GET path=/provider/timeout request
+INFO  2026-05-27T15:46:24 +10ms service=server method=GET path=/general request
+INFO  2026-05-27T15:46:24 +1ms service=server status=started method=GET path=/general request
+INFO  2026-05-27T15:46:24 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-27T15:46:25 +219ms service=server method=GET path=/event request
+INFO  2026-05-27T15:46:25 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-27T15:46:25 +1ms service=server event connected
+INFO  2026-05-27T15:46:25 +9ms service=bus type=* subscribing
+INFO  2026-05-27T15:46:25 +2ms service=server status=completed duration=12 method=GET path=/event request
+INFO  2026-05-27T15:46:25 +85ms service=server method=GET path=/event request
+INFO  2026-05-27T15:46:25 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-27T15:46:25 +0ms service=server event connected
+INFO  2026-05-27T15:46:25 +1ms service=bus type=* subscribing
+INFO  2026-05-27T15:46:25 +0ms service=server status=completed duration=1 method=GET path=/event request
+INFO  2026-05-27T15:46:25 +43ms service=server method=GET path=/general request
+INFO  2026-05-27T15:46:25 +0ms service=server status=started method=GET path=/general request
+INFO  2026-05-27T15:46:25 +1ms service=server status=completed duration=1 method=GET path=/general request
+INFO  2026-05-27T15:46:25 +184ms service=provider providerID=openai found
+INFO  2026-05-27T15:46:25 +1ms service=provider providerID=kilo found
+INFO  2026-05-27T15:46:25 +0ms service=provider providerID=openrouter found
+INFO  2026-05-27T15:46:25 +1ms service=provider providerID=opencode found
+INFO  2026-05-27T15:46:25 +0ms service=provider providerID=nvidia found
+INFO  2026-05-27T15:46:25 +0ms service=provider providerID=openai-codex found
+INFO  2026-05-27T15:46:25 +0ms service=provider providerID=google-gemini-cli found
+INFO  2026-05-27T15:46:25 +0ms service=provider providerID=ollama found
+INFO  2026-05-27T15:46:25 +0ms service=provider status=completed duration=1164 state
+INFO  2026-05-27T15:46:25 +172ms service=server status=completed duration=1661 method=GET path=/provider request
+WARN  2026-05-27T15:46:25 +122ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
+INFO  2026-05-27T15:46:26 +526ms service=server method=GET path=/schedule request
+INFO  2026-05-27T15:46:26 +0ms service=server status=started method=GET path=/schedule request
+INFO  2026-05-27T15:46:26 +2ms service=server status=completed duration=2 method=GET path=/schedule request
+INFO  2026-05-27T15:46:26 +0ms service=server method=GET path=/session/ses_197ade05cffeezE6XGhzxlIQHL/message request
+INFO  2026-05-27T15:46:26 +0ms service=server status=started method=GET path=/session/ses_197ade05cffeezE6XGhzxlIQHL/message request
+INFO  2026-05-27T15:46:26 +5ms service=server status=completed duration=5 method=GET path=/session/ses_197ade05cffeezE6XGhzxlIQHL/message request
+INFO  2026-05-27T15:46:26 +240ms service=server method=GET path=/event request
+INFO  2026-05-27T15:46:26 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-27T15:46:26 +1ms service=server event connected
+INFO  2026-05-27T15:46:26 +0ms service=bus type=* subscribing
+INFO  2026-05-27T15:46:26 +0ms service=server status=completed duration=1 method=GET path=/event request
+INFO  2026-05-27T15:46:28 +2346ms service=server method=GET path=/workflow request
+INFO  2026-05-27T15:46:28 +0ms service=server status=started method=GET path=/workflow request
+INFO  2026-05-27T15:46:28 +7ms service=server status=completed duration=7 method=GET path=/workflow request
+INFO  2026-05-27T15:46:28 +105ms service=server method=GET path=/workflow request
+INFO  2026-05-27T15:46:28 +0ms service=server status=started method=GET path=/workflow request
+INFO  2026-05-27T15:46:28 +3ms service=server status=completed duration=3 method=GET path=/workflow request
+INFO  2026-05-27T15:46:32 +3269ms service=server method=GET path=/workflow/test request
+INFO  2026-05-27T15:46:32 +0ms service=server status=started method=GET path=/workflow/test request
+INFO  2026-05-27T15:46:32 +3ms service=server status=completed duration=3 method=GET path=/workflow/test request
+INFO  2026-05-27T15:46:32 +118ms service=server method=GET path=/workflow/test request
+INFO  2026-05-27T15:46:32 +0ms service=server status=started method=GET path=/workflow/test request
+INFO  2026-05-27T15:46:32 +2ms service=server status=completed duration=2 method=GET path=/workflow/test request
+INFO  2026-05-27T15:46:32 +159ms service=server method=GET path=/agent/tools/schema request
+INFO  2026-05-27T15:46:32 +0ms service=server status=started method=GET path=/agent/tools/schema request
+INFO  2026-05-27T15:46:32 +111ms service=mcp key=playwright type=local found
+INFO  2026-05-27T15:46:32 +30ms service=mcp key=playwright mcp stderr: [x11_nocrash] XSetErrorHandler installed
 
-INFO  2026-05-27T06:44:17 +18ms service=provider providerID=openai found
-INFO  2026-05-27T06:44:17 +1ms service=provider providerID=kilo found
-INFO  2026-05-27T06:44:17 +1ms service=provider providerID=openrouter found
-INFO  2026-05-27T06:44:17 +0ms service=provider providerID=opencode found
-INFO  2026-05-27T06:44:17 +0ms service=provider providerID=nvidia found
-INFO  2026-05-27T06:44:17 +0ms service=provider providerID=openai-codex found
-INFO  2026-05-27T06:44:17 +0ms service=provider providerID=google-gemini-cli found
-INFO  2026-05-27T06:44:17 +0ms service=provider providerID=ollama found
-INFO  2026-05-27T06:44:17 +1ms service=provider status=completed duration=879 state
-INFO  2026-05-27T06:44:18 +173ms service=server status=completed duration=1418 method=GET path=/provider request
-INFO  2026-05-27T06:44:18 +298ms service=server method=GET path=/session/ses_1bb71af82ffegFGQa3slmzl2QC/message request
-INFO  2026-05-27T06:44:18 +1ms service=server status=started method=GET path=/session/ses_1bb71af82ffegFGQa3slmzl2QC/message request
-INFO  2026-05-27T06:44:18 +6ms service=server status=completed duration=6 method=GET path=/session/ses_1bb71af82ffegFGQa3slmzl2QC/message request
-WARN  2026-05-27T06:44:18 +123ms service=bun pkg=@opencode-ai/plugin cachedVersion=* Failed to resolve latest version, using cached
-INFO  2026-05-27T06:44:18 +202ms service=mcp key=playwright toolCount=22 create() successfully created client
-INFO  2026-05-27T06:44:18 +16ms service=server status=completed duration=936 method=GET path=/agent/tools/schema request
-INFO  2026-05-27T06:44:24 +5410ms service=snapshot prune=7.days cleanup
-INFO  2026-05-27T07:23:19 +2335616ms service=server method=GET path=/provider/timeout request
-INFO  2026-05-27T07:23:19 +0ms service=server status=started method=GET path=/provider/timeout request
-INFO  2026-05-27T07:23:19 +1ms service=server status=completed duration=1 method=GET path=/provider/timeout request
-INFO  2026-05-27T07:23:28 +8380ms service=server method=GET path=/workflow request
-INFO  2026-05-27T07:23:28 +0ms service=server status=started method=GET path=/workflow request
-INFO  2026-05-27T07:23:28 +4ms service=server status=completed duration=4 method=GET path=/workflow request
-INFO  2026-05-27T07:23:28 +50ms service=server method=GET path=/workflow request
-INFO  2026-05-27T07:23:28 +0ms service=server status=started method=GET path=/workflow request
-INFO  2026-05-27T07:23:28 +3ms service=server status=completed duration=2 method=GET path=/workflow request
-INFO  2026-05-27T07:23:49 +20880ms service=server method=POST path=/workflow request
-INFO  2026-05-27T07:23:49 +0ms service=server status=started method=POST path=/workflow request
-INFO  2026-05-27T07:23:49 +3ms service=server status=completed duration=3 method=POST path=/workflow request
-INFO  2026-05-27T07:23:49 +268ms service=server method=GET path=/workflow/mariusz request
-INFO  2026-05-27T07:23:49 +0ms service=server status=started method=GET path=/workflow/mariusz request
-INFO  2026-05-27T07:23:49 +1ms service=server status=completed duration=1 method=GET path=/workflow/mariusz request
-INFO  2026-05-27T07:23:49 +63ms service=server method=GET path=/workflow/mariusz request
-INFO  2026-05-27T07:23:49 +0ms service=server status=started method=GET path=/workflow/mariusz request
-INFO  2026-05-27T07:23:49 +1ms service=server status=completed duration=1 method=GET path=/workflow/mariusz request
-INFO  2026-05-27T07:23:52 +2702ms service=server method=PUT path=/workflow/mariusz request
-INFO  2026-05-27T07:23:52 +0ms service=server status=started method=PUT path=/workflow/mariusz request
-INFO  2026-05-27T07:23:52 +4ms service=server status=completed duration=4 method=PUT path=/workflow/mariusz request
-INFO  2026-05-27T07:24:18 +26689ms service=server method=PUT path=/workflow/mariusz request
-INFO  2026-05-27T07:24:18 +0ms service=server status=started method=PUT path=/workflow/mariusz request
-INFO  2026-05-27T07:24:18 +3ms service=server status=completed duration=3 method=PUT path=/workflow/mariusz request
-INFO  2026-05-27T07:24:20 +1815ms service=server method=GET path=/agent request
-INFO  2026-05-27T07:24:20 +0ms service=server status=started method=GET path=/agent request
-INFO  2026-05-27T07:24:20 +29ms service=server status=completed duration=29 method=GET path=/agent request
-INFO  2026-05-27T07:24:33 +12385ms service=server method=POST path=/workflow/mariusz/execute request
-INFO  2026-05-27T07:24:33 +0ms service=server status=started method=POST path=/workflow/mariusz/execute request
-INFO  2026-05-27T07:24:33 +15ms service=bus type=session.created publishing
-INFO  2026-05-27T07:24:33 +2ms service=bus type=session.updated publishing
-INFO  2026-05-27T07:24:33 +3ms service=bus type=message.updated publishing
-INFO  2026-05-27T07:24:33 +3ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T07:24:33 +1ms service=server status=completed duration=24 method=POST path=/workflow/mariusz/execute request
-INFO  2026-05-27T07:24:33 +202ms service=server method=GET path=/session/ses_197ade05cffeezE6XGhzxlIQHL/message request
-INFO  2026-05-27T07:24:33 +0ms service=server status=started method=GET path=/session/ses_197ade05cffeezE6XGhzxlIQHL/message request
-INFO  2026-05-27T07:24:33 +2ms service=server status=completed duration=2 method=GET path=/session/ses_197ade05cffeezE6XGhzxlIQHL/message request
-INFO  2026-05-27T07:24:36 +2836ms service=server method=GET path=/user request
-INFO  2026-05-27T07:24:36 +0ms service=server status=started method=GET path=/user request
-INFO  2026-05-27T07:24:36 +2ms service=server status=completed duration=2 method=GET path=/user request
-INFO  2026-05-27T07:24:36 +94ms service=server method=GET path=/general request
-INFO  2026-05-27T07:24:36 +1ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T07:24:36 +1ms service=server status=completed duration=1 method=GET path=/general request
-INFO  2026-05-27T07:24:36 +7ms service=server method=GET path=/event request
-INFO  2026-05-27T07:24:36 +0ms service=server status=started method=GET path=/event request
-INFO  2026-05-27T07:24:36 +0ms service=server event connected
-INFO  2026-05-27T07:24:36 +1ms service=bus type=* subscribing
-INFO  2026-05-27T07:24:36 +0ms service=server status=completed duration=1 method=GET path=/event request
-INFO  2026-05-27T07:24:36 +87ms service=server method=GET path=/user request
-INFO  2026-05-27T07:24:36 +0ms service=server status=started method=GET path=/user request
-INFO  2026-05-27T07:24:36 +0ms service=server status=completed duration=0 method=GET path=/user request
-INFO  2026-05-27T07:24:36 +0ms service=server method=GET path=/general request
-INFO  2026-05-27T07:24:36 +0ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T07:24:36 +1ms service=server status=completed duration=1 method=GET path=/general request
-INFO  2026-05-27T07:24:36 +83ms service=server method=GET path=/general request
-INFO  2026-05-27T07:24:36 +0ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T07:24:36 +1ms service=server status=completed duration=1 method=GET path=/general request
-INFO  2026-05-27T07:24:36 +89ms service=server method=GET path=/general request
-INFO  2026-05-27T07:24:36 +1ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T07:24:36 +0ms service=server status=completed duration=0 method=GET path=/general request
-INFO  2026-05-27T07:24:36 +64ms service=server method=GET path=/general request
-INFO  2026-05-27T07:24:36 +0ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T07:24:36 +2ms service=server status=completed duration=2 method=GET path=/general request
-INFO  2026-05-27T07:24:36 +98ms service=server method=GET path=/general request
-INFO  2026-05-27T07:24:36 +0ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T07:24:36 +1ms service=server status=completed duration=1 method=GET path=/general request
-INFO  2026-05-27T07:24:45 +9116ms service=server method=GET path=/user request
-INFO  2026-05-27T07:24:45 +0ms service=server status=started method=GET path=/user request
-INFO  2026-05-27T07:24:45 +0ms service=server method=GET path=/general request
-INFO  2026-05-27T07:24:45 +0ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T07:24:45 +1ms service=server status=completed duration=1 method=GET path=/user request
-INFO  2026-05-27T07:24:45 +1ms service=server status=completed duration=2 method=GET path=/general request
-INFO  2026-05-27T07:24:45 +106ms service=server method=GET path=/agent request
-INFO  2026-05-27T07:24:45 +0ms service=server status=started method=GET path=/agent request
-INFO  2026-05-27T07:24:45 +6ms service=server method=GET path=/provider request
-INFO  2026-05-27T07:24:45 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-05-27T07:24:45 +64ms service=server status=completed duration=64 method=GET path=/provider request
-INFO  2026-05-27T07:24:45 +9ms service=server method=GET path=/session request
-INFO  2026-05-27T07:24:45 +0ms service=server status=started method=GET path=/session request
-INFO  2026-05-27T07:24:45 +4ms service=server status=completed duration=4 method=GET path=/session request
-INFO  2026-05-27T07:24:45 +1ms service=server method=GET path=/question request
-INFO  2026-05-27T07:24:45 +0ms service=server status=started method=GET path=/question request
-INFO  2026-05-27T07:24:45 +0ms service=server status=completed duration=0 method=GET path=/question request
-INFO  2026-05-27T07:24:45 +1ms service=server method=GET path=/config request
-INFO  2026-05-27T07:24:45 +0ms service=server status=started method=GET path=/config request
-INFO  2026-05-27T07:24:45 +1ms service=server status=completed duration=1 method=GET path=/config request
-INFO  2026-05-27T07:24:45 +1ms service=server method=GET path=/schedule request
-INFO  2026-05-27T07:24:45 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-27T07:24:45 +1ms service=server status=completed duration=1 method=GET path=/schedule request
-INFO  2026-05-27T07:24:45 +24ms service=server status=completed duration=112 method=GET path=/agent request
-INFO  2026-05-27T07:24:46 +278ms service=server method=GET path=/session/status request
-INFO  2026-05-27T07:24:46 +0ms service=server status=started method=GET path=/session/status request
-INFO  2026-05-27T07:24:46 +0ms service=server status=completed duration=0 method=GET path=/session/status request
-INFO  2026-05-27T07:24:46 +62ms service=server method=GET path=/provider/timeout request
-INFO  2026-05-27T07:24:46 +0ms service=server status=started method=GET path=/provider/timeout request
-INFO  2026-05-27T07:24:46 +0ms service=server status=completed duration=0 method=GET path=/provider/timeout request
-INFO  2026-05-27T07:24:46 +2ms service=server method=GET path=/general request
-INFO  2026-05-27T07:24:46 +1ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T07:24:46 +0ms service=server status=completed duration=0 method=GET path=/general request
-INFO  2026-05-27T07:24:46 +7ms service=server method=GET path=/event request
-INFO  2026-05-27T07:24:46 +0ms service=server status=started method=GET path=/event request
-INFO  2026-05-27T07:24:46 +0ms service=server event connected
-INFO  2026-05-27T07:24:46 +0ms service=bus type=* subscribing
-INFO  2026-05-27T07:24:46 +1ms service=server status=completed duration=1 method=GET path=/event request
-INFO  2026-05-27T07:24:46 +54ms service=server method=GET path=/event request
-INFO  2026-05-27T07:24:46 +0ms service=server status=started method=GET path=/event request
-INFO  2026-05-27T07:24:46 +0ms service=server event connected
-INFO  2026-05-27T07:24:46 +0ms service=bus type=* subscribing
-INFO  2026-05-27T07:24:46 +0ms service=server status=completed duration=0 method=GET path=/event request
-INFO  2026-05-27T07:24:46 +72ms service=server method=GET path=/general request
-INFO  2026-05-27T07:24:46 +0ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T07:24:46 +1ms service=server status=completed duration=1 method=GET path=/general request
-INFO  2026-05-27T07:24:46 +331ms service=server method=GET path=/schedule request
-INFO  2026-05-27T07:24:46 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-27T07:24:46 +2ms service=server status=completed duration=2 method=GET path=/schedule request
-INFO  2026-05-27T07:24:46 +2ms service=server method=GET path=/session/ses_197ade05cffeezE6XGhzxlIQHL/message request
-INFO  2026-05-27T07:24:46 +0ms service=server status=started method=GET path=/session/ses_197ade05cffeezE6XGhzxlIQHL/message request
-INFO  2026-05-27T07:24:46 +3ms service=server status=completed duration=3 method=GET path=/session/ses_197ade05cffeezE6XGhzxlIQHL/message request
-INFO  2026-05-27T07:24:46 +106ms service=server method=GET path=/event request
-INFO  2026-05-27T07:24:46 +0ms service=server status=started method=GET path=/event request
-INFO  2026-05-27T07:24:46 +1ms service=server event connected
-INFO  2026-05-27T07:24:46 +0ms service=bus type=* subscribing
-INFO  2026-05-27T07:24:46 +0ms service=server status=completed duration=1 method=GET path=/event request
-INFO  2026-05-27T07:31:36 +409334ms service=provider.routes count=5 codex models refreshed
-INFO  2026-05-27T07:44:17 +760820ms service=scheduler id=snapshot.cleanup run
-INFO  2026-05-27T07:44:17 +0ms service=scheduler id=tool.truncation.cleanup run
-INFO  2026-05-27T07:44:19 +2334ms service=snapshot prune=7.days cleanup
-INFO  2026-05-27T08:00:00 +940640ms service=bus type=session.created publishing
-INFO  2026-05-27T08:00:00 +1ms service=bus type=session.updated publishing
-INFO  2026-05-27T08:00:00 +1ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:00:00 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:00 +28ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:00:00 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:00 +6ms service=bus type=session.updated publishing
-INFO  2026-05-27T08:00:00 +10ms service=bus type=session.status publishing
-INFO  2026-05-27T08:00:00 +3ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:00 +0ms service=bus type=message.updated publishing
-ERROR 2026-05-27T08:00:00 +5ms service=default e=ProviderModelNotFoundError rejection
-INFO  2026-05-27T08:00:00 +36ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:00:00 +93ms service=provider status=started providerID=opencode getSDK
-INFO  2026-05-27T08:00:00 +1ms service=provider providerID=opencode pkg=@ai-sdk/openai-compatible using bundled provider
-INFO  2026-05-27T08:00:00 +0ms service=provider status=completed duration=1 providerID=opencode getSDK
-INFO  2026-05-27T08:00:00 +159ms service=bus type=session.status publishing
-INFO  2026-05-27T08:00:14 +14109ms service=snapshot hash=34f21559437221aa34614ec3095d9594779d79ff
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:00:14 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:14 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:14 +1ms service=bus type=message.part.delta publishing
-INFO  2026-05-27T08:00:14 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:14 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:14 +3ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:14 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:14 +202ms service=snapshot hash=107a8753cfdfaf9c4fe1083a600a27462acd4557
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:00:14 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:14 +1ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:00:14 +195ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:14 +4ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:00:14 +1ms service=bus type=session.status publishing
-INFO  2026-05-27T08:00:14 +18ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:00:14 +26ms service=provider status=started providerID=kilo getSDK
-INFO  2026-05-27T08:00:14 +0ms service=provider providerID=kilo pkg=@ai-sdk/openai-compatible using bundled provider
-INFO  2026-05-27T08:00:14 +0ms service=provider status=completed duration=0 providerID=kilo getSDK
-INFO  2026-05-27T08:00:15 +59ms service=bus type=session.status publishing
-INFO  2026-05-27T08:00:40 +25214ms service=snapshot hash=733fd7c105ea6497e99ff3fa73ead768f9f3de35
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:00:40 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:40 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:40 +0ms service=bus type=message.part.delta publishing
-INFO  2026-05-27T08:00:40 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:40 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:40 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:41 +1670ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:42 +187ms service=snapshot hash=387c7a86602752ff941d13d89f546f2edd73390d
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:00:42 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:42 +0ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:00:42 +198ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:00:42 +3ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:00:42 +0ms service=bus type=session.status publishing
-INFO  2026-05-27T08:00:42 +7ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:00:42 +68ms service=bus type=session.status publishing
-INFO  2026-05-27T08:01:13 +31181ms service=snapshot hash=1996aceffdadff5e1c7ba21a1ef4cfbf377e4aed
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:01:13 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:01:13 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:01:13 +1ms service=bus type=message.part.delta publishing
-INFO  2026-05-27T08:01:13 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:01:13 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:01:13 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:01:14 +928ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:01:14 +213ms service=snapshot hash=1f4e2e27e78521f68c593bbea807494c30b7b95f
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:01:14 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:01:14 +1ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:01:14 +187ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:01:14 +3ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:01:14 +0ms service=bus type=session.status publishing
-INFO  2026-05-27T08:01:14 +18ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:01:14 +68ms service=bus type=session.status publishing
-INFO  2026-05-27T08:02:34 +79058ms service=snapshot hash=519a6c367ee5c7322ad7a78f9ee3bdb09554c5b4
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:02:34 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:02:34 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:02:34 +0ms service=bus type=message.part.delta publishing
-INFO  2026-05-27T08:02:34 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:02:34 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:02:34 +3ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:02:34 +947ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:02:35 +169ms service=snapshot hash=078785099e1dba4e7e65606f1b24476993569cc2
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:02:35 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:02:35 +1ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:02:35 +193ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:02:35 +4ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:02:35 +0ms service=bus type=session.status publishing
-INFO  2026-05-27T08:02:35 +21ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:02:35 +73ms service=bus type=session.status publishing
-INFO  2026-05-27T08:02:58 +22850ms service=snapshot hash=9c7f96d6ac70a9b8760f90ca61ba6e84c286eef1
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:02:58 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:02:58 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:02:58 +1ms service=bus type=message.part.delta publishing
-INFO  2026-05-27T08:02:58 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:02:58 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:02:58 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:02:59 +1521ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:03:00 +207ms service=snapshot hash=ce536f988051976867e59dcd8d0b828ee80fec9d
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:03:00 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:03:00 +1ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:03:00 +186ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:03:00 +4ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:03:00 +0ms service=bus type=session.status publishing
-INFO  2026-05-27T08:03:00 +29ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:03:00 +72ms service=bus type=session.status publishing
-INFO  2026-05-27T08:04:20 +80547ms service=snapshot hash=75021e2f1421f3c1f4ad18681f28a4288f973a68
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:04:20 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:04:20 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:04:20 +1ms service=bus type=message.part.delta publishing
-INFO  2026-05-27T08:04:20 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:04:20 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:04:20 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:04:21 +1109ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:04:22 +184ms service=snapshot hash=a024dbd9e2636e4b3bdbe97f2e5d5fe67783a814
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:04:22 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:04:22 +0ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:04:22 +205ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:04:22 +4ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:04:22 +0ms service=bus type=session.status publishing
-INFO  2026-05-27T08:04:22 +21ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:04:22 +74ms service=bus type=session.status publishing
-INFO  2026-05-27T08:05:21 +59119ms service=snapshot hash=f505a134c493dac49d40a3649947d736ee0deaad
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:05:21 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:21 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:21 +1ms service=bus type=message.part.delta publishing
-INFO  2026-05-27T08:05:21 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:21 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:21 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:22 +983ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:22 +195ms service=snapshot hash=cb8e2cd0e8464f70f0be952784dfd83a325e9dbc
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:05:22 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:22 +1ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:05:22 +188ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:22 +3ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:05:22 +1ms service=bus type=session.status publishing
-INFO  2026-05-27T08:05:23 +21ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:05:23 +87ms service=bus type=session.status publishing
-INFO  2026-05-27T08:05:52 +29505ms service=snapshot hash=f9dd40fd89262162c559ec206ee7d0d3e3121b3a
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:05:52 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:52 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:52 +0ms service=bus type=message.part.delta publishing
-INFO  2026-05-27T08:05:52 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:52 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:52 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:53 +1397ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:54 +188ms service=snapshot hash=49b45afef912af0402f4d1d728bdbaeb2a4343b2
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:05:54 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:54 +1ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:05:54 +196ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:05:54 +3ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:05:54 +1ms service=bus type=session.status publishing
-INFO  2026-05-27T08:05:54 +19ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:05:54 +65ms service=bus type=session.status publishing
-INFO  2026-05-27T08:06:50 +55897ms service=snapshot hash=506e97891625f03abeabbb79ed2d2f856fdc21e9
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:06:50 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:06:50 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:06:50 +1ms service=bus type=message.part.delta publishing
-INFO  2026-05-27T08:06:50 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:06:50 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:06:50 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:06:51 +1250ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:06:51 +211ms service=snapshot hash=79aba1530dd11240849c4d28e9ecfe65277e200a
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:06:51 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:06:51 +0ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:06:52 +192ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:06:52 +3ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:06:52 +1ms service=bus type=session.status publishing
-INFO  2026-05-27T08:06:52 +16ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:06:52 +70ms service=bus type=session.status publishing
-INFO  2026-05-27T08:09:07 +135624ms service=snapshot hash=899701d2a4e205487d6a08b1eab52550359c06b1
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:09:07 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:09:07 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:09:07 +1ms service=bus type=message.part.delta publishing
-INFO  2026-05-27T08:09:07 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:09:07 +0ms service=bus type=message.part.delta publishing
-INFO  2026-05-27T08:09:07 +1ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:09:07 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:09:07 +195ms service=snapshot hash=8fdadd49910a3c785da0c64ee048336d1033bb47
- cwd=/home/mariu/projects/opendora git=/home/mariu/projects/opendora/.opendora/storage/snapshot/32df3687db7da83d652739b990048a6a94d69cdd tracking
-INFO  2026-05-27T08:09:07 +2ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:09:07 +0ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:09:08 +168ms service=bus type=message.part.updated publishing
-INFO  2026-05-27T08:09:08 +4ms service=bus type=message.updated publishing
-INFO  2026-05-27T08:09:08 +1ms service=bus type=session.status publishing
-INFO  2026-05-27T08:09:08 +9ms service=bus type=session.status publishing
-INFO  2026-05-27T08:09:08 +0ms service=bus type=session.idle publishing
-INFO  2026-05-27T08:31:36 +1348270ms service=provider.routes count=5 codex models refreshed
-INFO  2026-05-27T08:33:05 +89523ms service=server method=GET path=/user request
-INFO  2026-05-27T08:33:05 +0ms service=server status=started method=GET path=/user request
-INFO  2026-05-27T08:33:05 +2ms service=server status=completed duration=2 method=GET path=/user request
-INFO  2026-05-27T08:33:06 +86ms service=server method=GET path=/general request
-INFO  2026-05-27T08:33:06 +0ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T08:33:06 +1ms service=server status=completed duration=1 method=GET path=/general request
-INFO  2026-05-27T08:33:06 +72ms service=server method=GET path=/provider request
-INFO  2026-05-27T08:33:06 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-05-27T08:33:06 +60ms service=server status=completed duration=60 method=GET path=/provider request
-INFO  2026-05-27T08:33:06 +96ms service=server method=GET path=/agent request
-INFO  2026-05-27T08:33:06 +1ms service=server status=started method=GET path=/agent request
-INFO  2026-05-27T08:33:06 +12ms service=server status=completed duration=12 method=GET path=/agent request
-INFO  2026-05-27T08:33:06 +62ms service=server method=GET path=/session request
-INFO  2026-05-27T08:33:06 +0ms service=server status=started method=GET path=/session request
-INFO  2026-05-27T08:33:06 +2ms service=server status=completed duration=2 method=GET path=/session request
-INFO  2026-05-27T08:33:06 +62ms service=server method=GET path=/question request
-INFO  2026-05-27T08:33:06 +0ms service=server status=started method=GET path=/question request
-INFO  2026-05-27T08:33:06 +0ms service=server status=completed duration=0 method=GET path=/question request
-INFO  2026-05-27T08:33:06 +57ms service=server method=GET path=/config request
-INFO  2026-05-27T08:33:06 +0ms service=server status=started method=GET path=/config request
-INFO  2026-05-27T08:33:06 +1ms service=server status=completed duration=1 method=GET path=/config request
-INFO  2026-05-27T08:33:06 +64ms service=server method=GET path=/schedule request
-INFO  2026-05-27T08:33:06 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-27T08:33:06 +1ms service=server status=completed duration=1 method=GET path=/schedule request
-INFO  2026-05-27T08:33:06 +70ms service=server method=GET path=/session/status request
-INFO  2026-05-27T08:33:06 +0ms service=server status=started method=GET path=/session/status request
-INFO  2026-05-27T08:33:06 +0ms service=server status=completed duration=0 method=GET path=/session/status request
-INFO  2026-05-27T08:33:06 +60ms service=server method=GET path=/provider/timeout request
-INFO  2026-05-27T08:33:06 +0ms service=server status=started method=GET path=/provider/timeout request
-INFO  2026-05-27T08:33:06 +0ms service=server status=completed duration=0 method=GET path=/provider/timeout request
-INFO  2026-05-27T08:33:06 +67ms service=server method=GET path=/event request
-INFO  2026-05-27T08:33:06 +0ms service=server status=started method=GET path=/event request
-INFO  2026-05-27T08:33:06 +0ms service=server event connected
-INFO  2026-05-27T08:33:06 +1ms service=bus type=* subscribing
-INFO  2026-05-27T08:33:06 +0ms service=server status=completed duration=1 method=GET path=/event request
-INFO  2026-05-27T08:33:06 +183ms service=server method=GET path=/general request
-INFO  2026-05-27T08:33:06 +0ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T08:33:06 +1ms service=server status=completed duration=1 method=GET path=/general request
-INFO  2026-05-27T08:33:06 +76ms service=server method=GET path=/schedule request
-INFO  2026-05-27T08:33:06 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-27T08:33:06 +1ms service=server status=completed duration=1 method=GET path=/schedule request
-INFO  2026-05-27T08:33:06 +1ms service=server method=GET path=/general request
-INFO  2026-05-27T08:33:06 +1ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T08:33:06 +0ms service=server status=completed duration=0 method=GET path=/general request
-INFO  2026-05-27T08:33:06 +0ms service=server method=GET path=/session/ses_1bb71af82ffegFGQa3slmzl2QC/message request
-INFO  2026-05-27T08:33:06 +0ms service=server status=started method=GET path=/session/ses_1bb71af82ffegFGQa3slmzl2QC/message request
-INFO  2026-05-27T08:33:06 +3ms service=server status=completed duration=3 method=GET path=/session/ses_1bb71af82ffegFGQa3slmzl2QC/message request
-INFO  2026-05-27T08:33:06 +3ms service=server method=GET path=/event request
-INFO  2026-05-27T08:33:06 +0ms service=server status=started method=GET path=/event request
-INFO  2026-05-27T08:33:06 +1ms service=server event connected
-INFO  2026-05-27T08:33:06 +0ms service=bus type=* subscribing
-INFO  2026-05-27T08:33:06 +0ms service=server status=completed duration=1 method=GET path=/event request
-INFO  2026-05-27T08:33:06 +2ms service=server method=GET path=/event request
-INFO  2026-05-27T08:33:06 +1ms service=server status=started method=GET path=/event request
-INFO  2026-05-27T08:33:06 +0ms service=server event connected
-INFO  2026-05-27T08:33:06 +0ms service=bus type=* subscribing
-INFO  2026-05-27T08:33:06 +0ms service=server status=completed duration=1 method=GET path=/event request
-INFO  2026-05-27T08:33:07 +361ms service=server method=GET path=/event request
-INFO  2026-05-27T08:33:07 +0ms service=server status=started method=GET path=/event request
-INFO  2026-05-27T08:33:07 +0ms service=server event connected
-INFO  2026-05-27T08:33:07 +1ms service=bus type=* subscribing
-INFO  2026-05-27T08:33:07 +0ms service=server status=completed duration=1 method=GET path=/event request
-INFO  2026-05-27T08:33:11 +3834ms service=server method=GET path=/user request
-INFO  2026-05-27T08:33:11 +0ms service=server status=started method=GET path=/user request
-INFO  2026-05-27T08:33:11 +1ms service=server status=completed duration=1 method=GET path=/user request
-INFO  2026-05-27T08:33:11 +1ms service=server method=GET path=/general request
-INFO  2026-05-27T08:33:11 +0ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T08:33:11 +1ms service=server status=completed duration=1 method=GET path=/general request
-INFO  2026-05-27T08:33:11 +118ms service=server method=GET path=/provider request
-INFO  2026-05-27T08:33:11 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-05-27T08:33:11 +59ms service=server status=completed duration=59 method=GET path=/provider request
-INFO  2026-05-27T08:33:11 +12ms service=server method=GET path=/session request
-INFO  2026-05-27T08:33:11 +0ms service=server status=started method=GET path=/session request
-INFO  2026-05-27T08:33:11 +1ms service=server status=completed duration=1 method=GET path=/session request
-INFO  2026-05-27T08:33:11 +1ms service=server method=GET path=/agent request
-INFO  2026-05-27T08:33:11 +0ms service=server status=started method=GET path=/agent request
-INFO  2026-05-27T08:33:11 +0ms service=server method=GET path=/question request
-INFO  2026-05-27T08:33:11 +0ms service=server status=started method=GET path=/question request
-INFO  2026-05-27T08:33:11 +0ms service=server status=completed duration=0 method=GET path=/question request
-INFO  2026-05-27T08:33:11 +0ms service=server method=GET path=/config request
-INFO  2026-05-27T08:33:11 +0ms service=server status=started method=GET path=/config request
-INFO  2026-05-27T08:33:11 +1ms service=server status=completed duration=0 method=GET path=/config request
-INFO  2026-05-27T08:33:11 +20ms service=server status=completed duration=21 method=GET path=/agent request
-INFO  2026-05-27T08:33:11 +243ms service=server method=GET path=/schedule request
-INFO  2026-05-27T08:33:11 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-27T08:33:11 +1ms service=server status=completed duration=1 method=GET path=/schedule request
-INFO  2026-05-27T08:33:11 +0ms service=server method=GET path=/session/status request
-INFO  2026-05-27T08:33:11 +0ms service=server status=started method=GET path=/session/status request
-INFO  2026-05-27T08:33:11 +1ms service=server status=completed duration=1 method=GET path=/session/status request
-INFO  2026-05-27T08:33:11 +0ms service=server method=GET path=/provider/timeout request
-INFO  2026-05-27T08:33:11 +0ms service=server status=started method=GET path=/provider/timeout request
-INFO  2026-05-27T08:33:11 +0ms service=server status=completed duration=0 method=GET path=/provider/timeout request
-INFO  2026-05-27T08:33:11 +208ms service=server method=GET path=/general request
-INFO  2026-05-27T08:33:11 +1ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T08:33:11 +0ms service=server status=completed duration=0 method=GET path=/general request
-INFO  2026-05-27T08:33:11 +6ms service=server method=GET path=/event request
-INFO  2026-05-27T08:33:11 +0ms service=server status=started method=GET path=/event request
-INFO  2026-05-27T08:33:11 +0ms service=server event connected
-INFO  2026-05-27T08:33:11 +0ms service=bus type=* subscribing
-INFO  2026-05-27T08:33:11 +0ms service=server status=completed duration=0 method=GET path=/event request
-INFO  2026-05-27T08:33:11 +3ms service=server method=GET path=/event request
-INFO  2026-05-27T08:33:11 +0ms service=server status=started method=GET path=/event request
-INFO  2026-05-27T08:33:11 +1ms service=server event connected
-INFO  2026-05-27T08:33:11 +0ms service=bus type=* subscribing
-INFO  2026-05-27T08:33:11 +0ms service=server status=completed duration=1 method=GET path=/event request
-INFO  2026-05-27T08:33:11 +61ms service=server method=GET path=/general request
-INFO  2026-05-27T08:33:11 +0ms service=server status=started method=GET path=/general request
-INFO  2026-05-27T08:33:11 +1ms service=server status=completed duration=1 method=GET path=/general request
-INFO  2026-05-27T08:33:12 +448ms service=server method=GET path=/schedule request
-INFO  2026-05-27T08:33:12 +0ms service=server status=started method=GET path=/schedule request
-INFO  2026-05-27T08:33:12 +1ms service=server status=completed duration=1 method=GET path=/schedule request
-INFO  2026-05-27T08:33:12 +69ms service=server method=GET path=/session/ses_1bb71af82ffegFGQa3slmzl2QC/message request
-INFO  2026-05-27T08:33:12 +0ms service=server status=started method=GET path=/session/ses_1bb71af82ffegFGQa3slmzl2QC/message request
-INFO  2026-05-27T08:33:12 +2ms service=server status=completed duration=2 method=GET path=/session/ses_1bb71af82ffegFGQa3slmzl2QC/message request
-INFO  2026-05-27T08:33:12 +219ms service=server method=GET path=/event request
-INFO  2026-05-27T08:33:12 +0ms service=server status=started method=GET path=/event request
-INFO  2026-05-27T08:33:12 +0ms service=server event connected
-INFO  2026-05-27T08:33:12 +0ms service=bus type=* subscribing
-INFO  2026-05-27T08:33:12 +0ms service=server status=completed duration=0 method=GET path=/event request
-INFO  2026-05-27T08:44:17 +664415ms service=scheduler id=snapshot.cleanup run
-INFO  2026-05-27T08:44:17 +1ms service=scheduler id=tool.truncation.cleanup run
-INFO  2026-05-27T08:44:33 +16308ms service=snapshot prune=7.days cleanup
-INFO  2026-05-27T08:44:47 +14515ms service=server method=GET path=/event request
-INFO  2026-05-27T08:44:47 +0ms service=server status=started method=GET path=/event request
-INFO  2026-05-27T08:44:47 +1ms service=server event connected
-INFO  2026-05-27T08:44:47 +1ms service=bus type=* subscribing
-INFO  2026-05-27T08:44:47 +0ms service=server status=completed duration=2 method=GET path=/event request
-INFO  2026-05-27T08:44:47 +1ms service=server method=GET path=/event request
-INFO  2026-05-27T08:44:47 +0ms service=server status=started method=GET path=/event request
-INFO  2026-05-27T08:44:47 +0ms service=server event connected
-INFO  2026-05-27T08:44:47 +0ms service=bus type=* subscribing
-INFO  2026-05-27T08:44:47 +0ms service=server status=completed duration=0 method=GET path=/event request
-INFO  2026-05-27T08:44:48 +295ms service=server method=GET path=/session/status request
-INFO  2026-05-27T08:44:48 +0ms service=server status=started method=GET path=/session/status request
-INFO  2026-05-27T08:44:48 +1ms service=server status=completed duration=1 method=GET path=/session/status request
-INFO  2026-05-27T08:44:50 +1963ms service=server method=GET path=/provider request
-INFO  2026-05-27T08:44:50 +0ms service=server status=started method=GET path=/provider request
-INFO  2026-05-27T08:44:50 +68ms service=server status=completed duration=68 method=GET path=/provider request
-INFO  2026-05-27T08:44:50 +12ms service=server method=GET path=/provider/timeout request
-INFO  2026-05-27T08:44:50 +0ms service=server status=started method=GET path=/provider/timeout request
-INFO  2026-05-27T08:44:50 +1ms service=server status=completed duration=1 method=GET path=/provider/timeout request
+INFO  2026-05-27T15:46:33 +925ms service=mcp key=playwright toolCount=22 create() successfully created client
+INFO  2026-05-27T15:46:33 +20ms service=server status=completed duration=1086 method=GET path=/agent/tools/schema request
+INFO  2026-05-27T15:46:35 +2089ms service=server method=PUT path=/workflow/test request
+INFO  2026-05-27T15:46:35 +1ms service=server status=started method=PUT path=/workflow/test request
+INFO  2026-05-27T15:46:35 +2ms service=server status=completed duration=2 method=PUT path=/workflow/test request
+INFO  2026-05-27T15:46:36 +1394ms service=snapshot prune=7.days cleanup
+INFO  2026-05-27T15:46:41 +4451ms service=server method=PUT path=/workflow/test request
+INFO  2026-05-27T15:46:41 +0ms service=server status=started method=PUT path=/workflow/test request
+INFO  2026-05-27T15:46:41 +2ms service=server status=completed duration=2 method=PUT path=/workflow/test request
+INFO  2026-05-27T15:49:54 +193193ms service=server method=GET path=/provider request
+INFO  2026-05-27T15:49:54 +1ms service=server status=started method=GET path=/provider request
+INFO  2026-05-27T15:49:54 +64ms service=server status=completed duration=64 method=GET path=/provider request
+INFO  2026-05-27T15:49:54 +12ms service=server method=GET path=/provider/timeout request
+INFO  2026-05-27T15:49:54 +1ms service=server status=started method=GET path=/provider/timeout request
+INFO  2026-05-27T15:49:54 +1ms service=server status=completed duration=0 method=GET path=/provider/timeout request
+INFO  2026-05-27T15:55:25 +331068ms service=server method=GET path=/event request
+INFO  2026-05-27T15:55:25 +0ms service=server status=started method=GET path=/event request
+INFO  2026-05-27T15:55:25 +0ms service=server event connected
+INFO  2026-05-27T15:55:25 +1ms service=bus type=* subscribing
+INFO  2026-05-27T15:55:25 +0ms service=server status=completed duration=1 method=GET path=/event request
+INFO  2026-05-27T15:55:25 +180ms service=server method=GET path=/session/status request
+INFO  2026-05-27T15:55:25 +0ms service=server status=started method=GET path=/session/status request
+INFO  2026-05-27T15:55:25 +1ms service=server status=completed duration=1 method=GET path=/session/status request
+INFO  2026-05-27T15:55:26 +243ms service=server method=GET path=/provider request
+INFO  2026-05-27T15:55:26 +0ms service=server status=started method=GET path=/provider request
+INFO  2026-05-27T15:55:26 +60ms service=server status=completed duration=60 method=GET path=/provider request
+INFO  2026-05-27T15:55:26 +8ms service=server method=GET path=/provider/timeout request
+INFO  2026-05-27T15:55:26 +0ms service=server status=started method=GET path=/provider/timeout request
+INFO  2026-05-27T15:55:26 +1ms service=server status=completed duration=1 method=GET path=/provider/timeout request

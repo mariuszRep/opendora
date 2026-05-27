@@ -10,7 +10,7 @@ import {
   WorkflowNodeFooter,
 } from './workflow-node-base'
 import { Badge } from '@/components/ui/badge'
-import { Bot } from 'lucide-react'
+import { Bot, GitBranch } from 'lucide-react'
 import { getHandlesForNodeType } from './node-handles'
 import { getNodeTypeMetadata } from './node-type-registry'
 import { resolveNodeType } from './node-utils'
@@ -68,13 +68,39 @@ export function WorkflowNode({ data, selected }: NodeProps) {
                 No prompt set
               </WorkflowNodeDescription>
             )
+          ) : nodeType === 'decide' ? (
+            (() => {
+              const cases = (nodeData.node.parameters?.cases as Array<{ label: string }> | undefined) ?? []
+              const mode = (nodeData.node.parameters?.mode as string) ?? 'agent'
+              return (
+                <div className="mt-1.5 space-y-1.5">
+                  <Badge variant="outline" className="text-[10px] h-4 px-1.5 font-mono">
+                    {mode === 'agent' ? 'AI' : '='}
+                  </Badge>
+                  {cases.length === 0 ? (
+                    <WorkflowNodeDescription className="text-xs">No cases</WorkflowNodeDescription>
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      {cases.slice(0, 5).map((c, i) => (
+                        <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-sm bg-primary/10 text-primary font-mono leading-tight">
+                          {c.label || '…'}
+                        </span>
+                      ))}
+                      {cases.length > 5 && (
+                        <span className="text-[10px] text-muted-foreground">+{cases.length - 5}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })()
           ) : null}
         </div>
       </WorkflowNodeHeader>
 
       <WorkflowNodeFooter className="border-t bg-muted/30 pt-3 mt-auto">
         <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-          <Icon className="size-3 shrink-0" />
+          {nodeType === 'decide' ? <GitBranch className="size-3 shrink-0" /> : <Icon className="size-3 shrink-0" />}
           {nodeType}
         </span>
         {nodeType === 'tool' && nodeData.agentArgs && (nodeData.agentArgs as string[]).length > 0 && (

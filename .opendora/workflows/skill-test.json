@@ -20,8 +20,8 @@
         "instructions": "I need to build todo list app using shadcn what set of skills would you recommend"
       },
       "position": {
-        "x": -2655.7293706675578,
-        "y": -2584.60634086855
+        "x": -3010.870883499547,
+        "y": -2934.3285387333403
       }
     },
     {
@@ -41,8 +41,8 @@
         }
       },
       "position": {
-        "x": -2387.808238224279,
-        "y": -2877.0762727972065
+        "x": -2790.5326027171277,
+        "y": -3147.633574174244
       }
     },
     {
@@ -55,7 +55,7 @@
           "description": "",
           "action_id": "skill_load",
           "parameters": {
-            "name": "requierments"
+            "name": "requirements"
           }
         },
         "data": {
@@ -65,8 +65,8 @@
         "agentArgs": []
       },
       "position": {
-        "x": -2882.965198393803,
-        "y": -2844.9779337654727
+        "x": -3208.601858820887,
+        "y": -3151.0834188946865
       }
     }
   ],

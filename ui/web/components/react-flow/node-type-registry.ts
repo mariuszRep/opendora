@@ -1,4 +1,4 @@
-import { MessageSquare, SlidersHorizontal, Wrench, type LucideIcon } from 'lucide-react'
+import { GitBranch, MessageSquare, SlidersHorizontal, Wrench, type LucideIcon } from 'lucide-react'
 import type { NodeType } from './unified-node'
 
 export interface NodeTypeMetadata {
@@ -7,13 +7,23 @@ export interface NodeTypeMetadata {
   description: string
   icon: LucideIcon
   defaultNodeData: {
-    node: { label: string; description: string }
+    node: { label: string; description: string; parameters?: Record<string, unknown> }
     data: { inputs: unknown[]; outputs: unknown[] }
     workflowParameters?: unknown[]
   }
 }
 
 export const NODE_TYPE_REGISTRY: Record<NodeType, NodeTypeMetadata> = {
+  decide: {
+    type: 'decide',
+    label: 'Decide',
+    description: 'Route execution to different branches based on agent decision or a condition',
+    icon: GitBranch,
+    defaultNodeData: {
+      node: { label: 'Decide', description: '', parameters: { mode: 'agent', cases: [], output: '' } },
+      data: { inputs: [], outputs: [] },
+    },
+  },
   tool: {
     type: 'tool',
     label: 'Tool',

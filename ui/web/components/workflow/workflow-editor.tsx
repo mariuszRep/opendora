@@ -18,6 +18,9 @@ import {
   ReactFlowProvider,
 } from '@xyflow/react'
 import { nanoid } from 'nanoid'
+import { GitBranch } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   WorkflowCanvas,
   WorkflowEdge,
@@ -33,6 +36,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { toast } from 'sonner'
 import type { Workflow, WorkflowNodeType } from '@/lib/opendora'
 import { migrateWorkflow, needsMigration } from './migrate-workflow'
+import { getAvailableRefs } from '@/lib/workflow-refs'
 
 const nodeTypes = {
   workflow: WorkflowNode,
@@ -123,6 +127,11 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const [isSaving, setIsSaving] = React.useState(false)
+  const [pendingDecideConn, setPendingDecideConn] = React.useState<{
+    connection: Parameters<OnConnect>[0]
+    cases: Array<{ label: string }>
+  } | null>(null)
+  const [decideLabelValue, setDecideLabelValue] = React.useState('')
   const [drawerOpen, setDrawerOpen] = React.useState(false)
   const [drawerType, setDrawerType] = React.useState<'workflow' | 'node' | 'edge'>('workflow')
   const [drawerData, setDrawerData] = React.useState<{
@@ -179,6 +188,38 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
     []
   )
 
+  const confirmDecideEdge = React.useCallback(
+    (label: string) => {
+      if (!pendingDecideConn || !label.trim()) return
+      const conn = pendingDecideConn.connection
+      const trimmed = label.trim()
+      const newEdges = addEdge({ ...conn, type: 'animated', label: trimmed }, edgesRef.current)
+      setEdges(newEdges)
+
+      // Sync case into the decide node
+      const updatedNodes = nodesRef.current.map((n) => {
+        if (n.id !== conn.source) return n
+        const data = n.data as WorkflowNodeData
+        const params = (data.node.parameters ?? {}) as Record<string, unknown>
+        const cases = (params.cases as Array<{ label: string; when?: unknown }> | undefined) ?? []
+        if (cases.some((c) => c.label === trimmed)) return n
+        const mode = (params.mode as string) ?? 'agent'
+        const newCase = mode === 'deterministic'
+          ? { label: trimmed, when: { op: 'equals', value: trimmed } }
+          : { label: trimmed }
+        return {
+          ...n,
+          data: { ...n.data, node: { ...data.node, parameters: { ...params, cases: [...cases, newCase] } } },
+        }
+      })
+      setNodes(updatedNodes)
+      saveWorkflow(updatedNodes, newEdges)
+      setPendingDecideConn(null)
+      setDecideLabelValue('')
+    },
+    [pendingDecideConn, saveWorkflow]
+  )
+
   const onConnect: OnConnect = React.useCallback(
     (connection) => {
       if (!connection.source || !connection.target) return
@@ -202,6 +243,14 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
 
       if (!result.valid) {
         toast.error(result.error ?? 'Connection not allowed')
+        return
+      }
+
+      if (sourceType === 'decide') {
+        const cases = ((sourceNode.data as WorkflowNodeData).node.parameters?.cases as Array<{ label: string }> | undefined) ?? []
+        const targetLabel = (targetNode.data as WorkflowNodeData).node.label || ''
+        setPendingDecideConn({ connection, cases })
+        setDecideLabelValue(targetLabel)
         return
       }
 
@@ -257,8 +306,32 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
     (deletedEdges: Edge[]) => {
       const deletedIds = new Set(deletedEdges.map((e) => e.id))
       const updatedEdges = edgesRef.current.filter((e) => !deletedIds.has(e.id))
+
+      // Remove cases from decide nodes when their labeled outgoing edges are deleted
+      let updatedNodes = nodesRef.current
+      for (const edge of deletedEdges) {
+        if (typeof edge.label !== 'string' || !edge.label) continue
+        const sourceNode = updatedNodes.find((n) => n.id === edge.source)
+        if (!sourceNode || (sourceNode.data as WorkflowNodeData).nodeType !== 'decide') continue
+        // Only remove if no remaining edge from this decide node still uses this label
+        const labelStillUsed = updatedEdges.some((e) => e.source === edge.source && e.label === edge.label)
+        if (labelStillUsed) continue
+        const label = edge.label
+        updatedNodes = updatedNodes.map((n) => {
+          if (n.id !== edge.source) return n
+          const data = n.data as WorkflowNodeData
+          const params = (data.node.parameters ?? {}) as Record<string, unknown>
+          const cases = (params.cases as Array<{ label: string }> | undefined) ?? []
+          return {
+            ...n,
+            data: { ...n.data, node: { ...data.node, parameters: { ...params, cases: cases.filter((c) => c.label !== label) } } },
+          }
+        })
+      }
+
       setEdges(updatedEdges)
-      saveWorkflow(nodesRef.current, updatedEdges)
+      if (updatedNodes !== nodesRef.current) setNodes(updatedNodes)
+      saveWorkflow(updatedNodes, updatedEdges)
     },
     [saveWorkflow]
   )
@@ -274,12 +347,9 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
       const nodeType = event.dataTransfer.getData('application/reactflow') as NodeType
       if (!nodeType) return
 
-      const wrapperBounds = reactFlowWrapper.current?.getBoundingClientRect()
-      if (!wrapperBounds) return
-
       const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX - wrapperBounds.left,
-        y: event.clientY - wrapperBounds.top,
+        x: event.clientX,
+        y: event.clientY,
       })
 
       const defaultData = getDefaultNodeData(nodeType)
@@ -442,6 +512,67 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
             {showMiniMap && <WorkflowMiniMap />}
           </WorkflowCanvas>
 
+          {pendingDecideConn && (
+            <div
+              className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-[2px]"
+              onClick={() => { setPendingDecideConn(null); setDecideLabelValue('') }}
+            >
+              <div
+                className="bg-background border rounded-lg shadow-xl p-4 w-72 space-y-3"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-2">
+                  <GitBranch className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-semibold text-sm">Name this branch</span>
+                </div>
+                <p className="text-xs text-muted-foreground">This becomes the case label on the decide node.</p>
+
+                {pendingDecideConn.cases.filter((c) => c.label).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {pendingDecideConn.cases.filter((c) => c.label).map((c) => (
+                      <button
+                        key={c.label}
+                        onClick={() => confirmDecideEdge(c.label)}
+                        className="text-xs px-2 py-1 rounded-md border border-primary/30 bg-primary/5 hover:bg-primary/20 text-primary font-mono transition-colors"
+                      >
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <Input
+                  placeholder="Or type a new label…"
+                  value={decideLabelValue}
+                  onChange={(e) => setDecideLabelValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') confirmDecideEdge(decideLabelValue)
+                    if (e.key === 'Escape') { setPendingDecideConn(null); setDecideLabelValue('') }
+                  }}
+                  className="font-mono text-xs"
+                  autoFocus
+                />
+
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setPendingDecideConn(null); setDecideLabelValue('') }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => confirmDecideEdge(decideLabelValue)}
+                    disabled={!decideLabelValue.trim()}
+                  >
+                    Connect
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <WorkflowEditDrawer
             open={drawerOpen}
             onOpenChange={setDrawerOpen}
@@ -452,6 +583,12 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
             isSaving={isSaving}
             showMiniMap={showMiniMap}
             setShowMiniMap={setShowMiniMap}
+            availableRefs={
+              drawerType === 'node' && drawerData?.node &&
+              (drawerData.node.data as WorkflowNodeData).nodeType === 'decide'
+                ? getAvailableRefs(drawerData.node.id, nodes, edges)
+                : undefined
+            }
           />
         </div>
       </SidebarInset>

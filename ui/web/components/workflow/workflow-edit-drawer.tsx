@@ -35,6 +35,8 @@ import { useToolSchemas } from '@/hooks/use-tool-schemas'
 import { ToolParameterForm } from './tool-parameter-form'
 import { type ToolSchema, type ToolSchemaProperty } from '@/lib/opendora'
 import { TOOL_GROUP_ORDER, TOOL_GROUP_LABELS, getToolGroup, HIDDEN_TOOLS } from '@/lib/tool-groups'
+import { ExpressionInput } from './expression-input'
+import type { RefSuggestion } from '@/lib/workflow-refs'
 
 type EditType = 'workflow' | 'node' | 'edge'
 
@@ -103,6 +105,7 @@ interface WorkflowEditDrawerProps {
   isSaving?: boolean
   showMiniMap?: boolean
   setShowMiniMap?: (show: boolean) => void
+  availableRefs?: RefSuggestion[]
 }
 
 function ToolComboboxItem({ schema, showMcp }: { schema: ToolSchema; showMcp?: boolean }) {
@@ -131,6 +134,7 @@ export function WorkflowEditDrawer({
   isSaving = false,
   showMiniMap = false,
   setShowMiniMap,
+  availableRefs = [],
 }: WorkflowEditDrawerProps) {
   const [formData, setFormData] = React.useState<DrawerFormData>({})
   const [editingNodeData, setEditingNodeData] = React.useState<UnifiedNodeData | null>(null)
@@ -183,7 +187,7 @@ export function WorkflowEditDrawer({
 
   const getAvailableTabs = () => {
     if (editType === 'node') {
-      if (editingNodeData?.nodeType === 'prompt' || editingNodeData?.nodeType === 'parameters') {
+      if (editingNodeData?.nodeType === 'prompt' || editingNodeData?.nodeType === 'parameters' || editingNodeData?.nodeType === 'decide') {
         return [{ value: 'general', label: 'General' }]
       }
       return [
@@ -355,6 +359,187 @@ export function WorkflowEditDrawer({
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          )
+        }
+
+        const isDecideNode = editingNodeData.nodeType === 'decide'
+
+        if (isDecideNode && activeTab === 'general') {
+          const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+          const mode = (params.mode as string) ?? 'agent'
+          const cases = (params.cases as Array<{ label: string; when?: { op: string; value?: unknown } }>) ?? []
+          const defaultLabel = (params.default as string) ?? ''
+          const output = (params.output as string) ?? ''
+          const inputExpr = (params.input as string) ?? ''
+
+          const updateParams = (updates: Record<string, unknown>) => {
+            setEditingNodeData({
+              ...editingNodeData,
+              node: { ...editingNodeData.node, parameters: { ...params, ...updates } },
+            })
+          }
+
+          const updateCases = (next: typeof cases) => updateParams({ cases: next })
+
+          const DECIDE_OPS = [
+            { value: 'equals', label: 'equals' },
+            { value: 'not_equals', label: 'not equals' },
+            { value: 'in', label: 'in (array)' },
+            { value: 'not_in', label: 'not in' },
+            { value: 'contains', label: 'contains' },
+            { value: 'not_contains', label: 'not contains' },
+            { value: 'matches', label: 'matches (regex)' },
+            { value: 'gt', label: '>' },
+            { value: 'gte', label: '>=' },
+            { value: 'lt', label: '<' },
+            { value: 'lte', label: '<=' },
+            { value: 'exists', label: 'exists' },
+            { value: 'not_exists', label: 'not exists' },
+            { value: 'is_empty', label: 'is empty' },
+            { value: 'is_not_empty', label: 'is not empty' },
+          ]
+
+          const noValueOps = new Set(['exists', 'not_exists', 'is_empty', 'is_not_empty'])
+
+          return (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Label</Label>
+                <Input
+                  value={editingNodeData.node.label || ''}
+                  onChange={(e) => handleNodeChange({ label: e.target.value })}
+                  placeholder="Decide"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Mode</Label>
+                <Select value={mode} onValueChange={(v) => updateParams({ mode: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="agent">Agent — LLM picks the branch</SelectItem>
+                    <SelectItem value="deterministic">Deterministic — evaluate a condition</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {mode === 'deterministic' && (
+                <div className="space-y-2">
+                  <Label>Input expression</Label>
+                  <ExpressionInput
+                    value={inputExpr}
+                    onChange={(v) => updateParams({ input: v || undefined })}
+                    suggestions={availableRefs}
+                    placeholder="$input.color"
+                  />
+                  {!inputExpr && (
+                    <p className="text-xs text-amber-500">
+                      Required — without this, the workflow will error at runtime. Type <code className="font-mono">$</code> to pick from upstream outputs.
+                    </p>
+                  )}
+                  {inputExpr && (
+                    <p className="text-xs text-muted-foreground">
+                      Resolved value is compared against each case below.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label>Branches</Label>
+                <p className="text-xs text-muted-foreground">
+                  Connect edges from this node to define branches. Each edge label becomes a case.
+                </p>
+
+                {cases.length === 0 ? (
+                  <div className="border border-dashed rounded-md py-4 text-center">
+                    <p className="text-xs text-muted-foreground">No branches yet — draw an edge from this node.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {cases.map((c, i) => (
+                      <div key={i} className="border rounded-md p-3 space-y-2">
+                        <span className="inline-block text-xs font-mono px-2 py-0.5 rounded-sm bg-primary/10 text-primary">
+                          {c.label || '(unnamed)'}
+                        </span>
+                        {mode === 'deterministic' && (
+                          <div className="flex gap-2">
+                            <Select
+                              value={c.when?.op ?? 'equals'}
+                              onValueChange={(op) => {
+                                const updated = [...cases]
+                                updated[i] = { ...updated[i], when: { op, value: updated[i].when?.value ?? '' } }
+                                updateCases(updated)
+                              }}
+                            >
+                              <SelectTrigger className="w-40 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {DECIDE_OPS.map((o) => (
+                                  <SelectItem key={o.value} value={o.value} className="text-xs">
+                                    {o.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {!noValueOps.has(c.when?.op ?? 'equals') && (
+                              <Input
+                                value={
+                                  ['in', 'not_in'].includes(c.when?.op ?? '') && Array.isArray(c.when?.value)
+                                    ? JSON.stringify(c.when!.value)
+                                    : String(c.when?.value ?? '')
+                                }
+                                onChange={(e) => {
+                                  const op = c.when?.op ?? 'equals'
+                                  let val: unknown = e.target.value
+                                  if (['in', 'not_in'].includes(op)) {
+                                    try { val = JSON.parse(e.target.value) } catch { /* keep as string */ }
+                                  }
+                                  const updated = [...cases]
+                                  updated[i] = { ...updated[i], when: { op, value: val } }
+                                  updateCases(updated)
+                                }}
+                                placeholder={['in', 'not_in'].includes(c.when?.op ?? '') ? '["a","b"]' : 'value'}
+                                className="font-mono text-xs flex-1"
+                              />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Default branch (fallback)</Label>
+                <Input
+                  value={defaultLabel}
+                  onChange={(e) => updateParams({ default: e.target.value || undefined })}
+                  placeholder="fallback label (optional)"
+                  className="font-mono text-xs"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Used when no case matches. Leave empty to throw an error.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Store decision as</Label>
+                <Input
+                  value={output}
+                  onChange={(e) => updateParams({ output: e.target.value || undefined })}
+                  placeholder="ctx key (e.g. decision)"
+                  className="font-mono text-xs"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Chosen label stored in <code className="font-mono">$ctx.&lt;key&gt;</code> for later steps.
+                </p>
               </div>
             </div>
           )
