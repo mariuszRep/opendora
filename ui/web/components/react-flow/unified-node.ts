@@ -1,4 +1,4 @@
-export type NodeType = 'tool' | 'prompt'
+export type NodeType = 'tool' | 'prompt' | 'parameters'
 
 export type ExecutionMode = 'automatic' | 'manual'
 
@@ -123,6 +123,13 @@ export interface InputMapping {
   required?: boolean
 }
 
+export interface WorkflowParameter {
+  name: string
+  type: JsonSchemaType
+  description: string
+  required?: boolean
+}
+
 export interface NodeProperties {
   label: string
   name?: string
@@ -152,6 +159,7 @@ export interface UnifiedNodeData extends Record<string, unknown> {
   input_mapping?: InputMapping[]
   stage_id?: string
   next_stage_id?: string
+  workflowParameters?: WorkflowParameter[]
 }
 
 export type WorkflowNodeData = UnifiedNodeData

@@ -1,4 +1,4 @@
-import { MessageSquare, Wrench, type LucideIcon } from 'lucide-react'
+import { MessageSquare, SlidersHorizontal, Wrench, type LucideIcon } from 'lucide-react'
 import type { NodeType } from './unified-node'
 
 export interface NodeTypeMetadata {
@@ -9,6 +9,7 @@ export interface NodeTypeMetadata {
   defaultNodeData: {
     node: { label: string; description: string }
     data: { inputs: unknown[]; outputs: unknown[] }
+    workflowParameters?: unknown[]
   }
 }
 
@@ -31,6 +32,17 @@ export const NODE_TYPE_REGISTRY: Record<NodeType, NodeTypeMetadata> = {
     defaultNodeData: {
       node: { label: 'Prompt', description: '' },
       data: { inputs: [], outputs: [] },
+    },
+  },
+  parameters: {
+    type: 'parameters',
+    label: 'Parameters',
+    description: 'Define workflow input parameters visible to triggers and the LLM',
+    icon: SlidersHorizontal,
+    defaultNodeData: {
+      node: { label: 'Parameters', description: '' },
+      data: { inputs: [], outputs: [] },
+      workflowParameters: [],
     },
   },
 }

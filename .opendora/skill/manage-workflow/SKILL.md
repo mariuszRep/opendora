@@ -125,9 +125,9 @@ Any other `action_id` is the name of a registered tool — the runner calls it d
 
 ---
 
-### Branching
+### Branching / Conditional Gates
 
-Use a `prompt` node with labeled outgoing edges. The runner matches the agent's response text against the edge labels to pick the next node.
+This is the only conditional mechanism available. Use a `prompt` node with labeled outgoing edges. The runner matches the agent's response text against the edge labels to pick the next node.
 
 ```json
 {
@@ -155,7 +155,7 @@ Outgoing edges must each have a `label` matching one of the expected choices.
 1. Workflows start from **root nodes** — nodes with no incoming edges.
 2. Workflows terminate naturally at any node with no outgoing edges — no special terminator node needed.
 3. Every node must be reachable from a root via edges.
-4. Edges from `decide` nodes must have a `label` matching one of the expected branch choices.
+4. Edges from branching `prompt` nodes must have a `label` matching one of the expected branch choices.
 5. No cycles.
 6. Reference syntax: `$input.fieldName` · `$ctx.keyName`
 
@@ -205,13 +205,19 @@ Increment `y` by 200 per row. Branches share the same `y`, spread by `x`.
 
 ## Part 3: When You Are Blocked
 
-**Stop here if the task requires something none of the current node kinds can do.**
+**Stop immediately if the task requires something none of the current node kinds can do. Do not invent new node kinds.**
 
-Do not invent new node kinds. Clearly state the block and explain what would unlock it.
+When you hit a block, do the following:
+
+1. **Name the missing capability** exactly — be specific about what the workflow would need to do.
+2. **State which node type would unlock it** — use the table below.
+3. **Ask the user to choose**: either (A) redesign the workflow to stay within current node types, or (B) flag the need for the new node type to be developed before this workflow can be built.
+
+Do not proceed, approximate, or work around the limit without the user's explicit direction.
 
 | Required Capability | Why blocked | What would unlock it |
 |---------------------|-------------|---------------------|
-| **Loop / iteration** | No loop node; `decide` can only branch forward | A `foreach` or `loop` node kind |
+| **Loop / iteration** | No loop node; branching can only route forward | A `foreach` or `loop` node kind |
 | **Parallel branches** | Edges are sequential; no fork-join | A `parallel` node with a merge node |
 | **Wait for external event** | Workflow runs to completion; no suspend/resume | A `wait` or `trigger` node |
 | **Sub-workflow call** (blocking) | `workflow_run` fires in background; output not capturable | A `workflow_call` node that blocks until child completes |

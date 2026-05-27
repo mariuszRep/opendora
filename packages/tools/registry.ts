@@ -8,7 +8,7 @@ import { GlobTool } from "./filesystem/glob.ts"
 import { GrepTool } from "./filesystem/grep.ts"
 import { MultiEditTool } from "./filesystem/multiedit.ts"
 import { ApplyPatchTool } from "./filesystem/apply_patch.ts"
-import { SessionSearchTool, SessionGetTool, SessionTreeTool, SessionUpdateTool } from "./sessions/index.ts"
+import { SessionSearchTool, SessionGetTool, SessionAnalyzeTool, SessionTreeTool, SessionUpdateTool } from "./sessions/index.ts"
 import { DelegateTool, ReplyTool, QuestionTool, NotifyTool } from "./communication/index.ts"
 import { TodoWriteTool, TodoReadTool } from "./system/todo.ts"
 import { WebFetchTool, WebSearchTool, CodeSearchTool } from "./browse-and-web/index.ts"
@@ -123,6 +123,7 @@ export namespace ToolRegistry {
       DelegateTool,
       SessionSearchTool,
       SessionGetTool,
+      SessionAnalyzeTool,
       SessionTreeTool,
       SessionUpdateTool,
       ReplyTool,

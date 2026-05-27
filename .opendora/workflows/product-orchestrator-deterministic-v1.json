@@ -1,0 +1,499 @@
+{
+  "id": "product-orchestrator-deterministic-v1",
+  "name": "Product Orchestrator Deterministic v1",
+  "description": "Deterministic orchestration flow for product delivery with explicit conditional gates and mandatory test/report stages.",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "setup_gate",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "node": {
+          "label": "Setup Gate",
+          "description": "Run setup and decide if baseline is ready",
+          "parameters": {
+            "output": "setupGateResult"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "instructions": "Run product-setup for this task. Verify runtime, scripts, and baseline readiness. Reply with exactly one keyword: pass or block.",
+        "agentArgs": []
+      },
+      "position": {
+        "x": -150,
+        "y": -110.55000114440918
+      }
+    },
+    {
+      "id": "blocked_exit",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "node": {
+          "label": "Blocked Exit",
+          "description": "Produce blocker report",
+          "parameters": {
+            "output": "blockedReport"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "instructions": "Workflow is blocked. Provide a concise blocker report with: exact blocker, impact, and why local resolution is not possible.",
+        "agentArgs": []
+      },
+      "position": {
+        "x": -328,
+        "y": 1286
+      }
+    },
+    {
+      "id": "explore_decision",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "node": {
+          "label": "Explore Decision Gate",
+          "description": "Decide whether exploration is required",
+          "parameters": {
+            "output": "exploreDecision"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "instructions": "Decide whether product-explore is required. If ownership/context is unclear, choose run-explore. If this is clear new scaffold work, choose skip-explore. Reply with exactly one keyword: run-explore or skip-explore.",
+        "agentArgs": []
+      },
+      "position": {
+        "x": 158,
+        "y": 94
+      }
+    },
+    {
+      "id": "load_explore_skill",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Load product-explore skill",
+          "description": "",
+          "action_id": "skill_load",
+          "parameters": {
+            "name": "product-explore"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "agentArgs": []
+      },
+      "position": {
+        "x": 480,
+        "y": 316
+      }
+    },
+    {
+      "id": "run_explore",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "node": {
+          "label": "Run Explore",
+          "description": "Execute exploration and summarize findings",
+          "parameters": {
+            "output": "exploreSummary"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "instructions": "Execute product-explore. Summarize ownership, relevant modules, risks, and assumptions in concise bullets.",
+        "agentArgs": []
+      },
+      "position": {
+        "x": 612,
+        "y": 526
+      }
+    },
+    {
+      "id": "load_plan_skill",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Load product-plan skill",
+          "description": "",
+          "action_id": "skill_load",
+          "parameters": {
+            "name": "product-plan"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "agentArgs": []
+      },
+      "position": {
+        "x": 350,
+        "y": 800
+      }
+    },
+    {
+      "id": "plan_gate",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "node": {
+          "label": "Plan Gate",
+          "description": "Create plan and validate completeness",
+          "parameters": {
+            "output": "planGateResult"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "instructions": "Execute product-plan and validate that file/module strategy and verification plan are explicit. Reply with exactly one keyword: pass or block.",
+        "agentArgs": []
+      },
+      "position": {
+        "x": 103.6971144589003,
+        "y": 982.2661922410409
+      }
+    },
+    {
+      "id": "load_build_skill",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Load product-built skill",
+          "description": "",
+          "action_id": "skill_load",
+          "parameters": {
+            "name": "product-built"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "agentArgs": []
+      },
+      "position": {
+        "x": 700,
+        "y": 1200
+      }
+    },
+    {
+      "id": "run_build",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "node": {
+          "label": "Run Build",
+          "description": "Implement planned changes",
+          "parameters": {
+            "output": "buildSummary"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "instructions": "Execute product-built according to the approved plan. Include changed files and key implementation decisions.",
+        "agentArgs": []
+      },
+      "position": {
+        "x": 700,
+        "y": 1400
+      }
+    },
+    {
+      "id": "load_test_skill",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Load product-test skill",
+          "description": "",
+          "action_id": "skill_load",
+          "parameters": {
+            "name": "product-test"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "agentArgs": []
+      },
+      "position": {
+        "x": 700,
+        "y": 1600
+      }
+    },
+    {
+      "id": "test_gate",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "node": {
+          "label": "Test Gate",
+          "description": "Run tests and return verdict",
+          "parameters": {
+            "output": "testGateResult"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "instructions": "Execute product-test. Include command evidence and verdict. Reply with exactly one keyword: pass or fail.",
+        "agentArgs": []
+      },
+      "position": {
+        "x": 700,
+        "y": 1800
+      }
+    },
+    {
+      "id": "verify_decision",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "node": {
+          "label": "Verify Decision Gate",
+          "description": "Decide UI verification requirement",
+          "parameters": {
+            "output": "verifyDecision"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "instructions": "Decide if browser/UI verification is required. If UI scope exists, choose run-verify; otherwise choose skip-verify. Reply with exactly one keyword: run-verify or skip-verify.",
+        "agentArgs": []
+      },
+      "position": {
+        "x": 1000,
+        "y": 2000
+      }
+    },
+    {
+      "id": "load_verify_skill",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Load product-verify skill",
+          "description": "",
+          "action_id": "skill_load",
+          "parameters": {
+            "name": "product-verify"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "agentArgs": []
+      },
+      "position": {
+        "x": 800,
+        "y": 2200
+      }
+    },
+    {
+      "id": "run_verify",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "node": {
+          "label": "Run Verify",
+          "description": "Perform browser/UI verification",
+          "parameters": {
+            "output": "verifySummary"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "instructions": "Execute product-verify against the plan and capture concise browser evidence.",
+        "agentArgs": []
+      },
+      "position": {
+        "x": 800,
+        "y": 2400
+      }
+    },
+    {
+      "id": "load_report_skill",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Load product-report skill",
+          "description": "",
+          "action_id": "skill_load",
+          "parameters": {
+            "name": "product-report"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "agentArgs": []
+      },
+      "position": {
+        "x": 1150,
+        "y": 2600
+      }
+    },
+    {
+      "id": "final_report",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "node": {
+          "label": "Final Report",
+          "description": "Mandatory closure report",
+          "parameters": {
+            "output": "finalReport"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        },
+        "instructions": "Execute product-report. Provide final closure with: delivered vs not delivered, gate outcomes (PASS/BLOCK), test verdict, and next steps.",
+        "agentArgs": []
+      },
+      "position": {
+        "x": 1150,
+        "y": 2800
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "setup_gate",
+      "target": "explore_decision",
+      "label": "pass"
+    },
+    {
+      "id": "e2",
+      "source": "setup_gate",
+      "target": "blocked_exit",
+      "label": "block"
+    },
+    {
+      "id": "e3",
+      "source": "explore_decision",
+      "target": "load_explore_skill",
+      "label": "run-explore"
+    },
+    {
+      "id": "e4",
+      "source": "explore_decision",
+      "target": "load_plan_skill",
+      "label": "skip-explore"
+    },
+    {
+      "id": "e5",
+      "source": "load_explore_skill",
+      "target": "run_explore"
+    },
+    {
+      "id": "e6",
+      "source": "run_explore",
+      "target": "load_plan_skill"
+    },
+    {
+      "id": "e7",
+      "source": "load_plan_skill",
+      "target": "plan_gate"
+    },
+    {
+      "id": "e8",
+      "source": "plan_gate",
+      "target": "load_build_skill",
+      "label": "pass"
+    },
+    {
+      "id": "e9",
+      "source": "plan_gate",
+      "target": "blocked_exit",
+      "label": "block"
+    },
+    {
+      "id": "e10",
+      "source": "load_build_skill",
+      "target": "run_build"
+    },
+    {
+      "id": "e11",
+      "source": "run_build",
+      "target": "load_test_skill"
+    },
+    {
+      "id": "e12",
+      "source": "load_test_skill",
+      "target": "test_gate"
+    },
+    {
+      "id": "e13",
+      "source": "test_gate",
+      "target": "verify_decision",
+      "label": "pass"
+    },
+    {
+      "id": "e14",
+      "source": "test_gate",
+      "target": "load_report_skill",
+      "label": "fail"
+    },
+    {
+      "id": "e15",
+      "source": "verify_decision",
+      "target": "load_verify_skill",
+      "label": "run-verify"
+    },
+    {
+      "id": "e16",
+      "source": "verify_decision",
+      "target": "load_report_skill",
+      "label": "skip-verify"
+    },
+    {
+      "id": "e17",
+      "source": "load_verify_skill",
+      "target": "run_verify"
+    },
+    {
+      "id": "e18",
+      "source": "run_verify",
+      "target": "load_report_skill"
+    },
+    {
+      "id": "e19",
+      "source": "load_report_skill",
+      "target": "final_report"
+    }
+  ]
+}

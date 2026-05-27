@@ -353,6 +353,7 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
               nodeType: formData.nodeType ?? n.data.nodeType,
               ...(formData.instructions !== undefined ? { instructions: formData.instructions } : {}),
               ...(formData.agentArgs !== undefined ? { agentArgs: formData.agentArgs } : {}),
+              ...(formData.workflowParameters !== undefined ? { workflowParameters: formData.workflowParameters } : {}),
               node: {
                 ...n.data.node,
                 label: formData.label ?? n.data.node.label,

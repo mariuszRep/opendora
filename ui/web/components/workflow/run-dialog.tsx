@@ -39,18 +39,26 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
 
   type InputField = { name: string; type: string; required?: boolean; description?: string }
 
-  // Support both legacy (type: "input") and unified (type: "workflow", nodeType: "start") formats
+  // Support legacy (type: "input"), unified start (nodeType: "start"), and parameters (nodeType: "parameters")
   const legacyInputNode = workflow.nodes.find((n) => n.type === "input")
   const unifiedStartNode = workflow.nodes.find(
     (n) => n.type === "workflow" && (n.data as any)?.nodeType === "start"
   )
+  const parametersNode = workflow.nodes.find(
+    (n) => n.type === "workflow" && (n.data as any)?.nodeType === "parameters"
+  )
   const inputNode = legacyInputNode ?? unifiedStartNode
 
   const inputFields: InputField[] = (() => {
+    if (parametersNode) {
+      const params = ((parametersNode.data as any)?.workflowParameters ?? []) as Array<{
+        name: string; type: string; description?: string; required?: boolean
+      }>
+      return params.map((p) => ({ name: p.name, type: p.type, required: p.required !== false, description: p.description }))
+    }
     if (!inputNode) return []
     const d = inputNode.data as any
     if (d?.type === "input") return (d.fields as InputField[]) ?? []
-    // Unified start: fields live in data.data.inputs
     const inputs = d?.data?.inputs as InputField[] | undefined
     return inputs ?? []
   })()

@@ -1,4 +1,5 @@
 export { SessionSearchTool } from "./session-search.ts"
 export { SessionGetTool } from "./session-get.ts"
+export { SessionAnalyzeTool } from "./session-analyze.ts"
 export { SessionTreeTool } from "./session-tree.ts"
 export { SessionUpdateTool } from "./session-update.ts"

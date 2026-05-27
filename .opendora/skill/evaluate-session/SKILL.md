@@ -1,195 +1,169 @@
 ---
 name: evaluate-session
-description: Evaluate session quality, execution efficiency, and routing correctness using session history evidence. Full retrospective mode traces the delegation tree, computes token and step costs, surfaces inefficiencies, and recommends targeted improvements. Use for session audits, workflow quality checks, and session retrospectives.
+description: Read-only retrospective on a session. Audits efficiency, identifies failed and redundant tool calls, surfaces step bloat and routing errors, and produces actionable improvement recommendations. Foundation for workflow automation — once a session has been evaluated and cleaned up, the manage-workflow skill can lift the corrected step chain into a reusable workflow.
 origin: opendora
 ---
 
 # Session Evaluation Skill
 
-Use this skill when you need to evaluate whether a session was executed correctly, efficiently, and with proper routing — or when conducting a full retrospective across an entire delegation tree.
+Retrospective audit of a session. Read-only. Never mutates session state — for that, use `manage-session`.
 
-## Alias Triggers
+## When to use
 
-- "session eval"
-- "evaluate session"
-- "session audit"
-- "workflow quality check"
-- "session retrospective"
-- "efficiency audit"
+- "evaluate session", "session retrospective", "session audit", "what went wrong with session X"
+- Before lifting a session into a reusable workflow (paired with `manage-workflow`)
+- After a multi-step task to find waste and failures
 
-## Objective
+## Tools in scope
 
-- Assess session quality against explicit criteria.
-- Identify routing errors, wasted steps, and missing verification.
-- Produce actionable remediation guidance.
-- For full retrospectives: trace the complete delegation tree, compute token and step costs, and recommend targeted improvements.
+The two foundational tools form a deliberate pair: **analyze first, then fetch only what you need.**
+
+- `session_analyze` — **call first**. Returns the full structural map: message/tool counts, tools_used frequency, **failure stats** (failed_tool_calls, interrupted_tool_calls, tools_failed, error_step_indices), and a flat `chain` array where every step has a `step` index, `message_id`, `part_id`, `tool`, `call_id`, and `tool_status`. **No text content** — purely structural.
+- `session_get` — **call after analyze, with precise filters**. Modes (chosen by the params you pass):
+  - `step_indices: [...]` → fetch native content for those exact steps
+  - `call_ids: [...]` → fetch specific tool calls; combine with `tool_data: "input" | "output" | "both"`
+  - `tool_names: [...]` → fetch all calls of those tools (e.g. all `webfetch`); combine with `tool_data`
+  - `message_ids: [...]` → fetch full messages
+  - no filter → full conversation in agent format (use `message_limit` for the most recent N)
+- `session_tree` — only when the session has children/parents and the audit covers the whole tree.
+- `session_search` — only to resolve a label/prefix to a session id when no id is given.
+- `log` — silent advisory log when something genuinely needs follow-up (see Logging below).
+
+**Do not** load a session's full transcript into your context unless you need it. The whole point of `session_analyze` + filtered `session_get` is to keep context small.
 
 ## Variables
 
-- `{{session_id}}` — target session or root session for a full tree retrospective.
-- `{{criteria}}` — quality dimensions and pass conditions.
-- `{{scope}}` — `quick` (single session audit) or `full` (complete delegation tree retrospective).
-- `{{goal}}` — what to optimize for in full mode: `efficiency`, `delegation`, `quality`, or free-form.
-- `{{depth}}` — how deep to traverse the delegation tree in full mode (default: full tree).
+- `{{session_id}}` — target session, or root of a tree retrospective.
+- `{{scope}}` — `single` (one session, default) or `tree` (root + descendants).
+- `{{goal}}` — `efficiency` | `failures` | `delegation` | `quality` | free-form. Defaults to `efficiency`.
 
----
+## Workflow
 
-## Quick Audit Mode (Default: Isolated Investigator)
+### 1. Resolve the target
 
-Use when evaluating a single session or a bounded subtree.
+If given a label or prefix instead of an id, use `session_search` once to pick the matching session.
 
-### Steps
+### 2. Map the structure (always start here)
 
-1. Do not load target session history into the parent context.
-2. Delegate a worker session dedicated to the audit question(s) for the target `session_id`.
-3. In the worker, inspect only what is needed using `session_tree` and `session_get`.
-4. Answer only the asked questions with concise findings and evidence pointers.
-5. Return summary to parent; parent synthesizes without transcript copy.
+Call `session_analyze(session_id)`. From the response, capture:
 
-### Rules
+- `summary.total_steps`, `total_tool_calls`, `failed_tool_calls`, `interrupted_tool_calls`
+- `summary.tools_used` (frequency map) and `summary.tools_failed` (per-tool error counts)
+- `summary.error_step_indices` and `summary.interrupted_step_indices`
+- `chain` — keep this in working memory; every later `session_get` references its `step` indices
 
-- Default path is delegated worker investigation, not direct parent-side deep reads.
-- Keep question scope narrow (1-3 questions per worker run).
-- Prefer tool-call and tree evidence first; read message bodies only when required.
-- Ground findings in concrete message/tool evidence.
-- Distinguish hard-rule violations from soft optimization opportunities.
+If `scope` is `tree`, also call `session_tree(session_id, include_stats: true)` and run step 2 on each node.
 
----
+### 3. Investigate failures (highest priority)
 
-## Full Retrospective Mode
-
-Use when given a root session ID or experiment label prefix and asked for a full retrospective. This mode walks the complete delegation chain, computes costs, and generates ranked recommendations.
-
-This mode is **read-only and analytical** — it makes no changes.
-
-### Steps
-
-#### 1. Find the Root Session
-
-- If given a full session ID: `session_get` it directly.
-- If given a label or prefix: `session_search` to find matching sessions; pick the most relevant root.
-- Confirm the session exists before continuing.
-
-#### 2. Build the Session Tree
-
-Starting from the root, build the full tree recursively:
-
-1. `session_tree(root_id, include_stats: true)` — get full tree with message and tool call counts per node.
-2. For each node needing detail: `session_get(child_id, include_tool_calls: true)`.
-
-Render the tree as you build it:
+For every step in `error_step_indices`:
 
 ```
-root (id) — agent: {agentId} — {N} messages — {X} in / {Y} out tokens — {T} tool calls
-├── child-1 (id) — agent: {agentId} — {N} messages — {X} in / {Y} out tokens — {T} tool calls
-│   └── grandchild-1 (id) — agent: {agentId} — {N} messages — {X} in / {Y} out tokens — {T} tool calls
-└── child-2 (id) — agent: {agentId} — {N} messages — {X} in / {Y} out tokens — {T} tool calls
+session_get(session_id, step_indices: [<error step>], tool_data: "both")
 ```
 
-#### 3. Analyse Each Session Node
+This returns the failing tool call's input AND error message in one shot. For each failure, identify:
 
-For each session, use `session_get(id, include_tool_calls: true)`:
+- **Root cause class**: bad parameter, missing parameter, wrong tool for the task, permission denied, network/IO, schema mismatch, incorrect path, agent hallucination.
+- **Whether it was retried**: scan the chain after the failed step for a same-tool call.
+- **Whether it cascaded**: did the failure block subsequent useful work?
 
-**Tool call breakdown** from the tool_calls array:
-```
-delegate: N  reply: N  read: N  write: N  edit: N  bash: N  session_get: N  skill_load: N  ...
-```
+For interrupted calls, do the same with `interrupted_step_indices`.
 
-**Delegation chain:** which agent was targeted, whether `wait: true/false` was used, whether a reply was received.
+### 4. Detect inefficiencies
 
-**Token breakdown:** inputTokens, outputTokens, cacheReadTokens from session metadata.
+Use the chain + tool counts to spot patterns. Fetch evidence only when needed.
 
-#### 4. Build the Summary Table
+| Pattern | Detection from analyze | Evidence fetch |
+|---|---|---|
+| Redundant reads | `tools_used.read` very high relative to unique files | `session_get(tool_names: ["read"], tool_data: "input")` to see paths |
+| Redundant fetches | `tools_used.webfetch` high, look at duplicate inputs | `session_get(tool_names: ["webfetch"], tool_data: "input")` |
+| Failed-then-retried bloat | error step followed by same-tool calls | already have it from step 3 |
+| Reasoning bloat | many `reasoning` steps between tool calls without progress | `session_get(step_indices: [...], )` for spot-check |
+| Tool-for-the-wrong-job | e.g. `bash` used to read a file when `read` exists | inspect the call's input/output |
+| Missing verification | edits/writes never followed by a read or test | tool_calls sequence in chain |
+| Step bloat | `total_steps` very high relative to user_messages | summary level |
+| Idle delegations | `delegate` calls that produced little output downstream (tree mode) | child session_analyze |
+| Ghost claims | assistant_text steps claim work was done but no matching tool_call follows | spot-check via `session_get(step_indices: [...])` |
 
-| Session label | Agent | Depth | Steps | Input tokens | Output tokens | Skills loaded | Delegations out | Tool calls |
-|---|---|---|---|---|---|---|---|---|
-| root | ... | 0 | N | X | Y | [...] | N | [...] |
-| child-1 | ... | 1 | N | X | Y | [...] | N | [...] |
-| **TOTAL** | | | **N** | **X** | **Y** | | **N** | **[...]** |
+For each pattern: list **affected step indices**, **frequency**, **estimated cost** (steps wasted, tokens approx).
 
-#### 5. Identify Inefficiencies
-
-Look for:
-
-- **Redundant reads** — same file or resource read multiple times across the tree.
-- **Delegation overhead** — sessions spawning children for tasks within their own capability.
-- **Step bloat** — sessions with high step count relative to output.
-- **Skill reload** — same skill loaded more than once within the same tree.
-- **Token imbalance** — input tokens very high relative to output (reading too broadly before acting).
-- **Deep chains for shallow work** — tasks travelling to grandchild depth when child level sufficed.
-- **Idle delegations** — delegate calls where the delegated session produced minimal output.
-- **Ghost delegations** — agent claims to have delegated but no delegate tool call exists.
-- **Missing replies** — delegated to another agent but no reply tool called in child session.
-- **Message bloat** — excessive thinking/reasoning text without corresponding tool calls.
-
-For each inefficiency: which session(s), estimated token/step cost, frequency.
-
-#### 6. Generate Recommendations
-
-For each inefficiency:
-
-- **Name the pattern** (e.g. "redundant read", "step bloat in child-1")
-- **Show the evidence** — which session, how many occurrences, estimated cost
-- **State the fix** — persona rule, injection hint, workflow restructure, or experiment target
-- **Estimate the saving** — tokens or steps reduced if the fix is applied
-
-Sort by estimated impact, highest first.
-
-#### 7. Report
+### 5. Produce the report
 
 ```
-Retrospective: {session_id or experiment label}
-Goal:          {efficiency | delegation | quality | ...}
-Date:          {YYYY-MM-DD}
+# Session Retrospective — {session_id}
 
-## Session Tree
+Title:        {title}
+Agent:        {agentId}
+Goal of run:  (inferred from first user_message)
+Audit goal:   {goal}
 
-{tree diagram from Step 2}
+## Snapshot
 
-## Summary Table
+Total steps:           {N}
+Total tool calls:      {N}   (failed: {F}, interrupted: {I})
+Unique tools used:     {N}
+Most-used tools:       {top 3 from tools_used}
+Tools that failed:     {tools_failed map, or "none"}
 
-{table from Step 4}
+## Failures
 
-## Total Cost
+{For each failed step:}
+- step {N} · {tool} · status: error
+  - input:  (one-liner extracted from session_get input)
+  - error:  (extracted error)
+  - cause:  {root cause class}
+  - retried: {yes/no, where}
+  - cascaded: {yes/no, what blocked}
 
-Input tokens:  {N}
-Output tokens: {N}
-Cache reads:   {N}  (if available)
-Total steps:   {N}
-Deepest chain: depth {N}  ({N} sessions total)
+## Inefficiencies
 
-## Inefficiencies Found
+{For each pattern detected, sorted by impact:}
+1. {pattern} — {affected steps} — est. {N} wasted steps / {N} tokens
+   Evidence: step indices {[...]}
+   Fix:      {persona rule, parameter discipline, alt tool, restructure}
 
-1. {pattern name} — {sessions affected} — {estimated cost}
+## Recommendations (sorted by impact)
+
+1. {fix} → est. saving {N steps / N tokens}
 2. ...
 
-## Recommendations
+## Workflow-readiness
 
-1. {fix description} → estimated saving: {N} tokens / {N} steps → suggested experiment target: {artifact}
-2. ...
+Cleaned step chain (after removing failures/redundancy): {N} steps
+Candidate to lift into workflow via manage-workflow: {yes/no, with notes on what must be parameterized}
 ```
 
-After the report, ask: "Would you like me to run an `agent-ops` experiment targeting the top recommendation?"
+### 6. Logging (silent, only on real findings)
 
-### Background Logging
+Only log when there is something a human or another agent needs to act on. Do not narrate logging.
 
-Call `log` silently only for problems — do not narrate:
+- Tool/skill failure during the audit itself: `log(target_type=skill, target_id=evaluate-session, kind=error, message=<what failed>, context=<session_id>)`
+- Per significant inefficiency (top 3 max): `log(target_type=agent, target_id=<agent that caused it>, kind=advisory, message=<pattern + step indices + estimated cost>, context=<session_id>)`
+- Per clear agent bug (e.g. ghost claim, repeated same-error retry without recovery): `log(target_type=agent, target_id=<that agent>, kind=bug, message=<what happened>, context=<session_id>)`
 
-- **When session_get or session_search fails**: `log(target_type=skill, target_id=session-eval, kind=error, message=<what failed>, context=<session_id>)`
-- **For each significant inefficiency found** (top 3 max): `log(target_type=agent, target_id=<agent that caused it>, kind=advisory, message=<pattern + evidence + estimated cost>, context=<session_id>)`
-- **When an agent shows clearly wrong behavior**: `log(target_type=agent, target_id=<that agent>, kind=bug, message=<what happened>, context=<session_id>)`
+Never log a clean session.
 
-Do NOT log sessions that look clean, reasonable token counts, or observations that don't require follow-up.
+If anything was logged, append a single line to the report: `Logged: N entries`.
 
-If any log entries were written, append: `Logged: N entries → agent and skill LOG.md files`
+## Rules
 
-### Rules
+- **Read-only.** Never call `session_update`, `delegate`, or any mutating tool from this skill.
+- **Analyze first, fetch second.** Never call `session_get` without filters unless the session has fewer than ~20 steps.
+- **One filter mode per `session_get` call.** Don't combine `step_indices` with `tool_names`.
+- **Quote concrete evidence.** Every finding cites step indices, call IDs, or message IDs from `session_analyze`.
+- **No edits, no agent updates, no commits.** If a fix is warranted, recommend it; don't apply it.
+- **Tree mode**: traverse via `session_tree`, then run analyze on each child. Roll up failures and inefficiencies at the tree level.
+- **Pair with downstream skills**:
+  - `manage-session` — to actually rename/archive/reparent based on findings
+  - `manage-workflow` — to lift the cleaned step chain into a reusable workflow
+  - `agent-ops` — to run experiments fixing the top recommendation
 
-- For quick audits, use delegated worker investigation first; build full trees only for full retrospectives.
-- Use `session_tree(id, include_stats: true)` for fast tree building.
-- Use `session_get(id, include_tool_calls: true)` for exact tool calls.
-- Token data comes from session metadata, not from counting message text.
-- If a session has no token data, note it as "tokens not recorded" and continue.
-- If the tree has more than 20 sessions, summarise at the agent level rather than per-session.
-- This mode is read-only — no edits, no agent updates, no commits.
-- Pair with `agent-ops`: retro reveals where to experiment; agent-ops makes the change.
+## Hand-off to manage-workflow
+
+When the user asks "turn this session into a workflow" after an evaluation:
+
+1. The cleaned step chain (failures and redundant calls removed) is the candidate.
+2. Identify which inputs are session-specific (must become workflow parameters) vs. constant.
+3. Note any branches/conditionals (failed → retried with different input) that need to become workflow logic.
+4. Hand off the chain + parameterization notes to `manage-workflow`.

@@ -127,7 +127,23 @@ export async function runWorkflow({
 
     let result: string | undefined
 
-    if (d.nodeType === "prompt") {
+    if (d.nodeType === "parameters") {
+      const defs = Array.isArray(d.workflowParameters)
+        ? (d.workflowParameters as Array<{ name: string; description?: string }>)
+        : []
+      const received: Record<string, unknown> = {}
+      for (const p of defs) {
+        received[p.name] = Object.prototype.hasOwnProperty.call(input, p.name) ? input[p.name] : null
+      }
+      await injectMessage(sessionId, [{
+        type: "tool",
+        tool: "workflow_parameters",
+        input: received,
+        output: JSON.stringify(received, null, 2),
+      }], directory)
+      result = JSON.stringify(received)
+
+    } else if (d.nodeType === "prompt") {
       result = await agentPrompt(sessionId, resolveTemplate(instructions ?? "", input, ctx))
 
     } else if (d.nodeType === "tool") {

@@ -2,14 +2,97 @@ import z from "zod"
 import { Tool } from "../tool"
 import { host } from "../host"
 import toolDef from "./session-get.json"
+import { MessageV2 } from "@opendora/session"
 
 const parameters = z.object({
   session_id: z.string().describe("ID of the session to retrieve"),
-  include_messages: z.boolean().default(true).describe("Include the full message content of the session"),
-  message_limit: z.number().optional().describe("Maximum number of messages to include (default: all)"),
-  include_thinking: z.boolean().default(false).describe("Include reasoning/thinking parts in messages"),
-  include_tool_calls: z.boolean().default(false).describe("Include tool call parts in messages"),
+  step_indices: z
+    .array(z.number())
+    .optional()
+    .describe("Specific step indices from session_analyze.chain[].step. When set, only those steps are returned."),
+  message_ids: z
+    .array(z.string())
+    .optional()
+    .describe("Specific message IDs to retrieve. When set, only those messages are returned."),
+  call_ids: z
+    .array(z.string())
+    .optional()
+    .describe("Specific tool call IDs to retrieve. Returns a flat list of just those tool calls."),
+  tool_names: z
+    .array(z.string())
+    .optional()
+    .describe('Filter to tool calls whose tool name matches (e.g. ["webfetch", "read"]). Returns a flat list.'),
+  tool_data: z
+    .enum(["input", "output", "both"])
+    .default("both")
+    .describe('When returning tool calls, controls which fields are included.'),
+  message_limit: z
+    .number()
+    .optional()
+    .describe("When fetching the full conversation (no filters), return only the most recent N messages."),
+  include_thinking: z.boolean().default(false).describe("Include reasoning/thinking blocks in returned messages."),
+  include_tool_calls: z.boolean().default(true).describe("Include tool call parts in returned messages."),
+  model: z
+    .object({
+      providerID: z.string(),
+      modelID: z.string(),
+    })
+    .optional()
+    .describe("Optional model context for media-aware formatting (Anthropic, OpenAI, Google)."),
 })
+
+type AnyMsg = { info: any; parts: any[]; id?: string }
+
+/**
+ * Build the same step index session_analyze produces, so the indices line up
+ * exactly. A step is one of: user_message, assistant_text, reasoning, tool_call.
+ */
+function buildStepIndex(messages: AnyMsg[]) {
+  const steps: Array<{
+    step: number
+    type: "user_message" | "assistant_text" | "reasoning" | "tool_call"
+    message: AnyMsg
+    part?: any
+  }> = []
+  let step = 0
+  for (const msg of messages) {
+    const role = msg.info?.role
+    const parts = msg.parts ?? []
+    if (role === "user") {
+      steps.push({ step: step++, type: "user_message", message: msg })
+      continue
+    }
+    if (role === "assistant") {
+      for (const part of parts) {
+        if (part.synthetic) continue
+        if (part.type === "text") steps.push({ step: step++, type: "assistant_text", message: msg, part })
+        else if (part.type === "reasoning") steps.push({ step: step++, type: "reasoning", message: msg, part })
+        else if (part.type === "tool") steps.push({ step: step++, type: "tool_call", message: msg, part })
+      }
+    }
+  }
+  return steps
+}
+
+function projectToolCall(part: any, mode: "input" | "output" | "both") {
+  const base = {
+    tool: part.tool,
+    call_id: part.callID,
+    status: part.state?.status ?? null,
+  }
+  if (mode === "input") return { ...base, input: part.state?.input ?? null }
+  if (mode === "output") {
+    if (part.state?.status === "completed") return { ...base, output: part.state.output ?? null }
+    if (part.state?.status === "error") return { ...base, error: part.state.error ?? null }
+    return { ...base, output: null }
+  }
+  return {
+    ...base,
+    input: part.state?.input ?? null,
+    output: part.state?.status === "completed" ? part.state.output ?? null : null,
+    error: part.state?.status === "error" ? part.state.error ?? null : null,
+  }
+}
 
 export const SessionGetTool = Tool.define("session_get", {
   description: toolDef.description,
@@ -23,7 +106,7 @@ export const SessionGetTool = Tool.define("session_get", {
       permission: "session_get",
       patterns: [],
       always: ["*"],
-      metadata: { sessionId: params.session_id }
+      metadata: { sessionId: params.session_id },
     })
 
     try {
@@ -31,15 +114,14 @@ export const SessionGetTool = Tool.define("session_get", {
       if (!session) {
         return {
           title: "Session Not Found",
-          metadata: {
-            sessionId: params.session_id,
-            found: false,
-          },
-          output: JSON.stringify({ error: `Session '${params.session_id}' not found. Use session_search to find available sessions.` }),
+          metadata: { sessionId: params.session_id, mode: "none", count: 0, found: false },
+          output: JSON.stringify({
+            error: `Session '${params.session_id}' not found. Use session_search to find available sessions.`,
+          }),
         }
       }
 
-      const sessionInfo: Record<string, any> = {
+      const sessionInfo = {
         id: session.id,
         title: session.title || null,
         type: session.sessionType || null,
@@ -52,80 +134,125 @@ export const SessionGetTool = Tool.define("session_get", {
         messageCount: session.messageCount ?? null,
       }
 
-      if (session.tokens) {
-        sessionInfo.tokens = {
-          input: session.tokens.input,
-          output: session.tokens.output,
-          cacheRead: session.tokens.cacheRead,
-          cacheWrite: session.tokens.cacheWrite,
-        }
-      }
+      const messages: AnyMsg[] = (await sessionSvc.messages({ sessionID: params.session_id })) ?? []
 
-      const result: Record<string, any> = { session: sessionInfo }
+      const usingToolFilter = (params.call_ids && params.call_ids.length > 0) || (params.tool_names && params.tool_names.length > 0)
+      const usingStepFilter = params.step_indices && params.step_indices.length > 0
+      const usingMessageFilter = params.message_ids && params.message_ids.length > 0
 
-      if (params.include_messages) {
-        const messages = await sessionSvc.messages({ sessionID: params.session_id })
-        if (messages && messages.length > 0) {
-          const messagesToInclude = params.message_limit
-            ? messages.slice(0, params.message_limit)
-            : messages
-
-          result.messages = messagesToInclude.map((msg: any) => {
-            const info = msg.info
-            const parts = (msg.parts || []) as any[]
-
-            const filteredParts = parts
-              .filter((part: any) => {
-                if (part.synthetic) return false
-                if (part.type === "reasoning" && !params.include_thinking) return false
-                if (part.type === "tool" && !params.include_tool_calls) return false
-                return true
-              })
-              .map((part: any) => {
-                if (part.type === "text") return { type: "text", text: part.text }
-                if (part.type === "reasoning") return { type: "reasoning", text: part.text }
-                if (part.type === "tool") return { type: "tool", tool: part.tool, state: part.state ?? null }
-                return part
-              })
-
-            return {
-              id: msg.id ?? null,
-              timestamp: info?.time?.created ?? null,
-              role: info?.role ?? null,
-              parts: filteredParts,
-            }
+      // ── Tool-call filter mode ─────────────────────────────────────────────
+      // Returns a flat list of tool calls — easiest format for "show me all
+      // webfetch outputs" style queries.
+      if (usingToolFilter) {
+        const steps = buildStepIndex(messages)
+        const callIdSet = new Set(params.call_ids ?? [])
+        const toolNameSet = new Set(params.tool_names ?? [])
+        const calls = steps
+          .filter((s) => s.type === "tool_call")
+          .filter((s) => {
+            if (callIdSet.size > 0 && !callIdSet.has(s.part.callID)) return false
+            if (toolNameSet.size > 0 && !toolNameSet.has(s.part.tool)) return false
+            return true
           })
+          .map((s) => ({
+            step: s.step,
+            message_id: s.message.info?.id ?? null,
+            ...projectToolCall(s.part, params.tool_data),
+          }))
 
-          result.messagesMeta = {
-            included: messagesToInclude.length,
-            total: messages.length,
-            truncated: params.message_limit ? messages.length > params.message_limit : false,
-          }
-        } else {
-          result.messages = []
-          result.messagesMeta = { included: 0, total: 0, truncated: false }
+        return {
+          title: `Tool calls: ${session.title || params.session_id}`,
+          metadata: { sessionId: session.id, mode: "tool_calls", count: calls.length, found: true },
+          output: JSON.stringify({ session: sessionInfo, mode: "tool_calls", tool_data: params.tool_data, calls }, null, 2),
         }
       }
+
+      // ── Step-index filter mode ────────────────────────────────────────────
+      // Returns the specific steps requested, each in its native shape.
+      if (usingStepFilter) {
+        const steps = buildStepIndex(messages)
+        const wanted = new Set(params.step_indices)
+        const picked = steps.filter((s) => wanted.has(s.step))
+        const out = picked.map((s) => {
+          if (s.type === "user_message") {
+            const text = (s.message.parts ?? [])
+              .filter((p: any) => p.type === "text" && !p.ignored && !p.synthetic)
+              .map((p: any) => p.text)
+              .join("\n")
+            return { step: s.step, type: s.type, message_id: s.message.info?.id, text }
+          }
+          if (s.type === "assistant_text") {
+            return { step: s.step, type: s.type, message_id: s.message.info?.id, text: s.part.text }
+          }
+          if (s.type === "reasoning") {
+            return { step: s.step, type: s.type, message_id: s.message.info?.id, text: s.part.text }
+          }
+          // tool_call
+          return {
+            step: s.step,
+            type: s.type,
+            message_id: s.message.info?.id,
+            ...projectToolCall(s.part, params.tool_data),
+          }
+        })
+
+        return {
+          title: `Steps: ${session.title || params.session_id}`,
+          metadata: { sessionId: session.id, mode: "steps", count: out.length, found: true },
+          output: JSON.stringify({ session: sessionInfo, mode: "steps", steps: out }, null, 2),
+        }
+      }
+
+      // ── Default: full conversation in agent format ────────────────────────
+      let messagesToInclude = messages
+
+      if (usingMessageFilter) {
+        const wanted = new Set(params.message_ids)
+        messagesToInclude = messages.filter((m) => wanted.has(m.info?.id))
+      } else if (params.message_limit) {
+        messagesToInclude = messages.slice(-params.message_limit)
+      }
+
+      // Strip parts the caller didn't ask for, before agent-format conversion.
+      const trimmed = messagesToInclude.map((m) => ({
+        ...m,
+        parts: (m.parts ?? []).filter((p: any) => {
+          if (p.type === "reasoning" && !params.include_thinking) return false
+          if (p.type === "tool" && !params.include_tool_calls) return false
+          return true
+        }),
+      }))
+
+      const model = params.model ?? { providerID: "openai", modelID: "gpt-4" }
+      const modelMessages = MessageV2.toModelMessages(trimmed, model)
 
       return {
         title: `Session: ${session.title || params.session_id}`,
         metadata: {
           sessionId: session.id,
-          sessionType: session.sessionType,
-          sessionStatus: session.sessionStatus,
-          agentId: session.agentID,
-          messageCount: session.messageCount,
+          mode: usingMessageFilter ? "messages" : "conversation",
+          count: modelMessages.length,
           found: true,
         },
-        output: JSON.stringify(result, null, 2),
+        output: JSON.stringify(
+          {
+            session: sessionInfo,
+            mode: usingMessageFilter ? "messages" : "conversation",
+            messages: modelMessages,
+            messagesMeta: {
+              included: messagesToInclude.length,
+              total: messages.length,
+              truncated: !usingMessageFilter && params.message_limit ? messages.length > params.message_limit : false,
+            },
+          },
+          null,
+          2,
+        ),
       }
     } catch (error) {
       return {
         title: "Session Retrieval Failed",
-        metadata: {
-          sessionId: params.session_id,
-          found: false,
-        },
+        metadata: { sessionId: params.session_id, mode: "error", count: 0, found: false },
         output: JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       }
     }

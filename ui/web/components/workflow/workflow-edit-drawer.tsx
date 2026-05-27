@@ -24,11 +24,11 @@ import {
   ComboboxList,
 } from '@/components/ui/combobox'
 import { cn } from '@/lib/utils'
-import { Trash2, Save, X, GitBranch, Workflow as WorkflowIcon, Map as MapIcon } from 'lucide-react'
+import { Trash2, Save, X, GitBranch, Workflow as WorkflowIcon, Map as MapIcon, Plus } from 'lucide-react'
 import { WorkflowControls, WorkflowControlButton } from '@/components/react-flow'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Node, Edge } from '@xyflow/react'
-import type { WorkflowNodeData, UnifiedNodeData, NodeType } from '@/components/react-flow/unified-node'
+import type { WorkflowNodeData, UnifiedNodeData, NodeType, WorkflowParameter, JsonSchemaType } from '@/components/react-flow/unified-node'
 import { getNodeTypeMetadata } from '@/components/react-flow/node-type-registry'
 import { resolveNodeType } from '@/components/react-flow/node-utils'
 import { useToolSchemas } from '@/hooks/use-tool-schemas'
@@ -85,6 +85,7 @@ export type DrawerFormData = {
   instructions?: string
   nodeType?: NodeType
   type?: string
+  workflowParameters?: WorkflowParameter[]
 }
 
 interface WorkflowEditDrawerProps {
@@ -173,6 +174,7 @@ export function WorkflowEditDrawer({
         inputs: editingNodeData.data.inputs,
         instructions: editingNodeData.instructions as string | undefined,
         nodeType: editingNodeData.nodeType,
+        workflowParameters: editingNodeData.workflowParameters,
       })
     } else {
       onSave(formData)
@@ -181,7 +183,7 @@ export function WorkflowEditDrawer({
 
   const getAvailableTabs = () => {
     if (editType === 'node') {
-      if (editingNodeData?.nodeType === 'prompt') {
+      if (editingNodeData?.nodeType === 'prompt' || editingNodeData?.nodeType === 'parameters') {
         return [{ value: 'general', label: 'General' }]
       }
       return [
@@ -255,7 +257,108 @@ export function WorkflowEditDrawer({
         }
 
         const isPromptNode = editingNodeData.nodeType === 'prompt'
+        const isParametersNode = editingNodeData.nodeType === 'parameters'
         const selectedSchema = schemas.find((s) => s.id === editingNodeData.node.action_id)
+
+        if (isParametersNode && activeTab === 'general') {
+          const params = (editingNodeData.workflowParameters ?? []) as WorkflowParameter[]
+
+          const updateParams = (updated: WorkflowParameter[]) => {
+            setEditingNodeData({ ...editingNodeData, workflowParameters: updated })
+          }
+
+          const PARAM_TYPES: JsonSchemaType[] = ['string', 'number', 'integer', 'boolean', 'object', 'array']
+
+          return (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="params-label">Label</Label>
+                <Input
+                  id="params-label"
+                  value={editingNodeData.node.label || ''}
+                  onChange={(e) => handleNodeChange({ label: e.target.value })}
+                  placeholder="Parameters"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Parameters</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => updateParams([...params, { name: '', type: 'string', description: '', required: true }])}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add
+                  </Button>
+                </div>
+
+                {params.length === 0 && (
+                  <p className="text-xs text-muted-foreground py-3 text-center">
+                    No parameters yet. Add one to define what this workflow accepts.
+                  </p>
+                )}
+
+                <div className="space-y-2">
+                  {params.map((param, i) => (
+                    <div key={i} className="border rounded-md p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={param.name}
+                          onChange={(e) => {
+                            const updated = [...params]
+                            updated[i] = { ...updated[i], name: e.target.value }
+                            updateParams(updated)
+                          }}
+                          placeholder="name"
+                          className="font-mono text-xs flex-1"
+                        />
+                        <Select
+                          value={param.type}
+                          onValueChange={(v) => {
+                            const updated = [...params]
+                            updated[i] = { ...updated[i], type: v as JsonSchemaType }
+                            updateParams(updated)
+                          }}
+                        >
+                          <SelectTrigger className="w-28 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PARAM_TYPES.map((t) => (
+                              <SelectItem key={t} value={t} className="text-xs font-mono">{t}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => updateParams(params.filter((_, j) => j !== i))}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <Textarea
+                        value={param.description}
+                        onChange={(e) => {
+                          const updated = [...params]
+                          updated[i] = { ...updated[i], description: e.target.value }
+                          updateParams(updated)
+                        }}
+                        placeholder="Description — shown to the LLM when this workflow runs"
+                        rows={2}
+                        className="text-xs resize-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
+        }
 
         if (isPromptNode && activeTab === 'general') {
           return (
