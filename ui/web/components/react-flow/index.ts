@@ -14,6 +14,7 @@ export { WorkflowCanvas } from './workflow-canvas'
 export { WorkflowControls, WorkflowControlButton } from './workflow-controls'
 export { WorkflowMiniMap } from './workflow-minimap'
 export { WorkflowPanel } from './workflow-panel'
+export { WorkflowZoomBar } from './workflow-zoom-bar'
 export { WorkflowEdge } from './workflow-edge'
 export {
   WorkflowNodeBase,
@@ -26,7 +27,7 @@ export {
 } from './workflow-node-base'
 export { WorkflowNode } from './workflow-node'
 export { WorkflowNodePalette } from './workflow-node-palette'
-export { NODE_TYPE_REGISTRY, getNodeTypeMetadata, getAllNodeTypes, getDefaultNodeData } from './node-type-registry'
+export { NODE_TYPE_REGISTRY, getNodeTypeMetadata, getAllNodeTypes, getDefaultNodeData, NodeRegistry, NodeTypeId } from './node-type-registry'
 export { resolveNodeType, normalizeNodeName, generateUniqueNodeName } from './node-utils'
 export {
   HANDLE_SCHEMA,

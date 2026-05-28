@@ -328,6 +328,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@base-ui/react": "^1.2.0",
+        "@opendora/workflow": "workspace:*",
         "@radix-ui/react-avatar": "latest",
         "@radix-ui/react-collapsible": "latest",
         "@radix-ui/react-dialog": "latest",

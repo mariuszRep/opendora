@@ -72,6 +72,7 @@ export function resolveRef(
   ctx: Record<string, unknown>,
 ): unknown {
   if (value.startsWith("$input.")) return getPath(input, value.slice(7))
+  if (value.startsWith("$output.")) return getPath(ctx, value.slice(8))
   if (value.startsWith("$ctx.")) return getPath(ctx, value.slice(5))
   return value
 }
@@ -100,7 +101,7 @@ export function resolveTemplate(
   input: Record<string, unknown>,
   ctx: Record<string, unknown>,
 ): string {
-  return template.replace(/\$(input|ctx)\.([a-zA-Z0-9_.]+)/g, (_, ns, path) => {
+  return template.replace(/\$(input|output|ctx)\.([a-zA-Z0-9_.]+)/g, (_, ns, path) => {
     const val = getPath(ns === "input" ? input : ctx, path)
     return val == null ? "" : String(val)
   })

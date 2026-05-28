@@ -1,4 +1,14 @@
-export type NodeType = 'tool' | 'prompt' | 'parameters' | 'decide'
+// ─── Canonical Node Type ─────────────────────────────────────────────────────
+// Imported from centralized definitions in @opendora/workflow/node-types.
+// This is the single source of truth — do not redefine NodeType here.
+
+import { NodeTypeId } from "@opendora/workflow/node-types"
+
+/**
+ * @deprecated Import `NodeTypeId` from `@opendora/workflow/node-types` instead.
+ * Kept as a backward-compatible alias.
+ */
+export type NodeType = NodeTypeId
 
 export type ExecutionMode = 'automatic' | 'manual'
 

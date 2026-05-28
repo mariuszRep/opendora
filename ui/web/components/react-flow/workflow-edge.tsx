@@ -1,5 +1,6 @@
 import {
   BaseEdge,
+  EdgeLabelRenderer,
   type EdgeProps,
   getBezierPath,
   getSimpleBezierPath,
@@ -91,7 +92,7 @@ const WorkflowTemporaryEdge = (props: EdgeProps) => {
 }
 
 const WorkflowAnimatedEdge = (props: EdgeProps) => {
-  const { id, source, target, markerEnd, style } = props
+  const { id, source, target, markerEnd, style, label } = props
   const sourceNode = useInternalNode(source)
   const targetNode = useInternalNode(target)
 
@@ -111,7 +112,7 @@ const WorkflowAnimatedEdge = (props: EdgeProps) => {
   const ty = targetResult?.y ?? props.targetY
   const targetPosition = targetResult?.position ?? props.targetPosition
 
-  const [edgePath] = getBezierPath({
+  const [edgePath, labelX, labelY] = getBezierPath({
     sourceX: sx,
     sourceY: sy,
     sourcePosition,
@@ -126,6 +127,16 @@ const WorkflowAnimatedEdge = (props: EdgeProps) => {
       <circle fill="var(--primary)" r="4">
         <animateMotion dur="2s" path={edgePath} repeatCount="indefinite" />
       </circle>
+      {typeof label === 'string' && label && (
+        <EdgeLabelRenderer>
+          <div
+            className="absolute nodrag nopan text-[10px] font-mono px-1.5 py-0.5 rounded bg-background border border-primary/30 text-primary shadow-sm"
+            style={{ transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`, pointerEvents: 'all' }}
+          >
+            {label}
+          </div>
+        </EdgeLabelRenderer>
+      )}
     </>
   )
 }

@@ -28,8 +28,8 @@
         ]
       },
       "position": {
-        "x": -1256.4111358811156,
-        "y": -688.101720145507
+        "x": -1375.7584751956488,
+        "y": -906.01912295094
       }
     },
     {
@@ -44,14 +44,14 @@
             "mode": "deterministic",
             "cases": [
               {
-                "label": "Prompt1",
+                "label": "red",
                 "when": {
                   "op": "equals",
                   "value": "red"
                 }
               },
               {
-                "label": "Prompt2",
+                "label": "blue",
                 "when": {
                   "op": "equals",
                   "value": "blue"
@@ -59,7 +59,8 @@
               }
             ],
             "output": "",
-            "input": "$input.Colour"
+            "input": "$input.Colour",
+            "outputMode": "result"
           }
         },
         "data": {
@@ -69,8 +70,8 @@
         "agentArgs": []
       },
       "position": {
-        "x": -1142.0513333730682,
-        "y": -534.8551033268375
+        "x": -1334.97722627508,
+        "y": -755.2955820843306
       }
     },
     {
@@ -90,8 +91,8 @@
         "agentArgs": []
       },
       "position": {
-        "x": -1273.0744171311153,
-        "y": -326.9157826455069
+        "x": -1602.018072098655,
+        "y": -524.9658048744905
       }
     },
     {
@@ -107,12 +108,12 @@
           "inputs": [],
           "outputs": []
         },
-        "instructions": "why blue is the best",
+        "instructions": "the selected color is $output.decide",
         "agentArgs": []
       },
       "position": {
-        "x": -780.4650421311155,
-        "y": -324.5321888955069
+        "x": -1010.8767242505102,
+        "y": -528.5626572718597
       }
     }
   ],
@@ -126,13 +127,13 @@
       "id": "xy-edge__r5hLwAqU_Jp3BP5GqWzXs-GcDOImtMuOUa3OncSFWyb",
       "source": "r5hLwAqU_Jp3BP5GqWzXs",
       "target": "GcDOImtMuOUa3OncSFWyb",
-      "label": "Prompt1"
+      "label": "red"
     },
     {
       "id": "xy-edge__r5hLwAqU_Jp3BP5GqWzXs-KGBDXud0COkqriWAm4QSE",
       "source": "r5hLwAqU_Jp3BP5GqWzXs",
       "target": "KGBDXud0COkqriWAm4QSE",
-      "label": "Prompt2"
+      "label": "result"
     }
   ]
 }

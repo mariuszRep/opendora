@@ -46,12 +46,23 @@ export function getAvailableRefs(
       }
     }
 
-    const output = d.node.parameters?.output as string | undefined
-    if (output) {
+    if (d.nodeType === 'decide') {
+      const label = d.node.label || 'decide'
+      const autoKey = label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') || 'decide'
+      const explicitKey = d.node.parameters?.output as string | undefined
       suggestions.push({
-        ref: `$ctx.${output}`,
-        source: `${d.nodeType}: ${d.node.label || d.nodeType}`,
+        ref: `$output.${explicitKey || autoKey}`,
+        source: d.node.label || 'Decide',
+        description: 'decision result',
       })
+    } else {
+      const output = d.node.parameters?.output as string | undefined
+      if (output) {
+        suggestions.push({
+          ref: `$output.${output}`,
+          source: `${d.nodeType}: ${d.node.label || d.nodeType}`,
+        })
+      }
     }
   }
 

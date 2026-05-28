@@ -1,176 +1,45 @@
-import type { NodeType } from './unified-node'
-import type { Edge } from '@xyflow/react'
+import {
+  NodeTypeId,
+  NodeRegistry,
+  type HandlePosition,
+  type HandleType,
+  type NodeHandleDefinition,
+  type NodeConstraints,
+} from "@opendora/workflow/node-registry"
+import type { NodeType } from "./unified-node"
+import type { Edge } from "@xyflow/react"
 
-export type HandlePosition = 'top' | 'bottom' | 'left' | 'right'
-export type HandleType = 'source' | 'target'
-export type EdgeLimit = number | 'unlimited'
+// Re-export types from canonical definitions
+export type {
+  HandlePosition,
+  HandleType,
+  EdgeLimit,
+  HandleConnectionRule,
+  NodeHandleDefinition,
+  NodeConstraints,
+} from "@opendora/workflow/node-registry"
 
-export interface HandleConnectionRule {
-  nodeType: NodeType
-  handleId: string | null
-  maxConnections: number | 'unlimited'
+export {
+  /** @deprecated Import from @opendora/workflow/node-registry directly */
+  NodeTypeId,
 }
 
-export interface HandleDefinition {
-  id: string | null
-  position: HandlePosition
-  type: HandleType
-  connections: {
-    canConnectTo?: HandleConnectionRule[]
-    canReceiveFrom?: HandleConnectionRule[]
-  }
-}
+/**
+ * @deprecated Use NodeRegistry.getHandles() / NodeRegistry.getConstraints() instead.
+ * Derived from the canonical NodeRegistry; will be removed once all consumers migrate.
+ */
+export const HANDLE_SCHEMA: Record<NodeType, { handles: NodeHandleDefinition[]; constraints: NodeConstraints }> =
+  Object.fromEntries(
+    NodeRegistry.getAll().map((def) => [
+      def.type,
+      { handles: NodeRegistry.getHandles(def.type), constraints: NodeRegistry.getConstraints(def.type) },
+    ])
+  ) as Record<NodeType, { handles: NodeHandleDefinition[]; constraints: NodeConstraints }>
 
-export interface NodeHandleConfig {
-  handles: HandleDefinition[]
-  constraints: NodeConstraints
-}
+/** @deprecated Use `NodeHandleDefinition` from canonical definitions instead. */
+export type HandleDefinition = NodeHandleDefinition
 
-export interface NodeConstraints {
-  allowedInboundEdges: EdgeLimit
-  allowedOutboundEdges: EdgeLimit
-  hiddenFields: string[]
-  requiredFields: string[]
-  exposedFields: string[]
-}
-
-// tool   ← tool, prompt, parameters, or decide via top handle
-// tool   → tool(s), prompt(s), or decide(s) via bottom handle (unlimited)
-export const HANDLE_SCHEMA: Record<NodeType, NodeHandleConfig> = {
-  decide: {
-    handles: [
-      {
-        id: null,
-        position: 'top',
-        type: 'target',
-        connections: {
-          canReceiveFrom: [
-            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'parameters', handleId: null, maxConnections: 1 },
-            { nodeType: 'decide', handleId: null, maxConnections: 'unlimited' },
-          ],
-        },
-      },
-      {
-        id: null,
-        position: 'bottom',
-        type: 'source',
-        connections: {
-          canConnectTo: [
-            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'decide', handleId: null, maxConnections: 'unlimited' },
-          ],
-        },
-      },
-    ],
-    constraints: {
-      allowedInboundEdges: 'unlimited',
-      allowedOutboundEdges: 'unlimited',
-      hiddenFields: [],
-      requiredFields: ['label'],
-      exposedFields: ['parameters'],
-    },
-  },
-  tool: {
-    handles: [
-      {
-        id: null,
-        position: 'top',
-        type: 'target',
-        connections: {
-          canReceiveFrom: [
-            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'parameters', handleId: null, maxConnections: 1 },
-            { nodeType: 'decide', handleId: null, maxConnections: 'unlimited' },
-          ],
-        },
-      },
-      {
-        id: null,
-        position: 'bottom',
-        type: 'source',
-        connections: {
-          canConnectTo: [
-            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'decide', handleId: null, maxConnections: 'unlimited' },
-          ],
-        },
-      },
-    ],
-    constraints: {
-      allowedInboundEdges: 'unlimited',
-      allowedOutboundEdges: 'unlimited',
-      hiddenFields: [],
-      requiredFields: ['label'],
-      exposedFields: ['action_id', 'parameters'],
-    },
-  },
-  prompt: {
-    handles: [
-      {
-        id: null,
-        position: 'top',
-        type: 'target',
-        connections: {
-          canReceiveFrom: [
-            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'parameters', handleId: null, maxConnections: 1 },
-            { nodeType: 'decide', handleId: null, maxConnections: 'unlimited' },
-          ],
-        },
-      },
-      {
-        id: null,
-        position: 'bottom',
-        type: 'source',
-        connections: {
-          canConnectTo: [
-            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'decide', handleId: null, maxConnections: 'unlimited' },
-          ],
-        },
-      },
-    ],
-    constraints: {
-      allowedInboundEdges: 'unlimited',
-      allowedOutboundEdges: 'unlimited',
-      hiddenFields: [],
-      requiredFields: ['label'],
-      exposedFields: ['instructions', 'parameters'],
-    },
-  },
-  parameters: {
-    handles: [
-      {
-        id: null,
-        position: 'bottom',
-        type: 'source',
-        connections: {
-          canConnectTo: [
-            { nodeType: 'tool', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'prompt', handleId: null, maxConnections: 'unlimited' },
-            { nodeType: 'decide', handleId: null, maxConnections: 'unlimited' },
-          ],
-        },
-      },
-    ],
-    constraints: {
-      allowedInboundEdges: 0,
-      allowedOutboundEdges: 'unlimited',
-      hiddenFields: [],
-      requiredFields: ['label'],
-      exposedFields: ['workflowParameters'],
-    },
-  },
-}
-
-export function getNodeHandleConfig(nodeType: NodeType): NodeHandleConfig {
+export function getNodeHandleConfig(nodeType: NodeType): { handles: NodeHandleDefinition[]; constraints: NodeConstraints } | undefined {
   return HANDLE_SCHEMA[nodeType]
 }
 
@@ -178,7 +47,7 @@ export function getHandleDefinition(
   nodeType: NodeType,
   handleId: string | null | undefined,
   handleType?: HandleType
-): HandleDefinition | undefined {
+): NodeHandleDefinition | undefined {
   const config = HANDLE_SCHEMA[nodeType]
   if (!config) return undefined
 
@@ -233,14 +102,14 @@ export function validateConnection(
     return { valid: false, error: `Invalid target handle: ${targetNodeType}` }
   }
 
-  const allowedTarget = sourceHandle.connections.canConnectTo?.find(
+  const allowedTarget = sourceHandle.connections?.canConnectTo?.find(
     c => c.nodeType === targetNodeType
   )
   if (!allowedTarget) {
     return { valid: false, error: `${sourceNodeType} cannot connect to ${targetNodeType}` }
   }
 
-  const allowedSource = targetHandle.connections.canReceiveFrom?.find(
+  const allowedSource = targetHandle.connections?.canReceiveFrom?.find(
     c => c.nodeType === sourceNodeType
   )
   if (!allowedSource) {
@@ -266,12 +135,12 @@ export function validateConnection(
   return { valid: true }
 }
 
-export function getHandlesForNodeType(nodeType: NodeType): HandleDefinition[] {
+export function getHandlesForNodeType(nodeType: NodeType): NodeHandleDefinition[] {
   return HANDLE_SCHEMA[nodeType]?.handles ?? []
 }
 
 export function getNodeConstraints(nodeType: NodeType): NodeConstraints {
-  return HANDLE_SCHEMA[nodeType]?.constraints ?? HANDLE_SCHEMA.tool.constraints
+  return HANDLE_SCHEMA[nodeType]?.constraints ?? HANDLE_SCHEMA[NodeTypeId.Tool].constraints
 }
 
 export function isVerticalHandle(position: HandlePosition): boolean {

@@ -2,6 +2,7 @@ import { Session } from "@opendora/session/session"
 import { SessionPrompt } from "@opendora/session/prompt"
 import { Identifier } from "@opendora/util/id"
 import { Workflow, WorkflowEdge, resolveRef, resolveRefs, resolveTemplate } from "./schema.ts"
+import { NodeTypeId } from "./node-types.ts"
 
 export type WorkflowToolContext = {
   sessionID: string
@@ -144,12 +145,12 @@ export async function runWorkflow({
     const nd = (d.node ?? {}) as Record<string, unknown>
     const params = (nd.parameters ?? {}) as Record<string, unknown>
     const instructions = d.instructions as string | undefined
-    const storeAs = params.output != null ? String(params.output) : undefined
+    const storeAs = params.output ? String(params.output) : undefined
     const agentArgs = Array.isArray(d.agentArgs) ? (d.agentArgs as string[]) : []
 
     let result: string | undefined
 
-    if (d.nodeType === "parameters") {
+    if (d.nodeType === NodeTypeId.Parameters) {
       const defs = Array.isArray(d.workflowParameters)
         ? (d.workflowParameters as Array<{ name: string; description?: string }>)
         : []
@@ -165,10 +166,10 @@ export async function runWorkflow({
       }], directory)
       result = JSON.stringify(received)
 
-    } else if (d.nodeType === "prompt") {
+    } else if (d.nodeType === NodeTypeId.Prompt) {
       result = await agentPrompt(sessionId, resolveTemplate(instructions ?? "", input, ctx))
 
-    } else if (d.nodeType === "tool") {
+    } else if (d.nodeType === NodeTypeId.Tool) {
       const actionId = nd.action_id as string | undefined
       if (!actionId) continue
       if (!_toolExecutor) throw new Error("No tool executor registered — call registerToolExecutor() at startup")
@@ -189,7 +190,7 @@ export async function runWorkflow({
 
       await injectMessage(sessionId, [{ type: "tool", tool: actionId, input: resolvedArgs, output }], directory)
 
-    } else if (d.nodeType === "decide") {
+    } else if (d.nodeType === NodeTypeId.Decide) {
       const mode = (params.mode as string) ?? "agent"
       const cases = Array.isArray(params.cases)
         ? (params.cases as Array<{ label: string; when?: { op: string; value?: unknown } }>)
@@ -228,21 +229,56 @@ export async function runWorkflow({
       if (!result) {
         throw new Error(`Decide node "${currentId}": agent returned "${String(result)}" which matched no case label and no default is defined`)
       }
+
+      await injectMessage(sessionId, [{
+        type: "tool",
+        tool: "workflow_decide",
+        input: {
+          mode,
+          cases: cases.map((c) => c.label),
+          ...(mode === "deterministic" ? { expression: params.input } : {}),
+        },
+        output: result,
+      }], directory)
+
+      // Auto-store result in ctx so it's accessible as $ctx.<key>.
+      // Key is derived from the node label; explicit params.output overrides if set.
+      const autoKey = (nd.label as string | undefined)
+        ?.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") || "decide"
+      ctx[storeAs ?? autoKey] = result
     }
 
-    if (storeAs !== undefined && result !== undefined) ctx[storeAs] = result
+    if (d.nodeType !== NodeTypeId.Decide && storeAs !== undefined && result !== undefined) ctx[storeAs] = result
 
     const edges = adjacency.get(currentId) ?? []
-    let next: string | undefined
 
-    if (d.nodeType === "decide") {
-      const chosen = result?.toLowerCase()
-      next = edges.find((e) => e.label?.toLowerCase() === chosen)?.target
-      if (!next) throw new Error(`Decide node "${currentId}": no outgoing edge for label "${result}"`)
+    if (d.nodeType === NodeTypeId.Decide) {
+      // Edges labeled "result" (or with no label) always fire regardless of the decision.
+      // Edges with any other label fire only when that label matches the decision result.
+      // "else" fires as a fallback when no case label matched.
+      const resultEdges = edges.filter((e) => !e.label || e.label === "result")
+      const caseEdges = edges.filter((e) => e.label && e.label !== "result" && e.label !== "else")
+      const elseEdges = edges.filter((e) => e.label === "else")
+
+      const matchedCase = caseEdges.find((e) => e.label?.toLowerCase() === result?.toLowerCase())
+
+      const nextIds: string[] = []
+      for (const e of resultEdges) nextIds.push(e.target)
+
+      if (matchedCase) {
+        nextIds.push(matchedCase.target)
+      } else if (elseEdges.length > 0) {
+        for (const e of elseEdges) nextIds.push(e.target)
+      } else if (caseEdges.length > 0) {
+        throw new Error(
+          `Decide node "${currentId}": result "${result}" matched no case edge and no else branch is defined`,
+        )
+      }
+
+      for (const id of nextIds) queue.push(id)
     } else {
-      next = edges[0]?.target
+      const next = edges[0]?.target
+      if (next) queue.push(next)
     }
-
-    if (next) queue.push(next)
   }
 }

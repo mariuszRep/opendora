@@ -15,6 +15,7 @@ export function ExpressionInput({ value, onChange, suggestions, className, ...pr
   const [open, setOpen] = React.useState(false)
   const [activeIndex, setActiveIndex] = React.useState(0)
   const inputRef = React.useRef<HTMLInputElement>(null)
+  const justSelected = React.useRef(false)
 
   // Find the $-token starting position before the cursor
   function tokenStart(val: string, cursor: number): number {
@@ -42,12 +43,24 @@ export function ExpressionInput({ value, onChange, suggestions, className, ...pr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, suggestions])
 
+  const isCompleteMatch = React.useMemo(() => {
+    const partial = partialToken(value, value.length)
+    if (!partial) return false
+    return suggestions.some((s) => s.ref === partial)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, suggestions])
+
   React.useEffect(() => {
-    setOpen(filtered.length > 0)
+    if (justSelected.current) {
+      justSelected.current = false
+      return
+    }
+    setOpen(filtered.length > 0 && !isCompleteMatch)
     setActiveIndex(0)
-  }, [filtered.length, value])
+  }, [filtered.length, value, isCompleteMatch])
 
   const select = (suggestion: RefSuggestion) => {
+    justSelected.current = true
     const cur = inputRef.current?.selectionStart ?? value.length
     const start = tokenStart(value, cur)
     if (start === -1) { onChange(suggestion.ref); setOpen(false); return }
@@ -86,7 +99,7 @@ export function ExpressionInput({ value, onChange, suggestions, className, ...pr
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={() => setTimeout(() => setOpen(false), 120)}
-        onFocus={() => { if (filtered.length > 0) setOpen(true) }}
+        onFocus={() => { if (filtered.length > 0 && !isCompleteMatch) setOpen(true) }}
         className={cn('font-mono text-xs', className)}
         {...props}
       />

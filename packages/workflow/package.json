@@ -9,7 +9,9 @@
     "./schema": "./src/schema.ts",
     "./storage": "./src/storage.ts",
     "./runner": "./src/runner.ts",
-    "./routes": "./src/routes.ts"
+    "./routes": "./src/routes.ts",
+    "./node-types": "./src/node-types.ts",
+    "./node-registry": "./src/node-registry.ts"
   },
   "dependencies": {
     "@opendora/agent": "workspace:*",

@@ -23,19 +23,22 @@ import {
   ComboboxLabel,
   ComboboxList,
 } from '@/components/ui/combobox'
+import { Switch } from '@/components/ui/switch'
+import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { Trash2, Save, X, GitBranch, Workflow as WorkflowIcon, Map as MapIcon, Plus } from 'lucide-react'
-import { WorkflowControls, WorkflowControlButton } from '@/components/react-flow'
+import { WorkflowControls, WorkflowControlButton, WorkflowZoomBar } from '@/components/react-flow'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Node, Edge } from '@xyflow/react'
 import type { WorkflowNodeData, UnifiedNodeData, NodeType, WorkflowParameter, JsonSchemaType } from '@/components/react-flow/unified-node'
-import { getNodeTypeMetadata } from '@/components/react-flow/node-type-registry'
+import { getNodeTypeMetadata, NodeTypeId } from '@/components/react-flow/node-type-registry'
 import { resolveNodeType } from '@/components/react-flow/node-utils'
 import { useToolSchemas } from '@/hooks/use-tool-schemas'
 import { ToolParameterForm } from './tool-parameter-form'
 import { type ToolSchema, type ToolSchemaProperty } from '@/lib/opendora'
 import { TOOL_GROUP_ORDER, TOOL_GROUP_LABELS, getToolGroup, HIDDEN_TOOLS } from '@/lib/tool-groups'
 import { ExpressionInput } from './expression-input'
+import { PromptInput } from './prompt-input'
 import type { RefSuggestion } from '@/lib/workflow-refs'
 
 type EditType = 'workflow' | 'node' | 'edge'
@@ -76,6 +79,34 @@ const BUILTIN_SCHEMAS: Record<string, BuiltinSchema> = {
   },
 }
 
+type TabId = 'general' | 'input' | 'settings' | 'output'
+
+const TAB_MANIFEST: Record<NodeTypeId, TabId[]> = {
+  [NodeTypeId.Tool]:       ['general', 'input', 'settings', 'output'],
+  [NodeTypeId.Prompt]:     ['general', 'input'],
+  [NodeTypeId.Parameters]: ['general', 'input'],
+  [NodeTypeId.Decide]:     ['general', 'input', 'settings', 'output'],
+}
+
+const TAB_LABELS: Record<TabId, string> = {
+  general:  'General',
+  input:    'Input',
+  settings: 'Settings',
+  output:   'Output',
+}
+
+const DECIDE_OPS = [
+  { value: 'equals', label: '= equals' },
+  { value: 'not_equals', label: '≠ not equals' },
+  { value: 'contains', label: '⊃ contains' },
+  { value: 'gt', label: '> greater than' },
+  { value: 'gte', label: '≥ greater or equal' },
+  { value: 'lt', label: '< less than' },
+  { value: 'lte', label: '≤ less or equal' },
+] as const
+
+const PARAM_TYPES: JsonSchemaType[] = ['string', 'number', 'integer', 'boolean', 'object', 'array']
+
 export type DrawerFormData = {
   name?: string
   description?: string
@@ -88,6 +119,7 @@ export type DrawerFormData = {
   nodeType?: NodeType
   type?: string
   workflowParameters?: WorkflowParameter[]
+  edgeLabel?: string
 }
 
 interface WorkflowEditDrawerProps {
@@ -106,6 +138,7 @@ interface WorkflowEditDrawerProps {
   showMiniMap?: boolean
   setShowMiniMap?: (show: boolean) => void
   availableRefs?: RefSuggestion[]
+  sourceDecideCases?: Array<{ label: string }>
 }
 
 function ToolComboboxItem({ schema, showMcp }: { schema: ToolSchema; showMcp?: boolean }) {
@@ -135,6 +168,7 @@ export function WorkflowEditDrawer({
   showMiniMap = false,
   setShowMiniMap,
   availableRefs = [],
+  sourceDecideCases,
 }: WorkflowEditDrawerProps) {
   const [formData, setFormData] = React.useState<DrawerFormData>({})
   const [editingNodeData, setEditingNodeData] = React.useState<UnifiedNodeData | null>(null)
@@ -161,7 +195,10 @@ export function WorkflowEditDrawer({
           nodeType: nodeData.nodeType,
         })
       } else if (editType === 'edge' && data.edge) {
-        setFormData({ type: data.edge.type || 'animated' })
+        setFormData({
+          type: data.edge.type || 'animated',
+          edgeLabel: typeof data.edge.label === 'string' ? data.edge.label : undefined,
+        })
         setEditingNodeData(null)
       }
     }
@@ -185,23 +222,12 @@ export function WorkflowEditDrawer({
     }
   }
 
-  const getAvailableTabs = () => {
-    if (editType === 'node') {
-      if (editingNodeData?.nodeType === 'prompt' || editingNodeData?.nodeType === 'parameters' || editingNodeData?.nodeType === 'decide') {
-        return [{ value: 'general', label: 'General' }]
-      }
-      return [
-        { value: 'general', label: 'General' },
-        { value: 'inputs', label: 'Inputs' },
-        { value: 'settings', label: 'Settings' },
-        { value: 'schema', label: 'Schema' },
-      ]
+  const getAvailableTabs = (): Array<{ value: string; label: string }> => {
+    if (editType === 'node' && editingNodeData?.nodeType) {
+      const tabIds = TAB_MANIFEST[editingNodeData.nodeType as NodeTypeId] ?? ['general']
+      return tabIds.map((id) => ({ value: id, label: TAB_LABELS[id] }))
     }
-    switch (editType) {
-      case 'workflow': return [{ value: 'general', label: 'General' }]
-      case 'edge': return [{ value: 'general', label: 'General' }]
-      default: return [{ value: 'general', label: 'General' }]
-    }
+    return [{ value: 'general', label: 'General' }]
   }
 
   const renderNodeIdentity = () => {
@@ -251,371 +277,41 @@ export function WorkflowEditDrawer({
       case 'node': {
         if (!editingNodeData) return null
 
+        const nodeType = editingNodeData.nodeType ?? NodeTypeId.Tool
+
         const handleNodeChange = (updates: Partial<UnifiedNodeData['node']>) => {
-          const updated = {
-            ...editingNodeData,
-            node: { ...editingNodeData.node, ...updates },
-          }
+          const updated = { ...editingNodeData, node: { ...editingNodeData.node, ...updates } }
           setEditingNodeData(updated)
           setFormData((prev) => ({ ...prev, label: updated.node.label, action_id: updated.node.action_id }))
         }
 
-        const isPromptNode = editingNodeData.nodeType === 'prompt'
-        const isParametersNode = editingNodeData.nodeType === 'parameters'
         const selectedSchema = schemas.find((s) => s.id === editingNodeData.node.action_id)
 
-        if (isParametersNode && activeTab === 'general') {
-          const params = (editingNodeData.workflowParameters ?? []) as WorkflowParameter[]
-
-          const updateParams = (updated: WorkflowParameter[]) => {
-            setEditingNodeData({ ...editingNodeData, workflowParameters: updated })
-          }
-
-          const PARAM_TYPES: JsonSchemaType[] = ['string', 'number', 'integer', 'boolean', 'object', 'array']
-
-          return (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="params-label">Label</Label>
-                <Input
-                  id="params-label"
-                  value={editingNodeData.node.label || ''}
-                  onChange={(e) => handleNodeChange({ label: e.target.value })}
-                  placeholder="Parameters"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Parameters</Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => updateParams([...params, { name: '', type: 'string', description: '', required: true }])}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add
-                  </Button>
-                </div>
-
-                {params.length === 0 && (
-                  <p className="text-xs text-muted-foreground py-3 text-center">
-                    No parameters yet. Add one to define what this workflow accepts.
-                  </p>
-                )}
-
-                <div className="space-y-2">
-                  {params.map((param, i) => (
-                    <div key={i} className="border rounded-md p-3 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={param.name}
-                          onChange={(e) => {
-                            const updated = [...params]
-                            updated[i] = { ...updated[i], name: e.target.value }
-                            updateParams(updated)
-                          }}
-                          placeholder="name"
-                          className="font-mono text-xs flex-1"
-                        />
-                        <Select
-                          value={param.type}
-                          onValueChange={(v) => {
-                            const updated = [...params]
-                            updated[i] = { ...updated[i], type: v as JsonSchemaType }
-                            updateParams(updated)
-                          }}
-                        >
-                          <SelectTrigger className="w-28 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {PARAM_TYPES.map((t) => (
-                              <SelectItem key={t} value={t} className="text-xs font-mono">{t}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                          onClick={() => updateParams(params.filter((_, j) => j !== i))}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                      <Textarea
-                        value={param.description}
-                        onChange={(e) => {
-                          const updated = [...params]
-                          updated[i] = { ...updated[i], description: e.target.value }
-                          updateParams(updated)
-                        }}
-                        placeholder="Description — shown to the LLM when this workflow runs"
-                        rows={2}
-                        className="text-xs resize-none"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )
-        }
-
-        const isDecideNode = editingNodeData.nodeType === 'decide'
-
-        if (isDecideNode && activeTab === 'general') {
-          const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
-          const mode = (params.mode as string) ?? 'agent'
-          const cases = (params.cases as Array<{ label: string; when?: { op: string; value?: unknown } }>) ?? []
-          const defaultLabel = (params.default as string) ?? ''
-          const output = (params.output as string) ?? ''
-          const inputExpr = (params.input as string) ?? ''
-
-          const updateParams = (updates: Record<string, unknown>) => {
-            setEditingNodeData({
-              ...editingNodeData,
-              node: { ...editingNodeData.node, parameters: { ...params, ...updates } },
-            })
-          }
-
-          const updateCases = (next: typeof cases) => updateParams({ cases: next })
-
-          const DECIDE_OPS = [
-            { value: 'equals', label: 'equals' },
-            { value: 'not_equals', label: 'not equals' },
-            { value: 'in', label: 'in (array)' },
-            { value: 'not_in', label: 'not in' },
-            { value: 'contains', label: 'contains' },
-            { value: 'not_contains', label: 'not contains' },
-            { value: 'matches', label: 'matches (regex)' },
-            { value: 'gt', label: '>' },
-            { value: 'gte', label: '>=' },
-            { value: 'lt', label: '<' },
-            { value: 'lte', label: '<=' },
-            { value: 'exists', label: 'exists' },
-            { value: 'not_exists', label: 'not exists' },
-            { value: 'is_empty', label: 'is empty' },
-            { value: 'is_not_empty', label: 'is not empty' },
-          ]
-
-          const noValueOps = new Set(['exists', 'not_exists', 'is_empty', 'is_not_empty'])
-
-          return (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Label</Label>
-                <Input
-                  value={editingNodeData.node.label || ''}
-                  onChange={(e) => handleNodeChange({ label: e.target.value })}
-                  placeholder="Decide"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Mode</Label>
-                <Select value={mode} onValueChange={(v) => updateParams({ mode: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="agent">Agent — LLM picks the branch</SelectItem>
-                    <SelectItem value="deterministic">Deterministic — evaluate a condition</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {mode === 'deterministic' && (
-                <div className="space-y-2">
-                  <Label>Input expression</Label>
-                  <ExpressionInput
-                    value={inputExpr}
-                    onChange={(v) => updateParams({ input: v || undefined })}
-                    suggestions={availableRefs}
-                    placeholder="$input.color"
-                  />
-                  {!inputExpr && (
-                    <p className="text-xs text-amber-500">
-                      Required — without this, the workflow will error at runtime. Type <code className="font-mono">$</code> to pick from upstream outputs.
-                    </p>
-                  )}
-                  {inputExpr && (
-                    <p className="text-xs text-muted-foreground">
-                      Resolved value is compared against each case below.
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label>Branches</Label>
-                <p className="text-xs text-muted-foreground">
-                  Connect edges from this node to define branches. Each edge label becomes a case.
-                </p>
-
-                {cases.length === 0 ? (
-                  <div className="border border-dashed rounded-md py-4 text-center">
-                    <p className="text-xs text-muted-foreground">No branches yet — draw an edge from this node.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {cases.map((c, i) => (
-                      <div key={i} className="border rounded-md p-3 space-y-2">
-                        <span className="inline-block text-xs font-mono px-2 py-0.5 rounded-sm bg-primary/10 text-primary">
-                          {c.label || '(unnamed)'}
-                        </span>
-                        {mode === 'deterministic' && (
-                          <div className="flex gap-2">
-                            <Select
-                              value={c.when?.op ?? 'equals'}
-                              onValueChange={(op) => {
-                                const updated = [...cases]
-                                updated[i] = { ...updated[i], when: { op, value: updated[i].when?.value ?? '' } }
-                                updateCases(updated)
-                              }}
-                            >
-                              <SelectTrigger className="w-40 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {DECIDE_OPS.map((o) => (
-                                  <SelectItem key={o.value} value={o.value} className="text-xs">
-                                    {o.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {!noValueOps.has(c.when?.op ?? 'equals') && (
-                              <Input
-                                value={
-                                  ['in', 'not_in'].includes(c.when?.op ?? '') && Array.isArray(c.when?.value)
-                                    ? JSON.stringify(c.when!.value)
-                                    : String(c.when?.value ?? '')
-                                }
-                                onChange={(e) => {
-                                  const op = c.when?.op ?? 'equals'
-                                  let val: unknown = e.target.value
-                                  if (['in', 'not_in'].includes(op)) {
-                                    try { val = JSON.parse(e.target.value) } catch { /* keep as string */ }
-                                  }
-                                  const updated = [...cases]
-                                  updated[i] = { ...updated[i], when: { op, value: val } }
-                                  updateCases(updated)
-                                }}
-                                placeholder={['in', 'not_in'].includes(c.when?.op ?? '') ? '["a","b"]' : 'value'}
-                                className="font-mono text-xs flex-1"
-                              />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label>Default branch (fallback)</Label>
-                <Input
-                  value={defaultLabel}
-                  onChange={(e) => updateParams({ default: e.target.value || undefined })}
-                  placeholder="fallback label (optional)"
-                  className="font-mono text-xs"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Used when no case matches. Leave empty to throw an error.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Store decision as</Label>
-                <Input
-                  value={output}
-                  onChange={(e) => updateParams({ output: e.target.value || undefined })}
-                  placeholder="ctx key (e.g. decision)"
-                  className="font-mono text-xs"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Chosen label stored in <code className="font-mono">$ctx.&lt;key&gt;</code> for later steps.
-                </p>
-              </div>
-            </div>
-          )
-        }
-
-        if (isPromptNode && activeTab === 'general') {
-          return (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="prompt-label">Label</Label>
-                <Input
-                  id="prompt-label"
-                  value={editingNodeData.node.label || ''}
-                  onChange={(e) => handleNodeChange({ label: e.target.value })}
-                  placeholder="Step label"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="prompt-text">Prompt</Label>
-                <Textarea
-                  id="prompt-text"
-                  value={(editingNodeData.instructions as string) || ''}
-                  onChange={(e) =>
-                    setEditingNodeData({ ...editingNodeData, instructions: e.target.value })
-                  }
-                  placeholder="Message to send to the agent. Use $input.field or $ctx.key for substitution."
-                  rows={6}
-                  className="font-mono text-xs"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="prompt-output">Store response as</Label>
-                <Input
-                  id="prompt-output"
-                  value={String(editingNodeData.node.parameters?.output ?? '')}
-                  onChange={(e) =>
-                    handleNodeChange({ parameters: { ...editingNodeData.node.parameters, output: e.target.value || undefined } })
-                  }
-                  placeholder="ctx key (e.g. result)"
-                  className="font-mono text-xs"
-                />
-                <p className="text-xs text-muted-foreground">Response stored in <code className="font-mono">$ctx.&lt;key&gt;</code> for use in later steps.</p>
-              </div>
-            </div>
-          )
-        }
-
+        // ── General ─────────────────────────────────────────────────────────────
         if (activeTab === 'general') {
-          const q = toolSearch.toLowerCase()
-          const visibleSchemas = schemas
-            .filter((s) => !HIDDEN_TOOLS.has(s.id))
-            .filter((s) => !q || s.id.includes(q) || s.description?.toLowerCase().includes(q))
-          const internalSchemas = visibleSchemas.filter((s) => s.source !== 'mcp')
-          const mcpSchemas = visibleSchemas.filter((s) => s.source === 'mcp')
+          if (nodeType === NodeTypeId.Tool) {
+            const q = toolSearch.toLowerCase()
+            const visibleSchemas = schemas
+              .filter((s) => !HIDDEN_TOOLS.has(s.id))
+              .filter((s) => !q || s.id.includes(q) || s.description?.toLowerCase().includes(q))
+            const internalSchemas = visibleSchemas.filter((s) => s.source !== 'mcp')
+            const mcpSchemas = visibleSchemas.filter((s) => s.source === 'mcp')
+            const grouped = TOOL_GROUP_ORDER.map((groupId) => ({
+              groupId,
+              label: TOOL_GROUP_LABELS[groupId],
+              tools: internalSchemas.filter((s) => getToolGroup(s.id) === groupId),
+            })).filter((g) => g.tools.length > 0)
+            const mcpServers = Array.from(new Set(mcpSchemas.map((s) => s.mcpServer ?? 'MCP')))
 
-          const grouped = TOOL_GROUP_ORDER.map((groupId) => ({
-            groupId,
-            label: TOOL_GROUP_LABELS[groupId],
-            tools: internalSchemas.filter((s) => getToolGroup(s.id) === groupId),
-          })).filter((g) => g.tools.length > 0)
-
-          const mcpServers = Array.from(new Set(mcpSchemas.map((s) => s.mcpServer ?? 'MCP')))
-
-          return (
-            <div className="space-y-4">
-              <div className="space-y-2">
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
                   <Label>Tool</Label>
                   <Combobox
                     value={editingNodeData.node.action_id ?? null}
                     onValueChange={(toolId) => {
-                      handleNodeChange({
-                        action_id: toolId ?? undefined,
-                        label: editingNodeData.node.label || toolId || '',
-                        parameters: {},
-                      })
-                      if (toolId) setActiveTab('inputs')
+                      handleNodeChange({ action_id: toolId ?? undefined, label: editingNodeData.node.label || toolId || '', parameters: {} })
+                      if (toolId) setActiveTab('input')
                     }}
                     onInputValueChange={(v) => setToolSearch(v)}
                   >
@@ -631,162 +327,440 @@ export function WorkflowEditDrawer({
                         {grouped.map(({ groupId, label, tools }) => (
                           <ComboboxGroup key={groupId}>
                             <ComboboxLabel>{label}</ComboboxLabel>
-                            {tools.map((s) => (
-                              <ToolComboboxItem key={s.id} schema={s} />
-                            ))}
+                            {tools.map((s) => <ToolComboboxItem key={s.id} schema={s} />)}
                           </ComboboxGroup>
                         ))}
                         {mcpServers.map((server) => (
                           <ComboboxGroup key={`mcp:${server}`}>
                             <ComboboxLabel>{server}</ComboboxLabel>
-                            {mcpSchemas
-                              .filter((s) => (s.mcpServer ?? 'MCP') === server)
-                              .map((s) => (
-                                <ToolComboboxItem key={s.id} schema={s} showMcp />
-                              ))}
+                            {mcpSchemas.filter((s) => (s.mcpServer ?? 'MCP') === server).map((s) => (
+                              <ToolComboboxItem key={s.id} schema={s} showMcp />
+                            ))}
                           </ComboboxGroup>
                         ))}
                       </ComboboxList>
                     </ComboboxContent>
                   </Combobox>
                   {(selectedSchema?.description ?? BUILTIN_SCHEMAS[editingNodeData.node.action_id ?? '']?.description) && (
-                    <p className="text-xs text-muted-foreground">{selectedSchema?.description ?? BUILTIN_SCHEMAS[editingNodeData.node.action_id ?? '']?.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedSchema?.description ?? BUILTIN_SCHEMAS[editingNodeData.node.action_id ?? '']?.description}
+                    </p>
                   )}
                 </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="node-label">Label</Label>
-                <Input
-                  id="node-label"
-                  value={editingNodeData.node.label || ''}
-                  onChange={(e) => handleNodeChange({ label: e.target.value })}
-                  placeholder="Node label"
-                />
-              </div>
-
-              <div className="space-y-2">
-                  <Label htmlFor="node-description">Description</Label>
-                  <Textarea
-                    id="node-description"
-                    value={editingNodeData.node.description || ''}
-                    onChange={(e) => handleNodeChange({ description: e.target.value })}
-                    placeholder="What does this step do?"
-                    rows={2}
-                  />
+                <div className="space-y-2">
+                  <Label htmlFor="node-label">Label</Label>
+                  <Input id="node-label" value={editingNodeData.node.label || ''} onChange={(e) => handleNodeChange({ label: e.target.value })} placeholder="Node label" />
                 </div>
-            </div>
-          )
-        }
-
-        if (activeTab === 'inputs') {
-          const actionId = editingNodeData.node.action_id ?? ''
-          const builtin = BUILTIN_SCHEMAS[actionId]
-          const properties = selectedSchema?.inputSchema?.properties ?? builtin?.properties ?? {}
-          const required = selectedSchema?.inputSchema?.required ?? builtin?.required ?? []
-          const description = selectedSchema?.description ?? builtin?.description
-          const parameters = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
-          const hasSchema = !!(selectedSchema || builtin)
-
-          return (
-            <div className="space-y-4">
-              {description && (
-                <p className="text-xs text-muted-foreground">{description}</p>
-              )}
-              {!hasSchema ? (
-                <p className="text-xs text-muted-foreground py-4 text-center">
-                  Select a tool in the General tab to configure its inputs.
-                </p>
-              ) : (
-                <ToolParameterForm
-                  properties={properties}
-                  required={required}
-                  values={parameters}
-                  agentArgs={editingNodeData.agentArgs ?? []}
-                  onChange={(updated) => {
-                    const next = { ...editingNodeData, node: { ...editingNodeData.node, parameters: updated } }
-                    setEditingNodeData(next)
-                  }}
-                  onAgentArgsChange={(updated) => {
-                    setEditingNodeData({ ...editingNodeData, agentArgs: updated })
-                  }}
-                />
-              )}
-            </div>
-          )
-        }
-
-        if (activeTab === 'schema') {
-          const actionId = editingNodeData.node.action_id ?? ''
-          const builtin = BUILTIN_SCHEMAS[actionId]
-          const schemaObj = selectedSchema ?? (builtin ? {
-            id: actionId,
-            description: builtin.description,
-            source: 'internal' as const,
-            inputSchema: { type: 'object', properties: builtin.properties, required: builtin.required },
-          } : null)
-
-          if (!schemaObj) {
-            return (
-              <p className="text-xs text-muted-foreground py-4 text-center">
-                Select a tool in the General tab to view its JSON schema.
-              </p>
+                <div className="space-y-2">
+                  <Label htmlFor="node-description">Description</Label>
+                  <Textarea id="node-description" value={editingNodeData.node.description || ''} onChange={(e) => handleNodeChange({ description: e.target.value })} placeholder="What does this step do?" rows={2} />
+                </div>
+              </div>
             )
           }
 
-          const json = JSON.stringify(
-            {
-              name: schemaObj.id,
-              description: schemaObj.description,
-              inputSchema: schemaObj.inputSchema,
-            },
-            null,
-            2
-          )
+          if (nodeType === NodeTypeId.Prompt) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="prompt-label">Label</Label>
+                  <Input id="prompt-label" value={editingNodeData.node.label || ''} onChange={(e) => handleNodeChange({ label: e.target.value })} placeholder="Step label" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="prompt-description">Description</Label>
+                  <Textarea id="prompt-description" value={editingNodeData.node.description || ''} onChange={(e) => handleNodeChange({ description: e.target.value })} placeholder="What does this step do?" rows={2} />
+                </div>
+              </div>
+            )
+          }
 
-          return (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-muted-foreground">{schemaObj.id}</span>
-                {schemaObj.source === 'mcp' && (
-                  <Badge variant="secondary" className="text-xs">MCP</Badge>
+          if (nodeType === NodeTypeId.Parameters) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="params-label">Label</Label>
+                  <Input id="params-label" value={editingNodeData.node.label || ''} onChange={(e) => handleNodeChange({ label: e.target.value })} placeholder="Parameters" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="params-description">Description</Label>
+                  <Textarea id="params-description" value={editingNodeData.node.description || ''} onChange={(e) => handleNodeChange({ description: e.target.value })} placeholder="What are these parameters for?" rows={2} />
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Decide) {
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const mode = (params.mode as string) ?? 'agent'
+            const updateDecideParams = (updates: Record<string, unknown>) => {
+              setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: { ...params, ...updates } } })
+            }
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Label</Label>
+                  <Input value={editingNodeData.node.label || ''} onChange={(e) => handleNodeChange({ label: e.target.value })} placeholder="Decide" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea value={editingNodeData.node.description || ''} onChange={(e) => handleNodeChange({ description: e.target.value })} placeholder="What decision is this node making?" rows={2} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Mode</Label>
+                  <Select value={mode} onValueChange={(v) => updateDecideParams({ mode: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="agent">Agent — LLM picks the branch</SelectItem>
+                      <SelectItem value="deterministic">Deterministic — evaluate a condition</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )
+          }
+
+          return null
+        }
+
+        // ── Input ────────────────────────────────────────────────────────────────
+        if (activeTab === 'input') {
+          if (nodeType === NodeTypeId.Tool) {
+            const actionId = editingNodeData.node.action_id ?? ''
+            const builtin = BUILTIN_SCHEMAS[actionId]
+            const properties = selectedSchema?.inputSchema?.properties ?? builtin?.properties ?? {}
+            const required = selectedSchema?.inputSchema?.required ?? builtin?.required ?? []
+            const description = selectedSchema?.description ?? builtin?.description
+            const parameters = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const hasSchema = !!(selectedSchema || builtin)
+
+            return (
+              <div className="space-y-4">
+                {description && <p className="text-xs text-muted-foreground">{description}</p>}
+                {!hasSchema ? (
+                  <p className="text-xs text-muted-foreground py-4 text-center">Select a tool in the General tab to configure its inputs.</p>
+                ) : (
+                  <ToolParameterForm
+                    properties={properties}
+                    required={required}
+                    values={parameters}
+                    agentArgs={editingNodeData.agentArgs ?? []}
+                    onChange={(updated) => setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: updated } })}
+                    onAgentArgsChange={(updated) => setEditingNodeData({ ...editingNodeData, agentArgs: updated })}
+                  />
                 )}
               </div>
-              <pre className="text-xs bg-muted/50 rounded-md p-3 overflow-auto font-mono leading-relaxed whitespace-pre-wrap border max-h-[50vh]">
-                {json}
-              </pre>
-            </div>
-          )
+            )
+          }
+
+          if (nodeType === NodeTypeId.Prompt) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Prompt</Label>
+                  <PromptInput
+                    value={(editingNodeData.instructions as string) || ''}
+                    onChange={(v) => setEditingNodeData({ ...editingNodeData, instructions: v })}
+                    suggestions={availableRefs ?? []}
+                    placeholder={'Message to send to the agent.\nType $ to insert a reference — e.g. $input.color or $output.decide'}
+                    rows={8}
+                  />
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Parameters) {
+            const params = (editingNodeData.workflowParameters ?? []) as WorkflowParameter[]
+            const updateWfParams = (updated: WorkflowParameter[]) => setEditingNodeData({ ...editingNodeData, workflowParameters: updated })
+
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Workflow parameters</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">Visible to triggers and the LLM as <code className="font-mono">$input.*</code></p>
+                    </div>
+                    <Button variant="outline" size="sm" className="h-7 text-xs shrink-0"
+                      onClick={() => updateWfParams([...params, { name: '', type: 'string', description: '', required: true }])}>
+                      <Plus className="h-3 w-3 mr-1" />Add
+                    </Button>
+                  </div>
+                  {params.length === 0 && (
+                    <p className="text-xs text-muted-foreground py-3 text-center">No parameters yet. Add one to define what this workflow accepts.</p>
+                  )}
+                  <div className="space-y-2">
+                    {params.map((param, i) => (
+                      <div key={i} className="border rounded-md p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Input value={param.name} onChange={(e) => { const u = [...params]; u[i] = { ...u[i], name: e.target.value }; updateWfParams(u) }} placeholder="name" className="font-mono text-xs flex-1" />
+                          <Select value={param.type} onValueChange={(v) => { const u = [...params]; u[i] = { ...u[i], type: v as JsonSchemaType }; updateWfParams(u) }}>
+                            <SelectTrigger className="w-28 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>{PARAM_TYPES.map((t) => <SelectItem key={t} value={t} className="text-xs font-mono">{t}</SelectItem>)}</SelectContent>
+                          </Select>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => updateWfParams(params.filter((_, j) => j !== i))}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                        <Textarea value={param.description} onChange={(e) => { const u = [...params]; u[i] = { ...u[i], description: e.target.value }; updateWfParams(u) }} placeholder="Description — shown to the LLM when this workflow runs" rows={2} className="text-xs resize-none" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Decide) {
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const mode = (params.mode as string) ?? 'agent'
+            const inputExpr = (params.input as string) ?? ''
+            const updateDecideParams = (updates: Record<string, unknown>) => {
+              setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: { ...params, ...updates } } })
+            }
+
+            if (mode === 'agent') {
+              return (
+                <div className="py-6 text-center space-y-2">
+                  <p className="text-sm text-muted-foreground">The agent reads available context and picks a branch.</p>
+                  <p className="text-xs text-muted-foreground">Switch to <strong>Deterministic</strong> mode in General if you want to evaluate an expression instead.</p>
+                </div>
+              )
+            }
+
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Input expression</Label>
+                  <ExpressionInput
+                    value={inputExpr}
+                    onChange={(v) => updateDecideParams({ input: v || undefined })}
+                    suggestions={availableRefs}
+                    placeholder="$input.color"
+                  />
+                  {!inputExpr && (
+                    <p className="text-xs text-amber-500">Required — without this the workflow will error at runtime. Type <code className="font-mono">$</code> to pick from upstream outputs.</p>
+                  )}
+                  {inputExpr && (
+                    <p className="text-xs text-muted-foreground">Resolved value is compared against each condition in the Settings tab.</p>
+                  )}
+                </div>
+              </div>
+            )
+          }
+
+          return null
         }
 
+        // ── Settings ─────────────────────────────────────────────────────────────
         if (activeTab === 'settings') {
-          return (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="node-exec-mode">Execution Mode</Label>
-                <Select
-                  value={editingNodeData.node.execution_mode || 'automatic'}
-                  onValueChange={(value) =>
-                    handleNodeChange({ execution_mode: value as 'automatic' | 'manual' })
-                  }
-                >
-                  <SelectTrigger id="node-exec-mode">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="automatic">Automatic</SelectItem>
-                    <SelectItem value="manual">Manual (User Approval)</SelectItem>
-                  </SelectContent>
-                </Select>
+          if (nodeType === NodeTypeId.Tool) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="node-exec-mode">Execution Mode</Label>
+                  <Select value={editingNodeData.node.execution_mode || 'automatic'} onValueChange={(v) => handleNodeChange({ execution_mode: v as 'automatic' | 'manual' })}>
+                    <SelectTrigger id="node-exec-mode"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="automatic">Automatic</SelectItem>
+                      <SelectItem value="manual">Manual (User Approval)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
-          )
+            )
+          }
+
+          if (nodeType === NodeTypeId.Decide) {
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const mode = (params.mode as string) ?? 'agent'
+            const cases = (params.cases as Array<{ label: string; when?: { op: string; value?: unknown } }>) ?? []
+            const hasElse = !!(params.hasElse)
+            const updateDecideParams = (updates: Record<string, unknown>) => {
+              setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: { ...params, ...updates } } })
+            }
+
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Conditions</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">Each condition is a named branch. Connect an edge and assign it.</p>
+                    </div>
+                    <Button variant="outline" size="sm" className="h-7 text-xs shrink-0"
+                      onClick={() => {
+                        const label = 'condition_' + (cases.length + 1)
+                        const newCase = mode === 'deterministic' ? { label, when: { op: 'equals', value: label } } : { label }
+                        updateDecideParams({ cases: [...cases, newCase] })
+                      }}>
+                      <Plus className="h-3 w-3 mr-1" />Add condition
+                    </Button>
+                  </div>
+
+                  {cases.length === 0 && (
+                    <div className="border border-dashed rounded-md py-4 text-center">
+                      <p className="text-xs text-muted-foreground">No conditions yet — draw an edge from this node or add one above.</p>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    {cases.map((c, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Input
+                          value={c.label}
+                          onChange={(e) => {
+                            const newLabel = e.target.value
+                            const updated = [...cases]
+                            const currentOp = updated[i].when?.op ?? 'equals'
+                            updated[i] = { ...updated[i], label: newLabel, ...(mode === 'deterministic' && currentOp === 'equals' ? { when: { op: currentOp, value: newLabel } } : {}) }
+                            updateDecideParams({ cases: updated })
+                          }}
+                          placeholder="condition name"
+                          className="font-mono text-xs flex-1"
+                        />
+                        {mode === 'deterministic' && (
+                          <>
+                            <Select value={c.when?.op ?? 'equals'} onValueChange={(op) => { const u = [...cases]; u[i] = { ...u[i], when: { op, value: u[i].when?.value ?? '' } }; updateDecideParams({ cases: u }) }}>
+                              <SelectTrigger className="w-36 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>{DECIDE_OPS.map((o) => <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <Input
+                              value={String(c.when?.value ?? '')}
+                              onChange={(e) => { const op = c.when?.op ?? 'equals'; const u = [...cases]; u[i] = { ...u[i], when: { op, value: e.target.value } }; updateDecideParams({ cases: u }) }}
+                              placeholder="value"
+                              className="font-mono text-xs flex-1"
+                            />
+                          </>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => updateDecideParams({ cases: cases.filter((_, j) => j !== i) })}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <Label>Include else branch</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">Fallback when no condition matches</p>
+                  </div>
+                  <Switch checked={hasElse} onCheckedChange={(checked) => updateDecideParams(checked ? { hasElse: true, default: 'else' } : { hasElse: false, default: undefined })} />
+                </div>
+              </div>
+            )
+          }
+
+          return null
         }
+
+        // ── Output ───────────────────────────────────────────────────────────────
+        if (activeTab === 'output') {
+          if (nodeType === NodeTypeId.Tool) {
+            const outputs = editingNodeData.data.outputs ?? []
+
+            return (
+              <div className="space-y-3">
+                {outputs.length === 0 ? (
+                  <div className="border border-dashed rounded-md py-6 text-center">
+                    <p className="text-xs text-muted-foreground">No output schema defined for this tool.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Outputs become available as <code className="font-mono">$ctx.*</code> in downstream nodes.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {outputs.map((field, i) => (
+                      <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-md border bg-muted/30">
+                        <span className="font-mono text-xs flex-1 truncate">{field.name}</span>
+                        <Badge variant="secondary" className="font-mono text-xs shrink-0">{field.type}</Badge>
+                        {field.description && (
+                          <span className="text-xs text-muted-foreground truncate max-w-[160px]">{field.description}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Decide) {
+            const label = editingNodeData.node.label || 'decide'
+            const autoKey = label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') || 'decide'
+
+            return (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md border bg-muted/30">
+                  <span className="font-mono text-xs flex-1 text-foreground">${`output.${autoKey}`}</span>
+                  <Badge variant="secondary" className="font-mono text-xs shrink-0">string</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  The chosen label is automatically stored here. Use <code className="font-mono">${`output.${autoKey}`}</code> in any downstream node.
+                  Rename the node in General to change the key.
+                </p>
+              </div>
+            )
+          }
+
+          return null
+        }
+
         return null
       }
 
       case 'edge':
         return (
           <div className="space-y-4">
+            {formData.edgeLabel !== undefined && sourceDecideCases && (
+              <div className="space-y-2">
+                <Label>Branch</Label>
+                <p className="text-xs text-muted-foreground">
+                  Pick a case to route conditionally, or <code className="font-mono">result</code> to always fire and pass the decision value downstream.
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {sourceDecideCases.map((c) => (
+                    <Button
+                      key={c.label}
+                      variant={formData.edgeLabel === c.label ? 'default' : 'outline'}
+                      size="sm"
+                      className="font-mono text-xs h-7"
+                      onClick={() => setFormData({ ...formData, edgeLabel: c.label })}
+                    >
+                      {c.label}
+                    </Button>
+                  ))}
+                  <Button
+                    variant={formData.edgeLabel === 'else' ? 'default' : 'outline'}
+                    size="sm"
+                    className="font-mono text-xs h-7"
+                    onClick={() => setFormData({ ...formData, edgeLabel: 'else' })}
+                  >
+                    else
+                  </Button>
+                  <Button
+                    variant={formData.edgeLabel === 'result' ? 'default' : 'outline'}
+                    size="sm"
+                    className="font-mono text-xs h-7 text-muted-foreground"
+                    onClick={() => setFormData({ ...formData, edgeLabel: 'result' })}
+                  >
+                    result
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {formData.edgeLabel !== undefined && (!sourceDecideCases || sourceDecideCases.length === 0) && (
+              <div className="space-y-2">
+                <Label>Label</Label>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="font-mono text-xs">{formData.edgeLabel}</Badge>
+                  <span className="text-xs text-muted-foreground">double-click to edit</span>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="edge-type">Edge Type</Label>
               <Select
@@ -856,20 +830,26 @@ export function WorkflowEditDrawer({
     >
       {/* Controls — attached above the container, always visible */}
       <div className="absolute -top-16 inset-x-0 flex justify-center z-[100] pointer-events-none">
-        <WorkflowControls
-          orientation="horizontal"
-          showInteractive={true}
-          className="!static shadow-lg pointer-events-auto"
-        >
-          {setShowMiniMap && (
-            <WorkflowControlButton
-              onClick={() => setShowMiniMap(!showMiniMap)}
-              title="Toggle Minimap"
-            >
-              <MapIcon className="h-4 w-4" />
-            </WorkflowControlButton>
-          )}
-        </WorkflowControls>
+        <div className="relative pointer-events-auto">
+          {/* Zoom indicator bar — absolutely positioned above controls, exact same width */}
+          <div className="absolute bottom-full left-0 right-0 mb-1 [&>*]:w-full">
+            <WorkflowZoomBar />
+          </div>
+          <WorkflowControls
+            orientation="horizontal"
+            showInteractive={true}
+            className="!static shadow-lg"
+          >
+            {setShowMiniMap && (
+              <WorkflowControlButton
+                onClick={() => setShowMiniMap(!showMiniMap)}
+                title="Toggle Minimap"
+              >
+                <MapIcon className="h-4 w-4" />
+              </WorkflowControlButton>
+            )}
+          </WorkflowControls>
+        </div>
       </div>
 
       {open && (
