@@ -193,6 +193,11 @@ export interface SessionCoreConfig {
     uninstall?(name: string): Promise<void>
     list?(): Promise<any[]>
   }
+  /** Workflow service */
+  workflow?: {
+    list?(directory?: string): Promise<any[]>
+    get?(id: string, directory?: string): Promise<any>
+  }
   /** Skill-tool registry — tools unlocked per session via skill_load */
   skillTools?: {
     get(sessionID: string): Set<string>

@@ -32,6 +32,7 @@ import { TaskTool } from "@/tool/task"
 import { Shell } from "@/shell/shell"
 import { Truncate } from "@/tool/truncation"
 import { Skill } from "@/skill"
+import { WorkflowStorage } from "@opendora/workflow/storage"
 import { Ripgrep } from "@/file/ripgrep"
 import { SessionPrompt } from "@opendora/session/prompt"
 import { Session } from "@opendora/session/session"
@@ -439,6 +440,14 @@ export function configureSessionCore() {
     skillTools: {
       get: (sessionID: string) => getSkillTools(sessionID),
       add: (sessionID: string, tools: string[]) => addSkillTools(sessionID, tools),
+    },
+    workflow: {
+      async list(directory?: string) {
+        return WorkflowStorage.list(directory ?? Instance.directory)
+      },
+      async get(id: string, directory?: string) {
+        return WorkflowStorage.get(directory ?? Instance.directory, id)
+      },
     },
     // Wire session methods so compaction.create can call them without circular dep
     session: {

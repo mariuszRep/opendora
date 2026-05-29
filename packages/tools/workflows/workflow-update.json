@@ -1,6 +1,6 @@
 {
   "name": "workflow_update",
-  "description": "Replace an existing workflow entirely. Pass the id of the workflow to update and the complete replacement workflow JSON — same shape as the UI creates and the HTTP API accepts. Always call workflow_get first to read the current state. The workflow.id inside the JSON must match the id parameter.",
+  "description": "Replace an existing workflow entirely with a new definition. This is a full replace — every field is overwritten with the new value; there is no patch/merge.\n\nAlways call workflow_get first to read the current state before making changes.\nThe workflow.id inside the JSON must match the id parameter.\n\nThe workflow JSON schema is identical to what workflow_create accepts — see that tool's description for the full node type reference, variable reference syntax, and edge routing rules.",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -10,14 +10,14 @@
       },
       "workflow": {
         "type": "object",
-        "description": "Complete replacement workflow JSON. Required fields: id (must match the id parameter), name, nodes, edges. All fields are replaced — this is not a patch.",
+        "description": "Complete replacement workflow JSON. All fields are overwritten. See workflow_create for the full schema including all four node types (parameters, prompt, tool, decide), variable references, and edge routing.",
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
+          "id":          { "type": "string" },
+          "name":        { "type": "string" },
           "description": { "type": "string" },
-          "version": { "type": "string" },
-          "nodes": { "type": "array" },
-          "edges": { "type": "array" }
+          "version":     { "type": "string" },
+          "nodes":       { "type": "array" },
+          "edges":       { "type": "array" }
         },
         "required": ["id", "name", "nodes", "edges"]
       }

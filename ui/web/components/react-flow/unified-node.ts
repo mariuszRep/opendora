@@ -138,6 +138,7 @@ export interface WorkflowParameter {
   type: JsonSchemaType
   description: string
   required?: boolean
+  enum?: string[]
 }
 
 export interface NodeProperties {

@@ -5,6 +5,7 @@ import { PlayIcon, Loader2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -37,7 +38,7 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  type InputField = { name: string; type: string; required?: boolean; description?: string }
+  type InputField = { name: string; type: string; required?: boolean; description?: string; enum?: string[] }
 
   // Support legacy (type: "input"), unified start (nodeType: "start"), and parameters (nodeType: "parameters")
   const legacyInputNode = workflow.nodes.find((n) => n.type === "input")
@@ -52,9 +53,9 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
   const inputFields: InputField[] = (() => {
     if (parametersNode) {
       const params = ((parametersNode.data as any)?.workflowParameters ?? []) as Array<{
-        name: string; type: string; description?: string; required?: boolean
+        name: string; type: string; description?: string; required?: boolean; enum?: string[]
       }>
-      return params.map((p) => ({ name: p.name, type: p.type, required: p.required !== false, description: p.description }))
+      return params.map((p) => ({ name: p.name, type: p.type, required: p.required !== false, description: p.description, enum: p.enum }))
     }
     if (!inputNode) return []
     const d = inputNode.data as any
@@ -82,6 +83,56 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
       .catch(() => {})
   }, [open])
 
+  function renderFieldInput(field: InputField) {
+    const type = field.type ?? 'string'
+    const val = inputValues[field.name] ?? ''
+    const set = (v: string) => setInputValues((p) => ({ ...p, [field.name]: v }))
+
+    if (field.enum && field.enum.length > 0) {
+      return (
+        <Select value={val} onValueChange={set}>
+          <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+          <SelectContent>
+            {field.enum.map((opt) => (
+              <SelectItem key={opt} value={opt} className="font-mono text-sm">{opt}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )
+    }
+
+    if (type === 'boolean') {
+      return (
+        <Select value={val} onValueChange={set}>
+          <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="true">true</SelectItem>
+            <SelectItem value="false">false</SelectItem>
+          </SelectContent>
+        </Select>
+      )
+    }
+    if (type === 'number' || type === 'integer') {
+      return (
+        <Input type="number" placeholder={`Enter ${field.name}…`} value={val} onChange={(e) => set(e.target.value)} />
+      )
+    }
+    if (type === 'object' || type === 'array') {
+      return (
+        <Textarea
+          placeholder={type === 'array' ? '["item1", "item2"]' : '{"key": "value"}'}
+          value={val}
+          onChange={(e) => set(e.target.value)}
+          rows={3}
+          className="font-mono text-xs"
+        />
+      )
+    }
+    return (
+      <Input placeholder={`Enter ${field.name}…`} value={val} onChange={(e) => set(e.target.value)} />
+    )
+  }
+
   async function handleRun() {
     if (!agentId) { setError("Select an agent"); return }
     for (const f of requiredFields) {
@@ -90,7 +141,19 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
     setError(null)
     setRunning(true)
     try {
-      const input = Object.fromEntries(Object.entries(inputValues).filter(([, v]) => v !== ""))
+      const input = Object.fromEntries(
+        inputFields
+          .filter(({ name }) => (inputValues[name] ?? '') !== '')
+          .map(({ name, type }) => {
+            const raw = inputValues[name] ?? ''
+            const t = type ?? 'string'
+            let coerced: unknown = raw
+            if (t === 'boolean') coerced = raw === 'true'
+            else if (t === 'number' || t === 'integer') coerced = Number(raw)
+            else if (t === 'object' || t === 'array') { try { coerced = JSON.parse(raw) } catch { coerced = raw } }
+            return [name, coerced]
+          })
+      )
       const result = await opendora.workflow.execute(workflow.id, agentId, input, directory)
       onOpenChange(false)
       onSessionCreated?.(result.sessionId, agentId)
@@ -134,17 +197,15 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
 
           {inputFields.map((field) => (
             <div key={field.name} className="space-y-1.5">
-              <Label>
-                {field.name}
-                {field.required !== false && <span className="ml-1 text-destructive">*</span>}
-                <span className="ml-2 text-xs text-muted-foreground font-normal">{field.type}</span>
+              <Label className="flex items-center gap-1.5">
+                <span className="font-mono">{field.name}</span>
+                {field.required !== false && <span className="text-destructive">*</span>}
+                {field.type && field.type !== 'string' && (
+                  <span className="text-xs text-muted-foreground font-normal font-mono">{field.type}</span>
+                )}
               </Label>
-              <Input
-                placeholder={`Enter ${field.name}…`}
-                value={inputValues[field.name] ?? ""}
-                onChange={(e) => setInputValues((p) => ({ ...p, [field.name]: e.target.value }))}
-              />
               {field.description && <p className="text-xs text-muted-foreground">{field.description}</p>}
+              {renderFieldInput(field)}
             </div>
           ))}
 

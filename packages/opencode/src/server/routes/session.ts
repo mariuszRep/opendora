@@ -16,6 +16,8 @@ import { getConfig } from "@opendora/session/config"
 import { sessionManager } from "@opendora/session/session"
 import { Agent } from "../../agent"
 import { Skill } from "../../skill/skill"
+import { WorkflowStorage } from "@opendora/workflow/storage"
+import { Instance } from "../../project/instance"
 import { ToolRegistry } from "../../tool/registry"
 import { MCP } from "../../mcp"
 import { getSkillTools } from "../../session-skill-tools"
@@ -260,6 +262,7 @@ export const SessionRoutes = lazy(() =>
                   sections: z.array(z.object({ label: z.string(), content: z.string() })),
                   injection: z.string(),
                   skills: z.array(z.object({ name: z.string(), description: z.string(), content: z.string(), tools: z.array(z.string()).optional() })),
+                  workflows: z.array(z.object({ id: z.string(), name: z.string(), description: z.string().optional() })),
                   tools: z.array(z.object({ id: z.string(), description: z.string(), source: z.enum(["internal", "mcp"]), mcpServer: z.string().optional(), agentManaged: z.boolean(), skillUnlocked: z.boolean() })),
                   loadedSkillNames: z.array(z.string()),
                 })),
@@ -348,6 +351,17 @@ export const SessionRoutes = lazy(() =>
             }))
           : []
 
+        const agentWorkflowIds: string[] = ((agent as any)?.workflows as string[] | undefined) ?? ((agent as any)?.config?.workflows as string[] | undefined) ?? []
+        const workflows = agentWorkflowIds.length > 0
+          ? (await Promise.all(
+              agentWorkflowIds.map((id) => WorkflowStorage.get(Instance.directory, id).catch(() => null))
+            )).filter((w): w is NonNullable<typeof w> => w != null).map((w) => ({
+              id: w.id,
+              name: w.name,
+              description: w.description,
+            }))
+          : []
+
         const dummyModel = { providerID: "anthropic", modelID: "claude-sonnet-4-6" }
         const allInternal = await Promise.all(
           ToolRegistry.all().map(async (t) => {
@@ -398,7 +412,7 @@ export const SessionRoutes = lazy(() =>
           ? allTagged.filter((t) => t.agentManaged || t.skillUnlocked)
           : allTagged
 
-        return c.json({ sections, injection, skills, tools, loadedSkillNames })
+        return c.json({ sections, injection, skills, workflows, tools, loadedSkillNames })
       },
     )
     .patch(

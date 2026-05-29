@@ -1,12 +1,12 @@
 {
   "name": "workflow_get",
-  "description": "Retrieve a single workflow definition by its ID. Returns the full workflow object including all nodes and edges.",
+  "description": "Retrieve a single workflow definition by its ID. Returns the full workflow object — the exact same JSON shape that workflow_create and workflow_update accept. Always call this before workflow_update to read current state.",
   "inputSchema": {
     "type": "object",
     "properties": {
       "id": {
         "type": "string",
-        "description": "The workflow ID to retrieve (matches the workflow file name without .json)"
+        "description": "The workflow ID to retrieve (use workflow_list to see available IDs)"
       }
     },
     "required": ["id"]

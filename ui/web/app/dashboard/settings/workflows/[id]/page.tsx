@@ -77,10 +77,12 @@ export default function WorkflowEditorPage() {
   }
 
   function handleSessionCreated(sessionId: string, agentId: string) {
-    // Switch agent first so the correct tab is active even before the session
-    // appears in the sessions list (worker sessions load asynchronously)
-    ctx.selectAgent(agentId)
-    ctx.selectSession(sessionId)
+    // Pass the agent id as a hint so the agent tab updates eagerly even before
+    // the new worker session arrives via SSE. We must NOT call ctx.selectAgent
+    // here: that picks an *existing* session for the agent (active/remembered/
+    // first), which would briefly select an unrelated past session and flicker
+    // its messages into view before the workflow's session is selected.
+    ctx.selectSession(sessionId, agentId)
   }
 
   if (loading) {

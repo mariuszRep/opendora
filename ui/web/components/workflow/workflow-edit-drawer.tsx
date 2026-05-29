@@ -157,6 +157,44 @@ function ToolComboboxItem({ schema, showMcp }: { schema: ToolSchema; showMcp?: b
   )
 }
 
+function EnumTagInput({ values, onChange }: { values: string[]; onChange: (v: string[]) => void }) {
+  const [draft, setDraft] = React.useState('')
+  const inputRef = React.useRef<HTMLInputElement>(null)
+
+  function add(raw: string) {
+    const v = raw.trim()
+    if (!v || values.includes(v)) { setDraft(''); return }
+    onChange([...values, v])
+    setDraft('')
+  }
+
+  return (
+    <div
+      className="flex min-h-8 w-full flex-wrap items-center gap-1 rounded-md border border-input bg-transparent px-2 py-1 text-xs transition-colors focus-within:ring-1 focus-within:ring-ring cursor-text"
+      onClick={() => inputRef.current?.focus()}
+    >
+      {values.map((v, i) => (
+        <span key={i} className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] font-medium">
+          {v}
+          <X className="size-2.5 cursor-pointer opacity-60 hover:opacity-100" onClick={(e) => { e.stopPropagation(); onChange(values.filter((_, j) => j !== i)) }} />
+        </span>
+      ))}
+      <input
+        ref={inputRef}
+        className="flex-1 min-w-[80px] bg-transparent outline-none font-mono text-xs placeholder:text-muted-foreground"
+        placeholder={values.length === 0 ? 'Type a value, press Enter…' : 'Add another…'}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(draft) }
+          else if (e.key === 'Backspace' && draft === '' && values.length > 0) onChange(values.slice(0, -1))
+        }}
+        onBlur={() => { if (draft.trim()) add(draft) }}
+      />
+    </div>
+  )
+}
+
 export function WorkflowEditDrawer({
   open,
   onOpenChange,
@@ -494,15 +532,25 @@ export function WorkflowEditDrawer({
                       <div key={i} className="border rounded-md p-3 space-y-2">
                         <div className="flex items-center gap-2">
                           <Input value={param.name} onChange={(e) => { const u = [...params]; u[i] = { ...u[i], name: e.target.value }; updateWfParams(u) }} placeholder="name" className="font-mono text-xs flex-1" />
-                          <Select value={param.type} onValueChange={(v) => { const u = [...params]; u[i] = { ...u[i], type: v as JsonSchemaType }; updateWfParams(u) }}>
+                          <Select value={param.type ?? 'string'} onValueChange={(v) => { const u = [...params]; u[i] = { ...u[i], type: v as JsonSchemaType }; updateWfParams(u) }}>
                             <SelectTrigger className="w-28 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>{PARAM_TYPES.map((t) => <SelectItem key={t} value={t} className="text-xs font-mono">{t}</SelectItem>)}</SelectContent>
                           </Select>
+                          <Switch checked={param.required !== false} onCheckedChange={(checked) => { const u = [...params]; u[i] = { ...u[i], required: checked }; updateWfParams(u) }} className="scale-75 origin-right" title="Required" />
                           <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => updateWfParams(params.filter((_, j) => j !== i))}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                         <Textarea value={param.description} onChange={(e) => { const u = [...params]; u[i] = { ...u[i], description: e.target.value }; updateWfParams(u) }} placeholder="Description — shown to the LLM when this workflow runs" rows={2} className="text-xs resize-none" />
+                        {(['string', 'number', 'integer'] as const).includes((param.type ?? 'string') as 'string' | 'number' | 'integer') && (
+                          <div className="space-y-1">
+                            <span className="text-xs text-muted-foreground">Allowed values <span className="opacity-60">(empty = accept any)</span></span>
+                            <EnumTagInput
+                              values={param.enum ?? []}
+                              onChange={(next) => { const u = [...params]; u[i] = { ...u[i], enum: next.length > 0 ? next : undefined }; updateWfParams(u) }}
+                            />
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

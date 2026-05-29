@@ -18,7 +18,7 @@ import type { WorkflowNodeData } from './unified-node'
 function isAiDriven(nodeData: WorkflowNodeData): boolean {
   const nodeType = resolveNodeType(nodeData)
   if (nodeType === NodeTypeId.Prompt) return true
-  if (nodeType === NodeTypeId.Decide) return (nodeData.node.parameters?.mode as string | undefined) !== 'deterministic'
+  if (nodeType === NodeTypeId.Decide) return (nodeData.node?.parameters?.mode as string | undefined) !== 'deterministic'
   if (nodeType === NodeTypeId.Tool) return ((nodeData.agentArgs as string[] | undefined)?.length ?? 0) > 0
   return false
 }
@@ -58,9 +58,9 @@ export function WorkflowNode({ data, selected }: NodeProps) {
       <WorkflowNodeHeader className="pb-2 flex-1 bg-secondary/50">
         <div className="min-w-0 flex-1">
           <WorkflowNodeTitle className="text-base leading-tight">
-            {nodeData.node.label}
+            {nodeData.node?.label ?? ''}
           </WorkflowNodeTitle>
-          {nodeData.node.description ? (
+          {nodeData.node?.description ? (
             <WorkflowNodeDescription className="text-sm line-clamp-2 mt-1">
               {nodeData.node.description}
             </WorkflowNodeDescription>

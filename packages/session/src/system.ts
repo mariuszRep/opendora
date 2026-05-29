@@ -146,6 +146,29 @@ export namespace SystemPrompt {
       }
     }
 
+    // 4b. Available Workflows — list assigned workflows so the agent knows what to run
+    const hasWorkflowRunTool = agentToolsList?.includes("workflow_run") ?? false
+    if (hasWorkflowRunTool) {
+      const agentWorkflowIds = input.agent?.config?.workflows as string[] | undefined
+      if (agentWorkflowIds?.length) {
+        const allWorkflows: any[] = await cfg.workflow?.list?.() ?? []
+        const visibleWorkflows = allWorkflows.filter((w: any) => agentWorkflowIds.includes(w.id))
+        // Include any assigned ids that didn't resolve, so the agent still sees them
+        const resolvedIds = new Set(visibleWorkflows.map((w: any) => w.id))
+        const unresolved = agentWorkflowIds.filter((id) => !resolvedIds.has(id))
+        const entries = [
+          ...visibleWorkflows.map((w: any) => `- **${w.id}**${w.name && w.name !== w.id ? ` (${w.name})` : ""}${w.description ? `: ${w.description}` : ""}`),
+          ...unresolved.map((id) => `- **${id}**`),
+        ]
+        if (entries.length > 0) {
+          sections.push({
+            label: "Available Workflows",
+            content: `# Available Workflows\nUse the \`workflow_run\` tool to run any of these workflows when appropriate:\n\n${entries.join("\n")}`,
+          })
+        }
+      }
+    }
+
     // 5. Session/user system override (mirrors user.system in llm.ts)
     if (input.userSystem) {
       sections.push({ label: "Session Boundary Prompt", content: input.userSystem })

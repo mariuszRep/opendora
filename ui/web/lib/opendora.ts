@@ -347,6 +347,7 @@ export type Agent = {
   fallback_model?: { modelID: string; providerID: string }
   tools?: string[]
   skills?: string[]
+  workflows?: string[]
   toolConfig?: {
     delegate?: { allowedAgents?: string[] }
     reply?: { stopAfterReply?: boolean }
@@ -372,6 +373,7 @@ export type AgentConfig = {
   hidden?: boolean
   tools?: string[]
   skills?: string[]
+  workflows?: string[]
   toolConfig?: {
     delegate?: { allowedAgents?: string[] }
     reply?: { stopAfterReply?: boolean }

@@ -48,6 +48,20 @@ const edgeTypes = {
   temporary: WorkflowEdge.Temporary,
 } satisfies EdgeTypes
 
+function normalizeNodeData(raw: unknown): WorkflowNodeData {
+  const d = (raw ?? {}) as Record<string, unknown>
+  const nodeType = (d.nodeType as NodeType) ?? NodeTypeId.Tool
+  const defaults = getDefaultNodeData(nodeType)
+  const node = d.node && typeof d.node === 'object' ? (d.node as Record<string, unknown>) : null
+  return {
+    ...(d as WorkflowNodeData),
+    node: node
+      ? { ...defaults.node, ...(node as WorkflowNodeData['node']), label: (node.label as string) || defaults.node.label }
+      : defaults.node,
+    data: (d.data as WorkflowNodeData['data']) ?? defaults.data,
+  }
+}
+
 function toReactFlowNodes(workflow: Workflow): Node<WorkflowNodeData>[] {
   return (workflow.nodes ?? [])
     .filter((n) => n.type === 'workflow')
@@ -55,7 +69,7 @@ function toReactFlowNodes(workflow: Workflow): Node<WorkflowNodeData>[] {
       id: n.id,
       type: 'workflow',
       position: n.position,
-      data: n.data as unknown as WorkflowNodeData,
+      data: normalizeNodeData(n.data),
     }))
 }
 
@@ -476,8 +490,34 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
             },
           }
         })
+
+        // Decide nodes: keep outgoing edge labels in sync when a case is renamed
+        // in the drawer (index-based pairing). Without this the runner finds a
+        // matching case in params.cases but no edge with that label, and throws.
+        let updatedEdges = edgesRef.current
+        const oldNodeData = drawerData.node.data as WorkflowNodeData | undefined
+        if (oldNodeData?.nodeType === NodeTypeId.Decide && formData.nodeType !== undefined && formData.nodeType === NodeTypeId.Decide) {
+          const oldCases = ((oldNodeData.node.parameters?.cases as DecideCase[] | undefined) ?? [])
+          const newCases = (((formData.parameters as Record<string, unknown> | undefined)?.cases as DecideCase[] | undefined) ?? [])
+          const renames = new Map<string, string>()
+          for (let i = 0; i < Math.min(oldCases.length, newCases.length); i++) {
+            const oldLabel = oldCases[i]?.label
+            const newLabel = newCases[i]?.label
+            if (oldLabel && newLabel && oldLabel !== newLabel) renames.set(oldLabel, newLabel)
+          }
+          if (renames.size > 0) {
+            updatedEdges = edgesRef.current.map((e) => {
+              if (e.source !== targetId) return e
+              if (typeof e.label !== 'string') return e
+              const mapped = renames.get(e.label)
+              return mapped ? { ...e, label: mapped } : e
+            })
+          }
+        }
+
         setNodes(updatedNodes)
-        saveWorkflow(updatedNodes, edgesRef.current)
+        if (updatedEdges !== edgesRef.current) setEdges(updatedEdges)
+        saveWorkflow(updatedNodes, updatedEdges)
         setDrawerOpen(false)
         return
       }

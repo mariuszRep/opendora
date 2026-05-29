@@ -26,6 +26,7 @@ export const AgentUpdateTool = Tool.define(
       hidden: z.boolean().optional().describe("Whether to hide this agent from UI listings"),
       tools: z.array(z.string()).optional().describe("New tool restrictions for this agent"),
       skills: z.array(z.string()).optional().describe("Skills allocated to this agent (skill names)"),
+      workflows: z.array(z.string()).optional().describe("Workflows allocated to this agent (workflow ids)"),
       enableInjection: z.boolean().optional().describe("Whether to enable dynamic prompt injection"),
       persona: z.string().optional().describe("New persona and system prompt content"),
       injection: z.string().optional().describe("New dynamic injection content")
@@ -43,6 +44,7 @@ export const AgentUpdateTool = Tool.define(
       hidden?: boolean
       tools?: string[]
       skills?: string[]
+      workflows?: string[]
       enableInjection?: boolean
       persona?: string
       injection?: string
@@ -75,6 +77,7 @@ export const AgentUpdateTool = Tool.define(
         if (args.hidden !== undefined) configPatch.hidden = args.hidden
         if (args.tools !== undefined) configPatch.tools = args.tools
         if (args.skills !== undefined) configPatch.skills = args.skills
+        if (args.workflows !== undefined) configPatch.workflows = args.workflows
         if (args.enableInjection !== undefined) configPatch.enableInjection = args.enableInjection
 
         await agents.update(args.id, configPatch, args.persona, args.injection)

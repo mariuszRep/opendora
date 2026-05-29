@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { opendora, type Agent, type AgentConfig, type Provider, type Skill } from "@/lib/opendora"
+import { opendora, type Agent, type AgentConfig, type Provider, type Skill, type Workflow } from "@/lib/opendora"
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
 import {
   HIDDEN_TOOLS,
@@ -126,8 +126,11 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const mcpServers = Array.from(new Set(availableMcpSchemas.map((t) => t.mcpServer ?? 'MCP')))
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
+  const [selectedWorkflows, setSelectedWorkflows] = useState<string[]>([])
+  const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>([])
   const [expandedGroup, setExpandedGroup] = useState<ToolGroupId | string | null>(null)
   const [expandedSkill, setExpandedSkill] = useState<string | null>(null)
+  const [expandedWorkflow, setExpandedWorkflow] = useState<string | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
   const [defaultPaths, setDefaultPaths] = useState<string[]>([])
@@ -142,6 +145,11 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   // Load skills once
   useEffect(() => {
     opendora.skill.list().then(setAvailableSkills).catch(() => {})
+  }, [])
+
+  // Load workflows once
+  useEffect(() => {
+    opendora.workflow.list().then(setAvailableWorkflows).catch(() => {})
   }, [])
 
   // Pre-fill on open
@@ -161,6 +169,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setFallbackModel(modelToValue(a.fallback_model))
       setSelectedTools(a.tools ?? [])
       setSelectedSkills(a.skills ?? (a as any).config?.skills ?? [])
+      setSelectedWorkflows(a.workflows ?? (a as any).config?.workflows ?? [])
       setDelegateAllowedAgents((a as any).config?.toolConfig?.delegate?.allowedAgents ?? a.toolConfig?.delegate?.allowedAgents ?? [])
       setReplyStopAfterReply((a as any).config?.toolConfig?.reply?.stopAfterReply ?? a.toolConfig?.reply?.stopAfterReply ?? false)
       setPersona("")
@@ -179,6 +188,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setFallbackModel(NONE)
       setSelectedTools([])
       setSelectedSkills([])
+      setSelectedWorkflows([])
       setDelegateAllowedAgents([])
       setReplyStopAfterReply(false)
       setInjectInstructions(true)
@@ -204,6 +214,12 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   function toggleSkill(name: string) {
     setSelectedSkills((prev) =>
       prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name],
+    )
+  }
+
+  function toggleWorkflow(id: string) {
+    setSelectedWorkflows((prev) =>
+      prev.includes(id) ? prev.filter((w) => w !== id) : [...prev, id],
     )
   }
 
@@ -245,6 +261,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
         fallback_model: valueToModel(fallbackModel),
         tools: selectedTools.length > 0 ? selectedTools : undefined,
         skills: selectedSkills,
+        workflows: selectedWorkflows,
         toolConfig: (() => {
           const config: any = {}
           if (delegateAllowedAgents.length > 0) {
@@ -295,6 +312,14 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
               {selectedSkills.length > 0 && (
                 <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                   {selectedSkills.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="workflows">
+              Workflows
+              {selectedWorkflows.length > 0 && (
+                <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+                  {selectedWorkflows.length}
                 </span>
               )}
             </TabsTrigger>
@@ -821,6 +846,58 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                   size="sm"
                   className="h-auto self-start px-0 text-xs text-muted-foreground"
                   onClick={() => setSelectedSkills([])}
+                >
+                  Clear all
+                </Button>
+              )}
+            </div>
+          </TabsContent>
+          {/* ── Workflows tab ── */}
+          <TabsContent value="workflows" className="flex-1 overflow-y-auto pr-1">
+            <div className="flex flex-col gap-3 pb-2 pt-3">
+              <p className="text-xs text-muted-foreground">
+                Attach workflows to this agent. The agent can run any assigned workflow via the workflow_run tool.
+              </p>
+              {availableWorkflows.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No workflows found.</p>
+              ) : (
+                availableWorkflows.map((workflow) => {
+                  const checked = selectedWorkflows.includes(workflow.id)
+                  const isExpanded = expandedWorkflow === workflow.id
+                  return (
+                    <Card key={workflow.id} className="cursor-pointer">
+                      <CardHeader
+                        className="flex-row items-center justify-between"
+                        onClick={() => setExpandedWorkflow(isExpanded ? null : workflow.id)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleWorkflow(workflow.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <div>
+                            <CardTitle className="font-mono">{workflow.name || workflow.id}</CardTitle>
+                            <CardDescription>{workflow.id}</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      {isExpanded && workflow.description && (
+                        <CardContent className="border-t pt-3">
+                          <p className="text-xs text-muted-foreground">{workflow.description}</p>
+                        </CardContent>
+                      )}
+                    </Card>
+                  )
+                })
+              )}
+              {selectedWorkflows.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto self-start px-0 text-xs text-muted-foreground"
+                  onClick={() => setSelectedWorkflows([])}
                 >
                   Clear all
                 </Button>

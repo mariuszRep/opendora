@@ -151,18 +151,55 @@ export async function runWorkflow({
     let result: string | undefined
 
     if (d.nodeType === NodeTypeId.Parameters) {
-      const defs = Array.isArray(d.workflowParameters)
-        ? (d.workflowParameters as Array<{ name: string; description?: string }>)
-        : []
+      type WfParam = { name: string; type?: string; description?: string; required?: boolean; enum?: string[] }
+      const defs = Array.isArray(d.workflowParameters) ? (d.workflowParameters as WfParam[]) : []
+
       const received: Record<string, unknown> = {}
       for (const p of defs) {
         received[p.name] = Object.prototype.hasOwnProperty.call(input, p.name) ? input[p.name] : null
       }
+
+      // Validate required fields and enum constraints
+      for (const p of defs) {
+        const val = received[p.name]
+        if (p.required !== false && (val === null || val === undefined || val === "")) {
+          throw new Error(
+            `Workflow parameter "${p.name}" is required but was not provided.` +
+            (p.description ? ` (${p.description})` : "")
+          )
+        }
+        if (p.enum && p.enum.length > 0 && val !== null && val !== undefined && val !== "") {
+          const strVal = String(val)
+          if (!p.enum.includes(strVal)) {
+            throw new Error(
+              `Workflow parameter "${p.name}" value "${strVal}" is not allowed. ` +
+              `Allowed values: ${p.enum.join(", ")}`
+            )
+          }
+        }
+      }
+
+      // Build rich output: values + metadata so the agent has full context
+      const lines: string[] = ["Workflow inputs:"]
+      for (const p of defs) {
+        const val = received[p.name]
+        const displayVal = val === null || val === undefined ? "(not provided)" : JSON.stringify(val)
+        lines.push(`  ${p.name}: ${displayVal}`)
+        const meta: string[] = []
+        if (p.type) meta.push(p.type)
+        if (p.required !== false) meta.push("required")
+        if (p.enum && p.enum.length > 0) meta.push(`allowed: ${p.enum.join(" | ")}`)
+        const parts: string[] = []
+        if (meta.length > 0) parts.push(`[${meta.join(", ")}]`)
+        if (p.description) parts.push(p.description)
+        if (parts.length > 0) lines.push(`    ${parts.join(" ")}`)
+      }
+
       await injectMessage(sessionId, [{
         type: "tool",
         tool: "workflow_parameters",
         input: received,
-        output: JSON.stringify(received, null, 2),
+        output: lines.join("\n"),
       }], directory)
       result = JSON.stringify(received)
 
@@ -269,11 +306,9 @@ export async function runWorkflow({
         nextIds.push(matchedCase.target)
       } else if (elseEdges.length > 0) {
         for (const e of elseEdges) nextIds.push(e.target)
-      } else if (caseEdges.length > 0) {
-        throw new Error(
-          `Decide node "${currentId}": result "${result}" matched no case edge and no else branch is defined`,
-        )
       }
+      // If no case edge matches and there's no "else", this branch just ends —
+      // same as any other terminal node. No error.
 
       for (const id of nextIds) queue.push(id)
     } else {

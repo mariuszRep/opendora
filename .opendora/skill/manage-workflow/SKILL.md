@@ -23,11 +23,32 @@ Use this skill whenever you need to create, inspect, modify, delete, or run a wo
 
 ---
 
+## Authoring Standard — Treat every workflow as a native tool
+
+OpenDora workflows are **native tools**. They are not MCP servers, but every parameter, description, and field shape in OpenDora intentionally follows the **MCP / JSON‑Schema convention** so any native tool — including a published workflow — can be exposed over MCP later without redesign.
+
+When you author a workflow you are authoring a tool. Hold every field to tool‑definition quality:
+
+- **Workflow `name` and `description`** — describe the tool's purpose, when to call it, and what it returns. This is what another agent will see when deciding to invoke it.
+- **`Parameters` node entries** (`workflowParameters`) — these are the workflow's `inputSchema`. Each entry must specify:
+  - **`name`** — stable, `snake_case`, unique within the workflow.
+  - **`type`** — exact JSON Schema type (`string`, `number`, `integer`, `boolean`, `array`, `object`, `null`). No `string` catch‑alls.
+  - **`description`** — self‑contained, imperative, includes purpose, expected format, units, and an example. Assume the only context the caller has is this string.
+  - **`required`** — explicit. The runner throws on missing required values.
+  - **`enum`** — list every legal value when the input is constrained. The runner rejects out‑of‑set values.
+- **`Decide` node `cases[].label`** — these are routing tokens the agent must emit. Make labels short, unambiguous, mutually exclusive, and include a brief description on the node so the agent knows when to choose each.
+- **Tool node `parameters`** — the tool you call already has its own MCP‑style schema; respect its required fields and types. Do not stuff free‑form strings into typed fields.
+- **Node `description`** — describe the *effect* of the step, not its label. Surfaces in the agent's context.
+
+If a description, type, or enum is weak, agents will misuse the workflow the same way they misuse a poorly‑specified MCP tool. There is no second layer that fixes this.
+
+---
+
 ## Part 1: The Node Format
 
 Every workflow is a JSON object with `id`, `name`, `nodes`, and `edges`. All nodes use `type: "workflow"`.
 
-There are exactly **two node kinds**: `prompt` and `tool`. The kind is set in `data.nodeType`.
+There are four node kinds, set in `data.nodeType`: `parameters`, `prompt`, `tool`, `decide`.
 
 ### Node shape
 
@@ -45,6 +66,42 @@ There are exactly **two node kinds**: `prompt` and `tool`. The kind is set in `d
   "position": { "x": 0, "y": 0 }
 }
 ```
+
+---
+
+### Parameters node (`nodeType: "parameters"`)
+
+Declares the workflow's typed inputs. This is the workflow's **`inputSchema`** — apply the Authoring Standard above to every entry. Place it as a root node so it runs first; downstream nodes reference values via `$input.<name>`.
+
+```json
+{
+  "id": "params",
+  "type": "workflow",
+  "data": {
+    "nodeType": "parameters",
+    "node": { "label": "Inputs", "description": "Inputs accepted by this workflow" },
+    "data": { "inputs": [], "outputs": [] },
+    "workflowParameters": [
+      {
+        "name": "topic",
+        "type": "string",
+        "description": "Subject to research. Free-form text, e.g. \"quantum error correction\".",
+        "required": true
+      },
+      {
+        "name": "depth",
+        "type": "string",
+        "description": "How thorough the research should be.",
+        "required": false,
+        "enum": ["shallow", "standard", "deep"]
+      }
+    ]
+  },
+  "position": { "x": 0, "y": 0 }
+}
+```
+
+The runner validates `required` and `enum` and injects a synthetic `workflow_parameters` tool message so the agent sees inputs as if produced by a tool call. Weak descriptions degrade agent behavior; treat them as MCP tool descriptions.
 
 ---
 
@@ -125,26 +182,56 @@ Any other `action_id` is the name of a registered tool — the runner calls it d
 
 ---
 
-### Branching / Conditional Gates
+### Decide node (`nodeType: "decide"`)
 
-This is the only conditional mechanism available. Use a `prompt` node with labeled outgoing edges. The runner matches the agent's response text against the edge labels to pick the next node.
+Routes execution to one branch based on either an agent decision (`mode: "agent"`) or a deterministic expression (`mode: "deterministic"`). Apply the Authoring Standard to `node.description` and every `cases[].label`.
+
+**Agent mode** — the runner asks the agent to reply with exactly one of the case labels.
 
 ```json
 {
-  "id": "gate",
+  "id": "route",
   "type": "workflow",
   "data": {
-    "nodeType": "prompt",
-    "node": { "label": "Branch Decision", "description": "" },
-    "data": { "inputs": [], "outputs": [] },
-    "instructions": "Based on the findings, reply with exactly one word: deep-dive or summarize",
-    "agentArgs": []
+    "nodeType": "decide",
+    "node": {
+      "label": "Route by depth",
+      "description": "Choose the research path that matches the requested depth.",
+      "parameters": {
+        "mode": "agent",
+        "cases": [
+          { "label": "deep_dive" },
+          { "label": "summarize" }
+        ],
+        "default": "summarize"
+      }
+    },
+    "data": { "inputs": [], "outputs": [] }
   },
   "position": { "x": 0, "y": 200 }
 }
 ```
 
-Outgoing edges must each have a `label` matching one of the expected choices.
+**Deterministic mode** — match a value from `$input` or `$ctx` against per‑case predicates.
+
+```json
+"parameters": {
+  "mode": "deterministic",
+  "input": "$input.depth",
+  "cases": [
+    { "label": "deep_dive",  "when": { "op": "equals", "value": "deep" } },
+    { "label": "summarize",  "when": { "op": "equals", "value": "shallow" } }
+  ],
+  "default": "summarize"
+}
+```
+
+Outgoing edges fire by label:
+- Edge with no label or `label: "result"` — always fires.
+- Edge labeled with a case `label` — fires when that case wins.
+- Edge labeled `else` — fires when no case matched and no `default` resolved it.
+
+The decision is auto‑stored under `$ctx.<node_label_snake_case>` (override with `parameters.output`).
 
 ---
 
@@ -155,7 +242,7 @@ Outgoing edges must each have a `label` matching one of the expected choices.
 1. Workflows start from **root nodes** — nodes with no incoming edges.
 2. Workflows terminate naturally at any node with no outgoing edges — no special terminator node needed.
 3. Every node must be reachable from a root via edges.
-4. Edges from branching `prompt` nodes must have a `label` matching one of the expected branch choices.
+4. Edges leaving a `decide` node must have a `label` matching one of its `cases[].label` values (or `result` / `else`).
 5. No cycles.
 6. Reference syntax: `$input.fieldName` · `$ctx.keyName`
 
@@ -193,13 +280,14 @@ Increment `y` by 200 per row. Branches share the same `y`, spread by `x`.
 
 ```json
 "edges": [
-  { "id": "e1", "source": "research", "target": "gate" },
-  { "id": "e2", "source": "gate", "target": "handle-deep",    "label": "deep-dive" },
-  { "id": "e3", "source": "gate", "target": "handle-summary", "label": "summarize" }
+  { "id": "e1", "source": "research", "target": "route" },
+  { "id": "e2", "source": "route", "target": "handle-deep",    "label": "deep_dive" },
+  { "id": "e3", "source": "route", "target": "handle-summary", "label": "summarize" },
+  { "id": "e4", "source": "route", "target": "handle-fallback", "label": "else" }
 ]
 ```
 
-`handle-deep` and `handle-summary` have no outgoing edges — traversal ends there naturally.
+`route` is a `decide` node. Edge labels must match its `cases[].label` values exactly (or `result` / `else`). `handle-*` nodes have no outgoing edges — traversal ends there naturally.
 
 ---
 
@@ -221,7 +309,7 @@ Do not proceed, approximate, or work around the limit without the user's explici
 | **Parallel branches** | Edges are sequential; no fork-join | A `parallel` node with a merge node |
 | **Wait for external event** | Workflow runs to completion; no suspend/resume | A `wait` or `trigger` node |
 | **Sub-workflow call** (blocking) | `workflow_run` fires in background; output not capturable | A `workflow_call` node that blocks until child completes |
-| **Workflow inputs declaration** | No start node to declare typed inputs | Inputs must be passed at runtime; use `$input.field` refs freely |
+| **Workflow inputs declaration** | Use a `parameters` node — it declares the workflow's typed `inputSchema` | Already supported; see Parameters node above |
 | **Error handling / retry** | No try/catch construct | A `catch` edge type or `retry` wrapper |
 | **Human-in-the-loop approval** | No mechanism to pause mid-workflow | A `checkpoint` node that suspends for human reply |
 

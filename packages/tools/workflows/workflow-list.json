@@ -1,6 +1,6 @@
 {
   "name": "workflow_list",
-  "description": "List all workflow definitions available in this project. Returns an array of workflows with their id, name, description, and node/edge counts.",
+  "description": "List all workflow definitions in this project. Returns an array of summaries including id, name, description, and node/edge counts.\n\nUse this to:\n  • Discover existing workflow IDs before calling workflow_get, workflow_run, or workflow_delete\n  • Verify that a chosen id does not already exist before calling workflow_create\n  • Get an overview of available workflows to decide which to run or modify",
   "inputSchema": {
     "type": "object",
     "properties": {}

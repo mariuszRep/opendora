@@ -11,14 +11,14 @@ export const AgentGetTool = Tool.define(
     parameters: z.object({
       id: z.string().describe("ID of the agent to retrieve"),
       view: z
-        .enum(["config", "persona", "injection", "tools", "skills", "system_prompt"])
+        .enum(["config", "persona", "injection", "tools", "skills", "workflows", "system_prompt"])
         .default("config")
         .describe(
-          "What to return: config (default), persona, injection, tools, skills, or system_prompt (full assembled view)"
+          "What to return: config (default), persona, injection, tools, skills, workflows, or system_prompt (full assembled view)"
         ),
     }),
 
-    async execute(args: { id: string; view?: "config" | "persona" | "injection" | "tools" | "skills" | "system_prompt" }, ctx) {
+    async execute(args: { id: string; view?: "config" | "persona" | "injection" | "tools" | "skills" | "workflows" | "system_prompt" }, ctx) {
       await ctx.ask({
         permission: "agent_get",
         patterns: [],
@@ -52,6 +52,7 @@ export const AgentGetTool = Tool.define(
           `Enable Injection: ${agent.enableInjection ?? false}`,
           `Tools: ${agent.tools ? agent.tools.join(", ") : "all available"}`,
           `Skills: ${agent.skills && agent.skills.length > 0 ? agent.skills.join(", ") : "none"}`,
+          `Workflows: ${agent.workflows && agent.workflows.length > 0 ? agent.workflows.join(", ") : "none"}`,
         ]
         return {
           title: `Agent Config: ${agent.name}`,
@@ -132,6 +133,24 @@ export const AgentGetTool = Tool.define(
         }
       }
 
+      // ── workflows ──────────────────────────────────────────────────────────
+      if (view === "workflows") {
+        const workflowIds: string[] = agent.workflows ?? []
+        if (workflowIds.length === 0) {
+          return {
+            title: `Agent Workflows: ${agent.name}`,
+            metadata: { agentId: agent.id, view },
+            output: "(no workflows allocated)",
+          }
+        }
+        const output = `Workflows allocated to ${agent.name} (${workflowIds.length}):\n\n${workflowIds.map((id: string) => `- ${id}`).join("\n")}`
+        return {
+          title: `Agent Workflows: ${agent.name}`,
+          metadata: { agentId: agent.id, view },
+          output,
+        }
+      }
+
       // ── system_prompt ──────────────────────────────────────────────────────
       if (view === "system_prompt") {
         const parts: string[] = []
@@ -166,6 +185,11 @@ export const AgentGetTool = Tool.define(
             }
           }
           parts.push(`# SKILLS\n\n${skillSections.join("\n\n---\n\n")}`)
+        }
+
+        const workflowIds: string[] = agent.workflows ?? []
+        if (workflowIds.length > 0) {
+          parts.push(`# WORKFLOWS\n\n${workflowIds.map((id: string) => `- ${id}`).join("\n")}`)
         }
 
         return {

@@ -6,7 +6,13 @@ import { WorkflowStorage } from "@opendora/workflow/storage"
 import { runWorkflow } from "@opendora/workflow/runner"
 import toolDef from "./workflow-run.json"
 
-export const WorkflowRunTool = Tool.define("workflow_run", async () => {
+export const WorkflowRunTool = Tool.define("workflow_run", async (initCtx) => {
+  const agentWorkflows = initCtx?.agent?.workflows
+
+  const description = agentWorkflows && agentWorkflows.length > 0
+    ? `${toolDef.description}\n\nWorkflows assigned to this agent (workflowId must be one of these):\n${agentWorkflows.map((id) => `- ${id}`).join("\n")}`
+    : toolDef.description
+
   const parameters = z.object({
     workflowId: z.string().describe("ID of the workflow to run"),
     input: z
@@ -21,11 +27,19 @@ export const WorkflowRunTool = Tool.define("workflow_run", async () => {
   })
 
   return {
-    description: toolDef.description,
+    description,
     parameters,
     async execute(params: z.infer<typeof parameters>, ctx) {
       const h = host(ctx)
       const directory = h.worktree
+
+      // If the agent has workflows assigned, restrict workflow_run to that list.
+      // Mirrors the skill_load assignment-as-permission pattern.
+      if (agentWorkflows && agentWorkflows.length > 0 && !agentWorkflows.includes(params.workflowId)) {
+        throw new Error(
+          `Workflow "${params.workflowId}" is not assigned to this agent. Assigned workflows: ${agentWorkflows.join(", ")}`,
+        )
+      }
 
       const workflow = await WorkflowStorage.get(directory, params.workflowId)
       if (!workflow) {

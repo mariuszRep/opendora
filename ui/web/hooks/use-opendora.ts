@@ -52,7 +52,7 @@ export type UseOpendoraResult = {
   sessions: Session[]
   agentSessions: Session[]
   selectedSession: Session | null
-  selectSession: (id: string) => void
+  selectSession: (id: string, agentIdHint?: string) => void
   createSession: (sessionType?: SessionType) => Promise<string>
   setSessionAgent: (sessionID: string, agentID: string | null) => Promise<void>
   setAgentMainSession: (agentID: string, sessionID: string) => Promise<void>
@@ -821,7 +821,7 @@ export function useOpendora(opts?: {
     await opendora.question.reject(requestID)
   }, [])
 
-  const selectSession = useCallback((id: string) => {
+  const selectSession = useCallback((id: string, agentIdHint?: string) => {
     // Save current session messages to cache before switching away
     if (selectedSessionRef.current?.id) {
       messageCacheRef.current.set(selectedSessionRef.current.id, messagesRef.current)
@@ -833,16 +833,22 @@ export function useOpendora(opts?: {
       // the id so the URL→state sync guard (selectedSessionRef.current?.id) still
       // matches and doesn't revert back to the previously selected session.
       // The session.created SSE handler upgrades this to the real object.
-      selectedSessionRef.current = { id } as Session
+      selectedSessionRef.current = (agentIdHint ? { id, agentID: agentIdHint } : { id }) as Session
       pendingSessionIdRef.current = id
     } else {
       selectedSessionRef.current = session
       pendingSessionIdRef.current = null
     }
+    // Clear messages immediately so we don't briefly render the previous session's
+    // messages against the new session id while the message-fetch effect is running.
+    setMessages([])
     setSelectedSessionId(id)
     setStatus(activeSessionsRef.current.has(id) ? "streaming" : "ready")
     setError(null)
-    if (session?.agentID) setSelectedAgent(session.agentID)
+    // Use the resolved session's agent if known, otherwise honor the hint so the
+    // agent tab updates eagerly even before the new session arrives via SSE.
+    const agentForSession = session?.agentID ?? agentIdHint
+    if (agentForSession) setSelectedAgent(agentForSession)
     rememberSessionForAgent(session)
     // Only navigate to /dashboard when not already there; the URL sync effect
     // handles updating the ?session= param when already on /dashboard.

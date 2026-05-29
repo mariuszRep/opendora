@@ -1,0 +1,112 @@
+{
+  "id": "wf-product-intake-contract-v1",
+  "name": "Product Intake Contract v1",
+  "description": "Single-node intake contract requiring product_state, architecture_brief, and core handoff fields.",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "intake_contract",
+      "type": "workflow",
+      "data": {
+        "nodeType": "parameters",
+        "workflowParameters": [
+          {
+            "name": "product_state",
+            "type": "string",
+            "description": "Required. Product state classification.",
+            "required": true,
+            "enum": [
+              "new",
+              "existing"
+            ]
+          },
+          {
+            "name": "repo_path",
+            "type": "string",
+            "description": "Required repository or workspace path for the product.",
+            "required": true
+          },
+          {
+            "name": "goal",
+            "type": "string",
+            "description": "Required delivery goal.",
+            "required": true
+          },
+          {
+            "name": "scope",
+            "type": "string",
+            "description": "Required in-scope boundaries.",
+            "required": true
+          },
+          {
+            "name": "acceptance_criteria",
+            "type": "string",
+            "description": "Required acceptance criteria.",
+            "required": true
+          },
+          {
+            "name": "architecture_brief",
+            "type": "string",
+            "description": "Required architecture brief from product-architecture handoff.",
+            "required": true
+          }
+        ],
+        "node": {
+          "label": "Parameters",
+          "description": ""
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
+      },
+      "position": {
+        "x": -344.8606662656164,
+        "y": -382.62829964022256
+      }
+    },
+    {
+      "id": "decide_project_path",
+      "type": "workflow",
+      "data": {
+        "nodeType": "decide",
+        "node": {
+          "label": "Decide Project Path",
+          "parameters": {
+            "mode": "deterministic",
+            "input": "$input.product_state",
+            "cases": [
+              {
+                "label": "new",
+                "when": {
+                  "op": "equals",
+                  "value": "new"
+                }
+              },
+              {
+                "label": "existing",
+                "when": {
+                  "op": "equals",
+                  "value": "existing"
+                }
+              }
+            ],
+            "default": "existing",
+            "output": "project_path"
+          }
+        }
+      },
+      "position": {
+        "x": -344.8606662656164,
+        "y": -232.62829964022256
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "intake_contract",
+      "target": "decide_project_path"
+    }
+  ]
+}

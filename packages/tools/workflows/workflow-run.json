@@ -1,20 +1,20 @@
 {
   "name": "workflow_run",
-  "description": "Start a workflow in a new isolated session. The workflow executes deterministically — nodes run in the defined order without agent decisions, except at 'agent' and 'decide' nodes where the session's agent participates. Returns the new session ID immediately; execution continues in the background session.",
+  "description": "Execute a workflow in a new isolated session and return the session ID immediately. Execution continues in the background — the caller does not wait for completion.\n\nThe workflow runner walks the node graph in topological order:\n  • parameters nodes  — map the input object onto named workflow parameters (accessible as $input.<name>)\n  • prompt nodes      — send the node's instructions to the session agent and capture its reply\n  • tool nodes        — call the specified tool with resolved arguments\n  • decide nodes      — ask the agent to choose a branch (agent mode) or evaluate a condition (deterministic mode)\n\nThe `input` object must match the names declared in the workflow's parameters node.\nFor example, if the workflow has workflowParameters [{\"name\": \"topic\"}], pass {\"topic\": \"climate change\"}.\n\nIf the workflow has no parameters node, pass an empty object {}.\n\nTo inspect the result, use session_get with the returned session ID once execution completes.",
   "inputSchema": {
     "type": "object",
     "properties": {
       "workflowId": {
         "type": "string",
-        "description": "ID of the workflow to run (matches the workflow file name without .json)"
+        "description": "ID of the workflow to run (use workflow_list to see available IDs)"
       },
       "input": {
         "type": "object",
-        "description": "Input values passed to the workflow's input node. Must be a JSON object, not a string."
+        "description": "Input values for the workflow's parameters node, keyed by parameter name. Pass {} if the workflow has no parameters node."
       },
       "agentId": {
         "type": "string",
-        "description": "Optional. Agent to use for the workflow session. Defaults to the calling agent."
+        "description": "Agent to use for the workflow session. Defaults to the calling agent. Optional."
       }
     },
     "required": ["workflowId", "input"]

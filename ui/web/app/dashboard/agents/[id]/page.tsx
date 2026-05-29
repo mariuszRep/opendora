@@ -48,7 +48,7 @@ import {
   ModelSelectorTrigger,
 } from "@/components/ai-elements/model-selector"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { opendora, type AgentConfig, type Skill } from "@/lib/opendora"
+import { opendora, type AgentConfig, type Skill, type Workflow } from "@/lib/opendora"
 import { SettingsCard } from "@/components/settings/settings-card"
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
 import {
@@ -115,6 +115,10 @@ export default function AgentSettingsPage() {
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
   const [skillSearch, setSkillSearch] = useState("")
   const [skillFilter, setSkillFilter] = useState<"all" | "selected" | "deselected">("all")
+  const [selectedWorkflows, setSelectedWorkflows] = useState<string[]>([])
+  const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>([])
+  const [workflowSearch, setWorkflowSearch] = useState("")
+  const [workflowFilter, setWorkflowFilter] = useState<"all" | "selected" | "deselected">("all")
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
   const [defaultPaths, setDefaultPaths] = useState<string[]>([])
@@ -175,6 +179,11 @@ export default function AgentSettingsPage() {
     return unsub
   }, [])
 
+  // Load workflows
+  useEffect(() => {
+    opendora.workflow.list().then(setAvailableWorkflows).catch(() => { })
+  }, [])
+
   // Load agent data — re-run when agent loads (agents list may arrive after mount)
   useEffect(() => {
     if (!id || !agent || isNew) return
@@ -189,6 +198,7 @@ export default function AgentSettingsPage() {
     setFallbackModel(agent.fallback_model ?? undefined)
     setSelectedTools(agent.tools ?? [])
     setSelectedSkills(agent.skills ?? (agent as any).config?.skills ?? [])
+    setSelectedWorkflows(agent.workflows ?? (agent as any).config?.workflows ?? [])
     setDelegateAllowedAgents((agent as any).config?.toolConfig?.delegate?.allowedAgents ?? agent.toolConfig?.delegate?.allowedAgents ?? [])
     setReplyStopAfterReply((agent as any).config?.toolConfig?.reply?.stopAfterReply ?? agent.toolConfig?.reply?.stopAfterReply ?? false)
     setDefaultPaths((agent as any).config?.defaultPaths ?? (agent as any).defaultPaths ?? [])
@@ -260,6 +270,7 @@ export default function AgentSettingsPage() {
         fallback_model: fallbackModel,
         tools: selectedTools.length > 0 ? selectedTools : undefined,
         skills: selectedSkills,
+        workflows: selectedWorkflows,
         toolConfig: (() => {
           const tc: any = {}
           if (delegateAllowedAgents.length > 0) {
@@ -475,6 +486,14 @@ export default function AgentSettingsPage() {
             {selectedSkills.length > 0 && (
               <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                 {selectedSkills.length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="workflows">
+            Workflows
+            {selectedWorkflows.length > 0 && (
+              <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+                {selectedWorkflows.length}
               </span>
             )}
           </TabsTrigger>
@@ -1026,6 +1045,97 @@ export default function AgentSettingsPage() {
                             onCheckedChange={() =>
                               setSelectedSkills((prev) =>
                                 enabled ? prev.filter((s) => s !== skill.name) : [...prev, skill.name]
+                              )
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        }
+                      />
+                    )
+                  })}
+                </div>
+              )
+            })()}
+          </div>
+        </TabsContent>
+        {/* ── Workflows tab ── */}
+        <TabsContent value="workflows" className="flex-1 overflow-y-auto">
+          <div className="flex flex-col gap-6 px-6 py-8">
+            <div className="flex gap-3">
+              <div className="relative max-w-sm flex-1">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search workflows…"
+                  value={workflowSearch}
+                  onChange={(e) => setWorkflowSearch(e.target.value)}
+                  className="pl-9 h-9"
+                />
+              </div>
+              <div className="flex rounded-lg border p-1 h-9">
+                <Button
+                  size="sm"
+                  variant={workflowFilter === "all" ? "secondary" : "ghost"}
+                  className="h-full text-xs"
+                  onClick={() => setWorkflowFilter("all")}
+                >
+                  All
+                </Button>
+                <Button
+                  size="sm"
+                  variant={workflowFilter === "selected" ? "secondary" : "ghost"}
+                  className="h-full text-xs"
+                  onClick={() => setWorkflowFilter("selected")}
+                >
+                  Selected
+                </Button>
+                <Button
+                  size="sm"
+                  variant={workflowFilter === "deselected" ? "secondary" : "ghost"}
+                  className="h-full text-xs"
+                  onClick={() => setWorkflowFilter("deselected")}
+                >
+                  Deselected
+                </Button>
+              </div>
+            </div>
+            {(() => {
+              const filtered = workflowSearch
+                ? availableWorkflows.filter((w) =>
+                    w.id.toLowerCase().includes(workflowSearch.toLowerCase()) ||
+                    w.name.toLowerCase().includes(workflowSearch.toLowerCase()) ||
+                    (w.description ?? "").toLowerCase().includes(workflowSearch.toLowerCase())
+                  )
+                : availableWorkflows
+              const filterApplied = workflowFilter === "selected"
+                ? (() => {
+                    const selectedSet = new Set(selectedWorkflows)
+                    const selectedFromAvailable = filtered.filter((w) => selectedSet.has(w.id))
+                    const missingIds = selectedWorkflows.filter((id) => !availableWorkflows.some((w) => w.id === id))
+                    const missingAsWorkflows: Workflow[] = missingIds.map((id) => ({ id, name: id, description: "Workflow not found", version: "", nodes: [], edges: [] }))
+                    return [...selectedFromAvailable, ...missingAsWorkflows]
+                  })()
+                : workflowFilter === "deselected"
+                  ? filtered.filter((w) => !selectedWorkflows.includes(w.id))
+                  : filtered
+              const sorted = [...filterApplied].sort((a, b) => a.name.localeCompare(b.name))
+              return sorted.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No workflows match your search.</p>
+              ) : (
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {sorted.map((workflow) => {
+                    const enabled = selectedWorkflows.includes(workflow.id)
+                    return (
+                      <SettingsCard
+                        key={workflow.id}
+                        title={workflow.name || workflow.id}
+                        description={workflow.description || workflow.id}
+                        action={
+                          <Switch
+                            size="sm"
+                            checked={enabled}
+                            onCheckedChange={() =>
+                              setSelectedWorkflows((prev) =>
+                                enabled ? prev.filter((s) => s !== workflow.id) : [...prev, workflow.id]
                               )
                             }
                             onClick={(e) => e.stopPropagation()}

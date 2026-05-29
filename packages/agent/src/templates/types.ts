@@ -15,6 +15,7 @@ export const AgentConfig = z.object({
   hidden: z.boolean().optional(),
   tools: z.array(z.string()).optional(),
   skills: z.array(z.string()).optional(),
+  workflows: z.array(z.string()).optional(),
   toolConfig: z.object({
     delegate: z.object({
       allowedAgents: z.array(z.string()).optional(),

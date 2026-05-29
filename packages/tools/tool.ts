@@ -20,6 +20,8 @@ export namespace Tool {
     delegateAgents?: Array<{ name: string; description?: string }>
     /** Skills allocated to this agent — skill_load is restricted to this list if non-empty */
     skills?: string[]
+    /** Workflows allocated to this agent — workflow_run is restricted to this list if non-empty */
+    workflows?: string[]
   }
 
   export interface InitContext {

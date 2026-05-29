@@ -723,6 +723,8 @@ export namespace Server {
           skills: {
             all: () => Skill.all(),
             get: (name: string) => Skill.get(name),
+            save: (location: string, content: string) => Skill.save(location, content),
+            saveConfig: (name: string, patch: { tools?: string[] }) => Skill.saveConfig(name, patch),
           },
           agents: {
             list: () => Agent.list(),

@@ -2,20 +2,50 @@
 
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { Textarea } from '@/components/ui/textarea'
 import type { RefSuggestion } from '@/lib/workflow-refs'
 
 const REF_PATTERN = /(\$(?:input|output|ctx)\.[a-zA-Z0-9_.]+)/g
 
-function highlight(text: string) {
+function buildHTML(text: string) {
   REF_PATTERN.lastIndex = 0
-  const escaped = text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!))
-  return escaped.replace(REF_PATTERN, (ref) => {
-    const bg = ref.startsWith('$input.')
-      ? 'color-mix(in oklch, var(--chart-1) 18%, transparent)'
-      : 'color-mix(in oklch, var(--chart-2) 18%, transparent)'
-    return `<mark style="background:${bg};border-radius:3px">${ref}</mark>`
-  }) + '​'
+  const esc = text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!))
+  return esc.replace(REF_PATTERN, (ref) =>
+    `<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">${ref}</code>`
+  ) || '<br>'
+}
+
+function getOffset(el: HTMLElement): number {
+  const sel = window.getSelection()
+  if (!sel?.rangeCount) return 0
+  const range = sel.getRangeAt(0)
+  const pre = range.cloneRange()
+  pre.selectNodeContents(el)
+  pre.setEnd(range.endContainer, range.endOffset)
+  return pre.toString().length
+}
+
+function setOffset(el: HTMLElement, offset: number) {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+  let rem = offset
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Text
+    if (rem <= node.length) {
+      const r = document.createRange()
+      r.setStart(node, rem)
+      r.collapse(true)
+      const sel = window.getSelection()
+      sel?.removeAllRanges()
+      sel?.addRange(r)
+      return
+    }
+    rem -= node.length
+  }
+  const r = document.createRange()
+  r.selectNodeContents(el)
+  r.collapse(false)
+  const sel = window.getSelection()
+  sel?.removeAllRanges()
+  sel?.addRange(r)
 }
 
 function tokenStart(val: string, cur: number): number {
@@ -35,15 +65,33 @@ interface PromptInputProps {
   className?: string
 }
 
-export function PromptInput({ value, onChange, suggestions, placeholder, rows = 8, className }: PromptInputProps) {
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
-  const backdropRef = React.useRef<HTMLDivElement>(null)
+export function PromptInput({ value, onChange, suggestions, placeholder, className }: PromptInputProps) {
+  const editorRef = React.useRef<HTMLDivElement>(null)
+  const pendingCursor = React.useRef<number | null>(null)
   const [open, setOpen] = React.useState(false)
   const [activeIndex, setActiveIndex] = React.useState(0)
   const [cursor, setCursor] = React.useState(0)
   const justSelected = React.useRef(false)
 
-  const updateCursor = () => setCursor(textareaRef.current?.selectionStart ?? 0)
+  React.useLayoutEffect(() => {
+    const el = editorRef.current
+    if (!el) return
+    el.innerHTML = buildHTML(value)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  React.useLayoutEffect(() => {
+    const el = editorRef.current
+    if (!el) return
+    if ((el.textContent ?? '') === value) return
+    el.innerHTML = buildHTML(value)
+    const offset = pendingCursor.current ?? value.length
+    pendingCursor.current = null
+    setOffset(el, offset)
+  }, [value])
+
+  const updateCursor = () => {
+    if (editorRef.current) setCursor(getOffset(editorRef.current))
+  }
 
   const partialStart = tokenStart(value, cursor)
   const partial = partialStart === -1 ? null : value.slice(partialStart, cursor)
@@ -58,47 +106,54 @@ export function PromptInput({ value, onChange, suggestions, placeholder, rows = 
 
   const select = React.useCallback((s: RefSuggestion) => {
     justSelected.current = true
-    const cur = textareaRef.current?.selectionStart ?? value.length
+    const el = editorRef.current
+    const cur = el ? getOffset(el) : value.length
     const start = tokenStart(value, cur)
     if (start === -1) { onChange(s.ref); setOpen(false); return }
     const rest = value.slice(cur)
     const endOffset = rest.search(/[\s,;)}\]]/)
+    pendingCursor.current = start + s.ref.length
     onChange(value.slice(0, start) + s.ref + value.slice(endOffset === -1 ? value.length : cur + endOffset))
     setOpen(false)
-    const newCursor = start + s.ref.length
-    setTimeout(() => { textareaRef.current?.setSelectionRange(newCursor, newCursor); textareaRef.current?.focus() }, 0)
   }, [value, onChange])
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (!open || filtered.length === 0) return
-    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(i => Math.min(i + 1, filtered.length - 1)) }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(i => Math.max(i - 1, 0)) }
-    else if (e.key === 'Tab' && filtered[activeIndex]) { e.preventDefault(); select(filtered[activeIndex]) }
-    else if (e.key === 'Escape') setOpen(false)
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (open && filtered.length > 0) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(i => Math.min(i + 1, filtered.length - 1)); return }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(i => Math.max(i - 1, 0)); return }
+      if (e.key === 'Tab' && filtered[activeIndex]) { e.preventDefault(); select(filtered[activeIndex]); return }
+      if (e.key === 'Escape') { setOpen(false); return }
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      document.execCommand('insertText', false, '\n')
+    }
+  }
+
+  const onPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    document.execCommand('insertText', false, e.clipboardData.getData('text/plain'))
   }
 
   return (
     <div className={cn('relative', className)}>
       <div
-        ref={backdropRef}
-        aria-hidden
-        className="pointer-events-none absolute inset-[1px] overflow-hidden rounded-[calc(var(--radius)-1px)] px-2.5 py-2 font-mono text-base md:text-sm whitespace-pre-wrap break-words"
-        style={{ color: 'transparent' }}
-        dangerouslySetInnerHTML={{ __html: highlight(value) }}
-      />
-      <Textarea
-        ref={textareaRef}
-        value={value}
-        rows={rows}
-        placeholder={placeholder}
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
         spellCheck={false}
-        className="relative font-mono bg-transparent"
-        onChange={(e) => { onChange(e.target.value); updateCursor() }}
+        data-placeholder={placeholder}
+        className={cn(
+          'min-h-[120px] w-full rounded-lg border border-input bg-background px-2.5 py-2 font-mono text-sm',
+          'outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
+          'whitespace-pre-wrap break-words empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground',
+        )}
+        onInput={(e) => { onChange(e.currentTarget.textContent ?? ''); updateCursor() }}
         onKeyDown={onKeyDown}
         onKeyUp={updateCursor}
         onClick={updateCursor}
         onSelect={updateCursor}
-        onScroll={() => { if (backdropRef.current && textareaRef.current) backdropRef.current.scrollTop = textareaRef.current.scrollTop }}
+        onPaste={onPaste}
         onBlur={() => setTimeout(() => setOpen(false), 120)}
         onFocus={() => { updateCursor(); if (filtered.length > 0 && !isComplete) setOpen(true) }}
       />
