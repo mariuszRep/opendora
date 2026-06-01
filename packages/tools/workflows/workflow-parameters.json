@@ -1,0 +1,14 @@
+{
+  "name": "workflow_parameters",
+  "description": "Return the declared parameters for a workflow before running it. Call this before workflow_run whenever you need to know what keys to pass in the input object. Returns each parameter's name, type, required/optional status, description, and allowed enum values.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "workflowId": {
+        "type": "string",
+        "description": "ID of the workflow to inspect (use workflow_list to see available IDs)"
+      }
+    },
+    "required": ["workflowId"]
+  }
+}

@@ -22,7 +22,11 @@ export const WorkflowRunTool = Tool.define("workflow_run", async (initCtx) => {
           try { return JSON.parse(v) as Record<string, unknown> } catch { return {} }
         }),
       ])
-      .describe("Input values for the workflow's input node — pass as a JSON object, not a string"),
+      .optional()
+      .default({})
+      .describe(
+        "Input values keyed by parameter name. Call workflow_parameters first to discover required keys, then populate this object with all required parameters.",
+      ),
     agentId: z.string().optional().describe("Agent to use for the workflow session"),
   })
 
@@ -48,6 +52,18 @@ export const WorkflowRunTool = Tool.define("workflow_run", async (initCtx) => {
       }
 
       const input = params.input as Record<string, unknown>
+
+      // Throw early if required params are missing — agent should call workflow_parameters first.
+      const paramNode = workflow.nodes.find((n) => (n.data as any)?.nodeType === "parameters")
+      const declaredParams: Array<{ name: string; type?: string; required?: boolean; description?: string; enum?: string[] }> =
+        (paramNode?.data as any)?.workflowParameters ?? []
+      const missingRequired = declaredParams.filter((p) => p.required && !(p.name in input))
+      if (missingRequired.length > 0) {
+        throw new Error(
+          `Workflow "${params.workflowId}" is missing required parameters: ${missingRequired.map((p) => p.name).join(", ")}. Call workflow_parameters first to see the full parameter spec.`,
+        )
+      }
+
       const agentId = params.agentId ?? ctx.agent ?? "engineer"
 
       const session = await Session.createNext({

@@ -1,6 +1,6 @@
 {
   "name": "workflow_run",
-  "description": "Execute a workflow in a new isolated session and return the session ID immediately. Execution continues in the background — the caller does not wait for completion.\n\nThe workflow runner walks the node graph in topological order:\n  • parameters nodes  — map the input object onto named workflow parameters (accessible as $input.<name>)\n  • prompt nodes      — send the node's instructions to the session agent and capture its reply\n  • tool nodes        — call the specified tool with resolved arguments\n  • decide nodes      — ask the agent to choose a branch (agent mode) or evaluate a condition (deterministic mode)\n\nThe `input` object must match the names declared in the workflow's parameters node.\nFor example, if the workflow has workflowParameters [{\"name\": \"topic\"}], pass {\"topic\": \"climate change\"}.\n\nIf the workflow has no parameters node, pass an empty object {}.\n\nTo inspect the result, use session_get with the returned session ID once execution completes.",
+  "description": "Execute a workflow by ID. Call workflow_parameters first to discover the required input keys, then call this tool with the workflowId and a fully populated input object.\n\nThe workflow starts in a new isolated session and runs in the background. Returns the session ID immediately.\n\nThe workflow runner walks the node graph in topological order:\n  • parameters nodes  — validate and map the input object onto named workflow parameters ($input.<name>)\n  • prompt nodes      — send instructions to the session agent and capture its reply\n  • tool nodes        — execute the specified tool with resolved arguments\n  • decide nodes      — branch deterministically or ask the agent to choose\n\nTo check status or read output, use session_get with the returned session ID.",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -10,13 +10,13 @@
       },
       "input": {
         "type": "object",
-        "description": "Input values for the workflow's parameters node, keyed by parameter name. Pass {} if the workflow has no parameters node."
+        "description": "Input values keyed by parameter name, matching the workflow's declared parameters. All required parameters must be present. Check the 'Available Workflows' section in the system prompt for the full parameter list (names, types, required/optional, allowed enum values) for each workflow. Pass {} only if the workflow has no parameters node."
       },
       "agentId": {
         "type": "string",
         "description": "Agent to use for the workflow session. Defaults to the calling agent. Optional."
       }
     },
-    "required": ["workflowId", "input"]
+    "required": ["workflowId"]
   }
 }

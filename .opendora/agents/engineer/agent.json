@@ -28,7 +28,8 @@
     "session_search",
     "session_tree",
     "task",
-    "workflow_run"
+    "workflow_run",
+    "workflow_parameters"
   ],
   "skills": [
     "product-orchestrator",
@@ -45,6 +46,9 @@
     "vercel",
     "impeccable",
     "product-report"
+  ],
+  "workflows": [
+    "wf-product-intake-contract-v1"
   ],
   "toolConfig": {
     "reply": {

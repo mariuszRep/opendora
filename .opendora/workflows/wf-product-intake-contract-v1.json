@@ -1,7 +1,7 @@
 {
   "id": "wf-product-intake-contract-v1",
   "name": "Product Intake Contract v1",
-  "description": "Single-node intake contract requiring product_state, architecture_brief, and core handoff fields.",
+  "description": "Intake contract with new bootstrap and existing explore/plan paths.",
   "version": "1.0.0",
   "nodes": [
     {
@@ -61,8 +61,8 @@
         }
       },
       "position": {
-        "x": -344.8606662656164,
-        "y": -382.62829964022256
+        "x": -408.10546626561637,
+        "y": -529.8538996402226
       }
     },
     {
@@ -72,6 +72,7 @@
         "nodeType": "decide",
         "node": {
           "label": "Decide Project Path",
+          "description": "",
           "parameters": {
             "mode": "deterministic",
             "input": "$input.product_state",
@@ -94,11 +95,179 @@
             "default": "existing",
             "output": "project_path"
           }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
         }
       },
       "position": {
-        "x": -344.8606662656164,
-        "y": -232.62829964022256
+        "x": -475.49746626561637,
+        "y": -343.56589964022254
+      }
+    },
+    {
+      "id": "bootstrap_folder_git",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Bootstrap Folder and Git",
+          "description": "",
+          "action_id": "bash",
+          "parameters": {
+            "command": "mkdir -p \"$input.repo_path\" && git -C \"$input.repo_path\" init && git -C \"$input.repo_path\" branch -M main",
+            "description": "Create project folder and initialize git",
+            "output": "bootstrap_result"
+          }
+        },
+        "agentArgs": []
+      },
+      "position": {
+        "x": -760,
+        "y": -160
+      }
+    },
+    {
+      "id": "generate_scaffold_script",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "instructions": "Using this architecture brief, output only one shell command to scaffold the project in the current directory ('.'). Prefer foxtunda init if explicitly available for the target stack; otherwise use the most standard framework init command for the stack.\n\nArchitecture brief:\n$input.architecture_brief",
+        "node": {
+          "label": "Generate Scaffold Command",
+          "parameters": {
+            "output": "framework_init_cmd"
+          }
+        }
+      },
+      "position": {
+        "x": -760,
+        "y": 20
+      }
+    },
+    {
+      "id": "run_scaffold_and_commit",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Run Scaffold and Initial Commit",
+          "description": "",
+          "action_id": "bash",
+          "parameters": {
+            "command": "$ctx.framework_init_cmd && git add . && git commit -m \"Initial commit: scaffold setup\"",
+            "workdir": "$input.repo_path",
+            "description": "Run scaffold command and create initial commit",
+            "output": "scaffold_commit_result"
+          }
+        },
+        "agentArgs": []
+      },
+      "position": {
+        "x": -760,
+        "y": 200
+      }
+    },
+    {
+      "id": "load_product_explore_skill",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Load product-explore Skill",
+          "description": "",
+          "action_id": "skill_load",
+          "parameters": {
+            "name": "product-explore",
+            "output": "explore_skill_loaded"
+          }
+        },
+        "agentArgs": []
+      },
+      "position": {
+        "x": -250,
+        "y": -140
+      }
+    },
+    {
+      "id": "run_product_explore",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "instructions": "Use the loaded product-explore skill. Explore the existing product at this path and return a concise exploration brief with current structure, ownership boundaries, and change surfaces.\n\nrepo_path: $input.repo_path\ngoal: $input.goal\nscope: $input.scope\nacceptance_criteria: $input.acceptance_criteria",
+        "node": {
+          "label": "Run Product Explore",
+          "parameters": {
+            "output": "explore_brief"
+          }
+        }
+      },
+      "position": {
+        "x": -250,
+        "y": 20
+      }
+    },
+    {
+      "id": "load_product_plan_skill",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Load product-plan Skill",
+          "description": "",
+          "action_id": "skill_load",
+          "parameters": {
+            "name": "product-plan",
+            "output": "plan_skill_loaded"
+          }
+        },
+        "agentArgs": []
+      },
+      "position": {
+        "x": -500,
+        "y": 380
+      }
+    },
+    {
+      "id": "run_product_plan",
+      "type": "workflow",
+      "data": {
+        "nodeType": "prompt",
+        "instructions": "Use the loaded product-plan skill and produce an implementation plan grounded in intake + exploration context.\n\nrepo_path: $input.repo_path\ngoal: $input.goal\nscope: $input.scope\nacceptance_criteria: $input.acceptance_criteria\narchitecture_brief: $input.architecture_brief\nexplore_brief (may be empty for new): $ctx.explore_brief",
+        "node": {
+          "label": "Run Product Plan",
+          "parameters": {
+            "output": "product_plan"
+          }
+        }
+      },
+      "position": {
+        "x": -500,
+        "y": 540
+      }
+    },
+    {
+      "id": "ensure_delivery_branch",
+      "type": "workflow",
+      "data": {
+        "nodeType": "tool",
+        "node": {
+          "label": "Ensure Delivery Branch",
+          "description": "",
+          "action_id": "bash",
+          "parameters": {
+            "command": "BRANCH_NAME=\"feat/plan-$(date +%Y%m%d-%H%M%S)\" && CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD) && if [ \"$CURRENT_BRANCH\" != \"main\" ]; then git checkout main; fi && git checkout -b \"$BRANCH_NAME\" && echo \"$BRANCH_NAME\"",
+            "workdir": "$input.repo_path",
+            "description": "Create fresh feature branch from main",
+            "output": "delivery_branch"
+          }
+        },
+        "agentArgs": []
+      },
+      "position": {
+        "x": -500,
+        "y": 700
       }
     }
   ],
@@ -107,6 +276,53 @@
       "id": "e1",
       "source": "intake_contract",
       "target": "decide_project_path"
+    },
+    {
+      "id": "e2",
+      "source": "decide_project_path",
+      "target": "bootstrap_folder_git",
+      "label": "new"
+    },
+    {
+      "id": "e3",
+      "source": "bootstrap_folder_git",
+      "target": "generate_scaffold_script"
+    },
+    {
+      "id": "e4",
+      "source": "generate_scaffold_script",
+      "target": "run_scaffold_and_commit"
+    },
+    {
+      "id": "e5",
+      "source": "decide_project_path",
+      "target": "load_product_explore_skill",
+      "label": "existing"
+    },
+    {
+      "id": "e6",
+      "source": "load_product_explore_skill",
+      "target": "run_product_explore"
+    },
+    {
+      "id": "e7",
+      "source": "run_product_explore",
+      "target": "load_product_plan_skill"
+    },
+    {
+      "id": "e8",
+      "source": "run_scaffold_and_commit",
+      "target": "load_product_plan_skill"
+    },
+    {
+      "id": "e9",
+      "source": "load_product_plan_skill",
+      "target": "run_product_plan"
+    },
+    {
+      "id": "e10",
+      "source": "run_product_plan",
+      "target": "ensure_delivery_branch"
     }
   ]
 }

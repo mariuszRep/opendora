@@ -138,10 +138,11 @@ export namespace SystemPrompt {
         ? allSkills.filter((s: any) => agentSkillNames.includes(s.name))
         : []
       if (visibleSkills.length > 0) {
-        const entries = visibleSkills.map((s: any) => `- **${s.name}**: ${s.description}`)
+        const rows = visibleSkills.map((s: any) => `| ${s.name} | ${(s.description ?? "").replace(/\|/g, "\\|")} |`)
+        const table = ["| Name | Description |", "| --- | --- |", ...rows].join("\n")
         sections.push({
           label: "Available Skills",
-          content: `# Available Skills\nUse the \`skill_load\` tool to load any of these skills when the task matches:\n\n${entries.join("\n")}`,
+          content: `# Available Skills\nUse the \`skill_load\` tool to load any of these skills when the task matches:\n\n${table}`,
         })
       }
     }
@@ -156,14 +157,25 @@ export namespace SystemPrompt {
         // Include any assigned ids that didn't resolve, so the agent still sees them
         const resolvedIds = new Set(visibleWorkflows.map((w: any) => w.id))
         const unresolved = agentWorkflowIds.filter((id) => !resolvedIds.has(id))
-        const entries = [
-          ...visibleWorkflows.map((w: any) => `- **${w.id}**${w.name && w.name !== w.id ? ` (${w.name})` : ""}${w.description ? `: ${w.description}` : ""}`),
-          ...unresolved.map((id) => `- **${id}**`),
-        ]
-        if (entries.length > 0) {
+
+        const hasParams = (w: any): boolean => {
+          const paramNode = (w.nodes ?? []).find((n: any) => n.data?.nodeType === "parameters")
+          return ((paramNode?.data?.workflowParameters ?? []) as any[]).length > 0
+        }
+
+        const resolvedRows = visibleWorkflows.map((w: any) => {
+          const name = w.name && w.name !== w.id ? `${w.id} (${w.name})` : w.id
+          const desc = (w.description ?? "").replace(/\|/g, "\\|")
+          return `| ${name} | ${desc} | ${hasParams(w) ? "Yes" : "No"} |`
+        })
+        const unresolvedRows = unresolved.map((id) => `| ${id} | | |`)
+        const allRows = [...resolvedRows, ...unresolvedRows]
+
+        if (allRows.length > 0) {
+          const table = ["| Workflow | Description | Has Parameters |", "| --- | --- | --- |", ...allRows].join("\n")
           sections.push({
             label: "Available Workflows",
-            content: `# Available Workflows\nUse the \`workflow_run\` tool to run any of these workflows when appropriate:\n\n${entries.join("\n")}`,
+            content: `# Available Workflows\nIf a workflow shows **Yes** in the "Has Parameters" column, call \`workflow_parameters\` with the workflow ID before calling \`workflow_run\`.\n\n${table}`,
           })
         }
       }
