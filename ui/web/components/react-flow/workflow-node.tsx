@@ -18,6 +18,7 @@ import type { WorkflowNodeData } from './unified-node'
 function isAiDriven(nodeData: WorkflowNodeData): boolean {
   const nodeType = resolveNodeType(nodeData)
   if (nodeType === NodeTypeId.Prompt) return true
+  if (nodeType === NodeTypeId.Structured) return true
   if (nodeType === NodeTypeId.Decide) return (nodeData.node?.parameters?.mode as string | undefined) !== 'deterministic'
   if (nodeType === NodeTypeId.Tool) return ((nodeData.agentArgs as string[] | undefined)?.length ?? 0) > 0
   return false

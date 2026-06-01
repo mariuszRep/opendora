@@ -11,6 +11,7 @@ import {
 } from "@opendora/workflow/node-registry"
 import type { WorkflowNodePayload } from "@opendora/workflow/node-types"
 import {
+  Braces,
   GitBranch,
   MessageSquare,
   SlidersHorizontal,
@@ -23,6 +24,7 @@ import type { NodeType, WorkflowNodeData } from "./unified-node"
 // Canonical definitions reference icons by string name; this mapping resolves
 // them to actual React components for rendering.
 const ICON_MAP: Record<string, LucideIcon> = {
+  Braces,
   GitBranch,
   MessageSquare,
   SlidersHorizontal,

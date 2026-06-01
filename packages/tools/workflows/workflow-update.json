@@ -10,7 +10,7 @@
       },
       "workflow": {
         "type": "object",
-        "description": "Complete replacement workflow JSON. All fields are overwritten. See workflow_create for the full schema including all four node types (parameters, prompt, tool, decide), variable references, and edge routing.",
+        "description": "Complete replacement workflow JSON. All fields are overwritten. See workflow_create for the full schema including all five node types (parameters, prompt, structured, tool, decide), variable references, and edge routing.",
         "properties": {
           "id":          { "type": "string" },
           "name":        { "type": "string" },

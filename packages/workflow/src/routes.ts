@@ -73,7 +73,7 @@ export function WorkflowRoutes() {
     const workflow = await WorkflowStorage.get(directory, id)
     if (!workflow) return c.json({ error: `workflow "${id}" not found` }, 404)
 
-    let body: { agentId?: string; input?: Record<string, unknown> } = {}
+    let body: { agentId?: string; input?: Record<string, unknown>; parentSessionId?: string } = {}
     try { body = await c.req.json() } catch {}
 
     let agentId: string | undefined = body.agentId
@@ -98,6 +98,7 @@ export function WorkflowRoutes() {
       sessionType: "worker",
       agentID: agentId,
       ownerKind: "service",
+      ...(body.parentSessionId && { parentSessionID: body.parentSessionId }),
     })
     console.log(`[workflow execute] created session ${session.id} with session.agentID=${session.agentID}`)
 

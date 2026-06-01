@@ -61,8 +61,8 @@
         }
       },
       "position": {
-        "x": -408.10546626561637,
-        "y": -529.8538996402226
+        "x": -539.943708854657,
+        "y": -538.6851910294913
       }
     },
     {
@@ -102,8 +102,8 @@
         }
       },
       "position": {
-        "x": -475.49746626561637,
-        "y": -343.56589964022254
+        "x": -542.6795689677506,
+        "y": -376.327806624391
       }
     },
     {
@@ -114,14 +114,18 @@
         "node": {
           "label": "Bootstrap Folder and Git",
           "description": "",
-          "action_id": "bash",
           "parameters": {
             "command": "mkdir -p \"$input.repo_path\" && git -C \"$input.repo_path\" init && git -C \"$input.repo_path\" branch -M main",
             "description": "Create project folder and initialize git",
             "output": "bootstrap_result"
-          }
+          },
+          "action_id": "bash"
         },
-        "agentArgs": []
+        "agentArgs": [],
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
       },
       "position": {
         "x": -760,
@@ -136,9 +140,14 @@
         "instructions": "Using this architecture brief, output only one shell command to scaffold the project in the current directory ('.'). Prefer foxtunda init if explicitly available for the target stack; otherwise use the most standard framework init command for the stack.\n\nArchitecture brief:\n$input.architecture_brief",
         "node": {
           "label": "Generate Scaffold Command",
+          "description": "",
           "parameters": {
             "output": "framework_init_cmd"
           }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
         }
       },
       "position": {
@@ -154,15 +163,19 @@
         "node": {
           "label": "Run Scaffold and Initial Commit",
           "description": "",
-          "action_id": "bash",
           "parameters": {
             "command": "$ctx.framework_init_cmd && git add . && git commit -m \"Initial commit: scaffold setup\"",
             "workdir": "$input.repo_path",
             "description": "Run scaffold command and create initial commit",
             "output": "scaffold_commit_result"
-          }
+          },
+          "action_id": "bash"
         },
-        "agentArgs": []
+        "agentArgs": [],
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
       },
       "position": {
         "x": -760,
@@ -177,13 +190,17 @@
         "node": {
           "label": "Load product-explore Skill",
           "description": "",
-          "action_id": "skill_load",
           "parameters": {
             "name": "product-explore",
             "output": "explore_skill_loaded"
-          }
+          },
+          "action_id": "skill_load"
         },
-        "agentArgs": []
+        "agentArgs": [],
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
       },
       "position": {
         "x": -250,
@@ -198,9 +215,14 @@
         "instructions": "Use the loaded product-explore skill. Explore the existing product at this path and return a concise exploration brief with current structure, ownership boundaries, and change surfaces.\n\nrepo_path: $input.repo_path\ngoal: $input.goal\nscope: $input.scope\nacceptance_criteria: $input.acceptance_criteria",
         "node": {
           "label": "Run Product Explore",
+          "description": "",
           "parameters": {
             "output": "explore_brief"
           }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
         }
       },
       "position": {
@@ -216,35 +238,222 @@
         "node": {
           "label": "Load product-plan Skill",
           "description": "",
-          "action_id": "skill_load",
           "parameters": {
             "name": "product-plan",
             "output": "plan_skill_loaded"
-          }
+          },
+          "action_id": "skill_load"
         },
-        "agentArgs": []
+        "agentArgs": [],
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
       },
       "position": {
-        "x": -500,
-        "y": 380
+        "x": -519.3732247764315,
+        "y": 395.2577349329757
       }
     },
     {
       "id": "run_product_plan",
       "type": "workflow",
       "data": {
-        "nodeType": "prompt",
-        "instructions": "Use the loaded product-plan skill and produce an implementation plan grounded in intake + exploration context.\n\nrepo_path: $input.repo_path\ngoal: $input.goal\nscope: $input.scope\nacceptance_criteria: $input.acceptance_criteria\narchitecture_brief: $input.architecture_brief\nexplore_brief (may be empty for new): $ctx.explore_brief",
+        "nodeType": "structured",
+        "instructions": "Use the loaded product-plan skill and produce an implementation plan grounded in intake + exploration context. Follow the product-plan skill contract exactly.\n\nrepo_path: $input.repo_path\ngoal: $input.goal\nscope: $input.scope\nacceptance_criteria: $input.acceptance_criteria\narchitecture_brief: $input.architecture_brief\nexplore_brief (may be empty for new): $ctx.explore_brief",
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "context": {
+              "type": "string",
+              "description": "One paragraph describing what this plan delivers and why"
+            },
+            "delivery_mode": {
+              "type": "string",
+              "enum": [
+                "easy",
+                "medium",
+                "hard"
+              ],
+              "description": "Complexity classification for this delivery"
+            },
+            "shared_contracts": {
+              "type": "array",
+              "description": "Data model, interface, or UI surface contracts that all phases must respect",
+              "items": {
+                "type": "string"
+              }
+            },
+            "steps": {
+              "type": "array",
+              "description": "Ordered implementation steps",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Short step identifier, e.g. step-1"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "What this step does and why"
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "File paths touched by this step"
+                  }
+                },
+                "required": [
+                  "id",
+                  "description",
+                  "files"
+                ]
+              }
+            },
+            "critical_files": {
+              "type": "array",
+              "description": "3–10 most important files for this implementation",
+              "items": {
+                "type": "string"
+              }
+            },
+            "risks": {
+              "type": "array",
+              "description": "Risks and mitigations",
+              "items": {
+                "type": "string"
+              }
+            },
+            "verification": {
+              "type": "array",
+              "description": "Verification steps to confirm the plan is correctly implemented",
+              "items": {
+                "type": "string"
+              }
+            },
+            "readiness": {
+              "type": "string",
+              "enum": [
+                "READY",
+                "BLOCKED"
+              ],
+              "description": "Whether this plan is ready for product-built to execute"
+            }
+          },
+          "required": [
+            "context",
+            "delivery_mode",
+            "steps",
+            "critical_files",
+            "verification",
+            "readiness"
+          ]
+        },
         "node": {
           "label": "Run Product Plan",
+          "description": "",
           "parameters": {
             "output": "product_plan"
           }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
         }
       },
       "position": {
-        "x": -500,
-        "y": 540
+        "x": -498.9230234729872,
+        "y": 568.2280394673535
+      }
+    },
+    {
+      "id": "generate_phase_breakdown",
+      "type": "workflow",
+      "data": {
+        "nodeType": "structured",
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "phases": {
+              "type": "array",
+              "description": "Ordered list of deliverable phases — each phase is a self-contained mini-plan",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "phase_id": {
+                    "type": "string",
+                    "description": "Short unique identifier, e.g. phase-1"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Short human-readable name for this deliverable"
+                  },
+                  "context": {
+                    "type": "string",
+                    "description": "What this phase delivers — written so dependents know exactly what to expect from this phase"
+                  },
+                  "dependencies": {
+                    "type": "array",
+                    "description": "Phase IDs this phase depends on. Empty = no dependencies, can run in parallel",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "files": {
+                    "type": "array",
+                    "description": "File paths this phase creates or modifies — must not overlap with other phases unless dependency declared",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "verification": {
+                    "type": "array",
+                    "description": "Verification steps to confirm this phase is correctly complete",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "risks": {
+                    "type": "array",
+                    "description": "Risks specific to this phase and mitigations",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "phase_id",
+                  "name",
+                  "context",
+                  "files",
+                  "verification"
+                ]
+              }
+            }
+          },
+          "required": [
+            "phases"
+          ]
+        },
+        "instructions": "You have a structured implementation plan below. Break it into deliverable phases. Each phase must be fully self-contained and executable in isolation.\n\nFor each phase:\n- phase_id: short unique identifier (e.g. phase-1)\n- name: short name for this deliverable\n- context: what this phase delivers, written so dependents know exactly what to expect — include the handoff contract in this description\n- dependencies: phase_ids this phase must wait for. Empty array = can run in parallel with other independent phases\n- files: file paths this phase creates or modifies — this defines the phase boundary; no overlap with other phases unless dependency is declared\n- verification: concrete checks to confirm this phase is correctly complete\n- risks: phase-specific risks and mitigations (optional)\n\nAll phases together must cover the complete plan. File ownership is the boundary — if a file is not in a phase's files[], that phase must not touch it.\n\nGoal: $input.goal\nScope: $input.scope\nAcceptance Criteria: $input.acceptance_criteria\n\nImplementation Plan:\n$ctx.product_plan",
+        "node": {
+          "label": "Generate Phase Breakdown",
+          "description": "Breaks implementation plan into deliverable phases — each phase is a feature, dependencies optional",
+          "parameters": {
+            "output": "phase_breakdown"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
+      },
+      "position": {
+        "x": -515.0908982471631,
+        "y": 787.7081022334443
       }
     },
     {
@@ -255,19 +464,23 @@
         "node": {
           "label": "Ensure Delivery Branch",
           "description": "",
-          "action_id": "bash",
           "parameters": {
             "command": "BRANCH_NAME=\"feat/plan-$(date +%Y%m%d-%H%M%S)\" && CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD) && if [ \"$CURRENT_BRANCH\" != \"main\" ]; then git checkout main; fi && git checkout -b \"$BRANCH_NAME\" && echo \"$BRANCH_NAME\"",
             "workdir": "$input.repo_path",
-            "description": "Create fresh feature branch from main",
+            "description": "Create fresh feature branch from main with phase breakdown summary",
             "output": "delivery_branch"
-          }
+          },
+          "action_id": "bash"
         },
-        "agentArgs": []
+        "agentArgs": [],
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
       },
       "position": {
-        "x": -500,
-        "y": 700
+        "x": -503.4025203864627,
+        "y": 1017.609339340912
       }
     }
   ],
@@ -320,8 +533,13 @@
       "target": "run_product_plan"
     },
     {
-      "id": "e10",
+      "id": "e10a",
       "source": "run_product_plan",
+      "target": "generate_phase_breakdown"
+    },
+    {
+      "id": "e10b",
+      "source": "generate_phase_breakdown",
       "target": "ensure_delivery_branch"
     }
   ]

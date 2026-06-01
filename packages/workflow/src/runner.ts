@@ -82,6 +82,19 @@ async function agentPrompt(sessionId: string, text: string): Promise<string> {
     .trim()
 }
 
+async function agentStructuredPrompt(
+  sessionId: string,
+  text: string,
+  schema: Record<string, unknown>,
+): Promise<unknown> {
+  const result = await SessionPrompt.prompt({
+    sessionID: sessionId,
+    parts: [{ type: "text", text }],
+    format: { type: "json_schema", schema, retryCount: 2 },
+  })
+  return (result as any).structured ?? null
+}
+
 function evaluateWhen(op: string, actual: unknown, expected: unknown): boolean {
   switch (op) {
     case "equals":      return actual === expected
@@ -205,6 +218,15 @@ export async function runWorkflow({
 
     } else if (d.nodeType === NodeTypeId.Prompt) {
       result = await agentPrompt(sessionId, resolveTemplate(instructions ?? "", input, ctx))
+
+    } else if (d.nodeType === NodeTypeId.Structured) {
+      const schema = (d.outputSchema as Record<string, unknown>) ?? { type: "object", properties: {} }
+      const structured = await agentStructuredPrompt(
+        sessionId,
+        resolveTemplate(instructions ?? "", input, ctx),
+        schema,
+      )
+      result = structured !== null && structured !== undefined ? JSON.stringify(structured) : "{}"
 
     } else if (d.nodeType === NodeTypeId.Tool) {
       const actionId = nd.action_id as string | undefined

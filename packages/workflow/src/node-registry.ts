@@ -91,6 +91,43 @@ const BUILTIN_HANDLES: Record<NodeTypeId, { handles: NodeHandleDefinition[]; con
     },
   },
 
+  [NodeTypeId.Structured]: {
+    handles: [
+      {
+        id: null,
+        position: "top",
+        type: "target",
+        connections: {
+          canReceiveFrom: [
+            { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Parameters, handleId: null, maxConnections: 1 },
+            { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+          ],
+        },
+      },
+      {
+        id: null,
+        position: "bottom",
+        type: "source",
+        connections: {
+          canConnectTo: [
+            { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+          ],
+        },
+      },
+    ],
+    constraints: {
+      allowedInboundEdges: "unlimited",
+      allowedOutboundEdges: "unlimited",
+      hiddenFields: [],
+      requiredFields: ["label"],
+      exposedFields: ["instructions", "outputSchema"],
+    },
+  },
+
   [NodeTypeId.Parameters]: {
     handles: [
       {
@@ -206,6 +243,24 @@ const BUILTIN_DEFINITIONS: NodeDefinition[] = [
     uiHints: {
       handles: BUILTIN_HANDLES[NodeTypeId.Parameters].handles,
       constraints: BUILTIN_HANDLES[NodeTypeId.Parameters].constraints,
+    },
+  },
+  {
+    type: NodeTypeId.Structured,
+    name: "Structured",
+    description: "Prompt the agent to return a validated JSON object matching a defined schema",
+    icon: "Braces",
+    category: NodeCategory.Core,
+    defaultConfig: {
+      node: { label: "Structured", description: "" },
+      data: { inputs: [], outputs: [] },
+      outputSchema: { type: "object", properties: {} },
+    },
+    version: "1.0.0",
+    tags: ["structured", "json", "schema", "output"],
+    uiHints: {
+      handles: BUILTIN_HANDLES[NodeTypeId.Structured].handles,
+      constraints: BUILTIN_HANDLES[NodeTypeId.Structured].constraints,
     },
   },
   {

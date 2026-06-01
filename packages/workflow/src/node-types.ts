@@ -8,6 +8,7 @@
 export const NodeTypeId = {
   Tool: "tool",
   Prompt: "prompt",
+  Structured: "structured",
   Parameters: "parameters",
   Decide: "decide",
 } as const

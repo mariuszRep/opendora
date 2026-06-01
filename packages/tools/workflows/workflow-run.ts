@@ -72,6 +72,7 @@ export const WorkflowRunTool = Tool.define("workflow_run", async (initCtx) => {
         sessionType: "worker",
         agentID: agentId,
         ownerKind: "service",
+        parentSessionID: ctx.sessionID,
       })
 
       runWorkflow({ workflow, sessionId: session.id, input, directory }).catch((err) => {

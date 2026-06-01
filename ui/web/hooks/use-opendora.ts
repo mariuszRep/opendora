@@ -424,7 +424,10 @@ export function useOpendora(opts?: {
       setMessages([])
     }
     let cancelled = false
-    opendora.session.messages(selectedSessionId).then((msgs) => {
+    // Capture id in closure so the cache write is always for the right session
+    // even after the effect cleanup fires (user switched away mid-fetch).
+    const fetchingForId = selectedSessionId
+    opendora.session.messages(fetchingForId).then((msgs) => {
       if (!cancelled) {
         setMessages((current) => {
           // Merge fetched messages with any SSE updates that arrived during the fetch.
@@ -444,11 +447,18 @@ export function useOpendora(opts?: {
               merged.push(m)
             }
           }
-          messageCacheRef.current.set(selectedSessionId, merged)
+          messageCacheRef.current.set(fetchingForId, merged)
           return merged
         })
+      } else {
+        // Effect was cancelled because the user switched sessions before the API
+        // returned.  Still populate the cache so that returning to this session
+        // is instant (no second round-trip needed).
+        if (msgs.length > 0) {
+          messageCacheRef.current.set(fetchingForId, msgs)
+        }
       }
-    }).catch((err) => { console.error("[messages] fetch failed", selectedSessionId, err) })
+    }).catch((err) => { console.error("[messages] fetch failed", fetchingForId, err) })
     return () => { cancelled = true }
   }, [selectedSessionId])
 
@@ -822,10 +832,29 @@ export function useOpendora(opts?: {
   }, [])
 
   const selectSession = useCallback((id: string, agentIdHint?: string) => {
-    // Save current session messages to cache before switching away
-    if (selectedSessionRef.current?.id) {
+    // Guard: re-clicking the currently selected session should not clear messages.
+    if (selectedSessionRef.current?.id === id) {
+      // If messages somehow ended up empty (e.g. after a failed fetch), restore
+      // from cache or re-fetch so the user never sees a permanently blank chat.
+      if (messagesRef.current.length === 0) {
+        const cached = messageCacheRef.current.get(id)
+        if (cached && cached.length > 0) {
+          setMessages(cached)
+        } else {
+          opendora.session.messages(id).then((msgs) => {
+            if (msgs.length > 0) setMessages(msgs)
+          }).catch(() => {})
+        }
+      }
+      return
+    }
+
+    // Save current session messages to cache — only when non-empty to avoid
+    // overwriting a valid cache with the blank state from a still-pending fetch.
+    if (selectedSessionRef.current?.id && messagesRef.current.length > 0) {
       messageCacheRef.current.set(selectedSessionRef.current.id, messagesRef.current)
     }
+
     // Update ref immediately so the URL sync effect doesn't fire an extra router.replace
     const session = sessionsRef.current.find((s) => s.id === id) ?? null
     if (!session) {
@@ -839,9 +868,11 @@ export function useOpendora(opts?: {
       selectedSessionRef.current = session
       pendingSessionIdRef.current = null
     }
-    // Clear messages immediately so we don't briefly render the previous session's
-    // messages against the new session id while the message-fetch effect is running.
-    setMessages([])
+
+    // Show cached messages immediately (stale-while-revalidate) so the chat
+    // area never flashes blank when switching between previously visited sessions.
+    const cachedMessages = messageCacheRef.current.get(id)
+    setMessages(cachedMessages ?? [])
     setSelectedSessionId(id)
     setStatus(activeSessionsRef.current.has(id) ? "streaming" : "ready")
     setError(null)
@@ -1037,8 +1068,9 @@ export function useOpendora(opts?: {
   }, [router])
 
   const selectAgent = useCallback((agentId: string) => {
-    // Save current session messages to cache before switching away
-    if (selectedSessionRef.current?.id) {
+    // Save current session to cache — only when non-empty to avoid overwriting
+    // a valid cache entry with the blank state from a still-pending fetch.
+    if (selectedSessionRef.current?.id && messagesRef.current.length > 0) {
       messageCacheRef.current.set(selectedSessionRef.current.id, messagesRef.current)
     }
 

@@ -39,6 +39,7 @@ import { type ToolSchema, type ToolSchemaProperty } from '@/lib/opendora'
 import { TOOL_GROUP_ORDER, TOOL_GROUP_LABELS, getToolGroup, HIDDEN_TOOLS } from '@/lib/tool-groups'
 import { ExpressionInput } from './expression-input'
 import { PromptInput } from './prompt-input'
+import { SchemaBuilder, schemaPropsToJsonSchema, jsonSchemaToProps, type SchemaProp } from './schema-builder'
 import type { RefSuggestion } from '@/lib/workflow-refs'
 
 type EditType = 'workflow' | 'node' | 'edge'
@@ -82,10 +83,11 @@ const BUILTIN_SCHEMAS: Record<string, BuiltinSchema> = {
 type TabId = 'general' | 'input' | 'settings' | 'output'
 
 const TAB_MANIFEST: Record<NodeTypeId, TabId[]> = {
-  [NodeTypeId.Tool]:       ['general', 'input', 'settings', 'output'],
-  [NodeTypeId.Prompt]:     ['general', 'input'],
-  [NodeTypeId.Parameters]: ['general', 'input'],
-  [NodeTypeId.Decide]:     ['general', 'input', 'settings', 'output'],
+  [NodeTypeId.Tool]:        ['general', 'input', 'settings', 'output'],
+  [NodeTypeId.Prompt]:      ['general', 'input'],
+  [NodeTypeId.Structured]:  ['general', 'input'],
+  [NodeTypeId.Parameters]:  ['general', 'input'],
+  [NodeTypeId.Decide]:      ['general', 'input', 'settings', 'output'],
 }
 
 const TAB_LABELS: Record<TabId, string> = {
@@ -119,6 +121,7 @@ export type DrawerFormData = {
   nodeType?: NodeType
   type?: string
   workflowParameters?: WorkflowParameter[]
+  outputSchema?: Record<string, unknown>
   edgeLabel?: string
 }
 
@@ -254,6 +257,9 @@ export function WorkflowEditDrawer({
         instructions: editingNodeData.instructions as string | undefined,
         nodeType: editingNodeData.nodeType,
         workflowParameters: editingNodeData.workflowParameters,
+        outputSchema: editingNodeData._schemaProps !== undefined
+          ? schemaPropsToJsonSchema(editingNodeData._schemaProps as SchemaProp[])
+          : (editingNodeData.outputSchema as Record<string, unknown> | undefined),
       })
     } else {
       onSave(formData)
@@ -501,6 +507,49 @@ export function WorkflowEditDrawer({
                     suggestions={availableRefs ?? []}
                     placeholder={'Message to send to the agent.\nType $ to insert a reference — e.g. $input.color or $output.decide'}
                     rows={8}
+                  />
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Structured) {
+            return (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Instructions</Label>
+                  <PromptInput
+                    value={(editingNodeData.instructions as string) || ''}
+                    onChange={(v) => setEditingNodeData({ ...editingNodeData, instructions: v })}
+                    suggestions={availableRefs ?? []}
+                    placeholder={'Describe what to analyze and structure.\nType $ to insert a reference — e.g. $input.text or $output.previous'}
+                    rows={6}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <Label>Output schema</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Define the JSON shape the agent must return. Downstream nodes receive the result as <code className="font-mono">$output.*</code>
+                    </p>
+                  </div>
+                  {(() => {
+                    const rawSchema = editingNodeData.outputSchema as Record<string, unknown> | undefined
+                    if (rawSchema && rawSchema.type !== 'object' && !(editingNodeData._schemaProps as SchemaProp[] | undefined)) {
+                      return (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md px-3 py-2">
+                          Schema root type is <code className="font-mono">{String(rawSchema.type)}</code> — the builder only supports object roots. Add a field to reset to a compatible schema.
+                        </p>
+                      )
+                    }
+                    return null
+                  })()}
+                  <SchemaBuilder
+                    props={
+                      (editingNodeData._schemaProps as SchemaProp[] | undefined) ??
+                      jsonSchemaToProps((editingNodeData.outputSchema as Record<string, unknown>) ?? { type: 'object', properties: {} })
+                    }
+                    onChange={(props) => setEditingNodeData({ ...editingNodeData, _schemaProps: props })}
                   />
                 </div>
               </div>
