@@ -71,10 +71,14 @@ export function resolveRef(
   input: Record<string, unknown>,
   ctx: Record<string, unknown>,
 ): unknown {
-  if (value.startsWith("$input.")) return getPath(input, value.slice(7))
-  if (value.startsWith("$output.")) return getPath(ctx, value.slice(8))
-  if (value.startsWith("$ctx.")) return getPath(ctx, value.slice(5))
-  return value
+  // Pure reference (entire value is a single reference expression) → return raw value to preserve type
+  const pure = /^\$(input|output|ctx)\.([a-zA-Z0-9_.]+)$/.exec(value)
+  if (pure) {
+    const [, ns, path] = pure
+    return getPath(ns === "input" ? input : ctx, path)
+  }
+  // String with embedded references → substitute all occurrences in-place
+  return resolveTemplate(value, input, ctx)
 }
 
 export function resolveRefs(

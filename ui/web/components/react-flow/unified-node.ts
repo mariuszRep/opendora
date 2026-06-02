@@ -157,6 +157,11 @@ export interface NodeDataConfig {
   outputs: ParameterSchema[]
 }
 
+export interface NodeModel {
+  providerID: string
+  modelID: string
+}
+
 export interface UnifiedNodeData extends Record<string, unknown> {
   nodeType?: NodeType
   node: NodeProperties
@@ -171,6 +176,8 @@ export interface UnifiedNodeData extends Record<string, unknown> {
   stage_id?: string
   next_stage_id?: string
   workflowParameters?: WorkflowParameter[]
+  /** Optional model override for this node — overrides the agent's default model */
+  model?: NodeModel
 }
 
 export type WorkflowNodeData = UnifiedNodeData

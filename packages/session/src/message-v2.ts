@@ -95,6 +95,7 @@ export namespace MessageV2 {
   export const OutputFormatText = z
     .object({
       type: z.literal("text"),
+      toolChoice: z.enum(["auto", "required", "none"]).optional(),
     })
     .meta({
       ref: "OutputFormatText",

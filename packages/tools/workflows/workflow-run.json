@@ -15,6 +15,14 @@
       "agentId": {
         "type": "string",
         "description": "Agent to use for the workflow session. Defaults to the calling agent. Optional."
+      },
+      "workdir": {
+        "type": "string",
+        "description": "Working directory for all bash nodes in the workflow. Defaults to the calling session directory."
+      },
+      "wait": {
+        "type": "boolean",
+        "description": "If true, block until the workflow completes and return its summary. Default: false (fire and forget)."
       }
     },
     "required": ["workflowId"]

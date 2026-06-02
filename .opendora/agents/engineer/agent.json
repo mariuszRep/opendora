@@ -3,7 +3,7 @@
   "description": "Full-stack engineering orchestrator. Runs a skill-driven delivery workflow across intake, context, isolated research/planning sessions, synthesis, implementation, verification, and reporting.",
   "mode": "primary",
   "model": {
-    "modelID": "gpt-5.3-codex",
+    "modelID": "gpt-5.5",
     "providerID": "openai-codex"
   },
   "temperature": 0.25,

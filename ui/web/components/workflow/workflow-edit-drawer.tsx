@@ -26,21 +26,101 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
-import { Trash2, Save, X, GitBranch, Workflow as WorkflowIcon, Map as MapIcon, Plus } from 'lucide-react'
+import { Trash2, Save, X, GitBranch, Workflow as WorkflowIcon, Map as MapIcon, Plus, Cpu, ChevronDown } from 'lucide-react'
 import { WorkflowControls, WorkflowControlButton, WorkflowZoomBar } from '@/components/react-flow'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Node, Edge } from '@xyflow/react'
-import type { WorkflowNodeData, UnifiedNodeData, NodeType, WorkflowParameter, JsonSchemaType } from '@/components/react-flow/unified-node'
+import type { WorkflowNodeData, UnifiedNodeData, NodeType, WorkflowParameter, JsonSchemaType, NodeModel } from '@/components/react-flow/unified-node'
 import { getNodeTypeMetadata, NodeTypeId } from '@/components/react-flow/node-type-registry'
 import { resolveNodeType } from '@/components/react-flow/node-utils'
 import { useToolSchemas } from '@/hooks/use-tool-schemas'
 import { ToolParameterForm } from './tool-parameter-form'
 import { type ToolSchema, type ToolSchemaProperty } from '@/lib/opendora'
+import { useModelList } from '@/hooks/use-model-list'
+import {
+  ModelSelector,
+  ModelSelectorContent,
+  ModelSelectorEmpty,
+  ModelSelectorGroup,
+  ModelSelectorInput,
+  ModelSelectorItem,
+  ModelSelectorList,
+  ModelSelectorLogo,
+  ModelSelectorName,
+  ModelSelectorTrigger,
+} from '@/components/ai-elements/model-selector'
 import { TOOL_GROUP_ORDER, TOOL_GROUP_LABELS, getToolGroup, HIDDEN_TOOLS } from '@/lib/tool-groups'
 import { ExpressionInput } from './expression-input'
 import { PromptInput } from './prompt-input'
 import { SchemaBuilder, schemaPropsToJsonSchema, jsonSchemaToProps, type SchemaProp } from './schema-builder'
 import type { RefSuggestion } from '@/lib/workflow-refs'
+
+interface ModelPickerProps {
+  value: NodeModel | undefined
+  onChange: (model: NodeModel | undefined) => void
+}
+
+function ModelPicker({ value, onChange }: ModelPickerProps) {
+  const { modelList, modelsByProvider, refreshProviders } = useModelList()
+  const [open, setOpen] = React.useState(false)
+
+  const selectedModelName = React.useMemo(() => {
+    if (!value) return null
+    const entry = modelList.find((m) => m.providerID === value.providerID && m.modelID === value.modelID)
+    return entry?.modelName ?? value.modelID
+  }, [value, modelList])
+
+  return (
+    <ModelSelector
+      open={open}
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen)
+        if (isOpen) refreshProviders().catch(() => {})
+      }}
+    >
+      <ModelSelectorTrigger asChild>
+        <Button variant="outline" size="sm" className="w-full justify-between font-normal h-8 text-xs">
+          <span className="flex items-center gap-1.5 min-w-0">
+            {value ? (
+              <>
+                <ModelSelectorLogo provider={value.providerID} />
+                <ModelSelectorName className="truncate">{selectedModelName}</ModelSelectorName>
+              </>
+            ) : (
+              <span className="text-muted-foreground">Agent default</span>
+            )}
+          </span>
+          <ChevronDown className="size-3.5 shrink-0 opacity-50" />
+        </Button>
+      </ModelSelectorTrigger>
+      <ModelSelectorContent>
+        <ModelSelectorInput placeholder="Search models…" />
+        <ModelSelectorList>
+          <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
+          <ModelSelectorGroup heading="Default">
+            <ModelSelectorItem value="__default__" onSelect={() => { onChange(undefined); setOpen(false) }}>
+              <ModelSelectorName>Agent default</ModelSelectorName>
+            </ModelSelectorItem>
+          </ModelSelectorGroup>
+          {[...modelsByProvider.entries()].map(([providerName, models]) => (
+            <ModelSelectorGroup key={providerName} heading={providerName}>
+              {models.map((m) => (
+                <ModelSelectorItem
+                  key={`${m.providerID}::${m.modelID}`}
+                  value={`${m.providerID}::${m.modelID} ${m.modelName}`}
+                  onSelect={() => { onChange({ providerID: m.providerID, modelID: m.modelID }); setOpen(false) }}
+                >
+                  <ModelSelectorLogo provider={m.providerID} />
+                  <ModelSelectorName>{m.modelName}</ModelSelectorName>
+                </ModelSelectorItem>
+              ))}
+            </ModelSelectorGroup>
+          ))}
+        </ModelSelectorList>
+      </ModelSelectorContent>
+    </ModelSelector>
+  )
+}
 
 type EditType = 'workflow' | 'node' | 'edge'
 
@@ -84,8 +164,8 @@ type TabId = 'general' | 'input' | 'settings' | 'output'
 
 const TAB_MANIFEST: Record<NodeTypeId, TabId[]> = {
   [NodeTypeId.Tool]:        ['general', 'input', 'settings', 'output'],
-  [NodeTypeId.Prompt]:      ['general', 'input'],
-  [NodeTypeId.Structured]:  ['general', 'input'],
+  [NodeTypeId.Prompt]:      ['general', 'input', 'settings'],
+  [NodeTypeId.Structured]:  ['general', 'input', 'settings'],
   [NodeTypeId.Parameters]:  ['general', 'input'],
   [NodeTypeId.Decide]:      ['general', 'input', 'settings', 'output'],
 }
@@ -123,6 +203,7 @@ export type DrawerFormData = {
   workflowParameters?: WorkflowParameter[]
   outputSchema?: Record<string, unknown>
   edgeLabel?: string
+  model?: NodeModel
 }
 
 interface WorkflowEditDrawerProps {
@@ -234,6 +315,7 @@ export function WorkflowEditDrawer({
           action_id: nodeData.node.action_id || '',
           parameters: nodeData.node.parameters || {},
           nodeType: nodeData.nodeType,
+          model: nodeData.model,
         })
       } else if (editType === 'edge' && data.edge) {
         setFormData({
@@ -260,6 +342,7 @@ export function WorkflowEditDrawer({
         outputSchema: editingNodeData._schemaProps !== undefined
           ? schemaPropsToJsonSchema(editingNodeData._schemaProps as SchemaProp[])
           : (editingNodeData.outputSchema as Record<string, unknown> | undefined),
+        model: formData.model,
       })
     } else {
       onSave(formData)
@@ -668,6 +751,26 @@ export function WorkflowEditDrawer({
             )
           }
 
+          if (nodeType === NodeTypeId.Prompt || nodeType === NodeTypeId.Structured) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <Cpu className="size-3.5" />
+                    Model
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Override the agent&apos;s default model for this node only. Leave blank to inherit.
+                  </p>
+                  <ModelPicker
+                    value={formData.model}
+                    onChange={(m) => setFormData((prev) => ({ ...prev, model: m }))}
+                  />
+                </div>
+              </div>
+            )
+          }
+
           if (nodeType === NodeTypeId.Decide) {
             const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
             const mode = (params.mode as string) ?? 'agent'
@@ -747,6 +850,25 @@ export function WorkflowEditDrawer({
                   </div>
                   <Switch checked={hasElse} onCheckedChange={(checked) => updateDecideParams(checked ? { hasElse: true, default: 'else' } : { hasElse: false, default: undefined })} />
                 </div>
+
+                {mode === 'agent' && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5">
+                        <Cpu className="size-3.5" />
+                        Model
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Override the model for this decision. A smaller, faster model is often sufficient.
+                      </p>
+                      <ModelPicker
+                        value={formData.model}
+                        onChange={(m) => setFormData((prev) => ({ ...prev, model: m }))}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             )
           }

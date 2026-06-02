@@ -693,6 +693,13 @@ export namespace SessionPrompt {
             structuredOutput = output
           },
         })
+        // Strip every other tool — model must call StructuredOutput immediately,
+        // no exploring with bash/read/etc. before answering.
+        for (const id of Object.keys(tools)) {
+          if (id !== "StructuredOutput" && id !== "invalid") {
+            delete tools[id]
+          }
+        }
       }
 
       if (step === 1) {
@@ -748,7 +755,7 @@ export namespace SessionPrompt {
         ],
         tools,
         model,
-        toolChoice: format.type === "json_schema" ? "required" : undefined,
+        toolChoice: format.type === "json_schema" ? "required" : (format.toolChoice ?? undefined),
       })
 
       // If structured output was captured, save it and exit
@@ -1093,14 +1100,14 @@ export namespace SessionPrompt {
       if (base.length > 0 || skillUnlocked.size > 0) {
         const allowed = new Set([...base, ...skillUnlocked])
         for (const id of Object.keys(tools)) {
-          if (id !== "invalid" && !allowed.has(id)) {
+          if (id !== "invalid" && id !== "StructuredOutput" && !allowed.has(id)) {
             delete tools[id]
           }
         }
       } else {
         // Empty tools array and no skill tools means no tools (except "invalid")
         for (const id of Object.keys(tools)) {
-          if (id !== "invalid") {
+          if (id !== "invalid" && id !== "StructuredOutput") {
             delete tools[id]
           }
         }

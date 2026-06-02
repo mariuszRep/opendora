@@ -478,6 +478,7 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
               ...(formData.agentArgs !== undefined ? { agentArgs: formData.agentArgs } : {}),
               ...(formData.workflowParameters !== undefined ? { workflowParameters: formData.workflowParameters } : {}),
               ...(formData.outputSchema !== undefined ? { outputSchema: formData.outputSchema } : {}),
+              model: formData.model ?? undefined,
               node: {
                 ...n.data.node,
                 label: formData.label ?? n.data.node.label,

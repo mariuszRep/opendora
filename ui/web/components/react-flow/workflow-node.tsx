@@ -9,7 +9,7 @@ import {
   WorkflowNodeDescription,
   WorkflowNodeFooter,
 } from './workflow-node-base'
-import { Brain } from 'lucide-react'
+import { Brain, Cpu } from 'lucide-react'
 import { getHandlesForNodeType } from './node-handles'
 import { getNodeTypeMetadata, NodeTypeId } from './node-type-registry'
 import { resolveNodeType } from './node-utils'
@@ -74,9 +74,17 @@ export function WorkflowNode({ data, selected }: NodeProps) {
           <Icon className="size-3 shrink-0" />
           {metadata.label}
         </span>
-        {ai && (
-          <Brain className="size-3.5 shrink-0 text-primary/60 ml-auto" />
-        )}
+        <div className="flex items-center gap-1.5 ml-auto">
+          {nodeData.model && (
+            <span className="flex items-center gap-1 text-[10px] font-mono text-primary/70 bg-primary/8 rounded px-1.5 py-0.5 leading-none">
+              <Cpu className="size-2.5 shrink-0" />
+              {(nodeData.model as any).modelID}
+            </span>
+          )}
+          {ai && (
+            <Brain className="size-3.5 shrink-0 text-primary/60" />
+          )}
+        </div>
       </WorkflowNodeFooter>
     </WorkflowNodeBase>
   )

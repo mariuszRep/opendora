@@ -105,6 +105,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useModelList } from "@/hooks/use-model-list"
 
 const suggestions = [
   "What files are in this project?",
@@ -457,38 +458,7 @@ export const Chatbot = () => {
     }
   }, [selectedAgent, agents, updateAgent])
 
-  const modelList = useMemo(() => {
-    const isFreeModel = (m: { id: string; [k: string]: unknown }) => {
-      const cost = (m as any).cost as { input: number; output: number } | undefined
-      return !!(cost && cost.input === 0 && cost.output === 0)
-    }
-    const real = providers
-      .filter((p) => connectedProviders.includes(p.id) && p.id !== "fallback")
-      .flatMap((p) => {
-        const filter = modelFilters[p.id] ?? "all"
-        if (filter === "none") return []
-        const models = Object.values(p.models)
-        const filtered = filter === "free" ? models.filter(isFreeModel) : models
-        return filtered.map((m) => ({
-          providerID: p.id,
-          providerName: p.name,
-          modelID: m.id,
-          modelName: (m as { name?: string }).name ?? m.id,
-          isFallback: false,
-        }))
-      })
-    const fallbackProvider = providers.find((p) => p.id === "fallback")
-    const fallback = fallbackProvider
-      ? Object.values(fallbackProvider.models).map((m) => ({
-          providerID: "fallback",
-          providerName: "Free Fallback Groups",
-          modelID: m.id,
-          modelName: (m as { name?: string }).name ?? m.id,
-          isFallback: true,
-        }))
-      : []
-    return [...real, ...fallback]
-  }, [providers, connectedProviders, modelFilters])
+  const { modelList, modelsByProvider } = useModelList()
 
   const selectedGroup = useMemo(
     () => (selectedGroupId ? modelGroups.find((g) => g.id === selectedGroupId) : null),
@@ -525,15 +495,6 @@ export const Chatbot = () => {
     if (selectedModel.modelID.includes("128k")) return 128000
     return 200000
   }, [selectedModel, providers])
-
-  const modelsByProvider = useMemo(() => {
-    const groups = new Map<string, typeof modelList>()
-    for (const m of modelList) {
-      if (!groups.has(m.providerName)) groups.set(m.providerName, [])
-      groups.get(m.providerName)!.push(m)
-    }
-    return groups
-  }, [modelList])
 
   const agentDotColor = useMemo(() => {
     const agent = agents.find((a) => (a as any)._id === selectedAgent)
