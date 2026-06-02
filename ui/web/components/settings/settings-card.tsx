@@ -33,7 +33,7 @@ export function SettingsCard({
       onClick={onClick}
     >
       <CardHeader className="pb-2 flex-1">
-        <div className="flex items-start gap-2">
+        <div className="flex items-start gap-2 min-w-0">
           {Icon && (
             <div className="shrink-0">
               <Icon className="h-5 w-5 text-muted-foreground" />

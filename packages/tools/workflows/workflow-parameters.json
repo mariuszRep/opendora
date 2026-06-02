@@ -1,14 +1,16 @@
 {
   "name": "workflow_parameters",
-  "description": "Return the declared parameters for a workflow before running it. Call this before workflow_run whenever you need to know what keys to pass in the input object. Returns each parameter's name, type, required/optional status, description, and allowed enum values.",
+  "description": "Return the workflow-declared input parameters for a workflow before running it.\n\nUse this before workflow_run to discover the keys, types, required/optional status, descriptions, and enum values that must be placed inside workflow_run.input. This only reports parameters declared by the workflow's parameters node; it does not include generic workflow_run options such as workdir, agentId, or wait.\n\nIf the workflow description says it operates on a project directory or uses bash/file-system nodes, pass the directory separately as workflow_run.workdir even though it is not returned by this tool.",
   "inputSchema": {
     "type": "object",
     "properties": {
       "workflowId": {
         "type": "string",
-        "description": "ID of the workflow to inspect (use workflow_list to see available IDs)"
+        "description": "Workflow ID to inspect for declared input parameters, e.g. wf-product-intake-contract-v1; use workflow_list to see available IDs."
       }
     },
-    "required": ["workflowId"]
+    "required": [
+      "workflowId"
+    ]
   }
 }

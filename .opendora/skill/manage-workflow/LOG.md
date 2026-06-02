@@ -9,3 +9,24 @@ Skill reports workflow_list/workflow_get/workflow_create/workflow_update/workflo
 _Context: ses_19c66070cffeH216d7S1JrPIOr_
 
 ---
+### 2026-06-02 10:22:40 UTC [ADVISORY]
+
+Intake workflow run failed after deterministic decide with opaque 'Bad Request 2 passed, 1 failed'. Inspection showed a tool node had agentArgs:['workdir']; likely caused invalid runtime arg handling for bash. Workflow tooling should surface failing node id/action and validation details, and skill guidance should warn against using agentArgs for workdir; use workflow_run top-level workdir instead.
+
+_Context: wf-product-intake-contract-v1 bootstrap_folder_git_
+
+---
+### 2026-06-02 10:29:41 UTC [ADVISORY]
+
+Skill should add a permanent 'workdir contract' rule: workflow parameters node declares only workflow_run.input keys; workflow_run.workdir is a top-level runner option, optional globally but effectively mandatory for workflows that use bash/filesystem/project directories. Workflow authors should state this in workflow.description/node descriptions and never put workdir in tool node agentArgs.
+
+_Context: workflow_workdir_contract_
+
+---
+### 2026-06-02 10:47:01 UTC [ADVISORY]
+
+Workflow authoring guidance should state that workflow_run.workdir must be an existing directory. For new-project workflows, either require caller to pre-create/pass exact project dir, or add a separate folder-name input and explicit mkdir/cd steps; downstream bash nodes must cd into that child folder because changing cwd in one bash node does not persist to later nodes.
+
+_Context: wf-product-intake-contract-v1 v1.3.0_
+
+---
