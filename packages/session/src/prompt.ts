@@ -103,6 +103,7 @@ export namespace SessionPrompt {
     agent: z.string().optional(),
     noReply: z.boolean().optional(),
     noWait: z.boolean().optional(),
+    hidden: z.boolean().optional(),
     format: MessageV2.Format.optional(),
     system: z.string().optional(),
     variant: z.string().optional(),
@@ -655,6 +656,7 @@ export namespace SessionPrompt {
             created: Date.now(),
           },
           sessionID,
+          ...(lastUser.hidden ? { hidden: true } : {}),
         })) as MessageV2.Assistant,
         sessionID: sessionID,
         model,
@@ -1203,6 +1205,7 @@ export namespace SessionPrompt {
       format: input.format,
       variant,
       ...(input.schedule_id ? { schedule_id: input.schedule_id } : {}),
+      ...(input.hidden ? { hidden: true } : {}),
     }
     using _3 = defer(() => InstructionPrompt.clear(info.id))
 

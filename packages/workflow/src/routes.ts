@@ -100,6 +100,7 @@ export function WorkflowRoutes() {
       ownerKind: "service",
       ...(body.parentSessionId && { parentSessionID: body.parentSessionId }),
     })
+    await Session.setCwd({ sessionID: session.id, cwd: directory })
     console.log(`[workflow execute] created session ${session.id} with session.agentID=${session.agentID}`)
 
     runWorkflow({ workflow, sessionId: session.id, input, directory }).catch((err) => {

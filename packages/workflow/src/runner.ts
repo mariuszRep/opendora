@@ -75,23 +75,74 @@ async function injectMessage(sessionId: string, parts: InjectedPart[], directory
 
 type NodeModel = { providerID: string; modelID: string }
 
+function buildJsonInstruction(schema: Record<string, unknown>): string {
+  const props = (schema as any).properties ?? {}
+  const required: string[] = (schema as any).required ?? []
+  const lines = Object.entries(props).map(([key, val]: [string, any]) => {
+    const desc = val.description ? ` // ${val.description}` : ""
+    const enumStr = val.enum ? ` (one of: ${val.enum.join(", ")})` : ""
+    return `  "${key}": ...${enumStr}${desc}`
+  })
+  return [
+    `Respond with ONLY a valid JSON object — no prose, no markdown, no code fences.`,
+    `Use EXACTLY these field names (required: ${required.join(", ")}):`,
+    `{`,
+    ...lines,
+    `}`,
+  ].join("\n")
+}
+
+function extractJsonFromText(text: string): unknown | null {
+  // Try the whole string first
+  try { return JSON.parse(text.trim()) } catch {}
+  // Walk backward from the last } to find the largest valid object
+  let end = text.lastIndexOf("}")
+  while (end >= 0) {
+    const start = text.lastIndexOf("{", end)
+    if (start < 0) break
+    try { return JSON.parse(text.slice(start, end + 1)) } catch {}
+    end = text.lastIndexOf("}", end - 1)
+  }
+  return null
+}
+
 async function agentStructuredPrompt(
   sessionId: string,
   text: string,
   schema: Record<string, unknown>,
   model?: NodeModel,
 ): Promise<unknown> {
-  // json_schema format + prompt.ts tool restriction = single-shot: only StructuredOutput
-  // is available, toolChoice:"required" forces one call, loop exits immediately.
+  // For reasoning models (e.g. gpt-5.x) toolChoice:"required" causes them to reason about
+  // calling the tool but produce no actual response — the reasoning phase has no tool access.
+  // Use a plain text prompt with toolChoice:"none" instead: the model always produces real
+  // text output, and we extract the JSON from that text.
+  const jsonInstruction = buildJsonInstruction(schema)
+  const fullPrompt = `${text}\n\n${jsonInstruction}`
+
   const result = await SessionPrompt.prompt({
     sessionID: sessionId,
-    parts: [{ type: "text", text }],
-    format: { type: "json_schema", schema, retryCount: 1 },
+    parts: [{ type: "text", text: fullPrompt }],
+    format: { type: "text", toolChoice: "none" },
+    hidden: true,
     ...(model ? { model } : {}),
   })
-  const structured = (result as any).structured ?? null
-  if (structured === null) throw new Error(`Workflow structured node produced no output — stopping workflow`)
-  return structured
+
+  // For non-reasoning models that support StructuredOutput tool call
+  const structured = (result as any).info?.structured ?? null
+  if (structured !== null) return structured
+
+  // Primary path for reasoning models: extract JSON from the text response
+  const textContent = ((result as any).parts ?? [])
+    .filter((p: any) => p.type === "text" && !p.synthetic)
+    .map((p: any) => p.text ?? "")
+    .join("")
+    .trim()
+  if (textContent) {
+    const extracted = extractJsonFromText(textContent)
+    if (extracted !== null) return extracted
+  }
+
+  throw new Error(`Workflow structured node produced no output — stopping workflow`)
 }
 
 async function agentPrompt(
@@ -162,7 +213,7 @@ export async function runWorkflow({
   const rootNodes = workflow.nodes.filter((n) => !allTargetIds.has(n.id))
   if (rootNodes.length === 0) throw new Error("Workflow has no root node")
 
-  const ctx: Record<string, unknown> = { _dir: directory }
+  const ctx: Record<string, unknown> = {}
   const visited = new Set<string>()
   const queue = rootNodes.map((n) => n.id)
   const steps: Array<{ label: string; passed: boolean }> = []
@@ -179,7 +230,8 @@ export async function runWorkflow({
       ...steps.map((s) => `${s.passed ? "✓" : "✗"} ${s.label}`),
     ]
     const summary = lines.join("\n")
-    await injectMessage(sessionId, [{ type: "text", text: summary }], directory)
+    const cwd = await Session.effectiveDefaultPath(sessionId)
+    await injectMessage(sessionId, [{ type: "text", text: summary }], cwd)
     return summary
   }
 
@@ -202,6 +254,7 @@ export async function runWorkflow({
 
     try {
 
+    const currentDir = await Session.effectiveDefaultPath(sessionId)
     let result: string | undefined
 
     if (d.nodeType === NodeTypeId.Parameters) {
@@ -254,7 +307,7 @@ export async function runWorkflow({
         tool: "workflow_parameters",
         input: received,
         output: lines.join("\n"),
-      }], directory)
+      }], currentDir)
       result = JSON.stringify(received)
 
     } else if (d.nodeType === NodeTypeId.Prompt) {
@@ -267,9 +320,9 @@ export async function runWorkflow({
       await injectMessage(sessionId, [{
         type: "tool",
         tool: "workflow_structured",
-        input: { instructions: resolvedPrompt, schema },
+        input: { node: nodeLabel },
         output: structured,
-      }], directory)
+      }], currentDir)
       result = JSON.stringify(structured)
 
     } else if (d.nodeType === NodeTypeId.Tool) {
@@ -283,9 +336,7 @@ export async function runWorkflow({
       }
       const resolvedArgs = resolveRefs(args, input, ctx)
 
-      // Default workdir: the workflow's own directory (from session or workflow_run workdir param).
-      // Explicit node workdir always wins; this is the fallback when none is set.
-      if (!resolvedArgs.workdir) resolvedArgs.workdir = directory
+      if (!resolvedArgs.workdir) resolvedArgs.workdir = currentDir
 
       const session = await Session.get(sessionId)
       const { output } = await _toolExecutor(actionId, resolvedArgs, agentArgs, {
@@ -295,7 +346,7 @@ export async function runWorkflow({
       })
       result = output
 
-      await injectMessage(sessionId, [{ type: "tool", tool: actionId, input: resolvedArgs, output }], directory)
+      await injectMessage(sessionId, [{ type: "tool", tool: actionId, input: resolvedArgs, output }], currentDir)
 
     } else if (d.nodeType === NodeTypeId.Decide) {
       const mode = (params.mode as string) ?? "agent"
@@ -344,13 +395,28 @@ export async function runWorkflow({
           ...(mode === "deterministic" ? { expression: params.input } : {}),
         },
         output: result,
-      }], directory)
+      }], currentDir)
 
       // Auto-store result in ctx so it's accessible as $ctx.<key>.
       // Key is derived from the node label; explicit params.output overrides if set.
       const autoKey = (nd.label as string | undefined)
         ?.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") || "decide"
       ctx[storeAs ?? autoKey] = result
+
+    } else if (d.nodeType === NodeTypeId.SetWorkdir) {
+      const pathExpr = (params.path as string | undefined) ?? ""
+      if (!pathExpr) throw new Error(`SetWorkdir node "${currentId}": "path" parameter is required`)
+      const resolved = String(resolveRef(pathExpr, input, ctx) ?? pathExpr)
+      // Take the last non-empty line — bash stdout may carry preamble noise before the actual path
+      const newDir = resolved.split("\n").map((l) => l.trim()).filter(Boolean).at(-1) ?? resolved
+      await Session.setCwd({ sessionID: sessionId, cwd: newDir })
+      result = newDir
+      await injectMessage(sessionId, [{
+        type: "tool",
+        tool: "set_workdir",
+        input: { path: pathExpr },
+        output: newDir,
+      }], newDir)
     }
 
     if (d.nodeType !== NodeTypeId.Decide && storeAs !== undefined && result !== undefined) ctx[storeAs] = result

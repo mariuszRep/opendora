@@ -188,6 +188,45 @@ const BUILTIN_HANDLES: Record<NodeTypeId, { handles: NodeHandleDefinition[]; con
       exposedFields: ["parameters"],
     },
   },
+
+  [NodeTypeId.SetWorkdir]: {
+    handles: [
+      {
+        id: null,
+        position: "top",
+        type: "target",
+        connections: {
+          canReceiveFrom: [
+            { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Parameters, handleId: null, maxConnections: 1 },
+            { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.SetWorkdir, handleId: null, maxConnections: "unlimited" },
+          ],
+        },
+      },
+      {
+        id: null,
+        position: "bottom",
+        type: "source",
+        connections: {
+          canConnectTo: [
+            { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.SetWorkdir, handleId: null, maxConnections: "unlimited" },
+          ],
+        },
+      },
+    ],
+    constraints: {
+      allowedInboundEdges: "unlimited",
+      allowedOutboundEdges: "unlimited",
+      hiddenFields: [],
+      requiredFields: ["label"],
+      exposedFields: ["path"],
+    },
+  },
 }
 
 // ─── Built-in node definitions ────────────────────────────────────────────────
@@ -278,6 +317,23 @@ const BUILTIN_DEFINITIONS: NodeDefinition[] = [
     uiHints: {
       handles: BUILTIN_HANDLES[NodeTypeId.Decide].handles,
       constraints: BUILTIN_HANDLES[NodeTypeId.Decide].constraints,
+    },
+  },
+  {
+    type: NodeTypeId.SetWorkdir,
+    name: "Set Working Directory",
+    description: "Update the active working directory for all subsequent nodes in this workflow",
+    icon: "FolderOpen",
+    category: NodeCategory.Data,
+    defaultConfig: {
+      node: { label: "Set Working Directory", description: "", parameters: { path: "" } },
+      data: { inputs: [], outputs: [] },
+    },
+    version: "1.0.0",
+    tags: ["workdir", "directory", "path", "context"],
+    uiHints: {
+      handles: BUILTIN_HANDLES[NodeTypeId.SetWorkdir].handles,
+      constraints: BUILTIN_HANDLES[NodeTypeId.SetWorkdir].constraints,
     },
   },
 ]

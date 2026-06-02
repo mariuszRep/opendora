@@ -1,7 +1,7 @@
 {
   "version": 1,
   "providerID": "openai-codex",
-  "updatedAt": 1780397242147,
+  "updatedAt": 1780416103787,
   "models": {
     "gpt-5.3-codex": {
       "updatedAt": 1780330454017,
@@ -9,9 +9,9 @@
       "tokens_reset_at": 1780347636016
     },
     "gpt-5.5": {
-      "updatedAt": 1780397242147,
-      "requests_reset_at": 1780414713145,
-      "tokens_reset_at": 1780414713145
+      "updatedAt": 1780416103787,
+      "requests_reset_at": 1780432243785,
+      "tokens_reset_at": 1780432243785
     },
     "gpt-5.4-mini": {
       "updatedAt": 1779782693275,

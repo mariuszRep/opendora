@@ -30,3 +30,10 @@ Workflow authoring guidance should state that workflow_run.workdir must be an ex
 _Context: wf-product-intake-contract-v1 v1.3.0_
 
 ---
+### 2026-06-02 10:54:08 UTC [ADVISORY]
+
+Platform gap: workflows lack a first-class node/runtime primitive to set the workflow session working directory after path creation. Current workaround is to compute project_directory in ctx and pass it as bash.workdir on every filesystem-sensitive tool node. This does not update prompt/session-level directory context and is brittle for mixed tool types.
+
+_Context: wf-product-intake-contract-v1 v1.3.1_
+
+---

@@ -2,7 +2,7 @@
   "id": "wf-product-intake-contract-v1",
   "name": "Product Intake Contract v1",
   "description": "Intake contract for new and existing products. Caller must pass project_state as 'new' or 'existing'. For existing products, workflow_run.workdir must be the exact existing project directory. For new products, workflow_run.workdir may be the parent projects directory only when input.project_directory_name is supplied; the workflow creates/uses that child folder.",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "nodes": [
     {
       "id": "intake_contract",
@@ -61,8 +61,8 @@
         }
       },
       "position": {
-        "x": -473.94370885465696,
-        "y": -708.6851910294913
+        "x": -505.6118987132064,
+        "y": -723.1997780479932
       }
     },
     {
@@ -102,8 +102,8 @@
         }
       },
       "position": {
-        "x": -458.3020521526282,
-        "y": -460.35834329797126
+        "x": -505.8043369404524,
+        "y": -514.4581676396599
       }
     },
     {
@@ -113,10 +113,10 @@
         "nodeType": "tool",
         "node": {
           "label": "Prepare New Project Directory",
-          "description": "Validates the requested new project folder name and creates it under workflow_run.workdir when needed.",
+          "description": "Validates the requested new project folder name, creates it under workflow_run.workdir when needed, and returns its absolute path.",
           "parameters": {
-            "command": "PROJECT_DIR=\"$input.project_directory_name\"; if [ -z \"$PROJECT_DIR\" ]; then echo \"project_directory_name is required when project_state=new\" >&2; exit 1; fi; case \"$PROJECT_DIR\" in /*|*/*|*..*) echo \"Invalid project_directory_name: use a single safe folder name or '.'\" >&2; exit 1;; esac; mkdir -p \"$PROJECT_DIR\"; echo \"$PROJECT_DIR\"",
-            "description": "Create the named new project directory under the workflow working directory",
+            "command": "PROJECT_DIR=\"$input.project_directory_name\"; if [ -z \"$PROJECT_DIR\" ]; then echo \"project_directory_name is required when project_state=new\" >&2; exit 1; fi; case \"$PROJECT_DIR\" in /*|*/*|*..*) echo \"Invalid project_directory_name: use a single safe folder name or '.'\" >&2; exit 1;; esac; PROJECT_PATH=\"$(pwd)/$PROJECT_DIR\"; mkdir -p \"$PROJECT_PATH\"; printf '%s' \"$PROJECT_PATH\"",
+            "description": "Create and return new project directory path",
             "output": "project_directory"
           },
           "action_id": "bash"
@@ -128,8 +128,30 @@
         }
       },
       "position": {
-        "x": -846,
-        "y": -280
+        "x": -819.5022847878242,
+        "y": -239.2780316430916
+      }
+    },
+    {
+      "id": "set_project_workdir",
+      "type": "workflow",
+      "data": {
+        "nodeType": "set_workdir",
+        "node": {
+          "label": "Set Project Working Directory",
+          "description": "",
+          "parameters": {
+            "path": "$ctx.project_directory"
+          }
+        },
+        "data": {
+          "inputs": [],
+          "outputs": []
+        }
+      },
+      "position": {
+        "x": -803.6267135908681,
+        "y": -24.04147626768132
       }
     },
     {
@@ -141,7 +163,7 @@
           "label": "Bootstrap Git",
           "description": "",
           "parameters": {
-            "command": "cd \"$ctx.project_directory\" && git init && git branch -M main",
+            "command": "git init && git branch -M main",
             "description": "Initialize git repo in the prepared project directory",
             "output": "bootstrap_result"
           },
@@ -154,8 +176,8 @@
         }
       },
       "position": {
-        "x": -846,
-        "y": -136
+        "x": -800,
+        "y": 128
       }
     },
     {
@@ -177,8 +199,8 @@
         }
       },
       "position": {
-        "x": -838,
-        "y": 130
+        "x": -808,
+        "y": 280
       }
     },
     {
@@ -190,7 +212,7 @@
           "label": "Run Scaffold and Initial Commit",
           "description": "",
           "parameters": {
-            "command": "cd \"$ctx.project_directory\" && $ctx.framework_init_cmd && git add . && git commit -m \"Initial commit: scaffold setup\"",
+            "command": "$ctx.framework_init_cmd && git add . && git commit -m \"Initial commit: scaffold setup\"",
             "description": "Run scaffold command inside the prepared project directory and create initial commit",
             "output": "scaffold_commit_result"
           },
@@ -203,8 +225,8 @@
         }
       },
       "position": {
-        "x": -848,
-        "y": 308
+        "x": -796,
+        "y": 450
       }
     },
     {
@@ -228,8 +250,8 @@
         }
       },
       "position": {
-        "x": -172,
-        "y": -148
+        "x": -254,
+        "y": -182
       }
     },
     {
@@ -276,8 +298,8 @@
         }
       },
       "position": {
-        "x": -465.37322477643147,
-        "y": 512
+        "x": -497.37322477643147,
+        "y": 596
       }
     },
     {
@@ -285,7 +307,7 @@
       "type": "workflow",
       "data": {
         "nodeType": "structured",
-        "instructions": "Use the loaded product-plan skill and produce an implementation plan grounded in intake + exploration context. Follow the product-plan skill contract exactly.\n\ngoal: $input.goal\nscope: $input.scope\nacceptance_criteria: $input.acceptance_criteria\narchitecture_brief: $input.architecture_brief\nproject_directory: $ctx.project_directory\nexplore_brief (may be empty for new): $ctx.explore_brief",
+        "instructions": "Use the product-plan skill methodology to produce an implementation plan grounded in the intake and exploration context below. Call the StructuredOutput tool with your result using EXACTLY these schema field names: context, delivery_mode, shared_contracts, steps, critical_files, risks, verification, readiness. Do NOT produce plain text — you MUST call the StructuredOutput tool.\n\ngoal: $input.goal\nscope: $input.scope\nacceptance_criteria: $input.acceptance_criteria\narchitecture_brief: $input.architecture_brief\nproject_directory: $ctx.project_directory\nexplore_brief (may be empty for new): $ctx.explore_brief",
         "outputSchema": {
           "type": "object",
           "properties": {
@@ -390,8 +412,8 @@
         }
       },
       "position": {
-        "x": -468.9230234729872,
-        "y": 698
+        "x": -500.9230234729872,
+        "y": 786.25
       }
     },
     {
@@ -477,8 +499,8 @@
         }
       },
       "position": {
-        "x": -399.09089824716307,
-        "y": 938
+        "x": -495.09089824716307,
+        "y": 963.9999999999999
       }
     },
     {
@@ -490,7 +512,7 @@
           "label": "Ensure Delivery Branch",
           "description": "",
           "parameters": {
-            "command": "PROJECT_DIR=\"$ctx.project_directory\"; if [ -n \"$PROJECT_DIR\" ]; then cd \"$PROJECT_DIR\"; fi; BRANCH_NAME=\"feat/plan-$(date +%Y%m%d-%H%M%S)\" && CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD) && if [ \"$CURRENT_BRANCH\" != \"main\" ]; then git checkout main; fi && git checkout -b \"$BRANCH_NAME\" && echo \"$BRANCH_NAME\"",
+            "command": "BRANCH_NAME=\"feat/plan-$(date +%Y%m%d-%H%M%S)\" && CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD) && if [ \"$CURRENT_BRANCH\" != \"main\" ]; then git checkout main; fi && git checkout -b \"$BRANCH_NAME\" && echo \"$BRANCH_NAME\"",
             "description": "Create fresh feature branch from main for delivery in the prepared project directory when present",
             "output": "delivery_branch"
           },
@@ -503,8 +525,8 @@
         }
       },
       "position": {
-        "x": -433.4025203864627,
-        "y": 1162
+        "x": -495.4025203864627,
+        "y": 1211.849630355835
       }
     }
   ],
@@ -523,6 +545,11 @@
     {
       "id": "e3b",
       "source": "prepare_new_project_directory",
+      "target": "set_project_workdir"
+    },
+    {
+      "id": "e3c",
+      "source": "set_project_workdir",
       "target": "bootstrap_folder_git"
     },
     {

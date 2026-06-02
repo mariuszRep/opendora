@@ -93,6 +93,7 @@ export const WorkflowRunTool = Tool.define("workflow_run", async (initCtx) => {
         ownerKind: "service",
         parentSessionID: ctx.sessionID,
       })
+      await Session.setCwd({ sessionID: session.id, cwd: workdir })
 
       if (params.wait) {
         const summary = await runWorkflow({ workflow, sessionId: session.id, input, directory: workdir })

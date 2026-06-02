@@ -98,7 +98,7 @@ import { WebFetchToolContent, isWebFetchTool, getWebFetchToolTitle, getWebFetchU
 import { isSkillLoadTool, getSkillLoadToolTitle, getSkillLoadDefinition } from "@/components/ai-elements/skill-load-tool"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BellIcon, CheckIcon, ClockAlertIcon, ComponentIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, FileIcon, KeyIcon, Link2Icon, PanelRightIcon, SquareSlash, Volume2Icon, VolumeXIcon } from "lucide-react"
+import { BellIcon, CheckIcon, ClockAlertIcon, ComponentIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, FileIcon, KeyIcon, Link2Icon, PanelRightIcon, SquareSlash, Volume2Icon, VolumeXIcon, WorkflowIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
@@ -830,6 +830,7 @@ export const Chatbot = () => {
         <Conversation key={selectedSession.id}>
           <ConversationContent className={cn(isChatCentered && "max-w-3xl mx-auto w-full")}>
             {messages.map(({ info, parts }, msgIndex) => {
+              if ((info as UserMessage | AssistantMessage).hidden) return null
               const rawContent = getMessageText(parts)
               // Strip the "user: NAME\n\n" attribution prefix added before sending so it doesn't leak into the bubble
               const content = info.role === "user"
@@ -868,6 +869,7 @@ export const Chatbot = () => {
                   ? (info as AssistantMessage).schedule_id
                   : undefined
               const isSchedulerAssistant = info.role === "assistant" && (info as AssistantMessage).from?.kind === "scheduler"
+              const isWorkflowMessage = info.role === "assistant" && (info as AssistantMessage).from?.kind === "service"
               // Fallback for messages created before schedule_id tracking: match by prompt text
               // against schedules targeting this session.
               const msgSchedule = msgScheduleId
@@ -1247,6 +1249,7 @@ export const Chatbot = () => {
                                             onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : isSessionTreeToolCall ? handleSessionTreeViewModeChange : isWebFetchToolCall ? handleWebFetchViewModeChange : undefined}
                                             hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}
                                             actions={webFetchActions}
+                                            icon={isWorkflowMessage ? WorkflowIcon : undefined}
                                           />
                                           <ToolContent>
                                             {questionRequest ? (

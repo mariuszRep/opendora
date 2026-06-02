@@ -29,7 +29,7 @@ import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { useUserProfile } from "@/hooks/use-user-profile"
 import { useVoiceSettings, formatHotkey, type HotkeyConfig } from "@/hooks/use-voice-settings"
 import { useTheme } from "next-themes"
-import { BotIcon, MessageSquareIcon, SettingsIcon, PlugIcon, UserIcon, ClockPlusIcon, WrenchIcon, SunIcon, MoonIcon, MonitorIcon, BookOpenIcon, MicIcon, Volume2Icon, KeyboardIcon, WorkflowIcon } from "lucide-react"
+import { BotIcon, MessageSquareIcon, SettingsIcon, PlugIcon, UserIcon, ClockPlusIcon, WrenchIcon, SunIcon, MoonIcon, MonitorIcon, BookOpenIcon, MicIcon, Volume2Icon, KeyboardIcon, WorkflowIcon, ActivityIcon } from "lucide-react"
 import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -167,6 +167,12 @@ export default function SettingsPage() {
       description: "Theme and voice settings",
       icon: SunIcon,
       onClick: () => setGeneralDialogOpen(true),
+    },
+    {
+      title: "Usage",
+      description: "View system usage and statistics",
+      icon: ActivityIcon,
+      href: "/dashboard/usage",
     },
     {
       title: "Agents",

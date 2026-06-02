@@ -21,7 +21,7 @@ import {
 import { cn } from "@/lib/utils"
 import type { Session, SessionType } from "@/lib/opendora"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BellIcon, BotIcon, FolderTreeIcon, MessageSquareIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, NetworkIcon, GalleryHorizontalIcon, GlobeIcon, ActivityIcon, WorkflowIcon } from "lucide-react"
+import { BellIcon, BotIcon, FolderTreeIcon, MessageSquareIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, NetworkIcon, GalleryHorizontalIcon, GlobeIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type React from "react"
 import { useState, useEffect } from "react"
@@ -484,26 +484,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <span className="group-data-[collapsible=icon]:hidden">Preview</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => router.push("/dashboard/usage")}
-                tooltip="Usage"
-                isActive={false}
-              >
-                <ActivityIcon className="size-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Usage</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => router.push("/dashboard/settings/workflows")}
-                tooltip="Workflows"
-                isActive={false}
-              >
-                <WorkflowIcon className="size-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Workflows</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+          </SidebarMenu>
+          <div className="border-t my-2" />
+          <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={() => setNotificationBladeOpen(true)}

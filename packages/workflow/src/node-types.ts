@@ -11,6 +11,7 @@ export const NodeTypeId = {
   Structured: "structured",
   Parameters: "parameters",
   Decide: "decide",
+  SetWorkdir: "set_workdir",
 } as const
 
 export type NodeTypeId = (typeof NodeTypeId)[keyof typeof NodeTypeId]

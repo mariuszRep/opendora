@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/collapsible";
 import { CodeViewToggle } from "@/components/ui/code-view-toggle";
 import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
 import {
   CheckCircleIcon,
   ChevronDownIcon,
@@ -45,6 +46,7 @@ export type ToolHeaderProps = {
   onViewChange?: (mode: "code" | "view") => void;
   hasView?: boolean;
   actions?: ReactNode;
+  icon?: LucideIcon;
 } & (
   | { type: ToolUIPart["type"]; state: ToolUIPart["state"]; toolName?: never }
   | {
@@ -92,10 +94,12 @@ export const ToolHeader = ({
   onViewChange,
   hasView,
   actions,
+  icon: IconComponent,
   ...props
 }: ToolHeaderProps) => {
   const derivedName =
     type === "dynamic-tool" ? toolName : type.split("-").slice(1).join("-");
+  const Icon = IconComponent ?? WrenchIcon;
 
   return (
     <CollapsibleTrigger
@@ -106,7 +110,7 @@ export const ToolHeader = ({
       {...props}
     >
       <div className="flex min-w-0 items-center gap-2">
-        <WrenchIcon className="size-4 text-muted-foreground" />
+        <Icon className="size-4 text-muted-foreground" />
         <span className="truncate font-medium text-foreground text-sm">
           {centerTitle ? derivedName : (title ?? derivedName)}
         </span>

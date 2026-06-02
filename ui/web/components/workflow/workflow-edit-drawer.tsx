@@ -168,6 +168,7 @@ const TAB_MANIFEST: Record<NodeTypeId, TabId[]> = {
   [NodeTypeId.Structured]:  ['general', 'input', 'settings'],
   [NodeTypeId.Parameters]:  ['general', 'input'],
   [NodeTypeId.Decide]:      ['general', 'input', 'settings', 'output'],
+  [NodeTypeId.SetWorkdir]:  ['general', 'input'],
 }
 
 const TAB_LABELS: Record<TabId, string> = {
@@ -546,6 +547,21 @@ export function WorkflowEditDrawer({
             )
           }
 
+          if (nodeType === NodeTypeId.SetWorkdir) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="setworkdir-label">Label</Label>
+                  <Input id="setworkdir-label" value={editingNodeData.node.label || ''} onChange={(e) => handleNodeChange({ label: e.target.value })} placeholder="Set Working Directory" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="setworkdir-description">Description</Label>
+                  <Textarea id="setworkdir-description" value={editingNodeData.node.description || ''} onChange={(e) => handleNodeChange({ description: e.target.value })} placeholder="Why is the working directory being changed here?" rows={2} />
+                </div>
+              </div>
+            )
+          }
+
           return null
         }
 
@@ -724,6 +740,44 @@ export function WorkflowEditDrawer({
                   {inputExpr && (
                     <p className="text-xs text-muted-foreground">Resolved value is compared against each condition in the Settings tab.</p>
                   )}
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.SetWorkdir) {
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const pathVal = (params.path as string) ?? ''
+            const outputKey = (params.output as string) ?? ''
+            const updateParams = (updates: Record<string, unknown>) => {
+              setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: { ...params, ...updates } } })
+            }
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Path</Label>
+                  <ExpressionInput
+                    value={pathVal}
+                    onChange={(v) => updateParams({ path: v || undefined })}
+                    suggestions={availableRefs}
+                    placeholder="$ctx.project_directory"
+                  />
+                  {!pathVal && (
+                    <p className="text-xs text-amber-500">Required — the directory to set. Type <code className="font-mono">$</code> to reference an upstream value.</p>
+                  )}
+                  {pathVal && (
+                    <p className="text-xs text-muted-foreground">Session working directory will be updated to this path. All subsequent nodes inherit it.</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Output key <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Input
+                    value={outputKey}
+                    onChange={(e) => updateParams({ output: e.target.value || undefined })}
+                    placeholder="e.g. workdir"
+                    className="font-mono text-xs"
+                  />
+                  <p className="text-xs text-muted-foreground">If set, the resolved path is also stored as <code className="font-mono">$ctx.&lt;key&gt;</code> for downstream reference.</p>
                 </div>
               </div>
             )

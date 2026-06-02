@@ -96,6 +96,8 @@ export type UserMessage = {
   parentSessionID?: string
   /** ID of the schedule that created this message, if any */
   schedule_id?: string
+  /** When true, this message is hidden from the canvas (used for internal workflow LLM calls) */
+  hidden?: boolean
 }
 
 export type AssistantMessage = {
@@ -115,6 +117,8 @@ export type AssistantMessage = {
   parentSessionID?: string
   /** ID of the schedule that created this message, if any */
   schedule_id?: string
+  /** When true, this message is hidden from the canvas (used for internal workflow LLM calls) */
+  hidden?: boolean
 }
 
 export type Message = UserMessage | AssistantMessage
