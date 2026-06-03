@@ -36,13 +36,13 @@ export function serializeEntries(entries: MemoryEntry[]): string {
 export async function findOpendoraDir(startDir: string): Promise<string> {
   let dir = startDir
   while (true) {
-    const candidate = path.join(dir, ".opendora")
+    const candidate = path.join(dir, ".projectflows")
     try {
       const stat = await fs.stat(candidate)
       if (stat.isDirectory()) return candidate
     } catch {}
     const parent = path.dirname(dir)
-    if (parent === dir) throw new Error("Could not find .opendora directory — are you inside an OpenDora project?")
+    if (parent === dir) throw new Error("Could not find .projectflows directory — are you inside a ProjectFlows project?")
     dir = parent
   }
 }

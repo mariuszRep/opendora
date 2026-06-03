@@ -50,7 +50,7 @@ export const StartCommand = cmd({
           programArguments,
           workingDirectory: projectRoot,
           environment: {
-            OPENCODE_CONFIG_DIR: path.join(projectRoot, ".opendora"),
+            OPENCODE_CONFIG_DIR: path.join(projectRoot, ".projectflows"),
             OPENDORA_SERVICE_VERSION: Installation.VERSION,
           },
           description: `OpenDora Server (v${Installation.VERSION})`,

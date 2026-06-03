@@ -431,7 +431,7 @@ export namespace Skill {
     const dirs = await Config.directories()
     const installBase = dirs.length > 0
       ? path.join(dirs[0], "skill")
-      : path.join(Instance.directory, ".opendora", "skill")
+      : path.join(Instance.directory, ".projectflows", "skill")
 
     // GitHub-hosted registries (anthropic, vercel)
     const ghReg = registry ? GITHUB_REGISTRIES[registry] : undefined
@@ -572,7 +572,7 @@ export namespace Skill {
     const dirs = await Config.directories()
     const installBase = dirs.length > 0
       ? path.join(dirs[0], "skill")
-      : path.join(Instance.directory, ".opendora", "skill")
+      : path.join(Instance.directory, ".projectflows", "skill")
 
     const skillDir = path.join(installBase, params.name)
     await fs.mkdir(skillDir, { recursive: true })

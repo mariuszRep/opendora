@@ -392,7 +392,7 @@ export namespace Config {
       })
       if (!md) continue
 
-      const patterns = ["/.opendora/agent/", "/.opendora/agents/", "/agent/", "/agents/"]
+      const patterns = ["/.projectflows/agent/", "/.projectflows/agents/", "/agent/", "/agents/"]
       const file = rel(item, patterns) ?? path.basename(item)
       const agentName = trim(file)
 

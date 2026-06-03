@@ -9,7 +9,7 @@ import { AgentConfig } from "./templates/types"
 
 export namespace AgentStorage {
   // ── Constants ─────────────────────────────────────────────────────────────
-  export const OPENDORA_DIR = ".opendora"
+  export const OPENDORA_DIR = ".projectflows"
   export const AGENTS_SUBDIR = "agents"
   export const INDEX_FILE = "index.json"
   const ALLOWED_FILES = new Set(["agent.json", "PERSONA.md", "INJECTION.md"])

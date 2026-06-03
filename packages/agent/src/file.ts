@@ -11,7 +11,7 @@ import { AgentConfig } from "./templates/types"
 
 export namespace AgentFile {
   // ── Directory layout ──────────────────────────────────────────────────────
-  export const OPENDORA_DIR = ".opendora"
+  export const OPENDORA_DIR = ".projectflows"
   export const AGENTS_SUBDIR = "agents"
   export const INDEX_FILE = "index.json"
 
