@@ -17,7 +17,6 @@ ts-dist
 /result
 refs
 Session.vim
-opencode.json
 a.out
 target
 .scripts
@@ -28,3 +27,41 @@ opencode-dev
 logs/
 *.bun-build
 tsconfig.tsbuildinfo
+
+# .opendora — all data migrated to ~/.projectflows, never commit this folder
+.opendora/
+
+# ProjectFlows runtime data — never commit these
+.projectflows/providers/auth.json
+.projectflows/providers/mcp-auth.json
+.projectflows/providers/fallback-state.json
+.projectflows/providers/usage/
+.projectflows/log/
+.projectflows/state/
+.projectflows/storage/
+.projectflows/cache/models.json
+.projectflows/cache/bun.lock
+.projectflows/cache/package.json
+.projectflows/bin/
+.projectflows/bun.lock
+.projectflows/package.json
+.projectflows/agents/*/LOG.md
+.projectflows/agents/MEMORY.md
+.projectflows/agents/Minds/MEMORY.md
+*.db
+*.db-shm
+*.db-wal
+
+# Legacy .opendora paths (kept for safety during migration)
+.opendora/providers/auth.json
+.opendora/providers/mcp-auth.json
+.opendora/providers/fallback-state.json
+.opendora/providers/usage/
+.opendora/log/
+.opendora/state/
+.opendora/storage/
+.opendora/cache/models.json
+.opendora/cache/bun.lock
+.opendora/bin/
+.opendora/bun.lock
+.opendora/package.json

@@ -3,26 +3,26 @@ import path from "path"
 import os from "os"
 import { Filesystem } from "../util/filesystem"
 
-// Determine the OpenDora root directory:
-//   1. OPENCODE_CONFIG_DIR env var (set by dev script to $PWD/.opendora)
-//   2. Walk up from cwd to find the nearest .opendora directory (dev monorepo)
-//   3. ~/.opendora (installed via npm/pnpm/bun)
+// Determine the ProjectFlows root directory:
+//   1. OPENCODE_CONFIG_DIR env var (explicit override)
+//   2. Walk up from cwd to find the nearest .projectflows directory
+//   3. ~/.projectflows (installed via npm/pnpm/bun)
 const home = process.env.OPENCODE_TEST_HOME || os.homedir()
 
 async function findRoot(): Promise<string> {
   if (process.env.OPENCODE_CONFIG_DIR) return process.env.OPENCODE_CONFIG_DIR
 
-  // Walk up from cwd looking for a .opendora directory
+  // Walk up from cwd looking for a .projectflows directory
   let dir = process.cwd()
   while (true) {
-    const candidate = path.join(dir, ".opendora")
+    const candidate = path.join(dir, ".projectflows")
     if (await fs.access(candidate).then(() => true).catch(() => false)) return candidate
     const parent = path.dirname(dir)
     if (parent === dir) break
     dir = parent
   }
 
-  return path.join(home, ".opendora")
+  return path.join(home, ".projectflows")
 }
 
 const root = await findRoot()

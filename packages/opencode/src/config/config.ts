@@ -133,7 +133,7 @@ export namespace Config {
 
     const directories = await ConfigPaths.directories(Instance.directory, Instance.worktree)
 
-    // .opendora directory config overrides (project and global) config sources.
+    // .projectflows directory config overrides (project and global) config sources.
     if (Flag.OPENCODE_CONFIG_DIR) {
       log.debug("loading config from OPENCODE_CONFIG_DIR", { path: Flag.OPENCODE_CONFIG_DIR })
     }
@@ -141,8 +141,8 @@ export namespace Config {
     const deps = []
 
     for (const dir of unique(directories)) {
-      if (dir.endsWith(".opendora") || dir === Flag.OPENCODE_CONFIG_DIR) {
-        for (const file of ["opendora.jsonc", "opendora.json"]) {
+      if (dir.endsWith(".projectflows") || dir === Flag.OPENCODE_CONFIG_DIR) {
+        for (const file of ["projectflows.jsonc", "projectflows.json", "opendora.jsonc", "opendora.json"]) {
           log.debug(`loading config from ${path.join(dir, file)}`)
           result = mergeConfigConcatArrays(result, await loadFile(path.join(dir, file)))
           // to satisfy the type checker
@@ -1327,8 +1327,8 @@ export namespace Config {
     // Determine the correct config file to write to
     let filepath: string
     if (Flag.OPENCODE_CONFIG_DIR) {
-      // Write to .opendora/opendora.json when using custom config dir
-      filepath = path.join(Flag.OPENCODE_CONFIG_DIR, "opendora.json")
+      // Write to .projectflows/projectflows.json when using custom config dir
+      filepath = path.join(Flag.OPENCODE_CONFIG_DIR, "projectflows.json")
     } else {
       // Otherwise write to project's opencode.json
       const projectFiles = await ConfigPaths.projectFiles("opencode", Instance.directory, Instance.worktree)
