@@ -1,9 +1,0 @@
-{
-  "tools": [
-    "session_analyze",
-    "session_get",
-    "session_search",
-    "session_tree",
-    "log"
-  ]
-}
