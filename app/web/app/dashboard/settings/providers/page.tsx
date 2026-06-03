@@ -693,10 +693,9 @@ function ProviderCard({
     </div>
   ) : null
 
-  const footer = filterRow || groupRow ? (
-    <div className={cn("flex flex-col w-full", filterRow && groupRow ? "gap-1.5" : "")}>
+  const footer = filterRow ? (
+    <div className="flex flex-col w-full">
       {filterRow}
-      {groupRow}
     </div>
   ) : undefined
 

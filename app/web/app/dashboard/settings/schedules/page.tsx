@@ -100,9 +100,9 @@ export default function SchedulesSettingsPage() {
               description={displayPromptFor(schedule)}
               onClick={() => { setEditSchedule(schedule); setDialogOpen(true) }}
               footer={
-                <div className="flex items-center justify-center w-full">
-                  <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <ClockPlusIcon className="size-3 shrink-0" />
+                <div className="flex items-center justify-start w-full">
+                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <ClockPlusIcon className="size-2.5 shrink-0" />
                     {schedule.cron_expression}
                   </span>
                 </div>
