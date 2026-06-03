@@ -6,7 +6,7 @@ import { directory } from "../host.ts"
 import {
   parseEntries,
   serializeEntries,
-  findOpendoraDir,
+  findProjectFlowsDir,
   resolveMemoryPath,
   readMemoryFile,
   type MemoryEntry,
@@ -31,7 +31,7 @@ export const MemoryWriteTool = Tool.define("memory_write", {
   description: toolDef.description,
   parameters,
   async execute(params, ctx) {
-    const opendoraDir = await findOpendoraDir(directory(ctx))
+    const opendoraDir = await findProjectFlowsDir(directory(ctx))
     const memoryPath = resolveMemoryPath(opendoraDir, params.scope, ctx.agent)
 
     const raw = await readMemoryFile(memoryPath)

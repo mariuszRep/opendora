@@ -241,8 +241,13 @@ export namespace Skill {
     return state().then((x) => x.dirs)
   }
 
-  export async function save(location: string, content: string) {
-    await fs.writeFile(location, content, "utf-8")
+  export async function save(location: string, body: string) {
+    // Preserve existing frontmatter — skill.content is body-only (gray-matter strips ---...---).
+    // Reconstruct the full file so the skill remains valid after reload.
+    const existing = await fs.readFile(location, "utf-8").catch(() => "")
+    const fmMatch = existing.match(/^(---[\s\S]*?---\r?\n?)/)
+    const frontmatter = fmMatch ? fmMatch[1] : ""
+    await fs.writeFile(location, frontmatter + body, "utf-8")
     reload()
   }
 
@@ -583,7 +588,7 @@ export namespace Skill {
     const fmLines: string[] = [
       `name: ${params.name}`,
       `description: ${safeDesc}`,
-      `origin: opendora`,
+      `origin: projectflows`,
     ]
 
     const skillMd = `---\n${fmLines.join("\n")}\n---\n\n${params.content ?? ""}`

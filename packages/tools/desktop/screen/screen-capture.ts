@@ -51,7 +51,7 @@ export const DesktopScreenCaptureTool = Tool.define("desktop_screen_capture", as
 
       const destPath = params.path
         ? path.resolve(params.path)
-        : path.join(os.tmpdir(), "opendora-desktop", `${ctx.callID ?? Date.now()}.png`)
+        : path.join(os.tmpdir(), "projectflows-desktop", `${ctx.callID ?? Date.now()}.png`)
 
       await assertExternalDirectory(ctx, params.path ? destPath : undefined, { write: true })
 

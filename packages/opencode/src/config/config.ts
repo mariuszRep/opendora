@@ -77,10 +77,10 @@ export namespace Config {
 
     // Config loading order (low -> high precedence): https://opendora.ai/docs/config#precedence-order
     // 1) Remote .well-known/opendora (org defaults)
-    // 2) Global config (~/.config/opendora/opendora.json{,c})
+    // 2) Global config (~/.projectflows/projectflows.json{,c})
     // 3) Custom config (OPENCODE_CONFIG)
-    // 4) Project config (opendora.json{,c})
-    // 5) .opendora directories (.opendora/agents/, .opendora/commands/, .opendora/plugins/, .opendora/opendora.json{,c})
+    // 4) Project config (projectflows.json{,c})
+    // 5) .projectflows directories (.projectflows/agents/, .projectflows/commands/, .projectflows/plugins/, .projectflows/projectflows.json{,c})
     // 6) Inline config (OPENCODE_CONFIG_CONTENT)
     // Managed config directory is enterprise-only and always overrides everything above.
     let result: Info = {}

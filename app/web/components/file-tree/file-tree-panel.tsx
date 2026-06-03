@@ -213,7 +213,7 @@ export function FileTreePanel({ rootPath, rootLabel, onFileClick }: FileTreePane
       }))
 
       try {
-        // node.path is relative from Instance.directory (e.g. "../../.opendora/skill/agent-author")
+        // node.path is relative from Instance.directory (e.g. "../../.projectflows/skill/agent-author")
         // path.resolve on the backend converts it to the correct absolute path
         const raw = await opendora.file.list(node.path)
         const sorted = [...raw].sort((a, b) => {

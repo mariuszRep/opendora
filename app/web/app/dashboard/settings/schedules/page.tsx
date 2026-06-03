@@ -92,7 +92,7 @@ export default function SchedulesSettingsPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 items-stretch">
           {filteredSchedules.map(schedule => (
             <SettingsCard
               key={schedule.id}
@@ -100,7 +100,7 @@ export default function SchedulesSettingsPage() {
               description={displayPromptFor(schedule)}
               onClick={() => { setEditSchedule(schedule); setDialogOpen(true) }}
               footer={
-                <div className="flex items-center w-full">
+                <div className="flex items-center justify-center w-full">
                   <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <ClockPlusIcon className="size-3 shrink-0" />
                     {schedule.cron_expression}

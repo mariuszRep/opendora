@@ -28,7 +28,7 @@ export function SettingsCard({
 }: SettingsCardProps) {
   return (
     <Card
-      className={`hover:shadow-md hover:border-primary/50 transition-all h-full flex flex-col ${onClick || onDoubleClick ? "cursor-pointer" : ""} ${className || ""}`}
+      className={`hover:shadow-md hover:border-primary/50 transition-all h-full flex flex-col ${footer ? "pb-0" : ""} ${onClick || onDoubleClick ? "cursor-pointer" : ""} ${className || ""}`}
       onDoubleClick={onDoubleClick}
       onClick={onClick}
     >
@@ -52,7 +52,7 @@ export function SettingsCard({
       </CardHeader>
       {children}
       {footer && (
-        <CardFooter className="border-t bg-muted/30 pt-4 pb-1 mt-auto">
+        <CardFooter className="border-t bg-muted/30 pt-4 pb-6 mt-auto -mb-6">
           {footer}
         </CardFooter>
       )}

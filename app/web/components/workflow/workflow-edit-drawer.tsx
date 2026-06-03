@@ -155,7 +155,7 @@ const BUILTIN_SCHEMAS: Record<string, BuiltinSchema> = {
   skill_load: {
     description: 'Load a skill into the workflow context so agent nodes can use it.',
     properties: {
-      name: { type: 'string', description: 'Name of the skill to load (must exist in .opendora/skill/)' },
+      name: { type: 'string', description: 'Name of the skill to load (must exist in .projectflows/skill/)' },
       storeAs: { type: 'string', description: 'Context key to store the skill under (default: skill_<name>)' },
     },
     required: ['name'],

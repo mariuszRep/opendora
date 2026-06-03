@@ -75,7 +75,7 @@ export const DesktopScreenWaitForImageTool = Tool.define(
           const osModule = await import("os")
           const fsModule = await import("fs/promises")
           while (Date.now() < deadline) {
-            const haystackPath = path.join(osModule.tmpdir(), "opendora-desktop", `wait-haystack-${Date.now()}.png`)
+            const haystackPath = path.join(osModule.tmpdir(), "projectflows-desktop", `wait-haystack-${Date.now()}.png`)
             try {
               await captureComposite(haystackPath)
               let hits = await findAllInImage(haystackPath, templatePath, confidence)

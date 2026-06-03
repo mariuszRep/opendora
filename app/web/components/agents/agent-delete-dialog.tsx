@@ -43,7 +43,7 @@ export function AgentDeleteDialog({ open, onOpenChange, agentId, agentName, onDe
         <AlertDialogHeader>
           <AlertDialogTitle>Delete &ldquo;{agentName}&rdquo;?</AlertDialogTitle>
           <AlertDialogDescription>
-            This removes the agent&apos;s folder from <code>.opendora/agents/{agentId}</code> and
+            This removes the agent&apos;s folder from <code>.projectflows/agents/{agentId}</code> and
             its index entry. This cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>

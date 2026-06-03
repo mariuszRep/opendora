@@ -58,7 +58,7 @@ export const DesktopScreenFindImageTool = Tool.define("desktop_screen_find_image
         // Use a per-window composite screenshot + Python/OpenCV instead — works
         // on any Linux X11 setup.
         const import_ = await import("os")
-        const haystackPath = path.join(import_.tmpdir(), `opendora-desktop`, `find-haystack-${Date.now()}.png`)
+        const haystackPath = path.join(import_.tmpdir(), `projectflows-desktop`, `find-haystack-${Date.now()}.png`)
         try {
           await captureComposite(haystackPath)
           let raw = await findAllInImage(haystackPath, templatePath, params.confidence ?? 0.8)
