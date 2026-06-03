@@ -75,7 +75,7 @@ export const AgentRoutes = lazy(() =>
       "/",
       describeRoute({
         summary: "List agents",
-        description: "Get a list of all available agents, including file-based agents in .opendora/agents/.",
+        description: "Get a list of all available agents, including file-based agents in .projectflows/agents/.",
         operationId: "agent.list",
         responses: {
           200: {
@@ -167,7 +167,7 @@ export const AgentRoutes = lazy(() =>
       "/",
       describeRoute({
         summary: "Create agent",
-        description: "Create a new agent. Writes agent.json and persona.md into .opendora/agents/<id>/.",
+        description: "Create a new agent. Writes agent.json and persona.md into .projectflows/agents/<id>/.",
         operationId: "agent.create",
         responses: {
           201: {
@@ -253,7 +253,7 @@ export const AgentRoutes = lazy(() =>
       "/:id",
       describeRoute({
         summary: "Delete agent",
-        description: "Delete an agent's .opendora/agents/<id>/ directory.",
+        description: "Delete an agent's .projectflows/agents/<id>/ directory.",
         operationId: "agent.delete",
         responses: {
           200: {

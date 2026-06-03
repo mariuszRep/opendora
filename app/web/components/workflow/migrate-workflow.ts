@@ -1,10 +1,17 @@
 import type { Workflow } from '@/lib/opendora'
 import type { WorkflowNodeData, NodeType } from '@/components/react-flow/unified-node'
+import { generateUniqueNodeName } from '@/components/react-flow/node-utils'
 
 const LEGACY_TYPES = new Set(['input', 'skill_load', 'tool_call', 'agent', 'decide', 'output', 'stage', 'action'])
 
 export function needsMigration(workflow: Workflow): boolean {
-  return workflow.nodes.some((n) => LEGACY_TYPES.has(n.type))
+  if (workflow.nodes.some((n) => LEGACY_TYPES.has(n.type))) return true
+  // Also migrate when any node is missing a key
+  return workflow.nodes.some((n) => {
+    const d = n.data as Record<string, unknown>
+    const nd = (d.node ?? {}) as Record<string, unknown>
+    return !nd.key
+  })
 }
 
 function labelFromId(id: string): string {
@@ -117,10 +124,40 @@ function migrateNode(node: Workflow['nodes'][number]): Workflow['nodes'][number]
   }
 }
 
+function populateNodeKeys(nodes: Workflow['nodes']): Workflow['nodes'] {
+  const assignedKeys = new Set<string>()
+
+  // First pass: collect keys already set so we don't collide with them
+  for (const node of nodes) {
+    const nd = ((node.data as Record<string, unknown>).node ?? {}) as Record<string, unknown>
+    if (nd.key && typeof nd.key === 'string') assignedKeys.add(nd.key)
+  }
+
+  return nodes.map((node) => {
+    const d = node.data as Record<string, unknown>
+    const nd = (d.node ?? {}) as Record<string, unknown>
+
+    if (nd.key) return node  // already has a key, leave it
+
+    // Derive from params.output if present, otherwise from label
+    const paramsOutput = ((nd.parameters ?? {}) as Record<string, unknown>).output
+    const base = paramsOutput ? String(paramsOutput) : (nd.label as string | undefined) ?? 'node'
+    const raw = generateUniqueNodeName(base, assignedKeys)
+    const key = /^[0-9]/.test(raw) ? `n_${raw}` : raw
+    assignedKeys.add(key)
+
+    return {
+      ...node,
+      data: { ...d, node: { ...nd, key } } as Record<string, unknown>,
+    }
+  }) as Workflow['nodes']
+}
+
 export function migrateWorkflow(workflow: Workflow): Workflow {
   if (!needsMigration(workflow)) return workflow
+  const typesMigrated = workflow.nodes.map(migrateNode) as Workflow['nodes']
   return {
     ...workflow,
-    nodes: workflow.nodes.map(migrateNode) as Workflow['nodes'],
+    nodes: populateNodeKeys(typesMigrated),
   }
 }

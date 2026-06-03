@@ -12,8 +12,11 @@ import {
 import type { WorkflowNodePayload } from "@opendora/workflow/node-types"
 import {
   Braces,
+  FolderOpen,
   GitBranch,
   MessageSquare,
+  Play,
+  Repeat,
   SlidersHorizontal,
   Wrench,
   type LucideIcon,
@@ -25,8 +28,11 @@ import type { NodeType, WorkflowNodeData } from "./unified-node"
 // them to actual React components for rendering.
 const ICON_MAP: Record<string, LucideIcon> = {
   Braces,
+  FolderOpen,
   GitBranch,
   MessageSquare,
+  Play,
+  Repeat,
   SlidersHorizontal,
   Wrench,
 }

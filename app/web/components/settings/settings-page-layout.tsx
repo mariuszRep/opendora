@@ -13,6 +13,7 @@ import {
 export type SettingsBreadcrumb = {
   label: string
   href?: string
+  onClick?: () => void
 }
 
 export interface SettingsPageLayoutProps {
@@ -68,10 +69,14 @@ export function SettingsPageLayout({
               return (
                 <React.Fragment key={`${item.label}-${idx}`}>
                   <BreadcrumbItem>
-                    {isLast || !item.href ? (
+                    {isLast ? (
                       <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                    ) : (
+                    ) : item.onClick ? (
+                      <BreadcrumbLink className="cursor-pointer" onClick={item.onClick}>{item.label}</BreadcrumbLink>
+                    ) : item.href ? (
                       <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+                    ) : (
+                      <BreadcrumbPage>{item.label}</BreadcrumbPage>
                     )}
                   </BreadcrumbItem>
                   {!isLast && <BreadcrumbSeparator />}

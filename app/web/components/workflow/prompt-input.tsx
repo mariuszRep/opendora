@@ -3,8 +3,10 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import type { RefSuggestion } from '@/lib/workflow-refs'
+import { RefDropdown } from './ref-dropdown'
 
-const REF_PATTERN = /(\$(?:input|output|ctx)\.[a-zA-Z0-9_.]+)/g
+// Highlight $ref tokens. Updated to match new $nodeKey format too.
+const REF_PATTERN = /(\$(?:(?:input|output|ctx)\.[a-zA-Z0-9_.]+|[a-z][a-z0-9_]*(?:\.[a-zA-Z0-9_.]+)?))/g
 
 function buildHTML(text: string) {
   REF_PATTERN.lastIndex = 0
@@ -157,27 +159,14 @@ export function PromptInput({ value, onChange, suggestions, placeholder, classNa
         onBlur={() => setTimeout(() => setOpen(false), 120)}
         onFocus={() => { updateCursor(); if (filtered.length > 0 && !isComplete) setOpen(true) }}
       />
-      {open && filtered.length > 0 && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-          {filtered.map((s, i) => (
-            <button
-              key={s.ref}
-              type="button"
-              className={cn('w-full text-left px-3 py-2 text-xs transition-colors hover:bg-accent', i === activeIndex && 'bg-accent')}
-              onMouseDown={(e) => { e.preventDefault(); select(s) }}
-              onMouseEnter={() => setActiveIndex(i)}
-            >
-              <div className="font-mono text-primary">{s.ref}</div>
-              {(s.source || s.description) && (
-                <div className="text-[10px] text-muted-foreground mt-0.5 flex gap-1.5">
-                  <span>{s.source}</span>
-                  {s.description && <span className="opacity-70">— {s.description}</span>}
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+      <RefDropdown
+        open={open}
+        items={filtered}
+        activeIndex={activeIndex}
+        anchorRef={editorRef}
+        onSelect={select}
+        onHover={setActiveIndex}
+      />
     </div>
   )
 }

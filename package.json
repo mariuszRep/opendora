@@ -27,7 +27,7 @@
       "packages/provider",
       "packages/sdk/js",
       "packages/util",
-      "ui/*",
+      "app/*",
       "packages/session",
       "packages/schedule",
       "packages/workflow"

@@ -14,7 +14,7 @@ export { AgentConfig, type AgentTemplate } from "./types"
 
 /**
  * Default agent templates shipped with OpenDora.
- * These are used to seed .opendora/agents/ on first run.
+ * These are used to seed .projectflows/agents/ on first run.
  */
 export const templates: Record<string, AgentTemplate> = {
   build: buildTemplate,

@@ -23,7 +23,7 @@ const parameters = z.object({
     "Full memory body. For feedback and project types: lead with the rule or fact, then **Why:** and **How to apply:** lines.",
   ),
   scope: z.enum(["global", "local"]).describe(
-    "global = .opendora/agents/MEMORY.md (all agents); local = .opendora/agents/<this-agent>/MEMORY.md (this agent only)",
+    "global = .projectflows/agents/MEMORY.md (all agents); local = .projectflows/agents/<this-agent>/MEMORY.md (this agent only)",
   ),
 })
 

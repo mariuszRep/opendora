@@ -90,19 +90,28 @@ export default function SettingsPage() {
   const [recordingHotkey, setRecordingHotkey] = useState(false)
   const [recordingKeys, setRecordingKeys] = useState<string[]>([])
   const [timezone, setTimezone] = useState("UTC")
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string>("")
+  const [workflows, setWorkflows] = useState<any[]>([])
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Sync theme and timezone from general.json on first open
+  // Sync theme, timezone, and workflow from general.json on first open
   useEffect(() => {
     if (!mounted) return
     opendora.general.get().then((data) => {
       if (data.theme && data.theme !== theme) setTheme(data.theme)
       if (data.timezone) setTimezone(data.timezone)
+      if (data.selectedWorkflowId) setSelectedWorkflowId(data.selectedWorkflowId)
     }).catch(() => {})
   }, [mounted])
+
+  // Load workflows when general dialog opens
+  useEffect(() => {
+    if (!generalDialogOpen) return
+    opendora.workflow.list().then(setWorkflows).catch(() => setWorkflows([]))
+  }, [generalDialogOpen])
 
   const handleSetTheme = (newTheme: string) => {
     setTheme(newTheme)
@@ -112,6 +121,11 @@ export default function SettingsPage() {
   const handleSetTimezone = (newTimezone: string) => {
     setTimezone(newTimezone)
     opendora.general.update({ timezone: newTimezone }).catch(() => {})
+  }
+
+  const handleSetWorkflow = (workflowId: string) => {
+    setSelectedWorkflowId(workflowId)
+    opendora.general.update({ selectedWorkflowId: workflowId }).catch(() => {})
   }
 
   // Hotkey recording effect
@@ -345,6 +359,27 @@ export default function SettingsPage() {
               )}
               <p className="text-xs text-muted-foreground">
                 Used as the default timezone for schedules and timestamps across the system.
+              </p>
+            </div>
+
+            {/* Workflow Selector */}
+            <div className="space-y-2">
+              <Label htmlFor="workflow">Default Workflow</Label>
+              <Select value={selectedWorkflowId} onValueChange={handleSetWorkflow}>
+                <SelectTrigger id="workflow" className="w-full">
+                  <SelectValue placeholder="Select workflow…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {workflows.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Default workflow to run. Inputs will be auto-populated from this workflow's parameters.
               </p>
             </div>
 

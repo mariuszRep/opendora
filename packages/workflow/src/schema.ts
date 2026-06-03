@@ -71,11 +71,23 @@ export function resolveRef(
   input: Record<string, unknown>,
   ctx: Record<string, unknown>,
 ): unknown {
-  // Pure reference (entire value is a single reference expression) → return raw value to preserve type
-  const pure = /^\$(input|output|ctx)\.([a-zA-Z0-9_.]+)$/.exec(value)
-  if (pure) {
-    const [, ns, path] = pure
+  // Legacy: $input.x / $ctx.x / $output.x — kept for backward compatibility
+  const legacy = /^\$(input|output|ctx)\.([a-zA-Z0-9_.]+)$/.exec(value)
+  if (legacy) {
+    const [, ns, path] = legacy
     return getPath(ns === "input" ? input : ctx, path)
+  }
+  // New: $nodeKey  or  $nodeKey.field.subfield
+  // nodeKey must start with a letter and contain only lowercase letters, digits, underscores
+  const nodeRef = /^\$([a-z][a-z0-9_]*)(?:\.([a-zA-Z0-9_.]+))?$/.exec(value)
+  if (nodeRef) {
+    const [, key, path] = nodeRef
+    if (key === "input") return path ? getPath(input, path) : input
+    const nodeVal = ctx[key]
+    if (path === undefined) return nodeVal
+    return nodeVal != null && typeof nodeVal === "object"
+      ? getPath(nodeVal as Record<string, unknown>, path)
+      : undefined
   }
   // String with embedded references → substitute all occurrences in-place
   return resolveTemplate(value, input, ctx)
@@ -105,8 +117,26 @@ export function resolveTemplate(
   input: Record<string, unknown>,
   ctx: Record<string, unknown>,
 ): string {
-  return template.replace(/\$(input|output|ctx)\.([a-zA-Z0-9_.]+)/g, (_, ns, path) => {
-    const val = getPath(ns === "input" ? input : ctx, path)
-    return val == null ? "" : String(val)
-  })
+  // Replace legacy $input.x / $ctx.x / $output.x AND new $nodeKey / $nodeKey.field
+  return template.replace(
+    /\$(input|output|ctx)\.([a-zA-Z0-9_.]+)|\$([a-z][a-z0-9_]*)(?:\.([a-zA-Z0-9_.]+))?/g,
+    (match, legacyNs, legacyPath, nodeKey, nodePath) => {
+      if (legacyNs) {
+        const val = getPath(legacyNs === "input" ? input : ctx, legacyPath)
+        return val == null ? "" : String(val)
+      }
+      if (nodeKey) {
+        if (nodeKey === "input") {
+          const val = nodePath ? getPath(input, nodePath) : input
+          return val == null ? "" : String(val)
+        }
+        const nodeVal = ctx[nodeKey]
+        const val = nodePath && nodeVal != null && typeof nodeVal === "object"
+          ? getPath(nodeVal as Record<string, unknown>, nodePath)
+          : nodeVal
+        return val == null ? "" : String(val)
+      }
+      return match
+    }
+  )
 }

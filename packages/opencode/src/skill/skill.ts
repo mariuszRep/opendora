@@ -144,7 +144,7 @@ export namespace Skill {
       }
     }
 
-    // Scan .opendora/skill/ directories
+    // Scan .projectflows/skill/ directories
     for (const dir of await Config.directories()) {
       const matches = await Glob.scan(OPENDORA_SKILL_PATTERN, {
         cwd: dir,
@@ -562,7 +562,7 @@ export namespace Skill {
     }
   }
 
-  /** Create a new local skill under the first .opendora/skill/ directory */
+  /** Create a new local skill under the first .projectflows/skill/ directory */
   export async function create(params: {
     name: string
     description: string

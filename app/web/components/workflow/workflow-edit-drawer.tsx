@@ -26,7 +26,7 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
-import { Trash2, Save, X, GitBranch, Workflow as WorkflowIcon, Map as MapIcon, Plus, Cpu, ChevronDown } from 'lucide-react'
+import { Trash2, Save, X, GitBranch, Workflow as WorkflowIcon, Map as MapIcon, Plus, Cpu, ChevronDown, ExternalLink, LayoutGrid } from 'lucide-react'
 import { WorkflowControls, WorkflowControlButton, WorkflowZoomBar } from '@/components/react-flow'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Node, Edge } from '@xyflow/react'
@@ -35,7 +35,7 @@ import { getNodeTypeMetadata, NodeTypeId } from '@/components/react-flow/node-ty
 import { resolveNodeType } from '@/components/react-flow/node-utils'
 import { useToolSchemas } from '@/hooks/use-tool-schemas'
 import { ToolParameterForm } from './tool-parameter-form'
-import { type ToolSchema, type ToolSchemaProperty } from '@/lib/opendora'
+import { opendora, type ToolSchema, type ToolSchemaProperty, type Workflow as WorkflowDef } from '@/lib/opendora'
 import { useModelList } from '@/hooks/use-model-list'
 import {
   ModelSelector,
@@ -122,6 +122,31 @@ function ModelPicker({ value, onChange }: ModelPickerProps) {
   )
 }
 
+function useWorkflowList() {
+  const [workflows, setWorkflows] = React.useState<WorkflowDef[]>([])
+  React.useEffect(() => {
+    opendora.workflow.list().then(setWorkflows).catch(() => {})
+  }, [])
+  return workflows
+}
+
+function useWorkflowParams(workflowId: string) {
+  const [wfParams, setWfParams] = React.useState<WorkflowParameter[]>([])
+  const [loading, setLoading] = React.useState(false)
+  React.useEffect(() => {
+    if (!workflowId) { setWfParams([]); return }
+    setLoading(true)
+    opendora.workflow.get(workflowId)
+      .then((wf) => {
+        const paramsNode = wf.nodes.find((n: any) => (n.data as any)?.nodeType === 'parameters')
+        setWfParams(((paramsNode?.data as any)?.workflowParameters as WorkflowParameter[]) ?? [])
+      })
+      .catch(() => setWfParams([]))
+      .finally(() => setLoading(false))
+  }, [workflowId])
+  return { wfParams, loading }
+}
+
 type EditType = 'workflow' | 'node' | 'edge'
 
 type BuiltinSchema = { description: string; properties: Record<string, ToolSchemaProperty>; required: string[] }
@@ -169,6 +194,8 @@ const TAB_MANIFEST: Record<NodeTypeId, TabId[]> = {
   [NodeTypeId.Parameters]:  ['general', 'input'],
   [NodeTypeId.Decide]:      ['general', 'input', 'settings', 'output'],
   [NodeTypeId.SetWorkdir]:  ['general', 'input'],
+  [NodeTypeId.ForEach]:     ['general', 'input', 'output'],
+  [NodeTypeId.RunWorkflow]: ['general', 'input', 'output'],
 }
 
 const TAB_LABELS: Record<TabId, string> = {
@@ -224,6 +251,9 @@ interface WorkflowEditDrawerProps {
   setShowMiniMap?: (show: boolean) => void
   availableRefs?: RefSuggestion[]
   sourceDecideCases?: Array<{ label: string }>
+  currentWorkflowId?: string
+  onOpenForEachCanvas?: () => void
+  onEditWorkflow?: (workflowId: string) => void
 }
 
 function ToolComboboxItem({ schema, showMcp }: { schema: ToolSchema; showMcp?: boolean }) {
@@ -292,12 +322,25 @@ export function WorkflowEditDrawer({
   setShowMiniMap,
   availableRefs = [],
   sourceDecideCases,
+  currentWorkflowId,
+  onOpenForEachCanvas,
+  onEditWorkflow,
 }: WorkflowEditDrawerProps) {
   const [formData, setFormData] = React.useState<DrawerFormData>({})
   const [editingNodeData, setEditingNodeData] = React.useState<UnifiedNodeData | null>(null)
   const [activeTab, setActiveTab] = React.useState('general')
   const [toolSearch, setToolSearch] = React.useState('')
   const { schemas, loading: loadingSchemas } = useToolSchemas()
+  const allWorkflows = useWorkflowList()
+  const availableWorkflows = currentWorkflowId
+    ? allWorkflows.filter((w) => w.id !== currentWorkflowId)
+    : allWorkflows
+
+  // Tracked separately so useWorkflowParams always has a stable hook call
+  const runWorkflowId = editingNodeData?.nodeType === NodeTypeId.RunWorkflow
+    ? ((editingNodeData.node.parameters ?? {}) as Record<string, unknown>).workflowId as string ?? ''
+    : ''
+  const { wfParams, loading: loadingWfParams } = useWorkflowParams(runWorkflowId)
 
   React.useEffect(() => {
     if (open && data) {
@@ -562,6 +605,110 @@ export function WorkflowEditDrawer({
             )
           }
 
+          if (nodeType === NodeTypeId.ForEach) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="foreach-label">Label</Label>
+                  <Input id="foreach-label" value={editingNodeData.node.label || ''} onChange={(e) => handleNodeChange({ label: e.target.value })} placeholder="For Each" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="foreach-description">Description</Label>
+                  <Textarea id="foreach-description" value={editingNodeData.node.description || ''} onChange={(e) => handleNodeChange({ description: e.target.value })} placeholder="What is this loop doing?" rows={2} />
+                </div>
+                {onOpenForEachCanvas && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2 justify-center"
+                    onClick={() => { handleSave(); onOpenForEachCanvas() }}
+                  >
+                    <LayoutGrid className="size-3.5" />
+                    Open Canvas
+                  </Button>
+                )}
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.RunWorkflow) {
+            const rwParams = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const rwWorkflowId = (rwParams.workflowId as string) ?? ''
+            const WORKFLOW_RUN_KEYS = new Set(['workflowId', 'wait', 'output'])
+            const updateRwParams = (updates: Record<string, unknown>) =>
+              setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: { ...rwParams, ...updates } } })
+            const handleWorkflowSelect = (id: string | null) => {
+              // Clear per-param values when the workflow changes
+              const cleaned: Record<string, unknown> = {}
+              for (const k of WORKFLOW_RUN_KEYS) if (rwParams[k] !== undefined) cleaned[k] = rwParams[k]
+              cleaned.workflowId = id ?? ''
+              setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: cleaned } })
+            }
+            const selectedWorkflow = availableWorkflows.find((w) => w.id === rwWorkflowId)
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Workflow</Label>
+                  <div className="flex gap-1.5">
+                  <Combobox
+                    value={rwWorkflowId || null}
+                    onValueChange={handleWorkflowSelect}
+                  >
+                    <ComboboxInput
+                      placeholder={availableWorkflows.length === 0 ? 'Loading workflows…' : 'Search workflows…'}
+                      showClear
+                      className="font-mono text-xs"
+                    />
+                    <ComboboxContent>
+                      <ComboboxEmpty>No workflows found.</ComboboxEmpty>
+                      <ComboboxList>
+                        <ComboboxGroup>
+                          <ComboboxLabel>Available Workflows</ComboboxLabel>
+                          {availableWorkflows.map((wf) => (
+                            <ComboboxItem key={wf.id} value={wf.id}>
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <span className="font-mono text-xs">{wf.id}</span>
+                                {wf.name && wf.name !== wf.id && (
+                                  <span className="text-xs text-muted-foreground truncate">{wf.name}</span>
+                                )}
+                              </div>
+                            </ComboboxItem>
+                          ))}
+                        </ComboboxGroup>
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
+                  {onEditWorkflow && rwWorkflowId && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      title="Open this workflow in the editor"
+                      onClick={() => onEditWorkflow(rwWorkflowId)}
+                    >
+                      <ExternalLink className="size-3.5" />
+                    </Button>
+                  )}
+                  </div>
+                  {selectedWorkflow?.description && (
+                    <p className="text-xs text-muted-foreground">{selectedWorkflow.description}</p>
+                  )}
+                  {!rwWorkflowId && (
+                    <p className="text-xs text-amber-500">Required — select the workflow to call.</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rw-label">Label</Label>
+                  <Input id="rw-label" value={editingNodeData.node.label || ''} onChange={(e) => handleNodeChange({ label: e.target.value })} placeholder="Run Workflow" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rw-description">Description</Label>
+                  <Textarea id="rw-description" value={editingNodeData.node.description || ''} onChange={(e) => handleNodeChange({ description: e.target.value })} placeholder="Why is this sub-workflow being called here?" rows={2} />
+                </div>
+              </div>
+            )
+          }
+
           return null
         }
 
@@ -621,7 +768,7 @@ export function WorkflowEditDrawer({
                     value={(editingNodeData.instructions as string) || ''}
                     onChange={(v) => setEditingNodeData({ ...editingNodeData, instructions: v })}
                     suggestions={availableRefs ?? []}
-                    placeholder={'Describe what to analyze and structure.\nType $ to insert a reference — e.g. $input.text or $output.previous'}
+                    placeholder={'Describe what to analyze and structure.\nType $ to insert a reference — e.g. $input.text or $generate_colors.colours'}
                     rows={6}
                   />
                 </div>
@@ -629,7 +776,7 @@ export function WorkflowEditDrawer({
                   <div>
                     <Label>Output schema</Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Define the JSON shape the agent must return. Downstream nodes receive the result as <code className="font-mono">$output.*</code>
+                      Define the JSON shape the agent must return. Fields are referenced as <code className="font-mono">${'$'}{(editingNodeData.node as any).key || 'node_key'}.<i>field</i></code>.
                     </p>
                   </div>
                   {(() => {
@@ -778,6 +925,153 @@ export function WorkflowEditDrawer({
                     className="font-mono text-xs"
                   />
                   <p className="text-xs text-muted-foreground">If set, the resolved path is also stored as <code className="font-mono">$ctx.&lt;key&gt;</code> for downstream reference.</p>
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.ForEach) {
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const itemsVal = (params.items as string) ?? ''
+            const itemVar = (params.item_variable as string) ?? 'item'
+            const collectVal = (params.collect as string) ?? ''
+            const outputKey = (params.output as string) ?? 'results'
+            const updateParams = (updates: Record<string, unknown>) => {
+              setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: { ...params, ...updates } } })
+            }
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Items array</Label>
+                  <ExpressionInput
+                    value={itemsVal}
+                    onChange={(v) => updateParams({ items: v || undefined })}
+                    suggestions={availableRefs}
+                    placeholder="$ctx.my_array"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Reference an upstream array. The loop body runs once per element. Also accepts a JSON string array from a previous node.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Item variable name</Label>
+                  <Input
+                    value={itemVar}
+                    onChange={(e) => updateParams({ item_variable: e.target.value || 'item' })}
+                    placeholder="item"
+                    className="font-mono text-xs"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Each element is injected as <code className="font-mono">$ctx.{itemVar || 'item'}</code> inside the loop body.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Collect key <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Input
+                    value={collectVal}
+                    onChange={(e) => updateParams({ collect: e.target.value || undefined })}
+                    placeholder="e.g. result"
+                    className="font-mono text-xs"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    After each iteration, read <code className="font-mono">$ctx.{collectVal || '<collect>'}</code> and append it to the results array. Leave blank to collect the item itself as a passthrough.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Output key</Label>
+                  <Input
+                    value={outputKey}
+                    onChange={(e) => updateParams({ output: e.target.value || 'results' })}
+                    placeholder="results"
+                    className="font-mono text-xs"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    The collected results array is stored as <code className="font-mono">$ctx.{outputKey || 'results'}</code> for downstream nodes.
+                  </p>
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.RunWorkflow) {
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const workflowId = (params.workflowId as string) ?? ''
+            const outputKey = (params.output as string) ?? 'workflow_result'
+            const updateParams = (updates: Record<string, unknown>) =>
+              setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: { ...params, ...updates } } })
+
+            if (!workflowId) {
+              return (
+                <div className="py-6 text-center">
+                  <p className="text-xs text-muted-foreground">Select a workflow in the General tab to configure its inputs.</p>
+                </div>
+              )
+            }
+
+            if (loadingWfParams) {
+              return (
+                <div className="py-6 text-center">
+                  <p className="text-xs text-muted-foreground">Loading workflow parameters…</p>
+                </div>
+              )
+            }
+
+            return (
+              <div className="space-y-4">
+                {wfParams.length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-3 text-center">
+                    This workflow declares no input parameters.
+                  </p>
+                ) : (
+                  wfParams.map((p) => (
+                    <div key={p.name} className="space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <Label className="font-mono text-xs">{p.name}</Label>
+                        {p.required !== false && (
+                          <Badge variant="secondary" className="text-[10px] px-1 py-0">required</Badge>
+                        )}
+                        {p.type && p.type !== 'string' && (
+                          <Badge variant="outline" className="font-mono text-[10px] px-1 py-0">{p.type}</Badge>
+                        )}
+                      </div>
+                      {p.description && (
+                        <p className="text-xs text-muted-foreground">{p.description}</p>
+                      )}
+                      {p.enum && p.enum.length > 0 ? (
+                        <Select
+                          value={(params[p.name] as string) ?? ''}
+                          onValueChange={(v) => updateParams({ [p.name]: v })}
+                        >
+                          <SelectTrigger className="h-8 text-xs font-mono"><SelectValue placeholder="Select a value…" /></SelectTrigger>
+                          <SelectContent>
+                            {p.enum.map((v) => (
+                              <SelectItem key={v} value={v} className="font-mono text-xs">{v}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <ExpressionInput
+                          value={(params[p.name] as string) ?? ''}
+                          onChange={(v) => updateParams({ [p.name]: v })}
+                          suggestions={availableRefs}
+                          placeholder={`$ctx.${p.name}`}
+                        />
+                      )}
+                    </div>
+                  ))
+                )}
+                <Separator />
+                <div className="space-y-1.5">
+                  <Label>Output key</Label>
+                  <Input
+                    value={outputKey}
+                    onChange={(e) => updateParams({ output: e.target.value || 'workflow_result' })}
+                    placeholder="workflow_result"
+                    className="font-mono text-xs"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Completion summary stored as <code className="font-mono">$ctx.{outputKey || 'workflow_result'}</code>.
+                  </p>
                 </div>
               </div>
             )
@@ -972,6 +1266,40 @@ export function WorkflowEditDrawer({
                 <p className="text-xs text-muted-foreground">
                   The chosen label is automatically stored here. Use <code className="font-mono">${`output.${autoKey}`}</code> in any downstream node.
                   Rename the node in General to change the key.
+                </p>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.ForEach) {
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const outputKey = (params.output as string) || 'results'
+            return (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md border bg-muted/30">
+                  <span className="font-mono text-xs flex-1 text-foreground">{`$ctx.${outputKey}`}</span>
+                  <Badge variant="secondary" className="font-mono text-xs shrink-0">array</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  After all iterations complete, the collected results array is available as <code className="font-mono">{`$ctx.${outputKey}`}</code> for downstream nodes.
+                  Change the key in the Input tab.
+                </p>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.RunWorkflow) {
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const outputKey = (params.output as string) || 'workflow_result'
+            return (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md border bg-muted/30">
+                  <span className="font-mono text-xs flex-1 text-foreground">{`$ctx.${outputKey}`}</span>
+                  <Badge variant="secondary" className="font-mono text-xs shrink-0">string</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  The sub-workflow&apos;s completion summary is stored here. Use <code className="font-mono">{`$ctx.${outputKey}`}</code> in downstream nodes.
+                  Change the key in the Input tab.
                 </p>
               </div>
             )
@@ -1195,6 +1523,28 @@ export function WorkflowEditDrawer({
           <div className="mx-auto w-full max-w-2xl">
             <div className="p-4 pb-4 max-h-[calc(80vh-8rem)] overflow-y-auto">
               {renderTabContent()}
+              {activeTab === 'general' && editType === 'node' && editingNodeData && (() => {
+                const nodeKey = (editingNodeData.node as any).key as string | undefined
+                if (!nodeKey) return null
+                return (
+                  <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-md bg-muted/30 border">
+                    <span className="text-xs text-muted-foreground shrink-0">Referenced as</span>
+                    <code
+                      className="font-mono text-xs flex-1 cursor-pointer select-all hover:text-foreground transition-colors"
+                      title="Click to select"
+                      onClick={(e) => {
+                        const range = document.createRange()
+                        range.selectNodeContents(e.currentTarget)
+                        const sel = window.getSelection()
+                        sel?.removeAllRanges()
+                        sel?.addRange(range)
+                      }}
+                    >
+                      ${nodeKey}
+                    </code>
+                  </div>
+                )
+              })()}
             </div>
           </div>
         </>

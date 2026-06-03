@@ -143,6 +143,8 @@ export interface WorkflowParameter {
 
 export interface NodeProperties {
   label: string
+  /** Stable machine-readable key auto-generated from the label. Referenced as $key or $key.field. */
+  key?: string
   name?: string
   description?: string
   execution_mode?: ExecutionMode

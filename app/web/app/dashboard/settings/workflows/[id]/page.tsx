@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import {
   PlayIcon,
@@ -39,6 +39,8 @@ export default function WorkflowEditorPage() {
   const [view, setView] = useState<"flow" | "json">("flow")
   const [jsonText, setJsonText] = useState("")
   const [jsonError, setJsonError] = useState<string | null>(null)
+  const [editorNav, setEditorNav] = useState<Array<{ label: string }>>([])
+  const editorPopToRef = useRef<((idx: number) => void) | null>(null)
 
   useEffect(() => {
     opendora.workflow
@@ -104,15 +106,24 @@ export default function WorkflowEditorPage() {
 
   if (!workflow) return null
 
+  const breadcrumbs = [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Settings", href: "/dashboard/settings" },
+    { label: "Workflows", href: "/dashboard/settings/workflows" },
+    {
+      label: workflow.name,
+      onClick: editorNav.length > 0 ? () => editorPopToRef.current?.(0) : undefined,
+    },
+    ...editorNav.map((entry, i) => ({
+      label: entry.label,
+      onClick: i < editorNav.length - 1 ? () => editorPopToRef.current?.(i + 1) : undefined,
+    })),
+  ]
+
   return (
     <SettingsPageLayout
       flush
-      breadcrumbs={[
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Settings", href: "/dashboard/settings" },
-        { label: "Workflows", href: "/dashboard/settings/workflows" },
-        { label: workflow.name },
-      ]}
+      breadcrumbs={breadcrumbs}
       headerAction={
         <div className="flex items-center gap-2">
           <div className="flex items-center rounded-md border bg-muted/40 p-0.5">
@@ -172,6 +183,8 @@ export default function WorkflowEditorPage() {
         <WorkflowEditor
           workflow={workflow}
           onSave={handleSave}
+          onNavStackChange={setEditorNav}
+          popToRef={editorPopToRef}
         />
       ) : (
         <div className="flex flex-col gap-2 p-4 h-full">

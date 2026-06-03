@@ -3328,7 +3328,7 @@ export class Agent extends HeyApiClient {
   /**
    * List agents
    *
-   * Get a list of all available agents, including file-based agents in .opendora/agents/.
+   * Get a list of all available agents, including file-based agents in .projectflows/agents/.
    */
   public list<ThrowOnError extends boolean = false>(
     parameters?: {
@@ -3347,7 +3347,7 @@ export class Agent extends HeyApiClient {
   /**
    * Create agent
    *
-   * Create a new agent. Writes agent.json and persona.md into .opendora/agents/<id>/.
+   * Create a new agent. Writes agent.json and persona.md into .projectflows/agents/<id>/.
    */
   public create<ThrowOnError extends boolean = false>(
     parameters?: {
@@ -3408,7 +3408,7 @@ export class Agent extends HeyApiClient {
   /**
    * Delete agent
    *
-   * Delete an agent's .opendora/agents/<id>/ directory.
+   * Delete an agent's .projectflows/agents/<id>/ directory.
    */
   public delete<ThrowOnError extends boolean = false>(
     parameters: {

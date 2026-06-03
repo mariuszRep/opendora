@@ -1,5 +1,5 @@
 /**
- * AgentFile — file-based agent storage for .opendora/agents/
+ * AgentFile — file-based agent storage for .projectflows/agents/
  *
  * Lightweight file storage with no dependencies on Instance or global state.
  * All agents are stored as files - no "native" vs "file-based" distinction.
@@ -63,7 +63,7 @@ export namespace AgentFile {
     return path.join(agentsRoot(baseDirectory), INDEX_FILE)
   }
 
-  /** Ensure the .opendora/agents/ directory exists. Returns the path. */
+  /** Ensure the .projectflows/agents/ directory exists. Returns the path. */
   export async function ensureRoot(baseDirectory: string): Promise<string> {
     const root = agentsRoot(baseDirectory)
     await fs.mkdir(root, { recursive: true })

@@ -38,8 +38,8 @@ export const WorkflowRunTool = Tool.define("workflow_run", async (initCtx) => {
     parameters,
     async execute(params: z.infer<typeof parameters>, ctx) {
       const h = host(ctx)
-      // Workflow files live in <project-root>/.opendora/workflows — use the git
-      // worktree root for lookup. The session working directory is separate.
+      // Workflows are stored in the nearest .projectflows/workflows dir (walking up
+      // from worktree), falling back to ~/.projectflows/workflows.
       const projectRoot = h.worktree ?? h.directory
       const workdir = params.workdir ?? h.directory ?? h.worktree
       if (params.workdir) mkdirSync(params.workdir, { recursive: true })

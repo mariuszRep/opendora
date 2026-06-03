@@ -1,10 +1,10 @@
 {
-  "name": "@opendora/ui",
+  "name": "@opendora/app",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --bun next dev",
+    "dev": "next dev",
     "build": "bun --bun next build",
     "start": "bun --bun next start",
     "lint": "eslint",

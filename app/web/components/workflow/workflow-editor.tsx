@@ -22,6 +22,14 @@ import { GitBranch } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
+import {
   WorkflowCanvas,
   WorkflowEdge,
   WorkflowMiniMap,
@@ -30,14 +38,30 @@ import {
 } from '@/components/react-flow'
 import { getDefaultNodeData, NodeTypeId } from '@/components/react-flow/node-type-registry'
 import { validateConnection as validateConnectionSchema } from '@/components/react-flow/node-handles'
+import { generateUniqueNodeName } from '@/components/react-flow/node-utils'
 import type { NodeType, WorkflowNodeData } from '@/components/react-flow/unified-node'
 import { WorkflowEditDrawer, type DrawerFormData } from './workflow-edit-drawer'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { toast } from 'sonner'
-import type { Workflow, WorkflowNodeType } from '@/lib/opendora'
+import { opendora, type Workflow, type WorkflowNodeType } from '@/lib/opendora'
 import { migrateWorkflow, needsMigration } from './migrate-workflow'
 import { getAvailableRefs } from '@/lib/workflow-refs'
+import { cn } from '@/lib/utils'
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+
+type NavEntry = {
+  kind: 'foreach' | 'workflow'
+  /** Stable React key for this view */
+  key: string
+  /** Breadcrumb label */
+  label: string
+  workflow: Workflow
+  onSave: (updated: Workflow) => Promise<void>
+  /** Refs pre-seeded from the parent context (e.g. the loop item variable) */
+  injectedRefs?: import('@/lib/workflow-refs').RefSuggestion[]
+}
 
 const nodeTypes = {
   workflow: WorkflowNode,
@@ -105,6 +129,8 @@ interface WorkflowEditorProps {
   workflow: Workflow
   directory?: string
   onSave: (workflow: Workflow) => Promise<void>
+  onNavStackChange?: (entries: Array<{ label: string }>) => void
+  popToRef?: React.MutableRefObject<((idx: number) => void) | null>
 }
 
 type DecideCase = { label: string; when?: unknown }
@@ -138,7 +164,20 @@ function syncDecideCaseRename(
   }) as Node<WorkflowNodeData>[]
 }
 
-function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: WorkflowEditorProps) {
+interface WorkflowEditorInnerProps extends WorkflowEditorProps {
+  onPushNavEntry?: (entry: NavEntry) => void
+  currentWorkflowId?: string
+  injectedRefs?: import('@/lib/workflow-refs').RefSuggestion[]
+}
+
+function WorkflowEditorInner({
+  workflow: workflowProp,
+  directory,
+  onSave,
+  onPushNavEntry,
+  currentWorkflowId,
+  injectedRefs,
+}: WorkflowEditorInnerProps) {
   const reactFlowInstance = useReactFlow()
   const reactFlowWrapper = React.useRef<HTMLDivElement>(null)
 
@@ -394,6 +433,14 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
     event.dataTransfer.dropEffect = 'move'
   }, [])
 
+  const makeNodeKey = React.useCallback((label: string): string => {
+    const existingKeys = new Set(
+      nodesRef.current.map((n) => (n.data?.node as any)?.key).filter(Boolean) as string[]
+    )
+    const raw = generateUniqueNodeName(label, existingKeys)
+    return /^[0-9]/.test(raw) ? `n_${raw}` : raw
+  }, [])
+
   const onDrop = React.useCallback(
     (event: React.DragEvent) => {
       event.preventDefault()
@@ -406,13 +453,14 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
       })
 
       const defaultData = getDefaultNodeData(nodeType)
+      const key = makeNodeKey(defaultData.node.label)
       const newNode: Node<WorkflowNodeData> = {
         id: nanoid(),
         type: 'workflow',
         position,
         data: {
           nodeType,
-          node: defaultData.node,
+          node: { ...defaultData.node, key },
           data: { inputs: [], outputs: [] },
         },
       }
@@ -421,7 +469,7 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
       setNodes(updatedNodes)
       saveWorkflow(updatedNodes, edgesRef.current)
     },
-    [reactFlowInstance, saveWorkflow]
+    [reactFlowInstance, saveWorkflow, makeNodeKey]
   )
 
   const onNodeDoubleClickFromPalette = React.useCallback(
@@ -433,13 +481,14 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
         y: window.innerHeight / 2,
       })
 
+      const key = makeNodeKey(defaultData.node.label)
       const newNode: Node<WorkflowNodeData> = {
         id: nanoid(),
         type: 'workflow',
         position: center,
         data: {
           nodeType: type,
-          node: defaultData.node,
+          node: { ...defaultData.node, key },
           data: { inputs: [], outputs: [] },
         },
       }
@@ -448,7 +497,7 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
       setNodes(updatedNodes)
       saveWorkflow(updatedNodes, edgesRef.current)
     },
-    [reactFlowInstance, saveWorkflow]
+    [reactFlowInstance, saveWorkflow, makeNodeKey]
   )
 
   const handleDrawerSave = React.useCallback(
@@ -569,6 +618,73 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
     }
   }, [drawerType, drawerData, saveWorkflow])
 
+  const handleOpenForEachCanvas = React.useCallback(() => {
+    if (!drawerData?.node) return
+    const node = nodesRef.current.find((n) => n.id === drawerData.node!.id)
+    if (!node) return
+    const nodeData = node.data as WorkflowNodeData
+    const params = (nodeData.node.parameters ?? {}) as Record<string, unknown>
+    const nodeId = node.id
+    const label = nodeData.node.label || 'For Each'
+    const itemVariable = (params.item_variable as string) || 'item'
+    const sub = (nodeData as any).subWorkflow as { nodes: Workflow['nodes']; edges: Workflow['edges'] } | undefined
+
+    setDrawerOpen(false)
+
+    // Collect parent-workflow refs available to the ForEach node itself so they're
+    // also accessible inside the loop body
+    const parentRefs = getAvailableRefs(nodeId, nodesRef.current, edgesRef.current)
+
+    onPushNavEntry?.({
+      kind: 'foreach',
+      key: `foreach-sub-${nodeId}`,
+      label: `${label}`,
+      workflow: {
+        id: `foreach-sub-${nodeId}`,
+        name: `${label}`,
+        description: `Loop body — $${itemVariable} is the current item.`,
+        version: '1.0.0',
+        nodes: sub?.nodes ?? [],
+        edges: sub?.edges ?? [],
+      },
+      onSave: async (updated) => {
+        const updatedNodes = nodesRef.current.map((n) => {
+          if (n.id !== nodeId) return n
+          return { ...n, data: { ...n.data, subWorkflow: { nodes: updated.nodes, edges: updated.edges } } }
+        })
+        setNodes(updatedNodes)
+        await saveWorkflow(updatedNodes, edgesRef.current)
+      },
+      injectedRefs: [
+        {
+          ref: `$${itemVariable}`,
+          source: label,
+          description: 'current loop item',
+        },
+        ...parentRefs,
+      ],
+    })
+  }, [drawerData, nodesRef, onPushNavEntry, saveWorkflow])
+
+  const handleEditWorkflow = React.useCallback(
+    async (workflowId: string) => {
+      try {
+        const wf = await opendora.workflow.get(workflowId)
+        setDrawerOpen(false)
+        onPushNavEntry?.({
+          kind: 'workflow',
+          key: `workflow-${workflowId}`,
+          label: wf.name || workflowId,
+          workflow: wf,
+          onSave: async (updated) => { await opendora.workflow.update(workflowId, updated) },
+        })
+      } catch {
+        toast.error(`Could not load workflow "${workflowId}"`)
+      }
+    },
+    [onPushNavEntry],
+  )
+
   return (
     <SidebarProvider className="relative flex h-full w-full overflow-hidden">
       <WorkflowNodePalette onNodeDoubleClick={onNodeDoubleClickFromPalette} />
@@ -658,10 +774,16 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
             setShowMiniMap={setShowMiniMap}
             availableRefs={
               drawerType === 'node' && drawerData?.node
-                ? getAvailableRefs((drawerData.node as Node<WorkflowNodeData>).id, nodes, edges)
-                : undefined
+                ? [
+                    ...(injectedRefs ?? []),
+                    ...getAvailableRefs((drawerData.node as Node<WorkflowNodeData>).id, nodes, edges),
+                  ]
+                : (injectedRefs?.length ? injectedRefs : undefined)
             }
             sourceDecideCases={drawerData?.sourceDecideCases}
+            currentWorkflowId={currentWorkflowId ?? workflowRef.current.id}
+            onOpenForEachCanvas={handleOpenForEachCanvas}
+            onEditWorkflow={handleEditWorkflow}
           />
         </div>
       </SidebarInset>
@@ -669,10 +791,57 @@ function WorkflowEditorInner({ workflow: workflowProp, directory, onSave }: Work
   )
 }
 
-export function WorkflowEditor(props: WorkflowEditorProps) {
+export function WorkflowEditor({ workflow, directory, onSave, onNavStackChange, popToRef }: WorkflowEditorProps) {
+  const [navStack, setNavStack] = React.useState<NavEntry[]>([])
+
+  const pushNavEntry = React.useCallback((entry: NavEntry) => {
+    setNavStack((prev) => {
+      const idx = prev.findIndex((e) => e.key === entry.key)
+      if (idx !== -1) return [...prev.slice(0, idx), entry]
+      return [...prev, entry]
+    })
+  }, [])
+
+  const popTo = React.useCallback((idx: number) => {
+    setNavStack((prev) => prev.slice(0, idx))
+  }, [])
+
+  // Expose popTo to parent so the page-level breadcrumb can trigger back-navigation
+  React.useEffect(() => {
+    if (popToRef) popToRef.current = popTo
+  }, [popTo, popToRef])
+
+  // Notify parent when nav stack changes so it can extend the page breadcrumb
+  React.useEffect(() => {
+    onNavStackChange?.(navStack.map((e) => ({ label: e.label })))
+  }, [navStack, onNavStackChange])
+
+  const allViews = React.useMemo(() => [
+    { key: workflow.id, label: workflow.name, workflow, onSave },
+    ...navStack,
+  ], [workflow, onSave, navStack])
+
+  const currentIdx = allViews.length - 1
+
   return (
-    <ReactFlowProvider>
-      <WorkflowEditorInner {...props} />
-    </ReactFlowProvider>
+    <div className="h-full w-full relative overflow-hidden">
+      {allViews.map((view, idx) => (
+        <div
+          key={view.key}
+          className={cn('absolute inset-0', idx !== currentIdx && 'hidden')}
+        >
+          <ReactFlowProvider>
+            <WorkflowEditorInner
+              workflow={view.workflow}
+              directory={directory}
+              onSave={view.onSave}
+              onPushNavEntry={pushNavEntry}
+              currentWorkflowId={workflow.id}
+              injectedRefs={(view as NavEntry).injectedRefs}
+            />
+          </ReactFlowProvider>
+        </div>
+      ))}
+    </div>
   )
 }
