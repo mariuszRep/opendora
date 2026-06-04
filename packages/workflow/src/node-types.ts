@@ -11,6 +11,9 @@ export const NodeTypeId = {
   Structured: "structured",
   Parameters: "parameters",
   Decide: "decide",
+  SetWorkdir: "set_workdir",
+  ForEach: "for_each",
+  RunWorkflow: "run_workflow",
 } as const
 
 export type NodeTypeId = (typeof NodeTypeId)[keyof typeof NodeTypeId]
@@ -121,6 +124,9 @@ export interface WorkflowNodePayload {
   nodeType?: NodeTypeId
   node: {
     label: string
+    /** Stable machine-readable key auto-generated from the label at creation time.
+     *  Used as the ctx key for this node's output: reference via $key or $key.field. */
+    key?: string
     name?: string
     description?: string
     execution_mode?: "automatic" | "manual"

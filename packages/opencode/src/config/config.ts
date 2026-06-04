@@ -77,10 +77,10 @@ export namespace Config {
 
     // Config loading order (low -> high precedence): https://opendora.ai/docs/config#precedence-order
     // 1) Remote .well-known/opendora (org defaults)
-    // 2) Global config (~/.config/opendora/opendora.json{,c})
+    // 2) Global config (~/.projectflows/projectflows.json{,c})
     // 3) Custom config (OPENCODE_CONFIG)
-    // 4) Project config (opendora.json{,c})
-    // 5) .opendora directories (.opendora/agents/, .opendora/commands/, .opendora/plugins/, .opendora/opendora.json{,c})
+    // 4) Project config (projectflows.json{,c})
+    // 5) .projectflows directories (.projectflows/agents/, .projectflows/commands/, .projectflows/plugins/, .projectflows/projectflows.json{,c})
     // 6) Inline config (OPENCODE_CONFIG_CONTENT)
     // Managed config directory is enterprise-only and always overrides everything above.
     let result: Info = {}
@@ -133,7 +133,7 @@ export namespace Config {
 
     const directories = await ConfigPaths.directories(Instance.directory, Instance.worktree)
 
-    // .opendora directory config overrides (project and global) config sources.
+    // .projectflows directory config overrides (project and global) config sources.
     if (Flag.OPENCODE_CONFIG_DIR) {
       log.debug("loading config from OPENCODE_CONFIG_DIR", { path: Flag.OPENCODE_CONFIG_DIR })
     }
@@ -141,8 +141,8 @@ export namespace Config {
     const deps = []
 
     for (const dir of unique(directories)) {
-      if (dir.endsWith(".opendora") || dir === Flag.OPENCODE_CONFIG_DIR) {
-        for (const file of ["opendora.jsonc", "opendora.json"]) {
+      if (dir.endsWith(".projectflows") || dir === Flag.OPENCODE_CONFIG_DIR) {
+        for (const file of ["projectflows.jsonc", "projectflows.json", "opendora.jsonc", "opendora.json"]) {
           log.debug(`loading config from ${path.join(dir, file)}`)
           result = mergeConfigConcatArrays(result, await loadFile(path.join(dir, file)))
           // to satisfy the type checker
@@ -392,7 +392,7 @@ export namespace Config {
       })
       if (!md) continue
 
-      const patterns = ["/.opendora/agent/", "/.opendora/agents/", "/agent/", "/agents/"]
+      const patterns = ["/.projectflows/agent/", "/.projectflows/agents/", "/agent/", "/agents/"]
       const file = rel(item, patterns) ?? path.basename(item)
       const agentName = trim(file)
 
@@ -1327,8 +1327,8 @@ export namespace Config {
     // Determine the correct config file to write to
     let filepath: string
     if (Flag.OPENCODE_CONFIG_DIR) {
-      // Write to .opendora/opendora.json when using custom config dir
-      filepath = path.join(Flag.OPENCODE_CONFIG_DIR, "opendora.json")
+      // Write to .projectflows/projectflows.json when using custom config dir
+      filepath = path.join(Flag.OPENCODE_CONFIG_DIR, "projectflows.json")
     } else {
       // Otherwise write to project's opencode.json
       const projectFiles = await ConfigPaths.projectFiles("opencode", Instance.directory, Instance.worktree)

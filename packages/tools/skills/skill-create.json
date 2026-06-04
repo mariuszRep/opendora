@@ -1,6 +1,6 @@
 {
   "name": "skill_create",
-  "description": "Create a new local skill under .opendora/skill/. Writes a SKILL.md with the provided frontmatter and body, registers it immediately (no session restart needed), and returns the skill directory path. Use the write/edit tools afterward to add optional scripts, agents, or reference files to the same directory.",
+  "description": "Create a new local skill under .projectflows/skill/. Writes a SKILL.md with the provided frontmatter and body, registers it immediately (no session restart needed), and returns the skill directory path. Use the write/edit tools afterward to add optional scripts, agents, or reference files to the same directory.",
   "inputSchema": {
     "type": "object",
     "properties": {

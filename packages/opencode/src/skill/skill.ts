@@ -144,7 +144,7 @@ export namespace Skill {
       }
     }
 
-    // Scan .opendora/skill/ directories
+    // Scan .projectflows/skill/ directories
     for (const dir of await Config.directories()) {
       const matches = await Glob.scan(OPENDORA_SKILL_PATTERN, {
         cwd: dir,
@@ -241,8 +241,13 @@ export namespace Skill {
     return state().then((x) => x.dirs)
   }
 
-  export async function save(location: string, content: string) {
-    await fs.writeFile(location, content, "utf-8")
+  export async function save(location: string, body: string) {
+    // Preserve existing frontmatter — skill.content is body-only (gray-matter strips ---...---).
+    // Reconstruct the full file so the skill remains valid after reload.
+    const existing = await fs.readFile(location, "utf-8").catch(() => "")
+    const fmMatch = existing.match(/^(---[\s\S]*?---\r?\n?)/)
+    const frontmatter = fmMatch ? fmMatch[1] : ""
+    await fs.writeFile(location, frontmatter + body, "utf-8")
     reload()
   }
 
@@ -431,7 +436,7 @@ export namespace Skill {
     const dirs = await Config.directories()
     const installBase = dirs.length > 0
       ? path.join(dirs[0], "skill")
-      : path.join(Instance.directory, ".opendora", "skill")
+      : path.join(Instance.directory, ".projectflows", "skill")
 
     // GitHub-hosted registries (anthropic, vercel)
     const ghReg = registry ? GITHUB_REGISTRIES[registry] : undefined
@@ -562,7 +567,7 @@ export namespace Skill {
     }
   }
 
-  /** Create a new local skill under the first .opendora/skill/ directory */
+  /** Create a new local skill under the first .projectflows/skill/ directory */
   export async function create(params: {
     name: string
     description: string
@@ -572,7 +577,7 @@ export namespace Skill {
     const dirs = await Config.directories()
     const installBase = dirs.length > 0
       ? path.join(dirs[0], "skill")
-      : path.join(Instance.directory, ".opendora", "skill")
+      : path.join(Instance.directory, ".projectflows", "skill")
 
     const skillDir = path.join(installBase, params.name)
     await fs.mkdir(skillDir, { recursive: true })
@@ -583,7 +588,7 @@ export namespace Skill {
     const fmLines: string[] = [
       `name: ${params.name}`,
       `description: ${safeDesc}`,
-      `origin: opendora`,
+      `origin: projectflows`,
     ]
 
     const skillMd = `---\n${fmLines.join("\n")}\n---\n\n${params.content ?? ""}`

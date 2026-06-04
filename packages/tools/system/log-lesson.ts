@@ -1,20 +1,20 @@
 import fs from "node:fs/promises"
 import path from "node:path"
+import os from "node:os"
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { directory } from "../host.ts"
 
 /**
  * Walk up from `start` to find the nearest ancestor directory that contains
- * a `.opendora` subdirectory. Falls back to `start` if none is found.
- * This prevents mis-rooted paths when a session's working directory is a
- * subdirectory of the project (e.g. `.opendora/skill/`).
+ * a `.projectflows` subdirectory. Falls back to `~/.projectflows/..` (home)
+ * if none is found.
  */
-async function findOpendoraRoot(start: string): Promise<string> {
+async function findProjectFlowsRoot(start: string): Promise<string> {
   let current = start
   while (true) {
     try {
-      await fs.access(path.join(current, ".opendora"))
+      await fs.access(path.join(current, ".projectflows"))
       return current
     } catch {
       // not found here, go up
@@ -23,7 +23,7 @@ async function findOpendoraRoot(start: string): Promise<string> {
     if (parent === current) break
     current = parent
   }
-  return start
+  return os.homedir()
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -36,14 +36,14 @@ const KIND_LABEL: Record<string, string> = {
 /**
  * Resolve the path to LOG.md for a given target.
  *
- * agent:{id}   → {root}/.opendora/agents/{id}/LOG.md
- * skill:{name} → {root}/.opendora/skill/{name}/LOG.md
+ * agent:{id}   → {root}/.projectflows/agents/{id}/LOG.md
+ * skill:{name} → {root}/.projectflows/skill/{name}/LOG.md
  */
 function resolveLogPath(root: string, targetType: "agent" | "skill", targetId: string): string {
   if (targetType === "agent") {
-    return path.join(root, ".opendora", "agents", targetId, "LOG.md")
+    return path.join(root, ".projectflows", "agents", targetId, "LOG.md")
   }
-  return path.join(root, ".opendora", "skill", targetId, "LOG.md")
+  return path.join(root, ".projectflows", "skill", targetId, "LOG.md")
 }
 
 function formatEntry(kind: string, message: string, context?: string): string {
@@ -90,7 +90,7 @@ export const LogLessonTool = Tool.define(
     }),
 
     async execute(args, ctx) {
-      const root = await findOpendoraRoot(directory(ctx))
+      const root = await findProjectFlowsRoot(directory(ctx))
       const logPath = resolveLogPath(root, args.target_type, args.target_id)
 
       await fs.mkdir(path.dirname(logPath), { recursive: true })

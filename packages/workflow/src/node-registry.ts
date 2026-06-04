@@ -27,8 +27,11 @@ const BUILTIN_HANDLES: Record<NodeTypeId, { handles: NodeHandleDefinition[]; con
           canReceiveFrom: [
             { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Structured, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Parameters, handleId: null, maxConnections: 1 },
             { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
           ],
         },
       },
@@ -40,7 +43,10 @@ const BUILTIN_HANDLES: Record<NodeTypeId, { handles: NodeHandleDefinition[]; con
           canConnectTo: [
             { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Structured, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
           ],
         },
       },
@@ -64,8 +70,11 @@ const BUILTIN_HANDLES: Record<NodeTypeId, { handles: NodeHandleDefinition[]; con
           canReceiveFrom: [
             { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Structured, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Parameters, handleId: null, maxConnections: 1 },
             { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
           ],
         },
       },
@@ -77,7 +86,10 @@ const BUILTIN_HANDLES: Record<NodeTypeId, { handles: NodeHandleDefinition[]; con
           canConnectTo: [
             { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Structured, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
           ],
         },
       },
@@ -101,8 +113,11 @@ const BUILTIN_HANDLES: Record<NodeTypeId, { handles: NodeHandleDefinition[]; con
           canReceiveFrom: [
             { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Structured, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Parameters, handleId: null, maxConnections: 1 },
             { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
           ],
         },
       },
@@ -114,7 +129,10 @@ const BUILTIN_HANDLES: Record<NodeTypeId, { handles: NodeHandleDefinition[]; con
           canConnectTo: [
             { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Structured, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
           ],
         },
       },
@@ -138,7 +156,11 @@ const BUILTIN_HANDLES: Record<NodeTypeId, { handles: NodeHandleDefinition[]; con
           canConnectTo: [
             { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Structured, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.SetWorkdir, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
           ],
         },
       },
@@ -162,8 +184,54 @@ const BUILTIN_HANDLES: Record<NodeTypeId, { handles: NodeHandleDefinition[]; con
           canReceiveFrom: [
             { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Structured, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Parameters, handleId: null, maxConnections: 1 },
             { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
+          ],
+        },
+      },
+      {
+        id: null,
+        position: "bottom",
+        type: "source",
+        connections: {
+          canConnectTo: [
+            { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Structured, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
+          ],
+        },
+      },
+    ],
+    constraints: {
+      allowedInboundEdges: "unlimited",
+      allowedOutboundEdges: "unlimited",
+      hiddenFields: [],
+      requiredFields: ["label"],
+      exposedFields: ["parameters"],
+    },
+  },
+
+  [NodeTypeId.SetWorkdir]: {
+    handles: [
+      {
+        id: null,
+        position: "top",
+        type: "target",
+        connections: {
+          canReceiveFrom: [
+            { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Parameters, handleId: null, maxConnections: 1 },
+            { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.SetWorkdir, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
           ],
         },
       },
@@ -176,6 +244,99 @@ const BUILTIN_HANDLES: Record<NodeTypeId, { handles: NodeHandleDefinition[]; con
             { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
             { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.SetWorkdir, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
+          ],
+        },
+      },
+    ],
+    constraints: {
+      allowedInboundEdges: "unlimited",
+      allowedOutboundEdges: "unlimited",
+      hiddenFields: [],
+      requiredFields: ["label"],
+      exposedFields: ["path"],
+    },
+  },
+
+  [NodeTypeId.ForEach]: {
+    handles: [
+      {
+        id: null,
+        position: "top",
+        type: "target",
+        connections: {
+          canReceiveFrom: [
+            { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Structured, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Parameters, handleId: null, maxConnections: 1 },
+            { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.SetWorkdir, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
+          ],
+        },
+      },
+      {
+        id: null,
+        position: "bottom",
+        type: "source",
+        connections: {
+          canConnectTo: [
+            { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Structured, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.SetWorkdir, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
+          ],
+        },
+      },
+    ],
+    constraints: {
+      allowedInboundEdges: "unlimited",
+      allowedOutboundEdges: "unlimited",
+      hiddenFields: [],
+      requiredFields: ["label"],
+      exposedFields: ["parameters", "subWorkflow"],
+    },
+  },
+
+  [NodeTypeId.RunWorkflow]: {
+    handles: [
+      {
+        id: null,
+        position: "top",
+        type: "target",
+        connections: {
+          canReceiveFrom: [
+            { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Structured, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Parameters, handleId: null, maxConnections: 1 },
+            { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.SetWorkdir, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
+          ],
+        },
+      },
+      {
+        id: null,
+        position: "bottom",
+        type: "source",
+        connections: {
+          canConnectTo: [
+            { nodeType: NodeTypeId.Tool, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Prompt, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Structured, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.Decide, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.SetWorkdir, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.ForEach, handleId: null, maxConnections: "unlimited" },
+            { nodeType: NodeTypeId.RunWorkflow, handleId: null, maxConnections: "unlimited" },
           ],
         },
       },
@@ -278,6 +439,67 @@ const BUILTIN_DEFINITIONS: NodeDefinition[] = [
     uiHints: {
       handles: BUILTIN_HANDLES[NodeTypeId.Decide].handles,
       constraints: BUILTIN_HANDLES[NodeTypeId.Decide].constraints,
+    },
+  },
+  {
+    type: NodeTypeId.SetWorkdir,
+    name: "Set Working Directory",
+    description: "Update the active working directory for all subsequent nodes in this workflow",
+    icon: "FolderOpen",
+    category: NodeCategory.Data,
+    defaultConfig: {
+      node: { label: "Set Working Directory", description: "", parameters: { path: "" } },
+      data: { inputs: [], outputs: [] },
+    },
+    version: "1.0.0",
+    tags: ["workdir", "directory", "path", "context"],
+    uiHints: {
+      handles: BUILTIN_HANDLES[NodeTypeId.SetWorkdir].handles,
+      constraints: BUILTIN_HANDLES[NodeTypeId.SetWorkdir].constraints,
+    },
+  },
+  {
+    type: NodeTypeId.ForEach,
+    name: "For Each",
+    description: "Iterate over an array and run an embedded sub-pipeline for each item",
+    icon: "Repeat",
+    category: NodeCategory.Flow,
+    defaultConfig: {
+      node: {
+        label: "For Each",
+        description: "",
+        parameters: { items: "", item_variable: "item", collect: "", output: "results" },
+      },
+      data: { inputs: [], outputs: [] },
+      subWorkflow: { nodes: [], edges: [] },
+    },
+    version: "1.0.0",
+    tags: ["foreach", "loop", "iterate", "array", "collection", "map"],
+    uiHints: {
+      handles: BUILTIN_HANDLES[NodeTypeId.ForEach].handles,
+      constraints: BUILTIN_HANDLES[NodeTypeId.ForEach].constraints,
+    },
+  },
+  {
+    type: NodeTypeId.RunWorkflow,
+    name: "Run Workflow",
+    description: "Execute another workflow by ID, passing context, and wait for its result",
+    icon: "Play",
+    category: NodeCategory.Integration,
+    defaultConfig: {
+      node: {
+        label: "Run Workflow",
+        description: "",
+        action_id: "workflow_run",
+        parameters: { workflowId: "", input: "", wait: "true", output: "workflow_result" },
+      },
+      data: { inputs: [], outputs: [] },
+    },
+    version: "1.0.0",
+    tags: ["workflow", "run", "execute", "delegate", "sub-workflow", "call"],
+    uiHints: {
+      handles: BUILTIN_HANDLES[NodeTypeId.RunWorkflow].handles,
+      constraints: BUILTIN_HANDLES[NodeTypeId.RunWorkflow].constraints,
     },
   },
 ]

@@ -6,7 +6,7 @@ import { directory } from "../host.ts"
 import {
   parseEntries,
   serializeEntries,
-  findOpendoraDir,
+  findProjectFlowsDir,
   resolveMemoryPath,
   readMemoryFile,
   type MemoryEntry,
@@ -23,7 +23,7 @@ const parameters = z.object({
     "Full memory body. For feedback and project types: lead with the rule or fact, then **Why:** and **How to apply:** lines.",
   ),
   scope: z.enum(["global", "local"]).describe(
-    "global = .opendora/agents/MEMORY.md (all agents); local = .opendora/agents/<this-agent>/MEMORY.md (this agent only)",
+    "global = .projectflows/agents/MEMORY.md (all agents); local = .projectflows/agents/<this-agent>/MEMORY.md (this agent only)",
   ),
 })
 
@@ -31,7 +31,7 @@ export const MemoryWriteTool = Tool.define("memory_write", {
   description: toolDef.description,
   parameters,
   async execute(params, ctx) {
-    const opendoraDir = await findOpendoraDir(directory(ctx))
+    const opendoraDir = await findProjectFlowsDir(directory(ctx))
     const memoryPath = resolveMemoryPath(opendoraDir, params.scope, ctx.agent)
 
     const raw = await readMemoryFile(memoryPath)

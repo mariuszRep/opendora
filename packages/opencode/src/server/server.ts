@@ -705,6 +705,9 @@ export namespace Server {
       }
       const toolDef = await toolInfo.init(initCtx)
 
+      const session = await Session.get(ctx.sessionID).catch(() => undefined)
+      const sessionDirectory = session?.directory ?? Instance.directory
+
       const execCtx = {
         sessionID: ctx.sessionID,
         messageID: "workflow-runner",
@@ -714,7 +717,7 @@ export namespace Server {
         metadata: (_input: { title?: string; metadata?: unknown }) => {},
         ask: async (_input: unknown) => {},
         extra: {
-          directory: Instance.directory,
+          directory: sessionDirectory,
           worktree: Instance.worktree,
           skillTools: {
             get: (sid: string) => getSkillTools(sid),
@@ -797,6 +800,7 @@ export namespace Server {
       const result = await toolDef.execute(finalArgs, execCtx)
       return { output: result.output }
     })
+
     // Clear out any tool parts left in pending/running state by a previous
     // process that was killed mid-stream — otherwise the UI shows them stuck
     // at "Pending" forever with no way to approve, dismiss, or retry.

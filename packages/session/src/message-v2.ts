@@ -95,6 +95,7 @@ export namespace MessageV2 {
   export const OutputFormatText = z
     .object({
       type: z.literal("text"),
+      toolChoice: z.enum(["auto", "required", "none"]).optional(),
     })
     .meta({
       ref: "OutputFormatText",
@@ -422,6 +423,7 @@ export namespace MessageV2 {
     tools: z.record(z.string(), z.boolean()).optional(),
     variant: z.string().optional(),
     schedule_id: z.string().optional(),
+    hidden: z.boolean().optional(),
   }).meta({
     ref: "UserMessage",
   })
@@ -494,6 +496,7 @@ export namespace MessageV2 {
     structured: z.any().optional(),
     variant: z.string().optional(),
     finish: z.string().optional(),
+    hidden: z.boolean().optional(),
   }).meta({
     ref: "AssistantMessage",
   })

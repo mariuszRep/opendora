@@ -1,8 +1,14 @@
+import { AsyncLocalStorage } from "async_hooks"
 import { Session } from "@opendora/session/session"
 import { SessionPrompt } from "@opendora/session/prompt"
 import { Identifier } from "@opendora/util/id"
-import { Workflow, WorkflowEdge, resolveRef, resolveRefs, resolveTemplate } from "./schema.ts"
+import { Workflow, WorkflowEdge, WorkflowNode, resolveRef, resolveRefs, resolveTemplate } from "./schema.ts"
 import { NodeTypeId } from "./node-types.ts"
+
+// Tracks the chain of workflow IDs currently executing on this async call stack.
+// Propagates automatically through the tool executor → workflow_run → runWorkflow path,
+// so cycles are caught regardless of call depth.
+const _callStack = new AsyncLocalStorage<Set<string>>()
 
 export type WorkflowToolContext = {
   sessionID: string
@@ -23,6 +29,7 @@ let _toolExecutor: ToolExecutor | null = null
 export function registerToolExecutor(executor: ToolExecutor) {
   _toolExecutor = executor
 }
+
 
 type InjectedPart =
   | { type: "text"; text: string }
@@ -72,8 +79,90 @@ async function injectMessage(sessionId: string, parts: InjectedPart[], directory
   }
 }
 
-async function agentPrompt(sessionId: string, text: string): Promise<string> {
-  const result = await SessionPrompt.prompt({ sessionID: sessionId, parts: [{ type: "text", text }] })
+type NodeModel = { providerID: string; modelID: string }
+
+function buildJsonInstruction(schema: Record<string, unknown>): string {
+  const props = (schema as any).properties ?? {}
+  const required: string[] = (schema as any).required ?? []
+  const lines = Object.entries(props).map(([key, val]: [string, any]) => {
+    const desc = val.description ? ` // ${val.description}` : ""
+    const enumStr = val.enum ? ` (one of: ${val.enum.join(", ")})` : ""
+    return `  "${key}": ...${enumStr}${desc}`
+  })
+  return [
+    `Respond with ONLY a valid JSON object — no prose, no markdown, no code fences.`,
+    `Use EXACTLY these field names (required: ${required.join(", ")}):`,
+    `{`,
+    ...lines,
+    `}`,
+  ].join("\n")
+}
+
+function extractJsonFromText(text: string): unknown | null {
+  // Try the whole string first
+  try { return JSON.parse(text.trim()) } catch {}
+  // Walk backward from the last } to find the largest valid object
+  let end = text.lastIndexOf("}")
+  while (end >= 0) {
+    const start = text.lastIndexOf("{", end)
+    if (start < 0) break
+    try { return JSON.parse(text.slice(start, end + 1)) } catch {}
+    end = text.lastIndexOf("}", end - 1)
+  }
+  return null
+}
+
+async function agentStructuredPrompt(
+  sessionId: string,
+  text: string,
+  schema: Record<string, unknown>,
+  model?: NodeModel,
+): Promise<unknown> {
+  // For reasoning models (e.g. gpt-5.x) toolChoice:"required" causes them to reason about
+  // calling the tool but produce no actual response — the reasoning phase has no tool access.
+  // Use a plain text prompt with toolChoice:"none" instead: the model always produces real
+  // text output, and we extract the JSON from that text.
+  const jsonInstruction = buildJsonInstruction(schema)
+  const fullPrompt = `${text}\n\n${jsonInstruction}`
+
+  const result = await SessionPrompt.prompt({
+    sessionID: sessionId,
+    parts: [{ type: "text", text: fullPrompt }],
+    format: { type: "text", toolChoice: "none" },
+    hidden: true,
+    ...(model ? { model } : {}),
+  })
+
+  // For non-reasoning models that support StructuredOutput tool call
+  const structured = (result as any).info?.structured ?? null
+  if (structured !== null) return structured
+
+  // Primary path for reasoning models: extract JSON from the text response
+  const textContent = ((result as any).parts ?? [])
+    .filter((p: any) => p.type === "text" && !p.synthetic)
+    .map((p: any) => p.text ?? "")
+    .join("")
+    .trim()
+  if (textContent) {
+    const extracted = extractJsonFromText(textContent)
+    if (extracted !== null) return extracted
+  }
+
+  throw new Error(`Workflow structured node produced no output — stopping workflow`)
+}
+
+async function agentPrompt(
+  sessionId: string,
+  text: string,
+  model?: NodeModel,
+  toolChoice?: "auto" | "required" | "none",
+): Promise<string> {
+  const result = await SessionPrompt.prompt({
+    sessionID: sessionId,
+    parts: [{ type: "text", text }],
+    ...(model ? { model } : {}),
+    ...(toolChoice ? { format: { type: "text", toolChoice } } : {}),
+  })
   const parts = (result as any).parts ?? []
   return parts
     .filter((p: any) => p.type === "text" && !p.synthetic)
@@ -82,18 +171,6 @@ async function agentPrompt(sessionId: string, text: string): Promise<string> {
     .trim()
 }
 
-async function agentStructuredPrompt(
-  sessionId: string,
-  text: string,
-  schema: Record<string, unknown>,
-): Promise<unknown> {
-  const result = await SessionPrompt.prompt({
-    sessionID: sessionId,
-    parts: [{ type: "text", text }],
-    format: { type: "json_schema", schema, retryCount: 2 },
-  })
-  return (result as any).structured ?? null
-}
 
 function evaluateWhen(op: string, actual: unknown, expected: unknown): boolean {
   switch (op) {
@@ -126,23 +203,32 @@ function buildAdjacency(edges: WorkflowEdge[]): Map<string, WorkflowEdge[]> {
   return map
 }
 
-export async function runWorkflow({
-  workflow,
+type GraphStep = { label: string; passed: boolean }
+
+// ─── Core graph executor ──────────────────────────────────────────────────────
+// Runs a flat node/edge graph within an existing session. Mutates ctx and steps
+// in place so the caller retains accumulated results even when an error is thrown.
+async function runSubGraph({
+  nodes,
+  edges,
   sessionId,
   input,
+  ctx,
+  steps,
   directory,
 }: {
-  workflow: Workflow
+  nodes: WorkflowNode[]
+  edges: WorkflowEdge[]
   sessionId: string
   input: Record<string, unknown>
+  ctx: Record<string, unknown>
+  steps: GraphStep[]
   directory: string
 }): Promise<void> {
-  const adjacency = buildAdjacency(workflow.edges)
-  const allTargetIds = new Set(workflow.edges.map((e) => e.target))
-  const rootNodes = workflow.nodes.filter((n) => !allTargetIds.has(n.id))
-  if (rootNodes.length === 0) throw new Error("Workflow has no root node")
+  const adjacency = buildAdjacency(edges)
+  const allTargetIds = new Set(edges.map((e) => e.target))
+  const rootNodes = nodes.filter((n) => !allTargetIds.has(n.id))
 
-  const ctx: Record<string, unknown> = {}
   const visited = new Set<string>()
   const queue = rootNodes.map((n) => n.id)
 
@@ -151,7 +237,7 @@ export async function runWorkflow({
     if (visited.has(currentId)) continue
     visited.add(currentId)
 
-    const node = workflow.nodes.find((n) => n.id === currentId)
+    const node = nodes.find((n) => n.id === currentId)
     if (!node) continue
 
     const d = node.data as Record<string, unknown>
@@ -159,8 +245,14 @@ export async function runWorkflow({
     const params = (nd.parameters ?? {}) as Record<string, unknown>
     const instructions = d.instructions as string | undefined
     const storeAs = params.output ? String(params.output) : undefined
+    const nodeKey = nd.key ? String(nd.key) : undefined
     const agentArgs = Array.isArray(d.agentArgs) ? (d.agentArgs as string[]) : []
+    const nodeModel = d.model as NodeModel | undefined
+    const nodeLabel = (nd.label as string | undefined) ?? d.nodeType as string ?? currentId
 
+    try {
+
+    const currentDir = await Session.effectiveDefaultPath(sessionId)
     let result: string | undefined
 
     if (d.nodeType === NodeTypeId.Parameters) {
@@ -172,7 +264,6 @@ export async function runWorkflow({
         received[p.name] = Object.prototype.hasOwnProperty.call(input, p.name) ? input[p.name] : null
       }
 
-      // Validate required fields and enum constraints
       for (const p of defs) {
         const val = received[p.name]
         if (p.required !== false && (val === null || val === undefined || val === "")) {
@@ -192,7 +283,6 @@ export async function runWorkflow({
         }
       }
 
-      // Build rich output: values + metadata so the agent has full context
       const lines: string[] = ["Workflow inputs:"]
       for (const p of defs) {
         const val = received[p.name]
@@ -213,24 +303,34 @@ export async function runWorkflow({
         tool: "workflow_parameters",
         input: received,
         output: lines.join("\n"),
-      }], directory)
+      }], currentDir)
       result = JSON.stringify(received)
 
     } else if (d.nodeType === NodeTypeId.Prompt) {
-      result = await agentPrompt(sessionId, resolveTemplate(instructions ?? "", input, ctx))
+      result = await agentPrompt(sessionId, resolveTemplate(instructions ?? "", input, ctx), nodeModel)
 
     } else if (d.nodeType === NodeTypeId.Structured) {
       const schema = (d.outputSchema as Record<string, unknown>) ?? { type: "object", properties: {} }
-      const structured = await agentStructuredPrompt(
-        sessionId,
-        resolveTemplate(instructions ?? "", input, ctx),
-        schema,
-      )
-      result = structured !== null && structured !== undefined ? JSON.stringify(structured) : "{}"
+      const resolvedPrompt = resolveTemplate(instructions ?? "", input, ctx)
+      const structured = await agentStructuredPrompt(sessionId, resolvedPrompt, schema, nodeModel)
+      await injectMessage(sessionId, [{
+        type: "tool",
+        tool: "workflow_structured",
+        input: { node: nodeLabel },
+        output: structured,
+      }], currentDir)
+      // Store the parsed object — both under the legacy storeAs key and the stable nodeKey.
+      // This must happen here because result is a JSON string; writing result later would
+      // overwrite with a string, breaking $nodeKey.field path navigation.
+      if (storeAs !== undefined) ctx[storeAs] = structured
+      if (nodeKey !== undefined) ctx[nodeKey] = structured
+      result = JSON.stringify(structured)
 
-    } else if (d.nodeType === NodeTypeId.Tool) {
-      const actionId = nd.action_id as string | undefined
-      if (!actionId) continue
+    } else if (d.nodeType === NodeTypeId.Tool || d.nodeType === NodeTypeId.RunWorkflow) {
+      // RunWorkflow is a Tool node with action_id pre-set to "workflow_run"
+      const actionId = (nd.action_id as string | undefined) ||
+        (d.nodeType === NodeTypeId.RunWorkflow ? "workflow_run" : undefined)
+      if (!actionId) { steps.push({ label: nodeLabel, passed: true }); continue }
       if (!_toolExecutor) throw new Error("No tool executor registered — call registerToolExecutor() at startup")
 
       const args: Record<string, string> = {}
@@ -238,6 +338,21 @@ export async function runWorkflow({
         if (k !== "output") args[k] = String(v)
       }
       const resolvedArgs = resolveRefs(args, input, ctx)
+
+      // For RunWorkflow: params beyond the known workflow_run keys are individual
+      // workflow input values. Assemble them into resolvedArgs.input and remove
+      // the individual keys so the tool executor receives a clean call.
+      if (d.nodeType === NodeTypeId.RunWorkflow) {
+        const TOOL_KEYS = new Set(["workflowId", "wait", "agentId", "workdir"])
+        const wfInput: Record<string, unknown> = {}
+        for (const k of Object.keys(resolvedArgs)) {
+          if (!TOOL_KEYS.has(k)) { wfInput[k] = resolvedArgs[k]; delete resolvedArgs[k] }
+        }
+        if (Object.keys(wfInput).length > 0) resolvedArgs.input = wfInput
+        resolvedArgs.wait = true
+      }
+
+      if (!resolvedArgs.workdir) resolvedArgs.workdir = currentDir
 
       const session = await Session.get(sessionId)
       const { output } = await _toolExecutor(actionId, resolvedArgs, agentArgs, {
@@ -247,7 +362,7 @@ export async function runWorkflow({
       })
       result = output
 
-      await injectMessage(sessionId, [{ type: "tool", tool: actionId, input: resolvedArgs, output }], directory)
+      await injectMessage(sessionId, [{ type: "tool", tool: actionId, input: resolvedArgs, output }], currentDir)
 
     } else if (d.nodeType === NodeTypeId.Decide) {
       const mode = (params.mode as string) ?? "agent"
@@ -270,15 +385,13 @@ export async function runWorkflow({
         }
       } else {
         const labelList = cases.map((c) => c.label).join(", ")
-        const inputContext = Object.keys(input).length > 0
-          ? `\nInput parameters: ${JSON.stringify(input)}`
-          : ""
-        const ctxContext = Object.keys(ctx).length > 0
-          ? `\nWorkflow context: ${JSON.stringify(ctx)}`
-          : ""
+        const inputContext = Object.keys(input).length > 0 ? `\nInput parameters: ${JSON.stringify(input)}` : ""
+        const ctxContext = Object.keys(ctx).length > 0 ? `\nWorkflow context: ${JSON.stringify(ctx)}` : ""
         const raw = await agentPrompt(
           sessionId,
           `You are routing a workflow. Choose the correct branch based on the available data.${inputContext}${ctxContext}\n\nReply with exactly one of these labels (nothing else): ${labelList}`,
+          nodeModel,
+          "none",
         )
         const normalizedRaw = raw.trim().toLowerCase()
         const matched = cases.find((c) => c.label.toLowerCase() === normalizedRaw)
@@ -298,44 +411,192 @@ export async function runWorkflow({
           ...(mode === "deterministic" ? { expression: params.input } : {}),
         },
         output: result,
-      }], directory)
+      }], currentDir)
 
-      // Auto-store result in ctx so it's accessible as $ctx.<key>.
-      // Key is derived from the node label; explicit params.output overrides if set.
       const autoKey = (nd.label as string | undefined)
         ?.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") || "decide"
       ctx[storeAs ?? autoKey] = result
+      // Also write under nodeKey for the new $nodeKey reference format
+      if (nodeKey !== undefined) ctx[nodeKey] = result
+
+    } else if (d.nodeType === NodeTypeId.SetWorkdir) {
+      const pathExpr = (params.path as string | undefined) ?? ""
+      if (!pathExpr) throw new Error(`SetWorkdir node "${currentId}": "path" parameter is required`)
+      const resolved = String(resolveRef(pathExpr, input, ctx) ?? pathExpr)
+      const newDir = resolved.split("\n").map((l) => l.trim()).filter(Boolean).at(-1) ?? resolved
+      await Session.setCwd({ sessionID: sessionId, cwd: newDir })
+      result = newDir
+      await injectMessage(sessionId, [{
+        type: "tool",
+        tool: "set_workdir",
+        input: { path: pathExpr },
+        output: newDir,
+      }], newDir)
+
+    } else if (d.nodeType === NodeTypeId.ForEach) {
+      const itemsExpr = (params.items as string | undefined) ?? ""
+      const itemVar = (params.item_variable as string | undefined) ?? "item"
+      const collectKey = (params.collect as string | undefined) || undefined
+      const subWf = d.subWorkflow as { nodes: WorkflowNode[]; edges: WorkflowEdge[] } | undefined
+
+      // Resolve the items array — support JSON string arrays from upstream nodes
+      const rawItems = itemsExpr ? resolveRef(itemsExpr, input, ctx) : []
+      const items: unknown[] = Array.isArray(rawItems)
+        ? rawItems
+        : typeof rawItems === "string"
+          ? (() => { try { const p = JSON.parse(rawItems); return Array.isArray(p) ? p : [rawItems] } catch { return rawItems ? [rawItems] : [] } })()
+          : rawItems != null ? [rawItems] : []
+
+      await injectMessage(sessionId, [{
+        type: "tool",
+        tool: "workflow_foreach",
+        input: { items: itemsExpr, item_variable: itemVar, count: items.length },
+        output: `Iterating over ${items.length} item(s)`,
+      }], currentDir)
+
+      const iterResults: unknown[] = []
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        // Each iteration gets a snapshot of the outer ctx + the current item
+        const iterCtx: Record<string, unknown> = { ...ctx, [itemVar]: item }
+
+        if (subWf && subWf.nodes.length > 0) {
+          const iterSteps: GraphStep[] = []
+          await runSubGraph({
+            nodes: subWf.nodes,
+            edges: subWf.edges,
+            sessionId,
+            input,
+            ctx: iterCtx,
+            steps: iterSteps,
+            directory: currentDir,
+          })
+          steps.push(...iterSteps.map((s) => ({ ...s, label: `[${i}] ${s.label}` })))
+        }
+
+        // Collect: use explicit collect key, or fall back to the item itself
+        if (collectKey && iterCtx[collectKey] !== undefined) {
+          iterResults.push(iterCtx[collectKey])
+        } else {
+          iterResults.push(item)
+        }
+      }
+
+      result = JSON.stringify(iterResults)
+
     }
 
-    if (d.nodeType !== NodeTypeId.Decide && storeAs !== undefined && result !== undefined) ctx[storeAs] = result
+    // Structured nodes already wrote the parsed object into ctx above; skip the string overwrite
+    if (d.nodeType !== NodeTypeId.Decide && d.nodeType !== NodeTypeId.Structured && storeAs !== undefined && result !== undefined) ctx[storeAs] = result
 
-    const edges = adjacency.get(currentId) ?? []
+    // Write under the stable node key so downstream nodes can use $nodeKey references.
+    // Structured already wrote the parsed object above; all other types write the string result.
+    if (d.nodeType !== NodeTypeId.Structured && nodeKey !== undefined && result !== undefined) {
+      ctx[nodeKey] = result
+    }
+
+    const nodeEdges = adjacency.get(currentId) ?? []
 
     if (d.nodeType === NodeTypeId.Decide) {
-      // Edges labeled "result" (or with no label) always fire regardless of the decision.
-      // Edges with any other label fire only when that label matches the decision result.
-      // "else" fires as a fallback when no case label matched.
-      const resultEdges = edges.filter((e) => !e.label || e.label === "result")
-      const caseEdges = edges.filter((e) => e.label && e.label !== "result" && e.label !== "else")
-      const elseEdges = edges.filter((e) => e.label === "else")
-
+      const resultEdges = nodeEdges.filter((e) => !e.label || e.label === "result")
+      const caseEdges = nodeEdges.filter((e) => e.label && e.label !== "result" && e.label !== "else")
+      const elseEdges = nodeEdges.filter((e) => e.label === "else")
       const matchedCase = caseEdges.find((e) => e.label?.toLowerCase() === result?.toLowerCase())
-
       const nextIds: string[] = []
       for (const e of resultEdges) nextIds.push(e.target)
-
       if (matchedCase) {
         nextIds.push(matchedCase.target)
       } else if (elseEdges.length > 0) {
         for (const e of elseEdges) nextIds.push(e.target)
       }
-      // If no case edge matches and there's no "else", this branch just ends —
-      // same as any other terminal node. No error.
-
       for (const id of nextIds) queue.push(id)
     } else {
-      const next = edges[0]?.target
+      const next = nodeEdges[0]?.target
       if (next) queue.push(next)
+    }
+
+    steps.push({ label: nodeLabel, passed: true })
+    } catch (err) {
+      steps.push({ label: nodeLabel, passed: false })
+      throw err
     }
   }
 }
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+export async function runWorkflow({
+  workflow,
+  sessionId,
+  input,
+  directory,
+}: {
+  workflow: Workflow
+  sessionId: string
+  input: Record<string, unknown>
+  directory: string
+}): Promise<string> {
+  if (workflow.nodes.length === 0) throw new Error("Workflow has no nodes")
+
+  // Detect cycles before executing anything.
+  const parentStack = _callStack.getStore()
+  if (parentStack?.has(workflow.id)) {
+    const chain = [...parentStack, workflow.id].join(" → ")
+    throw new Error(`Infinite loop detected: workflow "${workflow.id}" is already executing. Call stack: ${chain}`)
+  }
+  const activeStack = new Set(parentStack ?? [])
+  activeStack.add(workflow.id)
+
+  return _callStack.run(activeStack, () => _runWorkflow({ workflow, sessionId, input, directory }))
+}
+
+async function _runWorkflow({
+  workflow,
+  sessionId,
+  input,
+  directory,
+}: {
+  workflow: Workflow
+  sessionId: string
+  input: Record<string, unknown>
+  directory: string
+}): Promise<string> {
+  const ctx: Record<string, unknown> = {}
+  const steps: GraphStep[] = []
+
+  const finalize = async (error?: string) => {
+    const passed = steps.filter((s) => s.passed).length
+    const failed = steps.filter((s) => !s.passed).length
+    const lines = [
+      error
+        ? `Workflow "${workflow.name}" stopped — ${error}`
+        : `Workflow "${workflow.name}" completed`,
+      `${passed} passed, ${failed} failed`,
+      "",
+      ...steps.map((s) => `${s.passed ? "✓" : "✗"} ${s.label}`),
+    ]
+    const summary = lines.join("\n")
+    const cwd = await Session.effectiveDefaultPath(sessionId)
+    await injectMessage(sessionId, [{ type: "text", text: summary }], cwd)
+    return summary
+  }
+
+  try {
+    await runSubGraph({
+      nodes: workflow.nodes as WorkflowNode[],
+      edges: workflow.edges as WorkflowEdge[],
+      sessionId,
+      input,
+      ctx,
+      steps,
+      directory,
+    })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return finalize(msg)
+  }
+
+  return finalize()
+}
+

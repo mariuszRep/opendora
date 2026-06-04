@@ -6,29 +6,43 @@
 import fs from "fs/promises"
 import fsSync from "fs"
 import path from "path"
+import os from "os"
 import { Workflow } from "./schema.ts"
 
 export namespace WorkflowStorage {
-  function dir(baseDir: string): string {
-    return path.join(baseDir, ".opendora", "workflows")
+  async function resolveDir(baseDir: string): Promise<string> {
+    let dir = baseDir
+    while (true) {
+      const candidate = path.join(dir, ".projectflows")
+      try {
+        const stat = await fs.stat(candidate)
+        if (stat.isDirectory()) return path.join(candidate, "workflows")
+      } catch {}
+      const parent = path.dirname(dir)
+      if (parent === dir) break
+      dir = parent
+    }
+    return path.join(os.homedir(), ".projectflows", "workflows")
   }
 
-  function filePath(baseDir: string, id: string): string {
-    return path.join(dir(baseDir), `${id}.json`)
+  async function filePath(baseDir: string, id: string): Promise<string> {
+    return path.join(await resolveDir(baseDir), `${id}.json`)
   }
 
-  async function ensureDir(baseDir: string): Promise<void> {
-    await fs.mkdir(dir(baseDir), { recursive: true })
+  async function ensureDir(baseDir: string): Promise<string> {
+    const dir = await resolveDir(baseDir)
+    await fs.mkdir(dir, { recursive: true })
+    return dir
   }
 
   export async function list(baseDir: string): Promise<Workflow[]> {
-    await ensureDir(baseDir)
-    const entries = await fs.readdir(dir(baseDir)).catch(() => [] as string[])
+    const dir = await ensureDir(baseDir)
+    const entries = await fs.readdir(dir).catch(() => [] as string[])
     const workflows: Workflow[] = []
     for (const entry of entries) {
       if (!entry.endsWith(".json")) continue
       try {
-        const raw = JSON.parse(await fs.readFile(path.join(dir(baseDir), entry), "utf8"))
+        const raw = JSON.parse(await fs.readFile(path.join(dir, entry), "utf8"))
         const parsed = Workflow.safeParse(raw)
         if (parsed.success) workflows.push(parsed.data)
       } catch {}
@@ -38,7 +52,8 @@ export namespace WorkflowStorage {
 
   export async function get(baseDir: string, id: string): Promise<Workflow | null> {
     try {
-      const raw = JSON.parse(await fs.readFile(filePath(baseDir, id), "utf8"))
+      const fp = await filePath(baseDir, id)
+      const raw = JSON.parse(await fs.readFile(fp, "utf8"))
       const parsed = Workflow.safeParse(raw)
       return parsed.success ? parsed.data : null
     } catch {
@@ -53,11 +68,12 @@ export namespace WorkflowStorage {
       throw new Error(`Invalid workflow: ${issues}`)
     }
     const workflow = parsed.data
-    if (fsSync.existsSync(filePath(baseDir, workflow.id))) {
+    const fp = await filePath(baseDir, workflow.id)
+    if (fsSync.existsSync(fp)) {
       throw new Error(`Workflow "${workflow.id}" already exists`)
     }
     await ensureDir(baseDir)
-    await fs.writeFile(filePath(baseDir, workflow.id), JSON.stringify(workflow, null, 2), "utf8")
+    await fs.writeFile(fp, JSON.stringify(workflow, null, 2), "utf8")
     return workflow
   }
 
@@ -69,14 +85,15 @@ export namespace WorkflowStorage {
     }
     const workflow = parsed.data
     if (workflow.id !== id) throw new Error(`Workflow id must match: got "${workflow.id}", expected "${id}"`)
+    const fp = await filePath(baseDir, id)
     await ensureDir(baseDir)
-    await fs.writeFile(filePath(baseDir, id), JSON.stringify(workflow, null, 2), "utf8")
+    await fs.writeFile(fp, JSON.stringify(workflow, null, 2), "utf8")
     return workflow
   }
 
   export async function remove(baseDir: string, id: string): Promise<void> {
     try {
-      await fs.unlink(filePath(baseDir, id))
+      await fs.unlink(await filePath(baseDir, id))
     } catch {
       throw new Error(`Workflow "${id}" not found`)
     }
@@ -85,7 +102,8 @@ export namespace WorkflowStorage {
   /** Lists available workflow IDs, for error messages. */
   export async function availableIds(baseDir: string): Promise<string[]> {
     try {
-      const entries = await fs.readdir(dir(baseDir))
+      const dir = await resolveDir(baseDir)
+      const entries = await fs.readdir(dir)
       return entries.filter((f) => f.endsWith(".json")).map((f) => f.replace(".json", ""))
     } catch {
       return []

@@ -6,13 +6,13 @@
   "type": "module",
   "packageManager": "bun@1.3.10",
   "scripts": {
-    "dev": "OPENCODE_PROJECT_ROOT=$PWD OPENCODE_CONFIG_DIR=$PWD/.opendora bun run packages/opencode/src/index.ts",
-    "tui": "OPENCODE_PROJECT_ROOT=$PWD OPENCODE_CONFIG_DIR=$PWD/.opendora bun run packages/opencode/src/index.ts attach http://localhost:4097",
-    "serve": "LD_PRELOAD=$PWD/packages/tools/desktop/x11_nocrash.so OPENCODE_PROJECT_ROOT=$PWD OPENCODE_CONFIG_DIR=$PWD/.opendora bun run packages/opencode/src/index.ts serve --port 4097",
-    "start": "OPENCODE_PROJECT_ROOT=$PWD OPENCODE_CONFIG_DIR=$PWD/.opendora bun run packages/opencode/src/index.ts start",
-    "stop": "OPENCODE_PROJECT_ROOT=$PWD OPENCODE_CONFIG_DIR=$PWD/.opendora bun run packages/opencode/src/index.ts stop",
-    "restart": "OPENCODE_PROJECT_ROOT=$PWD OPENCODE_CONFIG_DIR=$PWD/.opendora bun run packages/opencode/src/index.ts restart",
-    "status": "OPENCODE_PROJECT_ROOT=$PWD OPENCODE_CONFIG_DIR=$PWD/.opendora bun run packages/opencode/src/index.ts status",
+    "dev": "OPENCODE_PROJECT_ROOT=$PWD bun run packages/opencode/src/index.ts",
+    "tui": "OPENCODE_PROJECT_ROOT=$PWD bun run packages/opencode/src/index.ts attach http://localhost:4097",
+    "serve": "LD_PRELOAD=$PWD/packages/tools/desktop/x11_nocrash.so OPENCODE_PROJECT_ROOT=$PWD bun run packages/opencode/src/index.ts serve --port 4097",
+    "start": "OPENCODE_PROJECT_ROOT=$PWD bun run packages/opencode/src/index.ts start",
+    "stop": "OPENCODE_PROJECT_ROOT=$PWD bun run packages/opencode/src/index.ts stop",
+    "restart": "OPENCODE_PROJECT_ROOT=$PWD bun run packages/opencode/src/index.ts restart",
+    "status": "OPENCODE_PROJECT_ROOT=$PWD bun run packages/opencode/src/index.ts status",
     "dev:ui": "bash ./scripts/dev-ui.sh",
     "typecheck": "bun turbo typecheck",
     "test": "echo 'do not run tests from root' && exit 1"
@@ -27,7 +27,7 @@
       "packages/provider",
       "packages/sdk/js",
       "packages/util",
-      "ui/*",
+      "app/*",
       "packages/session",
       "packages/schedule",
       "packages/workflow"
@@ -92,7 +92,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/opendora"
+    "url": "git+https://github.com/yourusername/opendora.git"
   },
   "license": "MIT",
   "prettier": {
@@ -109,5 +109,13 @@
   "overrides": {
     "@types/bun": "catalog:",
     "@types/node": "catalog:"
-  }
+  },
+  "version": "1.0.0",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "bugs": {
+    "url": "https://github.com/yourusername/opendora/issues"
+  },
+  "homepage": "https://github.com/yourusername/opendora#readme"
 }

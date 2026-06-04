@@ -45,7 +45,7 @@ export function isValidProfileName(name: string): boolean {
   return /^[a-zA-Z0-9_-]+$/.test(name)
 }
 
-export const CONFIG_DIR = process.env.OPENCODE_CONFIG_DIR || process.env.HOME + "/.opendora"
+export const CONFIG_DIR = process.env.OPENCODE_CONFIG_DIR || process.env.HOME + "/.projectflows"
 
 export function resolveUserPath(path: string): string {
   return path.replace(/^~/, process.env.HOME || "")

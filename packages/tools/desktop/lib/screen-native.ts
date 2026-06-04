@@ -180,7 +180,7 @@ export async function captureRegion(region: Region, destPath: string): Promise<v
  * Cheap under scrot/maim (<20ms).
  */
 export async function colorAt(x: number, y: number): Promise<PixelColor> {
-  const tmp = path.join(os.tmpdir(), "opendora-desktop", `pixel-${process.pid}-${Date.now()}.png`)
+  const tmp = path.join(os.tmpdir(), "projectflows-desktop", `pixel-${process.pid}-${Date.now()}.png`)
   try {
     await captureRegion({ x, y, width: 1, height: 1 }, tmp)
     const buf = await fs.readFile(tmp)
@@ -219,7 +219,7 @@ export async function captureComposite(destPath: string): Promise<{ width: numbe
 
   await fs.mkdir(path.dirname(destPath), { recursive: true })
 
-  const tmpDir = path.join(os.tmpdir(), "opendora-desktop")
+  const tmpDir = path.join(os.tmpdir(), "projectflows-desktop")
   await fs.mkdir(tmpDir, { recursive: true })
   const tmpFiles: string[] = []
 

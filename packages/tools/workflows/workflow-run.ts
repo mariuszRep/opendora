@@ -1,4 +1,5 @@
 import z from "zod"
+import { mkdirSync } from "fs"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import { Session } from "@opendora/session/session"
@@ -28,6 +29,8 @@ export const WorkflowRunTool = Tool.define("workflow_run", async (initCtx) => {
         "Input values keyed by parameter name. Call workflow_parameters first to discover required keys, then populate this object with all required parameters.",
       ),
     agentId: z.string().optional().describe("Agent to use for the workflow session"),
+    workdir: z.string().optional().describe("Working directory for all bash nodes in the workflow. Defaults to the calling session directory."),
+    wait: z.boolean().optional().default(false).describe("If true, block until the workflow completes and return its summary. Default: false (fire and forget)."),
   })
 
   return {
@@ -35,7 +38,11 @@ export const WorkflowRunTool = Tool.define("workflow_run", async (initCtx) => {
     parameters,
     async execute(params: z.infer<typeof parameters>, ctx) {
       const h = host(ctx)
-      const directory = h.worktree
+      // Workflows are stored in the nearest .projectflows/workflows dir (walking up
+      // from worktree), falling back to ~/.projectflows/workflows.
+      const projectRoot = h.worktree ?? h.directory
+      const workdir = params.workdir ?? h.directory ?? h.worktree
+      if (params.workdir) mkdirSync(params.workdir, { recursive: true })
 
       // If the agent has workflows assigned, restrict workflow_run to that list.
       // Mirrors the skill_load assignment-as-permission pattern.
@@ -45,9 +52,9 @@ export const WorkflowRunTool = Tool.define("workflow_run", async (initCtx) => {
         )
       }
 
-      const workflow = await WorkflowStorage.get(directory, params.workflowId)
+      const workflow = await WorkflowStorage.get(projectRoot, params.workflowId)
       if (!workflow) {
-        const available = (await WorkflowStorage.availableIds(directory)).join(", ") || "none"
+        const available = (await WorkflowStorage.availableIds(projectRoot)).join(", ") || "none"
         throw new Error(`Workflow "${params.workflowId}" not found. Available: ${available}`)
       }
 
@@ -64,28 +71,46 @@ export const WorkflowRunTool = Tool.define("workflow_run", async (initCtx) => {
         )
       }
 
-      const agentId = params.agentId ?? ctx.agent ?? "engineer"
+      // Resolve agent name to storage ID. ctx.agent is the display name
+      // (entry.config.name), but session.agentID stores the storage ID (entry.id).
+      // Match the delegate.ts pattern.
+      let agentId: string
+      const agentInput = params.agentId ?? ctx.agent ?? "engineer"
+      const agentsSvc = h.agents as any
+      if (agentsSvc) {
+        const allAgents = (await agentsSvc.list()) as any[]
+        const lookedUp = allAgents.find((a: any) => a.name === agentInput || a.id === agentInput)
+        agentId = lookedUp?.id ?? agentInput
+      } else {
+        agentId = agentInput
+      }
 
       const session = await Session.createNext({
-        directory,
+        directory: workdir,
         title: `Workflow: ${workflow.name}`,
         sessionType: "worker",
         agentID: agentId,
         ownerKind: "service",
         parentSessionID: ctx.sessionID,
       })
+      await Session.setCwd({ sessionID: session.id, cwd: workdir })
 
-      runWorkflow({ workflow, sessionId: session.id, input, directory }).catch((err) => {
+      if (params.wait) {
+        const summary = await runWorkflow({ workflow, sessionId: session.id, input, directory: workdir })
+        return {
+          title: `Workflow: ${workflow.name}`,
+          output: summary,
+          metadata: { sessionId: session.id, workflowId: params.workflowId },
+        }
+      }
+
+      runWorkflow({ workflow, sessionId: session.id, input, directory: workdir }).catch((err) => {
         console.error(`[workflow_run] error in workflow "${params.workflowId}":`, err)
       })
 
       return {
-        title: `Started workflow: ${workflow.name}`,
-        output: [
-          `Workflow "${workflow.name}" started.`,
-          `Session: ${session.id}`,
-          `Navigate to that session to follow execution in real time.`,
-        ].join("\n"),
+        title: `Workflow started: ${workflow.name}`,
+        output: `Workflow "${workflow.name}" started.\nSession: ${session.id}`,
         metadata: { sessionId: session.id, workflowId: params.workflowId },
       }
     },

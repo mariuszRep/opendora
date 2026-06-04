@@ -4,7 +4,7 @@ import { directory } from "../host.ts"
 import {
   parseEntries,
   serializeEntries,
-  findOpendoraDir,
+  findProjectFlowsDir,
   resolveMemoryPath,
   readMemoryFile,
 } from "./lib.ts"
@@ -21,7 +21,7 @@ export const MemoryReadTool = Tool.define("memory_read", {
   description: toolDef.description,
   parameters,
   async execute(params, ctx) {
-    const opendoraDir = await findOpendoraDir(directory(ctx))
+    const opendoraDir = await findProjectFlowsDir(directory(ctx))
     const scope = params.scope ?? "both"
 
     const targets: Array<{ label: string; file: string }> = []

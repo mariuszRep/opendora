@@ -33,24 +33,24 @@ export function serializeEntries(entries: MemoryEntry[]): string {
     .join("\n\n")
 }
 
-export async function findOpendoraDir(startDir: string): Promise<string> {
+export async function findProjectFlowsDir(startDir: string): Promise<string> {
   let dir = startDir
   while (true) {
-    const candidate = path.join(dir, ".opendora")
+    const candidate = path.join(dir, ".projectflows")
     try {
       const stat = await fs.stat(candidate)
       if (stat.isDirectory()) return candidate
     } catch {}
     const parent = path.dirname(dir)
-    if (parent === dir) throw new Error("Could not find .opendora directory — are you inside an OpenDora project?")
+    if (parent === dir) throw new Error("Could not find .projectflows directory — are you inside a ProjectFlows project?")
     dir = parent
   }
 }
 
-export function resolveMemoryPath(opendoraDir: string, scope: "global" | "local", agentId: string): string {
+export function resolveMemoryPath(projectFlowsDir: string, scope: "global" | "local", agentId: string): string {
   return scope === "global"
-    ? path.join(opendoraDir, "agents", "MEMORY.md")
-    : path.join(opendoraDir, "agents", agentId, "MEMORY.md")
+    ? path.join(projectFlowsDir, "agents", "MEMORY.md")
+    : path.join(projectFlowsDir, "agents", agentId, "MEMORY.md")
 }
 
 export async function readMemoryFile(filePath: string): Promise<string> {
