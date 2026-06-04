@@ -94,6 +94,19 @@
         "@types/node": "^20.14.10",
       },
     },
+    "packages/auth": {
+      "name": "@opendora/auth",
+      "version": "1.0.0",
+      "dependencies": {
+        "@opendora/tools": "workspace:*",
+        "@opendora/util": "workspace:*",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/opencode": {
       "name": "@opendora/core",
       "version": "1.2.15",
@@ -136,6 +149,7 @@
         "@opencode-ai/plugin": "1.2.20",
         "@opencode-ai/script": "workspace:*",
         "@opendora/agent": "workspace:*",
+        "@opendora/auth": "workspace:*",
         "@opendora/permission": "workspace:*",
         "@opendora/provider": "workspace:*",
         "@opendora/schedule": "workspace:*",
@@ -254,7 +268,9 @@
         "@aws-sdk/credential-providers": "*",
         "@gitlab/gitlab-ai-provider": "*",
         "@opencode-ai/plugin": "*",
+        "@opendora/auth": "workspace:*",
         "@opendora/core": "workspace:*",
+        "@opendora/tools": "workspace:*",
         "@opendora/util": "workspace:*",
         "@openrouter/ai-sdk-provider": "*",
         "ai": "catalog:",
@@ -354,6 +370,8 @@
       "name": "@opendora/util",
       "version": "1.2.15",
       "dependencies": {
+        "glob": "13.0.5",
+        "minimatch": "10.0.3",
         "zod": "catalog:",
       },
       "devDependencies": {
@@ -1097,6 +1115,8 @@
     "@opendora/agent": ["@opendora/agent@workspace:packages/agent"],
 
     "@opendora/app": ["@opendora/app@workspace:app/web"],
+
+    "@opendora/auth": ["@opendora/auth@workspace:packages/auth"],
 
     "@opendora/core": ["@opendora/core@workspace:packages/opencode"],
 
@@ -3909,6 +3929,8 @@
     "@opendora/app/react": ["react@19.2.3", "", {}, "sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA=="],
 
     "@opendora/app/shadcn": ["shadcn@3.8.5", "", { "dependencies": { "@antfu/ni": "^25.0.0", "@babel/core": "^7.28.0", "@babel/parser": "^7.28.0", "@babel/plugin-transform-typescript": "^7.28.0", "@babel/preset-typescript": "^7.27.1", "@dotenvx/dotenvx": "^1.48.4", "@modelcontextprotocol/sdk": "^1.26.0", "@types/validate-npm-package-name": "^4.0.2", "browserslist": "^4.26.2", "commander": "^14.0.0", "cosmiconfig": "^9.0.0", "dedent": "^1.6.0", "deepmerge": "^4.3.1", "diff": "^8.0.2", "execa": "^9.6.0", "fast-glob": "^3.3.3", "fs-extra": "^11.3.1", "fuzzysort": "^3.1.0", "https-proxy-agent": "^7.0.6", "kleur": "^4.1.5", "msw": "^2.10.4", "node-fetch": "^3.3.2", "open": "^11.0.0", "ora": "^8.2.0", "postcss": "^8.5.6", "postcss-selector-parser": "^7.1.0", "prompts": "^2.4.2", "recast": "^0.23.11", "stringify-object": "^5.0.0", "tailwind-merge": "^3.0.1", "ts-morph": "^26.0.0", "tsconfig-paths": "^4.2.0", "validate-npm-package-name": "^7.0.1", "zod": "^3.24.1", "zod-to-json-schema": "^3.24.6" }, "bin": { "shadcn": "dist/index.js" } }, "sha512-jPRx44e+eyeV7xwY3BLJXcfrks00+M0h5BGB9l6DdcBW4BpAj4x3lVmVy0TXPEs2iHEisxejr62sZAAw6B1EVA=="],
+
+    "@opendora/auth/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 
     "@opendora/core/ai": ["ai@5.0.124", "", { "dependencies": { "@ai-sdk/gateway": "2.0.30", "@ai-sdk/provider": "2.0.1", "@ai-sdk/provider-utils": "3.0.20", "@opentelemetry/api": "1.9.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-Li6Jw9F9qsvFJXZPBfxj38ddP2iURCnMs96f9Q3OeQzrDVcl1hvtwSEAuxA/qmfh6SDV2ERqFUOFzigvr0697g=="],
 

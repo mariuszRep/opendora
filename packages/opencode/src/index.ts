@@ -38,6 +38,10 @@ import path from "path"
 import { Global } from "./global"
 import { JsonMigration } from "./storage/json-migration"
 import { Database } from "./storage/db"
+import { Ripgrep } from "@opendora/tools/filesystem/lib/ripgrep"
+
+// Initialize ripgrep with binary path BEFORE any filesystem tool invocations
+Ripgrep.setBinaryPath(Global.Path.bin)
 
 process.on("unhandledRejection", (e) => {
   Log.Default.error("rejection", {

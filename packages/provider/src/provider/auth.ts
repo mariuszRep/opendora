@@ -2,10 +2,10 @@ import { Instance } from "@opendora/core/project/instance"
 import { Plugin } from "@opendora/core/plugin"
 import { map, filter, pipe, fromEntries, mapValues } from "remeda"
 import z from "zod"
-import { fn } from "@opendora/core/util/fn"
+import { fn } from "@opendora/util/fn"
 import type { AuthOuathResult, Hooks } from "@opencode-ai/plugin"
 import { NamedError } from "@opendora/util/error"
-import { Auth } from "@opendora/core/auth"
+import { Auth } from "@opendora/auth"
 
 export namespace ProviderAuth {
   const state = Instance.state(async () => {

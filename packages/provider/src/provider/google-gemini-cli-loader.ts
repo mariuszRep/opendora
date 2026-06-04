@@ -1,4 +1,4 @@
-import { Auth } from "@opendora/core/auth"
+import { Auth } from "@opendora/auth"
 import { GoogleOAuth } from "./google-oauth"
 
 const CODE_ASSIST_BASE = "https://cloudcode-pa.googleapis.com/v1internal"

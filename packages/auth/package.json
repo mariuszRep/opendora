@@ -1,19 +1,20 @@
 {
-  "name": "@opendora/util",
-  "version": "1.2.15",
+  "name": "@opendora/auth",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "license": "MIT",
-  "exports": {
-    "./*": "./src/*.ts"
-  },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
   "dependencies": {
-    "zod": "catalog:",
-    "glob": "13.0.5",
-    "minimatch": "10.0.3"
+    "@opendora/tools": "workspace:*",
+    "@opendora/util": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "typescript": "catalog:",

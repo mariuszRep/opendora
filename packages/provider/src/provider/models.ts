@@ -1,11 +1,11 @@
-import { Global } from "@opendora/core/global"
-import { Log } from "@opendora/core/util/log"
+import { Global } from "@opendora/util/global"
+import { Log } from "@opendora/util/log"
 import path from "path"
 import z from "zod"
-import { Installation } from "@opendora/core/installation"
-import { Flag } from "@opendora/core/flag/flag"
-import { lazy } from "@opendora/core/util/lazy"
-import { Filesystem } from "@opendora/core/util/filesystem"
+import * as Version from "@opendora/util/version"
+import { Flag } from "@opendora/util/flag"
+import { lazy } from "@opendora/util/lazy"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 
 // Try to import bundled snapshot (generated at build time)
 // Falls back to undefined in dev mode when snapshot doesn't exist
@@ -106,7 +106,7 @@ export namespace ModelsDev {
   export async function refresh() {
     const result = await fetch(`${url()}/api.json`, {
       headers: {
-        "User-Agent": Installation.USER_AGENT,
+        "User-Agent": Version.USER_AGENT,
       },
       signal: AbortSignal.timeout(10 * 1000),
     }).catch((e) => {

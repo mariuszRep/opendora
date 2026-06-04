@@ -4,19 +4,19 @@ import fuzzysort from "fuzzysort"
 import { Config } from "@opendora/core/config/config"
 import { mapValues, mergeDeep, omit, pickBy, sortBy } from "remeda"
 import { NoSuchModelError, type Provider as SDK } from "ai"
-import { Log } from "@opendora/core/util/log"
+import { Log } from "@opendora/util/log"
 import { BunProc } from "@opendora/core/bun"
 import { Plugin } from "@opendora/core/plugin"
 import { ModelsDev } from "./models"
 import { NamedError } from "@opendora/util/error"
-import { Auth } from "@opendora/core/auth"
+import { Auth } from "@opendora/auth"
 import { Env } from "@opendora/core/env"
 import { Instance } from "@opendora/core/project/instance"
-import { Flag } from "@opendora/core/flag/flag"
-import { iife } from "@opendora/core/util/iife"
-import { Global } from "@opendora/core/global"
+import { Flag } from "@opendora/util/flag"
+import { iife } from "@opendora/util/iife"
+import { Global } from "@opendora/util/global"
 import path from "path"
-import { Filesystem } from "@opendora/core/util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 
 // Direct imports for bundled providers
 import { createAmazonBedrock, type AmazonBedrockProviderSettings } from "@ai-sdk/amazon-bedrock"
@@ -43,7 +43,7 @@ import { createGitLab, VERSION as GITLAB_PROVIDER_VERSION } from "@gitlab/gitlab
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers"
 import { GoogleAuth } from "google-auth-library"
 import { ProviderTransform } from "./transform"
-import { Installation } from "@opendora/core/installation"
+import * as Version from "@opendora/util/version"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -499,7 +499,7 @@ export namespace Provider {
       const providerConfig = config.provider?.["gitlab"]
 
       const aiGatewayHeaders = {
-        "User-Agent": `opencode/${Installation.VERSION} gitlab-ai-provider/${GITLAB_PROVIDER_VERSION} (${os.platform()} ${os.release()}; ${os.arch()})`,
+        "User-Agent": `opencode/${Version.VERSION} gitlab-ai-provider/${GITLAB_PROVIDER_VERSION} (${os.platform()} ${os.release()}; ${os.arch()})`,
         ...(providerConfig?.options?.aiGatewayHeaders || {}),
       }
 

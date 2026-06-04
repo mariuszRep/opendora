@@ -85,6 +85,7 @@
     "@opencode-ai/plugin": "1.2.20",
     "@opencode-ai/script": "workspace:*",
     "@opendora/agent": "workspace:*",
+    "@opendora/auth": "workspace:*",
     "@opendora/permission": "workspace:*",
     "@opendora/provider": "workspace:*",
     "@opendora/schedule": "workspace:*",
