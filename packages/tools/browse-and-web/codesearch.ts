@@ -3,7 +3,7 @@ import z from "zod"
 import { Tool } from "../tool.ts"
 import toolDef from "./codesearch.json"
 import { abortAfterAny } from "../lib/abort.ts"
-import { Config } from "@opendora/core/config/config"
+import { get as getConfig } from "@opendora/util/config"
 
 const API_CONFIG = {
   BASE_URL: "https://mcp.exa.ai",
@@ -13,7 +13,7 @@ const API_CONFIG = {
 } as const
 
 async function getExaApiKey(): Promise<string | undefined> {
-  const config = await Config.get()
+  const config = await getConfig()
   const exa = config.tool_config?.exa
   if (exa?.useApiKey && exa?.apiKey) return exa.apiKey
   return undefined

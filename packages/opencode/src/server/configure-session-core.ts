@@ -39,6 +39,8 @@ import { Session } from "@opendora/session/session"
 import { Question } from "@/question"
 import { Schedule } from "@/schedule"
 import { addSkillTools, getSkillTools } from "@/session-skill-tools"
+import { register as registerConfig } from "@opendora/util/config"
+import { register as registerPluginList } from "@opendora/provider/plugin"
 
 async function enrichAgent(agent: any): Promise<any> {
   const allowedAgents: string[] | undefined = agent?.config?.toolConfig?.delegate?.allowedAgents
@@ -67,6 +69,9 @@ async function syncProviderFallbackGroups() {
 export function configureSessionCore() {
   if (configured) return
   configured = true
+
+  registerConfig(() => Config.get())
+  registerPluginList(() => Plugin.list())
 
   configure({
     // Wrap Database.Client() so it's resolved lazily at call time

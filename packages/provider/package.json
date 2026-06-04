@@ -10,8 +10,6 @@
   },
   "dependencies": {
     "@opendora/auth": "workspace:*",
-    "@opendora/core": "workspace:*",
-    "@opendora/tools": "workspace:*",
     "@opendora/util": "workspace:*",
     "@opencode-ai/plugin": "*",
     "@ai-sdk/amazon-bedrock": "*",

@@ -98,7 +98,6 @@
       "name": "@opendora/auth",
       "version": "1.0.0",
       "dependencies": {
-        "@opendora/tools": "workspace:*",
         "@opendora/util": "workspace:*",
         "zod": "catalog:",
       },
@@ -108,7 +107,7 @@
       },
     },
     "packages/opencode": {
-      "name": "@opendora/core",
+      "name": "@opendora/opencode",
       "version": "1.2.15",
       "bin": {
         "opendora": "./bin/opencode",
@@ -269,8 +268,6 @@
         "@gitlab/gitlab-ai-provider": "*",
         "@opencode-ai/plugin": "*",
         "@opendora/auth": "workspace:*",
-        "@opendora/core": "workspace:*",
-        "@opendora/tools": "workspace:*",
         "@opendora/util": "workspace:*",
         "@openrouter/ai-sdk-provider": "*",
         "ai": "catalog:",
@@ -340,7 +337,6 @@
         "@modelcontextprotocol/sdk": "1.29.0",
         "@nut-tree-fork/nut-js": "^4.2.0",
         "@opendora/agent": "workspace:*",
-        "@opendora/core": "workspace:*",
         "@opendora/session": "workspace:*",
         "@opendora/util": "workspace:*",
         "@opendora/workflow": "workspace:*",
@@ -1118,7 +1114,7 @@
 
     "@opendora/auth": ["@opendora/auth@workspace:packages/auth"],
 
-    "@opendora/core": ["@opendora/core@workspace:packages/opencode"],
+    "@opendora/opencode": ["@opendora/opencode@workspace:packages/opencode"],
 
     "@opendora/permission": ["@opendora/permission@workspace:packages/permission"],
 
@@ -3932,9 +3928,9 @@
 
     "@opendora/auth/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 
-    "@opendora/core/ai": ["ai@5.0.124", "", { "dependencies": { "@ai-sdk/gateway": "2.0.30", "@ai-sdk/provider": "2.0.1", "@ai-sdk/provider-utils": "3.0.20", "@opentelemetry/api": "1.9.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-Li6Jw9F9qsvFJXZPBfxj38ddP2iURCnMs96f9Q3OeQzrDVcl1hvtwSEAuxA/qmfh6SDV2ERqFUOFzigvr0697g=="],
+    "@opendora/opencode/ai": ["ai@5.0.124", "", { "dependencies": { "@ai-sdk/gateway": "2.0.30", "@ai-sdk/provider": "2.0.1", "@ai-sdk/provider-utils": "3.0.20", "@opentelemetry/api": "1.9.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-Li6Jw9F9qsvFJXZPBfxj38ddP2iURCnMs96f9Q3OeQzrDVcl1hvtwSEAuxA/qmfh6SDV2ERqFUOFzigvr0697g=="],
 
-    "@opendora/core/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
+    "@opendora/opencode/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 
     "@opendora/permission/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 
@@ -4586,7 +4582,7 @@
 
     "@opendora/app/shadcn/zod-to-json-schema": ["zod-to-json-schema@3.25.1", "", { "peerDependencies": { "zod": "^3.25 || ^4" } }, "sha512-pM/SU9d3YAggzi6MtR4h7ruuQlqKtad8e9S0fmxcMi+ueAK5Korys/aWcV9LIIHTVbj01NdzxcnXSN+O74ZIVA=="],
 
-    "@opendora/core/ai/@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@3.0.20", "", { "dependencies": { "@ai-sdk/provider": "2.0.1", "@standard-schema/spec": "^1.0.0", "eventsource-parser": "^3.0.6" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-iXHVe0apM2zUEzauqJwqmpC37A5rihrStAih5Ks+JE32iTe4LZ58y17UGBjpQQTCRw9YxMeo2UFLxLpBluyvLQ=="],
+    "@opendora/opencode/ai/@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@3.0.20", "", { "dependencies": { "@ai-sdk/provider": "2.0.1", "@standard-schema/spec": "^1.0.0", "eventsource-parser": "^3.0.6" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-iXHVe0apM2zUEzauqJwqmpC37A5rihrStAih5Ks+JE32iTe4LZ58y17UGBjpQQTCRw9YxMeo2UFLxLpBluyvLQ=="],
 
     "@opendora/provider/@ai-sdk/gateway/@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@4.0.27", "", { "dependencies": { "@ai-sdk/provider": "3.0.10", "@standard-schema/spec": "^1.1.0", "eventsource-parser": "^3.0.8" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-ubkAJ+xODouwtmN1tYlvTPphH1hPOBfZaEQe8U7skGvFAnIRs9PPpsq57bC2+Ky/MB4yzhd6YOsxTAx9sGpazw=="],
 

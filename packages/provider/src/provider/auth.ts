@@ -1,5 +1,5 @@
-import { Instance } from "@opendora/core/project/instance"
-import { Plugin } from "@opendora/core/plugin"
+import { state as instanceState } from "@opendora/util/instance"
+import { list as listPlugins } from "./plugin"
 import { map, filter, pipe, fromEntries, mapValues } from "remeda"
 import z from "zod"
 import { fn } from "@opendora/util/fn"
@@ -8,9 +8,9 @@ import { NamedError } from "@opendora/util/error"
 import { Auth } from "@opendora/auth"
 
 export namespace ProviderAuth {
-  const state = Instance.state(async () => {
+  const state = instanceState(async () => {
     const methods = pipe(
-      await Plugin.list(),
+      await listPlugins(),
       filter((x) => x.auth?.provider !== undefined),
       map((x) => [x.auth!.provider, x.auth!] as const),
       fromEntries(),

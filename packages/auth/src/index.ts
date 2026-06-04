@@ -1,7 +1,7 @@
 import path from "path"
 import { Global } from "@opendora/util/global"
 import z from "zod"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import { Filesystem } from "@opendora/util/filesystem"
 
 export const OAUTH_DUMMY_KEY = "opencode-oauth-dummy-key"
 
