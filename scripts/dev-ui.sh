@@ -29,7 +29,7 @@ echo "Waiting for backend on port 4097…"
 until curl -s -o /dev/null http://localhost:4097/health 2>/dev/null; do sleep 0.5; done
 echo "Backend ready."
 
-bun run --cwd app/web dev --hostname 0.0.0.0 </dev/null &
+bun run --cwd apps/web dev --hostname 0.0.0.0 </dev/null &
 pids+=($!)
 
 wait -n "${pids[@]}"
