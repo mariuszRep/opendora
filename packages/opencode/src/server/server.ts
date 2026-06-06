@@ -974,6 +974,7 @@ export namespace Server {
       await SessionPrompt.prompt({
         sessionID,
         schedule_id: schedule.id,
+        noWait: true,
         parts: [{ type: "text", text: schedule.prompt }],
       })
     }
