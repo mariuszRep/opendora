@@ -1,7 +1,12 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 
-const BASE_CMD = ["node", "packages/opencode/node_modules/@playwright/mcp/cli.js"]
+const PLAYWRIGHT_EXECUTABLE_PATH = "/home/mariusz/.cache/ms-playwright/chromium-1223/chrome-linux64/chrome"
+const BASE_CMD = [
+  "node",
+  "packages/opencode/node_modules/@playwright/mcp/cli.js",
+  `--executable-path=${PLAYWRIGHT_EXECUTABLE_PATH}`,
+]
 
 function apiBase() {
   return process.env.OPENCODE_URL ?? "http://localhost:4097"
