@@ -1,13 +1,13 @@
 # AGENTS.md
 
-Local instructions for `packages/ai-sdk`.
+Local instructions for `apps/web`.
 Read the root file set first, then this package's local file set.
 
 ## Rules
 
 - Keep this package focused on the Next.js web app.
 - Preserve the existing app structure and dependency choices unless the task requires a broader UI refactor.
-- Treat API coupling with `packages/opencode` and `packages/sdk/js` as integration boundaries, not places to duplicate business logic.
+- Treat API coupling with `packages/sdk` as an integration boundary, not a place to duplicate business logic.
 
 ## Editing guidance
 

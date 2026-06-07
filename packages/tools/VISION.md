@@ -14,7 +14,9 @@ Every tool in this package is described by a `tool.json` file that is fully comp
 
 ## Package Boundary
 
-`packages/tools` owns tool definitions, schemas, registries, execution adapters, and tool-facing permission surfaces. It is used by `runtime` to execute tool calls and may use `storage` when tool definitions or tool state must be persisted. It does not own the public API server, agent run loop, workflow semantics, or physical storage backend choice.
+`packages/tools` owns tool definitions, schemas, registries, execution adapters, and tool-facing permission surfaces. It is used by `runtime` to execute tool calls and may use `storage` when tool definitions or tool state must be persisted. It does not own the public API server, agent run loop, workflow semantics, permission lifecycle/evaluation, or physical storage backend choice.
+
+Tools may be made available through agent attachments, skill attachments, runtime/session context, or workflow step requirements. Tool availability is not authorization: runtime/server must ask `permission` before protected tool execution.
 
 ## Access Surface Boundary
 

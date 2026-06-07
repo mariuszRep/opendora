@@ -25,27 +25,28 @@ apps
         -> schedule
         -> session
 
-agent     -> storage
-skills    -> storage
-provider  -> storage
-tools     -> storage
-workflow  -> storage
-schedule  -> storage
-session   -> storage
+agent      -> storage
+auth       -> storage
+permission -> storage
+provider   -> storage
+skills     -> storage
+tools      -> storage
+workflow   -> storage
+schedule   -> storage
+session    -> storage
 ```
 
 ## Boundary rules
 
 - Apps use the SDK; apps do not depend on backend internals.
-- SDK talks to the server API; SDK owns no backend business behavior.
-- Server is the public API boundary and coordinates auth, permission, and runtime.
+- SDK talks to the server API only; SDK owns no backend business behavior and does not read storage directly.
+- Server is the API/service boundary: it keeps OpenDora reachable, validates requests, applies auth/permission, exposes SDK-facing routes/streams, and coordinates package-owned operations.
 - Auth identifies the caller.
 - Permission decides what the caller may do across domains.
-- Runtime orchestrates execution across agents, skills, providers, tools, workflows, schedules, and sessions.
-- Session is the universal run-capture format for agent runs, workflow runs, schedule-triggered runs, and other executable work.
-- Domain packages own their domain behavior and use storage through stable persistence contracts.
-- Storage decides physical persistence: JSON, SQLite, Postgres, or another backend.
-
+- Runtime is the execution engine: it keeps executable work alive and orchestrates agent runs, skills, providers, tools, workflows, schedules, sessions, streaming, cancellation, retries, and run lifecycle.
+- Session is the universal execution ledger and run-capture format for agent runs, workflow runs, schedule-triggered runs, and other executable work.
+- Domain packages own their domain behavior and expose canonical operations for their entities.
+- Storage is the only persistence boundary. Packages that need durable data use storage contracts instead of choosing JSON, SQLite, Postgres, files, or another backend directly.
 
 ## Canonical Operations
 
