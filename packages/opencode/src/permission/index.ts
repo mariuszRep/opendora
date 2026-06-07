@@ -5,7 +5,7 @@ import { Log } from "../util/log"
 import { Identifier } from "../id/id"
 import { Plugin } from "../plugin"
 import { Instance } from "../project/instance"
-import { Wildcard } from "../util/wildcard"
+import { Wildcard } from "@opendora/permission"
 
 export namespace Permission {
   const log = Log.create({ service: "permission" })

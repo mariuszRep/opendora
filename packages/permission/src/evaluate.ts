@@ -1,5 +1,6 @@
 import os from "os"
 import type { Permission } from "./types.js"
+import { Wildcard } from "./pattern.js"
 
 export function expand(pattern: string): string {
   if (pattern.startsWith("~/")) return os.homedir() + pattern.slice(1)
@@ -9,17 +10,7 @@ export function expand(pattern: string): string {
   return pattern
 }
 
-export function wildcardMatch(str: string, pattern: string): boolean {
-  if (str) str = str.replaceAll("\\", "/")
-  if (pattern) pattern = pattern.replaceAll("\\", "/")
-  let escaped = pattern
-    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-    .replace(/\*/g, ".*")
-    .replace(/\?/g, ".")
-  if (escaped.endsWith(" .*")) escaped = escaped.slice(0, -3) + "( .*)?"
-  const flags = process.platform === "win32" ? "si" : "s"
-  return new RegExp("^" + escaped + "$", flags).test(str)
-}
+export const wildcardMatch = Wildcard.match
 
 /** Find the last matching static rule for a resource/access/pattern triple. */
 export function evaluateStatic(

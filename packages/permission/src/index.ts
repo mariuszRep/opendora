@@ -1,4 +1,5 @@
 export { Permission } from "./types.js"
+export { Wildcard } from "./pattern.js"
 export { createStore } from "./store.js"
 export type { PermissionStore, AskInput, ReplyInput } from "./store.js"
 export { createRouter } from "./router.js"
