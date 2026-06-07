@@ -4,8 +4,8 @@ import type { JSONSchema7 } from "@ai-sdk/provider"
 import type { JSONSchema } from "zod/v4/core"
 import type { Provider } from "./provider"
 import type { ModelsDev } from "./models"
-import { iife } from "@opendora/core/util/iife"
-import { Flag } from "@opendora/core/flag/flag"
+import { iife } from "@opendora/util/iife"
+import { Flag } from "@opendora/util/flag"
 
 type Modality = NonNullable<ModelsDev.Model["modalities"]>["input"][number]
 

@@ -317,8 +317,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   // Only role sessions can be main, and only one should show star
                   const isMain = session.sessionType === "role"
                   const hasPendingQuestion = (allQuestionRequests[session.id]?.length ?? 0) > 0
-                  // Session is "working" only when actively processing — not when paused waiting for question input
-                  const isWorking = activeSessions.has(session.id) && !hasPendingQuestion
+                  // isRunning: session has an active LLM loop (includes pending-question state)
+                  // isWorking: running but not paused on a question (drives spinner and tooltip)
+                  const isRunning = activeSessions.has(session.id)
+                  const isWorking = isRunning && !hasPendingQuestion
                   return (
                     <SidebarMenuItem
                       key={session.id}
@@ -374,15 +376,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       {/* Bell — slot 0, shown when session is waiting for user input */}
                       <SidebarMenuAction
                         className="group-data-[collapsible=icon]:hidden transition-opacity"
-                        style={{ opacity: hasPendingQuestion && !isWorking ? 1 : 0, right: actionRight(0), pointerEvents: 'none' }}
+                        style={{ opacity: hasPendingQuestion ? 1 : 0, right: actionRight(0), pointerEvents: 'none' }}
                         title="Waiting for your answer"
                       >
                         <BellIcon className="size-3.5 text-amber-400" />
                         <span className="sr-only">Waiting for answer in {formatSessionTitle(session)}</span>
                       </SidebarMenuAction>
 
-                      {/* Stop — slot 0, only shown on hover when session is working */}
-                      {isWorking && (
+                      {/* Stop — slot 0, shown on hover for any active session (including pending-question) */}
+                      {isRunning && (
                         <SidebarMenuAction
                           data-hover-reveal="true"
                           className="group-data-[collapsible=icon]:hidden transition-all"

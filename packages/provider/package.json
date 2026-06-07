@@ -9,7 +9,7 @@
     "./*": "./src/provider/*.ts"
   },
   "dependencies": {
-    "@opendora/core": "workspace:*",
+    "@opendora/auth": "workspace:*",
     "@opendora/util": "workspace:*",
     "@opencode-ai/plugin": "*",
     "@ai-sdk/amazon-bedrock": "*",

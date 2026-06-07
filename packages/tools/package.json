@@ -45,7 +45,6 @@
     "@modelcontextprotocol/sdk": "1.29.0",
     "@nut-tree-fork/nut-js": "^4.2.0",
     "@opendora/agent": "workspace:*",
-    "@opendora/core": "workspace:*",
     "@opendora/session": "workspace:*",
     "@opendora/util": "workspace:*",
     "@opendora/workflow": "workspace:*",

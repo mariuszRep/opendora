@@ -20,6 +20,7 @@
   "workspaces": {
     "packages": [
       "packages/agent",
+      "packages/auth",
       "packages/permission",
       "packages/script",
       "packages/tools",
@@ -27,7 +28,7 @@
       "packages/provider",
       "packages/sdk/js",
       "packages/util",
-      "app/*",
+      "apps/*",
       "packages/session",
       "packages/schedule",
       "packages/workflow"

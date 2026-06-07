@@ -2,10 +2,26 @@ export function lazy<T>(fn: () => T) {
   let value: T | undefined
   let loaded = false
 
-  return (): T => {
+  const result = (): T => {
     if (loaded) return value as T
-    loaded = true
-    value = fn()
-    return value as T
+    try {
+      value = fn()
+      loaded = true
+      return value as T
+    } catch (e) {
+      throw e
+    }
   }
+
+  result.reset = () => {
+    loaded = false
+    value = undefined
+  }
+
+  result.set = (v: T) => {
+    value = v
+    loaded = true
+  }
+
+  return result
 }

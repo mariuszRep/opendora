@@ -1,22 +1,21 @@
 import z from "zod"
 import os from "os"
 import fuzzysort from "fuzzysort"
-import { Config } from "@opendora/core/config/config"
+import { get as getConfig } from "@opendora/util/config"
 import { mapValues, mergeDeep, omit, pickBy, sortBy } from "remeda"
 import { NoSuchModelError, type Provider as SDK } from "ai"
-import { Log } from "@opendora/core/util/log"
-import { BunProc } from "@opendora/core/bun"
-import { Plugin } from "@opendora/core/plugin"
+import { Log } from "@opendora/util/log"
+import { BunProc } from "@opendora/util/bun"
+import { list as listPlugins } from "./plugin"
 import { ModelsDev } from "./models"
 import { NamedError } from "@opendora/util/error"
-import { Auth } from "@opendora/core/auth"
-import { Env } from "@opendora/core/env"
-import { Instance } from "@opendora/core/project/instance"
-import { Flag } from "@opendora/core/flag/flag"
-import { iife } from "@opendora/core/util/iife"
-import { Global } from "@opendora/core/global"
+import { Auth } from "@opendora/auth"
+import { state as instanceState } from "@opendora/util/instance"
+import { Flag } from "@opendora/util/flag"
+import { iife } from "@opendora/util/iife"
+import { Global } from "@opendora/util/global"
 import path from "path"
-import { Filesystem } from "@opendora/core/util/filesystem"
+import { Filesystem } from "@opendora/util/filesystem"
 
 // Direct imports for bundled providers
 import { createAmazonBedrock, type AmazonBedrockProviderSettings } from "@ai-sdk/amazon-bedrock"
@@ -43,7 +42,7 @@ import { createGitLab, VERSION as GITLAB_PROVIDER_VERSION } from "@gitlab/gitlab
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers"
 import { GoogleAuth } from "google-auth-library"
 import { ProviderTransform } from "./transform"
-import { Installation } from "@opendora/core/installation"
+import * as Version from "@opendora/util/version"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -62,9 +61,9 @@ export namespace Provider {
 
   function googleVertexVars(options: Record<string, any>) {
     const project =
-      options["project"] ?? Env.get("GOOGLE_CLOUD_PROJECT") ?? Env.get("GCP_PROJECT") ?? Env.get("GCLOUD_PROJECT")
+      options["project"] ?? process.env["GOOGLE_CLOUD_PROJECT"] ?? process.env["GCP_PROJECT"] ?? process.env["GCLOUD_PROJECT"]
     const location =
-      options["location"] ?? Env.get("GOOGLE_CLOUD_LOCATION") ?? Env.get("VERTEX_LOCATION") ?? "us-central1"
+      options["location"] ?? process.env["GOOGLE_CLOUD_LOCATION"] ?? process.env["VERTEX_LOCATION"] ?? "us-central1"
     const endpoint = location === "global" ? "aiplatform.googleapis.com" : `${location}-aiplatform.googleapis.com`
 
     return {
@@ -79,7 +78,7 @@ export namespace Provider {
     if (typeof raw !== "string") return raw
     const vars = model.providerID === "google-vertex" ? googleVertexVars(options) : undefined
     return raw.replace(/\$\{([^}]+)\}/g, (match, key) => {
-      const val = Env.get(String(key)) ?? vars?.[String(key) as keyof typeof vars]
+      const val = process.env[String(key)] ?? vars?.[String(key) as keyof typeof vars]
       return val ?? match
     })
   }
@@ -118,9 +117,9 @@ export namespace Provider {
 
   async function loadOpencodeProvider(input: Info) {
     const auth = await Auth.get(input.id)
-    const env = Env.all()
+    const env = { ...process.env }
     const envKey = input.env.map((item) => env[item]).find(Boolean)
-    const config = await Config.get()
+    const config = await getConfig()
     const configKey = config.provider?.[input.id]?.options?.apiKey
 
     const hasKey = !!(envKey || auth || configKey)
@@ -214,7 +213,7 @@ export namespace Provider {
       }
     },
     "azure-cognitive-services": async () => {
-      const resourceName = Env.get("AZURE_COGNITIVE_SERVICES_RESOURCE_NAME")
+      const resourceName = process.env["AZURE_COGNITIVE_SERVICES_RESOURCE_NAME"]
       return {
         autoload: false,
         async getModel(sdk: any, modelID: string, options?: Record<string, any>) {
@@ -230,22 +229,22 @@ export namespace Provider {
       }
     },
     "amazon-bedrock": async () => {
-      const config = await Config.get()
+      const config = await getConfig()
       const providerConfig = config.provider?.["amazon-bedrock"]
 
       const auth = await Auth.get("amazon-bedrock")
 
       // Region precedence: 1) config file, 2) env var, 3) default
       const configRegion = providerConfig?.options?.region
-      const envRegion = Env.get("AWS_REGION")
+      const envRegion = process.env["AWS_REGION"]
       const defaultRegion = configRegion ?? envRegion ?? "us-east-1"
 
       // Profile: config file takes precedence over env var
       const configProfile = providerConfig?.options?.profile
-      const envProfile = Env.get("AWS_PROFILE")
+      const envProfile = process.env["AWS_PROFILE"]
       const profile = configProfile ?? envProfile
 
-      const awsAccessKeyId = Env.get("AWS_ACCESS_KEY_ID")
+      const awsAccessKeyId = process.env["AWS_ACCESS_KEY_ID"]
 
       // TODO: Using process.env directly because Env.set only updates a process.env shallow copy,
       // until the scope of the Env API is clarified (test only or runtime?)
@@ -259,7 +258,7 @@ export namespace Provider {
         return undefined
       })
 
-      const awsWebIdentityTokenFile = Env.get("AWS_WEB_IDENTITY_TOKEN_FILE")
+      const awsWebIdentityTokenFile = process.env["AWS_WEB_IDENTITY_TOKEN_FILE"]
 
       const containerCreds = Boolean(
         process.env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI || process.env.AWS_CONTAINER_CREDENTIALS_FULL_URI,
@@ -402,12 +401,12 @@ export namespace Provider {
     "google-vertex": async (provider) => {
       const project =
         provider.options?.project ??
-        Env.get("GOOGLE_CLOUD_PROJECT") ??
-        Env.get("GCP_PROJECT") ??
-        Env.get("GCLOUD_PROJECT")
+        process.env["GOOGLE_CLOUD_PROJECT"] ??
+        process.env["GCP_PROJECT"] ??
+        process.env["GCLOUD_PROJECT"]
 
       const location =
-        provider.options?.location ?? Env.get("GOOGLE_CLOUD_LOCATION") ?? Env.get("VERTEX_LOCATION") ?? "us-central1"
+        provider.options?.location ?? process.env["GOOGLE_CLOUD_LOCATION"] ?? process.env["VERTEX_LOCATION"] ?? "us-central1"
 
       const autoload = Boolean(project)
       if (!autoload) return { autoload: false }
@@ -434,8 +433,8 @@ export namespace Provider {
       }
     },
     "google-vertex-anthropic": async () => {
-      const project = Env.get("GOOGLE_CLOUD_PROJECT") ?? Env.get("GCP_PROJECT") ?? Env.get("GCLOUD_PROJECT")
-      const location = Env.get("GOOGLE_CLOUD_LOCATION") ?? Env.get("VERTEX_LOCATION") ?? "global"
+      const project = process.env["GOOGLE_CLOUD_PROJECT"] ?? process.env["GCP_PROJECT"] ?? process.env["GCLOUD_PROJECT"]
+      const location = process.env["GOOGLE_CLOUD_LOCATION"] ?? process.env["VERTEX_LOCATION"] ?? "global"
       const autoload = Boolean(project)
       if (!autoload) return { autoload: false }
       return {
@@ -486,20 +485,20 @@ export namespace Provider {
       }
     },
     gitlab: async (input) => {
-      const instanceUrl = Env.get("GITLAB_INSTANCE_URL") || "https://gitlab.com"
+      const instanceUrl = process.env["GITLAB_INSTANCE_URL"] || "https://gitlab.com"
 
       const auth = await Auth.get(input.id)
       const apiKey = await (async () => {
         if (auth?.type === "oauth") return auth.access
         if (auth?.type === "api") return auth.key
-        return Env.get("GITLAB_TOKEN")
+        return process.env["GITLAB_TOKEN"]
       })()
 
-      const config = await Config.get()
+      const config = await getConfig()
       const providerConfig = config.provider?.["gitlab"]
 
       const aiGatewayHeaders = {
-        "User-Agent": `opencode/${Installation.VERSION} gitlab-ai-provider/${GITLAB_PROVIDER_VERSION} (${os.platform()} ${os.release()}; ${os.arch()})`,
+        "User-Agent": `opencode/${Version.VERSION} gitlab-ai-provider/${GITLAB_PROVIDER_VERSION} (${os.platform()} ${os.release()}; ${os.arch()})`,
         ...(providerConfig?.options?.aiGatewayHeaders || {}),
       }
 
@@ -528,11 +527,11 @@ export namespace Provider {
       }
     },
     "cloudflare-workers-ai": async (input) => {
-      const accountId = Env.get("CLOUDFLARE_ACCOUNT_ID")
+      const accountId = process.env["CLOUDFLARE_ACCOUNT_ID"]
       if (!accountId) return { autoload: false }
 
       const apiKey = await iife(async () => {
-        const envToken = Env.get("CLOUDFLARE_API_KEY")
+        const envToken = process.env["CLOUDFLARE_API_KEY"]
         if (envToken) return envToken
         const auth = await Auth.get(input.id)
         if (auth?.type === "api") return auth.key
@@ -551,14 +550,14 @@ export namespace Provider {
       }
     },
     "cloudflare-ai-gateway": async (input) => {
-      const accountId = Env.get("CLOUDFLARE_ACCOUNT_ID")
-      const gateway = Env.get("CLOUDFLARE_GATEWAY_ID")
+      const accountId = process.env["CLOUDFLARE_ACCOUNT_ID"]
+      const gateway = process.env["CLOUDFLARE_GATEWAY_ID"]
 
       if (!accountId || !gateway) return { autoload: false }
 
       // Get API token from env or auth - required for authenticated gateways
       const apiToken = await (async () => {
-        const envToken = Env.get("CLOUDFLARE_API_TOKEN") || Env.get("CF_AIG_TOKEN")
+        const envToken = process.env["CLOUDFLARE_API_TOKEN"] || process.env["CF_AIG_TOKEN"]
         if (envToken) return envToken
         const auth = await Auth.get(input.id)
         if (auth?.type === "api") return auth.key
@@ -779,9 +778,9 @@ export namespace Provider {
     }
   }
 
-  const state = Instance.state(async () => {
+  const state = instanceState(async () => {
     using _ = log.time("state")
-    const config = await Config.get()
+    const config = await getConfig()
     const modelsDev = await ModelsDev.get()
     const database = mapValues(modelsDev, fromModelsDevProvider)
     if (!database["google-gemini-cli"]) {
@@ -955,7 +954,7 @@ export namespace Provider {
     }
 
     // load env
-    const env = Env.all()
+    const env = { ...process.env }
     for (const [providerID, provider] of Object.entries(database)) {
       if (disabled.has(providerID)) continue
       const apiKey = provider.env.map((item) => env[item]).find(Boolean)
@@ -977,7 +976,7 @@ export namespace Provider {
       }
     }
 
-    for (const plugin of await Plugin.list()) {
+    for (const plugin of await listPlugins()) {
       if (!plugin.auth) continue
       const providerID = plugin.auth.provider
       if (disabled.has(providerID)) continue
@@ -1310,7 +1309,7 @@ export namespace Provider {
   }
 
   export async function getSmallModel(providerID: string) {
-    const cfg = await Config.get()
+    const cfg = await getConfig()
 
     if (cfg.small_model) {
       const parsed = parseModel(cfg.small_model)
@@ -1386,7 +1385,7 @@ export namespace Provider {
   }
 
   export async function defaultModel() {
-    const cfg = await Config.get()
+    const cfg = await getConfig()
     if (cfg.model) return parseModel(cfg.model)
 
     const providers = await list()

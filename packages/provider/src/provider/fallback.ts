@@ -8,7 +8,7 @@
 
 import { readFile, writeFile, mkdir } from "fs/promises"
 import { join, dirname } from "path"
-import { Global } from "@opendora/core/global"
+import { Global } from "@opendora/util/global"
 import { ProviderError } from "./error"
 import { ProviderTimeout } from "./timeout"
 

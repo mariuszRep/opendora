@@ -1,6 +1,6 @@
 import { APICallError } from "ai"
 import { STATUS_CODES } from "http"
-import { iife } from "@opendora/core/util/iife"
+import { iife } from "@opendora/util/iife"
 
 export namespace ProviderError {
   /**
