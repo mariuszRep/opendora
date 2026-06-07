@@ -29,6 +29,7 @@
     "./llm":                    "./src/llm.ts",
     "./session":                "./src/session.ts",
     "./prompt":                 "./src/prompt.ts",
+    "./skill-tools":            "./src/skill-tools.ts",
     "./import":                 "./src/import/index.ts",
     "./token-usage-sql":        "./src/token-usage.sql.ts",
     "./token-usage":            "./src/token-usage.ts",

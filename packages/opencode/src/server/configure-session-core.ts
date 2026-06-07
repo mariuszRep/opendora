@@ -38,7 +38,7 @@ import { SessionPrompt } from "@opendora/session/prompt"
 import { Session } from "@opendora/session/session"
 import { Question } from "@/question"
 import { Schedule } from "@/schedule"
-import { addSkillTools, getSkillTools } from "@/session-skill-tools"
+import { addSkillTools, getSkillTools } from "@opendora/session/skill-tools"
 import { register as registerConfig } from "@opendora/util/config"
 import { register as registerPluginList } from "@opendora/provider/plugin"
 
