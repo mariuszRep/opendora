@@ -1,1 +1,1 @@
-export { Wildcard } from "@opendora/permission"
+export * from "@opendora/util/wildcard"
