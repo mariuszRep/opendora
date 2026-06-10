@@ -1,7 +1,7 @@
 import z from "zod"
 import { Filesystem } from "../util/filesystem"
 import path from "path"
-import { Database, eq } from "../storage/db"
+import { Database, eq } from "@opendora/storage/db"
 import { ProjectTable } from "./project.sql"
 import { SessionTable } from "@opendora/session/sql"
 import { Log } from "../util/log"

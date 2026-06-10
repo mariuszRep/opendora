@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { Database } from "../../storage/db"
+import { Database } from "@opendora/storage/db"
 import { ScheduleTable } from "@opendora/schedule/sql"
 import type { ScheduleDispatchFn } from "@opendora/schedule/cron-scheduler"
 import { eq } from "drizzle-orm"

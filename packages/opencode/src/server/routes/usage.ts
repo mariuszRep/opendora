@@ -1,5 +1,5 @@
 import { Hono } from "hono"
-import { Database } from "../../storage/db"
+import { Database } from "@opendora/storage/db"
 import { TokenUsageTable } from "@opendora/session/token-usage-sql"
 import { gte } from "drizzle-orm"
 

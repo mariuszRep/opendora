@@ -37,7 +37,7 @@ import { StatusCommand } from "./cli/cmd/status"
 import path from "path"
 import { Global } from "./global"
 import { JsonMigration } from "./storage/json-migration"
-import { Database } from "./storage/db"
+import { Database } from "@opendora/storage/db"
 import { Ripgrep } from "@opendora/tools/filesystem/lib/ripgrep"
 
 // Initialize ripgrep with binary path BEFORE any filesystem tool invocations
