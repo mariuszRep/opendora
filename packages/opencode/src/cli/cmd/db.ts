@@ -4,7 +4,7 @@ import { Database } from "@opendora/storage/db"
 import { Database as BunDatabase } from "bun:sqlite"
 import { UI } from "../ui"
 import { cmd } from "./cmd"
-import { JsonMigration } from "../../storage/json-migration"
+import { JsonMigration } from "@opendora/storage/json-migration"
 import { EOL } from "os"
 
 const QueryCommand = cmd({
