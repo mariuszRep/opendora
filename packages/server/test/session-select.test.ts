@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
-import { Session } from "../../src/session"
-import { Log } from "../../src/util/log"
-import { Instance } from "../../src/project/instance"
-import { Server } from "../../src/server/server"
+import { Session } from "@opendora/session/session"
+import { Log } from "@opendora/util/log"
+import { Instance } from "@opendora/opencode/project/instance"
+import { Server } from "@opendora/server/server"
+import { configureSessionCore } from "@opendora/server/configure-session-core"
 
 const projectRoot = path.join(__dirname, "../..")
 Log.init({ print: false })
@@ -14,6 +15,7 @@ describe("tui.selectSession endpoint", () => {
       directory: projectRoot,
       fn: async () => {
         // #given
+        configureSessionCore()
         const session = await Session.create({})
 
         // #when
@@ -39,6 +41,7 @@ describe("tui.selectSession endpoint", () => {
       directory: projectRoot,
       fn: async () => {
         // #given
+        configureSessionCore()
         const nonExistentSessionID = "ses_nonexistent123"
 
         // #when
@@ -60,6 +63,7 @@ describe("tui.selectSession endpoint", () => {
       directory: projectRoot,
       fn: async () => {
         // #given
+        configureSessionCore()
         const invalidSessionID = "invalid_session_id"
 
         // #when

@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
-import { Instance } from "../../src/project/instance"
-import { Log } from "../../src/util/log"
-import { Server } from "../../src/server/server"
-import { configureSessionCore } from "../../src/session"
+import { Instance } from "@opendora/opencode/project/instance"
+import { Log } from "@opendora/util/log"
+import { Server } from "@opendora/server/server"
+import { configureSessionCore } from "@opendora/server/configure-session-core"
 
 const projectRoot = path.join(__dirname, "../..")
 Log.init({ print: false })

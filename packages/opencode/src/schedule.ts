@@ -2,7 +2,7 @@
  * Schedule service — CRUD operations on the ScheduleTable.
  * Wraps raw DB access so tools and routes can share the same logic.
  */
-import { Database } from "@/storage/db"
+import { Database } from "@opendora/storage/db"
 import { ScheduleTable } from "@opendora/schedule/sql"
 import type { ScheduleDispatchFn } from "@opendora/schedule/cron-scheduler"
 import { eq } from "drizzle-orm"
