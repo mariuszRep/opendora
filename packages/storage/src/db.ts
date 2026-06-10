@@ -106,7 +106,7 @@ export namespace Database {
     const entries =
       typeof OPENCODE_MIGRATIONS !== "undefined"
         ? OPENCODE_MIGRATIONS
-        : migrations(path.join(import.meta.dirname, "../../migration"))
+        : migrations(path.join(import.meta.dirname, "../migration"))
     if (entries.length > 0) {
       log.info("applying migrations", {
         count: entries.length,
