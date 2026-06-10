@@ -31,7 +31,8 @@
       "apps/*",
       "packages/session",
       "packages/schedule",
-      "packages/workflow"
+      "packages/workflow",
+      "packages/storage"
     ],
     "catalog": {
       "@types/bun": "1.3.9",

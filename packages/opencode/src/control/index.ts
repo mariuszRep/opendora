@@ -1,5 +1,5 @@
 import { eq, and } from "drizzle-orm"
-import { Database } from "@/storage/db"
+import { Database } from "@opendora/storage/db"
 import { ControlAccountTable } from "./control.sql"
 import z from "zod"
 

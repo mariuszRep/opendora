@@ -5,11 +5,11 @@ import { migrate } from "drizzle-orm/bun-sqlite/migrator"
 import path from "path"
 import fs from "fs/promises"
 import { readFileSync, readdirSync } from "fs"
-import { JsonMigration } from "../../src/storage/json-migration"
-import { Global } from "../../src/global"
-import { ProjectTable } from "../../src/project/project.sql"
-import { SessionTable, MessageTable, PartTable, TodoTable } from "../../src/session/session.sql"
-import { SessionShareTable } from "../../src/share/share.sql"
+import { JsonMigration } from "../src/json-migration"
+import { Global } from "@opendora/util/global"
+import { ProjectTable } from "../src/project.sql"
+import { SessionTable, MessageTable, PartTable, TodoTable } from "@opendora/session/sql"
+import { SessionShareTable } from "../src/share.sql"
 
 // Test fixtures
 const fixtures = {
@@ -77,7 +77,7 @@ function createTestDb() {
   sqlite.exec("PRAGMA foreign_keys = ON")
 
   // Apply schema migrations using drizzle migrate
-  const dir = path.join(import.meta.dirname, "../../migration")
+  const dir = path.join(import.meta.dirname, "../migration")
   const entries = readdirSync(dir, { withFileTypes: true })
   const migrations = entries
     .filter((entry) => entry.isDirectory())

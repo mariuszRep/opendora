@@ -19,7 +19,7 @@ import {
   type AskInput,
   type PermissionStore,
 } from "@opendora/permission"
-import { Database, eq, and } from "@/storage/db"
+import { Database, eq, and } from "@opendora/storage/db"
 import { PermissionRuleTable } from "@/storage/permission.sql"
 import { Bus } from "@/bus"
 import { BusEvent } from "@/bus/bus-event"

@@ -9,8 +9,7 @@
     "typecheck": "tsgo --noEmit",
     "test": "bun test --timeout 30000",
     "build": "bun run script/build.ts",
-    "dev": "bun run --conditions=browser ./src/index.ts",
-    "db": "bun drizzle-kit"
+    "dev": "bun run --conditions=browser ./src/index.ts"
   },
   "bin": {
     "opendora": "./bin/opencode"
@@ -42,7 +41,6 @@
     "@types/turndown": "5.0.5",
     "@types/yargs": "17.0.33",
     "@typescript/native-preview": "catalog:",
-    "drizzle-kit": "1.0.0-beta.12-a5629fb",
     "drizzle-orm": "1.0.0-beta.12-a5629fb",
     "typescript": "catalog:",
     "vscode-languageserver-types": "3.17.5",
@@ -93,6 +91,7 @@
     "@opendora/session": "workspace:*",
     "@opendora/tools": "workspace:*",
     "@opendora/util": "workspace:*",
+    "@opendora/storage": "workspace:*",
     "@opendora/workflow": "workspace:*",
     "@openrouter/ai-sdk-provider": "1.5.4",
     "@opentui/core": "0.1.81",
@@ -141,7 +140,5 @@
     "zod": "catalog:",
     "zod-to-json-schema": "3.24.5"
   },
-  "overrides": {
-    "drizzle-orm": "1.0.0-beta.12-a5629fb"
-  }
+  "overrides": {}
 }

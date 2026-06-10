@@ -3,7 +3,7 @@
  * Call once at startup, after the Database is initialized.
  */
 import { configure } from "@opendora/session"
-import { Database } from "@/storage/db"
+import { Database } from "@opendora/storage/db"
 import { Global } from "@/global"
 import { Bus } from "@/bus"
 import { BusEvent } from "@/bus/bus-event"
