@@ -21,17 +21,18 @@ export namespace Schedule {
     if (!schedule) throw new Error(`Schedule '${id}' not found`)
     await _dispatch(schedule as any)
   }
+
   export interface ScheduleRow {
     id: string
     project_id: string | null
     session_id: string | null
     agent_id: string | null
-    prompt: string
+    description: string | null
+    workflow_id: string
+    workflow_input: string | null
     cron_expression: string
     timezone: string | null
     is_active: boolean | null
-    action_type: "message" | "tool"
-    tool_name: string | null
     time_created: number
     time_updated: number
     last_executed: number | null
@@ -40,13 +41,13 @@ export namespace Schedule {
   }
 
   export interface CreateInput {
-    prompt: string
+    workflow_id: string
+    workflow_input?: Record<string, unknown>
+    description?: string
     cron_expression: string
     agent_id?: string
     session_id?: string
     timezone?: string
-    action_type?: "message" | "tool"
-    tool_name?: string
     color?: string
     name?: string
   }
@@ -54,13 +55,13 @@ export namespace Schedule {
   export interface UpdateInput {
     is_active?: boolean
     cron_expression?: string
-    prompt?: string
+    description?: string
     timezone?: string
-    action_type?: "message" | "tool"
-    tool_name?: string
+    workflow_id?: string
+    workflow_input?: Record<string, unknown> | null
     agent_id?: string | null
     session_id?: string | null
-    color?: string
+    color?: string | null
     name?: string | null
   }
 
@@ -79,22 +80,22 @@ export namespace Schedule {
   export function create(input: CreateInput): ScheduleRow {
     const row = {
       id: ulid(),
-      prompt: input.prompt,
+      description: input.description ?? null,
+      workflow_id: input.workflow_id,
+      workflow_input: input.workflow_input ? JSON.stringify(input.workflow_input) : null,
       cron_expression: input.cron_expression,
       agent_id: input.agent_id ?? null,
       session_id: input.session_id ?? null,
       project_id: null,
       is_active: true,
       timezone: input.timezone ?? getGlobalTimezone(),
-      action_type: (input.action_type ?? "message") as "message" | "tool",
-      tool_name: input.tool_name ?? null,
       color: input.color ?? null,
       name: input.name ?? null,
       time_created: Date.now(),
       time_updated: Date.now(),
       last_executed: null,
     }
-    Database.Client().insert(ScheduleTable).values(row).run()
+    Database.Client().insert(ScheduleTable).values(row as any).run()
     return row as ScheduleRow
   }
 
@@ -102,10 +103,14 @@ export namespace Schedule {
     const setBlock: any = { time_updated: Date.now() }
     if (patch.is_active !== undefined) setBlock.is_active = patch.is_active
     if (patch.cron_expression !== undefined) setBlock.cron_expression = patch.cron_expression
-    if (patch.prompt !== undefined) setBlock.prompt = patch.prompt
+    if (patch.description !== undefined) setBlock.description = patch.description ?? null
     if (patch.timezone !== undefined) setBlock.timezone = patch.timezone
-    if (patch.action_type !== undefined) setBlock.action_type = patch.action_type
-    if (patch.tool_name !== undefined) setBlock.tool_name = patch.tool_name || null
+    if (patch.workflow_id !== undefined) setBlock.workflow_id = patch.workflow_id
+    if ("workflow_input" in patch) {
+      setBlock.workflow_input = patch.workflow_input
+        ? JSON.stringify(patch.workflow_input)
+        : null
+    }
     if ("agent_id" in patch) setBlock.agent_id = patch.agent_id || null
     if ("session_id" in patch) setBlock.session_id = patch.session_id || null
     if (patch.color !== undefined) setBlock.color = patch.color || null

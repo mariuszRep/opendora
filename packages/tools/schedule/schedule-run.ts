@@ -27,7 +27,7 @@ export const ScheduleRunTool = Tool.define("schedule_run", async () => ({
     return {
       title: "Schedule Triggered",
       metadata: { id: args.id },
-      output: `Triggered schedule ${args.id}\nprompt: ${schedule.prompt}\ntarget: ${schedule.agent_id ? `agent:${schedule.agent_id}` : schedule.session_id ? `session:${schedule.session_id}` : "unassigned"}`,
+      output: `Triggered schedule ${args.id}\nworkflow: ${schedule.workflow_id}\ntarget: ${schedule.agent_id ? `agent:${schedule.agent_id}` : schedule.session_id ? `session:${schedule.session_id}` : "unassigned"}`,
     }
   },
 }))

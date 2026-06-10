@@ -6,9 +6,8 @@ export type ScheduleDispatchFn = (schedule: {
   id: string
   session_id: string | null
   agent_id: string | null
-  prompt: string
-  action_type: string
-  tool_name: string | null
+  workflow_id: string | null
+  workflow_input: string | null
 }) => Promise<void>
 
 export class CronScheduler {

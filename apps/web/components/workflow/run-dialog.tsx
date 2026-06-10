@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react"
 import { PlayIcon, Loader2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -22,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { opendora, type Workflow, type Agent } from "@/lib/opendora"
+import { renderFieldInput, type WorkflowFieldDef } from "@/components/workflow/render-field-input"
 
 interface RunDialogProps {
   workflow: Workflow
@@ -38,7 +37,7 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  type InputField = { name: string; type: string; required?: boolean; description?: string; enum?: string[] }
+  type InputField = WorkflowFieldDef & { type: string }
 
   // Support legacy (type: "input"), unified start (nodeType: "start"), and parameters (nodeType: "parameters")
   const legacyInputNode = workflow.nodes.find((n) => n.type === "input")
@@ -82,56 +81,6 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
       })
       .catch(() => {})
   }, [open])
-
-  function renderFieldInput(field: InputField) {
-    const type = field.type ?? 'string'
-    const val = inputValues[field.name] ?? ''
-    const set = (v: string) => setInputValues((p) => ({ ...p, [field.name]: v }))
-
-    if (field.enum && field.enum.length > 0) {
-      return (
-        <Select value={val} onValueChange={set}>
-          <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-          <SelectContent>
-            {field.enum.map((opt) => (
-              <SelectItem key={opt} value={opt} className="font-mono text-sm">{opt}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )
-    }
-
-    if (type === 'boolean') {
-      return (
-        <Select value={val} onValueChange={set}>
-          <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="true">true</SelectItem>
-            <SelectItem value="false">false</SelectItem>
-          </SelectContent>
-        </Select>
-      )
-    }
-    if (type === 'number' || type === 'integer') {
-      return (
-        <Input type="number" placeholder={`Enter ${field.name}…`} value={val} onChange={(e) => set(e.target.value)} />
-      )
-    }
-    if (type === 'object' || type === 'array') {
-      return (
-        <Textarea
-          placeholder={type === 'array' ? '["item1", "item2"]' : '{"key": "value"}'}
-          value={val}
-          onChange={(e) => set(e.target.value)}
-          rows={3}
-          className="font-mono text-xs"
-        />
-      )
-    }
-    return (
-      <Input placeholder={`Enter ${field.name}…`} value={val} onChange={(e) => set(e.target.value)} />
-    )
-  }
 
   async function handleRun() {
     if (!agentId) { setError("Select an agent"); return }
@@ -205,7 +154,7 @@ export function RunDialog({ workflow, directory, open, onOpenChange, onSessionCr
                 )}
               </Label>
               {field.description && <p className="text-xs text-muted-foreground">{field.description}</p>}
-              {renderFieldInput(field)}
+              {renderFieldInput(field, inputValues, setInputValues)}
             </div>
           ))}
 

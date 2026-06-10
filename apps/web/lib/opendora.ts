@@ -243,12 +243,12 @@ export type Schedule = {
   project_id?: string
   session_id?: string
   agent_id?: string
-  prompt: string
+  description?: string
+  workflow_id: string
+  workflow_input?: Record<string, unknown>
   cron_expression: string
   timezone?: string
   is_active: boolean
-  action_type: "message" | "tool"
-  tool_name?: string
   last_executed?: number
   time_created: number
   time_updated: number
@@ -664,9 +664,9 @@ export const opendora = {
   },
   schedule: {
     list: () => req<Schedule[]>("/schedule"),
-    create: (input: { agent_id?: string; prompt: string; cron_expression: string; session_id?: string; timezone?: string; action_type?: "message" | "tool"; tool_name?: string; color?: string; name?: string }) =>
+    create: (input: { workflow_id: string; workflow_input?: Record<string, unknown>; description?: string; agent_id?: string; session_id?: string; cron_expression: string; timezone?: string; color?: string; name?: string }) =>
       req<Schedule>("/schedule", { method: "POST", body: JSON.stringify(input) }),
-    update: (id: string, input: { is_active?: boolean; cron_expression?: string; timezone?: string; prompt?: string; action_type?: "message" | "tool"; tool_name?: string; color?: string; agent_id?: string | null; session_id?: string | null; name?: string | null }) =>
+    update: (id: string, input: { is_active?: boolean; cron_expression?: string; timezone?: string; description?: string; workflow_id?: string; workflow_input?: Record<string, unknown> | null; color?: string | null; agent_id?: string | null; session_id?: string | null; name?: string | null }) =>
       req<Schedule>(`/schedule/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
     remove: (id: string) => req<boolean>(`/schedule/${id}`, { method: "DELETE" }),
     run: (id: string) => req<boolean>(`/schedule/${id}/run`, { method: "POST" }),

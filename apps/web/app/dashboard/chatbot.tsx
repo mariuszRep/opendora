@@ -870,15 +870,11 @@ export const Chatbot = () => {
                   : undefined
               const isSchedulerAssistant = info.role === "assistant" && (info as AssistantMessage).from?.kind === "scheduler"
               const isWorkflowMessage = info.role === "assistant" && (info as AssistantMessage).from?.kind === "service"
-              // Fallback for messages created before schedule_id tracking: match by prompt text
-              // against schedules targeting this session.
               const msgSchedule = msgScheduleId
                 ? schedules.find(s => s.id === msgScheduleId)
-                : info.role === "user"
-                  ? schedules.find(s => s.session_id === selectedSession?.id && s.prompt.trim() === content.trim())
-                  : isSchedulerAssistant
-                    ? schedules.find(s => s.session_id === selectedSession?.id)
-                    : undefined
+                : isSchedulerAssistant
+                  ? schedules.find(s => s.session_id === selectedSession?.id)
+                  : undefined
               const userRingColor = msgSchedule
                 ? getAgentColor(msgSchedule.color).hex
                 : msgDotColor ?? userDotColor

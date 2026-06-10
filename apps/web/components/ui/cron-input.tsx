@@ -51,7 +51,7 @@ function ordinal(n: number): string {
   return `${n}${suffix}`
 }
 
-function cronToHuman(expr: string): string {
+export function cronToHuman(expr: string): string {
   try {
     const { min, hour, dom, month, dow } = parseCron(expr)
 

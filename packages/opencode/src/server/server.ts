@@ -60,7 +60,6 @@ import { retentionDaemon, sessionManager } from "@opendora/session/session"
 import { configureSessionCore } from "./configure-session-core"
 import { openDoraStorageAdapter } from "@opendora/session/storage-adapter"
 import { Session } from "@opendora/session/session"
-import { SessionPrompt } from "@opendora/session/prompt"
 import { Identifier } from "@opendora/util/id"
 import { generateText, jsonSchema, tool as aiTool } from "ai"
 import { MessageV2 } from "@opendora/session/message"
@@ -811,80 +810,35 @@ export namespace Server {
 
     // Define before App() is called so the route captures the real function, not the no-op.
     _scheduleDispatch = async (schedule) => {
-      if (schedule.action_type === "tool" && schedule.tool_name === "delegate") {
-        let params: any
-        try { params = JSON.parse(schedule.prompt) } catch {
-          log.warn("schedule delegate prompt is not valid JSON, skipping", { id: schedule.id })
-          return
-        }
+      if (!schedule.workflow_id) {
+        log.warn("schedule has no workflow_id, skipping", { id: schedule.id })
+        return
+      }
 
-        if (typeof params.prompt !== "string") {
-          log.warn("schedule delegate: params.prompt is not a string, skipping", { id: schedule.id })
-          return
-        }
+      // Resolve source session (where the synthetic tool call appears in the UI)
+      let sourceSessionID: string | undefined = schedule.session_id ?? undefined
+      if (sourceSessionID) {
+        try { await Session.get(sourceSessionID) } catch { sourceSessionID = undefined }
+      }
+      if (!sourceSessionID && schedule.agent_id) {
+        const src = await Session.ensureMainSession(schedule.agent_id)
+        sourceSessionID = src.id
+      }
 
-        // Resolve agent by name or ID (like the delegate tool does via agents.find)
-        let resolvedAgentID: string | undefined
-        if (params.agent) {
-          const lookedUpAgent = await Agent.getByIdOrName(params.agent)
-          if (!lookedUpAgent) {
-            log.warn("schedule delegate: agent not found", { id: schedule.id, agent: params.agent })
-            return
-          }
-          resolvedAgentID = lookedUpAgent.id
-        }
+      // Inject a synthetic assistant message with a workflow_run tool part (if source session known)
+      const now = Date.now()
+      const cwd = process.cwd()
+      let assistantMsg: MessageV2.Assistant | undefined
+      let toolPartData: any | undefined
 
-        // Resolve source session (where the tool call appears in the UI)
-        let sourceSessionID: string | undefined = schedule.session_id ?? undefined
-        if (sourceSessionID) {
-          try { await Session.get(sourceSessionID) } catch { sourceSessionID = undefined }
-        }
-        if (!sourceSessionID && schedule.agent_id) {
-          const src = await Session.ensureMainSession(schedule.agent_id)
-          sourceSessionID = src.id
-        }
-        if (!sourceSessionID) {
-          log.warn("schedule delegate: cannot resolve source session", { id: schedule.id })
-          return
-        }
-
-        // Resolve target session (where the message will be delivered)
-        let targetSession: any
-        if (params.session_id) {
-          targetSession = await Session.get(params.session_id)
-          if (!targetSession) { log.warn("schedule delegate: target session not found", { id: schedule.id }); return }
-        } else if (resolvedAgentID && params.session_type) {
-          const runDate = new Date().toLocaleString(undefined, {
-            month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-          })
-          const scheduleLabel = (schedule as any).name || params.title || params.description || "Scheduled"
-          targetSession = await Session.createNext({
-            directory: process.cwd(),
-            title: `${scheduleLabel} (${runDate})`,
-            sessionType: params.session_type,
-            agentID: resolvedAgentID,
-            ownerKind: "service",
-            parentSessionID: sourceSessionID,
-          })
-        } else if (resolvedAgentID) {
-          targetSession = await Session.ensureMainSession(resolvedAgentID)
-        } else {
-          log.warn("schedule delegate: no agent or session_id in params", { id: schedule.id })
-          return
-        }
-
-        // Inject a synthetic assistant message into the source session to surface
-        // the delegate tool call in the UI. No parent user message needed.
-        const now = Date.now()
-        const cwd = process.cwd()
-
-        const assistantMsg: MessageV2.Assistant = {
+      if (sourceSessionID) {
+        assistantMsg = {
           id: Identifier.ascending("message"),
           sessionID: sourceSessionID,
           role: "assistant",
-          from: { kind: "scheduler", id: resolvedAgentID ?? "schedule" },
-          agent: resolvedAgentID ?? "schedule",
-          mode: resolvedAgentID ?? "schedule",
+          from: { kind: "scheduler", id: schedule.agent_id ?? "schedule" },
+          agent: schedule.agent_id ?? "schedule",
+          mode: schedule.agent_id ?? "schedule",
           modelID: "schedule",
           providerID: "schedule",
           schedule_id: schedule.id,
@@ -895,88 +849,96 @@ export namespace Server {
         }
         await Session.updateMessage(assistantMsg)
 
-        // Keep a reference to the part data — we need the same fields for the status update later.
-        // Don't rely on Session.updatePart's return value, which may not include all fields.
-        const toolPartData = {
+        toolPartData = {
           id: Identifier.ascending("part"),
           messageID: assistantMsg.id,
           sessionID: sourceSessionID,
           type: "tool" as const,
           callID: Identifier.ascending("part"),
-          tool: "delegate",
+          tool: "workflow_run",
           state: {
             status: "running" as const,
-            input: params,
+            input: { workflowId: schedule.workflow_id, input: schedule.workflow_input ?? undefined },
             metadata: {},
             time: { start: now },
           },
         }
         await Session.updatePart(toolPartData as any)
+      }
 
-        // Pre-generate the posted message ID so we know it upfront without
-        // parentSessionID/parentMessageID wire the posted message back to this tool call.
-        const start = Date.now()
-        let postedMessageId: string | undefined
-        let error: string | undefined
-        try {
-          const posted = await SessionPrompt.prompt({
-            sessionID: targetSession.id,
-            ...(resolvedAgentID ? { agent: resolvedAgentID } : {}),
-            noWait: !(params.wait ?? false),
-            parentMessageID: assistantMsg.id,
-            parts: await SessionPrompt.resolvePromptParts(params.prompt),
-          })
-          postedMessageId = (posted as any).info.id
-        } catch (e: any) {
-          error = e?.message ?? String(e)
-        }
+      // Get workflow_run tool from registry and build a synthetic execution context
+      const toolInfo = ToolRegistry.all().find((t) => t.id === "workflow_run")
+      if (!toolInfo) {
+        log.warn("schedule: workflow_run tool not found in registry", { id: schedule.id })
+        return
+      }
 
-        const completedState = error
-          ? { status: "error", input: params, error, metadata: {}, time: { start, end: Date.now() } }
+      const toolDef = await toolInfo.init({})
+      const srcSession = sourceSessionID
+        ? await Session.get(sourceSessionID).catch(() => undefined)
+        : undefined
+      const sessionDirectory = srcSession?.directory ?? Instance.directory
+
+      const execCtx = {
+        sessionID: sourceSessionID ?? `schedule-${schedule.id}`,
+        messageID: "schedule-workflow-runner",
+        agent: schedule.agent_id ?? "",
+        abort: new AbortController().signal,
+        messages: [],
+        metadata: (_input: any) => {},
+        ask: async (_input: any) => {},
+        extra: {
+          directory: sessionDirectory,
+          worktree: Instance.worktree,
+          agents: {
+            list: () => Agent.list(),
+            get: (id: string) => Agent.get(id),
+          },
+          session: {
+            list: (filter?: any) => Session.list(filter),
+            get: (id: string) => Session.get(id),
+            messages: (id: string) => Session.messages(id),
+            setTitle: (id: string, title: string) => Session.setTitle({ sessionID: id, title }),
+          },
+        },
+      }
+
+      // Pass workflow_input as-is — workflow_run's Zod schema accepts a JSON string and auto-parses it
+      const start = Date.now()
+      let error: string | undefined
+      try {
+        await toolDef.execute(
+          {
+            workflowId: schedule.workflow_id,
+            input: schedule.workflow_input ?? undefined,
+            agentId: schedule.agent_id ?? undefined,
+          },
+          execCtx as any,
+        )
+      } catch (err: any) {
+        error = err?.message ?? String(err)
+        log.error("schedule workflow: execution failed", { id: schedule.id, error })
+      }
+
+      // Finalize the synthetic tool part
+      if (assistantMsg && toolPartData && sourceSessionID) {
+        const finalState = error
+          ? { status: "error", input: toolPartData.state.input, error, metadata: {}, time: { start, end: Date.now() } }
           : {
               status: "completed",
-              input: params,
-              output: "message posted",
-              metadata: {
-                sessionId: targetSession.id,
-                messageId: postedMessageId,
-                agent: resolvedAgentID,
-              },
-              title: params.description ?? `Delegate → ${resolvedAgentID ?? targetSession.id}`,
+              input: toolPartData.state.input,
+              output: "workflow started",
+              metadata: { workflowId: schedule.workflow_id },
+              title: `Workflow → ${schedule.workflow_id}`,
               time: { start, end: Date.now() },
             }
         try {
-          await Session.updatePart({ ...toolPartData, state: completedState } as any)
+          await Session.updatePart({ ...toolPartData, state: finalState } as any)
         } catch (updateErr: any) {
-          log.error("scheduler delegate: failed to finalize tool part", {
-            err: updateErr?.message,
-            state: JSON.stringify(completedState),
-          })
+          log.error("schedule: failed to finalize tool part", { err: updateErr?.message })
         }
-
         await Session.updateMessage({ ...assistantMsg, time: { ...assistantMsg.time, completed: Date.now() } })
-        return
       }
-
-      // Default: message action — send text to the schedule's own session/agent
-      let sessionID: string | undefined = schedule.session_id ?? undefined
-      if (sessionID) {
-        try { await Session.get(sessionID) } catch { sessionID = undefined }
-      }
-      if (!sessionID && schedule.agent_id) {
-        const session = await Session.ensureMainSession(schedule.agent_id)
-        sessionID = session.id
-      }
-      if (!sessionID) {
-        log.warn("schedule has no session or agent, skipping", { id: schedule.id })
-        return
-      }
-      await SessionPrompt.prompt({
-        sessionID,
-        schedule_id: schedule.id,
-        noWait: true,
-        parts: [{ type: "text", text: schedule.prompt }],
-      })
     }
     Schedule.setDispatch(_scheduleDispatch)
 

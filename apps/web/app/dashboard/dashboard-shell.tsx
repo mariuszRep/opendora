@@ -38,7 +38,7 @@ const KIND_BADGE: Record<PathKind, { label: string; className: string }> = {
 }
 
 export function DashboardShell({ children }: DashboardShellProps) {
-  const { fileTreeOpen, sessionTreeOpen, selectedSession, agents, selectedAgent, activeSessions, selectSession, openFilePreview } = useOpendoraContext()
+  const { fileTreeOpen, sessionTreeOpen, selectedSession, agents, selectedAgent, activeSessions, selectSession, openFilePreview, sessions } = useOpendoraContext()
 
   const currentAgent = agents.find((a) => a._id === selectedAgent)
 
@@ -95,6 +95,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
             onSessionClick={(session) => selectSession(session.id)}
             selectedSessionId={selectedSession?.id}
             activeSessions={activeSessions}
+            sessions={sessions}
           />
         </div>
       )}

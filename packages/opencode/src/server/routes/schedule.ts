@@ -15,7 +15,16 @@ import { getGlobalTimezone } from "./general"
 
 const log = Log.create({ service: "schedule-name" })
 
-async function generateScheduleName(prompt: string): Promise<string | null> {
+function toClient(row: any) {
+  return {
+    ...row,
+    workflow_input: row.workflow_input
+      ? (() => { try { return JSON.parse(row.workflow_input) } catch { return undefined } })()
+      : undefined,
+  }
+}
+
+async function generateScheduleName(workflowId: string, description?: string): Promise<string | null> {
   try {
     const titleAgent = await Agent.get("title")
     if (!titleAgent) { log.warn("title agent not found"); return null }
@@ -36,6 +45,10 @@ async function generateScheduleName(prompt: string): Promise<string | null> {
       model: { providerID, modelID },
     }
 
+    const prompt = description
+      ? `Generate a short title (3-7 words) for a scheduled task that runs the '${workflowId}' workflow.\n\nContext: ${description}`
+      : `Generate a short title (3-7 words) for a scheduled task that runs the '${workflowId}' workflow.`
+
     const result = await LLM.stream({
       agent: titleAgent as any,
       user: fakeUser,
@@ -47,7 +60,7 @@ async function generateScheduleName(prompt: string): Promise<string | null> {
       sessionID: fakeSessionID,
       retries: 1,
       messages: [
-        { role: "user", content: `Generate a short title (3-7 words) for this scheduled task prompt:\n\n${prompt}` },
+        { role: "user", content: prompt },
       ],
     })
     result.usage.then(async (usage) => {
@@ -85,13 +98,7 @@ export async function backfillScheduleNames(db: ReturnType<typeof Database.Clien
   if (nameless.length === 0) return
   log.info("backfilling schedule names", { count: nameless.length })
   for (const row of nameless) {
-    const prompt = (() => {
-      if (row.action_type === "tool") {
-        try { const p = JSON.parse(row.prompt as string); return p.prompt ?? row.prompt } catch { return row.prompt }
-      }
-      return row.prompt
-    })()
-    const name = await generateScheduleName(prompt as string)
+    const name = await generateScheduleName(row.workflow_id as string, row.description as string | undefined)
     if (name) {
       db.update(ScheduleTable).set({ name, time_updated: Date.now() }).where(eq(ScheduleTable.id, row.id)).run()
       log.info("backfilled schedule name", { id: row.id, name })
@@ -106,7 +113,7 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
     "/",
     describeRoute({
       summary: "List schedules",
-      description: "Get all active and inactive delegation schedules.",
+      description: "Get all active and inactive workflow schedules.",
       operationId: "schedule.list",
       responses: {
         200: {
@@ -118,18 +125,15 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
     async (c) => {
       const db = Database.Client()
       const results = db.select().from(ScheduleTable).all()
-      // Fire-and-forget backfill for any nameless schedules (runs inside request context)
+      // Fire-and-forget backfill for any nameless schedules
       const nameless = (results as any[]).filter((r) => !r.name)
       if (nameless.length > 0) {
         Promise.all(nameless.map(async (row: any) => {
-          const prompt = row.action_type === "tool"
-            ? (() => { try { const p = JSON.parse(row.prompt); return p.prompt ?? row.prompt } catch { return row.prompt } })()
-            : row.prompt
-          const name = await generateScheduleName(prompt)
+          const name = await generateScheduleName(row.workflow_id, row.description)
           if (name) db.update(ScheduleTable).set({ name, time_updated: Date.now() }).where(eq(ScheduleTable.id, row.id)).run()
         })).catch(() => {})
       }
-      return c.json(results)
+      return c.json((results as any[]).map(toClient))
     }
   )
 
@@ -143,13 +147,13 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
       }
     }),
     validator("json", z.object({
+      workflow_id: z.string(),
+      workflow_input: z.record(z.string(), z.unknown()).optional(),
+      description: z.string().optional(),
       agent_id: z.string().optional(),
       session_id: z.string().optional(),
-      prompt: z.string(),
       cron_expression: z.string(),
       timezone: z.string().optional(),
-      action_type: z.enum(["message", "tool"]).optional(),
-      tool_name: z.string().optional(),
       color: z.string().optional(),
       name: z.string().optional(),
     })),
@@ -159,15 +163,15 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
       const id = ulid()
       const newSched = {
         id,
-        prompt: input.prompt,
+        description: input.description || null,
+        workflow_id: input.workflow_id,
+        workflow_input: input.workflow_input ? JSON.stringify(input.workflow_input) : null,
         cron_expression: input.cron_expression,
         agent_id: input.agent_id || null,
         session_id: input.session_id || null,
         project_id: null,
         is_active: true,
         timezone: input.timezone || getGlobalTimezone(),
-        action_type: input.action_type ?? "message" as const,
-        tool_name: input.tool_name || null,
         color: input.color || null,
         name: input.name || null,
         time_created: Date.now(),
@@ -175,16 +179,16 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
         last_executed: null,
       }
 
-      await db.insert(ScheduleTable).values(newSched).run()
+      await db.insert(ScheduleTable).values(newSched as any).run()
 
       // Auto-generate name if none provided (fire-and-forget)
       if (!input.name) {
-        generateScheduleName(input.prompt).then((name) => {
+        generateScheduleName(input.workflow_id, input.description).then((name) => {
           if (name) db.update(ScheduleTable).set({ name, time_updated: Date.now() }).where(eq(ScheduleTable.id, id)).run()
         }).catch(() => {})
       }
 
-      return c.json(newSched)
+      return c.json(toClient(newSched))
     }
   )
 
@@ -202,10 +206,10 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
       is_active: z.boolean().optional(),
       cron_expression: z.string().optional(),
       timezone: z.string().optional(),
-      prompt: z.string().optional(),
-      action_type: z.enum(["message", "tool"]).optional(),
-      tool_name: z.string().optional(),
-      color: z.string().optional(),
+      description: z.string().optional().nullable(),
+      workflow_id: z.string().optional(),
+      workflow_input: z.record(z.string(), z.unknown()).optional().nullable(),
+      color: z.string().optional().nullable(),
       agent_id: z.string().optional().nullable(),
       session_id: z.string().optional().nullable(),
       name: z.string().optional().nullable(),
@@ -219,9 +223,13 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
       if (updates.is_active !== undefined) setBlock.is_active = updates.is_active
       if (updates.cron_expression) setBlock.cron_expression = updates.cron_expression
       if (updates.timezone) setBlock.timezone = updates.timezone
-      if (updates.prompt) setBlock.prompt = updates.prompt
-      if (updates.action_type) setBlock.action_type = updates.action_type
-      if (updates.tool_name !== undefined) setBlock.tool_name = updates.tool_name || null
+      if ("description" in updates) setBlock.description = updates.description ?? null
+      if (updates.workflow_id) setBlock.workflow_id = updates.workflow_id
+      if ("workflow_input" in updates) {
+        setBlock.workflow_input = updates.workflow_input
+          ? JSON.stringify(updates.workflow_input)
+          : null
+      }
       if (updates.color !== undefined) setBlock.color = updates.color || null
       if ("agent_id" in updates) setBlock.agent_id = updates.agent_id || null
       if ("session_id" in updates) setBlock.session_id = updates.session_id || null
@@ -230,18 +238,17 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
       const result = await db.update(ScheduleTable).set(setBlock).where(eq(ScheduleTable.id, id)).returning().get()
       if (!result) return c.json({ error: "not found" }, 404)
 
-      // Auto-generate name when: no explicit name given AND (prompt changed OR still no name)
+      // Auto-generate name when: no explicit name given AND (workflow changed OR still no name)
       if (!updates.name) {
         const currentName = (result as any).name
-        const promptToUse = updates.prompt ?? (result as any).prompt
-        if (!currentName && promptToUse) {
-          generateScheduleName(promptToUse).then((name) => {
+        if (!currentName || updates.workflow_id) {
+          generateScheduleName((result as any).workflow_id, (result as any).description).then((name) => {
             if (name) db.update(ScheduleTable).set({ name, time_updated: Date.now() }).where(eq(ScheduleTable.id, id)).run()
           }).catch(() => {})
         }
       }
 
-      return c.json(result)
+      return c.json(toClient(result))
     }
   )
 
@@ -261,7 +268,7 @@ export function ScheduleRoutes(dispatch: ScheduleDispatchFn) {
       const db = Database.Client()
       const schedule = db.select().from(ScheduleTable).where(eq(ScheduleTable.id, id)).get()
       if (!schedule) return c.json({ error: "not found" }, 404)
-      await dispatch(schedule)
+      await dispatch(schedule as any)
       return c.json(true)
     }
   )

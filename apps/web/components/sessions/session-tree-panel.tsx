@@ -189,6 +189,7 @@ type SessionTreePanelProps = {
   onSessionClick?: (session: Session) => void
   selectedSessionId?: string
   activeSessions?: Set<string>
+  sessions: Session[] // Accept sessions from parent to avoid duplicate fetch
 }
 
 export function SessionTreePanel({
@@ -196,6 +197,7 @@ export function SessionTreePanel({
   onSessionClick,
   selectedSessionId,
   activeSessions = new Set(),
+  sessions,
 }: SessionTreePanelProps) {
   const [store, _setStore] = useState<Store>(emptyStore)
   const storeRef = useRef<Store>(store)
@@ -210,12 +212,10 @@ export function SessionTreePanel({
     _setStore(next)
   }, [])
 
-  const loadRoots = useCallback(async () => {
+  const loadRoots = useCallback(() => {
     setRootLoading(true)
     setLoadError(undefined)
     try {
-      const sessions = await opendora.session.list()
-      
       // Filter to only root sessions (no parentSessionID)
       const roots = sessions.filter((s) => !s.parentSessionID)
       
@@ -254,7 +254,7 @@ export function SessionTreePanel({
     } finally {
       setRootLoading(false)
     }
-  }, [setStore])
+  }, [setStore, sessions])
 
   useEffect(() => {
     storeRef.current = emptyStore()
@@ -318,17 +318,11 @@ export function SessionTreePanel({
         // Sort children by creation time
         children.sort((a: Session, b: Session) => a.time.created - b.time.created)
 
-        // Check which children have their own children
-        const childrenWithGrandchildren = await Promise.all(
-          children.map(async (child) => {
-            try {
-              const grandchildren = await opendora.session.children(child.id)
-              return { child, hasChildren: grandchildren.length > 0 }
-            } catch {
-              return { child, hasChildren: false }
-            }
-          })
-        )
+        // Check which children have their own children using the sessions prop (no extra API calls)
+        const childrenWithGrandchildren = children.map((child) => {
+          const hasChildren = sessions.some((s) => s.parentSessionID === child.id)
+          return { child, hasChildren }
+        })
 
         setStore((prev) => {
           const nodes = { ...prev.nodes }
@@ -381,28 +375,27 @@ export function SessionTreePanel({
   useEffect(() => {
     if (!selectedSessionId) return
 
-    const expandPathToSession = async (sessionId: string) => {
+    const expandPathToSession = (sessionId: string) => {
       try {
-        const allSessions = await opendora.session.list()
-        const targetSession = allSessions.find((s) => s.id === sessionId)
+        const targetSession = sessions.find((s) => s.id === sessionId)
         if (!targetSession) return
 
-        // Build path from root to target
+        // Build path from root to target using sessions prop
         const path: string[] = []
         let current = targetSession
         
         while (current.parentSessionID) {
           path.unshift(current.parentSessionID)
-          const parent = allSessions.find((s) => s.id === current.parentSessionID)
+          const parent = sessions.find((s) => s.id === current.parentSessionID)
           if (!parent) break
           current = parent
         }
 
-        // Expand each node in the path
+        // Expand each node in the path in parallel (not sequential)
         for (const nodeId of path) {
           const node = storeRef.current.nodes[nodeId]
           if (node && !node.expanded) {
-            await handleToggle(nodeId)
+            handleToggle(nodeId)
           }
         }
       } catch (err) {
@@ -411,7 +404,7 @@ export function SessionTreePanel({
     }
 
     expandPathToSession(selectedSessionId)
-  }, [selectedSessionId, handleToggle])
+  }, [selectedSessionId, sessions, handleToggle])
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-sidebar text-sidebar-foreground">
