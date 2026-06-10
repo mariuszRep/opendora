@@ -111,6 +111,7 @@ export const SpeechInput = ({
   const mode = forceMode ?? detectedMode;
   const [isRecognitionReady, setIsRecognitionReady] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const isRecognitionStartedRef = useRef(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -139,10 +140,12 @@ export const SpeechInput = ({
     speechRecognition.lang = lang;
 
     const handleStart = () => {
+      isRecognitionStartedRef.current = true;
       setIsListening(true);
     };
 
     const handleEnd = () => {
+      isRecognitionStartedRef.current = false;
       setIsListening(false);
     };
 
@@ -167,6 +170,7 @@ export const SpeechInput = ({
     };
 
     const handleError = () => {
+      isRecognitionStartedRef.current = false;
       setIsListening(false);
     };
 
@@ -183,7 +187,10 @@ export const SpeechInput = ({
       speechRecognition.removeEventListener("end", handleEnd);
       speechRecognition.removeEventListener("result", handleResult);
       speechRecognition.removeEventListener("error", handleError);
-      speechRecognition.stop();
+      if (isRecognitionStartedRef.current) {
+        speechRecognition.stop();
+      }
+      isRecognitionStartedRef.current = false;
       recognitionRef.current = null;
       setIsRecognitionReady(false);
     };
@@ -277,10 +284,23 @@ export const SpeechInput = ({
 
   const toggleListening = useCallback(() => {
     if (mode === "speech-recognition" && recognitionRef.current) {
-      if (isListening) {
+      if (isListening || isRecognitionStartedRef.current) {
         recognitionRef.current.stop();
       } else {
-        recognitionRef.current.start();
+        isRecognitionStartedRef.current = true;
+        setIsListening(true);
+
+        try {
+          recognitionRef.current.start();
+        } catch (error) {
+          const isAlreadyStartedError =
+            error instanceof DOMException && error.name === "InvalidStateError";
+
+          if (!isAlreadyStartedError) {
+            isRecognitionStartedRef.current = false;
+            setIsListening(false);
+          }
+        }
       }
     } else if (mode === "media-recorder") {
       if (isListening) {
