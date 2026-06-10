@@ -1935,13 +1935,6 @@ export const Chatbot = () => {
               </div>
             </PromptInputFooter>
           </PromptInput>
-          
-          {/* Hotkey hint */}
-          {settings.pushToTalk.enabled && settings.pushToTalk.hotkey && (
-            <p className="text-center text-xs text-muted-foreground px-4 pb-2">
-              Hold <kbd className="px-1 py-0.5 rounded bg-muted font-mono text-[10px]">{formatHotkey(settings.pushToTalk.hotkey)}</kbd> to record and send with voice reply
-            </p>
-          )}
         </div>
       </div>
 

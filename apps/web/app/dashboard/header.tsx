@@ -27,13 +27,15 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { MessageResponse } from "@/components/ai-elements/message"
-import { ChevronDownIcon, ChevronRightIcon, ClockPlusIcon, ScrollTextIcon, ServerIcon, Settings2Icon, ShieldIcon, WrenchIcon } from "lucide-react"
+import { ChevronDownIcon, ChevronRightIcon, ClockPlusIcon, MoreHorizontalIcon, ScrollTextIcon, ServerIcon, Settings2Icon, ShieldIcon, WrenchIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { SessionSettingsSheet } from "@/components/sessions/session-settings-sheet"
 import { SessionSchedulesSheet } from "@/components/sessions/session-schedules-sheet"
@@ -71,9 +73,11 @@ export function Header() {
   }>({ sections: [], injection: "", skills: [], tools: [], loadedSkillNames: [] })
   const [hasSchedules, setHasSchedules] = useState(false)
   const promptOpenRef = useRef(false)
+  const selectedSessionId = selectedSession?.id
 
   useEffect(() => {
-    setMounted(true)
+    const timeout = window.setTimeout(() => setMounted(true), 0)
+    return () => window.clearTimeout(timeout)
   }, [])
 
   function fetchPromptData(sessionID: string) {
@@ -88,30 +92,31 @@ export function Header() {
 
   useEffect(() => {
     promptOpenRef.current = promptOpen
-    if (promptOpen && selectedSession) fetchPromptData(selectedSession.id)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [promptOpen])
+    if (promptOpen && selectedSessionId) fetchPromptData(selectedSessionId)
+  }, [promptOpen, selectedSessionId])
 
   // Re-fetch whenever the session goes idle (tool calls finished) and the panel is open
   useEffect(() => {
     return opendora.events.subscribe((event) => {
       if (event.type !== "session.idle") return
       const ev = event as { type: string; properties: { sessionID: string } }
-      if (!promptOpenRef.current || ev.properties.sessionID !== selectedSession?.id) return
+      if (!promptOpenRef.current || ev.properties.sessionID !== selectedSessionId) return
       fetchPromptData(ev.properties.sessionID)
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSession?.id])
+  }, [selectedSessionId, selectedSession])
 
   useEffect(() => {
-    if (!selectedSession) { setHasSchedules(false); return }
+    if (!selectedSessionId) {
+      const timeout = window.setTimeout(() => setHasSchedules(false), 0)
+      return () => window.clearTimeout(timeout)
+    }
     opendora.schedule.list()
-      .then((all) => setHasSchedules(all.some((s) => s.session_id === selectedSession.id)))
+      .then((all) => setHasSchedules(all.some((s) => s.session_id === selectedSessionId)))
       .catch(() => setHasSchedules(false))
-  }, [selectedSession?.id])
+  }, [selectedSessionId])
 
   const visibleAgents = agents.filter((a) => !a.hidden)
-  const selectedAgentObj = agents.find((a) => (a as any)._id === selectedAgent)
+  const selectedAgentObj = agents.find((a) => a._id === selectedAgent)
   const selectedAgentName = selectedAgentObj?.name || selectedAgent
 
   return (
@@ -141,10 +146,10 @@ export function Header() {
                           <CommandGroup>
                             {visibleAgents.map((agent) => (
                               <CommandItem
-                                key={(agent as any)._id}
+                                key={agent._id}
                                 value={agent.name}
                                 onSelect={() => {
-                                  selectAgent((agent as any)._id)
+                                  selectAgent(agent._id)
                                   setAgentOpen(false)
                                 }}
                               >
@@ -213,48 +218,84 @@ export function Header() {
 
         {/* Far-right actions */}
         {selectedSession && mounted && (
-          <div className="flex items-center gap-1 px-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8"
-              title="System prompt"
-              onClick={() => setPromptOpen(true)}
-            >
-              <ScrollTextIcon className="size-4" />
-              <span className="sr-only">System prompt</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn("size-8", !hasSchedules && "text-muted-foreground")}
-              title="Schedules"
-              onClick={() => setSchedulesOpen(true)}
-            >
-              <ClockPlusIcon className="size-4" />
-              <span className="sr-only">Schedules</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8"
-              title="Permissions"
-              onClick={() => setPermissionsOpen(true)}
-            >
-              <ShieldIcon className="size-4" />
-              <span className="sr-only">Permissions</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8"
-              title="Session settings"
-              onClick={() => setSettingsOpen(true)}
-            >
-              <Settings2Icon className="size-4" />
-              <span className="sr-only">Session settings</span>
-            </Button>
-          </div>
+          <>
+            <div className="hidden items-center gap-1 px-4 md:flex">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                title="System prompt"
+                onClick={() => setPromptOpen(true)}
+              >
+                <ScrollTextIcon className="size-4" />
+                <span className="sr-only">System prompt</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn("size-8", !hasSchedules && "text-muted-foreground")}
+                title="Schedules"
+                onClick={() => setSchedulesOpen(true)}
+              >
+                <ClockPlusIcon className="size-4" />
+                <span className="sr-only">Schedules</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                title="Permissions"
+                onClick={() => setPermissionsOpen(true)}
+              >
+                <ShieldIcon className="size-4" />
+                <span className="sr-only">Permissions</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                title="Session settings"
+                onClick={() => setSettingsOpen(true)}
+              >
+                <Settings2Icon className="size-4" />
+                <span className="sr-only">Session settings</span>
+              </Button>
+            </div>
+
+            <div className="flex items-center px-4 md:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="size-8" title="Session actions">
+                    <MoreHorizontalIcon className="size-4" />
+                    <span className="sr-only">Session actions</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem onSelect={() => setPromptOpen(true)}>
+                      <ScrollTextIcon className="size-4" />
+                      <span>System prompt</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className={cn(!hasSchedules && "text-muted-foreground")}
+                      onSelect={() => setSchedulesOpen(true)}
+                    >
+                      <ClockPlusIcon className="size-4" />
+                      <span>Schedules</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setPermissionsOpen(true)}>
+                      <ShieldIcon className="size-4" />
+                      <span>Permissions</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setSettingsOpen(true)}>
+                      <Settings2Icon className="size-4" />
+                      <span>Session settings</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </>
         )}
       </header>
 
