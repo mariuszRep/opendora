@@ -96,7 +96,6 @@
     "@opendora/agent": "workspace:*",
     "@opendora/auth": "workspace:*",
     "@opendora/permission": "workspace:*",
-    "@opendora/server": "workspace:*",
     "@opendora/provider": "workspace:*",
     "@opendora/schedule": "workspace:*",
     "@opendora/sdk": "workspace:*",

@@ -1,4 +1,4 @@
-import { Server } from "@opendora/server/server"
+import { Server } from "../../server/server"
 import { cmd } from "./cmd"
 import { withNetworkOptions, resolveNetworkOptions } from "../network"
 import { Flag } from "../../flag/flag"

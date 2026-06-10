@@ -243,7 +243,7 @@ export const AgentRoutes = lazy(() =>
       async (c) => {
         const { id } = c.req.valid("param")
         const body = c.req.valid("json")
-        const entry = await Agent.update(id, body.config ?? {}, body.persona, body.injection)
+        const entry = await Agent.update(id, (body.config ?? {}) as any, body.persona, body.injection)
         return c.json(entry)
       },
     )

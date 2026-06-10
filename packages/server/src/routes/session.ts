@@ -71,7 +71,7 @@ export const SessionRoutes = lazy(() =>
           search: query.search,
           limit: query.limit,
         })) {
-          sessions.push(session)
+          sessions.push(session as Session.Info)
         }
         return c.json(sessions)
       },
@@ -750,7 +750,10 @@ export const SessionRoutes = lazy(() =>
         const sessionID = c.req.valid("param").sessionID
         const body = c.req.valid("json")
         const session = await Session.get(sessionID)
-        await SessionRevert.cleanup(session)
+        await SessionRevert.cleanup(session, {
+          getMessages: (id: string) => Session.messages({ sessionID: id }),
+          clearRevert: (id: string) => Session.clearRevert(id),
+        })
         const msgs = await Session.messages({ sessionID })
         let currentAgent = await Agent.defaultAgent()
         for (let i = msgs.length - 1; i >= 0; i--) {
@@ -1133,10 +1136,15 @@ export const SessionRoutes = lazy(() =>
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
         log.info("revert", c.req.valid("json"))
-        const session = await SessionRevert.revert({
-          sessionID,
-          ...c.req.valid("json"),
-        })
+        const session = await SessionRevert.revert(
+          { sessionID, ...c.req.valid("json") },
+          {
+            assertNotBusy: SessionPrompt.assertNotBusy,
+            getMessages: (id: string) => Session.messages({ sessionID: id }),
+            getSession: (id: string) => Session.get(id),
+            setRevert: (input: any) => Session.setRevert(input),
+          },
+        )
         return c.json(session)
       },
     )
@@ -1166,7 +1174,14 @@ export const SessionRoutes = lazy(() =>
       ),
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
-        const session = await SessionRevert.unrevert({ sessionID })
+        const session = await SessionRevert.unrevert(
+          { sessionID },
+          {
+            assertNotBusy: SessionPrompt.assertNotBusy,
+            getSession: (id: string) => Session.get(id),
+            clearRevert: (id: string) => Session.clearRevert(id),
+          },
+        )
         return c.json(session)
       },
     )

@@ -234,7 +234,7 @@ export const ExperimentalRoutes = lazy(() =>
           limit: limit + 1,
           archived: query.archived,
         })) {
-          sessions.push(session)
+          sessions.push(session as Session.GlobalInfo)
         }
         const hasMore = sessions.length > limit
         const list = hasMore ? sessions.slice(0, limit) : sessions

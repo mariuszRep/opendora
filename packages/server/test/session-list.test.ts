@@ -3,6 +3,7 @@ import path from "path"
 import { Instance } from "@opendora/opencode/project/instance"
 import { Session } from "@opendora/session/session"
 import { Log } from "@opendora/util/log"
+import { configureSessionCore } from "@opendora/server/configure-session-core"
 
 const projectRoot = path.join(__dirname, "../..")
 Log.init({ print: false })
@@ -12,6 +13,7 @@ describe("Session.list", () => {
     await Instance.provide({
       directory: projectRoot,
       fn: async () => {
+        configureSessionCore()
         const first = await Session.create({})
 
         const otherDir = path.join(projectRoot, "..", "__session_list_other")
@@ -33,6 +35,7 @@ describe("Session.list", () => {
     await Instance.provide({
       directory: projectRoot,
       fn: async () => {
+        configureSessionCore()
         const root = await Session.create({ title: "root-session" })
         const child = await Session.create({ title: "child-session", parentID: root.id })
 
@@ -49,6 +52,7 @@ describe("Session.list", () => {
     await Instance.provide({
       directory: projectRoot,
       fn: async () => {
+        configureSessionCore()
         const session = await Session.create({ title: "new-session" })
         const futureStart = Date.now() + 86400000
 
@@ -62,6 +66,7 @@ describe("Session.list", () => {
     await Instance.provide({
       directory: projectRoot,
       fn: async () => {
+        configureSessionCore()
         await Session.create({ title: "unique-search-term-abc" })
         await Session.create({ title: "other-session-xyz" })
 
@@ -78,6 +83,7 @@ describe("Session.list", () => {
     await Instance.provide({
       directory: projectRoot,
       fn: async () => {
+        configureSessionCore()
         await Session.create({ title: "session-1" })
         await Session.create({ title: "session-2" })
         await Session.create({ title: "session-3" })
