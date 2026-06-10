@@ -32,7 +32,8 @@
       "packages/session",
       "packages/schedule",
       "packages/workflow",
-      "packages/storage"
+      "packages/storage",
+      "packages/server"
     ],
     "catalog": {
       "@types/bun": "1.3.9",
