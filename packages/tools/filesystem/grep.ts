@@ -58,9 +58,11 @@ export const GrepTool = Tool.define("grep", {
       throw new Error("Process output not available")
     }
 
-    const output = await text(proc.stdout)
-    const errorOutput = await text(proc.stderr)
-    const exitCode = await proc.exited
+    const [output, errorOutput, exitCode] = await Promise.all([
+      text(proc.stdout),
+      text(proc.stderr),
+      proc.exited,
+    ])
 
     // Exit codes: 0 = matches found, 1 = no matches, 2 = errors (but may still have matches)
     // With --no-messages, we suppress error output but still get exit code 2 for broken symlinks etc.
