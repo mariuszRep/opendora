@@ -1,1 +1,1 @@
-export { AgentGetTool } from "@opendora/tools/agents"
+export { AgentGetTool } from "@opendora/tools/agents/agent-get"

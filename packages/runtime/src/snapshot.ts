@@ -5,7 +5,7 @@ import { Log } from "@opendora/util/log"
 import { Flag } from "@opendora/util/flag"
 import { Global } from "@opendora/util/global"
 import z from "zod"
-import { Config } from "@opendora/opencode/config/config"
+import { Config } from "@opendora/config/config"
 import { Instance } from "./instance"
 import { Scheduler } from "./scheduler"
 

@@ -1,11 +1,11 @@
 import { BusEvent } from "@/bus/bus-event"
-import { Bus } from "@/bus"
+import { Bus } from "@opendora/runtime/bus"
 import z from "zod"
 import { Log } from "../util/log"
 import { Identifier } from "../id/id"
 import { Plugin } from "../plugin"
 import { Instance } from "../project/instance"
-import { Wildcard } from "@opendora/permission"
+import { Wildcard } from "@opendora/permission/pattern"
 
 export namespace Permission {
   const log = Log.create({ service: "permission" })

@@ -34,7 +34,9 @@
       "packages/workflow",
       "packages/storage",
       "packages/server",
-      "packages/runtime"
+      "packages/runtime",
+      "packages/skills",
+      "packages/config"
     ],
     "catalog": {
       "@types/bun": "1.3.9",

@@ -1,11 +1,11 @@
 import type { Hooks, PluginInput } from "@opencode-ai/plugin"
 import { Log } from "../util/log"
 import { Installation } from "../installation"
-import { Auth, OAUTH_DUMMY_KEY } from "../auth"
+import { Auth, OAUTH_DUMMY_KEY } from "@opendora/auth"
 import os from "os"
 import { Provider } from "@opendora/provider/provider"
 import { ProviderTransform } from "@opendora/provider/transform"
-import { Bus } from "@/bus"
+import { Bus } from "@opendora/runtime/bus"
 import { BusEvent } from "@/bus/bus-event"
 
 const log = Log.create({ service: "plugin.codex" })

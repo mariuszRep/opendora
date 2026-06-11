@@ -1,28 +1,31 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@opendora/runtime",
-  "version": "1.2.15",
+  "name": "@opendora/config",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsgo --noEmit",
-    "test": "bun test --timeout 30000"
+    "typecheck": "tsc --noEmit"
   },
-  "exports": { "./*": "./src/*.ts" },
+  "exports": {
+    "./*": "./src/*.ts"
+  },
   "dependencies": {
-    "@opendora/config": "workspace:*",
+    "@opendora/auth": "workspace:*",
     "@opendora/opencode": "workspace:*",
+    "@opendora/provider": "workspace:*",
+    "@opendora/runtime": "workspace:*",
     "@opendora/session": "workspace:*",
     "@opendora/storage": "workspace:*",
     "@opendora/tools": "workspace:*",
     "@opendora/util": "workspace:*",
-    "drizzle-orm": "catalog:",
+    "gray-matter": "4.0.3",
+    "jsonc-parser": "3.3.1",
     "remeda": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@types/bun": "catalog:",
-    "@typescript/native-preview": "catalog:",
     "typescript": "catalog:"
   }
 }

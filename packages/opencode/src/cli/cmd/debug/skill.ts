@@ -1,5 +1,5 @@
 import { EOL } from "os"
-import { Skill } from "../../../skill"
+import { Skill } from "../../../skill/skill"
 import { bootstrap } from "../../bootstrap"
 import { cmd } from "../cmd"
 

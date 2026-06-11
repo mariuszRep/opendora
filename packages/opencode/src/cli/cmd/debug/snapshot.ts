@@ -1,4 +1,4 @@
-import { Snapshot } from "../../../snapshot"
+import { Snapshot } from "@opendora/runtime/snapshot"
 import { bootstrap } from "../../bootstrap"
 import { cmd } from "../cmd"
 

@@ -5,7 +5,7 @@ import path from "path"
 import z from "zod"
 
 import * as Formatter from "./formatter"
-import { Config } from "@opendora/opencode/config/config"
+import { Config } from "@opendora/config/config"
 import { mergeDeep } from "remeda"
 import { Instance } from "./instance"
 import { Process } from "@opendora/util/process"

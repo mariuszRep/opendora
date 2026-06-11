@@ -133,3 +133,16 @@
     transform: translateY(-10px);
   }
 }
+
+/* Tailwind Typography doesn't target div, but our markdown renderer uses
+   div[data-streamdown="p"] to avoid invalid <p> nesting in blockquotes. */
+.prose div[data-streamdown="p"] {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+}
+.prose div[data-streamdown="p"]:first-child {
+  margin-top: 0;
+}
+.prose div[data-streamdown="p"]:last-child {
+  margin-bottom: 0;
+}

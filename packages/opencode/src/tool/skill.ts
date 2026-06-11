@@ -1,7 +1,7 @@
 import path from "path"
 import z from "zod"
 import { Tool } from "./tool"
-import { Skill } from "../skill"
+import { Skill } from "../skill/skill"
 import { PermissionNext } from "../permission/next"
 import { addSkillTools } from "@opendora/session/skill-tools"
 

@@ -95,6 +95,7 @@
     "@opencode-ai/script": "workspace:*",
     "@opendora/agent": "workspace:*",
     "@opendora/auth": "workspace:*",
+    "@opendora/config": "workspace:*",
     "@opendora/permission": "workspace:*",
     "@opendora/provider": "workspace:*",
     "@opendora/schedule": "workspace:*",

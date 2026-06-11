@@ -12,6 +12,7 @@
     "./discovery": "./src/discovery.ts"
   },
   "dependencies": {
+    "@opendora/config": "workspace:*",
     "@opendora/opencode": "workspace:*",
     "@opendora/runtime": "workspace:*",
     "@opendora/session": "workspace:*",

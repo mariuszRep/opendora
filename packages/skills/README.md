@@ -20,7 +20,8 @@ bun add @opendora/skills
 ## Quick Start
 
 ```typescript
-import { SkillManager, SkillLoader } from "@opendora/skills"
+import { SkillManager } from "@opendora/skills/manager"
+import { SkillLoader } from "@opendora/skills/loader"
 
 // Initialize manager
 const manager = new SkillManager({

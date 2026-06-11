@@ -1,5 +1,5 @@
 import { BusEvent } from "@/bus/bus-event"
-import { Bus } from "@/bus"
+import { Bus } from "@opendora/runtime/bus"
 import z from "zod"
 import { Instance } from "../project/instance"
 import { Log } from "../util/log"

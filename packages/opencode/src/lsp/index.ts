@@ -1,1 +1,1 @@
-export * from "@opendora/server/lsp/index"
+export * from "@opendora/server/lsp"

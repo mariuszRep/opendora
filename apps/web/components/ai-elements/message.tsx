@@ -385,6 +385,9 @@ const messageResponseComponents = {
     isValidElement(children)
       ? cloneElement(children, { "data-block": "true" } as React.Attributes & { "data-block": string })
       : children,
+  p: ({ children, className, node: _node, ...props }: ComponentProps<"p"> & { node?: unknown }) => (
+    <div className={className} data-streamdown="p" {...props}>{children}</div>
+  ),
   a: ({
     children,
     className,

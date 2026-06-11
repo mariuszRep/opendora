@@ -9,7 +9,7 @@ import {
   type Tool as MCPToolDef,
   ToolListChangedNotificationSchema,
 } from "@modelcontextprotocol/sdk/types.js"
-import { Config } from "@opendora/opencode/config/config"
+import { Config } from "@opendora/config/config"
 import { Log } from "@opendora/util/log"
 import { NamedError } from "@opendora/util/error"
 import z from "zod/v4"

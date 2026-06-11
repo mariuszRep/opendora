@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { Config } from "@opendora/opencode/config/config"
+import { Config } from "@opendora/config/config"
 import { Provider } from "@opendora/provider/provider"
 import { mapValues } from "remeda"
 import { errors } from "../error"
