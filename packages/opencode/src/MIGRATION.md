@@ -174,26 +174,29 @@ Move tests: `test/project/`, `test/scheduler.test.ts`, `test/snapshot/` → `pac
 
 ## Phase 6 — Domain Module Consolidation
 
-**Hard: extend existing packages with modules that now have no remaining opencode-internal deps.**
+**Hard: move modules into their canonical packages. Modules with remaining opencode-internal deps use interim `@opendora/opencode/...` imports until Phase 7 clears those deps.**
 
-| Source | Destination |
-|--------|-------------|
-| `permission/` (2 files) | Extend `@opendora/permission` |
-| `skill/` (3 files) | Extend `@opendora/skills` |
-| `file/` (5 files: ripgrep, ignore, watcher) | Extend `@opendora/tools` |
-| `lsp/` (4 files) | `@opendora/server` |
-| `mcp/` (4 files) | `@opendora/server` |
-| `share/share-next.ts` | `@opendora/session` |
-| `control/index.ts` | `@opendora/storage` |
-| `ide/index.ts` | `@opendora/server` |
-| `format/` (2 files) | `@opendora/util` |
-| `auth/` (2 files) | `@opendora/auth` |
-| `question/index.ts` | `@opendora/runtime` |
-| `pty/index.ts` | `@opendora/server` |
+> **Shipped (branch `migration/phase-6-domain-modules`):** lsp, mcp, ide, pty, auth, control, question, format.
+> **Blocked by opencode↔runtime cycle:** skill, file (watcher/time), permission/next, share/share-next — originals stay in opencode; copies exist in target packages but are not yet wired as re-export stubs.
 
-Co-migrate matching test files from `test/` to destination packages.
+| Source | Destination | Status |
+|--------|-------------|--------|
+| `lsp/` (4 files) | `@opendora/server/lsp/` | ✅ Shipped — stub redirects in place |
+| `mcp/` (4 files) | `@opendora/server/mcp/` | ✅ Shipped — stub redirects in place |
+| `ide/index.ts` | `@opendora/server/ide` | ✅ Shipped — stub redirect in place |
+| `pty/index.ts` | `@opendora/server/pty` | ✅ Shipped — stub redirect in place |
+| `auth/` (2 files) | `@opendora/auth` | ✅ Shipped — stub redirect in place |
+| `control/index.ts` | `@opendora/storage` | ✅ Shipped — stub redirect in place |
+| `question/index.ts` | `@opendora/runtime` | ✅ Shipped — stub redirect in place |
+| `format/` (2 files) | `@opendora/runtime` (not util — needs Instance/Bus/Config) | ✅ Shipped — stub redirects in place |
+| `skill/` (3 files) | `@opendora/skills` | 🔶 Copies in skills/; opencode originals retained (runtime↔opencode cycle) |
+| `file/` (watcher, time) | `@opendora/tools` | 🔶 Blocked — tools cannot take opencode/runtime deps without new cycles |
+| `permission/next.ts` | `@opendora/server` (bridge code) | 🔶 Blocked — callers all in opencode; cycles if moved to permission pkg |
+| `share/share-next.ts` | `@opendora/session` | 🔶 Blocked — session cannot take opencode/runtime deps without new cycles |
 
-**Exit criteria:** `src/` contains only: `cli/`, `daemon/`, `plugin/`, `command/`, `config/`, `acp/`, `tool/`, `bun/`, `agent.ts`, `schedule.ts`, `index.ts`.
+**Cycle note:** `@opendora/runtime` ↔ `@opendora/opencode` is a pre-existing cycle from Phase 5 that breaks `bun turbo typecheck`. Resolving it (Phase 7) unblocks the remaining rows above.
+
+**Exit criteria (full):** `src/` contains only: `cli/`, `daemon/`, `plugin/`, `command/`, `config/`, `acp/`, `tool/`, `bun/`, `agent.ts`, `schedule.ts`, `index.ts`.
 
 ---
 
