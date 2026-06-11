@@ -2,11 +2,11 @@ import { BusEvent } from "@opendora/util/bus-event"
 import { Bus } from "@opendora/runtime/bus"
 import { type IPty } from "bun-pty"
 import z from "zod"
-import { Identifier } from "@opendora/opencode/id/id"
+import { Identifier } from "@opendora/util/id"
 import { Log } from "@opendora/util/log"
 import { Instance } from "@opendora/runtime/instance"
 import { lazy } from "@opendora/util/lazy"
-import { Shell } from "@opendora/opencode/shell/shell"
+import { Shell } from "@opendora/util/shell"
 import { Plugin } from "@opendora/opencode/plugin"
 
 export namespace Pty {

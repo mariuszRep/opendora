@@ -1,6 +1,6 @@
 import { Bus } from "./bus"
 import { BusEvent } from "@opendora/util/bus-event"
-import { Identifier } from "@opendora/opencode/id/id"
+import { Identifier } from "@opendora/util/id"
 import { Instance } from "./instance"
 import { Log } from "@opendora/util/log"
 import z from "zod"

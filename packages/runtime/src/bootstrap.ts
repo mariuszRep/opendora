@@ -1,5 +1,5 @@
 import { Plugin } from "@opendora/opencode/plugin"
-import { Format } from "@opendora/opencode/format"
+import { Format } from "./format"
 import { LSP } from "@opendora/opencode/lsp"
 import { FileWatcher } from "@opendora/opencode/file/watcher"
 import { File } from "@opendora/opencode/file"

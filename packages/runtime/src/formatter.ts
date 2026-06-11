@@ -1,9 +1,9 @@
 import { text } from "node:stream/consumers"
-import { BunProc } from "@opendora/opencode/bun"
+import { BunProc } from "@opendora/util/bun"
 import { Instance } from "./instance"
 import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { Process } from "@opendora/util/process"
-import { Flag } from "@opendora/opencode/flag/flag"
+import { Flag } from "@opendora/util/flag"
 
 export interface Info {
   name: string

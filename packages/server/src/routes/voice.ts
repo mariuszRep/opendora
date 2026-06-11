@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { Auth } from "@opendora/opencode/auth"
+import { Auth } from "@opendora/auth"
 import { errors } from "../error"
 import { lazy } from "@opendora/util/lazy"
 

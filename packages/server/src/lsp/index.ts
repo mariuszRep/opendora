@@ -9,7 +9,7 @@ import z from "zod"
 import { Config } from "@opendora/opencode/config/config"
 import { spawn } from "child_process"
 import { Instance } from "@opendora/runtime/instance"
-import { Flag } from "@opendora/opencode/flag/flag"
+import { Flag } from "@opendora/util/flag"
 
 export namespace LSP {
   const log = Log.create({ service: "lsp" })

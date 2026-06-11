@@ -1,8 +1,8 @@
 import path from "path"
 import { mkdir } from "fs/promises"
 import { Log } from "@opendora/util/log"
-import { Global } from "@opendora/opencode/global"
-import { Filesystem } from "@opendora/opencode/util/filesystem"
+import { Global } from "@opendora/util/global"
+import { Filesystem } from "@opendora/util/filesystem"
 
 export namespace Discovery {
   const log = Log.create({ service: "skill-discovery" })

@@ -1,6 +1,6 @@
 import path from "path"
 import z from "zod"
-import { Global } from "@opendora/opencode/global"
+import { Global } from "@opendora/util/global"
 import { Filesystem } from "@opendora/util/filesystem"
 
 export namespace McpAuth {
