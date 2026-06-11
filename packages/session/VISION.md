@@ -14,8 +14,9 @@ Session owns the universal execution ledger and session state for conversations,
 - Canonical capture for normal agent conversations, workflow runs, schedule-triggered workflow runs, skill loading, tool availability, tool-call traces, and other executable work.
 - Mixed ledgers where normal agent conversation and nested workflow execution coexist in one session history.
 - Parent-session relationships for nested workflow runs.
-- Session lifecycle and status.
+- Session lifecycle and status, including suspended/resumable run status.
 - Run linkage, run metadata, summaries, compaction, and token usage where session-scoped.
+- The run state shape: the durable cursor, context, and step journal that capture where a run is and what it has completed, persisted through storage's run-state/checkpoint contract.
 
 ## Does Not Own
 
@@ -43,6 +44,8 @@ Session owns the universal execution ledger and session state for conversations,
 
 - Session owns the state shape, ledger shape, and lifecycle for a run.
 - Agent conversations, workflow runs, and schedule-triggered workflow runs are represented as sessions or session-linked run records in one consistent format.
+- A run is one durable, resumable, event-sourced execution; a normal conversation is the simplest workflow (a single assistant-turn loop), and any conversation may be transformed into a reusable workflow over the same ledger.
+- Session defines the durable run state shape (cursor, context, step journal, status) and records it; runtime decides when to checkpoint, suspend, resume, or replay; storage decides where and how it is persisted.
 - A schedule run creates or resumes a parent session; the triggered workflow run is nested within that parent session.
 - Workflow execution and normal agent conversation may be mixed in the same session ledger when the product flow requires it.
 - Runtime causes context changes; session records those changes as current state and event history.

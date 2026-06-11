@@ -44,7 +44,7 @@ session    -> storage
 - Auth identifies the caller.
 - Permission decides what the caller may do across domains.
 - Runtime is the execution engine: it keeps executable work alive and orchestrates agent runs, skills, providers, tools, workflows, schedules, sessions, streaming, cancellation, retries, and run lifecycle.
-- Session is the universal execution ledger and run-capture format for agent runs, workflow runs, schedule-triggered runs, and other executable work.
+- Session is the universal execution ledger and run-capture format for agent runs, workflow runs, schedule-triggered runs, and other executable work. A run is one durable, resumable, event-sourced execution; a conversation is the simplest workflow and any conversation may be transformed into a reusable workflow.
 - Domain packages own their domain behavior and expose canonical operations for their entities.
 - Storage is the only persistence boundary. Packages that need durable data use storage contracts instead of choosing JSON, SQLite, Postgres, files, or another backend directly.
 

@@ -16,6 +16,7 @@
     "@opendora/tools": "workspace:*",
     "@opendora/util": "workspace:*",
     "drizzle-orm": "catalog:",
+    "remeda": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

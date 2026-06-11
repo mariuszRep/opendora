@@ -13,6 +13,7 @@ Storage is the exclusive persistence abstraction layer for OpenDora packages.
 - Storage selection and configuration.
 - Common persistence behavior needed across domains.
 - Persistence support for the universal session/run capture format.
+- A durable run-state / checkpoint contract: the stable interface through which a run's cursor, context, step journal, and suspend/resume tokens are persisted, listed, and read so runs can resume and replay across process restarts.
 
 ## Does Not Own
 
@@ -43,6 +44,7 @@ Storage is the exclusive persistence abstraction layer for OpenDora packages.
 - Persisted agents, providers, sessions, workflows, skills, schedules, permissions, auth identities, and tool state go through storage contracts.
 - Domain packages must not choose or directly access JSON, SQLite, Postgres, files, or another backend.
 - Storage preserves persistence mechanics; domains preserve business meaning.
+- The run-state / checkpoint contract is persistence only: storage stores and retrieves run snapshots and journals but never decides when to checkpoint, resume, replay, or suspend. Runtime owns those decisions; session owns the run state shape.
 
 ## Canonical Operations
 

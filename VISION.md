@@ -9,6 +9,8 @@ OpenDora is a local-first agentic application platform where users operate and e
 
 OpenDora is intended to remain lightweight at its core while supporting an ecosystem of installable extensions that can attach new capabilities and integrated experiences without turning every capability into a core module.
 
+Conversations and workflows are one durable execution model. A run — whether a normal conversation or a workflow — is a single durable, resumable, event-sourced execution. A normal conversation is the simplest workflow (message → reply); a workflow is the same run with more structure; and any conversation can be transformed into a reusable workflow.
+
 ## Owns
 
 - Product-level architecture and boundaries for OpenDora.
@@ -74,6 +76,8 @@ domain packages that persist data
 - Domain packages own their own entities and canonical behavior.
 - Storage is the only persistence boundary. Packages that need durable data use storage contracts instead of choosing JSON, SQLite, Postgres, files, or another backend directly.
 - Session is the universal execution ledger and records run state/history; it is not the execution engine.
+- A run is one durable, resumable, event-sourced execution; conversations and workflows share this model, and any conversation may be transformed into a reusable workflow.
+- Durable run state — checkpoints, step journal, and suspend/resume tokens — is persisted only through storage contracts; runtime owns resume and replay; session records run state and history.
 - Plugins are installable OpenDora extension packages. A plugin may contribute any subset of agents, skills, tools, MCP integrations, workflows, schedules, configuration, permissions, and UI extension surfaces.
 - Users should install extension capabilities as plugins rather than through separate product concepts for installing agents, skills, workflows, schedules, or tools independently.
 - Tools are a primary extension boundary because they may need execution behavior, schemas, permissions, configuration, and bespoke UI interaction/rendering surfaces.

@@ -7,6 +7,12 @@ const BASE_CMD = [
   "packages/opencode/node_modules/@playwright/mcp/cli.js",
   `--executable-path=${PLAYWRIGHT_EXECUTABLE_PATH}`,
 ]
+const HEADED_CMD = [...BASE_CMD, "--config=packages/tools/browser/playwright-headed.config.json"]
+const HEADED_ENVIRONMENT = {
+  DISPLAY: process.env.DISPLAY ?? ":10",
+  XAUTHORITY: process.env.XAUTHORITY ?? "/home/mariusz/.Xauthority",
+  DBUS_SESSION_BUS_ADDRESS: process.env.DBUS_SESSION_BUS_ADDRESS ?? "unix:path=/run/user/1000/bus",
+}
 
 function apiBase() {
   return process.env.OPENCODE_URL ?? "http://localhost:4097"
@@ -25,7 +31,8 @@ export const PlaywrightModeTool = Tool.define("playwright_browser_mode", {
   }),
   async execute(params) {
     const api = apiBase()
-    const cmd = params.mode === "headless" ? [...BASE_CMD, "--headless"] : [...BASE_CMD]
+    const cmd = params.mode === "headless" ? [...BASE_CMD, "--headless"] : HEADED_CMD
+    const environment = params.mode === "headed" ? HEADED_ENVIRONMENT : undefined
 
     const disconnect = await fetch(`${api}/mcp/playwright/disconnect`, { method: "POST" })
     if (!disconnect.ok) throw new Error(`Disconnect failed: ${disconnect.status}`)
@@ -33,7 +40,7 @@ export const PlaywrightModeTool = Tool.define("playwright_browser_mode", {
     const patch = await fetch(`${api}/config`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mcp: { playwright: { type: "local", command: cmd } } }),
+      body: JSON.stringify({ mcp: { playwright: { type: "local", command: cmd, environment } } }),
     })
     if (!patch.ok) throw new Error(`Config update failed: ${patch.status}`)
 

@@ -48,6 +48,16 @@ export namespace BusEvent {
     z.object({}),
   )
 
+  export const ToastShow = define(
+    "tui.toast.show",
+    z.object({
+      title: z.string().optional(),
+      message: z.string(),
+      variant: z.enum(["info", "success", "warning", "error"]),
+      duration: z.number().default(5000).optional().describe("Duration in milliseconds"),
+    }),
+  )
+
   export function payloads() {
     return z
       .discriminatedUnion(

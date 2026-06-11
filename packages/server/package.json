@@ -24,8 +24,11 @@
     "@opendora/tools": "workspace:*",
     "@opendora/util": "workspace:*",
     "@opendora/workflow": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.25.2",
     "ai": "catalog:",
     "bonjour-service": "1.3.0",
+    "open": "10.1.2",
+    "bun-pty": "0.4.8",
     "drizzle-orm": "1.0.0-beta.12-a5629fb",
     "hono": "catalog:",
     "hono-openapi": "catalog:",
@@ -33,6 +36,8 @@
     "remeda": "catalog:",
     "ulid": "catalog:",
     "zod": "catalog:",
+    "vscode-jsonrpc": "8.2.1",
+    "vscode-languageserver-types": "3.17.5",
     "zod-to-json-schema": "3.24.5"
   },
   "devDependencies": {

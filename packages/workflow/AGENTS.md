@@ -7,8 +7,9 @@ Read the root file set first, then this package's local file set.
 
 1. Root `AGENTS.md`
 2. `packages/workflow/VISION.md`
-3. This file
-4. The user-facing authoring contract: `.opendora/skill/manage-workflow/SKILL.md` — the **Authoring Standard** section is normative for any change that touches workflow shape or runtime semantics.
+3. `packages/workflow/MIGRATION.md` — transition memory for the **Unified Durable Run** migration (checkpoint-driven runner). Read before changing `src/runner.ts` run state.
+4. This file
+5. The user-facing authoring contract: `.opendora/skill/manage-workflow/SKILL.md` — the **Authoring Standard** section is normative for any change that touches workflow shape or runtime semantics.
 
 ## Native tools, MCP-shaped
 
@@ -28,6 +29,13 @@ When editing this package you are editing the contract that other agents use to 
 - Do not invent ad-hoc field names that would not survive translation to an MCP `inputSchema`. New fields should map cleanly onto JSON Schema (`type`, `description`, `enum`, `default`, `format`, `items`, `properties`, etc.).
 - If you add a new node kind, register it in `src/node-types.ts` + `src/node-registry.ts`, handle it in `src/runner.ts`, and document it in `.opendora/skill/manage-workflow/SKILL.md` under the same Authoring Standard.
 - If you change runtime semantics that the skill describes, update the skill in the same change. The skill is the agent-facing contract.
+
+### Durable run state (Unified Durable Run migration)
+
+- Do not reintroduce in-memory-only run state as a source of truth. `src/runner.ts` currently holds `ctx`/`steps` in plain locals; the migration moves run state (cursor, context, step journal, status) behind storage's run-state/checkpoint contract. New run-state must flow through that contract, not module-local variables.
+- Resume must be deterministic: completed steps are replayed from the journal, never re-executed. Side-effecting nodes (Tool, RunWorkflow) must be idempotent under replay or guarded by a journaled completion marker.
+- The synthetic tool-message surface (`workflow_parameters`, `workflow_decide`) and step ordering must be byte-for-byte identical whether a run is fresh or resumed — the agent must not be able to tell a resume happened.
+- A previously granted permission/approval must be honored from the journal on resume, not re-prompted.
 
 ## Cross-references
 

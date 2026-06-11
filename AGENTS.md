@@ -22,6 +22,8 @@ Nested files inherit parent context by default. Treat nested files as stricter o
 - Do not present planned work as implemented. Put shipped facts in `STATE.md` and proposed work in `ROADMAP.md`.
 - Mark uncertain claims as `needs verification` or `unknown`.
 - Prefer existing scripts, build steps, and generators over ad hoc replacements.
+- The root `/MIGRATION.md` is the master transition memory for the **Unified Durable Run** migration (making conversations and workflows one durable, resumable, event-sourced run). Read it before changing run state, checkpointing, the workflow runner, or the conversation loop, and keep per-package `MIGRATION.md` files consistent with it.
+- Do not reintroduce in-memory-only run state as a source of truth. Durable run state (cursor, context, step journal, suspend/resume tokens) flows through `storage` contracts; `runtime` owns resume/replay; `session` records.
 
 ## Application & Package map
 

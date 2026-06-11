@@ -21,6 +21,8 @@ Runtime is the execution engine and orchestration layer for OpenDora work. Runti
 - Calling permission for authorization before protected actions.
 - Writing execution context, state changes, events, and output into session during execution.
 - Streaming, cancellation, retries, and run lifecycle behavior.
+- Deciding when to checkpoint a run, suspend it (awaiting human input, permission, a decision, or an external event), resume it, and replay completed steps from the run's journal.
+- Driving conversations and workflows through one step-journaled execution path, where a normal conversation is the simplest workflow (a single assistant-turn loop).
 
 ## Does Not Own
 
@@ -56,6 +58,8 @@ Runtime is the execution engine and orchestration layer for OpenDora work. Runti
 - Runtime assembles the effective execution context from agent, skill, tool, workflow, schedule, session, identity, and permission metadata.
 - Schedule-triggered execution enters runtime as workflow execution only.
 - Runtime records executable work through sessions so runs share one capture format.
+- Runtime owns resume and replay: it checkpoints runs, suspends and resumes them, and skips already-completed journal steps. Session defines and records the run state shape; storage persists it; runtime decides when these transitions happen.
+- Conversations and workflows advance through the same step-journaled executor; runtime does not maintain in-memory-only run state as a source of truth.
 - Runtime can run workflows nested inside a parent session, including parent sessions created or resumed by schedule runs.
 - Runtime decides how work executes and when active context changes.
 - Session owns how execution state, attached context, event history, and nesting are captured.

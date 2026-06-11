@@ -7,13 +7,27 @@
     "./types": "./src/types.ts",
     "./manager": "./src/manager.ts",
     "./loader": "./src/loader.ts",
-    "./registries/*": "./src/registries/*.ts"
+    "./registries/*": "./src/registries/*.ts",
+    "./skill": "./src/skill.ts",
+    "./discovery": "./src/discovery.ts"
   },
   "dependencies": {
+    "@opendora/opencode": "workspace:*",
+    "@opendora/runtime": "workspace:*",
+    "@opendora/session": "workspace:*",
+    "@opendora/util": "workspace:*",
+    "chokidar": "4.0.3",
     "zod": "^3.22.4",
     "yaml": "^2.3.4"
   },
   "devDependencies": {
-    "@types/node": "^20.11.5"
+    "@tsconfig/bun": "catalog:",
+    "@types/bun": "catalog:",
+    "@types/node": "^20.11.5",
+    "@typescript/native-preview": "catalog:",
+    "typescript": "catalog:"
+  },
+  "scripts": {
+    "typecheck": "tsgo --noEmit"
   }
 }
