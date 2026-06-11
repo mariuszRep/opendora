@@ -33,7 +33,8 @@
       "packages/schedule",
       "packages/workflow",
       "packages/storage",
-      "packages/server"
+      "packages/server",
+      "packages/runtime"
     ],
     "catalog": {
       "@types/bun": "1.3.9",

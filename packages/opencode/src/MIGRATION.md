@@ -219,13 +219,36 @@ Co-migrate matching test files from `test/` to destination packages.
 
 ---
 
+## Phase 8 — Create `apps/cli` and `apps/tui`; Delete `packages/opencode`
+
+**After Phase 7, `opencode/src/` contains only:** `cli/`, `daemon/`, `plugin/`, `config/tui-*.ts`, `index.ts`, `preload-bindings-fix.ts`, `sql.d.ts`
+
+| Source | Destination |
+|--------|-------------|
+| `src/index.ts` | `apps/cli/src/index.ts` |
+| `src/cli/` (minus `cmd/tui/`) | `apps/cli/src/cli/` |
+| `src/cli/cmd/tui/` | `apps/tui/src/` |
+| `src/daemon/` | `apps/cli/src/daemon/` |
+| `src/plugin/` | `apps/cli/src/plugin/` |
+
+`apps/cli` depends on: `@opendora/sdk` (or `@opendora/server` directly), `@opendora/runtime`, `@opendora/util`
+
+`apps/tui` depends on: `@opendora/sdk`, `@opentui/core`
+
+**Delete `packages/opencode`** and remove from workspace root `package.json`.
+
+**Exit criteria:** `opencode` binary built from `apps/cli`; TUI launches from `apps/tui`; `packages/opencode` removed from monorepo. `turbo build` succeeds. All tests pass.
+
+---
+
 ## Cross-Cutting Rules
 
-**Dependency order is strict:** 1 → 2 → 3 → 4 → 5 → 6 → 7.
+**Dependency order is strict:** 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8.
 - Phase 3 needs `context`/`lazy` from Phase 1
 - Phase 4 needs `@opendora/storage` from Phase 3
 - Phase 5 needs `@opendora/storage` from Phase 3
 - Phase 6 needs `Instance` from Phase 5
+- Phase 8 needs opencode fully hollowed out from Phases 6/7
 
 **Re-export redirect pattern:** When moving a file, leave a 1-line re-export at the old path. The existing `src/util/log.ts` is the model.
 

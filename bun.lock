@@ -151,9 +151,9 @@
         "@opendora/auth": "workspace:*",
         "@opendora/permission": "workspace:*",
         "@opendora/provider": "workspace:*",
+        "@opendora/runtime": "workspace:*",
         "@opendora/schedule": "workspace:*",
         "@opendora/sdk": "workspace:*",
-        "@opendora/server": "workspace:*",
         "@opendora/session": "workspace:*",
         "@opendora/storage": "workspace:*",
         "@opendora/tools": "workspace:*",
@@ -275,6 +275,24 @@
         "zod": "catalog:",
       },
     },
+    "packages/runtime": {
+      "name": "@opendora/runtime",
+      "version": "1.2.15",
+      "dependencies": {
+        "@opendora/opencode": "workspace:*",
+        "@opendora/session": "workspace:*",
+        "@opendora/storage": "workspace:*",
+        "@opendora/tools": "workspace:*",
+        "@opendora/util": "workspace:*",
+        "drizzle-orm": "catalog:",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "@typescript/native-preview": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/schedule": {
       "name": "@opendora/schedule",
       "version": "0.1.0",
@@ -310,6 +328,7 @@
         "@opendora/opencode": "workspace:*",
         "@opendora/permission": "workspace:*",
         "@opendora/provider": "workspace:*",
+        "@opendora/runtime": "workspace:*",
         "@opendora/schedule": "workspace:*",
         "@opendora/session": "workspace:*",
         "@opendora/storage": "workspace:*",
@@ -1167,6 +1186,8 @@
     "@opendora/permission": ["@opendora/permission@workspace:packages/permission"],
 
     "@opendora/provider": ["@opendora/provider@workspace:packages/provider"],
+
+    "@opendora/runtime": ["@opendora/runtime@workspace:packages/runtime"],
 
     "@opendora/schedule": ["@opendora/schedule@workspace:packages/schedule"],
 
@@ -3997,6 +4018,8 @@
     "@opendora/provider/ai": ["ai@5.0.124", "", { "dependencies": { "@ai-sdk/gateway": "2.0.30", "@ai-sdk/provider": "2.0.1", "@ai-sdk/provider-utils": "3.0.20", "@opentelemetry/api": "1.9.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-Li6Jw9F9qsvFJXZPBfxj38ddP2iURCnMs96f9Q3OeQzrDVcl1hvtwSEAuxA/qmfh6SDV2ERqFUOFzigvr0697g=="],
 
     "@opendora/provider/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
+
+    "@opendora/runtime/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 
     "@opendora/schedule/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 

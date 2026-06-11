@@ -102,6 +102,7 @@
     "@opendora/session": "workspace:*",
     "@opendora/tools": "workspace:*",
     "@opendora/util": "workspace:*",
+    "@opendora/runtime": "workspace:*",
     "@opendora/storage": "workspace:*",
     "@opendora/workflow": "workspace:*",
     "@openrouter/ai-sdk-provider": "1.5.4",
