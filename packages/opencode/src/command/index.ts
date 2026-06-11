@@ -6,7 +6,7 @@ import { Identifier } from "../id/id"
 import PROMPT_INITIALIZE from "./template/initialize.txt"
 import PROMPT_REVIEW from "./template/review.txt"
 import { MCP } from "@opendora/server/mcp/index"
-import { Skill } from "./skill/skill"
+import { Skill } from "../skill/skill"
 
 export namespace Command {
   export const Event = {

@@ -18,8 +18,7 @@ import {
   extractPathBoundaries as _extractPathBoundaries,
   type AskInput,
   type PermissionStore,
-} from "@opendora/permission/types"
-import { CREATE_TABLE_SQL } from "@opendora/permission"
+} from "@opendora/permission"
 import { Database, eq, and } from "@opendora/storage/db"
 import { PermissionRuleTable } from "@/storage/permission.sql"
 import { Bus } from "@opendora/runtime/bus"

@@ -16,24 +16,11 @@
   },
   "exports": {
     "./*": "./src/*.ts",
-    "./bun": "./src/bun/index.ts",
     "./plugin": "./src/plugin/index.ts",
-    "./auth": "./src/auth/index.ts",
-    "./env": "./src/env/index.ts",
-    "./global": "./src/global/index.ts",
     "./installation": "./src/installation/index.ts",
-    "./bus": "./src/bus/index.ts",
     "./command": "./src/command/index.ts",
     "./file": "./src/file/index.ts",
-    "./format": "./src/format/index.ts",
-    "./lsp": "./src/lsp/index.ts",
-    "./mcp": "./src/mcp/index.ts",
-    "./pty": "./src/pty/index.ts",
-    "./question": "./src/question/index.ts",
-    "./scheduler": "./src/scheduler/index.ts",
-    "./skill": "./src/skill/index.ts",
-    "./snapshot": "./src/snapshot/index.ts",
-    "./worktree": "./src/worktree/index.ts"
+    "./skill/discovery": "./src/skill/discovery.ts"
   },
   "devDependencies": {
     "@babel/core": "7.28.4",
@@ -101,6 +88,7 @@
     "@opendora/schedule": "workspace:*",
     "@opendora/sdk": "workspace:*",
     "@opendora/session": "workspace:*",
+    "@opendora/skills": "workspace:*",
     "@opendora/tools": "workspace:*",
     "@opendora/util": "workspace:*",
     "@opendora/runtime": "workspace:*",

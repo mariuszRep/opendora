@@ -9,7 +9,16 @@
     "test": "bun test --timeout 30000"
   },
   "exports": {
-    "./*": "./src/*.ts"
+    "./*": "./src/*.ts",
+    "./lsp": "./src/lsp/index.ts",
+    "./lsp/index": "./src/lsp/index.ts",
+    "./lsp/client": "./src/lsp/client.ts",
+    "./lsp/server": "./src/lsp/server.ts",
+    "./lsp/language": "./src/lsp/language.ts",
+    "./mcp": "./src/mcp/index.ts",
+    "./mcp/index": "./src/mcp/index.ts",
+    "./mcp/auth": "./src/mcp/auth.ts",
+    "./mcp/oauth-provider": "./src/mcp/oauth-provider.ts"
   },
   "dependencies": {
     "@opendora/agent": "workspace:*",
@@ -21,6 +30,7 @@
     "@opendora/provider": "workspace:*",
     "@opendora/schedule": "workspace:*",
     "@opendora/session": "workspace:*",
+    "@opendora/skills": "workspace:*",
     "@opendora/storage": "workspace:*",
     "@opendora/tools": "workspace:*",
     "@opendora/util": "workspace:*",

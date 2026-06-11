@@ -15,7 +15,7 @@ import { Format } from "@opendora/runtime/format"
 import { TuiRoutes } from "./routes/tui"
 import { Instance } from "@opendora/runtime/instance"
 import { Vcs } from "@opendora/runtime/vcs"
-import { Skill } from "@opendora/opencode/skill/skill"
+import { Skill } from "@opendora/skills/skill"
 import { Auth } from "@opendora/auth"
 import { Flag } from "@opendora/util/flag"
 import { Command } from "@opendora/opencode/command"
@@ -234,7 +234,7 @@ export namespace Server {
           })()
           return Instance.provide({
             directory,
-            init: InstanceBootstrap,
+            init: async () => { await LSP.init(); await InstanceBootstrap() },
             async fn() {
               return next()
             },
