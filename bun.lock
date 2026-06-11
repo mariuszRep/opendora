@@ -421,6 +421,7 @@
         "@opendora/opencode": "workspace:*",
         "@opendora/runtime": "workspace:*",
         "@opendora/session": "workspace:*",
+        "@opendora/tools": "workspace:*",
         "@opendora/util": "workspace:*",
         "chokidar": "4.0.3",
         "yaml": "^2.3.4",
