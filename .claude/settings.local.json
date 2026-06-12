@@ -9,7 +9,8 @@
       "Bash(head -20 /mnt/fileshare/projects/opendora/packages/server/test/*.test.ts)",
       "Bash(ls /mnt/fileshare/projects/opendora/packages/opencode/src/session*)",
       "Bash(sed -n '190,220p' /mnt/fileshare/projects/opendora/packages/server/src/configure-session-core.ts)",
-      "Bash(sed -n '420,435p' /mnt/fileshare/projects/opendora/packages/server/src/configure-session-core.ts)"
+      "Bash(sed -n '420,435p' /mnt/fileshare/projects/opendora/packages/server/src/configure-session-core.ts)",
+      "Bash(git add *)"
     ]
   }
 }

@@ -1,1 +1,1 @@
-export { AgentDeleteTool } from "@opendora/tools/agents"
+export { AgentDeleteTool } from "@opendora/tools/agents/agent-delete"

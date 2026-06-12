@@ -10,6 +10,8 @@ const home = process.env.OPENCODE_TEST_HOME || os.homedir()
 
 async function findRoot(): Promise<string> {
   if (process.env.OPENCODE_CONFIG_DIR) return process.env.OPENCODE_CONFIG_DIR
+  // In test environments, skip the cwd walk to avoid picking up real runtime config
+  if (process.env.OPENCODE_TEST_HOME) return path.join(process.env.OPENCODE_TEST_HOME, ".projectflows")
 
   // Walk up from cwd looking for a .projectflows directory
   let dir = process.cwd()
@@ -52,6 +54,7 @@ export namespace Global {
 await Promise.all([
   fs.mkdir(Global.Path.data, { recursive: true }),
   fs.mkdir(Global.Path.config, { recursive: true }),
+  fs.mkdir(Global.Path.cache, { recursive: true }),
   fs.mkdir(Global.Path.state, { recursive: true }),
   fs.mkdir(Global.Path.log, { recursive: true }),
   fs.mkdir(Global.Path.bin, { recursive: true }),

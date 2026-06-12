@@ -1,6 +1,6 @@
 import { ConfigMarkdown } from "@/config/markdown"
 import { Config } from "../config/config"
-import { MCP } from "../mcp"
+import { MCP } from "@opendora/server/mcp/index"
 import { Provider } from "@opendora/provider/provider"
 import { UI } from "./ui"
 

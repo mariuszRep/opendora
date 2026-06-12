@@ -1,6 +1,6 @@
 import { Hono } from "hono"
 import { describeRoute, resolver, validator } from "hono-openapi"
-import { RegistrationSchema } from "@opendora/opencode/auth/registration"
+import { RegistrationSchema } from "@opendora/auth/registration"
 import { errors } from "../error"
 import { lazy } from "@opendora/util/lazy"
 import z from "zod"

@@ -1,5 +1,5 @@
 import { describe, expect, test, afterEach } from "bun:test"
-import { Ide } from "../../src/ide"
+import { Ide } from "@opendora/server/ide"
 
 describe("ide", () => {
   const original = { ...process.env }

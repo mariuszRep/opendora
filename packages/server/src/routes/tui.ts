@@ -1,7 +1,7 @@
 import { Hono, type Context } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { Bus } from "@opendora/opencode/bus"
+import { Bus } from "@opendora/runtime/bus"
 import { Session } from "@opendora/session/session"
 import { TuiEvent } from "@opendora/opencode/cli/cmd/tui/event"
 import { AsyncQueue } from "@opendora/util/queue"

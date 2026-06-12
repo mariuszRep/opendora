@@ -2,7 +2,7 @@ import { Hono } from "hono"
 import fs from "fs/promises"
 import { existsSync, readFileSync } from "fs"
 import path from "path"
-import { Global } from "@opendora/opencode/global"
+import { Global } from "@opendora/util/global"
 import { lazy } from "@opendora/util/lazy"
 
 type VoiceSettings = {

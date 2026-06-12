@@ -1,7 +1,7 @@
 import { test, expect, describe, mock, afterEach } from "bun:test"
 import { Config } from "../../src/config/config"
 import { Instance } from "../../src/project/instance"
-import { Auth } from "../../src/auth"
+import { Auth } from "@opendora/auth"
 import { tmpdir } from "../fixture/fixture"
 import path from "path"
 import fs from "fs/promises"
@@ -591,7 +591,7 @@ test("updates config and writes to file", async () => {
       const newConfig = { model: "updated/model" }
       await Config.update(newConfig as any)
 
-      const writtenConfig = await Filesystem.readJson(path.join(tmp.path, "config.json"))
+      const writtenConfig = await Filesystem.readJson(path.join(tmp.path, "opencode.json"))
       expect(writtenConfig.model).toBe("updated/model")
     },
   })

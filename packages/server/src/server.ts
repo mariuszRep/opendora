@@ -1,5 +1,5 @@
 import { BusEvent } from "@opendora/util/bus-event"
-import { Bus } from "@opendora/opencode/bus"
+import { Bus } from "@opendora/runtime/bus"
 import { Log } from "@opendora/util/log"
 import { describeRoute, generateSpecs, validator, resolver, openAPIRouteHandler } from "hono-openapi"
 import { Hono } from "hono"
@@ -10,16 +10,16 @@ import { basicAuth } from "hono/basic-auth"
 import z, { toJSONSchema as zodToJSONSchema } from "zod"
 import { Provider } from "@opendora/provider/provider"
 import { NamedError } from "@opendora/util/error"
-import { LSP } from "@opendora/opencode/lsp"
-import { Format } from "@opendora/opencode/format"
+import { LSP } from "./lsp"
+import { Format } from "@opendora/runtime/format"
 import { TuiRoutes } from "./routes/tui"
-import { Instance } from "@opendora/opencode/project/instance"
-import { Vcs } from "@opendora/opencode/project/vcs"
-import { Skill } from "@opendora/opencode/skill/skill"
-import { Auth } from "@opendora/opencode/auth"
-import { Flag } from "@opendora/opencode/flag/flag"
+import { Instance } from "@opendora/runtime/instance"
+import { Vcs } from "@opendora/runtime/vcs"
+import { Skill } from "@opendora/skills/skill"
+import { Auth } from "@opendora/auth"
+import { Flag } from "@opendora/util/flag"
 import { Command } from "@opendora/opencode/command"
-import { Global } from "@opendora/opencode/global"
+import { Global } from "@opendora/util/global"
 import { ProjectRoutes } from "./routes/project"
 import { SessionRoutes } from "./routes/session"
 import { PtyRoutes } from "./routes/pty"
@@ -40,7 +40,7 @@ import { Database } from "@opendora/storage/db"
 import { Agent } from "@opendora/opencode/agent"
 import { ToolRegistry } from "@opendora/opencode/tool/registry"
 import { lazy } from "@opendora/util/lazy"
-import { InstanceBootstrap } from "@opendora/opencode/project/bootstrap"
+import { InstanceBootstrap } from "@opendora/runtime/bootstrap"
 import { NotFoundError } from "@opendora/storage/db"
 import type { ContentfulStatusCode } from "hono/utils/http-status"
 import { websocket } from "hono/bun"
@@ -234,7 +234,7 @@ export namespace Server {
           })()
           return Instance.provide({
             directory,
-            init: InstanceBootstrap,
+            init: async () => { await LSP.init(); await InstanceBootstrap() },
             async fn() {
               return next()
             },

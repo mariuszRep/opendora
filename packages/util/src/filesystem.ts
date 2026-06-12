@@ -1,5 +1,7 @@
 import { chmod, mkdir, readFile, writeFile } from "fs/promises"
-import { existsSync } from "fs"
+import { pipeline } from "stream/promises"
+import { createWriteStream, existsSync } from "fs"
+import { Readable } from "stream"
 import { dirname } from "path"
 
 export namespace Filesystem {
@@ -46,5 +48,22 @@ export namespace Filesystem {
 
   export async function writeJson(p: string, data: unknown, mode?: number): Promise<void> {
     return write(p, JSON.stringify(data, null, 2), mode)
+  }
+
+  export async function writeStream(
+    p: string,
+    stream: ReadableStream<Uint8Array> | Readable,
+    mode?: number,
+  ): Promise<void> {
+    const dir = dirname(p)
+    if (!existsSync(dir)) {
+      await mkdir(dir, { recursive: true })
+    }
+    const nodeStream = stream instanceof ReadableStream ? Readable.fromWeb(stream as any) : stream
+    const ws = createWriteStream(p)
+    await pipeline(nodeStream, ws)
+    if (mode) {
+      await chmod(p, mode)
+    }
   }
 }

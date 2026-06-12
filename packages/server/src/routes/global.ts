@@ -4,11 +4,11 @@ import { streamSSE } from "hono/streaming"
 import z from "zod"
 import { BusEvent } from "@opendora/util/bus-event"
 import { GlobalBus } from "@opendora/util/global-bus"
-import { Instance } from "@opendora/opencode/project/instance"
+import { Instance } from "@opendora/runtime/instance"
 import { Installation } from "@opendora/opencode/installation"
 import { Log } from "@opendora/util/log"
 import { lazy } from "@opendora/util/lazy"
-import { Config } from "@opendora/opencode/config/config"
+import { Config } from "@opendora/config/config"
 import { errors } from "../error"
 
 const log = Log.create({ service: "server" })

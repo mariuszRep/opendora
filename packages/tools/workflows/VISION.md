@@ -84,6 +84,8 @@ Each run holds:
 
 `history` is append-only and is the source of truth for replay, audit, and UI rendering. The agent's natural-language reasoning is *not* state — only tool calls move the run forward.
 
+This run state (`cursor`, `ctx`, `completed`, `history`) is the tool-surface view of the durable run state introduced by the **Unified Durable Run** migration (root `/MIGRATION.md`). It is persisted through storage's run-state / checkpoint contract — never as in-memory-only state — so a run can resume, replay completed steps, and suspend for input across process restarts. These tools author and advance run state; runtime decides when to checkpoint, suspend, and resume; storage persists it. `completed`/`history` map onto the migration's step journal, and `cursor` onto the run cursor.
+
 ---
 
 ## What lives where

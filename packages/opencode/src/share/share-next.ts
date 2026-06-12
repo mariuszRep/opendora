@@ -1,4 +1,4 @@
-import { Bus } from "@/bus"
+import { Bus } from "@opendora/runtime/bus"
 import { Config } from "@/config/config"
 import { ulid } from "ulid"
 import { Provider } from "@opendora/provider/provider"

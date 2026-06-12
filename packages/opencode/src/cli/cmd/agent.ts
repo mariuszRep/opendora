@@ -1,7 +1,7 @@
 import { cmd } from "./cmd"
 import * as prompts from "@clack/prompts"
 import { UI } from "../ui"
-import { Global } from "../../global"
+import { Global } from "@opendora/util/global"
 import { Agent } from "../../agent"
 import { Provider } from "@opendora/provider/provider"
 import path from "path"

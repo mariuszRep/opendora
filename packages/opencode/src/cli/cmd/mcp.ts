@@ -4,17 +4,17 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js"
 import * as prompts from "@clack/prompts"
 import { UI } from "../ui"
-import { MCP } from "../../mcp"
-import { McpAuth } from "../../mcp/auth"
-import { McpOAuthProvider } from "../../mcp/oauth-provider"
+import { MCP } from "@opendora/server/mcp/index"
+import { McpAuth } from "@opendora/server/mcp/auth"
+import { McpOAuthProvider } from "@opendora/server/mcp/oauth-provider"
 import { Config } from "../../config/config"
 import { Instance } from "../../project/instance"
 import { Installation } from "../../installation"
 import path from "path"
-import { Global } from "../../global"
+import { Global } from "@opendora/util/global"
 import { modify, applyEdits } from "jsonc-parser"
 import { Filesystem } from "../../util/filesystem"
-import { Bus } from "../../bus"
+import { Bus } from "@opendora/runtime/bus"
 
 function getAuthStatusIcon(status: MCP.AuthStatus): string {
   switch (status) {

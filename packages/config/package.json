@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@opendora/config",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@opendora/auth": "workspace:*",
+    "@opendora/opencode": "workspace:*",
+    "@opendora/provider": "workspace:*",
+    "@opendora/runtime": "workspace:*",
+    "@opendora/session": "workspace:*",
+    "@opendora/storage": "workspace:*",
+    "@opendora/tools": "workspace:*",
+    "@opendora/util": "workspace:*",
+    "gray-matter": "4.0.3",
+    "jsonc-parser": "3.3.1",
+    "remeda": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

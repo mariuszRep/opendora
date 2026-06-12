@@ -174,26 +174,29 @@ Move tests: `test/project/`, `test/scheduler.test.ts`, `test/snapshot/` → `pac
 
 ## Phase 6 — Domain Module Consolidation
 
-**Hard: extend existing packages with modules that now have no remaining opencode-internal deps.**
+**Hard: move modules into their canonical packages. Modules with remaining opencode-internal deps use interim `@opendora/opencode/...` imports until Phase 7 clears those deps.**
 
-| Source | Destination |
-|--------|-------------|
-| `permission/` (2 files) | Extend `@opendora/permission` |
-| `skill/` (3 files) | Extend `@opendora/skills` |
-| `file/` (5 files: ripgrep, ignore, watcher) | Extend `@opendora/tools` |
-| `lsp/` (4 files) | `@opendora/server` |
-| `mcp/` (4 files) | `@opendora/server` |
-| `share/share-next.ts` | `@opendora/session` |
-| `control/index.ts` | `@opendora/storage` |
-| `ide/index.ts` | `@opendora/server` |
-| `format/` (2 files) | `@opendora/util` |
-| `auth/` (2 files) | `@opendora/auth` |
-| `question/index.ts` | `@opendora/runtime` |
-| `pty/index.ts` | `@opendora/server` |
+> **Shipped (branch `migration/phase-6-domain-modules`):** lsp, mcp, ide, pty, auth, control, question, format.
+> **Blocked by opencode↔runtime cycle:** skill, file (watcher/time), permission/next, share/share-next — originals stay in opencode; copies exist in target packages but are not yet wired as re-export stubs.
 
-Co-migrate matching test files from `test/` to destination packages.
+| Source | Destination | Status |
+|--------|-------------|--------|
+| `lsp/` (4 files) | `@opendora/server/lsp/` | ✅ Shipped — stub redirects in place |
+| `mcp/` (4 files) | `@opendora/server/mcp/` | ✅ Shipped — stub redirects in place |
+| `ide/index.ts` | `@opendora/server/ide` | ✅ Shipped — stub redirect in place |
+| `pty/index.ts` | `@opendora/server/pty` | ✅ Shipped — stub redirect in place |
+| `auth/` (2 files) | `@opendora/auth` | ✅ Shipped — stub redirect in place |
+| `control/index.ts` | `@opendora/storage` | ✅ Shipped — stub redirect in place |
+| `question/index.ts` | `@opendora/runtime` | ✅ Shipped — stub redirect in place |
+| `format/` (2 files) | `@opendora/runtime` (not util — needs Instance/Bus/Config) | ✅ Shipped — stub redirects in place |
+| `skill/` (3 files) | `@opendora/skills` | 🔶 Copies in skills/; opencode originals retained (runtime↔opencode cycle) |
+| `file/` (watcher, time) | `@opendora/tools` | 🔶 Blocked — tools cannot take opencode/runtime deps without new cycles |
+| `permission/next.ts` | `@opendora/server` (bridge code) | 🔶 Blocked — callers all in opencode; cycles if moved to permission pkg |
+| `share/share-next.ts` | `@opendora/session` | 🔶 Blocked — session cannot take opencode/runtime deps without new cycles |
 
-**Exit criteria:** `src/` contains only: `cli/`, `daemon/`, `plugin/`, `command/`, `config/`, `acp/`, `tool/`, `bun/`, `agent.ts`, `schedule.ts`, `index.ts`.
+**Cycle note:** `@opendora/runtime` ↔ `@opendora/opencode` is a pre-existing cycle from Phase 5 that breaks `bun turbo typecheck`. Resolving it (Phase 7) unblocks the remaining rows above.
+
+**Exit criteria (full):** `src/` contains only: `cli/`, `daemon/`, `plugin/`, `command/`, `config/`, `acp/`, `tool/`, `bun/`, `agent.ts`, `schedule.ts`, `index.ts`.
 
 ---
 
@@ -219,13 +222,36 @@ Co-migrate matching test files from `test/` to destination packages.
 
 ---
 
+## Phase 8 — Create `apps/cli` and `apps/tui`; Delete `packages/opencode`
+
+**After Phase 7, `opencode/src/` contains only:** `cli/`, `daemon/`, `plugin/`, `config/tui-*.ts`, `index.ts`, `preload-bindings-fix.ts`, `sql.d.ts`
+
+| Source | Destination |
+|--------|-------------|
+| `src/index.ts` | `apps/cli/src/index.ts` |
+| `src/cli/` (minus `cmd/tui/`) | `apps/cli/src/cli/` |
+| `src/cli/cmd/tui/` | `apps/tui/src/` |
+| `src/daemon/` | `apps/cli/src/daemon/` |
+| `src/plugin/` | `apps/cli/src/plugin/` |
+
+`apps/cli` depends on: `@opendora/sdk` (or `@opendora/server` directly), `@opendora/runtime`, `@opendora/util`
+
+`apps/tui` depends on: `@opendora/sdk`, `@opentui/core`
+
+**Delete `packages/opencode`** and remove from workspace root `package.json`.
+
+**Exit criteria:** `opencode` binary built from `apps/cli`; TUI launches from `apps/tui`; `packages/opencode` removed from monorepo. `turbo build` succeeds. All tests pass.
+
+---
+
 ## Cross-Cutting Rules
 
-**Dependency order is strict:** 1 → 2 → 3 → 4 → 5 → 6 → 7.
+**Dependency order is strict:** 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8.
 - Phase 3 needs `context`/`lazy` from Phase 1
 - Phase 4 needs `@opendora/storage` from Phase 3
 - Phase 5 needs `@opendora/storage` from Phase 3
 - Phase 6 needs `Instance` from Phase 5
+- Phase 8 needs opencode fully hollowed out from Phases 6/7
 
 **Re-export redirect pattern:** When moving a file, leave a 1-line re-export at the old path. The existing `src/util/log.ts` is the model.
 

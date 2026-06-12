@@ -968,7 +968,9 @@ export namespace Session {
       const db = getConfig().db
       const row = db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get()
       if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
-      return fromRow(row)
+      const info = fromRow(row)
+      getConfig().bus?.publish(Event.Updated, { info })
+      return info
     },
   )
 
@@ -979,7 +981,9 @@ export namespace Session {
       const db = getConfig().db
       const row = db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get()
       if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
-      return fromRow(row)
+      const info = fromRow(row)
+      getConfig().bus?.publish(Event.Updated, { info })
+      return info
     },
   )
 
@@ -990,7 +994,9 @@ export namespace Session {
       const db = getConfig().db
       const row = db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get()
       if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
-      return fromRow(row)
+      const info = fromRow(row)
+      getConfig().bus?.publish(Event.Updated, { info })
+      return info
     },
   )
 

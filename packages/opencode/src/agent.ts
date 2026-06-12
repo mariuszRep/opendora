@@ -10,7 +10,7 @@ import { Provider } from "@opendora/provider/provider"
 import { generateObject } from "ai"
 import { Config } from "./config/config"
 import { Truncate } from "./tool/truncation"
-import { Skill } from "./skill"
+import { Skill } from "./skill/skill"
 import path from "path"
 import { pipe, sortBy, values } from "remeda"
 import { Flag } from "./flag/flag"
@@ -72,7 +72,7 @@ export namespace Agent {
     const whitelistedDirs = [Truncate.GLOB, ...skillDirs.map((dir) => path.join(dir, "*"))]
 
     const defaults = PermissionNext.fromConfig({
-      "*": "allow",
+      "*": "ask",
       doom_loop: "ask",
       external_directory: {
         "*": "ask",
@@ -80,17 +80,16 @@ export namespace Agent {
       },
       question: "deny",
       read: {
-        "*": "allow",
+        "*": "ask",
         "*.env": "ask",
         "*.env.*": "ask",
         "*.env.example": "allow",
       },
-      // Agent management permissions - allow agents to manage other agents by default
-      agent_create: "allow",
-      agent_update: "allow", 
-      agent_delete: "ask", // Deletion is destructive, so ask by default
-      agent_list: "allow",
-      agent_get: "allow",
+      agent_create: "ask",
+      agent_update: "ask",
+      agent_delete: "ask",
+      agent_list: "ask",
+      agent_get: "ask",
     })
 
     const user = PermissionNext.fromConfig(cfg.permission ?? {})
