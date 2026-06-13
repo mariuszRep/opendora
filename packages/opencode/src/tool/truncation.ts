@@ -6,7 +6,7 @@ import { PermissionNext } from "../permission/next"
 import type { Agent } from "../agent"
 import { Scheduler } from "@opendora/runtime/scheduler"
 import { Filesystem } from "../util/filesystem"
-import { Glob } from "../util/glob"
+import { Glob } from "@opendora/util/glob"
 
 export namespace Truncate {
   export const MAX_LINES = 2000

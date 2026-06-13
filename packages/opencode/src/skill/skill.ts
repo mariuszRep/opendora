@@ -15,7 +15,7 @@ import { Bus } from "@opendora/runtime/bus"
 import { BusEvent } from "@/bus/bus-event"
 import { Session } from "@opendora/session/session"
 import { Discovery } from "./discovery"
-import { Glob } from "../util/glob"
+import { Glob } from "@opendora/util/glob"
 import { State } from "../project/state"
 
 export namespace Skill {
