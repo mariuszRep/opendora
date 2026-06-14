@@ -143,7 +143,7 @@ export namespace ACP {
     private eventStarted = false
     private bashSnapshots = new Map<string, string>()
     private toolStarts = new Set<string>()
-    private providerCache = new Map<string, Awaited<ReturnType<OpencodeClient["config"]["providers"]>>["data"]["providers"]>()
+    private providerCache = new Map<string, NonNullable<Awaited<ReturnType<OpencodeClient["config"]["providers"]>>["data"]>["providers"]>()
     private modeCache = new Map<string, ModeOption[]>()
     private messageRoles = new Map<string, "assistant" | "user">()
     private messageParts = new Map<string, { type: SessionMessageResponse["parts"][number]["type"]; ignored?: boolean }>()
@@ -301,7 +301,7 @@ export namespace ACP {
           log.info("message part updated", { event: event.properties })
           const props = event.properties
           const part = props.part
-          this.cacheMessagePart(part.sessionID, part.messageID, part)
+          this.cacheMessagePart(part.sessionID, part.messageID, part as CachedMessagePart)
           const session = this.sessionManager.tryGet(part.sessionID)
           if (!session) return
           const sessionId = session.id
@@ -552,7 +552,7 @@ export namespace ACP {
 
           const part = message.parts.find((p) => p.id === props.partID)
           if (!part) return
-          this.cacheMessagePart(props.sessionID, props.messageID, part)
+          this.cacheMessagePart(props.sessionID, props.messageID, part as CachedMessagePart)
 
           if (part.type === "text" && props.field === "text" && part.ignored !== true) {
             await this.connection
@@ -887,7 +887,7 @@ export namespace ACP {
       this.messageRoles.set(this.messageKey(sessionId, message.info.id), message.info.role)
 
       for (const part of message.parts) {
-        this.cacheMessagePart(sessionId, message.info.id, part)
+        this.cacheMessagePart(sessionId, message.info.id, part as CachedMessagePart)
         if (part.type === "tool") {
           await this.toolStart(sessionId, part)
           switch (part.state.status) {
@@ -1208,18 +1208,18 @@ export namespace ACP {
       const cached = this.modeCache.get(directory)
       if (cached) return cached
 
-      const agents = await this.config.sdk.app
+      const agents = await (this.config.sdk.app as any)
         .agents(
           {
             directory,
           },
           { throwOnError: true },
         )
-        .then((resp) => resp.data!)
+        .then((resp: any) => resp.data!)
 
       const modes = agents
-        .filter((agent) => AgentModule.isPrimaryMode(agent.mode) && !agent.hidden)
-        .map((agent) => ({
+        .filter((agent: any) => AgentModule.isPrimaryMode(agent.mode) && !agent.hidden)
+        .map((agent: any) => ({
           id: agent.name,
           name: agent.name,
           description: agent.description,
@@ -1262,7 +1262,7 @@ export namespace ACP {
       const sessionId = params.sessionId
 
       const providers = await this.loadProviders(directory)
-      const entries = sortProvidersByName(providers)
+      const entries = sortProvidersByName(providers) as any[]
       const availableVariants = modelVariantsFromProviders(entries, model)
       const currentVariant = this.sessionManager.getVariant(sessionId)
       if (currentVariant && !availableVariants.includes(currentVariant)) {
@@ -1371,7 +1371,7 @@ export namespace ACP {
       this.sessionManager.setModel(session.id, selection.model)
       this.sessionManager.setVariant(session.id, selection.variant)
 
-      const entries = sortProvidersByName(providers)
+      const entries = sortProvidersByName(providers) as any[]
       const availableVariants = modelVariantsFromProviders(entries, selection.model)
 
       return {
@@ -1646,7 +1646,7 @@ export namespace ACP {
       .then((resp) => {
         const cfg = resp.data
         if (!cfg || !cfg.model) return undefined
-        const parsed = Provider.parseModel(cfg.model)
+        const parsed = Provider.parseModel(cfg.model as unknown as string)
         return {
           providerID: parsed.providerID,
           modelID: parsed.modelID,

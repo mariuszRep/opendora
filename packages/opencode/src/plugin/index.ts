@@ -32,7 +32,7 @@ export namespace Plugin {
     const config = await Config.get()
     const hooks: Hooks[] = []
     const input: PluginInput = {
-      client,
+      client: client as any,
       project: Instance.project,
       worktree: Instance.worktree,
       directory: Instance.directory,

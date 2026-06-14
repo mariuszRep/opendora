@@ -752,7 +752,7 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
         }
       },
       methods: [
-        {
+        ({
           label: "ChatGPT Pro/Plus (browser)",
           type: "oauth",
           refresh: async (refreshToken: string, _accessToken?: string) => {
@@ -795,8 +795,8 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
               },
             }
           },
-        },
-        {
+        }) as any,
+        ({
           label: "ChatGPT Pro/Plus (headless)",
           type: "oauth",
           refresh: async (refreshToken: string, _accessToken?: string) => {
@@ -892,7 +892,7 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
               },
             }
           },
-        },
+        }) as any,
         {
           label: "Manually enter API Key",
           type: "api",

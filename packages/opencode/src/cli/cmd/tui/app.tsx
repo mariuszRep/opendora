@@ -313,7 +313,7 @@ function App() {
     if (continued || sync.status === "loading" || !args.continue) return
     const match = sync.data.session
       .toSorted((a, b) => b.time.updated - a.time.updated)
-      .find((x) => x.parentID === undefined)?.id
+      .find((x) => x.parentSessionID === undefined)?.id
     if (match) {
       continued = true
       if (args.fork) {
@@ -710,7 +710,7 @@ function App() {
   })
 
   sdk.event.on(SessionApi.Event.Deleted.type, (evt) => {
-    if (route.data.type === "session" && route.data.sessionID === evt.properties.info.id) {
+    if (route.data.type === "session" && route.data.sessionID === (evt.properties.info as { id: string }).id) {
       route.navigate({ type: "home" })
       toast.show({
         variant: "info",

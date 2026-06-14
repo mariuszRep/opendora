@@ -55,7 +55,7 @@ configureRegistry({
             worktree: Instance.worktree,
           } as unknown as PluginToolContext
           const result = await d.execute(args as any, pluginCtx)
-          const out = await Truncate.output(result, {}, initCtx?.agent)
+          const out = await Truncate.output(result, {}, initCtx?.agent as any)
           return {
             title: "",
             output: out.truncated ? out.content : result,

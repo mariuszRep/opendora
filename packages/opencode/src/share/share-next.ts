@@ -190,20 +190,20 @@ export namespace ShareNext {
     await sync(sessionID, [
       {
         type: "session",
-        data: session,
+        data: session as any,
       },
       ...messages.map((x) => ({
         type: "message" as const,
-        data: x.info,
+        data: x.info as any,
       })),
-      ...messages.flatMap((x) => x.parts.map((y) => ({ type: "part" as const, data: y }))),
+      ...messages.flatMap((x) => x.parts.map((y) => ({ type: "part" as const, data: y as any }))),
       {
         type: "session_diff",
-        data: diffs,
+        data: diffs as any,
       },
       {
         type: "model",
-        data: models,
+        data: models as any,
       },
     ])
   }

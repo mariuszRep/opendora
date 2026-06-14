@@ -3,7 +3,7 @@ import { Bus } from "@opendora/runtime/bus"
 import z from "zod"
 import { Instance } from "../project/instance"
 import { Log } from "../util/log"
-import { FileIgnore } from "./ignore"
+import { FileIgnore } from "@opendora/tools/filesystem/lib/ignore"
 import { Config } from "../config/config"
 import path from "path"
 // @ts-ignore

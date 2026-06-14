@@ -11,7 +11,7 @@ import { Global } from "@opendora/util/global"
 import { Plugin } from "../../plugin"
 import { Instance } from "../../project/instance"
 import type { Hooks } from "@opencode-ai/plugin"
-import { Process } from "../../util/process"
+import { Process } from "@opendora/util/process"
 import { text } from "node:stream/consumers"
 
 type PluginAuth = NonNullable<Hooks["auth"]>

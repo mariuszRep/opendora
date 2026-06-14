@@ -22,7 +22,7 @@ import { ModelsDev } from "@opendora/provider/models"
 import { Instance } from "@/project/instance"
 import { bootstrap } from "../bootstrap"
 import { Session } from "@opendora/session/session"
-import { Identifier } from "../../id/id"
+import { Identifier } from "@opendora/util/id"
 import { Provider } from "@opendora/provider/provider"
 import { Bus } from "@opendora/runtime/bus"
 import { MessageV2 } from "@opendora/session/message"
@@ -964,7 +964,6 @@ export const GithubRunCommand = cmd({
             providerID,
             modelID,
           },
-          tools: { "*": false }, // Disable all tools to force text response
           parts: [
             {
               id: Identifier.ascending("part"),

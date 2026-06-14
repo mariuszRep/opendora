@@ -186,11 +186,12 @@ function skill(info: ToolProps<typeof SkillTool>) {
 }
 
 function bash(info: ToolProps<typeof BashTool>) {
+  const input = info.input as Partial<{ command: string; timeout?: number; workdir?: string; description: string }>
   const output = info.part.state.status === "completed" ? info.part.state.output?.trim() : undefined
   block(
     {
       icon: "$",
-      title: `${info.input.command}`,
+      title: `${input.command}`,
     },
     output,
   )
@@ -373,7 +374,7 @@ export const RunCommand = cmd({
     }
 
     async function session(sdk: OpencodeClient) {
-      const baseID = args.continue ? (await sdk.session.list()).data?.find((s) => !s.parentID)?.id : args.session
+      const baseID = args.continue ? (await sdk.session.list()).data?.find((s) => !s.parentSessionID)?.id : args.session
 
       if (baseID && args.fork) {
         const forked = await sdk.session.fork({ sessionID: baseID })

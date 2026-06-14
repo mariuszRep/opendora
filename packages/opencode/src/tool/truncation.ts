@@ -1,7 +1,7 @@
 import fs from "fs/promises"
 import path from "path"
 import { Global } from "@opendora/util/global"
-import { Identifier } from "../id/id"
+import { Identifier } from "@opendora/util/id"
 import { PermissionNext } from "../permission/next"
 import type { Agent } from "../agent"
 import { Scheduler } from "@opendora/runtime/scheduler"
