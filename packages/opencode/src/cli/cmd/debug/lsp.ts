@@ -1,7 +1,7 @@
 import { LSP } from "@opendora/server/lsp/index"
 import { bootstrap } from "../../bootstrap"
 import { cmd } from "../cmd"
-import { Log } from "../../../util/log"
+import { Log } from "@opendora/util/log"
 import { EOL } from "os"
 
 export const LSPCommand = cmd({

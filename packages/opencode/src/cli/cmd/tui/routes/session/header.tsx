@@ -80,7 +80,7 @@ export function Header() {
         backgroundColor={theme.backgroundPanel}
       >
         <Switch>
-          <Match when={session()?.parentID}>
+          <Match when={session()?.parentSessionID}>
             <box flexDirection="column" gap={1}>
               <box flexDirection={narrow() ? "column" : "row"} justifyContent="space-between" gap={narrow() ? 1 : 0}>
                 <text fg={theme.text}>

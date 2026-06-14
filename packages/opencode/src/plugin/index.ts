@@ -1,12 +1,12 @@
 import type { Hooks, PluginInput, Plugin as PluginInstance } from "@opencode-ai/plugin"
 import { Config } from "../config/config"
 import { Bus } from "@opendora/runtime/bus"
-import { Log } from "../util/log"
+import { Log } from "@opendora/util/log"
 import { createOpencodeClient } from "@opendora/sdk"
 import { Server } from "../server/server"
 import { BunProc } from "@opendora/util/bun"
 import { Instance } from "../project/instance"
-import { Flag } from "../flag/flag"
+import { Flag } from "@opendora/util/flag"
 import { CodexAuthPlugin } from "./codex"
 import { Session } from "@opendora/session/session"
 import { NamedError } from "@opendora/util/error"
@@ -32,7 +32,7 @@ export namespace Plugin {
     const config = await Config.get()
     const hooks: Hooks[] = []
     const input: PluginInput = {
-      client,
+      client: client as any,
       project: Instance.project,
       worktree: Instance.worktree,
       directory: Instance.directory,

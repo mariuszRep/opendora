@@ -26,7 +26,7 @@ import type { Snapshot } from "@opendora/runtime/snapshot"
 import { useExit } from "./exit"
 import { useArgs } from "./args"
 import { batch, onMount } from "solid-js"
-import { Log } from "@/util/log"
+import { Log } from "@opendora/util/log"
 import type { Path } from "@opendora/sdk"
 
 export const { use: useSync, provider: SyncProvider } = createSimpleContext({
@@ -194,7 +194,8 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           break
 
         case "session.deleted": {
-          const result = Binary.search(store.session, event.properties.info.id, (s) => s.id)
+          const info = event.properties.info as Session
+          const result = Binary.search(store.session, info.id, (s) => s.id)
           if (result.found) {
             setStore(
               "session",
@@ -206,15 +207,16 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           break
         }
         case "session.updated": {
-          const result = Binary.search(store.session, event.properties.info.id, (s) => s.id)
+          const info = event.properties.info as Session
+          const result = Binary.search(store.session, info.id, (s) => s.id)
           if (result.found) {
-            setStore("session", result.index, reconcile(event.properties.info))
+            setStore("session", result.index, reconcile(info))
             break
           }
           setStore(
             "session",
             produce((draft) => {
-              draft.splice(result.index, 0, event.properties.info)
+              draft.splice(result.index, 0, info)
             }),
           )
           break

@@ -32,18 +32,12 @@ import type { AssistantMessage, Part, ToolPart, UserMessage, TextPart, Reasoning
 import { useLocal } from "@tui/context/local"
 import { Locale } from "@/util/locale"
 import type { Tool } from "@/tool/tool"
-import type { ReadTool } from "@/tool/read"
-import type { WriteTool } from "@/tool/write"
+import type { ReadTool, WriteTool, GlobTool, GrepTool, ListTool, EditTool, ApplyPatchTool } from "@opendora/tools/filesystem"
 import { BashTool, BatchTool } from "@opendora/tools/shell"
-import type { GlobTool } from "@/tool/glob"
-import { TodoWriteTool } from "@/tool/todo"
-import type { GrepTool } from "@/tool/grep"
-import type { ListTool } from "@/tool/ls"
-import type { EditTool } from "@/tool/edit"
-import type { ApplyPatchTool } from "@/tool/apply_patch"
-import type { WebFetchTool } from "@/tool/webfetch"
-import type { TaskTool } from "@/tool/task"
-import type { QuestionTool } from "@/tool/question"
+import { TodoWriteTool } from "@opendora/tools/system"
+import type { WebFetchTool } from "@opendora/tools/browse-and-web"
+import type { TaskTool } from "@opendora/tools/system"
+import type { QuestionTool } from "@opendora/tools/communication"
 import type { SkillTool } from "@/tool/skill"
 import { useKeyboard, useRenderer, useTerminalDimensions, type JSX } from "@opentui/solid"
 import { useSDK } from "@tui/context/sdk"
@@ -60,7 +54,7 @@ import { DialogTimeline } from "./dialog-timeline"
 import { DialogForkFromTimeline } from "./dialog-fork-from-timeline"
 import { DialogSessionRename } from "../../component/dialog-session-rename"
 import { Sidebar } from "./sidebar"
-import { Flag } from "@/flag/flag"
+import { Flag } from "@opendora/util/flag"
 import { LANGUAGE_EXTENSIONS } from "@opendora/server/lsp/language"
 import parsers from "../../../../../../parsers-config.ts"
 import { Clipboard } from "../../util/clipboard"
@@ -71,7 +65,7 @@ import stripAnsi from "strip-ansi"
 import { Footer } from "./footer.tsx"
 import { usePromptRef } from "../../context/prompt"
 import { useExit } from "../../context/exit"
-import { Filesystem } from "@/util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { Global } from "@opendora/util/global"
 import { PermissionPrompt } from "./permission"
 import { QuestionPrompt } from "./question"
@@ -121,18 +115,18 @@ export function Session() {
   const promptRef = usePromptRef()
   const session = createMemo(() => sync.session.get(route.sessionID))
   const children = createMemo(() => {
-    const parentID = session()?.parentID ?? session()?.id
+    const parentID = session()?.parentSessionID ?? session()?.id
     return sync.data.session
-      .filter((x) => x.parentID === parentID || x.id === parentID)
+      .filter((x) => x.parentSessionID === parentID || x.id === parentID)
       .toSorted((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
   })
   const messages = createMemo(() => sync.data.message[route.sessionID] ?? [])
   const permissions = createMemo(() => {
-    if (session()?.parentID) return []
+    if (session()?.parentSessionID) return []
     return children().flatMap((x) => sync.data.permission[x.id] ?? [])
   })
   const questions = createMemo(() => {
-    if (session()?.parentID) return []
+    if (session()?.parentSessionID) return []
     return children().flatMap((x) => sync.data.question[x.id] ?? [])
   })
 
@@ -160,7 +154,7 @@ export function Session() {
 
   const wide = createMemo(() => dimensions().width > 120)
   const sidebarVisible = createMemo(() => {
-    if (session()?.parentID) return false
+    if (session()?.parentSessionID) return false
     if (sidebarOpen()) return true
     if (sidebar() === "auto" && wide()) return true
     return false
@@ -251,7 +245,7 @@ export function Session() {
   })
 
   useKeyboard((evt) => {
-    if (!session()?.parentID) return
+    if (!session()?.parentSessionID) return
     if (keybind.match("app_exit", evt)) {
       exit()
     }
@@ -912,7 +906,7 @@ export function Session() {
       category: "Session",
       hidden: true,
       onSelect: (dialog) => {
-        const parentID = session()?.parentID
+        const parentID = session()?.parentSessionID
         if (parentID) {
           navigate({
             type: "session",
@@ -1122,7 +1116,7 @@ export function Session() {
                 <QuestionPrompt request={questions()[0]} />
               </Show>
               <Prompt
-                visible={!session()?.parentID && permissions().length === 0 && questions().length === 0}
+                visible={!session()?.parentSessionID && permissions().length === 0 && questions().length === 0}
                 ref={(r) => {
                   prompt = r
                   promptRef.set(r)
@@ -1707,9 +1701,10 @@ function Bash(props: ToolProps<typeof BashTool>) {
     if (expanded() || !overflow()) return output()
     return [...lines().slice(0, 10), "…"].join("\n")
   })
+  const input = props.input as Partial<{ command: string; timeout?: number; workdir?: string; description: string }>
 
   const workdirDisplay = createMemo(() => {
-    const workdir = props.input.workdir
+    const workdir = input.workdir
     if (!workdir || workdir === ".") return undefined
 
     const base = sync.data.path.directory
@@ -1726,7 +1721,7 @@ function Bash(props: ToolProps<typeof BashTool>) {
   })
 
   const title = createMemo(() => {
-    const desc = props.input.description ?? "Shell"
+    const desc = input.description ?? "Shell"
     const wd = workdirDisplay()
     if (!wd) return `# ${desc}`
     if (desc.includes(wd)) return `# ${desc}`
@@ -1743,7 +1738,7 @@ function Bash(props: ToolProps<typeof BashTool>) {
           onClick={overflow() ? () => setExpanded((prev) => !prev) : undefined}
         >
           <box gap={1}>
-            <text fg={theme.text}>$ {props.input.command}</text>
+            <text fg={theme.text}>$ {input.command}</text>
             <Show when={output()}>
               <text fg={theme.text}>{limited()}</text>
             </Show>
@@ -1754,8 +1749,8 @@ function Bash(props: ToolProps<typeof BashTool>) {
         </BlockTool>
       </Match>
       <Match when={true}>
-        <InlineTool icon="$" pending="Writing command..." complete={props.input.command} part={props.part}>
-          {props.input.command}
+        <InlineTool icon="$" pending="Writing command..." complete={input.command} part={props.part}>
+          {input.command}
         </InlineTool>
       </Match>
     </Switch>

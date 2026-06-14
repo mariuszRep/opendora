@@ -4,9 +4,9 @@ import { Session } from "@opendora/session/session"
 import { bootstrap } from "../bootstrap"
 import { UI } from "../ui"
 import { Locale } from "../../util/locale"
-import { Flag } from "../../flag/flag"
-import { Filesystem } from "../../util/filesystem"
-import { Process } from "../../util/process"
+import { Flag } from "@opendora/util/flag"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import { Process } from "@opendora/util/process"
 import { EOL } from "os"
 import path from "path"
 
@@ -87,7 +87,7 @@ export const SessionListCommand = cmd({
   },
   handler: async (args) => {
     await bootstrap(process.cwd(), async () => {
-      const sessions = [...Session.list({ roots: true, limit: args.maxCount })]
+      const sessions = [...Session.list({ roots: true, limit: args.maxCount })] as unknown as Session.Info[]
 
       if (sessions.length === 0) {
         return

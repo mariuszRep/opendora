@@ -1,15 +1,15 @@
 import { Installation } from "@/installation"
 import { Server } from "@/server/server"
-import { Log } from "@/util/log"
+import { Log } from "@opendora/util/log"
 import { Instance } from "@/project/instance"
 import { InstanceBootstrap } from "@/project/bootstrap"
 import { Rpc } from "@/util/rpc"
 import { upgrade } from "@/cli/upgrade"
 import { Config } from "@/config/config"
-import { GlobalBus } from "@/bus/global"
+import { GlobalBus } from "@opendora/util/global-bus"
 import { createOpencodeClient, type Event } from "@opendora/sdk/v2"
 import type { BunWebSocketData } from "hono/bun"
-import { Flag } from "@/flag/flag"
+import { Flag } from "@opendora/util/flag"
 import { configureSessionCore } from "@/server/configure-session-core"
 
 await Log.init({

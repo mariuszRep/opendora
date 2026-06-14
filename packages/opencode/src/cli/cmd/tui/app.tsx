@@ -6,7 +6,7 @@ import { RouteProvider, useRoute } from "@tui/context/route"
 import { Switch, Match, createEffect, untrack, ErrorBoundary, createSignal, onMount, batch, Show, on } from "solid-js"
 import { win32DisableProcessedInput, win32FlushInputBuffer, win32InstallCtrlCGuard } from "./win32"
 import { Installation } from "@/installation"
-import { Flag } from "@/flag/flag"
+import { Flag } from "@opendora/util/flag"
 import { DialogProvider, useDialog } from "@tui/ui/dialog"
 import { DialogProvider as DialogProviderList } from "@tui/component/dialog-provider"
 import { SDKProvider, useSDK } from "@tui/context/sdk"
@@ -313,7 +313,7 @@ function App() {
     if (continued || sync.status === "loading" || !args.continue) return
     const match = sync.data.session
       .toSorted((a, b) => b.time.updated - a.time.updated)
-      .find((x) => x.parentID === undefined)?.id
+      .find((x) => x.parentSessionID === undefined)?.id
     if (match) {
       continued = true
       if (args.fork) {
@@ -710,7 +710,7 @@ function App() {
   })
 
   sdk.event.on(SessionApi.Event.Deleted.type, (evt) => {
-    if (route.data.type === "session" && route.data.sessionID === evt.properties.info.id) {
+    if (route.data.type === "session" && route.data.sessionID === (evt.properties.info as { id: string }).id) {
       route.navigate({ type: "home" })
       toast.show({
         variant: "info",

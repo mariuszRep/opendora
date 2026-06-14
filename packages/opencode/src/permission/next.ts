@@ -22,7 +22,7 @@ import {
 import { Database, eq, and } from "@opendora/storage/db"
 import { PermissionRuleTable } from "@/storage/permission.sql"
 import { Bus } from "@opendora/runtime/bus"
-import { BusEvent } from "@/bus/bus-event"
+import { BusEvent } from "@opendora/util/bus-event"
 import z from "zod"
 import type { Hono } from "hono"
 

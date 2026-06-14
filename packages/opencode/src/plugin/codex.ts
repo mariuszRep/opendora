@@ -1,12 +1,12 @@
 import type { Hooks, PluginInput } from "@opencode-ai/plugin"
-import { Log } from "../util/log"
+import { Log } from "@opendora/util/log"
 import { Installation } from "../installation"
 import { Auth, OAUTH_DUMMY_KEY } from "@opendora/auth"
 import os from "os"
 import { Provider } from "@opendora/provider/provider"
 import { ProviderTransform } from "@opendora/provider/transform"
 import { Bus } from "@opendora/runtime/bus"
-import { BusEvent } from "@/bus/bus-event"
+import { BusEvent } from "@opendora/util/bus-event"
 
 const log = Log.create({ service: "plugin.codex" })
 
@@ -752,7 +752,7 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
         }
       },
       methods: [
-        {
+        ({
           label: "ChatGPT Pro/Plus (browser)",
           type: "oauth",
           refresh: async (refreshToken: string, _accessToken?: string) => {
@@ -795,8 +795,8 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
               },
             }
           },
-        },
-        {
+        }) as any,
+        ({
           label: "ChatGPT Pro/Plus (headless)",
           type: "oauth",
           refresh: async (refreshToken: string, _accessToken?: string) => {
@@ -892,7 +892,7 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
               },
             }
           },
-        },
+        }) as any,
         {
           label: "Manually enter API Key",
           type: "api",

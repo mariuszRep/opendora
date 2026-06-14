@@ -2,7 +2,7 @@ import { SyntaxStyle, RGBA, type TerminalColors } from "@opentui/core"
 import path from "path"
 import { createEffect, createMemo, onMount } from "solid-js"
 import { createSimpleContext } from "./helper"
-import { Glob } from "../../../../util/glob"
+import { Glob } from "@opendora/util/glob"
 import aura from "./theme/aura.json" with { type: "json" }
 import ayu from "./theme/ayu.json" with { type: "json" }
 import catppuccin from "./theme/catppuccin.json" with { type: "json" }
@@ -40,7 +40,7 @@ import { useKV } from "./kv"
 import { useRenderer } from "@opentui/solid"
 import { createStore, produce } from "solid-js/store"
 import { Global } from "@opendora/util/global"
-import { Filesystem } from "@/util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { useTuiConfig } from "./tui-config"
 
 type ThemeColors = {

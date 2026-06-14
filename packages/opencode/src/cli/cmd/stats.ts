@@ -1,6 +1,7 @@
 import type { Argv } from "yargs"
 import { cmd } from "./cmd"
 import { Session } from "@opendora/session/session"
+import { fromRow as sessionFromRow } from "@opendora/session/from-row"
 import { bootstrap } from "../bootstrap"
 import { Database } from "@opendora/storage/db"
 import { SessionTable } from "@opendora/session/sql"
@@ -89,7 +90,7 @@ async function getCurrentProject(): Promise<Project.Info> {
 
 async function getAllSessions(): Promise<Session.Info[]> {
   const rows = Database.use((db) => db.select().from(SessionTable).all())
-  return rows.map((row) => Session.fromRow(row))
+  return rows.map((row) => sessionFromRow(row)) as unknown as Session.Info[]
 }
 
 export async function aggregateSessionStats(days?: number, projectFilter?: string): Promise<SessionStats> {

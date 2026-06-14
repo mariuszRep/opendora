@@ -4,7 +4,7 @@
  */
 import { ToolRegistry } from "@opendora/tools/registry"
 import { configureRegistry } from "@opendora/tools/registry"
-import { Flag } from "@/flag/flag"
+import { Flag } from "@opendora/util/flag"
 import { Config } from "@/config/config"
 import { Plugin } from "@/plugin"
 import { Instance } from "@/project/instance"
@@ -55,7 +55,7 @@ configureRegistry({
             worktree: Instance.worktree,
           } as unknown as PluginToolContext
           const result = await d.execute(args as any, pluginCtx)
-          const out = await Truncate.output(result, {}, initCtx?.agent)
+          const out = await Truncate.output(result, {}, initCtx?.agent as any)
           return {
             title: "",
             output: out.truncated ? out.content : result,

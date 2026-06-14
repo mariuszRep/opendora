@@ -1,11 +1,11 @@
-import { BusEvent } from "@/bus/bus-event"
+import { BusEvent } from "@opendora/util/bus-event"
 import path from "path"
 import { $ } from "bun"
 import z from "zod"
 import { NamedError } from "@opendora/util/error"
-import { Log } from "../util/log"
+import { Log } from "@opendora/util/log"
 import { iife } from "@/util/iife"
-import { Flag } from "../flag/flag"
+import { Flag } from "@opendora/util/flag"
 
 declare global {
   const OPENCODE_VERSION: string

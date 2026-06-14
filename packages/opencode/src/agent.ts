@@ -13,7 +13,7 @@ import { Truncate } from "./tool/truncation"
 import { Skill } from "./skill/skill"
 import path from "path"
 import { pipe, sortBy, values } from "remeda"
-import { Flag } from "./flag/flag"
+import { Flag } from "@opendora/util/flag"
 
 import PROMPT_GENERATE from "./generate.txt"
 

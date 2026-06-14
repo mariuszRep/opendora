@@ -1,4 +1,4 @@
-import { BusEvent } from "@/bus/bus-event"
+import { BusEvent } from "@opendora/util/bus-event"
 import { Bus } from "@opendora/runtime/bus"
 import z from "zod"
 

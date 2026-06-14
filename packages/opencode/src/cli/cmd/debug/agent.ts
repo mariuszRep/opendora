@@ -4,7 +4,7 @@ import { Agent } from "../../../agent"
 import { Provider } from "@opendora/provider/provider"
 import { Session } from "@opendora/session/session"
 import type { MessageV2 } from "@opendora/session/message"
-import { Identifier } from "../../../id/id"
+import { Identifier } from "@opendora/util/id"
 import { ToolRegistry } from "../../../tool/registry"
 import { Instance } from "../../../project/instance"
 import { PermissionNext } from "../../../permission/next"
@@ -72,7 +72,7 @@ export const AgentCommand = cmd({
 
 async function getAvailableTools(agent: Agent.Info) {
   const model = agent.model ?? (await Provider.defaultModel())
-  return ToolRegistry.tools(model, agent)
+  return ToolRegistry.tools(model, agent as unknown as Tool.AgentInfo)
 }
 
 async function resolveTools(agent: Agent.Info, availableTools: Awaited<ReturnType<typeof getAvailableTools>>) {

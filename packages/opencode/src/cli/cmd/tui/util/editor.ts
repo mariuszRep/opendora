@@ -3,8 +3,8 @@ import { rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { CliRenderer } from "@opentui/core"
-import { Filesystem } from "@/util/filesystem"
-import { Process } from "@/util/process"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import { Process } from "@opendora/util/process"
 
 export namespace Editor {
   export async function open(opts: { value: string; renderer: CliRenderer }): Promise<string | undefined> {

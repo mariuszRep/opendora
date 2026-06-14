@@ -8,7 +8,7 @@ import { SessionTable, MessageTable, PartTable } from "@opendora/session/sql"
 import { Instance } from "../../project/instance"
 import { ShareNext } from "../../share/share-next"
 import { EOL } from "os"
-import { Filesystem as Fs } from "../../util/filesystem"
+import { Filesystem as Fs } from "@opendora/tools/filesystem/lib/primitives"
 
 export type ShareData =
   | { type: "session"; data: SDKSession }
@@ -261,12 +261,12 @@ export function transformCsv(
     const role = roleIdx !== undefined ? cells[roleIdx]! : "user"
     const content = contentIdx !== undefined ? cells[contentIdx]! : ""
 
-    const messageInfo: Message = {
+    const messageInfo = {
       id: msgId,
       sessionID: sessionId,
       role: role as Message["role"],
       content,
-    }
+    } as unknown as Message
 
     messages.push({
       info: messageInfo,
@@ -274,12 +274,11 @@ export function transformCsv(
     })
   }
 
-  const sessionInfo: SDKSession = {
+  const sessionInfo = {
     id: sessionId,
-    sessionID: sessionId,
     projectID: projectId,
     title: `Imported session (${messages.length} messages)`,
-  }
+  } as unknown as SDKSession
 
   return {
     info: sessionInfo,
@@ -348,7 +347,7 @@ export const ImportCommand = cmd({
         exportData = transformed
       } else if (format === "csv") {
         // CSV import path
-        const csvContent = await Fs.readFile(args.file)
+        const csvContent = await Fs.readText(args.file)
         if (!csvContent) {
           process.stdout.write(`File not found: ${args.file}${EOL}`)
           return
@@ -391,7 +390,7 @@ export const ImportCommand = cmd({
         // Check for duplicates in database
         if (exportData) {
           const existingSession = Database.use((db) =>
-            db.select().from(SessionTable).where(eq(SessionTable.id, exportData.info.id)).get(),
+            db.select().from(SessionTable).where(eq(SessionTable.id, exportData!.info.id)).get(),
           )
 
           if (existingSession) {
@@ -404,7 +403,7 @@ export const ImportCommand = cmd({
             db
               .select()
               .from(MessageTable)
-              .where(eq(MessageTable.session_id, exportData.info.id))
+              .where(eq(MessageTable.session_id, exportData!.info.id))
               .all(),
           )
           const existingMsgIds = new Set(existingMessageIds.map((m) => m.id))
@@ -418,7 +417,7 @@ export const ImportCommand = cmd({
         }
       } else {
         // JSON import path (original behavior)
-        exportData = await Filesystem.readJson<NonNullable<typeof exportData>>(args.file).catch(() => undefined)
+        exportData = await Fs.readJson<NonNullable<typeof exportData>>(args.file).catch(() => undefined)
         if (!exportData) {
           process.stdout.write(`File not found: ${args.file}${EOL}`)
           return
@@ -438,7 +437,7 @@ export const ImportCommand = cmd({
         process.stdout.write(`[DRY-RUN] Messages: ${messageCount}${EOL}`)
         for (const msg of exportData.messages) {
           process.stdout.write(
-            `  - ${msg.info.id} [${msg.info.role}]: ${msg.info.content?.slice(0, 50) || "(empty)"}${msg.info.content && msg.info.content.length > 50 ? "..." : ""}${EOL}`,
+            `  - ${msg.info.id} [${msg.info.role}]: ${(msg.info as any).content?.slice(0, 50) || "(empty)"}${(msg.info as any).content && (msg.info as any).content.length > 50 ? "..." : ""}${EOL}`,
           )
         }
         return

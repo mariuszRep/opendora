@@ -3,29 +3,21 @@ import path from "path"
 import { pathToFileURL } from "bun"
 import { UI } from "../ui"
 import { cmd } from "./cmd"
-import { Flag } from "../../flag/flag"
+import { Flag } from "@opendora/util/flag"
 import { bootstrap } from "../bootstrap"
 import { EOL } from "os"
-import { Filesystem } from "../../util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { createOpencodeClient, type Message, type OpencodeClient, type ToolPart } from "@opendora/sdk/v2"
 import { Server } from "../../server/server"
 import { Provider } from "@opendora/provider/provider"
 import { Agent } from "../../agent"
 import { PermissionNext } from "../../permission/next"
 import { Tool } from "../../tool/tool"
-import { GlobTool } from "../../tool/glob"
-import { GrepTool } from "../../tool/grep"
-import { ListTool } from "../../tool/ls"
-import { ReadTool } from "../../tool/read"
-import { WebFetchTool } from "../../tool/webfetch"
-import { EditTool } from "../../tool/edit"
-import { WriteTool } from "../../tool/write"
-import { CodeSearchTool } from "../../tool/codesearch"
-import { WebSearchTool } from "../../tool/websearch"
-import { TaskTool } from "../../tool/task"
+import { GlobTool, GrepTool, ListTool, ReadTool, EditTool, WriteTool } from "@opendora/tools/filesystem"
+import { WebFetchTool, CodeSearchTool, WebSearchTool } from "@opendora/tools/browse-and-web"
+import { TaskTool, TodoWriteTool } from "@opendora/tools/system"
 import { SkillTool } from "../../tool/skill"
 import { BashTool, BatchTool } from "@opendora/tools/shell"
-import { TodoWriteTool } from "../../tool/todo"
 import { Locale } from "../../util/locale"
 
 type ToolProps<T extends Tool.Info> = {
@@ -192,11 +184,12 @@ function skill(info: ToolProps<typeof SkillTool>) {
 }
 
 function bash(info: ToolProps<typeof BashTool>) {
+  const input = info.input as Partial<{ command: string; timeout?: number; workdir?: string; description: string }>
   const output = info.part.state.status === "completed" ? info.part.state.output?.trim() : undefined
   block(
     {
       icon: "$",
-      title: `${info.input.command}`,
+      title: `${input.command}`,
     },
     output,
   )
@@ -379,7 +372,7 @@ export const RunCommand = cmd({
     }
 
     async function session(sdk: OpencodeClient) {
-      const baseID = args.continue ? (await sdk.session.list()).data?.find((s) => !s.parentID)?.id : args.session
+      const baseID = args.continue ? (await sdk.session.list()).data?.find((s) => !s.parentSessionID)?.id : args.session
 
       if (baseID && args.fork) {
         const forked = await sdk.session.fork({ sessionID: baseID })
