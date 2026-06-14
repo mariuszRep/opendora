@@ -7,7 +7,7 @@ import path from "path"
 import fs from "fs/promises"
 import { pathToFileURL } from "url"
 import { Global } from "../../src/global"
-import { Filesystem } from "../../src/util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 
 // Get managed config directory from environment (set in preload.ts)
 const managedConfigDir = process.env.OPENCODE_TEST_MANAGED_CONFIG_DIR!

@@ -33,7 +33,8 @@
     "./import":                 "./src/import/index.ts",
     "./token-usage-sql":        "./src/token-usage.sql.ts",
     "./token-usage":            "./src/token-usage.ts",
-    "./token-usage-file":       "./src/token-usage-file.ts"
+    "./token-usage-file":       "./src/token-usage-file.ts",
+    "./share-next":             "./src/share-next.ts"
   },
   "devDependencies": {
     "@types/node": "catalog:",
@@ -41,7 +42,12 @@
     "typescript": "catalog:"
   },
   "dependencies": {
+    "@opendora/config": "workspace:*",
     "@opendora/permission": "workspace:*",
+    "@opendora/provider": "workspace:*",
+    "@opendora/runtime": "workspace:*",
+    "@opendora/sdk": "workspace:*",
+    "@opendora/storage": "workspace:*",
     "@opendora/util": "workspace:*",
     "ai": "catalog:",
     "decimal.js": "10.5.0",

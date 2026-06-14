@@ -5,7 +5,7 @@ import { tmpdir } from "../fixture/fixture"
 import { Instance } from "../../src/project/instance"
 import { TuiConfig } from "../../src/config/tui"
 import { Global } from "../../src/global"
-import { Filesystem } from "../../src/util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 
 const managedConfigDir = process.env.OPENCODE_TEST_MANAGED_CONFIG_DIR!
 

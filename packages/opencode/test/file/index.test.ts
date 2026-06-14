@@ -3,7 +3,7 @@ import path from "path"
 import fs from "fs/promises"
 import { File } from "../../src/file"
 import { Instance } from "../../src/project/instance"
-import { Filesystem } from "../../src/util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { tmpdir } from "../fixture/fixture"
 
 describe("file/index Filesystem patterns", () => {

@@ -5,13 +5,16 @@
   "exports": {
     ".": "./src/index.ts",
     "./sql": "./src/schedule.sql.ts",
-    "./cron-scheduler": "./src/cron-scheduler.ts"
+    "./cron-scheduler": "./src/cron-scheduler.ts",
+    "./service": "./src/service.ts"
   },
   "dependencies": {
     "@opendora/session": "workspace:*",
+    "@opendora/storage": "workspace:*",
     "@opendora/util": "workspace:*",
     "croner": "9.0.0",
     "drizzle-orm": "catalog:",
+    "ulid": "catalog:",
     "zod": "catalog:"
   }
 }

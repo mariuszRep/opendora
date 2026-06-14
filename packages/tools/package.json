@@ -11,6 +11,9 @@
   },
   "exports": {
     "./shell": "./shell/index.ts",
+    "./shell/*": "./shell/*.ts",
+    "./communication/*": "./communication/*.ts",
+    "./system/*": "./system/*.ts",
     "./filesystem": "./filesystem/index.ts",
     "./filesystem/*": "./filesystem/*.ts",
     "./filesystem/lib/*": "./filesystem/lib/*.ts",
@@ -30,9 +33,13 @@
     "./desktop/lib/*": "./desktop/lib/*.ts",
     "./pyautogui": "./pyautogui/index.ts",
     "./pyautogui/*": "./pyautogui/*.ts",
+    "./file/watcher": "./file/watcher.ts",
+    "./file/time": "./file/time.ts",
     "./tool": "./tool.ts",
     "./registry": "./registry.ts",
     "./truncation": "./truncation.ts",
+    "./truncation-impl": "./truncation-impl.ts",
+    "./skill-load-tool": "./skill-load-tool.ts",
     "./workflows": "./workflows/index.ts"
   },
   "devDependencies": {
@@ -45,6 +52,9 @@
     "@modelcontextprotocol/sdk": "1.29.0",
     "@nut-tree-fork/nut-js": "^4.2.0",
     "@opendora/agent": "workspace:*",
+    "@opendora/config": "workspace:*",
+    "@opendora/permission": "workspace:*",
+    "@opendora/runtime": "workspace:*",
     "@opendora/session": "workspace:*",
     "@opendora/util": "workspace:*",
     "@opendora/workflow": "workspace:*",

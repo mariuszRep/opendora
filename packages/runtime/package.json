@@ -8,15 +8,22 @@
     "typecheck": "tsgo --noEmit",
     "test": "bun test --timeout 30000"
   },
-  "exports": { "./*": "./src/*.ts" },
+  "exports": {
+    "./*": "./src/*.ts",
+    "./agent": "./src/agent.ts"
+  },
   "dependencies": {
+    "@opendora/agent": "workspace:*",
     "@opendora/config": "workspace:*",
     "@opendora/opencode": "workspace:*",
+    "@opendora/permission": "workspace:*",
+    "@opendora/provider": "workspace:*",
     "@opendora/session": "workspace:*",
     "@opendora/skills": "workspace:*",
     "@opendora/storage": "workspace:*",
     "@opendora/tools": "workspace:*",
     "@opendora/util": "workspace:*",
+    "ai": "catalog:",
     "drizzle-orm": "catalog:",
     "remeda": "catalog:",
     "zod": "catalog:"

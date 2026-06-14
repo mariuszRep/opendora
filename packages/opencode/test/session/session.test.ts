@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import path from "path"
 import { Session, configureSessionCore } from "../../src/session"
 import { Bus } from "../../src/bus"
-import { Log } from "../../src/util/log"
+import { Log } from "@opendora/util/log"
 import { Instance } from "../../src/project/instance"
 import { Agent } from "../../src/agent"
 

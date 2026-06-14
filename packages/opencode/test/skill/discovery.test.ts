@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test"
 import { Discovery } from "../../src/skill/discovery"
-import { Filesystem } from "../../src/util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { rm } from "fs/promises"
 import path from "path"
 

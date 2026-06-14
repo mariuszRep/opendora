@@ -3,7 +3,7 @@ import path from "path"
 import { LSPClient } from "@opendora/server/lsp/client"
 import { LSPServer } from "@opendora/server/lsp/server"
 import { Instance } from "../../src/project/instance"
-import { Log } from "../../src/util/log"
+import { Log } from "@opendora/util/log"
 
 // Minimal fake LSP server that speaks JSON-RPC over stdio
 function spawnFakeServer() {

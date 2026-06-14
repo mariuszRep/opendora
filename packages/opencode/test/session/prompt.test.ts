@@ -5,7 +5,7 @@ import { Instance } from "../../src/project/instance"
 import { Session, configureSessionCore } from "../../src/session"
 import { MessageV2 } from "../../src/session/message-v2"
 import { SessionPrompt } from "../../src/session/prompt"
-import { Log } from "../../src/util/log"
+import { Log } from "@opendora/util/log"
 import { tmpdir } from "../fixture/fixture"
 
 Log.init({ print: false })

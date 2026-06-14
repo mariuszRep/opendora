@@ -3,10 +3,16 @@
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./pattern": "./src/pattern.ts",
+    "./arity": "./src/arity.ts",
+    "./next": "./src/next.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "catalog:",
+    "@opendora/runtime": "workspace:*",
+    "@opendora/storage": "workspace:*",
+    "@opendora/util": "workspace:*",
     "hono": "catalog:",
     "zod": "catalog:"
   },

@@ -256,6 +256,9 @@
       "version": "0.1.0",
       "dependencies": {
         "@hono/zod-validator": "catalog:",
+        "@opendora/runtime": "workspace:*",
+        "@opendora/storage": "workspace:*",
+        "@opendora/util": "workspace:*",
         "hono": "catalog:",
         "zod": "catalog:",
       },
@@ -303,13 +306,17 @@
       "name": "@opendora/runtime",
       "version": "1.2.15",
       "dependencies": {
+        "@opendora/agent": "workspace:*",
         "@opendora/config": "workspace:*",
         "@opendora/opencode": "workspace:*",
+        "@opendora/permission": "workspace:*",
+        "@opendora/provider": "workspace:*",
         "@opendora/session": "workspace:*",
         "@opendora/skills": "workspace:*",
         "@opendora/storage": "workspace:*",
         "@opendora/tools": "workspace:*",
         "@opendora/util": "workspace:*",
+        "ai": "catalog:",
         "drizzle-orm": "catalog:",
         "remeda": "catalog:",
         "zod": "catalog:",
@@ -325,9 +332,11 @@
       "version": "0.1.0",
       "dependencies": {
         "@opendora/session": "workspace:*",
+        "@opendora/storage": "workspace:*",
         "@opendora/util": "workspace:*",
         "croner": "9.0.0",
         "drizzle-orm": "catalog:",
+        "ulid": "catalog:",
         "zod": "catalog:",
       },
     },
@@ -350,6 +359,7 @@
       "name": "@opendora/server",
       "version": "1.2.15",
       "dependencies": {
+        "@agentclientprotocol/sdk": "0.14.1",
         "@modelcontextprotocol/sdk": "1.25.2",
         "@opendora/agent": "workspace:*",
         "@opendora/auth": "workspace:*",
@@ -368,6 +378,7 @@
         "ai": "catalog:",
         "bonjour-service": "1.3.0",
         "bun-pty": "0.4.8",
+        "diff": "catalog:",
         "drizzle-orm": "1.0.0-beta.12-a5629fb",
         "hono": "catalog:",
         "hono-openapi": "catalog:",
@@ -390,7 +401,12 @@
       "name": "@opendora/session",
       "version": "0.1.0",
       "dependencies": {
+        "@opendora/config": "workspace:*",
         "@opendora/permission": "workspace:*",
+        "@opendora/provider": "workspace:*",
+        "@opendora/runtime": "workspace:*",
+        "@opendora/sdk": "workspace:*",
+        "@opendora/storage": "workspace:*",
         "@opendora/util": "workspace:*",
         "ai": "catalog:",
         "decimal.js": "10.5.0",
@@ -418,7 +434,6 @@
       "version": "0.1.0",
       "dependencies": {
         "@opendora/config": "workspace:*",
-        "@opendora/opencode": "workspace:*",
         "@opendora/runtime": "workspace:*",
         "@opendora/session": "workspace:*",
         "@opendora/tools": "workspace:*",
@@ -459,6 +474,9 @@
         "@modelcontextprotocol/sdk": "1.29.0",
         "@nut-tree-fork/nut-js": "^4.2.0",
         "@opendora/agent": "workspace:*",
+        "@opendora/config": "workspace:*",
+        "@opendora/permission": "workspace:*",
+        "@opendora/runtime": "workspace:*",
         "@opendora/session": "workspace:*",
         "@opendora/util": "workspace:*",
         "@opendora/workflow": "workspace:*",
@@ -4083,6 +4101,8 @@
 
     "@opendora/provider/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 
+    "@opendora/runtime/ai": ["ai@5.0.124", "", { "dependencies": { "@ai-sdk/gateway": "2.0.30", "@ai-sdk/provider": "2.0.1", "@ai-sdk/provider-utils": "3.0.20", "@opentelemetry/api": "1.9.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-Li6Jw9F9qsvFJXZPBfxj38ddP2iURCnMs96f9Q3OeQzrDVcl1hvtwSEAuxA/qmfh6SDV2ERqFUOFzigvr0697g=="],
+
     "@opendora/runtime/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 
     "@opendora/schedule/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
@@ -5036,6 +5056,8 @@
     "@opendora/provider/ai/@ai-sdk/provider": ["@ai-sdk/provider@2.0.1", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-KCUwswvsC5VsW2PWFqF8eJgSCu5Ysj7m1TxiHTVA6g7k360bk0RNQENT8KTMAYEs+8fWPD3Uu4dEmzGHc+jGng=="],
 
     "@opendora/provider/ai/@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@3.0.20", "", { "dependencies": { "@ai-sdk/provider": "2.0.1", "@standard-schema/spec": "^1.0.0", "eventsource-parser": "^3.0.6" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-iXHVe0apM2zUEzauqJwqmpC37A5rihrStAih5Ks+JE32iTe4LZ58y17UGBjpQQTCRw9YxMeo2UFLxLpBluyvLQ=="],
+
+    "@opendora/runtime/ai/@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@3.0.20", "", { "dependencies": { "@ai-sdk/provider": "2.0.1", "@standard-schema/spec": "^1.0.0", "eventsource-parser": "^3.0.6" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-iXHVe0apM2zUEzauqJwqmpC37A5rihrStAih5Ks+JE32iTe4LZ58y17UGBjpQQTCRw9YxMeo2UFLxLpBluyvLQ=="],
 
     "@opendora/server/ai/@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@3.0.20", "", { "dependencies": { "@ai-sdk/provider": "2.0.1", "@standard-schema/spec": "^1.0.0", "eventsource-parser": "^3.0.6" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-iXHVe0apM2zUEzauqJwqmpC37A5rihrStAih5Ks+JE32iTe4LZ58y17UGBjpQQTCRw9YxMeo2UFLxLpBluyvLQ=="],
 

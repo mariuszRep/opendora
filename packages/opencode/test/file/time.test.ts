@@ -3,7 +3,7 @@ import path from "path"
 import fs from "fs/promises"
 import { FileTime } from "../../src/file/time"
 import { Instance } from "../../src/project/instance"
-import { Filesystem } from "../../src/util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { tmpdir } from "../fixture/fixture"
 
 describe("file/time", () => {
@@ -156,7 +156,7 @@ describe("file/time", () => {
       await Instance.provide({
         directory: tmp.path,
         fn: async () => {
-          const { Flag } = await import("../../src/flag/flag")
+          const { Flag } = await import("@opendora/util/flag")
           const original = Flag.OPENCODE_DISABLE_FILETIME_CHECK
           ;(Flag as { OPENCODE_DISABLE_FILETIME_CHECK: boolean }).OPENCODE_DISABLE_FILETIME_CHECK = true
 

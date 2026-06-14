@@ -1,10 +1,10 @@
 import { describe, expect, mock, test } from "bun:test"
 import { Project } from "../../src/project/project"
-import { Log } from "../../src/util/log"
+import { Log } from "@opendora/util/log"
 import { $ } from "bun"
 import path from "path"
 import { tmpdir } from "../fixture/fixture"
-import { Filesystem } from "../../src/util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { GlobalBus } from "../../src/bus/global"
 
 Log.init({ print: false })
