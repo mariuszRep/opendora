@@ -1,5 +1,5 @@
 import { EOL } from "os"
-import { Ripgrep } from "../../../file/ripgrep"
+import { Ripgrep } from "@opendora/tools/filesystem/lib/ripgrep"
 import { Instance } from "../../../project/instance"
 import { bootstrap } from "../../bootstrap"
 import { cmd } from "../cmd"

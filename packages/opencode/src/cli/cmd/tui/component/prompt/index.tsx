@@ -2,7 +2,7 @@ import { BoxRenderable, TextareaRenderable, MouseEvent, PasteEvent, t, dim, fg }
 import { createEffect, createMemo, type JSX, onMount, createSignal, onCleanup, on, Show, Switch, Match } from "solid-js"
 import "opentui-spinner/solid"
 import path from "path"
-import { Filesystem } from "@/util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { useLocal } from "@tui/context/local"
 import { useTheme } from "@tui/context/theme"
 import { EmptyBorder } from "@tui/component/border"

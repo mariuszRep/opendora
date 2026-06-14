@@ -4,7 +4,7 @@
  */
 import { ToolRegistry } from "@opendora/tools/registry"
 import { configureRegistry } from "@opendora/tools/registry"
-import { Flag } from "@/flag/flag"
+import { Flag } from "@opendora/util/flag"
 import { Config } from "@/config/config"
 import { Plugin } from "@/plugin"
 import { Instance } from "@/project/instance"

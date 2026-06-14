@@ -7,7 +7,7 @@ import { $ } from "bun"
 import fs from "fs/promises"
 import path from "path"
 import os from "os"
-import { Filesystem } from "../../util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 
 interface UninstallArgs {
   keepConfig: boolean

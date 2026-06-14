@@ -8,7 +8,7 @@ import { SessionTable, MessageTable, PartTable } from "@opendora/session/sql"
 import { Instance } from "../../project/instance"
 import { ShareNext } from "../../share/share-next"
 import { EOL } from "os"
-import { Filesystem as Fs } from "../../util/filesystem"
+import { Filesystem as Fs } from "@opendora/tools/filesystem/lib/primitives"
 
 export type ShareData =
   | { type: "session"; data: SDKSession }

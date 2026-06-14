@@ -1,6 +1,6 @@
 import { RequestError, type McpServer } from "@agentclientprotocol/sdk"
 import type { ACPSessionState } from "./types"
-import { Log } from "@/util/log"
+import { Log } from "@opendora/util/log"
 import type { OpencodeClient } from "@opendora/sdk/v2"
 
 const log = Log.create({ service: "acp-session-manager" })

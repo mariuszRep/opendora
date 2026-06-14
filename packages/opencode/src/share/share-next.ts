@@ -6,7 +6,7 @@ import { Session } from "@opendora/session/session"
 import { MessageV2 } from "@opendora/session/message"
 import { Database, eq } from "@opendora/storage/db"
 import { SessionShareTable } from "./share.sql"
-import { Log } from "@/util/log"
+import { Log } from "@opendora/util/log"
 import type * as SDK from "@opendora/sdk/v2"
 
 export namespace ShareNext {

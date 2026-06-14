@@ -40,7 +40,7 @@ import { useKV } from "./kv"
 import { useRenderer } from "@opentui/solid"
 import { createStore, produce } from "solid-js/store"
 import { Global } from "@opendora/util/global"
-import { Filesystem } from "@/util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { useTuiConfig } from "./tui-config"
 
 type ThemeColors = {

@@ -12,7 +12,7 @@ import { Provider } from "@opendora/provider/provider"
 import { useArgs } from "./args"
 import { useSDK } from "./sdk"
 import { RGBA } from "@opentui/core"
-import { Filesystem } from "@/util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { useRoute } from "./route"
 import { Agent } from "@/agent"
 

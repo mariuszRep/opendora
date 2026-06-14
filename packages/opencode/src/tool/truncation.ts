@@ -5,7 +5,7 @@ import { Identifier } from "@opendora/util/id"
 import { PermissionNext } from "../permission/next"
 import type { Agent } from "../agent"
 import { Scheduler } from "@opendora/runtime/scheduler"
-import { Filesystem } from "../util/filesystem"
+import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { Glob } from "@opendora/util/glob"
 
 export namespace Truncate {

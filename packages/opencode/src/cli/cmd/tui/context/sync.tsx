@@ -26,7 +26,7 @@ import type { Snapshot } from "@opendora/runtime/snapshot"
 import { useExit } from "./exit"
 import { useArgs } from "./args"
 import { batch, onMount } from "solid-js"
-import { Log } from "@/util/log"
+import { Log } from "@opendora/util/log"
 import type { Path } from "@opendora/sdk"
 
 export const { use: useSync, provider: SyncProvider } = createSimpleContext({
