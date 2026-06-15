@@ -254,6 +254,8 @@ export type Schedule = {
   time_updated: number
   color?: string
   name?: string
+  action_type?: string
+  prompt?: string
 }
 
 export type QuestionRequest = {
@@ -806,6 +808,7 @@ export const opendora = {
       req<{
         theme?: string
         timezone?: string
+        selectedWorkflowId?: string
         voice?: {
           stt: { provider: string; openaiModel?: string; geminiModel?: string }
           tts: { provider: string; openaiModel?: string; voice?: string; speed?: number; geminiVoice?: string; geminiModel?: string }
@@ -818,6 +821,7 @@ export const opendora = {
     update: (patch: {
       theme?: string
       timezone?: string
+      selectedWorkflowId?: string
       voice?: {
         stt?: { provider?: string; openaiModel?: string; geminiModel?: string }
         tts?: { provider?: string; openaiModel?: string; voice?: string; speed?: number; geminiVoice?: string; geminiModel?: string }

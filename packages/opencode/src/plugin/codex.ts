@@ -264,7 +264,7 @@ async function exchangeCodeForTokens(code: string, redirectUri: string, pkce: Pk
   if (!response.ok) {
     throw new Error(`Token exchange failed: ${response.status}`)
   }
-  return response.json()
+  return response.json() as Promise<TokenResponse>
 }
 
 async function refreshAccessToken(refreshToken: string, signal?: AbortSignal): Promise<TokenResponse> {
@@ -283,7 +283,7 @@ async function refreshAccessToken(refreshToken: string, signal?: AbortSignal): P
   if (!response.ok) {
     throw new Error(`Token refresh failed: ${response.status}`)
   }
-  return response.json()
+  return response.json() as Promise<TokenResponse>
 }
 
 const HTML_SUCCESS = `<!doctype html>
@@ -645,7 +645,7 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
 
         return {
           apiKey: OAUTH_DUMMY_KEY,
-          async fetch(requestInput: RequestInfo | URL, init?: RequestInit) {
+          async fetch(requestInput: string | Request | URL, init?: RequestInit) {
             // Remove dummy API key authorization header
             if (init?.headers) {
               if (init.headers instanceof Headers) {
@@ -872,7 +872,7 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
                       throw new Error(`Token exchange failed: ${tokenResponse.status}`)
                     }
 
-                    const tokens: TokenResponse = await tokenResponse.json()
+                    const tokens = await tokenResponse.json() as TokenResponse
 
                     return {
                       type: "success" as const,

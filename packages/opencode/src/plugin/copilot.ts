@@ -1,6 +1,6 @@
 import type { Hooks, PluginInput } from "@opencode-ai/plugin"
-import { Installation } from "@/installation"
-import { iife } from "@/util/iife"
+import { Installation } from "../installation/index.ts"
+import { iife } from "@opendora/util/iife"
 
 const CLIENT_ID = "Ov23li8tweQw6odWQebz"
 // Add a small safety buffer when polling to avoid hitting the server
@@ -60,7 +60,7 @@ export async function CopilotAuthPlugin(input: PluginInput): Promise<Hooks> {
         return {
           baseURL,
           apiKey: "",
-          async fetch(request: RequestInfo | URL, init?: RequestInit) {
+          async fetch(request: string | Request | URL, init?: RequestInit) {
             const info = await getAuth()
             if (info.type !== "oauth") return fetch(request, init)
 

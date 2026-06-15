@@ -1,3 +1,4 @@
+// @ts-ignore - optional dependency, installed only when sqlite adapter is used
 import Database from "better-sqlite3"
 import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { eq, and, desc, type SQL } from "drizzle-orm"

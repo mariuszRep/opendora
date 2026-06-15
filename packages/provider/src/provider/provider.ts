@@ -99,10 +99,12 @@ export namespace Provider {
     "@ai-sdk/deepinfra": createDeepInfra,
     "@ai-sdk/cerebras": createCerebras,
     "@ai-sdk/cohere": createCohere,
+    // @ts-expect-error - GatewayProvider uses @ai-sdk/provider@3 types vs @ai-sdk/provider@2 in BUNDLED_PROVIDERS
     "@ai-sdk/gateway": createGateway,
     "@ai-sdk/togetherai": createTogetherAI,
     "@ai-sdk/perplexity": createPerplexity,
     "@ai-sdk/vercel": createVercel,
+    // @ts-expect-error - GitLabProvider uses a different @ai-sdk/provider version than BUNDLED_PROVIDERS expects
     "@gitlab/gitlab-ai-provider": createGitLab,
     // @ts-ignore (TODO: kill this code so we dont have to maintain it)
     "@ai-sdk/github-copilot": createGitHubCopilotOpenAICompatible,
@@ -415,7 +417,7 @@ export namespace Provider {
         options: {
           project,
           location,
-          fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+          fetch: async (input: string | URL | Request, init?: RequestInit) => {
             const auth = new GoogleAuth()
             const client = await auth.getApplicationDefault()
             const token = await client.credential.getAccessToken()
@@ -572,7 +574,9 @@ export namespace Provider {
       }
 
       // Use official ai-gateway-provider package (v2.x for AI SDK v5 compatibility)
+      // @ts-ignore - ai-gateway-provider is a workspace-level dep, available at runtime
       const { createAiGateway } = await import("ai-gateway-provider")
+      // @ts-ignore
       const { createUnified } = await import("ai-gateway-provider/providers/unified")
 
       const aigateway = createAiGateway({ accountId, gateway, apiKey: apiToken })
@@ -841,7 +845,7 @@ export namespace Provider {
 
     log.info("init")
 
-    const configProviders = Object.entries(config.provider ?? {})
+    const configProviders = Object.entries((config.provider ?? {}) as Record<string, any>)
 
     // Add GitHub Copilot Enterprise provider that inherits from GitHub Copilot
     if (database["github-copilot"]) {
@@ -882,7 +886,7 @@ export namespace Provider {
         models: existing?.models ?? {},
       }
 
-      for (const [modelID, model] of Object.entries(provider.models ?? {})) {
+      for (const [modelID, model] of Object.entries((provider.models ?? {}) as Record<string, any>)) {
         const existingModel = parsed.models[model.id ?? modelID]
         const name = iife(() => {
           if (model.name) return model.name
@@ -943,10 +947,10 @@ export namespace Provider {
           release_date: model.release_date ?? existingModel?.release_date ?? "",
           variants: {},
         }
-        const merged = mergeDeep(ProviderTransform.variants(parsedModel), model.variants ?? {})
+        const merged = mergeDeep(ProviderTransform.variants(parsedModel), model.variants ?? {}) as Record<string, any>
         parsedModel.variants = mapValues(
-          pickBy(merged, (v) => !v.disabled),
-          (v) => omit(v, ["disabled"]),
+          pickBy(merged, (v) => !(v as any).disabled),
+          (v) => omit(v as any, ["disabled"]),
         )
         parsed.models[modelID] = parsedModel
       }
@@ -1075,10 +1079,10 @@ export namespace Provider {
         // Filter out disabled variants from config
         const configVariants = configProvider?.models?.[modelID]?.variants
         if (configVariants && model.variants) {
-          const merged = mergeDeep(model.variants, configVariants)
+          const merged = mergeDeep(model.variants, configVariants) as Record<string, any>
           model.variants = mapValues(
-            pickBy(merged, (v) => !v.disabled),
-            (v) => omit(v, ["disabled"]),
+            pickBy(merged, (v) => !(v as any).disabled),
+            (v) => omit(v as any, ["disabled"]),
           )
         }
       }

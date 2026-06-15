@@ -899,6 +899,7 @@ export function useOpendora(opts?: {
         if (prev.find((s) => s.id === session.id)) return prev
         return [session, ...prev]
       })
+      if (effectiveAgentID) setSelectedAgent(effectiveAgentID)
       setSelectedSessionId(session.id)
       router.push(`/dashboard?session=${session.id}`, { scroll: false })
       // Update ref immediately to avoid race condition

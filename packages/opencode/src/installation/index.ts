@@ -4,7 +4,7 @@ import { $ } from "bun"
 import z from "zod"
 import { NamedError } from "@opendora/util/error"
 import { Log } from "@opendora/util/log"
-import { iife } from "@/util/iife"
+import { iife } from "@opendora/util/iife"
 import { Flag } from "@opendora/util/flag"
 
 declare global {

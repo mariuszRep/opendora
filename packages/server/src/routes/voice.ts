@@ -104,7 +104,7 @@ export const VoiceRoutes = lazy(() =>
               return c.json({ error: "Transcription failed" }, { status: response.status as any })
             }
 
-            const result = await response.json()
+            const result = await response.json() as any
             const text = result?.candidates?.[0]?.content?.parts?.[0]?.text ?? ""
             return c.json({ text: text.trim() })
           }
@@ -136,7 +136,7 @@ export const VoiceRoutes = lazy(() =>
             return c.json({ error: "Transcription failed" }, { status: response.status as any })
           }
 
-          const result = await response.json()
+          const result = await response.json() as any
           return c.json({ text: result.text })
         } catch (error) {
           console.error("STT route error:", error)
@@ -227,7 +227,7 @@ export const VoiceRoutes = lazy(() =>
               return c.json({ error: "Text-to-speech generation failed" }, { status: response.status as any })
             }
 
-            const result = await response.json()
+            const result = await response.json() as any
             const part = result?.candidates?.[0]?.content?.parts?.[0]
             if (!part?.inlineData?.data) {
               return c.json({ error: "No audio data in Gemini response" }, { status: 500 })

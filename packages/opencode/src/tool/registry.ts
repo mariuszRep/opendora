@@ -5,9 +5,9 @@
 import { ToolRegistry } from "@opendora/tools/registry"
 import { configureRegistry } from "@opendora/tools/registry"
 import { Flag } from "@opendora/util/flag"
-import { Config } from "@/config/config"
-import { Plugin } from "@/plugin"
-import { Instance } from "@/project/instance"
+import { Config } from "@opendora/config/config"
+import { Plugin } from "../plugin/index.ts"
+import { Instance } from "../project/instance.ts"
 import type { ToolDefinition, ToolContext as PluginToolContext } from "@opencode-ai/plugin"
 import { Truncate } from "./truncation"
 import z from "zod"
@@ -34,7 +34,7 @@ configureRegistry({
   },
   async loadPlugin(_category: string) {
     const plugins = await Plugin.list()
-    return plugins.flatMap((plugin) =>
+    return plugins.flatMap((plugin: any) =>
       Object.entries(plugin.tool ?? {}).map(([id, def]) => ({ id, def })),
     )
   },

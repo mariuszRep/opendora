@@ -460,7 +460,7 @@ export namespace Session {
     if (config.share === "disabled") {
       throw new Error("Sharing is disabled in configuration")
     }
-    const { ShareNext } = await import("@/share/share-next")
+    const { ShareNext } = await import("./share/share-next.ts")
     const s = await ShareNext.create(id)
     const db = cfg.db
     const row = db.update(SessionTable).set({ share_url: s.url }).where(eq(SessionTable.id, id)).returning().get()
@@ -472,7 +472,7 @@ export namespace Session {
 
   export const unshare = fn(Identifier.schema("session"), async (id) => {
     const cfg = getConfig()
-    const { ShareNext } = await import("@/share/share-next")
+    const { ShareNext } = await import("./share/share-next.ts")
     await ShareNext.remove(id)
     const db = cfg.db
     const row = db.update(SessionTable).set({ share_url: null }).where(eq(SessionTable.id, id)).returning().get()

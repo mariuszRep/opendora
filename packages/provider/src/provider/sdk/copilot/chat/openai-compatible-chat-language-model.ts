@@ -67,6 +67,7 @@ export class OpenAICompatibleChatLanguageModel implements LanguageModelV2 {
     // initialize error handling:
     const errorStructure = config.errorStructure ?? defaultOpenAICompatibleErrorStructure
     this.chunkSchema = createOpenAICompatibleChatChunkSchema(errorStructure.errorSchema)
+    // @ts-expect-error - @ai-sdk/provider-utils uses @ai-sdk/provider@3 types, this file uses @ai-sdk/provider@2
     this.failedResponseHandler = createJsonErrorResponseHandler(errorStructure)
 
     this.supportsStructuredOutputs = config.supportsStructuredOutputs ?? false
@@ -200,6 +201,7 @@ export class OpenAICompatibleChatLanguageModel implements LanguageModelV2 {
       responseHeaders,
       value: responseBody,
       rawValue: rawResponse,
+      // @ts-ignore - @ai-sdk/provider-utils uses @ai-sdk/provider@3 types, this file uses @ai-sdk/provider@2
     } = await postJsonToApi({
       url: this.config.url({
         path: "/chat/completions",
@@ -207,11 +209,11 @@ export class OpenAICompatibleChatLanguageModel implements LanguageModelV2 {
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
       body: args,
-      failedResponseHandler: this.failedResponseHandler,
-      successfulResponseHandler: createJsonResponseHandler(OpenAICompatibleChatResponseSchema),
+      failedResponseHandler: this.failedResponseHandler as any,
+      successfulResponseHandler: createJsonResponseHandler(OpenAICompatibleChatResponseSchema) as any,
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
-    })
+    }) as any
 
     const choice = responseBody.choices[0]
     const content: Array<LanguageModelV2Content> = []
@@ -309,18 +311,22 @@ export class OpenAICompatibleChatLanguageModel implements LanguageModelV2 {
 
     const metadataExtractor = this.config.metadataExtractor?.createStreamExtractor()
 
-    const { responseHeaders, value: response } = await postJsonToApi({
+    const {
+      responseHeaders,
+      value: response,
+      // @ts-ignore - @ai-sdk/provider-utils uses @ai-sdk/provider@3 types, this file uses @ai-sdk/provider@2
+    } = await postJsonToApi({
       url: this.config.url({
         path: "/chat/completions",
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
       body,
-      failedResponseHandler: this.failedResponseHandler,
-      successfulResponseHandler: createEventSourceResponseHandler(this.chunkSchema),
+      failedResponseHandler: this.failedResponseHandler as any,
+      successfulResponseHandler: createEventSourceResponseHandler(this.chunkSchema) as any,
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
-    })
+    }) as any
 
     const toolCalls: Array<{
       id: string

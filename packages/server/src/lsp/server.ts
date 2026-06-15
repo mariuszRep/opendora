@@ -932,10 +932,10 @@ export namespace LSPServer {
         return
       }
 
-      const release: {
+      const release = await releaseResponse.json() as {
         tag_name?: string
         assets?: { name?: string; browser_download_url?: string }[]
-      } = await releaseResponse.json()
+      }
 
       const tag = release.tag_name
       if (!tag) {
@@ -1249,7 +1249,7 @@ export namespace LSPServer {
           return
         }
 
-        const release = await releaseResponse.json()
+        const release = await releaseResponse.json() as any
         const version = release.name?.replace(/^v/, "")
 
         if (!version) {
@@ -1384,7 +1384,7 @@ export namespace LSPServer {
           return
         }
 
-        const release = await releaseResponse.json()
+        const release = await releaseResponse.json() as any
 
         const platform = process.platform
         const arch = process.arch

@@ -270,7 +270,7 @@ export function ScheduleDialog({
                         type="button"
                         title="Change color"
                         className="size-7 rounded-full shrink-0 ring-2 ring-offset-2 ring-offset-background transition-all hover:scale-110 focus-visible:outline-none"
-                        style={{ backgroundColor: currentColorHex, ringColor: currentColorHex }}
+                        style={{ backgroundColor: currentColorHex, outlineColor: currentColorHex }}
                       />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="p-2.5 w-auto" align="end">

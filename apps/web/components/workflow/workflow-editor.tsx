@@ -80,7 +80,7 @@ function normalizeNodeData(raw: unknown): WorkflowNodeData {
   return {
     ...(d as WorkflowNodeData),
     node: node
-      ? { ...defaults.node, ...(node as WorkflowNodeData['node']), label: (node.label as string) || defaults.node.label }
+      ? { ...defaults.node, ...(node as unknown as WorkflowNodeData['node']), label: (node.label as string) || defaults.node.label }
       : defaults.node,
     data: (d.data as WorkflowNodeData['data']) ?? defaults.data,
   }

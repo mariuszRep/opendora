@@ -1,17 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { BicepsFlexedIcon, CheckIcon, FolderGitIcon, NotebookPenIcon, UserPenIcon } from "lucide-react"
+import { BicepsFlexedIcon, FolderGitIcon, NotebookPenIcon, UserPenIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { getAgentColor } from "@/lib/agent-colors"
@@ -87,42 +84,37 @@ export function SessionCreateDialog({
 
         <div className="px-5 pb-5 space-y-4">
           {agents.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            <div className="space-y-1">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-2">
                 Agent
               </p>
-              <div className="h-[120px] overflow-hidden rounded-lg border border-border">
-                <ScrollArea className="h-full">
-                  <div className="grid grid-cols-2 gap-1.5 p-1.5">
-                    {agents.map((agent) => {
-                      const isSelected = agent._id === chosenAgent
-                      const color = getAgentColor(agent.color)
-                      return (
-                        <button
-                          key={agent._id}
-                          type="button"
-                          onClick={() => setChosenAgent(agent._id)}
-                          className={cn(
-                            "group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-all outline-none",
-                            "focus-visible:ring-2 focus-visible:ring-ring",
-                            isSelected
-                              ? "bg-primary/10 text-foreground ring-1 ring-primary/30"
-                              : "hover:bg-accent/60",
-                          )}
-                        >
-                          <div
-                            className="size-2 shrink-0 rounded-full"
-                            style={{ backgroundColor: color.hex }}
-                          />
-                          <span className="truncate text-sm font-medium capitalize">{agent.name}</span>
-                          {isSelected && (
-                            <CheckIcon className="ml-auto size-3 shrink-0 text-primary" />
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </ScrollArea>
+              <div className="grid grid-cols-2">
+                {agents.map((agent) => {
+                  const isSelected = agent._id === chosenAgent
+                  const color = getAgentColor(agent.color)
+                  return (
+                    <button
+                      key={agent._id}
+                      type="button"
+                      onClick={() => setChosenAgent(agent._id)}
+                      className={cn(
+                        "flex items-center gap-2 h-8 w-full rounded-md px-2 text-sm text-left transition-colors outline-none",
+                        "focus-visible:ring-2 focus-visible:ring-ring",
+                        isSelected
+                          ? "bg-accent text-accent-foreground"
+                          : "hover:bg-accent hover:text-accent-foreground",
+                      )}
+                    >
+                      <div className="size-4 shrink-0 flex items-center justify-center">
+                        <div
+                          className="size-2 rounded-full"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                      </div>
+                      <span className="capitalize truncate">{agent.name}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -168,14 +160,14 @@ export function SessionCreateDialog({
           </div>
         </div>
 
-        <DialogFooter className="px-5 py-3 border-t bg-muted/20 gap-2">
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t bg-muted/20">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button size="sm" onClick={handleCreate}>
             Create Session
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   )
