@@ -6,18 +6,19 @@ import toolDef from ".//keyboard-type.json"
 
 export const DesktopKeyboardTypeTool = Tool.define("desktop_keyboard_type", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    text: z.string().min(1).describe("Text to type"),
+    delay: z
+      .number()
+      .int()
+      .nonnegative()
+      .optional()
+      .describe("Delay in milliseconds between keystrokes (default: 50)"),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      text: z.string().min(1).describe("Text to type"),
-      delay: z
-        .number()
-        .int()
-        .nonnegative()
-        .optional()
-        .describe("Delay in milliseconds between keystrokes (default: 50)"),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       assertNotSandbox(sandbox)
       assertDisplay()
       await ctx.ask({

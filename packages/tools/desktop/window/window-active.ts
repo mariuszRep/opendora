@@ -7,10 +7,11 @@ import toolDef from ".//window-active.json"
 
 export const DesktopWindowActiveTool = Tool.define("desktop_window_active", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({})
   return {
     description: toolDef.description,
-    parameters: z.object({}),
-    async execute(_params, ctx) {
+    parameters,
+    async execute(_params: z.infer<typeof parameters>, ctx) {
       assertNotSandbox(sandbox)
       assertDisplay()
       await ctx.ask({

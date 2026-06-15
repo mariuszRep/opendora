@@ -5,13 +5,14 @@ import toolDef from "./keyboard-type.json"
 
 export const PyAutoGUIKeyboardTypeTool = Tool.define("pyautogui_keyboard_type", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    text: z.string(),
+    window_id: z.number().int().optional().describe("X11 window ID to target directly (bypasses compositor focus)"),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      text: z.string(),
-      window_id: z.number().int().optional().describe("X11 window ID to target directly (bypasses compositor focus)"),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")
 
       await ctx.ask({

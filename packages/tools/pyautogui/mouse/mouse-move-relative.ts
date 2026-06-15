@@ -5,14 +5,15 @@ import toolDef from "./mouse-move-relative.json"
 
 export const PyAutoGUIMouseMoveRelativeTool = Tool.define("pyautogui_mouse_move_relative", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    dx: z.number().int(),
+    dy: z.number().int(),
+    duration: z.number().optional(),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      dx: z.number().int(),
-      dy: z.number().int(),
-      duration: z.number().optional(),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")
 
       await ctx.ask({

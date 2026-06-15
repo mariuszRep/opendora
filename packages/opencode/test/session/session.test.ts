@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
-import { Session, configureSessionCore } from "../../src/session"
+import { Session } from "../../src/session"
+import { configureSessionCore } from "../../src/server/configure-session-core"
 import { Bus } from "../../src/bus"
 import { Log } from "@opendora/util/log"
 import { Instance } from "../../src/project/instance"

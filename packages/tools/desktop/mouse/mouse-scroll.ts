@@ -6,19 +6,20 @@ import toolDef from ".//mouse-scroll.json"
 
 export const DesktopMouseScrollTool = Tool.define("desktop_mouse_scroll", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    direction: z
+      .enum(["up", "down", "left", "right"])
+      .describe("Scroll direction"),
+    amount: z
+      .number()
+      .int()
+      .positive()
+      .describe("Number of scroll steps"),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      direction: z
-        .enum(["up", "down", "left", "right"])
-        .describe("Scroll direction"),
-      amount: z
-        .number()
-        .int()
-        .positive()
-        .describe("Number of scroll steps"),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       assertNotSandbox(sandbox)
       assertDisplay()
       await ctx.ask({

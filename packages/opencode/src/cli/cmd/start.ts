@@ -2,6 +2,7 @@ import { cmd } from "./cmd"
 import { resolveService } from "../../daemon/service"
 import { Installation } from "../../installation"
 import path from "path"
+import os from "os"
 
 export const StartCommand = cmd({
   command: "start",
@@ -50,7 +51,9 @@ export const StartCommand = cmd({
           programArguments,
           workingDirectory: projectRoot,
           environment: {
-            OPENCODE_CONFIG_DIR: path.join(projectRoot, ".projectflows"),
+            // Single, deterministic data/config root in the user's home folder,
+            // independent of where the server is started from.
+            OPENCODE_CONFIG_DIR: path.join(os.homedir(), ".projectflows"),
             OPENDORA_SERVICE_VERSION: Installation.VERSION,
           },
           description: `OpenDora Server (v${Installation.VERSION})`,

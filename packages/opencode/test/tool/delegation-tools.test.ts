@@ -53,7 +53,7 @@ describe("delegation tool set", () => {
       directory: tmp.path,
       fn: async () => {
         const parent = await Session.create({ title: "parent" })
-        const target = await Session.create({ title: "target", parentID: parent.id, agentID: "plan" })
+        const target = await Session.create({ title: "target", parentSessionID: parent.id, agentID: "plan" })
         const tool = await PingSessionTool.init()
         const result = await tool.execute(
           { session_id: target.id, prompt: "Update this thread", mode: "async", reply_to: parent.id },
@@ -85,7 +85,7 @@ describe("delegation tool set", () => {
 
         const sessionId = /session_id: (.+)/.exec(result.output)?.[1]
         const child = await Session.get(sessionId!)
-        expect(child.parentID).toBe(parent.id)
+        expect(child.parentSessionID).toBe(parent.id)
         expect(child.sessionType).toBe("worker")
         expect(child.agentID).toBe("build")
       },

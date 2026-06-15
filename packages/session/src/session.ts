@@ -174,7 +174,7 @@ export namespace Session {
   }
 
   const SessionTypeSchema = z.enum(["role", "scope", "worker", "scratchpad"])
-  const SessionStatusSchema = z.enum(["active", "archived", "closed"])
+  const SessionStatusSchema = z.enum(["active", "archived", "closed", "waiting"])
 
   export const Info = z
     .object({
@@ -429,7 +429,7 @@ export namespace Session {
     }
 
     const config = await cfg.config?.get() ?? {}
-    if (!input.parentID && (process.env.OPENCODE_AUTO_SHARE || config.share === "auto"))
+    if (!input.parentSessionID && (process.env.OPENCODE_AUTO_SHARE || config.share === "auto"))
       share(id).catch(() => {})
 
     // Publish so ACP can register the session and not drop subsequent message events.
@@ -1172,7 +1172,7 @@ export namespace Session {
         ...msg,
         parentMessageID: parent_message_id,
         ...(parentRow ? { parentSessionID: parentRow.session_id } : {}),
-      } as MessageV2.Info
+      } as unknown as MessageV2.Info
     }
     cfg.bus?.publish(MessageV2.Event.Updated, { info: infoForBus })
     return msg

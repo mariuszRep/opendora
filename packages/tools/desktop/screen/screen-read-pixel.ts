@@ -7,13 +7,14 @@ import toolDef from ".//screen-read-pixel.json"
 
 export const DesktopScreenReadPixelTool = Tool.define("desktop_screen_read_pixel", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    x: z.number().int().describe("X coordinate in pixels"),
+    y: z.number().int().describe("Y coordinate in pixels"),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      x: z.number().int().describe("X coordinate in pixels"),
-      y: z.number().int().describe("Y coordinate in pixels"),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       assertNotSandbox(sandbox)
       assertDisplay()
       await ctx.ask({

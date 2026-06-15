@@ -5,7 +5,7 @@ import { LLM } from "../../src/session/llm"
 import { Global } from "../../src/global"
 import { Instance } from "../../src/project/instance"
 import { Provider } from "../../src/provider/provider"
-import { ProviderTransform } from "../../src/provider/transform"
+import { ProviderTransform } from "@opendora/provider/transform"
 import { ModelsDev } from "../../src/provider/models"
 import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { tmpdir } from "../fixture/fixture"
@@ -274,6 +274,7 @@ describe("session.llm.stream", () => {
           permission: [{ permission: "*", pattern: "*", action: "allow" }],
           temperature: 0.4,
           topP: 0.8,
+          config: undefined,
         } satisfies Agent.Info
 
         const user = {
@@ -404,6 +405,7 @@ describe("session.llm.stream", () => {
           options: {},
           permission: [{ permission: "*", pattern: "*", action: "allow" }],
           temperature: 0.2,
+          config: undefined,
         } satisfies Agent.Info
 
         const user = {
@@ -528,6 +530,7 @@ describe("session.llm.stream", () => {
           permission: [{ permission: "*", pattern: "*", action: "allow" }],
           temperature: 0.4,
           topP: 0.9,
+          config: undefined,
         } satisfies Agent.Info
 
         const user = {
@@ -630,6 +633,7 @@ describe("session.llm.stream", () => {
           permission: [{ permission: "*", pattern: "*", action: "allow" }],
           temperature: 0.3,
           topP: 0.8,
+          config: undefined,
         } satisfies Agent.Info
 
         const user = {

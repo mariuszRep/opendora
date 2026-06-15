@@ -19,33 +19,34 @@ export const DesktopScreenWaitForImageTool = Tool.define(
   "desktop_screen_wait_for_image",
   async (initCtx) => {
     const sandbox = initCtx?.agent?.config?.sandbox ?? false
+    const parameters = z.object({
+      templatePath: z
+        .string()
+        .describe("Absolute path to the PNG template image to wait for"),
+      timeoutMs: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe("Max wait time in ms (default: 5000)"),
+      intervalMs: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe("Poll interval in ms (default: 500)"),
+      confidence: z
+        .number()
+        .min(0)
+        .max(1)
+        .optional()
+        .describe("Minimum match confidence 0-1 (default: 0.8)"),
+      region: regionSchema.optional().describe("Restrict search to this screen region"),
+    })
     return {
       description: toolDef.description,
-      parameters: z.object({
-        templatePath: z
-          .string()
-          .describe("Absolute path to the PNG template image to wait for"),
-        timeoutMs: z
-          .number()
-          .int()
-          .positive()
-          .optional()
-          .describe("Max wait time in ms (default: 5000)"),
-        intervalMs: z
-          .number()
-          .int()
-          .positive()
-          .optional()
-          .describe("Poll interval in ms (default: 500)"),
-        confidence: z
-          .number()
-          .min(0)
-          .max(1)
-          .optional()
-          .describe("Minimum match confidence 0-1 (default: 0.8)"),
-        region: regionSchema.optional().describe("Restrict search to this screen region"),
-      }),
-      async execute(params, ctx) {
+      parameters,
+      async execute(params: z.infer<typeof parameters>, ctx) {
         assertNotSandbox(sandbox)
         assertDisplay()
 

@@ -5,17 +5,18 @@ import toolDef from "./mouse-drag.json"
 
 export const PyAutoGUIMouseDragTool = Tool.define("pyautogui_mouse_drag", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    x: z.number().int(),
+    y: z.number().int(),
+    from_x: z.number().int().optional(),
+    from_y: z.number().int().optional(),
+    button: z.enum(["left", "right", "middle"]).optional(),
+    duration: z.number().optional(),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      x: z.number().int(),
-      y: z.number().int(),
-      from_x: z.number().int().optional(),
-      from_y: z.number().int().optional(),
-      button: z.enum(["left", "right", "middle"]).optional(),
-      duration: z.number().optional(),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")
 
       await ctx.ask({

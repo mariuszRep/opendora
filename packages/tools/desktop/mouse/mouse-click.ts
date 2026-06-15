@@ -7,18 +7,19 @@ import toolDef from ".//mouse-click.json"
 
 export const DesktopMouseClickTool = Tool.define("desktop_mouse_click", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    button: z
+      .enum(["left", "right", "middle"])
+      .optional()
+      .describe("Mouse button to click (default: left)"),
+    double: z.boolean().optional().describe("Double-click instead of single-click"),
+    x: z.number().int().optional().describe("X coordinate to move to before clicking"),
+    y: z.number().int().optional().describe("Y coordinate to move to before clicking"),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      button: z
-        .enum(["left", "right", "middle"])
-        .optional()
-        .describe("Mouse button to click (default: left)"),
-      double: z.boolean().optional().describe("Double-click instead of single-click"),
-      x: z.number().int().optional().describe("X coordinate to move to before clicking"),
-      y: z.number().int().optional().describe("Y coordinate to move to before clicking"),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       assertNotSandbox(sandbox)
       assertDisplay()
 

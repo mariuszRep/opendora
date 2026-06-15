@@ -5,13 +5,14 @@ import toolDef from "./clipboard.json"
 
 export const PyAutoGUIClipboardTool = Tool.define("pyautogui_clipboard", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    mode: z.enum(["get", "set"]),
+    text: z.string().optional(),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      mode: z.enum(["get", "set"]),
-      text: z.string().optional(),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")
 
       await ctx.ask({

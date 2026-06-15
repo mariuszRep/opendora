@@ -105,24 +105,26 @@ export const BashTool = Tool.define("bash", async (ctx) => {
     .replace("${maxLines}", String(MAX_LINES))
     .replace("${maxBytes}", MAX_BYTES_LABEL)
 
+  const parameters = z.object({
+    command: z.string().describe("The command to execute"),
+    timeout: z.number().describe("Optional timeout in milliseconds").optional(),
+    workdir: z
+      .string()
+      .describe(
+        "The working directory to run the command in. Use this instead of 'cd' commands.",
+      )
+      .optional(),
+    description: z
+      .string()
+      .describe(
+        "Clear, concise description of what this command does in 5-10 words. Examples:\nInput: ls\nOutput: Lists files in current directory\n\nInput: git status\nOutput: Shows working tree status\n\nInput: npm install\nOutput: Installs package dependencies\n\nInput: mkdir foo\nOutput: Creates directory 'foo'",
+      ),
+  })
+
   return {
     description,
-    parameters: z.object({
-      command: z.string().describe("The command to execute"),
-      timeout: z.number().describe("Optional timeout in milliseconds").optional(),
-      workdir: z
-        .string()
-        .describe(
-          "The working directory to run the command in. Use this instead of 'cd' commands.",
-        )
-        .optional(),
-      description: z
-        .string()
-        .describe(
-          "Clear, concise description of what this command does in 5-10 words. Examples:\nInput: ls\nOutput: Lists files in current directory\n\nInput: git status\nOutput: Shows working tree status\n\nInput: npm install\nOutput: Installs package dependencies\n\nInput: mkdir foo\nOutput: Creates directory 'foo'",
-        ),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       const h = host(ctx)
       const dir = directory(ctx)
       const cwd = params.workdir || dir

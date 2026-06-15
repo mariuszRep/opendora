@@ -5,14 +5,15 @@ import toolDef from "./mouse-press.json"
 
 export const PyAutoGUIMousePressTool = Tool.define("pyautogui_mouse_press", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    x: z.number().int().optional(),
+    y: z.number().int().optional(),
+    button: z.enum(["left", "right", "middle"]).optional(),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      x: z.number().int().optional(),
-      y: z.number().int().optional(),
-      button: z.enum(["left", "right", "middle"]).optional(),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")
 
       await ctx.ask({

@@ -5,14 +5,15 @@ import toolDef from "./mouse-scroll-horizontal.json"
 
 export const PyAutoGUIMouseScrollHorizontalTool = Tool.define("pyautogui_mouse_scroll_horizontal", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    clicks: z.number().int(),
+    x: z.number().int().optional(),
+    y: z.number().int().optional(),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      clicks: z.number().int(),
-      x: z.number().int().optional(),
-      y: z.number().int().optional(),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")
 
       const dir = params.clicks > 0 ? "right" : "left"

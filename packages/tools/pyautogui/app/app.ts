@@ -5,19 +5,20 @@ import toolDef from "./app.json"
 
 export const PyAutoGUIAppTool = Tool.define("pyautogui_app", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    mode: z.enum(["list", "launch", "focus", "move", "resize"]),
+    name: z.string().optional(),
+    window_id: z.number().int().positive().optional(),
+    x: z.number().int().optional(),
+    y: z.number().int().optional(),
+    width: z.number().int().positive().optional(),
+    height: z.number().int().positive().optional(),
+    wait: z.number().optional(),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      mode: z.enum(["list", "launch", "focus", "move", "resize"]),
-      name: z.string().optional(),
-      window_id: z.number().int().positive().optional(),
-      x: z.number().int().optional(),
-      y: z.number().int().optional(),
-      width: z.number().int().positive().optional(),
-      height: z.number().int().positive().optional(),
-      wait: z.number().optional(),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")
 
       await ctx.ask({

@@ -791,7 +791,7 @@ export namespace MessageV2 {
         if (parentMsgId) {
           ;(info as any).parentMessageID = parentMsgId
           const parentSessionID = parentSessionByMsgId.get(parentMsgId)
-          if (parentSessionID) ;(info as any).parentSessionID = parentSessionID
+          if (parentSessionID) (info as any).parentSessionID = parentSessionID
         }
         yield {
           info,
@@ -830,7 +830,7 @@ export namespace MessageV2 {
         .from(MessageTable)
         .where(eq(MessageTable.id, parentMsgId))
         .get()
-      if (parentRow) ;(info as any).parentSessionID = parentRow.session_id
+      if (parentRow) (info as any).parentSessionID = parentRow.session_id
     }
     return {
       info,
@@ -849,7 +849,7 @@ export namespace MessageV2 {
         msg.parts.some((part) => part.type === "compaction")
       )
         break
-      if (msg.info.role === "assistant" && msg.info.summary && msg.info.finish) completed.add(msg.info.parentID)
+      if (msg.info.role === "assistant" && msg.info.summary && msg.info.finish && msg.info.parentID) completed.add(msg.info.parentID)
     }
     result.reverse()
     return result

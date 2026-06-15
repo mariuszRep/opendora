@@ -52,7 +52,7 @@ describe("tool.delegate", () => {
         expect(sessionId).toBeTruthy()
 
         const delegated = await Session.get(sessionId!)
-        expect(delegated.parentID).toBe(parent.id)
+        expect(delegated.parentSessionID).toBe(parent.id)
         expect(delegated.agentID).toBe("build")
         expect(result.metadata.created).toBe(true)
         expect(result.metadata.replied).toBe(false)
@@ -78,7 +78,7 @@ describe("tool.delegate", () => {
         const parent = await Session.create({ title: "parent" })
         const delegated = await Session.create({
           title: "plan session",
-          parentID: parent.id,
+          parentSessionID: parent.id,
           agentID: "plan",
         })
         const tool = await DelegateTool.init()
@@ -268,7 +268,7 @@ This skill is used in self-delegation.`,
         const parent = await Session.create({ title: "parent" })
         const delegated = await Session.create({
           title: "plan session",
-          parentID: parent.id,
+          parentSessionID: parent.id,
           agentID: "plan",
         })
         const tool = await DelegateTool.init()

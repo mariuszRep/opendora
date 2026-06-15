@@ -52,7 +52,7 @@ describe("tool.ping", () => {
         const mainSession = await Session.get(sessionId!)
         expect(mainSession.sessionType).toBe("role")
         expect(mainSession.agentID).toBe("plan")
-        expect(mainSession.parentID).toBeUndefined()
+        expect(mainSession.parentSessionID).toBeUndefined()
         expect(result.metadata.created).toBe(false)
         expect(result.metadata.route).toBe("agent_main")
       },
@@ -93,7 +93,7 @@ describe("tool.ping", () => {
         expect(sessionId).toBeTruthy()
 
         const child = await Session.get(sessionId!)
-        expect(child.parentID).toBe(parent.id)
+        expect(child.parentSessionID).toBe(parent.id)
         expect(child.agentID).toBe("build")
         expect(child.sessionType).toBe("worker")
         expect(result.metadata.created).toBe(true)
@@ -120,7 +120,7 @@ describe("tool.ping", () => {
         const parent = await Session.create({ title: "parent" })
         const target = await Session.create({
           title: "existing target",
-          parentID: parent.id,
+          parentSessionID: parent.id,
           agentID: "plan",
         })
         const tool = await PingTool.init()

@@ -5,13 +5,14 @@ import toolDef from "./screen-locate.json"
 
 export const PyAutoGUIScreenLocateTool = Tool.define("pyautogui_screen_locate", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    image: z.string(),
+    confidence: z.number().min(0).max(1).optional(),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      image: z.string(),
-      confidence: z.number().min(0).max(1).optional(),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")
 
       await ctx.ask({
