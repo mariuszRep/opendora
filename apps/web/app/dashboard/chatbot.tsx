@@ -91,7 +91,7 @@ import { useVoiceSettings, formatHotkey } from "@/hooks/use-voice-settings"
 import { useTextToSpeech } from "@/hooks/use-text-to-speech"
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder"
 import { usePushToTalk } from "@/hooks/use-push-to-talk"
-import { DelegateToolContent, isDelegateTool, getDelegateToolTitle } from "@/components/ai-elements/delegate-tool"
+import { DelegateToolContent, isDelegateTool, getDelegateToolTitle, ParentSessionBanner } from "@/components/ai-elements/delegate-tool"
 import { TodoToolContent, isTodoTool, getTodoToolTitle } from "@/components/ai-elements/todo-tool"
 import { SessionTreeToolContent, isSessionTreeTool, getSessionTreeToolTitle } from "@/components/ai-elements/session-tree-tool"
 import { WebFetchToolContent, isWebFetchTool, getWebFetchToolTitle, getWebFetchUrl } from "@/components/ai-elements/webfetch-tool"
@@ -827,6 +827,18 @@ export const Chatbot = () => {
           </Suggestions>
         </div>
       ) : (
+        <>
+        {(() => {
+          const chatParentSession = selectedSession.parentSessionID
+            ? sessions.find((s) => s.id === selectedSession.parentSessionID)
+            : undefined
+          return chatParentSession ? (
+            <ParentSessionBanner
+              parentSession={chatParentSession}
+              onSelectSession={selectSession}
+            />
+          ) : null
+        })()}
         <Conversation key={selectedSession.id}>
           <ConversationContent className={cn(isChatCentered && "max-w-3xl mx-auto w-full")}>
             {messages.map(({ info, parts }, msgIndex) => {
@@ -1613,6 +1625,7 @@ export const Chatbot = () => {
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>
+        </>
       )}
 
       <div className="grid shrink-0 gap-4 pt-4">

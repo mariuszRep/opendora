@@ -14,6 +14,7 @@ import {
   fromLegacyConfig,
   mergeLegacy,
   evaluateLegacy,
+  evaluateDB,
   disabledLegacy,
   extractPathBoundaries as _extractPathBoundaries,
   type AskInput,
@@ -168,6 +169,8 @@ export namespace PermissionNext {
   export const fromConfig = fromLegacyConfig
   export const merge = mergeLegacy
   export const evaluate = evaluateLegacy
+  /** Evaluate persisted (DB) rules for a resource/access/pattern triple. */
+  export const evaluateStored = evaluateDB
   export const disabled = disabledLegacy
   export const extractPathBoundaries = _extractPathBoundaries
 

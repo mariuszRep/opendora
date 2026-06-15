@@ -710,11 +710,28 @@ export namespace Server {
 
       const execCtx = {
         sessionID: ctx.sessionID,
-        messageID: "workflow-runner",
+        messageID: ctx.messageID ?? Identifier.ascending("message"),
         agent: ctx.agent ?? "",
         abort: ctx.abort ?? new AbortController().signal,
         messages: [],
-        metadata: (_input: { title?: string; metadata?: unknown }) => {},
+        metadata: async (input: { title?: string; metadata?: unknown }) => {
+          if (ctx.partID && ctx.messageID) {
+            await Session.updatePart({
+              id: ctx.partID,
+              sessionID: ctx.sessionID,
+              messageID: ctx.messageID,
+              type: "tool",
+              callID: ctx.partID,
+              tool: toolId,
+              state: {
+                status: "running",
+                input: finalArgs,
+                metadata: input.metadata as any,
+                time: { start: Date.now() },
+              },
+            } as any)
+          }
+        },
         ask: async (_input: unknown) => {},
         extra: {
           directory: sessionDirectory,
@@ -803,7 +820,7 @@ export namespace Server {
       }
 
       const result = await toolDef.execute(finalArgs, execCtx)
-      return { output: result.output }
+      return { output: result.output, metadata: result.metadata }
     })
 
     // Clear out any tool parts left in pending/running state by a previous

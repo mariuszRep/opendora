@@ -100,10 +100,54 @@ export namespace Agent {
   }
 
   /**
+   * Derive the agent's enabled skills from agent-scoped `skill` permission rules.
+   *
+   * Permission rules are the single source of truth for skill access. The
+   * agent.json `skills[]` array is treated as a legacy cache: on first load,
+   * if an agent has assigned skills but no skill rules yet, we seed one allow
+   * rule per skill (migration). Thereafter the enabled set is computed purely
+   * from rules so the UI toggle, system prompt, and skill_load all agree.
+   *
+   * Defensive: if the permission store / DB is unavailable, fall back to the
+   * stored config.skills so agent listing never breaks.
+   */
+  async function deriveEnabledSkills(entry: AgentStorage.Entry): Promise<string[]> {
+    try {
+      let skillRules = PermissionNext.listRules("agent", entry.id).filter((r) => r.resource === "skill")
+
+      // Migration: seed allow rules from legacy config.skills when none exist yet.
+      if (skillRules.length === 0 && entry.config.skills?.length) {
+        for (const name of entry.config.skills) {
+          PermissionNext.addRule({
+            scope: "agent",
+            scope_id: entry.id,
+            resource: "skill",
+            access: "execute",
+            pattern: name,
+            action: "allow",
+          })
+        }
+        skillRules = PermissionNext.listRules("agent", entry.id).filter((r) => r.resource === "skill")
+      }
+
+      const allNames: string[] = (await Skill.all()).map((s: any) => s.name)
+      return allNames.filter(
+        (name) => PermissionNext.evaluateStored("skill", "execute", name, skillRules)?.action === "allow",
+      )
+    } catch {
+      return entry.config.skills ?? []
+    }
+  }
+
+  /**
    * Convert storage entry to Info with permissions
    */
   async function entryToInfo(entry: AgentStorage.Entry): Promise<Info> {
     const defaults = await buildDefaultPermissions()
+    const enabledSkills = await deriveEnabledSkills(entry)
+    // Keep config.skills consistent with the rule-derived set so downstream
+    // readers (system prompt, skill_list, skill_load) reflect permission rules.
+    entry.config.skills = enabledSkills
 
     // User's tool selection is ALWAYS respected:
     // - tools: ["bash", "read"] -> only bash and read

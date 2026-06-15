@@ -135,7 +135,7 @@ export const ParentSessionBanner = ({
   parentMessageID,
   onSelectSession,
 }: ParentSessionBannerProps) => (
-  <div className="flex shrink-0 items-center gap-2 border-b bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
+  <div className="flex shrink-0 items-center gap-2 bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
     <ArrowRightIcon className="size-3.5 shrink-0 rotate-180" />
     <span>Spawned from</span>
     <button

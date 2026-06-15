@@ -3,27 +3,21 @@ import z from "zod"
 import { Tool } from "@opendora/tools/tool"
 // @ts-ignore — skills depends on tools creating a circular workspace ref; resolved at runtime
 import { Skill } from "@opendora/skills/skill"
-import { PermissionNext } from "@opendora/permission/next"
 import { addSkillTools } from "@opendora/session/skill-tools"
 
 // Tool to load and use a specific skill
 export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
   const agent = ctx?.agent
+  // agent.skills is derived from agent-scoped `skill` permission rules
+  // (see runtime/agent.ts deriveEnabledSkills): enabled === visible === loadable.
   const agentSkills = agent?.skills as string[] | undefined
-  const agentToolsList = agent?.config?.toolConfig?.delegate?.allowedAgents as string[] | undefined
-  // Agents with skill_list tool bypass the assignment restriction and can discover any skill
-  const hasUnrestrictedDiscovery = agentToolsList?.includes("skill_list") ?? false
 
   const allSkills = await Skill.all()
 
+  // An agent can only see (and therefore load) the skills it has enabled.
+  // When there is no agent context (e.g. system tooling), all skills are visible.
   const accessibleSkills = agent
-    ? allSkills.filter((skill: any) => {
-        if (hasUnrestrictedDiscovery) return true
-        if (agentSkills?.length) return agentSkills.includes(skill.name)
-        // No skills assigned — fall back to permission check
-        const rule = PermissionNext.evaluate("skill", skill.name, (agent.permission as PermissionNext.LegacyRuleset) ?? [])
-        return rule.action !== "deny"
-      })
+    ? allSkills.filter((skill: any) => agentSkills?.includes(skill.name) ?? false)
     : allSkills
 
   const description = [
@@ -52,21 +46,13 @@ export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
         throw new Error(`Skill "${params.name}" not found. Available skills: ${available || "none"}`)
       }
 
-      const isAssigned = agentSkills?.includes(params.name)
-
-      if (!hasUnrestrictedDiscovery && agentSkills?.length && !isAssigned) {
+      // Enabled === visible === loadable. An agent may only load a skill that
+      // is enabled for it (an agent-scoped `skill` allow rule, surfaced via
+      // agent.skills). No permission prompt: if it's visible, it loads.
+      const isEnabled = agentSkills?.includes(params.name) ?? false
+      if (agent && !isEnabled) {
         const available = accessibleSkills.map((s: any) => s.name).join(", ")
-        throw new Error(`Skill "${params.name}" is not assigned to this agent. Assigned skills: ${available || "none"}`)
-      }
-
-      // Assignment in agent config is the permission grant — only ask for unassigned discovery
-      if (!isAssigned) {
-        await ctx.ask({
-          permission: "skill",
-          patterns: [params.name],
-          always: [params.name],
-          metadata: {},
-        })
+        throw new Error(`Skill "${params.name}" is not enabled for this agent. Enabled skills: ${available || "none"}`)
       }
 
       if (skill.tools?.length) {

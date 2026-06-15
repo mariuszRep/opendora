@@ -15,6 +15,10 @@ export type WorkflowToolContext = {
   agent?: string
   model?: { providerID: string; modelID: string }
   abort?: AbortSignal
+  /** Pre-created message ID for the tool call — allows the executor to wire metadata updates */
+  messageID?: string
+  /** Pre-created part ID for the tool call — allows the executor to update state in real-time */
+  partID?: string
 }
 
 type ToolExecutor = (
@@ -22,7 +26,7 @@ type ToolExecutor = (
   fixedArgs: Record<string, unknown>,
   agentArgs: string[],
   ctx: WorkflowToolContext,
-) => Promise<{ output: string }>
+) => Promise<{ output: string; metadata?: Record<string, unknown> }>
 
 let _toolExecutor: ToolExecutor | null = null
 
@@ -354,15 +358,84 @@ async function runSubGraph({
 
       if (!resolvedArgs.workdir) resolvedArgs.workdir = currentDir
 
+      // Create message + tool part in "running" state BEFORE executing so the UI
+      // shows the tool card immediately (not only after the tool completes).
+      const toolMsgId = Identifier.ascending("message")
+      const toolPartId = Identifier.ascending("part")
+      const toolStartTime = Date.now()
+
+      await Session.updateMessage({
+        id: toolMsgId,
+        sessionID: sessionId,
+        role: "assistant",
+        from: { kind: "service", id: "workflow" },
+        time: { created: toolStartTime },
+        modelID: "workflow-runner",
+        providerID: "workflow",
+        mode: "workflow",
+        agent: "workflow",
+        path: { cwd: currentDir, root: currentDir },
+        cost: 0,
+        tokens: { total: 0, input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+      })
+
+      await Session.updatePart({
+        id: toolPartId,
+        sessionID: sessionId,
+        messageID: toolMsgId,
+        type: "tool",
+        callID: toolPartId,
+        tool: actionId,
+        state: {
+          status: "running",
+          input: resolvedArgs,
+          time: { start: toolStartTime },
+        },
+      } as any)
+
       const session = await Session.get(sessionId)
-      const { output } = await _toolExecutor(actionId, resolvedArgs, agentArgs, {
+      const { output, metadata: toolResultMetadata } = await _toolExecutor(actionId, resolvedArgs, agentArgs, {
         sessionID: sessionId,
         agent: session.agentID,
         abort: new AbortController().signal,
+        messageID: toolMsgId,
+        partID: toolPartId,
       })
       result = output
 
-      await injectMessage(sessionId, [{ type: "tool", tool: actionId, input: resolvedArgs, output }], currentDir)
+      // Update the part to "completed" with the tool output.
+      await Session.updatePart({
+        id: toolPartId,
+        sessionID: sessionId,
+        messageID: toolMsgId,
+        type: "tool",
+        callID: toolPartId,
+        tool: actionId,
+        state: {
+          status: "completed",
+          input: resolvedArgs,
+          output: typeof output === "string" ? output : JSON.stringify(output, null, 2),
+          title: actionId,
+          metadata: (toolResultMetadata ?? {}) as any,
+          time: { start: toolStartTime, end: Date.now() },
+        },
+      } as any)
+
+      // Mark the message as completed.
+      await Session.updateMessage({
+        id: toolMsgId,
+        sessionID: sessionId,
+        role: "assistant",
+        from: { kind: "service", id: "workflow" },
+        time: { created: toolStartTime, completed: Date.now() },
+        modelID: "workflow-runner",
+        providerID: "workflow",
+        mode: "workflow",
+        agent: "workflow",
+        path: { cwd: currentDir, root: currentDir },
+        cost: 0,
+        tokens: { total: 0, input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+      })
 
     } else if (d.nodeType === NodeTypeId.Decide) {
       const mode = (params.mode as string) ?? "agent"
