@@ -37,7 +37,7 @@ describe("Session.list", () => {
       fn: async () => {
         configureSessionCore()
         const root = await Session.create({ title: "root-session" })
-        const child = await Session.create({ title: "child-session", parentID: root.id })
+        const child = await Session.create({ title: "child-session", parentSessionID: root.id })
 
         const sessions = [...Session.list({ roots: true })]
         const ids = sessions.map((s) => s.id)

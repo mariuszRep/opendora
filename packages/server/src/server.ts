@@ -60,6 +60,7 @@ import { retentionDaemon, sessionManager } from "@opendora/session/session"
 import { configureSessionCore } from "./configure-session-core"
 import { openDoraStorageAdapter } from "@opendora/session/storage-adapter"
 import { Session } from "@opendora/session/session"
+import { SessionPrompt } from "@opendora/session/prompt"
 import { Identifier } from "@opendora/util/id"
 import { generateText, jsonSchema, tool as aiTool } from "ai"
 import { MessageV2 } from "@opendora/session/message"
@@ -732,11 +733,16 @@ export namespace Server {
             list: () => Agent.list(),
             get: (id: string) => Agent.get(id),
           },
+          prompt: (opts: any) => SessionPrompt.prompt(opts),
+          resolvePromptParts: (template: string) => SessionPrompt.resolvePromptParts(template),
           session: {
             list: (filter?: any) => Session.list(filter),
             get: (id: string) => Session.get(id),
             messages: (id: string) => Session.messages({ sessionID: id }),
             setTitle: (id: string, title: string) => Session.setTitle({ sessionID: id, title }),
+            create: (input: any) => Session.create(input),
+            ensureMainSession: (agentID: string) => Session.ensureMainSession(agentID),
+            setReplyToSessionID: (input: any) => Session.setReplyToSessionID(input),
           },
         },
       }

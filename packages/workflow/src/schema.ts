@@ -75,7 +75,7 @@ export function resolveRef(
   const legacy = /^\$(input|output|ctx)\.([a-zA-Z0-9_.]+)$/.exec(value)
   if (legacy) {
     const [, ns, path] = legacy
-    return getPath(ns === "input" ? input : ctx, path)
+    return getPath(ns === "input" ? input : ctx, path!)
   }
   // New: $nodeKey  or  $nodeKey.field.subfield
   // nodeKey must start with a letter and contain only lowercase letters, digits, underscores
@@ -83,7 +83,7 @@ export function resolveRef(
   if (nodeRef) {
     const [, key, path] = nodeRef
     if (key === "input") return path ? getPath(input, path) : input
-    const nodeVal = ctx[key]
+    const nodeVal = ctx[key!]
     if (path === undefined) return nodeVal
     return nodeVal != null && typeof nodeVal === "object"
       ? getPath(nodeVal as Record<string, unknown>, path)
