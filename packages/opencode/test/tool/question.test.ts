@@ -1,6 +1,6 @@
 import { describe, expect, test, spyOn, beforeEach, afterEach } from "bun:test"
 import { z } from "zod"
-import { QuestionTool } from "../../src/tool/question"
+import { QuestionTool } from "@opendora/tools/communication/question"
 import * as QuestionModule from "../../src/question"
 
 const ctx = {

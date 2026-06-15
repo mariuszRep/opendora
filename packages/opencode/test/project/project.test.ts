@@ -5,7 +5,7 @@ import { $ } from "bun"
 import path from "path"
 import { tmpdir } from "../fixture/fixture"
 import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
-import { GlobalBus } from "../../src/bus/global"
+import { GlobalBus } from "@opendora/util/global-bus"
 
 Log.init({ print: false })
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { Process } from "../../src/util/process"
+import { Process } from "@opendora/util/process"
 
 function node(script: string) {
   return [process.execPath, "-e", script]

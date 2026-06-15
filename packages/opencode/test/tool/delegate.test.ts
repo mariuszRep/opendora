@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test"
 import path from "path"
-import { DelegateTool } from "../../src/tool/delegate"
+import { DelegateTool } from "@opendora/tools/communication/delegate"
 import { Instance } from "../../src/project/instance"
 import { Session } from "../../src/session"
 import { MessageV2 } from "../../src/session/message-v2"

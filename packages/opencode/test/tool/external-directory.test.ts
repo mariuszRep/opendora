@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import path from "path"
 import type { Tool } from "../../src/tool/tool"
 import { Instance } from "../../src/project/instance"
-import { assertExternalDirectory } from "../../src/tool/external-directory"
+import { assertExternalDirectory } from "@opendora/tools/system/external-directory"
 
 const baseCtx: Omit<Tool.Context, "ask"> = {
   sessionID: "test",
