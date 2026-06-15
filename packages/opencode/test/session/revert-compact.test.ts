@@ -152,10 +152,15 @@ describe("revert + compact workflow", () => {
         expect(messageIds).toContain(assistantMsg2.id)
 
         // Revert the last user message (userMsg2)
-        await SessionRevert.revert({
-          sessionID,
-          messageID: userMsg2.id,
-        })
+        await SessionRevert.revert(
+          { sessionID, messageID: userMsg2.id },
+          {
+            assertNotBusy: () => {},
+            getMessages: async (sid) => Session.messages({ sessionID: sid }),
+            getSession: async (sid) => Session.get(sid),
+            setRevert: Session.setRevert,
+          },
+        )
 
         // Check that revert state is set
         let sessionInfo = await Session.get(sessionID)
@@ -168,7 +173,10 @@ describe("revert + compact workflow", () => {
         expect(messages.length).toBe(4)
 
         // Now clean up the revert state (this is what the compact endpoint should do)
-        await SessionRevert.cleanup(sessionInfo)
+        await SessionRevert.cleanup(sessionInfo, {
+          getMessages: async (sid) => { const r = [] as MessageV2.WithParts[]; for await (const m of MessageV2.stream(sid)) r.push(m); return r },
+          clearRevert: Session.clearRevert,
+        })
 
         // After cleanup, the reverted messages (those after the revert point) should be removed
         messages = await Session.messages({ sessionID })
@@ -257,17 +265,25 @@ describe("revert + compact workflow", () => {
         })
 
         // Revert the user message
-        await SessionRevert.revert({
-          sessionID,
-          messageID: userMsg.id,
-        })
+        await SessionRevert.revert(
+          { sessionID, messageID: userMsg.id },
+          {
+            assertNotBusy: () => {},
+            getMessages: async (sid) => Session.messages({ sessionID: sid }),
+            getSession: async (sid) => Session.get(sid),
+            setRevert: Session.setRevert,
+          },
+        )
 
         // Check that revert state is set
         let sessionInfo = await Session.get(sessionID)
         expect(sessionInfo.revert).toBeDefined()
 
         // Simulate what the compact endpoint does: cleanup revert before creating compaction
-        await SessionRevert.cleanup(sessionInfo)
+        await SessionRevert.cleanup(sessionInfo, {
+          getMessages: async (sid) => { const r = [] as MessageV2.WithParts[]; for await (const m of MessageV2.stream(sid)) r.push(m); return r },
+          clearRevert: Session.clearRevert,
+        })
 
         // Verify revert state is cleared
         sessionInfo = await Session.get(sessionID)

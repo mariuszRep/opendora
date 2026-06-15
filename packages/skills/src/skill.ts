@@ -41,8 +41,8 @@ export namespace Skill {
     z.object({
       path: z.string(),
       message: z.string().optional(),
-      issues: z.custom<z.core.$ZodIssue[]>().optional(),
-    }),
+      issues: z.array(z.any()).optional(),
+    }) as any,
   )
 
   export const NameMismatchError = NamedError.create(
@@ -51,7 +51,7 @@ export namespace Skill {
       path: z.string(),
       expected: z.string(),
       actual: z.string(),
-    }),
+    }) as any,
   )
 
   // External skill directories to search for (project-level and global)

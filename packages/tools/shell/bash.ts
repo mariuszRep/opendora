@@ -68,7 +68,7 @@ const resolveWasm = (asset: string) => {
   return fileURLToPath(url)
 }
 
-let _parser: ReturnType<typeof import("web-tree-sitter").then> | null = null
+let _parser: any | null = null
 async function getParser() {
   if (_parser) return _parser
   const { Parser } = await import("web-tree-sitter")

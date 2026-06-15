@@ -9,7 +9,7 @@ export const ToolGetTool = Tool.define("tool_get", {
   parameters: z.object({
     name: z.string().describe("Exact tool name/id (e.g. delegate, session_search, bash)."),
   }),
-  async execute(args, ctx) {
+  async execute(args: { name: string }, ctx): Promise<{ title: string; metadata: Record<string, any>; output: string }> {
     const tool = await findTool(args.name)
     if (!tool) {
       return {

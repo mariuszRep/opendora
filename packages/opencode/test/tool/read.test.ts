@@ -75,7 +75,7 @@ describe("tool.read external_directory permission", () => {
         await read.execute({ filePath: path.join(outerTmp.path, "secret.txt") }, testCtx)
         const extDirReq = requests.find((r) => r.permission === "external_directory")
         expect(extDirReq).toBeDefined()
-        expect(extDirReq!.patterns.some((p) => p.includes(outerTmp.path.replaceAll("\\", "/")))).toBe(true)
+        expect(extDirReq!.patterns!.some((p) => p.includes(outerTmp.path.replaceAll("\\", "/")))).toBe(true)
       },
     })
   })
@@ -177,14 +177,14 @@ describe("tool.read env file permissions", () => {
           const ctxWithPermissions = {
             ...ctx,
             ask: async (req: Tool.AskInput) => {
-              for (const pattern of req.patterns) {
+              for (const pattern of req.patterns ?? []) {
                 if (!agent) throw new Error("Agent not found")
                 const rule = PermissionNext.evaluate(req.permission, pattern, agent.permission)
                 if (rule.action === "ask" && req.permission === "read") {
                   askedForEnv = true
                 }
                 if (rule.action === "deny") {
-                  throw new PermissionNext.DeniedError(agent.permission)
+                  throw new PermissionNext.DeniedError(agent.permission as any)
                 }
               }
             },
@@ -407,7 +407,7 @@ describe("tool.read truncation", () => {
         expect(result.metadata.truncated).toBe(false)
         expect(result.attachments).toBeDefined()
         expect(result.attachments?.length).toBe(1)
-        expect(result.attachments?.[0].type).toBe("file")
+        expect((result.attachments?.[0] as any).type).toBe("file")
         expect(result.attachments?.[0]).not.toHaveProperty("id")
         expect(result.attachments?.[0]).not.toHaveProperty("sessionID")
         expect(result.attachments?.[0]).not.toHaveProperty("messageID")

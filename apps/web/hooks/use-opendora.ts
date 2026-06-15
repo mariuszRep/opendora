@@ -53,7 +53,7 @@ export type UseOpendoraResult = {
   agentSessions: Session[]
   selectedSession: Session | null
   selectSession: (id: string, agentIdHint?: string) => void
-  createSession: (sessionType?: SessionType) => Promise<string>
+  createSession: (sessionType?: SessionType, agentID?: string) => Promise<string>
   setSessionAgent: (sessionID: string, agentID: string | null) => Promise<void>
   setAgentMainSession: (agentID: string, sessionID: string) => Promise<void>
   activeSessions: Set<string>
@@ -888,11 +888,12 @@ export function useOpendora(opts?: {
     }
   }, [rememberSessionForAgent, router, pathname])
 
-  const createSession = useCallback(async (sessionType?: SessionType): Promise<string> => {
+  const createSession = useCallback(async (sessionType?: SessionType, agentID?: string): Promise<string> => {
+    const effectiveAgentID = agentID !== undefined ? agentID : selectedAgent
     try {
       const session = await opendora.session.create({
         sessionType: sessionType ?? "scope",
-        ...(selectedAgent ? { agentID: selectedAgent } : {}),
+        ...(effectiveAgentID ? { agentID: effectiveAgentID } : {}),
       })
       setSessions((prev) => {
         if (prev.find((s) => s.id === session.id)) return prev

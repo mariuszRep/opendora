@@ -117,10 +117,10 @@ export namespace SessionProcessor {
           : true
 
         while (true) {
+          let capturedTokens = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0 }
           try {
             let currentText: MessageV2.TextPart | undefined
             let reasoningMap: Record<string, MessageV2.ReasoningPart> = {}
-            let capturedTokens = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0 }
 
             const stream = await LLM.stream(streamInput)
             for await (const value of stream.fullStream) {
@@ -236,10 +236,10 @@ export namespace SessionProcessor {
                       const permissionNext = getConfig().permissionNext
                       const agentSvc = getConfig().agent
                       if (permissionNext && agentSvc) {
-                        let agent = await agentSvc.getByIdOrName(input.assistantMessage.agent)
+                        let agent = await agentSvc.getByIdOrName?.(input.assistantMessage.agent)
                         if (!agent) {
-                          const defaultAgentName = await agentSvc.defaultAgent()
-                          agent = await agentSvc.get(defaultAgentName)
+                          const defaultAgentName = await agentSvc.defaultAgent?.()
+                          agent = defaultAgentName ? await agentSvc.get(defaultAgentName) : undefined
                         }
                         if (agent) {
                           await permissionNext.ask({
@@ -550,7 +550,8 @@ export namespace SessionProcessor {
 
                 const nextSlot = result?.nextSlot ?? (result && "providerID" in result ? result : null)
                 if (nextSlot && "providerID" in nextSlot) {
-                  const nextModel = await getConfig().provider?.getModel(nextSlot.providerID, nextSlot.modelID)
+                  const slot = nextSlot as { providerID: string; modelID: string }
+                  const nextModel = await getConfig().provider?.getModel(slot.providerID, slot.modelID)
                   if (nextModel) {
                     streamInput = { ...streamInput, model: nextModel }
                     input.model = nextModel

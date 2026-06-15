@@ -1,6 +1,7 @@
 import path from "path"
 import z from "zod"
 import { Tool } from "@opendora/tools/tool"
+// @ts-ignore — skills depends on tools creating a circular workspace ref; resolved at runtime
 import { Skill } from "@opendora/skills/skill"
 import { PermissionNext } from "@opendora/permission/next"
 import { addSkillTools } from "@opendora/session/skill-tools"
@@ -16,7 +17,7 @@ export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
   const allSkills = await Skill.all()
 
   const accessibleSkills = agent
-    ? allSkills.filter((skill) => {
+    ? allSkills.filter((skill: any) => {
         if (hasUnrestrictedDiscovery) return true
         if (agentSkills?.length) return agentSkills.includes(skill.name)
         // No skills assigned — fall back to permission check
@@ -47,14 +48,14 @@ export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
       const skill = await Skill.get(params.name)
 
       if (!skill) {
-        const available = accessibleSkills.map((s) => s.name).join(", ")
+        const available = accessibleSkills.map((s: any) => s.name).join(", ")
         throw new Error(`Skill "${params.name}" not found. Available skills: ${available || "none"}`)
       }
 
       const isAssigned = agentSkills?.includes(params.name)
 
       if (!hasUnrestrictedDiscovery && agentSkills?.length && !isAssigned) {
-        const available = accessibleSkills.map((s) => s.name).join(", ")
+        const available = accessibleSkills.map((s: any) => s.name).join(", ")
         throw new Error(`Skill "${params.name}" is not assigned to this agent. Assigned skills: ${available || "none"}`)
       }
 

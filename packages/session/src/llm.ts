@@ -268,8 +268,7 @@ export namespace LLM {
           {
             async transformParams(args) {
               if (args.type === "stream") {
-                // @ts-expect-error
-                args.params.prompt = cfg.providerTransform?.message(args.params.prompt, input.model, options)
+                ;(args.params as any).prompt = cfg.providerTransform?.message((args.params as any).prompt, input.model, options)
               }
               return args.params
             },

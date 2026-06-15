@@ -244,8 +244,8 @@ describe("tool.bash permissions", () => {
           testCtx,
         )
         expect(requests.length).toBe(1)
-        expect(requests[0].always.length).toBeGreaterThan(0)
-        expect(requests[0].always.some((p) => p.endsWith("*"))).toBe(true)
+        expect(requests[0]!.always!.length).toBeGreaterThan(0)
+        expect(requests[0]!.always!.some((p) => p.endsWith("*"))).toBe(true)
       },
     })
   })
@@ -310,7 +310,7 @@ describe("tool.bash permissions", () => {
         await bash.execute({ command: "ls -la", description: "List" }, testCtx)
         const bashReq = requests.find((r) => r.permission === "bash")
         expect(bashReq).toBeDefined()
-        const pattern = bashReq!.always[0]
+        const pattern = bashReq!.always![0]
         expect(pattern).toBe("ls *")
       },
     })

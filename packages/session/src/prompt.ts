@@ -108,6 +108,7 @@ export namespace SessionPrompt {
     system: z.string().optional(),
     variant: z.string().optional(),
     schedule_id: z.string().optional(),
+    tools: z.record(z.string(), z.boolean()).optional(),
     parts: z.array(
       z.discriminatedUnion("type", [
         MessageV2.TextPart.omit({
@@ -157,7 +158,10 @@ export namespace SessionPrompt {
 
   export const prompt = fn(PromptInput, async (input) => {
     const session = await Session.get(input.sessionID)
-    await SessionRevert.cleanup(session)
+    await SessionRevert.cleanup(session, {
+      getMessages: async (sid) => { const r = [] as MessageV2.WithParts[]; for await (const m of MessageV2.stream(sid)) r.push(m); return r },
+      clearRevert: Session.clearRevert,
+    })
 
     const message = await createUserMessage(input)
     await Session.touch(input.sessionID)
@@ -568,7 +572,7 @@ export namespace SessionPrompt {
 
         // Check if the tool result has stopAfterReply flag set
         if (result?.metadata?.stopAfterReply === true) {
-          log.info("stopAfterReply detected, breaking loop", { agent: task.agent, tool: task.tool })
+          log.info("stopAfterReply detected, breaking loop", { agent: task.agent, tool: (task as any).tool })
           break
         }
 
@@ -889,7 +893,7 @@ export namespace SessionPrompt {
           list: (filter?: any) => Session.list(filter),
           children: (id: string) => Session.children(id),
           get: (id: string) => Session.get(id),
-          messages: (id: string) => Session.messages(id),
+          messages: (id: string) => Session.messages({ sessionID: id }),
           create: (opts: any) => Session.create(opts),
           ensureMainSession: (agentID: string) => Session.ensureMainSession(agentID),
           setReplyToSessionID: (opts: any) => Session.setReplyToSessionID(opts),
@@ -1162,7 +1166,7 @@ export namespace SessionPrompt {
       source = "defaultAgent"
     }
     console.log(`[prompt] createUserMessage sessionID=${input.sessionID} resolvedAgent=${agentName} source=${source}`)
-    const agent = await (cfg.agent?.getByIdOrName?.(agentName) ?? cfg.agent?.get?.(agentName))
+    const agent = await (cfg.agent?.getByIdOrName?.(agentName ?? "") ?? cfg.agent?.get?.(agentName ?? ""))
     if (!agent) throw new Error(`Unknown agent: ${input.agent}`)
     console.log(`[prompt] createUserMessage resolved agent.id=${agent.id} agent.name=${agent.name}`)
 
@@ -1369,7 +1373,7 @@ export namespace SessionPrompt {
                     const readCtx: any = {
                       sessionID: input.sessionID,
                       abort: new AbortController().signal,
-                      agent: input.agent?.name ?? input.agent,
+                      agent: input.agent,
                       messageID: info.id,
                       extra: { bypassCwdCheck: true, model: model2 },
                       messages: [],
@@ -1428,7 +1432,7 @@ export namespace SessionPrompt {
                 const listCtx: any = {
                   sessionID: input.sessionID,
                   abort: new AbortController().signal,
-                  agent: input.agent?.name ?? input.agent,
+                  agent: input.agent,
                   messageID: info.id,
                   extra: { bypassCwdCheck: true },
                   messages: [],
@@ -1661,7 +1665,10 @@ export namespace SessionPrompt {
     const cfg = getConfig()
     const session = await Session.get(input.sessionID)
     if (session.revert) {
-      await SessionRevert.cleanup(session)
+      await SessionRevert.cleanup(session, {
+        getMessages: async (sid) => { const r = [] as MessageV2.WithParts[]; for await (const m of MessageV2.stream(sid)) r.push(m); return r },
+        clearRevert: Session.clearRevert,
+      })
     }
     const agent = await (cfg.agent?.getByIdOrName?.(input.agent) ?? cfg.agent?.get?.(input.agent))
     if (!agent) throw new Error(`Unknown agent: ${input.agent}`)
@@ -1998,7 +2005,7 @@ export namespace SessionPrompt {
             providerID: taskModel.providerID,
             modelID: taskModel.modelID,
           },
-          prompt: templateParts.find((y: any) => y.type === "text")?.text ?? "",
+          prompt: (templateParts.find((y: any) => y.type === "text") as any)?.text ?? "",
         },
       ]
       : [...templateParts, ...(input.parts ?? [])]

@@ -546,8 +546,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SessionCreateDialog
         open={sessionCreateOpen}
         onOpenChange={setSessionCreateOpen}
-        onCreateSession={async (sessionType: SessionType, openSettings: boolean) => {
-          await createSession(sessionType)
+        agents={visibleAgents}
+        selectedAgentId={selectedAgent}
+        onCreateSession={async (sessionType: SessionType, agentID: string | undefined) => {
+          await createSession(sessionType, agentID)
         }}
       />
     </>

@@ -189,6 +189,8 @@ export interface SessionCoreConfig {
     all?(): Promise<any[]>
     search?(query: string, registries?: string[]): Promise<any[]>
     install?(source: string, options?: any): Promise<void>
+    create?(params: any): Promise<any>
+    remove?(name: string): Promise<void>
     update?(name: string): Promise<void>
     uninstall?(name: string): Promise<void>
     list?(): Promise<any[]>

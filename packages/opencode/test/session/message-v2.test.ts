@@ -883,7 +883,7 @@ describe("session.message-v2.fromError", () => {
     }
     const result = MessageV2.fromError(input, { providerID: "test" })
 
-    expect(result).toStrictEqual({
+    expect(result as any).toStrictEqual({
       name: "ContextOverflowError",
       data: {
         message: "Input exceeds context window of this model",

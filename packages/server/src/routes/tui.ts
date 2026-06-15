@@ -267,7 +267,7 @@ export const TuiRoutes = lazy(() =>
       async (c) => {
         const command = c.req.valid("json").command
         await Bus.publish(TuiEvent.CommandExecute, {
-          command: {
+          command: ({
             session_new: "session.new",
             session_share: "session.share",
             session_interrupt: "session.interrupt",
@@ -281,7 +281,7 @@ export const TuiRoutes = lazy(() =>
             messages_first: "session.first",
             messages_last: "session.last",
             agent_cycle: "agent.cycle",
-          }[command],
+          } as Record<string, string>)[command] ?? "",
         })
         return c.json(true)
       },

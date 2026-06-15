@@ -23,7 +23,7 @@ type Changes = {
 export const SessionUpdateTool = Tool.define("session_update", {
   description: toolDef.description,
   parameters,
-  async execute(params, ctx) {
+  async execute(params: z.infer<typeof parameters>, ctx): Promise<{ title: string; metadata: Record<string, any>; output: string }> {
     const h = host(ctx)
     const sessionSvc = h.session as any
     if (!sessionSvc || typeof sessionSvc.get !== "function") {

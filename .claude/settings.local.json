@@ -11,7 +11,9 @@
       "Bash(sed -n '190,220p' /mnt/fileshare/projects/opendora/packages/server/src/configure-session-core.ts)",
       "Bash(sed -n '420,435p' /mnt/fileshare/projects/opendora/packages/server/src/configure-session-core.ts)",
       "Bash(git add *)",
-      "Bash(CLAUDE_CODE_TMPDIR=/tmp bun test)"
+      "Bash(CLAUDE_CODE_TMPDIR=/tmp bun test)",
+      "Bash(sed -n '148,175p' /mnt/fileshare/projects/opendora/packages/opencode/test/session/revert-compact.test.ts)",
+      "Bash(sed -n '255,275p' /mnt/fileshare/projects/opendora/packages/opencode/test/session/revert-compact.test.ts)"
     ]
   }
 }
