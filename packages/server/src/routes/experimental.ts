@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { ToolRegistry } from "@opendora/opencode/tool/registry"
+import { ToolRegistry } from "@opendora/server/tool-registry"
 import { Worktree } from "@opendora/runtime/worktree"
 import { Instance } from "@opendora/runtime/instance"
 import { Project } from "@opendora/runtime/project"

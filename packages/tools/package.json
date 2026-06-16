@@ -36,6 +36,8 @@
     "./file": "./file/index.ts",
     "./file/watcher": "./file/watcher.ts",
     "./file/time": "./file/time.ts",
+    "./delegation": "./delegation/index.ts",
+    "./delegation/*": "./delegation/*.ts",
     "./tool": "./tool.ts",
     "./registry": "./registry.ts",
     "./truncation": "./truncation.ts",
@@ -46,6 +48,7 @@
   "devDependencies": {
     "@tsconfig/bun": "catalog:",
     "@types/bun": "catalog:",
+    "@typescript/native-preview": "catalog:",
     "@types/turndown": "5.0.5",
     "typescript": "catalog:"
   },

@@ -18,10 +18,10 @@ export function parseEntries(raw: string): MemoryEntry[] {
   let match: RegExpExecArray | null
   while ((match = ENTRY_RE.exec(raw)) !== null) {
     entries.push({
-      name: match[1].trim(),
-      description: match[2].trim(),
-      type: match[3].trim(),
-      content: match[4].trim(),
+      name: match[1]!.trim(),
+      description: match[2]!.trim(),
+      type: match[3]!.trim(),
+      content: match[4]!.trim(),
     })
   }
   return entries

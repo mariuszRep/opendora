@@ -214,6 +214,7 @@ export function useOpendora(opts?: {
   const questionRequestsRef = useRef<Record<string, QuestionRequest[]>>({})
   // Per-session message cache: serve stale-while-revalidate on session switch
   const messageCacheRef = useRef<Map<string, MessageWithParts[]>>(new Map())
+  const messageFetchRef = useRef<Map<string, Promise<MessageWithParts[]>>>(new Map())
 
 
   const getAgentId = useCallback((agent: Agent & { id?: string }) => agent.id ?? agent.name, [])
@@ -257,6 +258,20 @@ export function useOpendora(opts?: {
   const refreshSchedules = useCallback(async () => {
     const data = await opendora.schedule.list()
     setSchedules(data)
+  }, [])
+
+  const fetchSessionMessages = useCallback((sessionID: string) => {
+    const existing = messageFetchRef.current.get(sessionID)
+    if (existing) return existing
+
+    const request = opendora.session.messages(sessionID)
+      .finally(() => {
+        if (messageFetchRef.current.get(sessionID) === request) {
+          messageFetchRef.current.delete(sessionID)
+        }
+      })
+    messageFetchRef.current.set(sessionID, request)
+    return request
   }, [])
 
   useEffect(() => {
@@ -427,7 +442,7 @@ export function useOpendora(opts?: {
     // Capture id in closure so the cache write is always for the right session
     // even after the effect cleanup fires (user switched away mid-fetch).
     const fetchingForId = selectedSessionId
-    opendora.session.messages(fetchingForId).then((msgs) => {
+    fetchSessionMessages(fetchingForId).then((msgs) => {
       if (!cancelled) {
         setMessages((current) => {
           // Merge fetched messages with any SSE updates that arrived during the fetch.
@@ -460,7 +475,7 @@ export function useOpendora(opts?: {
       }
     }).catch((err) => { console.error("[messages] fetch failed", fetchingForId, err) })
     return () => { cancelled = true }
-  }, [selectedSessionId])
+  }, [selectedSessionId, fetchSessionMessages])
 
   useEffect(() => {
     const requestedSessionID = searchParams.get("session")
@@ -841,7 +856,7 @@ export function useOpendora(opts?: {
         if (cached && cached.length > 0) {
           setMessages(cached)
         } else {
-          opendora.session.messages(id).then((msgs) => {
+          fetchSessionMessages(id).then((msgs) => {
             if (msgs.length > 0) setMessages(msgs)
           }).catch(() => {})
         }
@@ -886,7 +901,7 @@ export function useOpendora(opts?: {
     if (pathname !== "/dashboard") {
       router.push(`/dashboard?session=${id}`, { scroll: false })
     }
-  }, [rememberSessionForAgent, router, pathname])
+  }, [rememberSessionForAgent, router, pathname, fetchSessionMessages])
 
   const createSession = useCallback(async (sessionType?: SessionType, agentID?: string): Promise<string> => {
     const effectiveAgentID = agentID !== undefined ? agentID : selectedAgent

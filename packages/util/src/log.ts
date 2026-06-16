@@ -63,7 +63,7 @@ export namespace Log {
     if (options.print) return
     logpath = path.join(
       Global.Path.log,
-      options.dev ? "dev.log" : new Date().toISOString().split(".")[0].replace(/:/g, "") + ".log",
+      options.dev ? "dev.log" : (new Date().toISOString().split(".")[0] ?? "").replace(/:/g, "") + ".log",
     )
     await fs.truncate(logpath).catch(() => {})
     const stream = createWriteStream(logpath, { flags: "a" })

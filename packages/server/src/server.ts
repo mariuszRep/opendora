@@ -38,7 +38,7 @@ import { CronScheduler, type ScheduleDispatchFn } from "@opendora/schedule/cron-
 import { Schedule } from "@opendora/opencode/schedule"
 import { Database } from "@opendora/storage/db"
 import { Agent } from "@opendora/opencode/agent"
-import { ToolRegistry } from "@opendora/opencode/tool/registry"
+import { ToolRegistry } from "@opendora/server/tool-registry"
 import { lazy } from "@opendora/util/lazy"
 import { InstanceBootstrap } from "@opendora/runtime/bootstrap"
 import { NotFoundError } from "@opendora/storage/db"

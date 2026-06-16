@@ -23,7 +23,8 @@
     "./acp/session": "./src/acp/session.ts",
     "./acp/types": "./src/acp/types.ts",
     "./command": "./src/command.ts",
-    "./plugin": "./src/plugin/index.ts"
+    "./plugin": "./src/plugin/index.ts",
+    "./tool-registry": "./src/tool-registry.ts"
   },
   "dependencies": {
     "@opendora/agent": "workspace:*",
