@@ -7,6 +7,7 @@ import type { Agent } from "@opendora/runtime/agent"
 import { Scheduler } from "@opendora/runtime/scheduler"
 import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { Glob } from "@opendora/util/glob"
+import { registerBootstrapHook } from "@opendora/runtime/bootstrap"
 
 export namespace Truncate {
   export const MAX_LINES = 2000
@@ -105,3 +106,5 @@ export namespace Truncate {
     return { content: message, truncated: true, outputPath: filepath }
   }
 }
+
+registerBootstrapHook(() => Truncate.init())

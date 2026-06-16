@@ -33,6 +33,7 @@
     "./desktop/lib/*": "./desktop/lib/*.ts",
     "./pyautogui": "./pyautogui/index.ts",
     "./pyautogui/*": "./pyautogui/*.ts",
+    "./file": "./file/index.ts",
     "./file/watcher": "./file/watcher.ts",
     "./file/time": "./file/time.ts",
     "./tool": "./tool.ts",

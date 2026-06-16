@@ -8,6 +8,7 @@ import { Database, eq } from "@opendora/storage/db"
 import { SessionShareTable } from "@opendora/storage/share.sql"
 import { Log } from "@opendora/util/log"
 import type * as SDK from "@opendora/sdk/v2"
+import { registerBootstrapHook } from "@opendora/runtime/bootstrap"
 
 export namespace ShareNext {
   const log = Log.create({ service: "share-next" })
@@ -208,3 +209,5 @@ export namespace ShareNext {
     ])
   }
 }
+
+registerBootstrapHook(() => ShareNext.init())

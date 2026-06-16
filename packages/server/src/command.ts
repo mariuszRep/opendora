@@ -7,6 +7,9 @@ import PROMPT_INITIALIZE from "./command-template/initialize.txt"
 import PROMPT_REVIEW from "./command-template/review.txt"
 import { MCP } from "@opendora/server/mcp/index"
 import { Skill } from "@opendora/skills/skill"
+import { Bus } from "@opendora/runtime/bus"
+import { Project } from "@opendora/runtime/project"
+import { registerBootstrapHook } from "@opendora/runtime/bootstrap"
 
 export namespace Command {
   export const Event = {
@@ -148,3 +151,11 @@ export namespace Command {
     return state().then((x) => Object.values(x))
   }
 }
+
+registerBootstrapHook(() => {
+  Bus.subscribe(Command.Event.Executed, async (payload) => {
+    if (payload.properties.name === Command.Default.INIT) {
+      await Project.setInitialized(Instance.project.id)
+    }
+  })
+})

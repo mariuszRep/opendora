@@ -1,5 +1,5 @@
 import { Bus } from "./bus"
-import { File } from "@opendora/opencode/file"
+import { FileEditedEvent } from "./file-events"
 import { Log } from "@opendora/util/log"
 import path from "path"
 import z from "zod"
@@ -103,7 +103,7 @@ export namespace Format {
 
   export function init() {
     log.info("init")
-    Bus.subscribe(File.Event.Edited, async (payload) => {
+    Bus.subscribe(FileEditedEvent, async (payload) => {
       const file = payload.properties.file
       log.info("formatting", { file })
       const ext = path.extname(file)

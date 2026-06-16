@@ -7,7 +7,7 @@ import { Log } from "@opendora/util/log"
 import { Instance } from "@opendora/runtime/instance"
 import { lazy } from "@opendora/util/lazy"
 import { Shell } from "@opendora/util/shell"
-import { Plugin } from "@opendora/opencode/plugin"
+import { Plugin } from "./plugin"
 
 export namespace Pty {
   const log = Log.create({ service: "pty" })

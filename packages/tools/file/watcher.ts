@@ -1,6 +1,4 @@
-import { BusEvent } from "@opendora/util/bus-event"
 import { Bus } from "@opendora/runtime/bus"
-import z from "zod"
 import { Instance } from "@opendora/runtime/instance"
 import { Log } from "@opendora/util/log"
 import { FileIgnore } from "@opendora/tools/filesystem/lib/ignore"
@@ -14,6 +12,8 @@ import type ParcelWatcher from "@parcel/watcher"
 import { $ } from "bun"
 import { Flag } from "@opendora/util/flag"
 import { readdir } from "fs/promises"
+import { FileWatcherUpdatedEvent } from "@opendora/runtime/file-events"
+import { registerBootstrapHook } from "@opendora/runtime/bootstrap"
 
 const SUBSCRIBE_TIMEOUT_MS = 10_000
 
@@ -23,13 +23,7 @@ export namespace FileWatcher {
   const log = Log.create({ service: "file.watcher" })
 
   export const Event = {
-    Updated: BusEvent.define(
-      "file.watcher.updated",
-      z.object({
-        file: z.string(),
-        event: z.union([z.literal("add"), z.literal("change"), z.literal("unlink")]),
-      }),
-    ),
+    Updated: FileWatcherUpdatedEvent,
   }
 
   const watcher = lazy((): typeof import("@parcel/watcher") | undefined => {
@@ -126,3 +120,5 @@ export namespace FileWatcher {
     state()
   }
 }
+
+registerBootstrapHook(() => FileWatcher.init())

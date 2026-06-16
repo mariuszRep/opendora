@@ -22,7 +22,8 @@
     "./acp/agent": "./src/acp/agent.ts",
     "./acp/session": "./src/acp/session.ts",
     "./acp/types": "./src/acp/types.ts",
-    "./command": "./src/command.ts"
+    "./command": "./src/command.ts",
+    "./plugin": "./src/plugin/index.ts"
   },
   "dependencies": {
     "@opendora/agent": "workspace:*",
@@ -40,6 +41,7 @@
     "@opendora/util": "workspace:*",
     "@opendora/workflow": "workspace:*",
     "@agentclientprotocol/sdk": "0.14.1",
+    "@gitlab/opencode-gitlab-auth": "1.3.3",
     "@modelcontextprotocol/sdk": "1.25.2",
     "diff": "catalog:",
     "ai": "catalog:",
