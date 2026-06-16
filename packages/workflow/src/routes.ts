@@ -97,7 +97,7 @@ export function WorkflowRoutes() {
       title: `Workflow: ${workflow.name}`,
       sessionType: "worker",
       agentID: agentId,
-      ownerKind: "service",
+      ownerKind: "workflow",
       ...(body.parentSessionId && { parentSessionID: body.parentSessionId }),
     })
     await Session.setCwd({ sessionID: session.id, cwd: directory })

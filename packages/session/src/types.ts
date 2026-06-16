@@ -3,7 +3,7 @@
 export type Actor =
   | { kind: "user"; id: string }
   | { kind: "agent"; id: string }
-  | { kind: "service"; id: string }
+  | { kind: "workflow"; id: string }
 
 // ─── Messages ─────────────────────────────────────────────────────────────────
 
@@ -20,7 +20,7 @@ export type MessagePart =
   | { type: "file"; mimeType: string; url: string }
   | { type: "reasoning"; text: string }
 
-export type InputProvenance = "user" | "agent" | "service"
+export type InputProvenance = "user" | "agent" | "workflow"
 
 export type Message = {
   id: string

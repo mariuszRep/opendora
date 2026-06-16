@@ -12,6 +12,7 @@ export namespace Identifier {
     pty: "pty",
     tool: "tool",
     token_usage: "tku",
+    workflow_run: "wfr",
   } as const
 
   export function schema(prefix: keyof typeof prefixes) {

@@ -24,7 +24,7 @@ export type SessionInfo = {
   sessionStatus?: SessionStatus
   agentID?: string
   ownerID?: string
-  ownerKind?: "user" | "agent" | "service"
+  ownerKind?: "user" | "agent" | "workflow"
   allowedAgents?: string[]
   sendPolicy?: SendPolicy
   retention?: RetentionPolicy
@@ -35,6 +35,7 @@ export type SessionInfo = {
   parentSessionID?: string
   replyToSessionID?: string
   tokens?: { input: number; output: number; cacheRead: number; cacheWrite: number; compactionCount: number }
+  workflowRun?: { workflowID: string; workflowRunID: string; startedAt: number }
 }
 
 export function fromRow(row: SessionRow): SessionInfo {
@@ -91,5 +92,6 @@ export function fromRow(row: SessionRow): SessionInfo {
             compactionCount: row.compaction_count ?? 0,
           }
         : undefined,
+    workflowRun: row.workflow_run ?? undefined,
   }
 }

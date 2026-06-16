@@ -58,7 +58,7 @@ export const SessionTable = sqliteTable(
     session_status: text().$type<SessionStatus>(),
     agent_id: text(),
     owner_id: text(),
-    owner_kind: text().$type<"user" | "agent" | "service">(),
+    owner_kind: text().$type<"user" | "agent" | "workflow">(),
     allowed_agents: text().$type<string>(), // stored as JSON string, parsed manually in fromRow
     send_policy: text().$type<string>(),    // stored as JSON string, parsed manually in fromRow
     retention: text().$type<string>(),      // stored as JSON string, parsed manually in fromRow
@@ -77,6 +77,8 @@ export const SessionTable = sqliteTable(
     // Persisted so the allowlist survives server restarts without forcing the model
     // to re-invoke skill_load. Stored as a JSON array of tool IDs.
     unlocked_tools: text({ mode: "json" }).$type<string[]>(),
+    // Set when a workflow is running in this session; cleared on completion
+    workflow_run: text({ mode: "json" }).$type<{ workflowID: string; workflowRunID: string; startedAt: number } | null>(),
     // Vendor import — origin of sessions that were brought in from other agents
     // (Claude Code, Codex, Antigravity, Windsurf). NULL on opendora-native sessions.
     vendor: text().$type<"claude" | "codex" | "antigravity" | "windsurf">(),

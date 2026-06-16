@@ -35,11 +35,24 @@ export function registerToolExecutor(executor: ToolExecutor) {
 }
 
 
+type WorkflowMeta = {
+  workflowID: string
+  workflowRunID: string
+  nodeID?: string
+  nodeType?: string
+  nodeLabel?: string
+}
+
 type InjectedPart =
   | { type: "text"; text: string }
   | { type: "tool"; tool: string; input: Record<string, unknown>; output: unknown }
 
-async function injectMessage(sessionId: string, parts: InjectedPart[], directory: string): Promise<void> {
+async function injectMessage(
+  sessionId: string,
+  parts: InjectedPart[],
+  directory: string,
+  meta?: WorkflowMeta,
+): Promise<void> {
   const now = Date.now()
   const msgId = Identifier.ascending("message")
 
@@ -47,7 +60,7 @@ async function injectMessage(sessionId: string, parts: InjectedPart[], directory
     id: msgId,
     sessionID: sessionId,
     role: "assistant",
-    from: { kind: "service", id: "workflow" },
+    from: { kind: "workflow", id: "workflow" },
     time: { created: now, completed: now },
     modelID: "workflow-runner",
     providerID: "workflow",
@@ -56,6 +69,7 @@ async function injectMessage(sessionId: string, parts: InjectedPart[], directory
     path: { cwd: directory, root: directory },
     cost: 0,
     tokens: { total: 0, input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+    ...(meta ? { workflowMeta: meta } : {}),
   })
 
   for (const p of parts) {
@@ -220,6 +234,7 @@ async function runSubGraph({
   ctx,
   steps,
   directory,
+  workflowMeta,
 }: {
   nodes: WorkflowNode[]
   edges: WorkflowEdge[]
@@ -228,6 +243,7 @@ async function runSubGraph({
   ctx: Record<string, unknown>
   steps: GraphStep[]
   directory: string
+  workflowMeta: WorkflowMeta
 }): Promise<void> {
   const adjacency = buildAdjacency(edges)
   const allTargetIds = new Set(edges.map((e) => e.target))
@@ -307,7 +323,7 @@ async function runSubGraph({
         tool: "workflow_parameters",
         input: received,
         output: lines.join("\n"),
-      }], currentDir)
+      }], currentDir, { ...workflowMeta, nodeID: currentId, nodeType: String(d.nodeType ?? "parameters"), nodeLabel })
       result = JSON.stringify(received)
 
     } else if (d.nodeType === NodeTypeId.Prompt) {
@@ -322,7 +338,7 @@ async function runSubGraph({
         tool: "workflow_structured",
         input: { node: nodeLabel },
         output: structured,
-      }], currentDir)
+      }], currentDir, { ...workflowMeta, nodeID: currentId, nodeType: String(d.nodeType ?? "structured"), nodeLabel })
       // Store the parsed object — both under the legacy storeAs key and the stable nodeKey.
       // This must happen here because result is a JSON string; writing result later would
       // overwrite with a string, breaking $nodeKey.field path navigation.
@@ -368,7 +384,7 @@ async function runSubGraph({
         id: toolMsgId,
         sessionID: sessionId,
         role: "assistant",
-        from: { kind: "service", id: "workflow" },
+        from: { kind: "workflow", id: "workflow" },
         time: { created: toolStartTime },
         modelID: "workflow-runner",
         providerID: "workflow",
@@ -377,6 +393,7 @@ async function runSubGraph({
         path: { cwd: currentDir, root: currentDir },
         cost: 0,
         tokens: { total: 0, input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+        workflowMeta: { ...workflowMeta, nodeID: currentId, nodeType: String(d.nodeType ?? "tool"), nodeLabel },
       })
 
       await Session.updatePart({
@@ -426,7 +443,7 @@ async function runSubGraph({
         id: toolMsgId,
         sessionID: sessionId,
         role: "assistant",
-        from: { kind: "service", id: "workflow" },
+        from: { kind: "workflow", id: "workflow" },
         time: { created: toolStartTime, completed: Date.now() },
         modelID: "workflow-runner",
         providerID: "workflow",
@@ -435,6 +452,7 @@ async function runSubGraph({
         path: { cwd: currentDir, root: currentDir },
         cost: 0,
         tokens: { total: 0, input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+        workflowMeta: { ...workflowMeta, nodeID: currentId, nodeType: String(d.nodeType ?? "tool"), nodeLabel },
       })
 
     } else if (d.nodeType === NodeTypeId.Decide) {
@@ -544,6 +562,7 @@ async function runSubGraph({
             ctx: iterCtx,
             steps: iterSteps,
             directory: currentDir,
+            workflowMeta,
           })
           steps.push(...iterSteps.map((s) => ({ ...s, label: `[${i}] ${s.label}` })))
         }
@@ -637,6 +656,13 @@ async function _runWorkflow({
 }): Promise<string> {
   const ctx: Record<string, unknown> = {}
   const steps: GraphStep[] = []
+  const workflowRunID = Identifier.ascending("workflow_run")
+  const baseWorkflowMeta: WorkflowMeta = { workflowID: workflow.id, workflowRunID }
+
+  await Session.setWorkflowRun({
+    sessionID: sessionId,
+    workflowRun: { workflowID: workflow.id, workflowRunID, startedAt: Date.now() },
+  })
 
   const finalize = async (error?: string) => {
     const passed = steps.filter((s) => s.passed).length
@@ -651,7 +677,8 @@ async function _runWorkflow({
     ]
     const summary = lines.join("\n")
     const cwd = await Session.effectiveDefaultPath(sessionId)
-    await injectMessage(sessionId, [{ type: "text", text: summary }], cwd)
+    await injectMessage(sessionId, [{ type: "text", text: summary }], cwd, baseWorkflowMeta)
+    await Session.setWorkflowRun({ sessionID: sessionId, workflowRun: null })
     return summary
   }
 
@@ -664,6 +691,7 @@ async function _runWorkflow({
       ctx,
       steps,
       directory,
+      workflowMeta: baseWorkflowMeta,
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)

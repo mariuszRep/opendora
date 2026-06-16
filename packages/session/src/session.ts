@@ -216,7 +216,7 @@ export namespace Session {
       sessionStatus: SessionStatusSchema.optional(),
       agentID: z.string().optional(),
       ownerID: z.string().optional(),
-      ownerKind: z.enum(["user", "agent", "service"]).optional(),
+      ownerKind: z.enum(["user", "agent", "workflow"]).optional(),
       allowedAgents: z.array(z.string()).optional(),
       sendPolicy: z.object({ allow: z.array(z.string()), deny: z.array(z.string()) }).optional(),
       retention: z
@@ -242,6 +242,13 @@ export namespace Session {
           cacheRead: z.number(),
           cacheWrite: z.number(),
           compactionCount: z.number(),
+        })
+        .optional(),
+      workflowRun: z
+        .object({
+          workflowID: z.string(),
+          workflowRunID: z.string(),
+          startedAt: z.number(),
         })
         .optional(),
     })
@@ -369,7 +376,7 @@ export namespace Session {
     sessionType?: SessionType
     agentID?: string
     ownerID?: string
-    ownerKind?: "user" | "agent" | "service"
+    ownerKind?: "user" | "agent" | "workflow"
     retention?: Partial<RetentionPolicy>
     sendPolicy?: SendPolicy
     spawnDepth?: number
@@ -864,13 +871,39 @@ export namespace Session {
     z.object({
       sessionID: Identifier.schema("session"),
       ownerID: z.string(),
-      ownerKind: z.enum(["user", "agent", "service"]).default("user"),
+      ownerKind: z.enum(["user", "agent", "workflow"]).default("user"),
     }),
     async (input) => {
       const db = getConfig().db
       const row = db
         .update(SessionTable)
         .set({ owner_id: input.ownerID, owner_kind: input.ownerKind, time_updated: Date.now() })
+        .where(eq(SessionTable.id, input.sessionID))
+        .returning()
+        .get()
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      const info = fromRow(row)
+      getConfig().bus?.publish(Event.Updated, { info })
+      return info
+    },
+  )
+
+  export const setWorkflowRun = fn(
+    z.object({
+      sessionID: Identifier.schema("session"),
+      workflowRun: z
+        .object({
+          workflowID: z.string(),
+          workflowRunID: z.string(),
+          startedAt: z.number(),
+        })
+        .nullable(),
+    }),
+    async (input) => {
+      const db = getConfig().db
+      const row = db
+        .update(SessionTable)
+        .set({ workflow_run: input.workflowRun, time_updated: Date.now() })
         .where(eq(SessionTable.id, input.sessionID))
         .returning()
         .get()

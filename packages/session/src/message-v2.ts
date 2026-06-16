@@ -51,7 +51,7 @@ type SystemError = Error & { code?: string; syscall?: string }
 export namespace MessageV2 {
   export const Actor = z
     .object({
-      kind: z.enum(["user", "agent", "service", "scheduler"]),
+      kind: z.enum(["user", "agent", "workflow", "scheduler"]),
       id: z.string(),
     })
     .meta({
@@ -497,6 +497,15 @@ export namespace MessageV2 {
     variant: z.string().optional(),
     finish: z.string().optional(),
     hidden: z.boolean().optional(),
+    workflowMeta: z
+      .object({
+        workflowID: z.string(),
+        workflowRunID: z.string(),
+        nodeID: z.string().optional(),
+        nodeType: z.string().optional(),
+        nodeLabel: z.string().optional(),
+      })
+      .optional(),
   }).meta({
     ref: "AssistantMessage",
   })
