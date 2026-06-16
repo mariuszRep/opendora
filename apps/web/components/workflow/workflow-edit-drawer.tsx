@@ -130,6 +130,14 @@ function useWorkflowList() {
   return workflows
 }
 
+function useAgentList() {
+  const [agents, setAgents] = React.useState<Array<{ id?: string; name: string }>>([])
+  React.useEffect(() => {
+    opendora.agent.list().then(setAgents).catch(() => {})
+  }, [])
+  return agents
+}
+
 function useWorkflowParams(workflowId: string) {
   const [wfParams, setWfParams] = React.useState<WorkflowParameter[]>([])
   const [loading, setLoading] = React.useState(false)
@@ -196,6 +204,7 @@ const TAB_MANIFEST: Record<NodeTypeId, TabId[]> = {
   [NodeTypeId.SetWorkdir]:  ['general', 'input'],
   [NodeTypeId.ForEach]:     ['general', 'input', 'output'],
   [NodeTypeId.RunWorkflow]: ['general', 'input', 'output'],
+  [NodeTypeId.ConfigureSession]: ['general', 'input'],
 }
 
 const TAB_LABELS: Record<TabId, string> = {
@@ -335,6 +344,7 @@ export function WorkflowEditDrawer({
   const availableWorkflows = currentWorkflowId
     ? allWorkflows.filter((w) => w.id !== currentWorkflowId)
     : allWorkflows
+  const agentList = useAgentList()
 
   // Tracked separately so useWorkflowParams always has a stable hook call
   const runWorkflowId = editingNodeData?.nodeType === NodeTypeId.RunWorkflow
@@ -600,6 +610,21 @@ export function WorkflowEditDrawer({
                 <div className="space-y-2">
                   <Label htmlFor="setworkdir-description">Description</Label>
                   <Textarea id="setworkdir-description" value={editingNodeData.node.description || ''} onChange={(e) => handleNodeChange({ description: e.target.value })} placeholder="Why is the working directory being changed here?" rows={2} />
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.ConfigureSession) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="configsession-label">Label</Label>
+                  <Input id="configsession-label" value={editingNodeData.node.label || ''} onChange={(e) => handleNodeChange({ label: e.target.value })} placeholder="Configure Session" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="configsession-description">Description</Label>
+                  <Textarea id="configsession-description" value={editingNodeData.node.description || ''} onChange={(e) => handleNodeChange({ description: e.target.value })} placeholder="Why is the session being reconfigured here?" rows={2} />
                 </div>
               </div>
             )
@@ -926,6 +951,66 @@ export function WorkflowEditDrawer({
                     className="font-mono text-xs"
                   />
                   <p className="text-xs text-muted-foreground">If set, the resolved path is also stored as <code className="font-mono">$ctx.&lt;key&gt;</code> for downstream reference.</p>
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.ConfigureSession) {
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const model = (params.model as NodeModel | null | undefined) ?? undefined
+            const cwdVal = (params.cwd as string) ?? ''
+            const titleVal = (params.title as string) ?? ''
+            const agentIDVal = (params.agentID as string) ?? ''
+            const systemPromptVal = (params.systemPrompt as string) ?? ''
+            const pathVal = (params.path as string) ?? ''
+            const readPathVal = (params.readPath as string) ?? ''
+            const updateParams = (updates: Record<string, unknown>) => {
+              setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: { ...params, ...updates } } })
+            }
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Model</Label>
+                  <ModelPicker value={model} onChange={(m) => updateParams({ model: m ?? null })} />
+                  <p className="text-xs text-muted-foreground">Sets the session&apos;s active model from this node forward. Subsequent nodes inherit it until changed again or reset to &quot;Agent default&quot;.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Working directory <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <ExpressionInput value={cwdVal} onChange={(v) => updateParams({ cwd: v || undefined })} suggestions={availableRefs} placeholder="$ctx.project_directory" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Session title <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Input value={titleVal} onChange={(e) => updateParams({ title: e.target.value || undefined })} placeholder="Leave blank to keep current title" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Agent <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Combobox
+                    value={agentIDVal || null}
+                    onValueChange={(id) => updateParams({ agentID: id ?? undefined })}
+                  >
+                    <ComboboxInput placeholder="Keep current agent…" showClear />
+                    <ComboboxContent>
+                      <ComboboxEmpty>No agents found.</ComboboxEmpty>
+                      <ComboboxList>
+                        {agentList.map((a) => (
+                          <ComboboxItem key={a.id ?? a.name} value={a.id ?? a.name}>{a.name}</ComboboxItem>
+                        ))}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
+                </div>
+                <div className="space-y-2">
+                  <Label>System prompt <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Textarea value={systemPromptVal} onChange={(e) => updateParams({ systemPrompt: e.target.value || undefined })} placeholder="Leave blank to keep current system prompt" rows={3} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Write path boundary <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <ExpressionInput value={pathVal} onChange={(v) => updateParams({ path: v || undefined })} suggestions={availableRefs} placeholder="$ctx.write_path" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Read path boundary <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <ExpressionInput value={readPathVal} onChange={(v) => updateParams({ readPath: v || undefined })} suggestions={availableRefs} placeholder="$ctx.read_path" />
                 </div>
               </div>
             )

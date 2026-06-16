@@ -407,7 +407,7 @@ const BUILTIN_HANDLES: Record<NodeTypeId, { handles: NodeHandleDefinition[]; con
       allowedOutboundEdges: "unlimited",
       hiddenFields: [],
       requiredFields: ["label"],
-      exposedFields: ["sessionConfig"],
+      exposedFields: ["parameters"],
     },
   },
 }
@@ -570,9 +570,8 @@ const BUILTIN_DEFINITIONS: NodeDefinition[] = [
     icon: "Settings2",
     category: NodeCategory.Data,
     defaultConfig: {
-      node: { label: "Configure Session", description: "" },
+      node: { label: "Configure Session", description: "", parameters: {} },
       data: { inputs: [], outputs: [] },
-      sessionConfig: {},
     },
     version: "1.0.0",
     tags: ["session", "configure", "model", "agent", "workdir", "path", "context"],

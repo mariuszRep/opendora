@@ -17,6 +17,7 @@ import {
   MessageSquare,
   Play,
   Repeat,
+  Settings2,
   SlidersHorizontal,
   Wrench,
   type LucideIcon,
@@ -33,6 +34,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   MessageSquare,
   Play,
   Repeat,
+  Settings2,
   SlidersHorizontal,
   Wrench,
 }

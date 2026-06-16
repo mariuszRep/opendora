@@ -252,6 +252,12 @@ async function runSubGraph({
   const visited = new Set<string>()
   const queue = rootNodes.map((n) => n.id)
 
+  // Model set by a ConfigureSession node, carried forward to subsequent nodes
+  // that don't specify their own override. Must be passed explicitly on every
+  // prompt call below — otherwise createUserMessage's `agent.model` fallback
+  // (which outranks message history) would silently override it.
+  let carriedModel: NodeModel | undefined
+
   while (queue.length > 0) {
     const currentId = queue.shift()!
     if (visited.has(currentId)) continue
@@ -267,7 +273,7 @@ async function runSubGraph({
     const storeAs = params.output ? String(params.output) : undefined
     const nodeKey = nd.key ? String(nd.key) : undefined
     const agentArgs = Array.isArray(d.agentArgs) ? (d.agentArgs as string[]) : []
-    const nodeModel = d.model as NodeModel | undefined
+    const nodeModel = (d.model as NodeModel | undefined) ?? carriedModel
     const nodeLabel = (nd.label as string | undefined) ?? d.nodeType as string ?? currentId
 
     try {
@@ -578,9 +584,8 @@ async function runSubGraph({
       result = JSON.stringify(iterResults)
 
     } else if (d.nodeType === NodeTypeId.ConfigureSession) {
-      type NodeModel = { providerID: string; modelID: string }
-      const cfg = (d.sessionConfig ?? {}) as {
-        model?: NodeModel
+      const cfg = params as {
+        model?: NodeModel | null
         cwd?: string
         title?: string
         agentID?: string
@@ -592,8 +597,10 @@ async function runSubGraph({
       const applied: Record<string, unknown> = {}
 
       if (cfg.model?.providerID && cfg.model?.modelID) {
-        // Stamp the model into message history so lastModel() returns it for all
-        // subsequent nodes. noReply skips the assistant turn — no tokens consumed.
+        carriedModel = cfg.model
+        // Stamp the model into message history (visible/auditable) — the actual
+        // carry-forward to subsequent nodes is via `carriedModel` above, passed
+        // explicitly on every later prompt call. noReply skips the assistant turn.
         await SessionPrompt.prompt({
           sessionID: sessionId,
           parts: [{ type: "text", text: `[session configured: model=${cfg.model.providerID}/${cfg.model.modelID}]` }],
@@ -602,6 +609,12 @@ async function runSubGraph({
           hidden: true,
         })
         applied.model = `${cfg.model.providerID}/${cfg.model.modelID}`
+      } else if (cfg.model === null) {
+        // Explicit reset to "Agent default" — `null` is a deliberate sentinel
+        // distinct from "field untouched" (undefined), which JSON.stringify would
+        // otherwise drop on save, making the reset unrecoverable after reload.
+        carriedModel = undefined
+        applied.model = "agent default"
       }
       if (cfg.cwd) {
         const resolved = String(resolveRef(cfg.cwd, input, ctx) ?? cfg.cwd)
@@ -621,12 +634,14 @@ async function runSubGraph({
         applied.systemPrompt = cfg.systemPrompt
       }
       if (cfg.path) {
-        await Session.setPath({ sessionID: sessionId, path: cfg.path })
-        applied.path = cfg.path
+        const resolved = String(resolveRef(cfg.path, input, ctx) ?? cfg.path)
+        await Session.setPath({ sessionID: sessionId, path: resolved })
+        applied.path = resolved
       }
       if (cfg.readPath) {
-        await Session.setReadPath({ sessionID: sessionId, readPath: cfg.readPath })
-        applied.readPath = cfg.readPath
+        const resolved = String(resolveRef(cfg.readPath, input, ctx) ?? cfg.readPath)
+        await Session.setReadPath({ sessionID: sessionId, readPath: resolved })
+        applied.readPath = resolved
       }
 
       const changedKeys = Object.keys(applied)
