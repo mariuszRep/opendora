@@ -225,7 +225,7 @@ export namespace Snapshot {
       .nothrow()
       .lines()) {
       if (!line) continue
-      const [additions, deletions, file] = line.split("\t")
+      const [additions = "0", deletions = "0", file = ""] = line.split("\t")
       const isBinaryFile = additions === "-" && deletions === "-"
       const before = isBinaryFile
         ? ""

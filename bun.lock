@@ -30,6 +30,64 @@
         "tw-animate-css": "1.4.0",
       },
     },
+    "apps/cli": {
+      "name": "@opendora/cli",
+      "version": "1.2.15",
+      "bin": {
+        "opendora": "./bin/opencode",
+      },
+      "dependencies": {
+        "@actions/core": "1.11.1",
+        "@actions/github": "6.0.1",
+        "@agentclientprotocol/sdk": "0.14.1",
+        "@clack/prompts": "1.0.0-alpha.1",
+        "@modelcontextprotocol/sdk": "1.25.2",
+        "@octokit/graphql": "9.0.2",
+        "@octokit/rest": "catalog:",
+        "@opencode-ai/plugin": "1.2.20",
+        "@opencode-ai/script": "workspace:*",
+        "@opendora/auth": "workspace:*",
+        "@opendora/config": "workspace:*",
+        "@opendora/permission": "workspace:*",
+        "@opendora/provider": "workspace:*",
+        "@opendora/runtime": "workspace:*",
+        "@opendora/sdk": "workspace:*",
+        "@opendora/server": "workspace:*",
+        "@opendora/session": "workspace:*",
+        "@opendora/skills": "workspace:*",
+        "@opendora/storage": "workspace:*",
+        "@opendora/tools": "workspace:*",
+        "@opendora/util": "workspace:*",
+        "@opentui/core": "0.1.81",
+        "@opentui/solid": "0.1.81",
+        "@parcel/watcher": "2.5.1",
+        "@solid-primitives/event-bus": "1.1.2",
+        "@solid-primitives/scheduled": "1.5.2",
+        "clipboardy": "2.3.0",
+        "diff": "catalog:",
+        "fuzzysort": "3.1.0",
+        "gray-matter": "4.0.3",
+        "hono": "catalog:",
+        "jsonc-parser": "3.3.1",
+        "open": "10.1.2",
+        "opentui-spinner": "0.0.6",
+        "remeda": "catalog:",
+        "solid-js": "catalog:",
+        "strip-ansi": "7.1.2",
+        "yargs": "18.0.0",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@babel/core": "7.28.4",
+        "@octokit/webhooks-types": "7.6.1",
+        "@tsconfig/bun": "catalog:",
+        "@types/babel__core": "7.20.5",
+        "@types/bun": "catalog:",
+        "@types/yargs": "17.0.33",
+        "@typescript/native-preview": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "apps/web": {
       "name": "@opendora/app",
       "version": "0.1.0",
@@ -111,7 +169,6 @@
       "version": "1.0.0",
       "dependencies": {
         "@opendora/auth": "workspace:*",
-        "@opendora/opencode": "workspace:*",
         "@opendora/provider": "workspace:*",
         "@opendora/runtime": "workspace:*",
         "@opendora/session": "workspace:*",
@@ -364,7 +421,6 @@
         "@opendora/agent": "workspace:*",
         "@opendora/auth": "workspace:*",
         "@opendora/config": "workspace:*",
-        "@opendora/opencode": "workspace:*",
         "@opendora/permission": "workspace:*",
         "@opendora/provider": "workspace:*",
         "@opendora/runtime": "workspace:*",
@@ -463,6 +519,7 @@
       },
       "devDependencies": {
         "@types/bun": "catalog:",
+        "@typescript/native-preview": "catalog:",
         "drizzle-kit": "catalog:",
         "typescript": "catalog:",
       },
@@ -499,6 +556,7 @@
         "@tsconfig/bun": "catalog:",
         "@types/bun": "catalog:",
         "@types/turndown": "5.0.5",
+        "@typescript/native-preview": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -1254,6 +1312,8 @@
     "@opendora/app": ["@opendora/app@workspace:apps/web"],
 
     "@opendora/auth": ["@opendora/auth@workspace:packages/auth"],
+
+    "@opendora/cli": ["@opendora/cli@workspace:apps/cli"],
 
     "@opendora/config": ["@opendora/config@workspace:packages/config"],
 
@@ -2625,7 +2685,7 @@
 
     "ip-address": ["ip-address@10.1.0", "", {}, "sha512-XXADHxXmvT9+CRxhXg56LJovE+bmWnEWB78LB83VZTprKTmaC5QfruXocxzTZ2Kl0DNwKuBdlIhjL8LeY8Sf8Q=="],
 
-    "ipaddr.js": ["ipaddr.js@2.3.0", "", {}, "sha512-Zv/pA+ciVFbCSBBjGfaKUya/CcGmUHzTydLMaTwrUUEM2DIEO3iZvueGxmacvmN50fGpGVKeTXpb2LcYQxeVdg=="],
+    "ipaddr.js": ["ipaddr.js@1.9.1", "", {}, "sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g=="],
 
     "is-alphabetical": ["is-alphabetical@2.0.1", "", {}, "sha512-FWyyY60MeTNyeSRpkM2Iry0G9hpr7/9kD40mD/cGQEuilcZYS4okz8SN2Q6rLCJ8gbCt6fN+rC+6tMGS99LaxQ=="],
 
@@ -3963,6 +4023,8 @@
 
     "@fastify/ajv-compiler/ajv": ["ajv@8.18.0", "", { "dependencies": { "fast-deep-equal": "^3.1.3", "fast-uri": "^3.0.1", "json-schema-traverse": "^1.0.0", "require-from-string": "^2.0.2" } }, "sha512-PlXPeEWMXMZ7sPYOHqmDyCJzcfNrUr3fGNKtezX14ykXOEIvyK81d+qydx89KY5O71FKMPaQ2vBfBFI5NHR63A=="],
 
+    "@fastify/proxy-addr/ipaddr.js": ["ipaddr.js@2.3.0", "", {}, "sha512-Zv/pA+ciVFbCSBBjGfaKUya/CcGmUHzTydLMaTwrUUEM2DIEO3iZvueGxmacvmN50fGpGVKeTXpb2LcYQxeVdg=="],
+
     "@hey-api/json-schema-ref-parser/js-yaml": ["js-yaml@4.1.1", "", { "dependencies": { "argparse": "^2.0.1" }, "bin": { "js-yaml": "bin/js-yaml.js" } }, "sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA=="],
 
     "@hey-api/openapi-ts/open": ["open@11.0.0", "", { "dependencies": { "default-browser": "^5.4.0", "define-lazy-prop": "^3.0.0", "is-in-ssh": "^1.0.0", "is-inside-container": "^1.0.0", "powershell-utils": "^0.1.0", "wsl-utils": "^0.3.0" } }, "sha512-smsWv2LzFjP03xmvFoJ331ss6h+jixfA4UUV/Bsiyuu4YJPfN+FIQGOIiv4w9/+MoHkfkJ22UIaQWRVFRfH6Vw=="],
@@ -4080,6 +4142,8 @@
     "@opendora/app/shadcn": ["shadcn@3.8.5", "", { "dependencies": { "@antfu/ni": "^25.0.0", "@babel/core": "^7.28.0", "@babel/parser": "^7.28.0", "@babel/plugin-transform-typescript": "^7.28.0", "@babel/preset-typescript": "^7.27.1", "@dotenvx/dotenvx": "^1.48.4", "@modelcontextprotocol/sdk": "^1.26.0", "@types/validate-npm-package-name": "^4.0.2", "browserslist": "^4.26.2", "commander": "^14.0.0", "cosmiconfig": "^9.0.0", "dedent": "^1.6.0", "deepmerge": "^4.3.1", "diff": "^8.0.2", "execa": "^9.6.0", "fast-glob": "^3.3.3", "fs-extra": "^11.3.1", "fuzzysort": "^3.1.0", "https-proxy-agent": "^7.0.6", "kleur": "^4.1.5", "msw": "^2.10.4", "node-fetch": "^3.3.2", "open": "^11.0.0", "ora": "^8.2.0", "postcss": "^8.5.6", "postcss-selector-parser": "^7.1.0", "prompts": "^2.4.2", "recast": "^0.23.11", "stringify-object": "^5.0.0", "tailwind-merge": "^3.0.1", "ts-morph": "^26.0.0", "tsconfig-paths": "^4.2.0", "validate-npm-package-name": "^7.0.1", "zod": "^3.24.1", "zod-to-json-schema": "^3.24.6" }, "bin": { "shadcn": "dist/index.js" } }, "sha512-jPRx44e+eyeV7xwY3BLJXcfrks00+M0h5BGB9l6DdcBW4BpAj4x3lVmVy0TXPEs2iHEisxejr62sZAAw6B1EVA=="],
 
     "@opendora/auth/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
+
+    "@opendora/cli/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 
     "@opendora/config/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 
@@ -4702,8 +4766,6 @@
     "prompts/kleur": ["kleur@3.0.3", "", {}, "sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w=="],
 
     "prop-types/react-is": ["react-is@16.13.1", "", {}, "sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ=="],
-
-    "proxy-addr/ipaddr.js": ["ipaddr.js@1.9.1", "", {}, "sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g=="],
 
     "radix-ui/@radix-ui/primitive": ["@radix-ui/primitive@1.1.3", "", {}, "sha512-JTF99U/6XIjCBo0wqkU5sK10glYe27MRRsfwoiq5zzOEZLHU3A3KCMa5X/azekYRCJ0HlwI0crAXS/5dEHTzDg=="],
 

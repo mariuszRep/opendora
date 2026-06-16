@@ -84,7 +84,7 @@ export namespace Skill {
       if (skills[parsed.data.name]) {
         log.warn("duplicate skill name", {
           name: parsed.data.name,
-          existing: skills[parsed.data.name].location,
+          existing: skills[parsed.data.name]!.location,
           duplicate: match,
         })
       }
@@ -295,7 +295,7 @@ export namespace Skill {
             const mdData = await mdRes.json() as any
             const content = Buffer.from(mdData.content.replace(/\n/g, ""), "base64").toString("utf-8")
             const m = content.match(/^description:\s*(.+)$/m)
-            if (m) description = m[1].trim().replace(/^['"]|['"]$/g, "")
+            if (m) description = m[1]!.trim().replace(/^['"]|['"]$/g, "")
           }
         } catch {}
         return {
@@ -429,7 +429,7 @@ export namespace Skill {
 
     const dirs = await Config.directories()
     const installBase = dirs.length > 0
-      ? path.join(dirs[0], "skill")
+      ? path.join(dirs[0]!, "skill")
       : path.join(Instance.directory, ".projectflows", "skill")
 
     // GitHub-hosted registries (anthropic, vercel)
@@ -461,8 +461,8 @@ export namespace Skill {
     if (registry === "github") {
       const parts = skillPath.split("/")
       if (parts.length < 2) throw new Error(`GitHub source must be "owner/repo" or "owner/repo/path", got: ${skillPath}`)
-      const owner = parts[0]
-      const repo = parts[1]
+      const owner = parts[0]!
+      const repo = parts[1]!
       const subPath = parts.slice(2).join("/")
       const ref = options?.version ?? "main"
       const skillName = subPath ? subPath.split("/").pop()! : repo
@@ -566,7 +566,7 @@ export namespace Skill {
   }): Promise<{ dir: string }> {
     const dirs = await Config.directories()
     const installBase = dirs.length > 0
-      ? path.join(dirs[0], "skill")
+      ? path.join(dirs[0]!, "skill")
       : path.join(Instance.directory, ".projectflows", "skill")
 
     const skillDir = path.join(installBase, params.name)

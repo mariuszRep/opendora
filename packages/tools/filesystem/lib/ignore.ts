@@ -68,8 +68,8 @@ export namespace FileIgnore {
     }
 
     const parts = filepath.split(/[/\\]/)
-    for (let i = 0; i < parts.length; i++) {
-      if (FOLDERS.has(parts[i])) return true
+    for (const part of parts) {
+      if (FOLDERS.has(part)) return true
     }
 
     const extra = opts?.extra || []

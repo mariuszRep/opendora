@@ -13,7 +13,7 @@ import { mapValues } from "remeda"
 import { errors } from "../error"
 import { lazy } from "@opendora/util/lazy"
 import { Log } from "@opendora/util/log"
-import { Installation } from "@opendora/opencode/installation"
+import { Installation } from "@opendora/util/installation"
 
 const log = Log.create({ service: "provider.routes" })
 

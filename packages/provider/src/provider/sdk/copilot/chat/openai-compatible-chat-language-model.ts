@@ -78,7 +78,7 @@ export class OpenAICompatibleChatLanguageModel implements LanguageModelV2 {
   }
 
   private get providerOptionsName(): string {
-    return this.config.provider.split(".")[0].trim()
+    return (this.config.provider.split(".")[0] ?? "").trim()
   }
 
   get supportedUrls() {
@@ -266,12 +266,13 @@ export class OpenAICompatibleChatLanguageModel implements LanguageModelV2 {
       })),
     }
     const completionTokenDetails = responseBody.usage?.completion_tokens_details
+    const providerOptionsMetadata = providerMetadata[this.providerOptionsName]!
     if (completionTokenDetails?.accepted_prediction_tokens != null) {
-      providerMetadata[this.providerOptionsName].acceptedPredictionTokens =
+      providerOptionsMetadata.acceptedPredictionTokens =
         completionTokenDetails?.accepted_prediction_tokens
     }
     if (completionTokenDetails?.rejected_prediction_tokens != null) {
-      providerMetadata[this.providerOptionsName].rejectedPredictionTokens =
+      providerOptionsMetadata.rejectedPredictionTokens =
         completionTokenDetails?.rejected_prediction_tokens
     }
 
@@ -664,12 +665,13 @@ export class OpenAICompatibleChatLanguageModel implements LanguageModelV2 {
               ...(reasoningOpaque ? { copilot: { reasoningOpaque } } : {}),
               ...metadataExtractor?.buildMetadata(),
             }
+            const streamProviderOptionsMetadata = providerMetadata[providerOptionsName]!
             if (usage.completionTokensDetails.acceptedPredictionTokens != null) {
-              providerMetadata[providerOptionsName].acceptedPredictionTokens =
+              streamProviderOptionsMetadata.acceptedPredictionTokens =
                 usage.completionTokensDetails.acceptedPredictionTokens
             }
             if (usage.completionTokensDetails.rejectedPredictionTokens != null) {
-              providerMetadata[providerOptionsName].rejectedPredictionTokens =
+              streamProviderOptionsMetadata.rejectedPredictionTokens =
                 usage.completionTokensDetails.rejectedPredictionTokens
             }
 

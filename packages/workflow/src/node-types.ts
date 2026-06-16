@@ -14,6 +14,7 @@ export const NodeTypeId = {
   SetWorkdir: "set_workdir",
   ForEach: "for_each",
   RunWorkflow: "run_workflow",
+  ConfigureSession: "configure_session",
 } as const
 
 export type NodeTypeId = (typeof NodeTypeId)[keyof typeof NodeTypeId]
@@ -120,6 +121,33 @@ export interface NodeDefinition<
  * The runtime shape carried inside workflow node `data` fields.
  * UI and runner both reference this shape.
  */
+/** Model reference used on workflow nodes to override the active model. */
+export interface WorkflowNodeModel {
+  providerID: string
+  modelID: string
+}
+
+/**
+ * Session parameters that a ConfigureSession node can patch.
+ * All fields are optional — only the ones present are applied.
+ */
+export interface SessionConfigParams {
+  /** Override the active model for this session from this point forward. Omit to keep the current model. */
+  model?: WorkflowNodeModel
+  /** Change the working directory (same as SetWorkdir). */
+  cwd?: string
+  /** Update the session title. */
+  title?: string
+  /** Assign a different agent to this session. */
+  agentID?: string
+  /** Set or replace the session-level system prompt boundary. */
+  systemPrompt?: string
+  /** Set the write-boundary path enforced by the session. */
+  path?: string
+  /** Set the read-boundary path for the session. */
+  readPath?: string
+}
+
 export interface WorkflowNodePayload {
   nodeType?: NodeTypeId
   node: {
@@ -139,6 +167,8 @@ export interface WorkflowNodePayload {
     inputs: unknown[]
     outputs: unknown[]
   }
+  /** Optional model override for Prompt/Structured nodes (ephemeral — affects this node only). */
+  model?: WorkflowNodeModel
   instructions?: string
   agentArgs?: string[]
   workflowParameters?: unknown[]

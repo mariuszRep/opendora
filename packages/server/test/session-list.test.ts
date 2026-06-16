@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
-import { Instance } from "@opendora/opencode/project/instance"
+import { Instance } from "@opendora/runtime/instance"
 import { Session } from "@opendora/session/session"
 import { Log } from "@opendora/util/log"
 import { configureSessionCore } from "@opendora/server/configure-session-core"

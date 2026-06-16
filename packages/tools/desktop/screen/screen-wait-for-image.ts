@@ -85,7 +85,7 @@ export const DesktopScreenWaitForImageTool = Tool.define(
                 hits = hits.filter((m) => m.x >= rx && m.x <= rx + rw && m.y >= ry && m.y <= ry + rh)
               }
               if (hits.length > 0) {
-                const h = hits[0]
+                const h = hits[0]!
                 match = { x: h.x, y: h.y, width: h.width, height: h.height }
                 break
               }

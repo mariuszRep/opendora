@@ -166,7 +166,7 @@ export namespace SessionRetry {
           // 4. But first try to parse "reset after Ns" from the message — more precise than 10s default
           const msgMatch = (error.data.message ?? "").match(/reset after (\d+(?:\.\d+)?)s/i)
           if (msgMatch) {
-            const ms = parseFloat(msgMatch[1]) * 1000
+            const ms = parseFloat(msgMatch[1]!) * 1000
             if (!isNaN(ms)) return clampDelay(Math.ceil(ms) + 1000) // +1s buffer
           }
           return 10_000
@@ -184,7 +184,7 @@ export namespace SessionRetry {
 
       const resetMatch = message.match(/reset after (\d+(?:\.\d+)?)s/i)
       if (resetMatch) {
-        const ms = parseFloat(resetMatch[1]) * 1000
+        const ms = parseFloat(resetMatch[1]!) * 1000
         if (!isNaN(ms)) return clampDelay(Math.ceil(ms) + 1000)
       }
 

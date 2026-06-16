@@ -30,7 +30,6 @@
     "@opendora/agent": "workspace:*",
     "@opendora/auth": "workspace:*",
     "@opendora/config": "workspace:*",
-    "@opendora/opencode": "workspace:*",
     "@opendora/runtime": "workspace:*",
     "@opendora/permission": "workspace:*",
     "@opendora/provider": "workspace:*",

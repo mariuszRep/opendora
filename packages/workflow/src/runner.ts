@@ -577,6 +577,72 @@ async function runSubGraph({
 
       result = JSON.stringify(iterResults)
 
+    } else if (d.nodeType === NodeTypeId.ConfigureSession) {
+      type NodeModel = { providerID: string; modelID: string }
+      const cfg = (d.sessionConfig ?? {}) as {
+        model?: NodeModel
+        cwd?: string
+        title?: string
+        agentID?: string
+        systemPrompt?: string
+        path?: string
+        readPath?: string
+      }
+
+      const applied: Record<string, unknown> = {}
+
+      if (cfg.model?.providerID && cfg.model?.modelID) {
+        // Stamp the model into message history so lastModel() returns it for all
+        // subsequent nodes. noReply skips the assistant turn — no tokens consumed.
+        await SessionPrompt.prompt({
+          sessionID: sessionId,
+          parts: [{ type: "text", text: `[session configured: model=${cfg.model.providerID}/${cfg.model.modelID}]` }],
+          model: cfg.model,
+          noReply: true,
+          hidden: true,
+        })
+        applied.model = `${cfg.model.providerID}/${cfg.model.modelID}`
+      }
+      if (cfg.cwd) {
+        const resolved = String(resolveRef(cfg.cwd, input, ctx) ?? cfg.cwd)
+        await Session.setCwd({ sessionID: sessionId, cwd: resolved })
+        applied.cwd = resolved
+      }
+      if (cfg.title) {
+        await Session.setTitle({ sessionID: sessionId, title: cfg.title })
+        applied.title = cfg.title
+      }
+      if (cfg.agentID) {
+        await Session.setAgentID({ sessionID: sessionId, agentID: cfg.agentID })
+        applied.agentID = cfg.agentID
+      }
+      if (cfg.systemPrompt) {
+        await Session.setSystemPrompt({ sessionID: sessionId, systemPrompt: cfg.systemPrompt })
+        applied.systemPrompt = cfg.systemPrompt
+      }
+      if (cfg.path) {
+        await Session.setPath({ sessionID: sessionId, path: cfg.path })
+        applied.path = cfg.path
+      }
+      if (cfg.readPath) {
+        await Session.setReadPath({ sessionID: sessionId, readPath: cfg.readPath })
+        applied.readPath = cfg.readPath
+      }
+
+      const changedKeys = Object.keys(applied)
+      const summary = changedKeys.length > 0
+        ? changedKeys.map((k) => `${k}=${JSON.stringify(applied[k])}`).join(", ")
+        : "no changes"
+
+      await injectMessage(sessionId, [{
+        type: "tool",
+        tool: "workflow_configure_session",
+        input: applied,
+        output: `Session configured: ${summary}`,
+      }], currentDir, { ...workflowMeta, nodeID: currentId, nodeType: String(d.nodeType ?? "configure_session"), nodeLabel })
+
+      result = JSON.stringify(applied)
+
     }
 
     // Structured nodes already wrote the parsed object into ctx above; skip the string overwrite

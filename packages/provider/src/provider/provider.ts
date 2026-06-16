@@ -1001,7 +1001,7 @@ export namespace Provider {
 
       // Load for the main provider if auth exists
       if (auth) {
-        const options = await plugin.auth.loader(() => Auth.get(providerID) as any, database[plugin.auth.provider])
+        const options = await plugin.auth.loader(() => Auth.get(providerID) as any, database[plugin.auth.provider]!)
         const opts = options ?? {}
         const patch: Partial<Info> = providers[providerID] 
           ? { options: opts } 
@@ -1017,7 +1017,7 @@ export namespace Provider {
           if (enterpriseAuth) {
             const enterpriseOptions = await plugin.auth.loader(
               () => Auth.get(enterpriseProviderID) as any,
-              database[enterpriseProviderID],
+              database[enterpriseProviderID]!,
             )
             const opts = enterpriseOptions ?? {}
             const patch: Partial<Info> = providers[enterpriseProviderID]
@@ -1264,7 +1264,7 @@ export namespace Provider {
       const availableModels = Object.keys(provider.models)
       const matches = fuzzysort.go(modelID, availableModels, { limit: 3, threshold: -10000 })
       const suggestions = matches.map((m) => m.target)
-      if (matches.length > 0) return provider.models[matches[0].target]!
+      if (matches.length > 0) return provider.models[matches[0]!.target]!
       throw new ModelNotFoundError({ providerID, modelID, suggestions })
     }
     return info
@@ -1279,8 +1279,9 @@ export namespace Provider {
     const sdk = await getSDK(model)
 
     try {
-      const language = s.modelLoaders[model.providerID] && provider
-        ? await s.modelLoaders[model.providerID](sdk, model.api.id, provider.options)
+      const modelLoader = s.modelLoaders[model.providerID]
+      const language = typeof modelLoader === "function" && provider
+        ? await modelLoader(sdk, model.api.id, provider.options)
         : sdk.languageModel(model.api.id)
       s.models.set(key, language)
       return language
@@ -1418,7 +1419,7 @@ export namespace Provider {
   export function parseModel(model: string) {
     const [providerID, ...rest] = model.split("/")
     return {
-      providerID: providerID,
+      providerID: providerID ?? "",
       modelID: rest.join("/"),
     }
   }

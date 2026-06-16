@@ -1,5 +1,5 @@
 import type { Hooks, PluginInput } from "@opencode-ai/plugin"
-import { Installation } from "@opendora/opencode/installation"
+import { Installation } from "@opendora/util/installation"
 import { iife } from "@opendora/util/iife"
 
 const CLIENT_ID = "Ov23li8tweQw6odWQebz"

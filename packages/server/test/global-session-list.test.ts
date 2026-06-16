@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
-import { Instance } from "@opendora/opencode/project/instance"
-import { Project } from "@opendora/opencode/project/project"
+import { Instance } from "@opendora/runtime/instance"
+import { Project } from "@opendora/runtime/project"
 import { Session } from "@opendora/session/session"
 import { Log } from "@opendora/util/log"
 import { tmpdir } from "./fixture/fixture"

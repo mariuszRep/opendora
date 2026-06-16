@@ -315,7 +315,7 @@ export namespace File {
     if (type.includes("charset=")) return false
 
     const parts = type.split("/", 2)
-    const top = parts[0]
+    const top = parts[0] ?? ""
 
     const tops = ["image", "audio", "video", "font", "model", "multipart"]
     if (tops.includes(top)) return true
@@ -425,7 +425,7 @@ export namespace File {
     if (diffOutput.trim()) {
       const lines = diffOutput.trim().split("\n")
       for (const line of lines) {
-        const [added, removed, filepath] = line.split("\t")
+        const [added = "", removed = "", filepath = ""] = line.split("\t")
         changedFiles.push({
           path: filepath,
           added: added === "-" ? 0 : parseInt(added, 10),

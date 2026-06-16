@@ -23,7 +23,7 @@ function resolvePage(targetId?: string): Page | null {
   if (lastActiveId && pages.has(lastActiveId)) return pages.get(lastActiveId)!
   // last inserted entry
   const entries = Array.from(pages.entries())
-  return entries.length ? entries[entries.length - 1][1] : null
+  return entries.length ? entries[entries.length - 1]![1] : null
 }
 
 async function ensureContext(): Promise<BrowserContext> {

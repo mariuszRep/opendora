@@ -36,8 +36,6 @@
     "./file": "./file/index.ts",
     "./file/watcher": "./file/watcher.ts",
     "./file/time": "./file/time.ts",
-    "./delegation": "./delegation/index.ts",
-    "./delegation/*": "./delegation/*.ts",
     "./tool": "./tool.ts",
     "./registry": "./registry.ts",
     "./truncation": "./truncation.ts",

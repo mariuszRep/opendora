@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test"
-import { Installation } from "@opendora/opencode/installation"
+import { Installation } from "@opendora/util/installation"
 import { GlobalRoutes } from "@opendora/server/routes/global"
 import { Log } from "@opendora/util/log"
 

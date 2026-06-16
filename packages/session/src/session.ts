@@ -166,8 +166,8 @@ export namespace Session {
   function getForkedTitle(title: string): string {
     const match = title.match(/^(.+) \(fork #(\d+)\)$/)
     if (match) {
-      const base = match[1]
-      const num = parseInt(match[2], 10)
+      const base = match[1]!
+      const num = parseInt(match[2]!, 10)
       return `${base} (fork #${num + 1})`
     }
     return `${title} (fork #1)`

@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { File } from "@opendora/opencode/file"
+import { File } from "@opendora/tools/file"
 import { Ripgrep } from "@opendora/tools/filesystem/lib/ripgrep"
 import { LSP } from "../lsp"
 import { Instance } from "@opendora/runtime/instance"

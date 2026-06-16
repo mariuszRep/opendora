@@ -94,7 +94,7 @@ export namespace LLM {
       )
     }
 
-    const header = system[0]
+    const header = system[0]!
     await cfg.plugin?.trigger(
       "experimental.chat.system.transform",
       { sessionID: input.sessionID, model: input.model },

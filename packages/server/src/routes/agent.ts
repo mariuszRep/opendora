@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { describeRoute, resolver, validator } from "hono-openapi"
 import z from "zod"
-import { Agent } from "@opendora/opencode/agent"
+import { Agent } from "@opendora/runtime/agent"
 import { AgentStorage } from "@opendora/agent"
 import { ToolRegistry } from "@opendora/server/tool-registry"
 import { MCP } from "../mcp"

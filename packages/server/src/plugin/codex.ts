@@ -1,6 +1,6 @@
 import type { Hooks, PluginInput } from "@opencode-ai/plugin"
 import { Log } from "@opendora/util/log"
-import { Installation } from "@opendora/opencode/installation"
+import { Installation } from "@opendora/util/installation"
 import { Auth, OAUTH_DUMMY_KEY } from "@opendora/auth"
 import os from "os"
 import { Provider } from "@opendora/provider/provider"

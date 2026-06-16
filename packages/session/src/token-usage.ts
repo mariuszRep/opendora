@@ -62,7 +62,7 @@ function parseResetToMs(value: string): number | null {
   // "Xs" or "Xms"
   const relMatch = /^(\d+(?:\.\d+)?)(ms|s)$/.exec(value.trim())
   if (relMatch) {
-    const n = parseFloat(relMatch[1])
+    const n = parseFloat(relMatch[1]!)
     const unit = relMatch[2]
     return Math.floor(Date.now() + (unit === "ms" ? n : n * 1000))
   }

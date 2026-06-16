@@ -91,7 +91,7 @@ function resolveKeyName(part: string, Key: typeof NutKey): NutKey | undefined {
   // Function keys f1-f24
   const fMatch = part.match(/^f(\d{1,2})$/)
   if (fMatch) {
-    const n = parseInt(fMatch[1], 10)
+    const n = parseInt(fMatch[1]!, 10)
     if (n >= 1 && n <= 24) return (Key as unknown as Record<string, NutKey>)[`F${n}`]
   }
 

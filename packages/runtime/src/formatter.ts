@@ -186,7 +186,7 @@ export const ruff: Info = {
       const found = await Filesystem.findUp(config, Instance.directory, Instance.worktree)
       if (found.length > 0) {
         if (config === "pyproject.toml") {
-          const content = await Filesystem.readText(found[0])
+          const content = await Filesystem.readText(found[0]!)
           if (content.includes("[tool.ruff]")) return true
         } else {
           return true
@@ -197,7 +197,7 @@ export const ruff: Info = {
     for (const dep of deps) {
       const found = await Filesystem.findUp(dep, Instance.directory, Instance.worktree)
       if (found.length > 0) {
-        const content = await Filesystem.readText(found[0])
+        const content = await Filesystem.readText(found[0]!)
         if (content.includes("ruff")) return true
       }
     }
@@ -223,7 +223,7 @@ export const rlang: Info = {
       const output = await text(proc.stdout)
 
       // Check for "Air: An R language server and formatter"
-      const firstLine = output.split("\n")[0]
+      const firstLine = output.split("\n")[0] ?? ""
       const hasR = firstLine.includes("R language")
       const hasFormatter = firstLine.includes("formatter")
       return hasR && hasFormatter

@@ -94,7 +94,7 @@ export namespace ProviderTransform {
     ) {
       const result: ModelMessage[] = []
       for (let i = 0; i < msgs.length; i++) {
-        const msg = msgs[i]
+        const msg = msgs[i]!
         const nextMsg = msgs[i + 1]
 
         if ((msg.role === "assistant" || msg.role === "tool") && Array.isArray(msg.content)) {
@@ -232,7 +232,7 @@ export namespace ProviderTransform {
           }
         }
 
-        const mime = part.type === "image" ? part.image.toString().split(";")[0].replace("data:", "") : part.mediaType
+        const mime = part.type === "image" ? (part.image.toString().split(";")[0] ?? "").replace("data:", "") : part.mediaType
         const filename = part.type === "file" ? part.filename : undefined
         const modality = mimeToModality(mime)
         if (!modality) return part

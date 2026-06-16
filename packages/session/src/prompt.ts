@@ -301,7 +301,7 @@ export namespace SessionPrompt {
         })
       }
       return new Promise<MessageV2.WithParts>((resolve, reject) => {
-        const callbacks = state()[sessionID].callbacks
+        const callbacks = state()[sessionID]!.callbacks
         callbacks.push({ resolve, reject })
       })
     }
@@ -324,7 +324,7 @@ export namespace SessionPrompt {
       let lastFinished: MessageV2.Assistant | undefined
       let tasks: (MessageV2.CompactionPart | MessageV2.SubtaskPart)[] = []
       for (let i = msgs.length - 1; i >= 0; i--) {
-        const msg = msgs[i]
+        const msg = msgs[i]!
         if (!lastUser && msg.info.role === "user") lastUser = msg.info as MessageV2.User
         if (!lastAssistant && msg.info.role === "assistant") lastAssistant = msg.info as MessageV2.Assistant
         if (!lastFinished && msg.info.role === "assistant" && msg.info.finish)
@@ -1331,7 +1331,7 @@ export namespace SessionPrompt {
                   end: url.searchParams.get("end"),
                 }
                 if (range.start != null) {
-                  const filePathURI = part.url.split("?")[0]
+                  const filePathURI = part.url.split("?")[0]!
                   let start = parseInt(range.start)
                   let end = range.end ? parseInt(range.end) : undefined
                   if (start === end) {
@@ -1786,7 +1786,7 @@ export namespace SessionPrompt {
     }
 
     const matchingInvocation = invocations[shellName] ?? invocations[""]
-    const args = matchingInvocation?.args
+    const args = matchingInvocation?.args ?? []
 
     const shellEnv = await cfg.plugin?.trigger(
       "shell.env",
@@ -1796,7 +1796,7 @@ export namespace SessionPrompt {
     const proc = spawn(shell, args, {
       cwd,
       detached: process.platform !== "win32",
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ["ignore", "pipe", "pipe"] as ["ignore", "pipe", "pipe"],
       env: {
         ...process.env,
         ...shellEnv.env,
@@ -2081,7 +2081,7 @@ export namespace SessionPrompt {
     }
 
     const contextMessages = input.history.slice(0, firstRealUserIdx + 1)
-    const firstRealUser = contextMessages[firstRealUserIdx]
+    const firstRealUser = contextMessages[firstRealUserIdx]!
 
     const subtaskParts = firstRealUser.parts.filter((p) => p.type === "subtask") as MessageV2.SubtaskPart[]
     const hasOnlySubtaskParts = subtaskParts.length > 0 && firstRealUser.parts.every((p) => p.type === "subtask")

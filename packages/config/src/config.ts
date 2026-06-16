@@ -21,7 +21,7 @@ import {
 } from "jsonc-parser"
 import { Instance } from "@opendora/runtime/instance"
 import { BunProc } from "@opendora/util/bun"
-import { Installation } from "@opendora/opencode/installation"
+import { Installation } from "@opendora/util/installation"
 import { ConfigMarkdown } from "./markdown"
 import { constants, existsSync } from "fs"
 import { Bus } from "@opendora/runtime/bus"
@@ -1264,7 +1264,7 @@ export namespace Config {
       const data = parsed.data
       if (data.plugin && isFile) {
         for (let i = 0; i < data.plugin.length; i++) {
-          const plugin = data.plugin[i]
+          const plugin = data.plugin[i]!
           try {
             data.plugin[i] = import.meta.resolve!(plugin, options.path)
           } catch (e) {
@@ -1330,7 +1330,7 @@ export namespace Config {
     for (const file of candidates) {
       if (existsSync(file)) return file
     }
-    return candidates[0]
+    return candidates[0]!
   }
 
   function isRecord(value: unknown): value is Record<string, unknown> {
@@ -1363,7 +1363,7 @@ export namespace Config {
         .map((e) => {
           const beforeOffset = text.substring(0, e.offset).split("\n")
           const line = beforeOffset.length
-          const column = beforeOffset[beforeOffset.length - 1].length + 1
+          const column = beforeOffset[beforeOffset.length - 1]!.length + 1
           const problemLine = lines[line - 1]
 
           const error = `${printParseErrorCode(e.error)} at line ${line}, column ${column}`

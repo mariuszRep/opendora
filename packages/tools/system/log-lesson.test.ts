@@ -111,7 +111,7 @@ await run("long message truncated in output only", async () => {
   )
   // Output preview should be truncated to ~80 chars
   const lines = result.output.split("\n")
-  assert(lines[1].length <= 83, `preview too long: ${lines[1].length}`)
+  assert(lines[1]!.length <= 83, `preview too long: ${lines[1]!.length}`)
   // File must contain the full message
   const logPath = path.join(tmpRoot, ".projectflows", "agents", "pandora", "LOG.md")
   const content = await fs.readFile(logPath, "utf8")
