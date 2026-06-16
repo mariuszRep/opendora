@@ -734,6 +734,7 @@ export function WorkflowEditDrawer({
                     required={required}
                     values={parameters}
                     agentArgs={editingNodeData.agentArgs ?? []}
+                    availableRefs={availableRefs}
                     onChange={(updated) => setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: updated } })}
                     onAgentArgsChange={(updated) => setEditingNodeData({ ...editingNodeData, agentArgs: updated })}
                   />

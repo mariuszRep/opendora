@@ -3,7 +3,6 @@
 import * as React from 'react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -14,6 +13,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { ToolSchemaProperty } from '@/lib/opendora'
+import type { RefSuggestion } from '@/lib/workflow-refs'
+import { ExpressionInput } from './expression-input'
+import { PromptInput } from './prompt-input'
 import { Bot } from 'lucide-react'
 
 interface ToolParameterFormProps {
@@ -21,6 +23,7 @@ interface ToolParameterFormProps {
   required: string[]
   values: Record<string, unknown>
   agentArgs: string[]
+  availableRefs?: RefSuggestion[]
   onChange: (values: Record<string, unknown>) => void
   onAgentArgsChange: (agentArgs: string[]) => void
 }
@@ -30,6 +33,7 @@ export function ToolParameterForm({
   required,
   values,
   agentArgs,
+  availableRefs = [],
   onChange,
   onAgentArgsChange,
 }: ToolParameterFormProps) {
@@ -126,18 +130,19 @@ export function ToolParameterForm({
                 placeholder={prop.default !== undefined ? String(prop.default) : undefined}
               />
             ) : name === 'content' || name === 'instructions' || name === 'prompt' || name === 'message' ? (
-              <Textarea
-                className="text-xs font-mono"
-                rows={3}
+              <PromptInput
+                className="min-h-[72px] text-xs"
                 value={currentValue}
-                onChange={(e) => set(name, e.target.value)}
-                placeholder={prop.default !== undefined ? String(prop.default) : undefined}
+                onChange={(v) => set(name, v)}
+                suggestions={availableRefs}
+                placeholder={prop.default !== undefined ? String(prop.default) : 'Type $ to insert a reference…'}
               />
             ) : (
-              <Input
+              <ExpressionInput
                 className="h-8 text-xs font-mono"
                 value={currentValue}
-                onChange={(e) => set(name, e.target.value)}
+                onChange={(v) => set(name, v)}
+                suggestions={availableRefs}
                 placeholder={prop.default !== undefined ? String(prop.default) : undefined}
               />
             )}
