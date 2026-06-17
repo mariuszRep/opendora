@@ -3,6 +3,7 @@ import os from "os"
 import fs from "fs/promises"
 import { getConfig } from "./config.ts"
 import type { MessageV2 } from "./message-v2.ts"
+import { Instance } from "@opendora/runtime/instance"
 
 const log = { warn: (...a: any[]) => console.warn("[instruction]", ...a) }
 
@@ -11,6 +12,22 @@ const FILES = [
   "CLAUDE.md",
   "CONTEXT.md", // deprecated
 ]
+
+function instanceDirectory(): string {
+  try {
+    return Instance.directory
+  } catch {
+    return getConfig().instance?.directory ?? process.cwd()
+  }
+}
+
+function instanceWorktree(): string {
+  try {
+    return Instance.worktree
+  } catch {
+    return getConfig().instance?.worktree ?? process.cwd()
+  }
+}
 
 function globalFiles() {
   const files: string[] = []
@@ -89,9 +106,8 @@ async function globUp(pattern: string, dir: string, root: string): Promise<strin
 }
 
 async function resolveRelative(instruction: string): Promise<string[]> {
-  const cfg = getConfig()
-  const directory = process.cwd()
-  const worktree = cfg.instance?.worktree ?? process.cwd()
+  const directory = instanceDirectory()
+  const worktree = instanceWorktree()
   if (!(process.env.OPENCODE_DISABLE_PROJECT_CONFIG === "1")) {
     return globUp(instruction, directory, worktree).catch(() => [])
   }
@@ -131,8 +147,8 @@ export namespace InstructionPrompt {
   export async function systemPaths() {
     const cfg = getConfig()
     const config = await cfg.config?.get() ?? {}
-    const directory = process.cwd()
-    const worktree = cfg.instance?.worktree ?? process.cwd()
+    const directory = instanceDirectory()
+    const worktree = instanceWorktree()
     const paths = new Set<string>()
 
     if (!(process.env.OPENCODE_DISABLE_PROJECT_CONFIG === "1")) {
