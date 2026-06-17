@@ -320,7 +320,11 @@
         "zod": "catalog:",
       },
       "devDependencies": {
+        "@opendora/config": "workspace:*",
+        "@types/bun": "catalog:",
         "@types/node": "^20.14.10",
+        "@typescript/native-preview": "catalog:",
+        "typescript": "catalog:",
       },
     },
     "packages/provider": {
@@ -350,6 +354,9 @@
         "@gitlab/gitlab-ai-provider": "*",
         "@opencode-ai/plugin": "*",
         "@opendora/auth": "workspace:*",
+        "@opendora/config": "workspace:*",
+        "@opendora/runtime": "workspace:*",
+        "@opendora/tools": "workspace:*",
         "@opendora/util": "workspace:*",
         "@openrouter/ai-sdk-provider": "*",
         "ai": "catalog:",
@@ -357,6 +364,11 @@
         "google-auth-library": "*",
         "remeda": "catalog:",
         "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "@typescript/native-preview": "catalog:",
+        "typescript": "catalog:",
       },
     },
     "packages/runtime": {
@@ -472,7 +484,11 @@
         "zod": "catalog:",
       },
       "devDependencies": {
+        "@opendora/server": "workspace:*",
+        "@opendora/tools": "workspace:*",
+        "@types/bun": "catalog:",
         "@types/node": "catalog:",
+        "@typescript/native-preview": "catalog:",
         "tsx": "^4.19.0",
         "typescript": "catalog:",
       },
@@ -499,6 +515,7 @@
         "zod": "^3.22.4",
       },
       "devDependencies": {
+        "@opendora/storage": "workspace:*",
         "@tsconfig/bun": "catalog:",
         "@types/bun": "catalog:",
         "@types/node": "^20.11.5",
@@ -553,6 +570,7 @@
         "zod-to-json-schema": "3.25.2",
       },
       "devDependencies": {
+        "@opendora/skills": "workspace:*",
         "@tsconfig/bun": "catalog:",
         "@types/bun": "catalog:",
         "@types/turndown": "5.0.5",

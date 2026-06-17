@@ -25,6 +25,7 @@
     "@tsconfig/bun": "catalog:",
     "@types/bun": "catalog:",
     "@types/node": "^20.11.5",
+    "@opendora/storage": "workspace:*",
     "@typescript/native-preview": "catalog:",
     "typescript": "catalog:"
   },

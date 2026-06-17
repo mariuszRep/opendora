@@ -10,7 +10,7 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
-    "opencode#test": {
+    "@opendora/cli#test": {
       "dependsOn": ["^build"],
       "outputs": []
     },

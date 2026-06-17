@@ -79,9 +79,9 @@ describe("Session.listGlobal", () => {
 
     const page = [...Session.listGlobal({ directory: tmp.path, limit: 1 })]
     expect(page.length).toBe(1)
-    expect(page[0].id).toBe(second.id)
+    expect(page[0]!.id).toBe(second.id)
 
-    const next = [...Session.listGlobal({ directory: tmp.path, limit: 10, cursor: page[0].time.updated })]
+    const next = [...Session.listGlobal({ directory: tmp.path, limit: 10, cursor: page[0]!.time.updated })]
     const ids = next.map((session) => session.id)
 
     expect(ids).toContain(first.id)

@@ -185,7 +185,7 @@ function createChatStream(text: string) {
 }
 
 async function loadFixture(providerID: string, modelID: string) {
-  const fixturePath = path.join(import.meta.dir, "../tool/fixtures/models-api.json")
+  const fixturePath = path.join(import.meta.dir, "tool/fixtures/models-api.json")
   const data = await Filesystem.readJson<Record<string, ModelsDev.Provider>>(fixturePath)
   const provider = data[providerID]
   if (!provider) {

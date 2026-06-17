@@ -100,9 +100,9 @@ beforeEach(() => {
 
 // Import modules after mocking
 const { MCP } = await import("../../src/mcp/index")
-const { Bus } = await import("../../src/bus")
+const { Bus } = await import("@opendora/runtime/bus")
 const { McpOAuthCallback } = await import("../../src/mcp/oauth-callback")
-const { Instance } = await import("../../src/project/instance")
+const { Instance } = await import("@opendora/runtime/instance")
 const { tmpdir } = await import("../fixture/fixture")
 
 test("BrowserOpenFailed event is published when open() throws", async () => {
@@ -150,8 +150,8 @@ test("BrowserOpenFailed event is published when open() throws", async () => {
 
       // Verify the BrowserOpenFailed event was published
       expect(events.length).toBe(1)
-      expect(events[0].mcpName).toBe("test-oauth-server")
-      expect(events[0].url).toContain("https://")
+      expect(events[0]!.mcpName).toBe("test-oauth-server")
+      expect(events[0]!.url).toContain("https://")
     },
   })
 })

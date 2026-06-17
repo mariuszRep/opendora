@@ -127,10 +127,10 @@ describe("session.prompt special characters", () => {
         const fileParts = parts.filter((part) => part.type === "file")
 
         expect(fileParts.length).toBe(1)
-        expect(fileParts[0].filename).toBe("file#name.txt")
-        expect(fileParts[0].url).toContain("%23")
+        expect(fileParts[0]!.filename).toBe("file#name.txt")
+        expect(fileParts[0]!.url).toContain("%23")
 
-        const decodedPath = fileURLToPath(fileParts[0].url)
+        const decodedPath = fileURLToPath(fileParts[0]!.url)
         expect(decodedPath).toBe(path.join(tmp.path, "file#name.txt"))
 
         const message = await SessionPrompt.prompt({

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
 import { SessionCompaction } from "../src/compaction"
-import { Token } from "../../src/util/token"
+import { Token } from "@opendora/util/token"
 import { Instance } from "@opendora/runtime/instance"
 import { Log } from "@opendora/util/log"
 import { tmpdir } from "./fixture/fixture"

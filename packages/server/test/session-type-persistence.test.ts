@@ -22,7 +22,7 @@ describe("session type persistence", () => {
         })
 
         expect(createResponse.status).toBe(200)
-        const created = await createResponse.json()
+        const created = await createResponse.json() as { id: string; sessionType: string }
 
         expect(created.sessionType).toBe("scratchpad")
       },
@@ -40,7 +40,7 @@ describe("session type persistence", () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionType: "scope" }),
         })
-        const created = await createResponse.json()
+        const created = await createResponse.json() as { id: string; sessionType: string }
 
         const updateResponse = await app.request(`/session/${created.id}`, {
           method: "PATCH",
@@ -49,13 +49,13 @@ describe("session type persistence", () => {
         })
 
         expect(updateResponse.status).toBe(200)
-        const updated = await updateResponse.json()
+        const updated = await updateResponse.json() as { sessionType: string }
         expect(updated.sessionType).toBe("scratchpad")
 
         const listResponse = await app.request("/session")
         expect(listResponse.status).toBe(200)
-        const sessions = await listResponse.json()
-        const reloaded = sessions.find((session: { id: string }) => session.id === created.id)
+        const sessions = await listResponse.json() as Array<{ id: string; sessionType: string }>
+        const reloaded = sessions.find((session) => session.id === created.id)
 
         expect(reloaded?.sessionType).toBe("scratchpad")
       },

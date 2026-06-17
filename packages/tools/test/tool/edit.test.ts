@@ -74,9 +74,9 @@ describe("tool.edit", () => {
       await Instance.provide({
         directory: tmp.path,
         fn: async () => {
-          const { Bus } = await import("../../src/bus")
-          const { File } = await import("../../src/file")
-          const { FileWatcher } = await import("../../src/file/watcher")
+          const { Bus } = await import("@opendora/runtime/bus")
+          const { File } = await import("../../file")
+          const { FileWatcher } = await import("../../file/watcher")
 
           const events: string[] = []
           const unsubEdited = Bus.subscribe(File.Event.Edited, () => events.push("edited"))
@@ -295,9 +295,9 @@ describe("tool.edit", () => {
         fn: async () => {
           FileTime.read(ctx.sessionID, filepath)
 
-          const { Bus } = await import("../../src/bus")
-          const { File } = await import("../../src/file")
-          const { FileWatcher } = await import("../../src/file/watcher")
+          const { Bus } = await import("@opendora/runtime/bus")
+          const { File } = await import("../../file")
+          const { FileWatcher } = await import("../../file/watcher")
 
           const events: string[] = []
           const unsubEdited = Bus.subscribe(File.Event.Edited, () => events.push("edited"))

@@ -1,7 +1,14 @@
-export { ControlAccountTable } from "./control.sql"
-export { SessionTable, MessageTable, PartTable, TodoTable } from "@opendora/session/sql"
-export { SessionShareTable } from "./share.sql"
-export { ProjectTable } from "./project.sql"
-export { ScheduleTable } from "@opendora/schedule/sql"
-export { PermissionRuleTable } from "./permission-rule.sql"
-export { TokenUsageTable } from "@opendora/session/token-usage-sql"
+// Backwards compatibility - re-export from schema.sql.ts (Timestamps) and schema-tables.sql.ts (tables)
+export { Timestamps } from "./schema.sql"
+export {
+  ControlAccountTable,
+  SessionTable,
+  MessageTable,
+  PartTable,
+  TodoTable,
+  SessionShareTable,
+  ProjectTable,
+  ScheduleTable,
+  PermissionRuleTable,
+  TokenUsageTable,
+} from "./schema-tables.sql"

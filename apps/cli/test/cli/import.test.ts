@@ -28,7 +28,7 @@ test("transforms share data to storage format", () => {
 
   expect(result.info.id).toBe("sess-1")
   expect(result.messages).toHaveLength(1)
-  expect(result.messages[0].parts).toHaveLength(2)
+  expect(result.messages[0]!.parts).toHaveLength(2)
 })
 
 test("returns null for invalid share data", () => {
@@ -143,25 +143,25 @@ describe("transformCsv", () => {
     expect(result.info.id).toBe("session-1")
     expect(result.info.projectID).toBe("project-1")
     expect(result.messages).toHaveLength(2)
-    expect(result.messages[0].info.id).toBe("msg-1")
-    expect(result.messages[0].info.role).toBe("user")
-    expect((result.messages[0].info as any).content).toBe("Hello")
-    expect(result.messages[1].info.id).toBe("msg-2")
-    expect(result.messages[1].info.role).toBe("assistant")
+    expect(result.messages[0]!.info.id).toBe("msg-1")
+    expect(result.messages[0]!.info.role).toBe("user")
+    expect((result.messages[0]!.info as any).content).toBe("Hello")
+    expect(result.messages[1]!.info.id).toBe("msg-2")
+    expect(result.messages[1]!.info.role).toBe("assistant")
   })
 
   test("handles quoted CSV content with commas", () => {
     const csv = 'id,role,content\nmsg-1,user,"Hello, world"'
     const result = transformCsv(csv, "session-1")
 
-    expect((result.messages[0].info as any).content).toBe("Hello, world")
+    expect((result.messages[0]!.info as any).content).toBe("Hello, world")
   })
 
   test("handles empty content", () => {
     const csv = "id,role,content\nmsg-1,user,"
     const result = transformCsv(csv, "session-1")
 
-    expect((result.messages[0].info as any).content).toBe("")
+    expect((result.messages[0]!.info as any).content).toBe("")
   })
 
   test("handles extra columns including part_id and part_type", () => {
@@ -175,16 +175,16 @@ describe("transformCsv", () => {
     const csv = "role,content\nuser,Hello\nassistant,Hi"
     const result = transformCsv(csv, "session-1")
 
-    expect(result.messages[0].info.id).toMatch(/^msg-/)
-    expect(result.messages[1].info.id).toMatch(/^msg-/)
-    expect(result.messages[0].info.id).not.toBe(result.messages[1].info.id)
+    expect(result.messages[0]!.info.id).toMatch(/^msg-/)
+    expect(result.messages[1]!.info.id).toMatch(/^msg-/)
+    expect(result.messages[0]!.info.id).not.toBe(result.messages[1]!.info.id)
   })
 
   test("uses provided session ID in message sessionID field", () => {
     const csv = "id,role,content\nmsg-1,user,Hello"
     const result = transformCsv(csv, "my-session-id", "my-project-id")
 
-    expect(result.messages[0].info.sessionID).toBe("my-session-id")
+    expect(result.messages[0]!.info.sessionID).toBe("my-session-id")
   })
 
   test("sets default title for imported session", () => {

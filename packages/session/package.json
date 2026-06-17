@@ -43,6 +43,9 @@
   "devDependencies": {
     "@types/bun": "catalog:",
     "@types/node": "catalog:",
+    "@opendora/server": "workspace:*",
+    "@opendora/tools": "workspace:*",
+    "@typescript/native-preview": "catalog:",
     "tsx": "^4.19.0",
     "typescript": "catalog:"
   },

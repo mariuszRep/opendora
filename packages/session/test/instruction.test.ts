@@ -44,7 +44,7 @@ describe("InstructionPrompt.resolve", () => {
           "test-message-2",
         )
         expect(results.length).toBe(1)
-        expect(results[0].filepath).toBe(path.join(tmp.path, "subdir", "AGENTS.md"))
+        expect(results[0]!.filepath).toBe(path.join(tmp.path, "subdir", "AGENTS.md"))
       },
     })
   })
