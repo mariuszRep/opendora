@@ -5,7 +5,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test --timeout 30000"
   },
   "exports": {
     "./*": "./src/*.ts"

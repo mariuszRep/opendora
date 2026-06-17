@@ -29,6 +29,7 @@
     "typescript": "catalog:"
   },
   "scripts": {
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "test": "bun test --timeout 30000"
   }
 }

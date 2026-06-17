@@ -46,6 +46,7 @@ export function rowToMeta(row: SessionRow): SessionMeta {
     retention: row.retention ? (JSON.parse(row.retention) as RetentionPolicy) : { onExpire: "archive" },
     sendPolicy: row.send_policy ? (JSON.parse(row.send_policy) as SendPolicy) : undefined,
     agentId: row.agent_id ?? undefined,
+    model: row.model ?? undefined,
     path: row.path ?? undefined,
     readPath: row.read_path ?? undefined,
     cwd: row.cwd ?? undefined,
@@ -73,6 +74,7 @@ function patchToColumns(patch: Partial<SessionMeta>): Partial<typeof SessionTabl
   if (patch.archivedAt !== undefined) cols.time_archived = patch.archivedAt
   if (patch.label !== undefined) cols.title = patch.label
   if (patch.agentId !== undefined) cols.agent_id = patch.agentId
+  if (patch.model !== undefined) cols.model = patch.model ?? null as any
   if (patch.path !== undefined) cols.path = patch.path ?? null as any
   if (patch.readPath !== undefined) cols.read_path = patch.readPath ?? null as any
   if (patch.cwd !== undefined) cols.cwd = patch.cwd ?? null as any

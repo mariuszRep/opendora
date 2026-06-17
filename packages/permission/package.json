@@ -16,7 +16,14 @@
     "hono": "catalog:",
     "zod": "catalog:"
   },
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "test": "bun test --timeout 30000"
+  },
   "devDependencies": {
-    "@types/node": "^20.14.10"
+    "@types/bun": "catalog:",
+    "@types/node": "^20.14.10",
+    "@opendora/config": "workspace:*",
+    "typescript": "catalog:"
   }
 }

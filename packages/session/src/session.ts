@@ -1033,6 +1033,19 @@ export namespace Session {
     },
   )
 
+  export const setModel = fn(
+    z.object({ sessionID: Identifier.schema("session"), model: z.string().nullable() }),
+    async (input) => {
+      await sessionManager.update(input.sessionID, { model: input.model ?? undefined })
+      const db = getConfig().db
+      const row = db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get()
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      const info = fromRow(row)
+      getConfig().bus?.publish(Event.Updated, { info })
+      return info
+    },
+  )
+
   export const incrementTokens = fn(
     z.object({
       sessionID: z.string(),

@@ -36,7 +36,12 @@
     "./token-usage-file":       "./src/token-usage-file.ts",
     "./share-next":             "./src/share-next.ts"
   },
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "test": "bun test --timeout 30000"
+  },
   "devDependencies": {
+    "@types/bun": "catalog:",
     "@types/node": "catalog:",
     "tsx": "^4.19.0",
     "typescript": "catalog:"

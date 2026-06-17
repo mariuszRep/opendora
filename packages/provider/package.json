@@ -5,11 +5,23 @@
   "type": "module",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "test": "bun test --timeout 30000"
+  },
   "exports": {
     "./*": "./src/provider/*.ts"
   },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "typescript": "catalog:"
+  },
   "dependencies": {
     "@opendora/auth": "workspace:*",
+    "@opendora/config": "workspace:*",
+    "@opendora/runtime": "workspace:*",
+    "@opendora/tools": "workspace:*",
     "@opendora/util": "workspace:*",
     "@opencode-ai/plugin": "*",
     "@ai-sdk/amazon-bedrock": "*",

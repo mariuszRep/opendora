@@ -7,6 +7,7 @@
   "private": true,
   "scripts": {
     "typecheck": "tsgo --noEmit",
+    "test": "bun test --timeout 30000",
     "generate-tool-json": "bun scripts/generate-tool-json.ts"
   },
   "exports": {
@@ -48,6 +49,7 @@
     "@types/bun": "catalog:",
     "@typescript/native-preview": "catalog:",
     "@types/turndown": "5.0.5",
+    "@opendora/skills": "workspace:*",
     "typescript": "catalog:"
   },
   "dependencies": {

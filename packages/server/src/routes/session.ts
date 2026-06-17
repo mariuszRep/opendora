@@ -513,6 +513,9 @@ export const SessionRoutes = lazy(() =>
         if (updates.cwd !== undefined) {
           session = await Session.setCwd({ sessionID, cwd: updates.cwd })
         }
+        if (updates.model !== undefined) {
+          session = await Session.setModel({ sessionID, model: updates.model })
+        }
         if (updates.time?.archived !== undefined) {
           session = await Session.setArchived({ sessionID, time: updates.time.archived })
         }

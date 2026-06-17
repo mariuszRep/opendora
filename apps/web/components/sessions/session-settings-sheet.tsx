@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Loader2Icon, Trash2Icon, FolderOpenIcon } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { Loader2Icon, Trash2Icon, FolderOpenIcon, ComponentIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -32,9 +32,22 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import {
+  ModelSelector,
+  ModelSelectorContent,
+  ModelSelectorEmpty,
+  ModelSelectorGroup,
+  ModelSelectorInput,
+  ModelSelectorItem,
+  ModelSelectorList,
+  ModelSelectorLogo,
+  ModelSelectorName,
+  ModelSelectorTrigger,
+} from "@/components/ai-elements/model-selector"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import type { Session, SessionType, RetentionPolicy } from "@/lib/opendora"
 import { opendora } from "@/lib/opendora"
+import { useModelList } from "@/hooks/use-model-list"
 import { FolderPickerDialog } from "./folder-picker-dialog"
 
 interface SessionSettingsSheetProps {
@@ -44,12 +57,17 @@ interface SessionSettingsSheetProps {
 }
 
 export function SessionSettingsSheet({ session, open, onOpenChange }: SessionSettingsSheetProps) {
-  const { agents, setAgentMainSession } = useOpendoraContext()
+  const { agents, setAgentMainSession, modelGroups, fallbackActiveSlots, providerTimeouts } = useOpendoraContext()
+  const { modelList, modelsByProvider } = useModelList()
 
   const [title, setTitle] = useState("")
   const [agentID, setAgentID] = useState("")
   const [sessionType, setSessionType] = useState<SessionType>("scope")
   const [model, setModel] = useState("")
+  const [modelSelectorOpen, setModelSelectorOpen] = useState(false)
+  const [selectedProviderID, setSelectedProviderID] = useState<string | null>(null)
+  const [selectedModelID, setSelectedModelID] = useState<string | null>(null)
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
   const [systemPrompt, setSystemPrompt] = useState("")
   const [autoArchive, setAutoArchive] = useState(false)
   const [autoDelete, setAutoDelete] = useState(false)
@@ -72,6 +90,25 @@ export function SessionSettingsSheet({ session, open, onOpenChange }: SessionSet
       setAgentID(session.agentID ?? "__none__")
       setSessionType(session.sessionType ?? "scope")
       setModel(session.model ?? "")
+      // Parse model into selector state
+      if (session.model) {
+        const parts = session.model.split(":")
+        if (parts.length === 2) {
+          if (parts[0] === "fallback") {
+            setSelectedGroupId(parts[1])
+            setSelectedProviderID(null)
+            setSelectedModelID(null)
+          } else {
+            setSelectedGroupId(null)
+            setSelectedProviderID(parts[0])
+            setSelectedModelID(parts[1])
+          }
+        }
+      } else {
+        setSelectedGroupId(null)
+        setSelectedProviderID(null)
+        setSelectedModelID(null)
+      }
       setSystemPrompt(session.systemPrompt ?? "")
       setPath(session.path ?? "")
       setReadPath(session.readPath ?? "")
@@ -218,8 +255,97 @@ export function SessionSettingsSheet({ session, open, onOpenChange }: SessionSet
 
             <div className="flex flex-col gap-1.5">
               <Label>Model Override</Label>
-              <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="e.g., anthropic/claude-3-5-sonnet-20241022" />
-              <p className="text-[11px] text-muted-foreground">Override the default model for this session.</p>
+              <ModelSelector open={modelSelectorOpen} onOpenChange={setModelSelectorOpen}>
+                <ModelSelectorTrigger className="w-full justify-between">
+                  {(() => {
+                    if (selectedGroupId) {
+                      const group = modelGroups.find((g) => g.id === selectedGroupId)
+                      return group?.name || "Unknown group"
+                    }
+                    if (selectedProviderID && selectedModelID) {
+                      const m = modelsByProvider[selectedProviderID]?.find((m) => m.modelID === selectedModelID)
+                      return m?.name || `${selectedProviderID}/${selectedModelID}`
+                    }
+                    const agent = agents.find((a) => (a as any)._id === agentID || a.id === agentID)
+                    if (agent?.model) {
+                      if (agent.model.providerID === "fallback") {
+                        const group = modelGroups.find((g) => g.id === agent.model?.modelID)
+                        return `Default (${group?.name || agent.model.modelID})`
+                      }
+                      const m = modelsByProvider[agent.model.providerID]?.find((m) => m.modelID === agent.model?.modelID)
+                      return `Default (${m?.name || `${agent.model.providerID}/${agent.model.modelID}`})`
+                    }
+                    return "Default (system)"
+                  })()}
+                </ModelSelectorTrigger>
+                <ModelSelectorContent>
+                  <ModelSelectorInput placeholder="Search models..." />
+                  <ModelSelectorList>
+                    <ModelSelectorEmpty>No models found</ModelSelectorEmpty>
+                    {/* Fallback Groups */}
+                    {modelGroups.map((g) => {
+                      const active = selectedGroupId === g.id
+                      return (
+                        <ModelSelectorItem
+                          key={`group:${g.id}`}
+                          value={`group:${g.name} ${g.id}`}
+                          onSelect={() => {
+                            setSelectedGroupId(g.id)
+                            setSelectedProviderID(null)
+                            setSelectedModelID(null)
+                            setModel(`fallback:${g.id}`)
+                            setModelSelectorOpen(false)
+                          }}
+                        >
+                          <ComponentIcon className="size-3 shrink-0" />
+                          <ModelSelectorName>{g.name}</ModelSelectorName>
+                        </ModelSelectorItem>
+                      )
+                    })}
+                    {/* Provider Models */}
+                    {Object.entries(modelsByProvider).map(([providerID, models]) => (
+                      <ModelSelectorGroup key={providerID} heading={providerID}>
+                        {models.map((m) => (
+                          <ModelSelectorItem
+                            key={`${m.providerID}:${m.modelID}`}
+                            onSelect={() => {
+                              setSelectedProviderID(m.providerID)
+                              setSelectedModelID(m.modelID)
+                              setSelectedGroupId(null)
+                              setModel(`${m.providerID}:${m.modelID}`)
+                              setModelSelectorOpen(false)
+                            }}
+                            value={`${m.providerID}:${m.modelID}`}
+                          >
+                            <ModelSelectorLogo provider={m.providerID} />
+                            <ModelSelectorName>{m.name}</ModelSelectorName>
+                          </ModelSelectorItem>
+                        ))}
+                      </ModelSelectorGroup>
+                    ))}
+                  </ModelSelectorList>
+                </ModelSelectorContent>
+              </ModelSelector>
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] text-muted-foreground">
+                  Override the default model for this session.
+                </p>
+                {model && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto py-0 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      setModel("")
+                      setSelectedGroupId(null)
+                      setSelectedProviderID(null)
+                      setSelectedModelID(null)
+                    }}
+                  >
+                    Clear override
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="flex flex-col gap-1.5">

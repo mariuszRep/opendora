@@ -84,6 +84,8 @@ export const SessionTable = sqliteTable(
     vendor: text().$type<"claude" | "codex" | "antigravity" | "windsurf">(),
     native_id: text(),
     vendor_raw_header: text({ mode: "json" }).$type<unknown>(),
+    // Model override for this session (providerID:modelID or fallback:groupID)
+    model: text(),
   },
   (table) => [
     index("session_project_idx").on(table.project_id),
