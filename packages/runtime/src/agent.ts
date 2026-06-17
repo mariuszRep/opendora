@@ -419,6 +419,33 @@ export namespace Agent {
   export async function update(id: string, patch: Partial<AgentStorage.Config>, persona?: string, injection?: string) {
     const result = await AgentCore.update(agentBaseDir(), id, patch, persona, injection)
     invalidateEntries()
+    // Sync skill permission rules when skills array is explicitly patched so
+    // deriveEnabledSkills reflects the new list on the next agent load without
+    // waiting for a re-seed (which only runs when no rules exist yet).
+    if (patch.skills !== undefined) {
+      const desired = new Set(patch.skills)
+      const existing = PermissionNext.listRules("agent", id).filter((r) => r.resource === "skill")
+      // Remove rules for skills no longer in the list
+      for (const rule of existing) {
+        if (!desired.has(rule.pattern)) {
+          PermissionNext.removeRule(rule.id, "agent", id)
+        }
+      }
+      // Add allow rules for newly added skills
+      const existingPatterns = new Set(existing.map((r) => r.pattern))
+      for (const name of desired) {
+        if (!existingPatterns.has(name)) {
+          PermissionNext.addRule({
+            scope: "agent",
+            scope_id: id,
+            resource: "skill",
+            access: "execute",
+            pattern: name,
+            action: "allow",
+          })
+        }
+      }
+    }
     return result
   }
 

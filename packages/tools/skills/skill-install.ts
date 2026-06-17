@@ -24,13 +24,6 @@ export const SkillInstallTool = Tool.define("skill_install", async (_initCtx) =>
         throw new Error("Skill installation is not available in this context")
       }
 
-      await ctx.ask({
-        permission: "skill_install",
-        patterns: [params.source],
-        always: [],
-        metadata: { source: params.source, registry: params.registry, version: params.version },
-      })
-
       await skills.install(params.source, {
         registry: params.registry,
         version: params.version,

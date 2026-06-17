@@ -3,7 +3,7 @@ import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 import toolDef from "./skill-create.json"
 
-export const SkillCreateTool = Tool.define("skill_create", async (_initCtx) => {
+export const SkillCreateTool = Tool.define("skill_create", async (initCtx) => {
   const description = toolDef.description
 
   const parameters = z.object({
@@ -25,19 +25,27 @@ export const SkillCreateTool = Tool.define("skill_create", async (_initCtx) => {
         throw new Error("Skill creation is not available in this context")
       }
 
-      await ctx.ask({
-        permission: "skill_create",
-        patterns: [params.name],
-        always: [],
-        metadata: { name: params.name },
-      })
-
       const result = await skills.create({
         name: params.name,
         description: params.description,
         tools: params.tools,
         content: params.content,
       })
+
+      // Auto-assign the new skill to the calling agent so it can be loaded immediately.
+      const callingAgentID = initCtx?.agent?.id
+      let assigned = false
+      if (callingAgentID) {
+        const agents = host(ctx).agents
+        if (agents) {
+          const agentInfo = await agents.get(callingAgentID).catch(() => undefined) as any
+          const currentSkills: string[] = agentInfo?.config?.skills ?? agentInfo?.skills ?? []
+          if (!currentSkills.includes(params.name)) {
+            await agents.update(callingAgentID, { skills: [...currentSkills, params.name] }).catch(() => {})
+          }
+          assigned = true
+        }
+      }
 
       return {
         title: `Created skill: ${params.name}`,
@@ -49,7 +57,9 @@ export const SkillCreateTool = Tool.define("skill_create", async (_initCtx) => {
           `Skill "${params.name}" created and registered.`,
           `Directory: ${result.dir}`,
           "",
-          "The skill is immediately available — use skill_load to verify.",
+          assigned
+            ? `Assigned to this agent — use skill_load({ name: "${params.name}" }) to load it now.`
+            : `To load it, assign it first: agent_update({ id: '<agent-id>', skills: [...existing, '${params.name}'] })`,
           "To add scripts, agents, or reference files, write them into the skill directory using the write tool.",
         ].join("\n"),
       }

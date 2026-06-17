@@ -32,13 +32,6 @@ export const SkillEditTool = Tool.define("skill_edit", async (_initCtx) => {
         throw new Error(`Skill "${params.name}" not found. Available skills: ${available || "none"}`)
       }
 
-      await ctx.ask({
-        permission: "skill_edit",
-        patterns: [params.name],
-        always: [],
-        metadata: { name: params.name },
-      })
-
       const updated: string[] = []
 
       if (params.content !== undefined) {

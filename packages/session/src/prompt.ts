@@ -873,6 +873,8 @@ export namespace SessionPrompt {
           update: (name: string) => cfg.skill?.update?.(name),
           uninstall: (name: string) => cfg.skill?.uninstall?.(name),
           list: () => cfg.skill?.list?.(),
+          save: (location: string, content: string) => cfg.skill?.save?.(location, content),
+          saveConfig: (name: string, patch: { tools?: string[] }) => cfg.skill?.saveConfig?.(name, patch),
         },
         agents: {
           list: () => cfg.agent?.list?.(),
