@@ -15,10 +15,19 @@ export namespace Agent {
   export type Config = AgentStorage.Config
   export type Entry = AgentStorage.Entry
 
+  // initialize() does a first-run check plus a template migration scan (filesystem
+  // stat/read per template). It's idempotent, so once it has run for a given baseDir
+  // in this process there's nothing left to do — without this guard, every single
+  // Agent.get/list call (i.e. every chat message, often more than once) re-paid that
+  // disk I/O for no reason.
+  const initialized = new Set<string>()
+
   /**
    * Initialize agents - seed from templates on first run
    */
   export async function initialize(baseDir: string): Promise<void> {
+    if (initialized.has(baseDir)) return
+    initialized.add(baseDir)
     if (await AgentStorage.isFirstRun(baseDir)) {
       await AgentStorage.ensureRoot(baseDir)
       // Seed all templates

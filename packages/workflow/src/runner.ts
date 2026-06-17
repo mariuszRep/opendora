@@ -276,6 +276,10 @@ async function runSubGraph({
     const nodeModel = (d.model as NodeModel | undefined) ?? carriedModel
     const nodeLabel = (nd.label as string | undefined) ?? d.nodeType as string ?? currentId
 
+    // Set when a Tool/RunWorkflow node creates its "running" tool part below, so the
+    // catch block can finalize it to "error" instead of leaving it stuck at "running".
+    let pendingToolPart: { id: string; messageID: string; tool: string; input: unknown } | undefined
+
     try {
 
     const currentDir = await Session.effectiveDefaultPath(sessionId)
@@ -415,6 +419,7 @@ async function runSubGraph({
           time: { start: toolStartTime },
         },
       } as any)
+      pendingToolPart = { id: toolPartId, messageID: toolMsgId, tool: actionId, input: resolvedArgs }
 
       const session = await Session.get(sessionId)
       const { output, metadata: toolResultMetadata } = await _toolExecutor(actionId, resolvedArgs, agentArgs, {
@@ -692,6 +697,22 @@ async function runSubGraph({
     steps.push({ label: nodeLabel, passed: true })
     } catch (err) {
       steps.push({ label: nodeLabel, passed: false })
+      if (pendingToolPart) {
+        await Session.updatePart({
+          id: pendingToolPart.id,
+          sessionID: sessionId,
+          messageID: pendingToolPart.messageID,
+          type: "tool",
+          callID: pendingToolPart.id,
+          tool: pendingToolPart.tool,
+          state: {
+            status: "error",
+            input: pendingToolPart.input,
+            error: err instanceof Error ? err.message : String(err),
+            time: { start: Date.now(), end: Date.now() },
+          },
+        } as any).catch(() => {})
+      }
       throw err
     }
   }

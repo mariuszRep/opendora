@@ -476,7 +476,8 @@ export type Event =
   | { type: "server.connected"; properties: Record<string, never> }
   | { type: "server.heartbeat"; properties: Record<string, never> }
   | { type: "message.updated"; properties: { info: Message } }
-  | { type: "message.part.updated"; properties: { part: Part; delta?: string } }
+  | { type: "message.part.updated"; properties: { part: Part } }
+  | { type: "message.part.delta"; properties: { sessionID: string; messageID: string; partID: string; field: string; delta: string } }
   | { type: "question.asked"; properties: QuestionRequest }
   | { type: "question.replied"; properties: { sessionID: string; requestID: string; answers: QuestionAnswer[] } }
   | { type: "question.rejected"; properties: { sessionID: string; requestID: string } }

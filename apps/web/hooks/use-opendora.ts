@@ -640,20 +640,40 @@ export function useOpendora(opts?: {
           break
         }
         case "message.part.updated": {
-          const { part, delta } = (event as { type: string; properties: { part: Part; delta?: string } }).properties
+          const { part } = (event as { type: string; properties: { part: Part } }).properties
           if (part.sessionID !== selectedSessionRef.current?.id) break
-          setMessages((prev) =>
-            prev.map((m) => {
-              if (m.info.id !== part.messageID) return m
-              const idx = m.parts.findIndex((p) => p.id === part.id)
-              if (idx === -1) return { ...m, parts: [...m.parts, part] }
-              if (delta && part.type === "text") {
-                const existing = m.parts[idx] as { type: "text"; text: string;[k: string]: unknown }
-                return { ...m, parts: m.parts.map((p, i) => (i === idx ? { ...part, text: existing.text + delta } : p)) }
-              }
-              return { ...m, parts: m.parts.map((p, i) => (i === idx ? part : p)) }
-            }),
-          )
+          setMessages((prev) => {
+            const msgIdx = prev.findIndex((m) => m.info.id === part.messageID)
+            if (msgIdx === -1) return prev
+            const m = prev[msgIdx]
+            const idx = m.parts.findIndex((p) => p.id === part.id)
+            const newParts = idx === -1 ? [...m.parts, part] : m.parts.map((p, i) => (i === idx ? part : p))
+            const next = prev.slice()
+            next[msgIdx] = { ...m, parts: newParts }
+            return next
+          })
+          break
+        }
+        case "message.part.delta": {
+          const { sessionID, messageID, partID, field, delta } = (event as {
+            type: string
+            properties: { sessionID: string; messageID: string; partID: string; field: string; delta: string }
+          }).properties
+          if (sessionID !== selectedSessionRef.current?.id) break
+          setMessages((prev) => {
+            const msgIdx = prev.findIndex((m) => m.info.id === messageID)
+            if (msgIdx === -1) return prev
+            const m = prev[msgIdx]
+            const idx = m.parts.findIndex((p) => p.id === partID)
+            if (idx === -1) return prev
+            const part = m.parts[idx] as Part & Record<string, unknown>
+            const existing = typeof part[field] === "string" ? (part[field] as string) : ""
+            const newPart = { ...part, [field]: existing + delta }
+            const newParts = m.parts.map((p, i) => (i === idx ? newPart : p))
+            const next = prev.slice()
+            next[msgIdx] = { ...m, parts: newParts }
+            return next
+          })
           break
         }
         case "session.fallback.switched": {

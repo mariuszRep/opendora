@@ -192,11 +192,34 @@ export namespace Agent {
     return Flag.OPENCODE_CONFIG_DIR ? path.dirname(Flag.OPENCODE_CONFIG_DIR) : Instance.directory
   }
 
+  // Agent definitions are file-based (one agent.json + PERSONA.md read per agent).
+  // get/getByIdOrName/list/defaultAgent were each independently re-reading every
+  // agent off disk — every chat message resolves the agent at least twice, so
+  // this was paying that I/O multiple times per message. Cache the raw entries
+  // per baseDir and invalidate on any write (create/update/remove/setPersona/
+  // setInjection/resetToTemplate are the only writers, all in this file).
+  const entriesCache = new Map<string, Promise<AgentCore.Entry[]>>()
+
+  function getEntries(): Promise<AgentCore.Entry[]> {
+    const baseDir = agentBaseDir()
+    let cached = entriesCache.get(baseDir)
+    if (!cached) {
+      cached = AgentCore.list(baseDir)
+      entriesCache.set(baseDir, cached)
+    }
+    return cached
+  }
+
+  function invalidateEntries() {
+    entriesCache.clear()
+  }
+
   /**
    * Get a single agent by ID
    */
   export async function get(agent: string): Promise<Info | undefined> {
-    const entry = await AgentCore.get(agentBaseDir(), agent)
+    const entries = await getEntries()
+    const entry = entries.find((e) => e.id === agent)
     if (!entry) return undefined
     return entryToInfo(entry)
   }
@@ -206,13 +229,8 @@ export namespace Agent {
    * Tries ID first, then falls back to searching by name
    */
   export async function getByIdOrName(agentIdOrName: string): Promise<Info | undefined> {
-    // Try by ID first
-    let entry = await AgentCore.get(agentBaseDir(), agentIdOrName)
-    if (entry) return entryToInfo(entry)
-
-    // Fallback: search by name for legacy data
-    const entries = await AgentCore.list(agentBaseDir())
-    entry = entries.find((e) => e.config.name === agentIdOrName)
+    const entries = await getEntries()
+    const entry = entries.find((e) => e.id === agentIdOrName) ?? entries.find((e) => e.config.name === agentIdOrName)
     if (!entry) return undefined
     return entryToInfo(entry)
   }
@@ -222,7 +240,7 @@ export namespace Agent {
    */
   export async function list(): Promise<Info[]> {
     const cfg = await Config.get()
-    const entries = await AgentCore.list(agentBaseDir())
+    const entries = await getEntries()
     const infos = await Promise.all(entries.map(entryToInfo))
 
     return pipe(
@@ -236,7 +254,7 @@ export namespace Agent {
    */
   export async function defaultAgent(): Promise<string> {
     const cfg = await Config.get()
-    const entries = await AgentCore.list(agentBaseDir())
+    const entries = await getEntries()
 
     if (cfg.default_agent) {
       const agent = entries.find((e) => e.config.name === cfg.default_agent)
@@ -258,15 +276,21 @@ export namespace Agent {
   // ── File-based CRUD (delegates to @opendora/agent) ───────────────────────
 
   export async function create(id: string, config: AgentStorage.Config, persona = "", injection = "") {
-    return AgentCore.create(agentBaseDir(), id, config, persona, injection)
+    const result = await AgentCore.create(agentBaseDir(), id, config, persona, injection)
+    invalidateEntries()
+    return result
   }
 
   export async function update(id: string, patch: Partial<AgentStorage.Config>, persona?: string, injection?: string) {
-    return AgentCore.update(agentBaseDir(), id, patch, persona, injection)
+    const result = await AgentCore.update(agentBaseDir(), id, patch, persona, injection)
+    invalidateEntries()
+    return result
   }
 
   export async function remove(id: string) {
-    return AgentCore.remove(agentBaseDir(), id)
+    const result = await AgentCore.remove(agentBaseDir(), id)
+    invalidateEntries()
+    return result
   }
 
   export async function getPersona(id: string) {
@@ -274,7 +298,9 @@ export namespace Agent {
   }
 
   export async function setPersona(id: string, text: string) {
-    return AgentCore.setPersona(agentBaseDir(), id, text)
+    const result = await AgentCore.setPersona(agentBaseDir(), id, text)
+    invalidateEntries()
+    return result
   }
 
   export async function getInjection(id: string) {
@@ -282,11 +308,15 @@ export namespace Agent {
   }
 
   export async function setInjection(id: string, text: string) {
-    return AgentCore.setInjection(agentBaseDir(), id, text)
+    const result = await AgentCore.setInjection(agentBaseDir(), id, text)
+    invalidateEntries()
+    return result
   }
 
   export async function resetToTemplate(id: string) {
-    return AgentCore.resetToTemplate(agentBaseDir(), id)
+    const result = await AgentCore.resetToTemplate(agentBaseDir(), id)
+    invalidateEntries()
+    return result
   }
 
   // ── AI generation ─────────────────────────────────────────────────────────

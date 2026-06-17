@@ -625,17 +625,46 @@ export namespace Server {
                   properties: {},
                 }),
               })
+
+              // Coalesce consecutive message.part.delta events for the same part into
+              // one SSE write every FLUSH_MS, so a fast-streaming response doesn't send
+              // one network frame per token. Other event types are written immediately,
+              // after flushing any pending delta first to preserve ordering.
+              const FLUSH_MS = 33
+              let pending: { event: any; timer: ReturnType<typeof setTimeout> } | null = null
+
+              function flushPending() {
+                if (!pending) return
+                clearTimeout(pending.timer)
+                const ev = pending.event
+                pending = null
+                stream.writeSSE({ data: JSON.stringify(ev) })
+              }
+
               const unsub = Bus.subscribeAll(async (event) => {
-                await stream.writeSSE({
-                  data: JSON.stringify(event),
-                })
-                if (event.type === Bus.InstanceDisposed.type) {
-                  stream.close()
+                if (event.type !== "message.part.delta") {
+                  flushPending()
+                  await stream.writeSSE({
+                    data: JSON.stringify(event),
+                  })
+                  if (event.type === Bus.InstanceDisposed.type) {
+                    stream.close()
+                  }
+                  return
                 }
+                if (pending && pending.event.properties.partID === event.properties.partID) {
+                  clearTimeout(pending.timer)
+                  pending.event.properties.delta += event.properties.delta
+                } else {
+                  flushPending()
+                  pending = { event, timer: null as any }
+                }
+                pending.timer = setTimeout(flushPending, FLUSH_MS)
               })
 
               // Send heartbeat every 10s to prevent stalled proxy streams.
               const heartbeat = setInterval(() => {
+                flushPending()
                 stream.writeSSE({
                   data: JSON.stringify({
                     type: "server.heartbeat",
@@ -646,6 +675,7 @@ export namespace Server {
 
               await new Promise<void>((resolve) => {
                 stream.onAbort(() => {
+                  flushPending()
                   clearInterval(heartbeat)
                   unsub()
                   resolve()
