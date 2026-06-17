@@ -10,7 +10,8 @@ import { list as listPlugins } from "./plugin"
 import { ModelsDev } from "./models"
 import { NamedError } from "@opendora/util/error"
 import { Auth } from "@opendora/auth"
-import { state as instanceState } from "@opendora/util/instance"
+import { Instance } from "@opendora/runtime/instance"
+import { Env } from "@opendora/runtime/env"
 import { Flag } from "@opendora/util/flag"
 import { iife } from "@opendora/util/iife"
 import { Global } from "@opendora/util/global"
@@ -119,7 +120,7 @@ export namespace Provider {
 
   async function loadOpencodeProvider(input: Info) {
     const auth = await Auth.get(input.id)
-    const env = { ...process.env }
+    const env = Env.all()
     const envKey = input.env.map((item) => env[item]).find(Boolean)
     const config = await getConfig()
     const configKey = config.provider?.[input.id]?.options?.apiKey
@@ -238,32 +239,30 @@ export namespace Provider {
 
       // Region precedence: 1) config file, 2) env var, 3) default
       const configRegion = providerConfig?.options?.region
-      const envRegion = process.env["AWS_REGION"]
+      const envRegion = Env.get("AWS_REGION")
       const defaultRegion = configRegion ?? envRegion ?? "us-east-1"
 
       // Profile: config file takes precedence over env var
       const configProfile = providerConfig?.options?.profile
-      const envProfile = process.env["AWS_PROFILE"]
+      const envProfile = Env.get("AWS_PROFILE")
       const profile = configProfile ?? envProfile
 
-      const awsAccessKeyId = process.env["AWS_ACCESS_KEY_ID"]
+      const awsAccessKeyId = Env.get("AWS_ACCESS_KEY_ID")
 
-      // TODO: Using process.env directly because Env.set only updates a process.env shallow copy,
-      // until the scope of the Env API is clarified (test only or runtime?)
       const awsBearerToken = iife(() => {
-        const envToken = process.env.AWS_BEARER_TOKEN_BEDROCK
+        const envToken = Env.get("AWS_BEARER_TOKEN_BEDROCK")
         if (envToken) return envToken
         if (auth?.type === "api") {
-          process.env.AWS_BEARER_TOKEN_BEDROCK = auth.key
+          Env.set("AWS_BEARER_TOKEN_BEDROCK", auth.key)
           return auth.key
         }
         return undefined
       })
 
-      const awsWebIdentityTokenFile = process.env["AWS_WEB_IDENTITY_TOKEN_FILE"]
+      const awsWebIdentityTokenFile = Env.get("AWS_WEB_IDENTITY_TOKEN_FILE")
 
       const containerCreds = Boolean(
-        process.env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI || process.env.AWS_CONTAINER_CREDENTIALS_FULL_URI,
+        Env.get("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI") || Env.get("AWS_CONTAINER_CREDENTIALS_FULL_URI"),
       )
 
       if (!profile && !awsAccessKeyId && !awsBearerToken && !awsWebIdentityTokenFile && !containerCreds)
@@ -782,7 +781,7 @@ export namespace Provider {
     }
   }
 
-  const state = instanceState(async () => {
+  const state = Instance.state(async () => {
     using _ = log.time("state")
     const config = await getConfig()
     const modelsDev = await ModelsDev.get()
@@ -958,7 +957,7 @@ export namespace Provider {
     }
 
     // load env
-    const env = { ...process.env }
+    const env = Env.all()
     for (const [providerID, provider] of Object.entries(database)) {
       if (disabled.has(providerID)) continue
       const apiKey = provider.env.map((item) => env[item]).find(Boolean)
@@ -1264,7 +1263,6 @@ export namespace Provider {
       const availableModels = Object.keys(provider.models)
       const matches = fuzzysort.go(modelID, availableModels, { limit: 3, threshold: -10000 })
       const suggestions = matches.map((m) => m.target)
-      if (matches.length > 0) return provider.models[matches[0]!.target]!
       throw new ModelNotFoundError({ providerID, modelID, suggestions })
     }
     return info

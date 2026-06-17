@@ -61,3 +61,20 @@ const { Log } = await import("@opendora/util/log")
 process.env["OPENCODE_MODELS_PATH"] = path.join(import.meta.dir, "tool", "fixtures", "models-api.json")
 
 Log.init({ print: false, dev: true, level: "DEBUG" })
+
+// Configure session core with minimal dependencies for tests
+const { configure } = await import("@opendora/session")
+const { Database } = await import("@opendora/storage/db")
+const { Config } = await import("@opendora/config/config")
+configure({
+  get db() {
+    return Database.Client()
+  },
+  dataPath: path.join(dir, "data"),
+  config: {
+    get: () => Config.get(),
+    async directories() {
+      return Config.directories()
+    },
+  },
+})

@@ -118,27 +118,28 @@ export namespace SessionRetry {
     if (error) {
       const headers = error.data.responseHeaders
 
-      // 1. Standard HTTP retry-after headers
+      // 1. Standard HTTP retry-after headers — returned as-is (no clamping).
+      //    retryable() already treats delays > MAX_RETRYABLE_DELAY_MS as terminal.
       if (headers) {
         const retryAfterMs = headers["retry-after-ms"]
         if (retryAfterMs) {
           const parsedMs = Number.parseFloat(retryAfterMs)
-          if (!Number.isNaN(parsedMs)) return clampDelay(parsedMs)
+          if (!Number.isNaN(parsedMs)) return parsedMs
         }
 
         const retryAfter = headers["retry-after"]
         if (retryAfter) {
           const parsedSeconds = Number.parseFloat(retryAfter)
-          if (!Number.isNaN(parsedSeconds)) return clampDelay(Math.ceil(parsedSeconds * 1000))
+          if (!Number.isNaN(parsedSeconds)) return Math.ceil(parsedSeconds * 1000)
           const parsed = Date.parse(retryAfter) - Date.now()
-          if (!Number.isNaN(parsed) && parsed > 0) return clampDelay(Math.ceil(parsed))
+          if (!Number.isNaN(parsed) && parsed > 0) return Math.ceil(parsed)
         }
 
         // Codex-specific: x-codex-primary-reset-after-seconds
         const codexResetAfter = headers["x-codex-primary-reset-after-seconds"]
         if (codexResetAfter) {
           const seconds = Number.parseFloat(codexResetAfter)
-          if (!Number.isNaN(seconds) && seconds > 0) return clampDelay(Math.ceil(seconds * 1000))
+          if (!Number.isNaN(seconds) && seconds > 0) return Math.ceil(seconds * 1000)
         }
 
         // Codex-specific: x-codex-primary-reset-at (Unix timestamp in seconds)
@@ -146,7 +147,7 @@ export namespace SessionRetry {
         if (codexResetAt) {
           const ts = Number.parseFloat(codexResetAt) * 1000
           const delayMs = ts - Date.now()
-          if (!Number.isNaN(ts) && delayMs > 0) return clampDelay(Math.ceil(delayMs))
+          if (!Number.isNaN(ts) && delayMs > 0) return Math.ceil(delayMs)
         }
       }
 

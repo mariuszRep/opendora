@@ -75,7 +75,7 @@ test("GitLab Duo: loads with OAuth token from auth.json", async () => {
     },
   })
 
-  const authPath = path.join(Global.Path.data, "auth.json")
+  const authPath = path.join(Global.Path.providers, "auth.json")
   await Bun.write(
     authPath,
     JSON.stringify({
@@ -112,7 +112,7 @@ test("GitLab Duo: loads with Personal Access Token from auth.json", async () => 
     },
   })
 
-  const authPath2 = path.join(Global.Path.data, "auth.json")
+  const authPath2 = path.join(Global.Path.providers, "auth.json")
   await Bun.write(
     authPath2,
     JSON.stringify({

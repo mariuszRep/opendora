@@ -66,7 +66,7 @@ test("explore agent denies edit and write", async () => {
     fn: async () => {
       const explore = await Agent.get("explore")
       expect(explore).toBeDefined()
-      expect(explore?.mode).toBe("subagent")
+      expect(explore?.mode).toBe("worker")
       expect(evalPerm(explore, "edit")).toBe("deny")
       expect(evalPerm(explore, "write")).toBe("deny")
       expect(evalPerm(explore, "todoread")).toBe("deny")
@@ -96,7 +96,7 @@ test("general agent denies todo tools", async () => {
     fn: async () => {
       const general = await Agent.get("general")
       expect(general).toBeDefined()
-      expect(general?.mode).toBe("subagent")
+      expect(general?.mode).toBe("worker")
       expect(general?.hidden).toBeUndefined()
       expect(evalPerm(general, "todoread")).toBe("deny")
       expect(evalPerm(general, "todowrite")).toBe("deny")
@@ -619,7 +619,7 @@ test("defaultAgent throws when default_agent points to subagent", async () => {
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
-      await expect(Agent.defaultAgent()).rejects.toThrow('default agent "explore" is a subagent')
+      await expect(Agent.defaultAgent()).rejects.toThrow('default agent "explore" is not a primary agent')
     },
   })
 })

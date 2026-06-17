@@ -68,6 +68,7 @@ export const pmTemplate: AgentTemplate = {
     name: "pm",
     description: "Project Manager agent specialized in orchestrating end-to-end feature implementation through coordinated sub-sessions",
     mode: "primary",
+    hidden: true,
     skills: ["pm-feature-workflow"],
     tools: [
       "bash",

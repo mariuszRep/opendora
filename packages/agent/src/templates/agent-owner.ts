@@ -66,6 +66,7 @@ export const agentOwnerTemplate: AgentTemplate = {
     name: "Minds",
     description: "Agent owner — the go-to authority for all agent-related decisions: registry, creation, delegation advice, and improvement",
     mode: "primary",
+    hidden: true,
     temperature: 0.7,
     steps: 80,
     color: "cyan",

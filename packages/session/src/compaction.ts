@@ -50,11 +50,10 @@ export namespace SessionCompaction {
     const configLimit = configVal?.compaction?.modelLimits?.[modelKey]?.context
     const context = configLimit ?? rawContext
 
-    // When the model's context window is unknown (0 or missing), use a conservative
-    // 100K fallback rather than disabling the check entirely. This ensures proactive
-    // compaction still fires for models whose limits aren't in the database.
-    const FALLBACK_CONTEXT = 100_000
-    const effectiveContext = (!context || context === 0) ? FALLBACK_CONTEXT : context
+    // When the model's context window is unknown (0 or missing), we can't determine
+    // overflow — return false rather than using a fallback that may trigger incorrectly.
+    if (!context || context === 0) return false
+    const effectiveContext = context
 
     const count =
       input.tokens.total ||

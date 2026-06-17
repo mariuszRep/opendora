@@ -67,14 +67,13 @@ export namespace Agent {
   export type Info = z.infer<typeof Info>
 
   /**
-   * Build default permissions for agents
+   * Build base default permissions (no user config — callers apply that separately).
    */
-  async function buildDefaultPermissions(): Promise<PermissionNext.LegacyRuleset> {
-    const cfg = await Config.get()
+  async function buildBaseDefaults(): Promise<PermissionNext.LegacyRuleset> {
     const skillDirs = await Skill.dirs()
     const whitelistedDirs = [TRUNCATE_GLOB, ...skillDirs.map((dir) => path.join(dir, "*"))]
 
-    const defaults = PermissionNext.fromConfig({
+    return PermissionNext.fromConfig({
       "*": "ask",
       doom_loop: "ask",
       external_directory: {
@@ -94,9 +93,35 @@ export namespace Agent {
       agent_list: "ask",
       agent_get: "ask",
     })
+  }
 
-    const user = PermissionNext.fromConfig(cfg.permission ?? {})
-    return PermissionNext.merge(defaults, user)
+  /**
+   * Re-apply the TRUNCATE_GLOB + skill-dir whitelist after all user/agent config
+   * to protect those dirs from simple wildcard denials.
+   * Only skips dirs that are EXPLICITLY denied (not just caught by "*": "deny").
+   */
+  async function reapplyWhitelist(
+    permission: PermissionNext.LegacyRuleset,
+    globalPermCfg: Record<string, unknown> | undefined,
+    agentPermCfg: Record<string, unknown> | undefined,
+  ): Promise<PermissionNext.LegacyRuleset> {
+    const skillDirs = await Skill.dirs()
+    const whitelistedDirs = [TRUNCATE_GLOB, ...skillDirs.map((dir) => path.join(dir, "*"))]
+    const globalExtDir = globalPermCfg?.external_directory
+    const agentExtDir = agentPermCfg?.external_directory
+    const protectedDirs = whitelistedDirs.filter((dir) => {
+      const explicitlyDenied =
+        (typeof globalExtDir === "object" && globalExtDir !== null && (globalExtDir as Record<string, string>)[dir] === "deny") ||
+        (typeof agentExtDir === "object" && agentExtDir !== null && (agentExtDir as Record<string, string>)[dir] === "deny")
+      return !explicitlyDenied
+    })
+    if (protectedDirs.length === 0) return permission
+    return PermissionNext.merge(
+      permission,
+      PermissionNext.fromConfig({
+        external_directory: Object.fromEntries(protectedDirs.map((dir) => [dir, "allow"])),
+      }),
+    )
   }
 
   /**
@@ -139,49 +164,126 @@ export namespace Agent {
     }
   }
 
+  function parseModelStr(m: string | undefined): { providerID: string; modelID: string } | undefined {
+    if (!m) return undefined
+    const idx = m.indexOf("/")
+    if (idx < 0) return undefined
+    return { providerID: m.slice(0, idx), modelID: m.slice(idx + 1) }
+  }
+
+  async function configToInfo(agentId: string, agentCfg: any): Promise<Info> {
+    const cfg = await Config.get()
+    let permission = await buildBaseDefaults()
+    // User global config after base defaults
+    permission = PermissionNext.merge(permission, PermissionNext.fromConfig(cfg.permission ?? {}))
+    // Agent-specific config overlay
+    if (agentCfg.permission) {
+      permission = PermissionNext.merge(permission, PermissionNext.fromConfig(agentCfg.permission as any))
+    }
+    // Protect TRUNCATE_GLOB from simple wildcard denials
+    permission = await reapplyWhitelist(permission, cfg.permission as Record<string, unknown> | undefined, agentCfg.permission as Record<string, unknown> | undefined)
+    return {
+      id: agentId,
+      name: agentCfg.name ?? agentId,
+      description: agentCfg.description,
+      mode: agentCfg.mode ?? "all",
+      native: false,
+      hidden: agentCfg.hidden,
+      temperature: agentCfg.temperature,
+      topP: agentCfg.top_p,
+      steps: agentCfg.steps,
+      color: agentCfg.color,
+      tools: undefined,
+      skills: undefined,
+      workflows: undefined,
+      prompt: agentCfg.prompt || undefined,
+      model: parseModelStr(agentCfg.model),
+      permission,
+      options: (agentCfg.options ?? {}) as Record<string, any>,
+      enableInjection: undefined,
+      injectInstructions: undefined,
+      config: undefined,
+    }
+  }
+
   /**
-   * Convert storage entry to Info with permissions
+   * Convert storage entry to Info with permissions, applying any config overrides
    */
   async function entryToInfo(entry: AgentStorage.Entry): Promise<Info> {
-    const defaults = await buildDefaultPermissions()
+    const cfg = await Config.get()
+    const agentCfg = (cfg.agent as any)?.[entry.id] as any
     const enabledSkills = await deriveEnabledSkills(entry)
     // Keep config.skills consistent with the rule-derived set so downstream
     // readers (system prompt, skill_list, skill_load) reflect permission rules.
     entry.config.skills = enabledSkills
 
-    // User's tool selection is ALWAYS respected:
-    // - tools: ["bash", "read"] -> only bash and read
-    // - tools: [] -> NO tools
-    // - tools: undefined -> NO OVERRIDE, use default permissions
+    // Start with base defaults (no user config yet)
+    let permission = await buildBaseDefaults()
 
     // Auto-inject path.write / path.read rules from defaultPaths so that path
     // boundaries are first-class permission rules rather than side-channel fields.
-    let permission = defaults
     const projectPath = entry.config.defaultPaths?.[0]
     if (projectPath) {
-      permission = PermissionNext.merge(defaults, [
+      permission = PermissionNext.merge(permission, [
         { permission: "path.write", pattern: projectPath, action: "allow" },
         { permission: "path.read", pattern: projectPath, action: "allow" },
       ])
     }
 
+    // Convert tools array to allow/deny rules (template level, before user config).
+    // Only affects named tool actions; meta-permissions (external_directory, doom_loop,
+    // agent_*, path.*) are excluded so defaults for those remain intact.
+    if (entry.config.tools !== undefined) {
+      const TOOL_PERMISSIONS = new Set([
+        "bash", "read", "glob", "grep", "edit", "write", "apply_patch",
+        "task", "webfetch", "websearch", "codesearch",
+        "todoread", "todowrite", "question", "skill",
+      ])
+      const allowedTools = new Set(entry.config.tools)
+      const toolRules: PermissionNext.LegacyRuleset = []
+      for (const tool of TOOL_PERMISSIONS) {
+        toolRules.push({ permission: tool, pattern: "*", action: allowedTools.has(tool) ? "allow" : "deny" })
+      }
+      permission = PermissionNext.merge(permission, toolRules)
+    }
+
+    // Apply template-level permission rules (path-specific overrides etc.), before user config.
+    if (entry.config.permission) {
+      permission = PermissionNext.merge(permission, PermissionNext.fromConfig(entry.config.permission as any))
+    }
+
+    // Apply user's global permission config (after template rules so it can override them).
+    permission = PermissionNext.merge(permission, PermissionNext.fromConfig(cfg.permission ?? {}))
+
+    // Apply per-agent config permission overlay (highest priority user-controlled config).
+    if (agentCfg?.permission) {
+      permission = PermissionNext.merge(permission, PermissionNext.fromConfig(agentCfg.permission as any))
+    }
+
+    // Protect TRUNCATE_GLOB and skill dirs from simple wildcard external_directory denials,
+    // while still honoring explicit per-path denials.
+    permission = await reapplyWhitelist(permission, cfg.permission as Record<string, unknown> | undefined, agentCfg?.permission as Record<string, unknown> | undefined)
+
+    const modelOverride = typeof agentCfg?.model === "string" ? parseModelStr(agentCfg.model) : undefined
+
     return {
       id: entry.id,
-      name: entry.config.name,
-      description: entry.config.description,
-      mode: entry.config.mode ?? "all",
-      native: false, // All agents are file-based now
-      hidden: entry.config.hidden,
-      temperature: entry.config.temperature,
-      steps: entry.config.steps,
-      color: entry.config.color,
+      name: (agentCfg as any)?.name ?? entry.config.name,
+      description: agentCfg?.description ?? entry.config.description,
+      mode: agentCfg?.mode ?? entry.config.mode ?? "all",
+      native: AgentCore.hasTemplate(entry.id),
+      hidden: agentCfg?.hidden ?? entry.config.hidden,
+      temperature: agentCfg?.temperature ?? entry.config.temperature,
+      topP: agentCfg?.top_p,
+      steps: agentCfg?.steps ?? entry.config.steps,
+      color: agentCfg?.color ?? entry.config.color,
       tools: entry.config.tools,
       skills: entry.config.skills,
       workflows: entry.config.workflows,
-      prompt: entry.persona || undefined,
-      model: entry.config.model,
+      prompt: agentCfg?.prompt ?? (entry.persona || undefined),
+      model: modelOverride ?? entry.config.model,
       permission,
-      options: {},
+      options: (agentCfg?.options ?? {}) as Record<string, any>,
       enableInjection: entry.config.enableInjection,
       injectInstructions: entry.config.injectInstructions,
       config: entry.config,
@@ -218,10 +320,14 @@ export namespace Agent {
    * Get a single agent by ID
    */
   export async function get(agent: string): Promise<Info | undefined> {
+    const cfg = await Config.get()
+    const agentCfg = (cfg.agent as any)?.[agent]
+    if (agentCfg?.disable) return undefined
     const entries = await getEntries()
     const entry = entries.find((e) => e.id === agent)
-    if (!entry) return undefined
-    return entryToInfo(entry)
+    if (entry) return entryToInfo(entry)
+    if (agentCfg) return configToInfo(agent, agentCfg)
+    return undefined
   }
 
   /**
@@ -229,19 +335,36 @@ export namespace Agent {
    * Tries ID first, then falls back to searching by name
    */
   export async function getByIdOrName(agentIdOrName: string): Promise<Info | undefined> {
+    const cfg = await Config.get()
     const entries = await getEntries()
     const entry = entries.find((e) => e.id === agentIdOrName) ?? entries.find((e) => e.config.name === agentIdOrName)
-    if (!entry) return undefined
-    return entryToInfo(entry)
+    if (entry) {
+      if ((cfg.agent as any)?.[entry.id]?.disable) return undefined
+      return entryToInfo(entry)
+    }
+    const agentCfg = (cfg.agent as any)?.[agentIdOrName]
+    if (agentCfg && !agentCfg.disable) return configToInfo(agentIdOrName, agentCfg)
+    return undefined
   }
 
   /**
-   * List all agents
+   * List all agents, applying config overlays and filtering disabled agents
    */
   export async function list(): Promise<Info[]> {
     const cfg = await Config.get()
     const entries = await getEntries()
-    const infos = await Promise.all(entries.map(entryToInfo))
+    const entryIds = new Set(entries.map((e) => e.id))
+
+    const filteredEntries = entries.filter((e) => !(cfg.agent as any)?.[e.id]?.disable)
+    const infos = await Promise.all(filteredEntries.map(entryToInfo))
+
+    // Add config-only agents (defined in config but not on disk)
+    const configAgentMap = (cfg.agent as any) ?? {}
+    for (const [agentId, agentCfg] of Object.entries(configAgentMap) as [string, any][]) {
+      if (entryIds.has(agentId)) continue
+      if (agentCfg.disable) continue
+      infos.push(await configToInfo(agentId, agentCfg))
+    }
 
     return pipe(
       infos,
@@ -255,19 +378,31 @@ export namespace Agent {
   export async function defaultAgent(): Promise<string> {
     const cfg = await Config.get()
     const entries = await getEntries()
+    const configAgentMap = (cfg.agent as any) ?? {}
 
     if (cfg.default_agent) {
-      const agent = entries.find((e) => e.config.name === cfg.default_agent)
-      if (!agent) throw new Error(`default agent "${cfg.default_agent}" not found`)
-      const mode = agent.config.mode ?? "all"
-      if (!isPrimaryMode(mode)) throw new Error(`default agent "${cfg.default_agent}" is not a primary agent`)
-      if (agent.config.hidden) throw new Error(`default agent "${cfg.default_agent}" is hidden`)
-      return agent.id
+      const agent = entries.find((e) => e.id === cfg.default_agent || e.config.name === cfg.default_agent)
+      if (agent) {
+        const agentCfg = configAgentMap[agent.id] as any
+        const mode = agentCfg?.mode ?? agent.config.mode ?? "all"
+        if (!isPrimaryMode(mode)) throw new Error(`default agent "${cfg.default_agent}" is not a primary agent`)
+        if (agentCfg?.hidden ?? agent.config.hidden) throw new Error(`default agent "${cfg.default_agent}" is hidden`)
+        return agent.id
+      }
+      const configAgent = configAgentMap[cfg.default_agent] as any
+      if (configAgent && !configAgent.disable) {
+        const mode = configAgent.mode ?? "all"
+        if (!isPrimaryMode(mode)) throw new Error(`default agent "${cfg.default_agent}" is not a primary agent`)
+        if (configAgent.hidden) throw new Error(`default agent "${cfg.default_agent}" is hidden`)
+        return cfg.default_agent
+      }
+      throw new Error(`default agent "${cfg.default_agent}" not found`)
     }
 
     const primaryVisible = entries.find((e) => {
-      const mode = e.config.mode ?? "all"
-      return isPrimaryMode(mode) && !e.config.hidden
+      if (configAgentMap[e.id]?.disable) return false
+      const mode = (configAgentMap[e.id] as any)?.mode ?? e.config.mode ?? "all"
+      return isPrimaryMode(mode) && !(configAgentMap[e.id]?.hidden ?? e.config.hidden)
     })
     if (!primaryVisible) throw new Error("no primary visible agent found")
     return primaryVisible.id

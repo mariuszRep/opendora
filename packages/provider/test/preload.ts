@@ -57,3 +57,28 @@ delete process.env["SAMBANOVA_API_KEY"]
 
 const { Log } = await import("@opendora/util/log")
 Log.init({ print: false, dev: true, level: "DEBUG" })
+
+const { register: registerConfig } = await import("@opendora/util/config")
+const { Config } = await import("@opendora/config/config")
+registerConfig(() => Config.get())
+
+const { register: registerPluginList } = await import("@opendora/provider/plugin")
+const { Instance } = await import("@opendora/runtime/instance")
+registerPluginList(async () => {
+  const pluginDir = path.join(Instance.directory, ".opencode", "plugin")
+  const plugins: any[] = []
+  try {
+    const entries = await fs.readdir(pluginDir)
+    for (const entry of entries) {
+      if (!entry.endsWith(".ts") && !entry.endsWith(".js")) continue
+      const mod = await import(path.join(pluginDir, entry))
+      if (typeof mod.default === "function") {
+        const hooks = await mod.default()
+        if (hooks) plugins.push(hooks)
+      }
+    }
+  } catch {
+    // plugin dir doesn't exist — ok
+  }
+  return plugins
+})

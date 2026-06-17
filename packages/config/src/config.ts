@@ -374,7 +374,7 @@ export namespace Config {
   async function loadAgent(dir: string) {
     const result: Record<string, Agent> = {}
 
-    for (const item of await Glob.scan("{agent,agents}/**/*.md", {
+    for (const item of await Glob.scan("{agent,agents}/*.md", {
       cwd: dir,
       absolute: true,
       dot: true,

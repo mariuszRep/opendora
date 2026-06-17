@@ -85,7 +85,7 @@ test("Bedrock: loads when bearer token from auth.json is present", async () => {
     },
   })
 
-  const authPath = path.join(Global.Path.data, "auth.json")
+  const authPath = path.join(Global.Path.providers, "auth.json")
 
   // Save original auth.json if it exists
   let originalAuth: string | undefined
