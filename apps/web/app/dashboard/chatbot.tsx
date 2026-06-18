@@ -270,6 +270,7 @@ export const Chatbot = () => {
     toggleWebPreview,
     setWebPreviewUrl,
     openFilePreview,
+    setSessionModel,
   } = useOpendoraContext()
 
   const { userName, userColor } = useUserProfile()
@@ -437,20 +438,10 @@ export const Chatbot = () => {
   // Update session's model when user changes it in chat interface
   const updateSessionModel = useCallback(async (providerID: string, modelID: string) => {
     if (!selectedSession) return
-
     const modelString = `${providerID}:${modelID}`
-
-    // Don't update if it's the same as the current session model
     if (selectedSession.model === modelString) return
-
-    try {
-      await opendora.session.update(selectedSession.id, {
-        model: modelString
-      })
-    } catch (err) {
-      console.error("Failed to update session model:", err)
-    }
-  }, [selectedSession])
+    await setSessionModel(selectedSession.id, modelString)
+  }, [selectedSession, setSessionModel])
 
   const { modelList, modelsByProvider } = useModelList()
 

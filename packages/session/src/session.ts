@@ -229,6 +229,7 @@ export namespace Session {
           onExpire: z.enum(["archive", "close", "delete"]).optional(),
         })
         .optional(),
+      model: z.string().optional(),
       path: z.string().optional(),
       readPath: z.string().optional(),
       cwd: z.string().optional(),

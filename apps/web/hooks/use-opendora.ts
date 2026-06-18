@@ -56,6 +56,7 @@ export type UseOpendoraResult = {
   createSession: (sessionType?: SessionType, agentID?: string) => Promise<string>
   setSessionAgent: (sessionID: string, agentID: string | null) => Promise<void>
   setAgentMainSession: (agentID: string, sessionID: string) => Promise<void>
+  setSessionModel: (sessionID: string, model: string | null) => Promise<void>
   activeSessions: Set<string>
   // Messages
   messages: MessageWithParts[]
@@ -1068,6 +1069,18 @@ export function useOpendora(opts?: {
     [],
   )
 
+  const setSessionModel = useCallback(async (sessionID: string, model: string | null): Promise<void> => {
+    // Optimistic update so the model useEffect doesn't revert the selector
+    setSessions((prev) => prev.map((s) => (s.id === sessionID ? { ...s, model: model ?? undefined } : s)))
+    try {
+      await opendora.session.update(sessionID, { model: model ?? undefined })
+    } catch (err) {
+      // Revert on failure
+      setSessions((prev) => prev.map((s) => (s.id === sessionID ? { ...s, model: undefined } : s)))
+      console.error("Failed to update session model:", err)
+    }
+  }, [])
+
   const setSessionAgent = useCallback(async (sessionID: string, agentID: string | null): Promise<void> => {
     const updated = await opendora.session.setAgent(sessionID, agentID)
     setSessions((prev) => prev.map((s) => (s.id === sessionID ? updated : s)))
@@ -1209,6 +1222,7 @@ export function useOpendora(opts?: {
     createSession,
     setSessionAgent,
     setAgentMainSession,
+    setSessionModel,
     activeSessions,
     messages,
     questionRequests: questionRequests[selectedSessionId ?? ""] ?? [],

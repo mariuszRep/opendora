@@ -28,6 +28,7 @@ export type SessionInfo = {
   allowedAgents?: string[]
   sendPolicy?: SendPolicy
   retention?: RetentionPolicy
+  model?: string
   path?: string
   readPath?: string
   cwd?: string
@@ -76,6 +77,7 @@ export function fromRow(row: SessionRow): SessionInfo {
     allowedAgents: row.allowed_agents ? (JSON.parse(row.allowed_agents) as string[]) : undefined,
     sendPolicy: row.send_policy ? (JSON.parse(row.send_policy) as SendPolicy) : undefined,
     retention: row.retention ? (JSON.parse(row.retention) as RetentionPolicy) : undefined,
+    model: row.model ?? undefined,
     path: row.path ?? undefined,
     readPath: row.read_path ?? undefined,
     cwd: row.cwd ?? undefined,

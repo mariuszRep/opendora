@@ -281,7 +281,9 @@ async function refreshAccessToken(refreshToken: string, signal?: AbortSignal): P
     signal: AbortSignal.any(signals),
   })
   if (!response.ok) {
-    throw new Error(`Token refresh failed: ${response.status}`)
+    const err = new Error(`Token refresh failed: ${response.status}`) as Error & { authExpired?: boolean }
+    if (response.status === 400 || response.status === 401) err.authExpired = true
+    throw err
   }
   return response.json() as Promise<TokenResponse>
 }
@@ -579,6 +581,12 @@ function scheduleTokenRefresh(getAuth: () => Promise<{ type: string; refresh?: s
         setTimeout(refresh, delay).unref()
       }
     } catch (error: any) {
+      if (error?.authExpired) {
+        Bus.publish(BusEvent.ProviderAuthExpired, {
+          providerID: "openai-codex",
+          providerName: "OpenAI Codex",
+        }).catch(() => {})
+      }
       log.warn("token refresh failed, will retry on next access", { error })
       backgroundRefreshActive = false
     }
@@ -732,10 +740,55 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
                 ? new URL(CODEX_API_ENDPOINT)
                 : parsed
 
-            const response = await fetch(url, {
-              ...init,
-              headers,
-            })
+            let response: Response
+            try {
+              response = await fetch(url, {
+                ...init,
+                headers,
+              })
+            } catch (err: any) {
+              // Codex sometimes closes the TCP connection instead of returning HTTP 401
+              // when an access token is fully expired. Attempt a token refresh once before
+              // re-throwing so the user gets an actionable auth-expired notification.
+              if (err?.code === "ConnectionRefused" && currentAuth.refresh) {
+                log.info("codex connection refused — access token may be fully expired, attempting refresh")
+                try {
+                  if (!tokenRefreshInFlight) {
+                    tokenRefreshInFlight = refreshAccessToken(currentAuth.refresh, init?.signal ?? undefined).finally(() => {
+                      tokenRefreshInFlight = undefined
+                    })
+                  }
+                  const tokens = await tokenRefreshInFlight
+                  const newAccountId = extractAccountId(tokens) || authWithAccount.accountId
+                  await input.client.auth.set({
+                    path: { id: "openai-codex" },
+                    body: {
+                      type: "oauth",
+                      refresh: tokens.refresh_token,
+                      access: tokens.access_token,
+                      expires: Date.now() + (tokens.expires_in ?? 3600) * 1000,
+                      ...(newAccountId && { accountId: newAccountId }),
+                    },
+                  })
+                  invalidateAuthCache()
+                  const retryHeaders = new Headers(headers)
+                  retryHeaders.set("authorization", `Bearer ${tokens.access_token}`)
+                  if (newAccountId) retryHeaders.set("ChatGPT-Account-Id", newAccountId)
+                  return fetch(url, { ...init, headers: retryHeaders })
+                } catch {
+                  Bus.publish(BusEvent.ProviderAuthExpired, {
+                    providerID: "openai-codex",
+                    providerName: "OpenAI Codex",
+                  }).catch(() => {})
+                }
+              } else if (err?.code === "ConnectionRefused") {
+                Bus.publish(BusEvent.ProviderAuthExpired, {
+                  providerID: "openai-codex",
+                  providerName: "OpenAI Codex",
+                }).catch(() => {})
+              }
+              throw err
+            }
             const refreshed = await maybeRefreshCodexTokenOnUnauthorized(response, currentAuth, authWithAccount, init, input)
             if (!refreshed) return response
 
