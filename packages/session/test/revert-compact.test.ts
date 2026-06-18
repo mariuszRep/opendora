@@ -8,9 +8,11 @@ import { Log } from "@opendora/util/log"
 import { Instance } from "@opendora/runtime/instance"
 import { Identifier } from "@opendora/util/id"
 import { tmpdir } from "./fixture/fixture"
+import { configureSessionCore } from "@opendora/server/configure-session-core"
 
 const projectRoot = path.join(__dirname, "../..")
 Log.init({ print: false })
+configureSessionCore()
 
 describe("revert + compact workflow", () => {
   test("should properly handle compact command after revert", async () => {

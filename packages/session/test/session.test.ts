@@ -1,20 +1,20 @@
 import { describe, expect, test } from "bun:test"
-import path from "path"
 import { Session } from "../src/session"
 import { configureSessionCore } from "@opendora/server/configure-session-core"
 import { Bus } from "@opendora/runtime/bus"
 import { Log } from "@opendora/util/log"
 import { Instance } from "@opendora/runtime/instance"
 import { Agent } from "@opendora/runtime/agent"
+import { tmpdir } from "./fixture/fixture"
 
-const projectRoot = path.join(__dirname, "../..")
 Log.init({ print: false })
 configureSessionCore()
 
 describe("session.started event", () => {
   test("should emit session.started event when session is created", async () => {
+    await using tmp = await tmpdir()
     await Instance.provide({
-      directory: projectRoot,
+      directory: tmp.path,
       fn: async () => {
         let eventReceived = false
         let receivedInfo: Session.Info | undefined
@@ -43,8 +43,9 @@ describe("session.started event", () => {
   })
 
   test("session.started event should be emitted before session.updated", async () => {
+    await using tmp = await tmpdir()
     await Instance.provide({
-      directory: projectRoot,
+      directory: tmp.path,
       fn: async () => {
         const events: string[] = []
 
@@ -75,8 +76,9 @@ describe("session.started event", () => {
 
 describe("session path inheritance", () => {
   test("session.path beats agent.defaultPaths[0] and child inherits parent path", async () => {
+    await using tmp = await tmpdir()
     await Instance.provide({
-      directory: projectRoot,
+      directory: tmp.path,
       fn: async () => {
         await Agent.create("path-agent", {
           name: "path-agent",
@@ -105,8 +107,9 @@ describe("session path inheritance", () => {
   })
 
   test("main session uses agent.defaultPaths[0] when set", async () => {
+    await using tmp = await tmpdir()
     await Instance.provide({
-      directory: projectRoot,
+      directory: tmp.path,
       fn: async () => {
         await Agent.create("agent-main-path", {
           name: "agent-main-path",

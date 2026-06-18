@@ -80,7 +80,7 @@ export function configureSessionCore() {
     },
     dataPath: Global.Path.data,
     providersPath: Global.Path.providers,
-    globalConfigPath: Global.Path.config,
+    get globalConfigPath() { return Global.Path.config },
     installationVersion: Installation.VERSION,
     opencodeBus: {
       publish(eventDef: any, payload: any) {

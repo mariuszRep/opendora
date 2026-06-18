@@ -441,6 +441,7 @@ export namespace Session {
       share(id).catch(() => {})
 
     // Publish so ACP can register the session and not drop subsequent message events.
+    cfg.bus?.publish(Event.Created, { info: result })
     cfg.bus?.publish(Event.Updated, { info: result })
 
     return result
@@ -1125,6 +1126,7 @@ export namespace Session {
       sessionType: "role",
       agentID,
       retention: { onExpire: "archive" },
+      path: agentDefaultPath,
     })
   }
 

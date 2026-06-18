@@ -254,7 +254,7 @@ export namespace InstructionPrompt {
 
     const target = path.resolve(filepath)
     let current = path.dirname(target)
-    const root = path.resolve(process.cwd())
+    const root = instanceWorktree()
 
     while (current.startsWith(root) && current !== root) {
       const found = await find(current)

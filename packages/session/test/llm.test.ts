@@ -11,6 +11,9 @@ import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
 import { tmpdir } from "./fixture/fixture"
 import type { Agent } from "@opendora/runtime/agent"
 import type { MessageV2 } from "../src/message-v2"
+import { configureSessionCore } from "@opendora/server/configure-session-core"
+
+configureSessionCore()
 
 describe("session.llm.hasToolCalls", () => {
   test("returns false for empty messages array", () => {

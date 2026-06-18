@@ -1371,13 +1371,18 @@ export namespace SessionPrompt {
 
                 await cfg.readTool?.init?.()
                   .then(async (t: any) => {
-                    const model2 = await cfg.provider?.getModel(info.model.providerID, info.model.modelID)
+                    const model2 = await cfg.provider?.getModel(info.model.providerID, info.model.modelID).catch(() => undefined)
                     const readCtx: any = {
                       sessionID: input.sessionID,
                       abort: new AbortController().signal,
                       agent: input.agent,
                       messageID: info.id,
-                      extra: { bypassCwdCheck: true, model: model2 },
+                      extra: {
+                        bypassCwdCheck: true,
+                        model: model2,
+                        directory: cfg.instance?.directory ?? process.cwd(),
+                        worktree: cfg.instance?.worktree ?? process.cwd(),
+                      },
                       messages: [],
                       metadata: async () => {},
                       ask: async () => {},

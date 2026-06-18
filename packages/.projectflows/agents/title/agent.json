@@ -1,8 +1,0 @@
-{
-  "name": "title",
-  "description": "Generates a short title for a session.",
-  "mode": "primary",
-  "temperature": 0.5,
-  "hidden": true,
-  "tools": []
-}

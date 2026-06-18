@@ -27,6 +27,7 @@ process.env["XDG_DATA_HOME"] = path.join(dir, "share")
 process.env["XDG_CACHE_HOME"] = path.join(dir, "cache")
 process.env["XDG_CONFIG_HOME"] = path.join(dir, "config")
 process.env["XDG_STATE_HOME"] = path.join(dir, "state")
+process.env["OPENCODE_DISABLE_MODELS_FETCH"] = "1"
 
 const testHome = path.join(dir, "home")
 await fs.mkdir(testHome, { recursive: true })
@@ -66,11 +67,15 @@ Log.init({ print: false, dev: true, level: "DEBUG" })
 const { configure } = await import("@opendora/session")
 const { Database } = await import("@opendora/storage/db")
 const { Config } = await import("@opendora/config/config")
+const { Global } = await import("@opendora/util/global")
 configure({
   get db() {
     return Database.Client()
   },
   dataPath: path.join(dir, "data"),
+  get globalConfigPath() {
+    return Global.Path.config
+  },
   config: {
     get: () => Config.get(),
     async directories() {
