@@ -31,7 +31,6 @@ export namespace Skill {
     description: z.string(),
     location: z.string(),
     content: z.string(),
-    origin: z.string().optional(),
     tools: z.array(z.string()).optional(),
   })
   export type Info = z.infer<typeof Info>
@@ -107,7 +106,6 @@ export namespace Skill {
         description: parsed.data.description,
         location: match,
         content: md.content,
-        origin: typeof md.data?.origin === "string" ? md.data.origin : undefined,
         tools: skillConfig?.tools,
       }
     }
@@ -242,12 +240,17 @@ export namespace Skill {
   }
 
   export async function save(location: string, body: string) {
-    // Preserve existing frontmatter — skill.content is body-only (gray-matter strips ---...---).
-    // Reconstruct the full file so the skill remains valid after reload.
-    const existing = await fs.readFile(location, "utf-8").catch(() => "")
-    const fmMatch = existing.match(/^(---[\s\S]*?---\r?\n?)/)
-    const frontmatter = fmMatch ? fmMatch[1] : ""
-    await fs.writeFile(location, frontmatter + body, "utf-8")
+    // If the caller supplied frontmatter, write the content as-is (their frontmatter wins).
+    // If not, preserve the existing frontmatter so the skill stays valid after reload.
+    const hasFrontmatter = /^---[\s\S]*?---/.test(body)
+    if (hasFrontmatter) {
+      await fs.writeFile(location, body, "utf-8")
+    } else {
+      const existing = await fs.readFile(location, "utf-8").catch(() => "")
+      const fmMatch = existing.match(/^(---[\s\S]*?---\r?\n?)/)
+      const frontmatter = fmMatch ? fmMatch[1] : ""
+      await fs.writeFile(location, frontmatter + body, "utf-8")
+    }
     reload()
   }
 
@@ -452,7 +455,6 @@ export namespace Skill {
         await fs.writeFile(dest, content, "utf-8")
       }
       log.info("installed skill", { skillName, files: files.size, skillDir })
-      await injectOrigin(skillDir, registry ?? "github")
       reload()
       return
     }
@@ -480,7 +482,6 @@ export namespace Skill {
         await fs.writeFile(dest, content, "utf-8")
       }
       log.info("installed skill from github", { skillName, files: files.size, skillDir })
-      await injectOrigin(skillDir, "github")
       reload()
       return
     }
@@ -514,7 +515,6 @@ export namespace Skill {
         await fs.writeFile(path.join(skillDir, "SKILL.md"), content, "utf-8")
       }
       log.info("installed skill from clawhub", { skillName, skillDir })
-      await injectOrigin(skillDir, "clawhub")
       reload()
       return
     }
@@ -534,30 +534,7 @@ export namespace Skill {
     return all()
   }
 
-  /** Inject or overwrite the `origin:` field in an installed skill's SKILL.md */
-  async function injectOrigin(skillDir: string, origin: string) {
-    const skillMdPath = path.join(skillDir, "SKILL.md")
-    try {
-      const raw = await fs.readFile(skillMdPath, "utf-8")
-      const fmPattern = /^---\r?\n([\s\S]*?)\r?\n---/
-      let updated: string
-      if (fmPattern.test(raw)) {
-        updated = raw.replace(fmPattern, (_, fm) => {
-          const cleaned = fm.replace(/^origin:.*$/m, "").replace(/\n{2,}/g, "\n").trim()
-          return `---\n${cleaned}\norigin: ${origin}\n---`
-        })
-      } else {
-        updated = `---\norigin: ${origin}\n---\n\n${raw}`
-      }
-      if (updated !== raw) {
-        await fs.writeFile(skillMdPath, updated, "utf-8")
-      }
-    } catch {
-      log.warn("could not inject origin into SKILL.md", { skillDir, origin })
-    }
-  }
-
-  /** Create a new local skill under the first .projectflows/skill/ directory */
+/** Create a new local skill under the first .projectflows/skill/ directory */
   export async function create(params: {
     name: string
     description: string
@@ -578,7 +555,6 @@ export namespace Skill {
     const fmLines: string[] = [
       `name: ${params.name}`,
       `description: ${safeDesc}`,
-      `origin: projectflows`,
     ]
 
     const skillMd = `---\n${fmLines.join("\n")}\n---\n\n${params.content ?? ""}`

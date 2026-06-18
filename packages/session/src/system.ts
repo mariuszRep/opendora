@@ -181,6 +181,57 @@ export namespace SystemPrompt {
       }
     }
 
+    // 4c. Directory Permissions — show allowed directories from path.read/path.write rules
+    // Also show session working directory and path boundaries even without explicit rules
+    const dirRows: string[] = []
+    let hasDirInfo = false
+
+    // Add session working directory if available
+    if (input.sessionID) {
+      const session = await Session.get(input.sessionID).catch(() => undefined)
+      if (session?.cwd) {
+        dirRows.push(`| ${session.cwd} | working directory |`)
+        hasDirInfo = true
+      }
+      if (session?.path) {
+        dirRows.push(`| ${session.path} | write boundary |`)
+        hasDirInfo = true
+      }
+      if (session?.readPath && session.readPath !== session.path) {
+        dirRows.push(`| ${session.readPath} | read boundary |`)
+        hasDirInfo = true
+      }
+    }
+
+    // Add explicit path permission rules if available
+    if (input.agent?.permission && cfg.permissionNext?.extractPathBoundaries) {
+      const pathBoundaries = cfg.permissionNext.extractPathBoundaries(input.agent.permission)
+      
+      // Add write paths
+      for (const writePath of pathBoundaries.writePaths) {
+        if (!dirRows.some((row) => row.includes(writePath))) {
+          dirRows.push(`| ${writePath} | write |`)
+          hasDirInfo = true
+        }
+      }
+      
+      // Add read path if different from write paths
+      if (pathBoundaries.readPath && !pathBoundaries.writePaths.includes(pathBoundaries.readPath)) {
+        if (!dirRows.some((row) => row.includes(pathBoundaries.readPath))) {
+          dirRows.push(`| ${pathBoundaries.readPath} | read |`)
+          hasDirInfo = true
+        }
+      }
+    }
+    
+    if (hasDirInfo) {
+      const table = ["| Path | Access |", "| --- | --- |", ...dirRows].join("\n")
+      sections.push({
+        label: "Directory Permissions",
+        content: `# Directory Permissions\nYou have the following directory access permissions:\n\n${table}`,
+      })
+    }
+
     // 5. Session/user system override (mirrors user.system in llm.ts)
     if (input.userSystem) {
       sections.push({ label: "Session Boundary Prompt", content: input.userSystem })

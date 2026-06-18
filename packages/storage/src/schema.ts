@@ -11,4 +11,5 @@ export {
   ScheduleTable,
   PermissionRuleTable,
   TokenUsageTable,
+  ProjectDirectoryTable,
 } from "./schema-tables.sql"

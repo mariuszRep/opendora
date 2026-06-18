@@ -6,6 +6,7 @@ import { Session } from "../src/session"
 import { configureSessionCore } from "@opendora/server/configure-session-core"
 import { MessageV2 } from "../src/message-v2"
 import { SessionPrompt } from "../src/prompt"
+import { SystemPrompt } from "../src/system"
 import { Log } from "@opendora/util/log"
 import { tmpdir } from "./fixture/fixture"
 
@@ -209,5 +210,127 @@ describe("session.prompt agent variant", () => {
       if (prev === undefined) delete process.env.OPENAI_API_KEY
       else process.env.OPENAI_API_KEY = prev
     }
+  })
+})
+
+describe("session.prompt directory permissions", () => {
+  test("includes directory permissions table when agent has path rules", async () => {
+    await using tmp = await tmpdir({
+      git: true,
+      config: {
+        agent: {
+          build: {
+            model: "openai/gpt-5.2",
+          },
+        },
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const session = await Session.create({})
+
+        // Mock agent with path permissions
+        const mockAgent = {
+          id: "build",
+          name: "build",
+          permission: [
+            { permission: "path.write", pattern: "/tmp/project", action: "allow" },
+            { permission: "path.read", pattern: "/tmp/project", action: "allow" },
+          ],
+        }
+
+        const mockModel = {
+          api: { id: "gpt-5.2" },
+          providerID: "openai",
+        }
+
+        const sections = await SystemPrompt.build({
+          agent: mockAgent,
+          model: mockModel,
+          sessionID: session.id,
+        })
+
+        const dirSection = sections.find((s) => s.label === "Directory Permissions")
+        expect(dirSection).toBeDefined()
+        expect(dirSection?.content).toContain("Directory Permissions")
+        expect(dirSection?.content).toContain("/tmp/project")
+        expect(dirSection?.content).toContain("write")
+
+        await Session.remove(session.id)
+      },
+    })
+  })
+
+  test("includes session working directory even without path rules", async () => {
+    await using tmp = await tmpdir({
+      git: true,
+      config: {
+        agent: {
+          build: {
+            model: "openai/gpt-5.2",
+          },
+        },
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const session = await Session.create({})
+
+        // Mock agent without path permissions
+        const mockAgent = {
+          id: "build",
+          name: "build",
+          permission: [
+            { permission: "bash", pattern: "*", action: "ask" },
+          ],
+        }
+
+        const mockModel = {
+          api: { id: "gpt-5.2" },
+          providerID: "openai",
+        }
+
+        const sections = await SystemPrompt.build({
+          agent: mockAgent,
+          model: mockModel,
+          sessionID: session.id,
+        })
+
+        const dirSection = sections.find((s) => s.label === "Directory Permissions")
+        expect(dirSection).toBeDefined()
+        expect(dirSection?.content).toContain("Directory Permissions")
+        expect(dirSection?.content).toContain("working directory")
+
+        await Session.remove(session.id)
+      },
+    })
+  })
+
+  test("does not include directory permissions table when no session or path rules", async () => {
+    // Mock agent without path permissions and no session
+    const mockAgent = {
+      id: "build",
+      name: "build",
+      permission: [
+        { permission: "bash", pattern: "*", action: "ask" },
+      ],
+    }
+
+    const mockModel = {
+      api: { id: "gpt-5.2" },
+      providerID: "openai",
+    }
+
+    const sections = await SystemPrompt.build({
+      agent: mockAgent,
+      model: mockModel,
+    })
+
+    const dirSection = sections.find((s) => s.label === "Directory Permissions")
+    expect(dirSection).toBeUndefined()
   })
 })

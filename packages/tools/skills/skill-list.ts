@@ -110,7 +110,6 @@ export const SkillListTool = Tool.define("skill_list", async () => {
             `  <skill>`,
             `    <name>${skill.name}</name>`,
             `    <description>${skill.description}</description>`,
-            `    <origin>${skill.origin ?? "unknown"}</origin>`,
             `    <location>${pathToFileURL(skill.location).href}</location>`,
             `  </skill>`,
           ]),
