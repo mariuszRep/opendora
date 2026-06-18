@@ -17,7 +17,7 @@ describe("session type persistence", () => {
         const app = Server.App()
         const createResponse = await app.request("/session", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-opencode-directory": projectRoot },
           body: JSON.stringify({ sessionType: "scratchpad" }),
         })
 
@@ -37,14 +37,14 @@ describe("session type persistence", () => {
         const app = Server.App()
         const createResponse = await app.request("/session", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-opencode-directory": projectRoot },
           body: JSON.stringify({ sessionType: "scope" }),
         })
         const created = await createResponse.json() as { id: string; sessionType: string }
 
         const updateResponse = await app.request(`/session/${created.id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-opencode-directory": projectRoot },
           body: JSON.stringify({ sessionType: "scratchpad" }),
         })
 
@@ -52,7 +52,9 @@ describe("session type persistence", () => {
         const updated = await updateResponse.json() as { sessionType: string }
         expect(updated.sessionType).toBe("scratchpad")
 
-        const listResponse = await app.request("/session")
+        const listResponse = await app.request("/session", {
+          headers: { "x-opencode-directory": projectRoot },
+        })
         expect(listResponse.status).toBe(200)
         const sessions = await listResponse.json() as Array<{ id: string; sessionType: string }>
         const reloaded = sessions.find((session) => session.id === created.id)

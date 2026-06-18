@@ -153,7 +153,8 @@ export namespace Config {
 
       deps.push(
         iife(async () => {
-          const shouldInstall = await needsInstall(dir)
+          const isManaged = dir === Global.Path.config || dir === Flag.OPENCODE_CONFIG_DIR
+          const shouldInstall = await needsInstall(dir, isManaged)
           if (shouldInstall) await installDependencies(dir)
         }),
       )
@@ -284,7 +285,7 @@ export namespace Config {
     }
   }
 
-  export async function needsInstall(dir: string) {
+  export async function needsInstall(dir: string, managed = false) {
     // Some config dirs may be read-only.
     // Installing deps there will fail; skip installation in that case.
     const writable = await isWritable(dir)
@@ -293,11 +294,16 @@ export namespace Config {
       return false
     }
 
+    const pkg = path.join(dir, "package.json")
+    const pkgExists = await Filesystem.exists(pkg)
+
+    // For project-level dirs (not the global config dir), only install if the
+    // user already has a package.json there. Never auto-create one.
+    if (!managed && !pkgExists) return false
+
     const nodeModules = path.join(dir, "node_modules")
     if (!existsSync(nodeModules)) return true
 
-    const pkg = path.join(dir, "package.json")
-    const pkgExists = await Filesystem.exists(pkg)
     if (!pkgExists) return true
 
     const parsed = await Filesystem.readJson<{ dependencies?: Record<string, string> }>(pkg).catch(() => null)

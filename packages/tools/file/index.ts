@@ -407,7 +407,7 @@ export namespace File {
   })
 
   export function init() {
-    state()
+    state().catch(() => {}) // best-effort — ripgrep may not be available (e.g., in tests)
   }
 
   export async function status() {

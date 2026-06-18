@@ -23,6 +23,9 @@ configureTruncation((text, agent) => Truncate.output(text, {}, agent as any))
 // Wire up opencode-specific configuration
 configureRegistry({
   clientType: Flag.OPENCODE_CLIENT,
+  getInstanceKey() {
+    try { return Instance.directory } catch { return undefined }
+  },
   flags: {
     enableQuestion: Flag.OPENCODE_ENABLE_QUESTION_TOOL,
     enableExa: Flag.OPENCODE_ENABLE_EXA,

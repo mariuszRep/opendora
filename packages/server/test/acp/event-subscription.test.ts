@@ -234,7 +234,7 @@ function createFakeAgent() {
             {
               name: "build",
               description: "build",
-              mode: "agent",
+              mode: "primary",
             },
           ],
         }
@@ -469,11 +469,13 @@ describe("acp.agent event subscription", () => {
             type: "permission.asked",
             properties: {
               id: "perm_1",
-              sessionID: sessionA,
-              permission: "bash",
+              session_id: sessionA,
+              agent_id: "build",
+              resource: "bash",
+              access: "execute",
               patterns: ["*"],
+              agent_patterns: [],
               metadata: {},
-              always: [],
             },
           },
         } as any)
@@ -528,11 +530,13 @@ describe("acp.agent event subscription", () => {
             type: "permission.asked",
             properties: {
               id: "perm_a",
-              sessionID: sessionA,
-              permission: "bash",
+              session_id: sessionA,
+              agent_id: "build",
+              resource: "bash",
+              access: "execute",
               patterns: ["*"],
+              agent_patterns: [],
               metadata: {},
-              always: [],
             },
           },
         } as any)

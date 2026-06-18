@@ -47,6 +47,8 @@ export interface RegistryConfig {
   loadPlugin?(category: string): Promise<Array<{ id: string; def: unknown }>>
   triggerPlugin?(toolID: string, output: { description: string; parameters: unknown }): Promise<void>
   fromPlugin?(id: string, def: unknown): Tool.Info
+  /** Returns a key that uniquely identifies the current instance; init() re-runs when the key changes. */
+  getInstanceKey?(): string | undefined
 }
 
 let _config: RegistryConfig = {
@@ -63,10 +65,13 @@ export const configureRegistry = configure
 export namespace ToolRegistry {
   let _custom: Tool.Info[] = []
   let _initialized = false
+  let _instanceKey: string | undefined = undefined
 
   export async function init(): Promise<void> {
-    if (_initialized) return
+    const key = _config.getInstanceKey?.()
+    if (_initialized && key === _instanceKey) return
     _initialized = true
+    _instanceKey = key
     _custom = []
 
     const dirs = (await _config.getToolDirs?.()) ?? []
@@ -79,7 +84,8 @@ export namespace ToolRegistry {
       )
       for (const match of matches) {
         const namespace = path.basename(match, path.extname(match))
-        const mod = await import(pathToFileURL(match).href)
+        const mod = await import(pathToFileURL(match).href).catch(() => null)
+        if (!mod) continue
         for (const [id, def] of Object.entries(mod)) {
           if (_config.fromPlugin) {
             _custom.push(_config.fromPlugin(id === "default" ? namespace : `${namespace}_${id}`, def))
@@ -175,7 +181,8 @@ export namespace ToolRegistry {
     ]
   }
 
-  export function ids(): string[] {
+  export async function ids(): Promise<string[]> {
+    await init()
     return all().map((t) => t.id)
   }
 

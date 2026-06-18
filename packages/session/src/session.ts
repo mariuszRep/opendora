@@ -16,17 +16,7 @@ import { openDoraStorageAdapter } from "./opendora-storage-adapter.ts"
 import { SessionManager } from "./session-manager"
 import { RetentionDaemon } from "./daemon"
 import type { SessionType, RetentionPolicy, SendPolicy, CreateSessionOptions, PongOptions } from "./types"
-
-// Inline NotFoundError
-class NotFoundError extends Error {
-  constructor(public readonly data: { message: string }) {
-    super(data.message)
-    this.name = "NotFoundError"
-  }
-  static isInstance(e: unknown): e is NotFoundError {
-    return e instanceof NotFoundError
-  }
-}
+import { NotFoundError } from "@opendora/storage/db"
 
 // Inline iife utility
 function iife<T>(fn: () => T): T {
