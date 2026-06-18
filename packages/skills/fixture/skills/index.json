@@ -1,0 +1,9 @@
+{
+  "skills": [
+    {
+      "name": "agents-sdk",
+      "description": "Claude Agents SDK skill",
+      "files": ["SKILL.md", "references/overview.md"]
+    }
+  ]
+}

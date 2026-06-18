@@ -415,15 +415,14 @@ test("loads config from .opencode directory", async () => {
     init: async (dir) => {
       const opencodeDir = path.join(dir, ".opencode")
       await fs.mkdir(opencodeDir, { recursive: true })
-      const agentDir = path.join(opencodeDir, "agent")
-      await fs.mkdir(agentDir, { recursive: true })
 
       await Filesystem.write(
-        path.join(agentDir, "test.md"),
-        `---
-model: test/model
----
-Test agent prompt`,
+        path.join(opencodeDir, "opencode.json"),
+        JSON.stringify({
+          agent: {
+            test: { model: "test/model" },
+          },
+        }),
       )
     },
   })
@@ -433,40 +432,27 @@ Test agent prompt`,
       const config = await Config.get()
       expect(config.agent?.["test"]).toEqual(
         expect.objectContaining({
-          name: "test",
           model: "test/model",
-          prompt: "Test agent prompt",
         }),
       )
     },
   })
 })
 
-test("loads agents from .opencode/agents (plural)", async () => {
+test("loads agents from .opencode config json", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
       const opencodeDir = path.join(dir, ".opencode")
       await fs.mkdir(opencodeDir, { recursive: true })
 
-      const agentsDir = path.join(opencodeDir, "agents")
-      await fs.mkdir(path.join(agentsDir, "nested"), { recursive: true })
-
       await Filesystem.write(
-        path.join(agentsDir, "helper.md"),
-        `---
-model: test/model
-mode: subagent
----
-Helper agent prompt`,
-      )
-
-      await Filesystem.write(
-        path.join(agentsDir, "nested", "child.md"),
-        `---
-model: test/model
-mode: subagent
----
-Nested agent prompt`,
+        path.join(opencodeDir, "opencode.json"),
+        JSON.stringify({
+          agent: {
+            helper: { model: "test/model", mode: "subagent" },
+            "nested-child": { model: "test/model", mode: "subagent" },
+          },
+        }),
       )
     },
   })
@@ -477,17 +463,13 @@ Nested agent prompt`,
       const config = await Config.get()
 
       expect(config.agent?.["helper"]).toMatchObject({
-        name: "helper",
         model: "test/model",
         mode: "subagent",
-        prompt: "Helper agent prompt",
       })
 
-      expect(config.agent?.["nested/child"]).toMatchObject({
-        name: "nested/child",
+      expect(config.agent?.["nested-child"]).toMatchObject({
         model: "test/model",
         mode: "subagent",
-        prompt: "Nested agent prompt",
       })
     },
   })
@@ -773,16 +755,14 @@ test("does not error when only custom agent is a subagent", async () => {
     init: async (dir) => {
       const opencodeDir = path.join(dir, ".opencode")
       await fs.mkdir(opencodeDir, { recursive: true })
-      const agentDir = path.join(opencodeDir, "agent")
-      await fs.mkdir(agentDir, { recursive: true })
 
       await Filesystem.write(
-        path.join(agentDir, "helper.md"),
-        `---
-model: test/model
-mode: subagent
----
-Helper subagent prompt`,
+        path.join(opencodeDir, "opencode.json"),
+        JSON.stringify({
+          agent: {
+            helper: { model: "test/model", mode: "subagent" },
+          },
+        }),
       )
     },
   })
@@ -791,10 +771,8 @@ Helper subagent prompt`,
     fn: async () => {
       const config = await Config.get()
       expect(config.agent?.["helper"]).toMatchObject({
-        name: "helper",
         model: "test/model",
         mode: "subagent",
-        prompt: "Helper subagent prompt",
       })
     },
   })
