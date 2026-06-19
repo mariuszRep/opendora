@@ -53,7 +53,7 @@ export const buildTemplate: AgentTemplate = {
     name: "build",
     description: "The default agent. Executes tools based on configured permissions.",
     mode: "primary",
-    tools: ["bash", "read", "glob", "grep", "edit", "write", "task", "webfetch", "todowrite", "websearch", "codesearch", "apply_patch", "question"],
+    tools: ["bash", "read", "glob", "grep", "edit", "write", "task", "webfetch", "todowrite", "websearch", "codesearch", "apply_patch", "question", "memory_read", "memory_write", "memory_delete"],
     enableInjection: true,
   },
   persona: PERSONA,

@@ -54,6 +54,7 @@ import { AuthRoutes } from "./routes/auth"
 import { UserRoutes } from "./routes/user"
 import { GeneralRoutes, getGlobalTimezone } from "./routes/general"
 import { UsageRoutes } from "./routes/usage"
+import { MemoryRoutes } from "./routes/memory"
 import { MDNS } from "./mdns"
 import { BusBridge } from "@opendora/session/bus-bridge"
 import { retentionDaemon, sessionManager } from "@opendora/session/session"
@@ -269,6 +270,7 @@ export namespace Server {
         .route("/user", UserRoutes())
         .route("/general", GeneralRoutes())
         .route("/usage", UsageRoutes())
+        .route("/memory", MemoryRoutes())
         .route("/", FileRoutes())
         .route("/mcp", McpRoutes())
         .route("/tui", TuiRoutes())

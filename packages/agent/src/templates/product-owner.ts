@@ -142,6 +142,9 @@ export const productOwnerTemplate: AgentTemplate = {
       "grep",
       "codesearch",
       "write",
+      "memory_read",
+      "memory_write",
+      "memory_delete",
     ],
     skills: ["requirements", "project-context"],
     toolConfig: {

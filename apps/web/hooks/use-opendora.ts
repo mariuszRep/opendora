@@ -819,6 +819,19 @@ export function useOpendora(opts?: {
               })
           break
         }
+        case "memory.write": {
+          const p = (event as { type: string; properties: { sessionID: string; agentID: string; callID?: string; directory?: string; name: string; description: string; scope: string; action: string } }).properties
+          if (p.directory) {
+            notify?.({
+              type: "info",
+              title: `Memory ${p.action}: ${p.name}`,
+              message: p.description,
+              duration: 8000,
+              memoryDelete: { directory: p.directory, name: p.name, scope: p.scope, agentID: p.agentID, callID: p.callID },
+            })
+          }
+          break
+        }
       }
     }, () => {
       // SSE reconnected — reload active sessions so spinners reflect true server state.

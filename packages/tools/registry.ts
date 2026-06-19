@@ -27,7 +27,7 @@ import { PYAUTOGUI_TOOLS } from "./pyautogui/index.ts"
 import { PlaywrightModeTool } from "./browser/playwright-mode.ts"
 import { ToolListTool, ToolGetTool, ToolUpdateTool } from "./tool-registry/index.ts"
 import { WorkflowRunTool, WorkflowParametersTool, WorkflowCreateTool, WorkflowGetTool, WorkflowListTool, WorkflowUpdateTool, WorkflowDeleteTool, WorkflowNodeCatalogTool } from "./workflows/index.ts"
-import { MemoryWriteTool, MemoryReadTool } from "./memory/index.ts"
+import { MemoryWriteTool, MemoryReadTool, MemoryDeleteTool } from "./memory/index.ts"
 import { toJSONSchema } from "zod"
 import type { Tool } from "./tool.ts"
 import path from "path"
@@ -172,6 +172,7 @@ export namespace ToolRegistry {
       WorkflowNodeCatalogTool,
       MemoryWriteTool,
       MemoryReadTool,
+      MemoryDeleteTool,
       ...(cfg.flags.enableLspTool ? [LspTool] : []),
       ...(cfg.flags.enableBatchTool ? [BatchTool] : []),
       PlaywrightModeTool,

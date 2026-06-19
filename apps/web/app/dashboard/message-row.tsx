@@ -49,6 +49,7 @@ import { TodoToolContent, isTodoTool, getTodoToolTitle } from "@/components/ai-e
 import { SessionTreeToolContent, isSessionTreeTool, getSessionTreeToolTitle } from "@/components/ai-elements/session-tree-tool"
 import { WebFetchToolContent, isWebFetchTool, getWebFetchToolTitle, getWebFetchUrl } from "@/components/ai-elements/webfetch-tool"
 import { isSkillLoadTool, getSkillLoadToolTitle, getSkillLoadDefinition } from "@/components/ai-elements/skill-load-tool"
+import { MemoryWriteToolContent, isMemoryWriteTool, getMemoryWriteToolTitle } from "@/components/ai-elements/memory-write-tool"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAgentColor } from "@/lib/agent-colors"
 import { BellIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, Link2Icon, PanelRightIcon, Volume2Icon, VolumeXIcon, WorkflowIcon } from "lucide-react"
@@ -541,6 +542,7 @@ export const MessageRow = React.memo(function MessageRow({
                           const webFetchToolUrl = isWebFetchToolCall ? getWebFetchUrl(tool) : undefined
                           const isSkillLoadToolCall = isSkillLoadTool(tool.tool)
                           const skillLoadDefinitionPath = isSkillLoadToolCall ? getSkillLoadDefinition(tool) : undefined
+                          const isMemoryWriteToolCall = isMemoryWriteTool(tool.tool)
                           const webFetchActions = isWebFetchToolCall ? (
                             <TooltipProvider>
                               <Tooltip>
@@ -574,10 +576,10 @@ export const MessageRow = React.memo(function MessageRow({
                           ) : undefined
 
                           return (
-                            <Tool defaultOpen={false}>
+                            <Tool defaultOpen={isMemoryWriteToolCall}>
                               <ToolHeader
                                 state={state}
-                                title={isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : isSkillLoadToolCall ? getSkillLoadToolTitle(tool) : tool.tool}
+                                title={isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : isSkillLoadToolCall ? getSkillLoadToolTitle(tool) : isMemoryWriteToolCall ? getMemoryWriteToolTitle(tool) : tool.tool}
                                 toolName={tool.tool}
                                 type="dynamic-tool"
                                 viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : isWebFetchToolCall ? currentWebFetchViewMode : undefined}
@@ -624,10 +626,12 @@ export const MessageRow = React.memo(function MessageRow({
                                   currentWebFetchViewMode === "code" ? toolInput : (
                                     <WebFetchToolContent tool={tool} />
                                   )
+                                ) : isMemoryWriteToolCall ? (
+                                  <MemoryWriteToolContent tool={tool} />
                                 ) : (
                                   toolInput
                                 )}
-                                {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !questionRequest && (output || error) ? (
+                                {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !isMemoryWriteToolCall && !questionRequest && (output || error) ? (
                                   <ToolOutput errorText={error} output={output} />
                                 ) : null}
                               </ToolContent>
@@ -761,6 +765,7 @@ export const MessageRow = React.memo(function MessageRow({
                       const webFetchToolUrl = isWebFetchToolCall ? getWebFetchUrl(tool) : undefined
                       const isSkillLoadToolCall = isSkillLoadTool(tool.tool)
                       const skillLoadDefinitionPath = isSkillLoadToolCall ? getSkillLoadDefinition(tool) : undefined
+                      const isMemoryWriteToolCall = isMemoryWriteTool(tool.tool)
                       const webFetchActions = isWebFetchToolCall ? (
                         <TooltipProvider>
                           <Tooltip>
@@ -794,12 +799,12 @@ export const MessageRow = React.memo(function MessageRow({
                       ) : undefined
                       return (
                         <Tool
-                          defaultOpen={false}
+                          defaultOpen={isMemoryWriteToolCall}
                           key={tool.id}
                         >
                           <ToolHeader
                             state={state}
-                            title={isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : isSkillLoadToolCall ? getSkillLoadToolTitle(tool) : tool.tool}
+                            title={isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : isSkillLoadToolCall ? getSkillLoadToolTitle(tool) : isMemoryWriteToolCall ? getMemoryWriteToolTitle(tool) : tool.tool}
                             toolName={tool.tool}
                             type="dynamic-tool"
                             viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : isWebFetchToolCall ? currentWebFetchViewMode : undefined}
@@ -845,10 +850,12 @@ export const MessageRow = React.memo(function MessageRow({
                               currentWebFetchViewMode === "code" ? toolInput : (
                                 <WebFetchToolContent tool={tool} />
                               )
+                            ) : isMemoryWriteToolCall ? (
+                              <MemoryWriteToolContent tool={tool} />
                             ) : (
                               toolInput
                             )}
-                            {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !questionRequest && !isPermissionTool && (output || error) ? (
+                            {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !isMemoryWriteToolCall && !questionRequest && !isPermissionTool && (output || error) ? (
                               <ToolOutput errorText={error} output={output} />
                             ) : null}
                           </ToolContent>

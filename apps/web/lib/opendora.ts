@@ -491,6 +491,7 @@ export type Event =
   | { type: "session.status"; properties: { sessionID: string; status: { type: "idle" | "busy" | "retry"; attempt?: number; message?: string; next?: number } } }
   | { type: "session.error"; properties: { sessionID?: string; error?: { name: string; message: string; data?: Record<string, unknown> } } }
   | { type: "skill.updated"; properties: Record<string, never> }
+  | { type: "memory.write"; properties: { sessionID: string; agentID: string; callID?: string; directory?: string; name: string; description: string; scope: string; action: string } }
   | { type: string; properties: unknown }
 
 export class SessionBusyError extends Error {
@@ -853,4 +854,25 @@ export const opendora = {
       return () => es.close()
     },
   },
+  memory: {
+    list: (directory: string, scope: string, agentID?: string) =>
+      req<MemoryEntry[]>(`/memory?directory=${encodeURIComponent(directory)}&scope=${scope}${agentID ? `&agentID=${encodeURIComponent(agentID)}` : ""}`),
+    get: (directory: string, name: string, scope: string, agentID?: string) =>
+      req<MemoryEntry>(`/memory/${encodeURIComponent(name)}?directory=${encodeURIComponent(directory)}&scope=${scope}${agentID ? `&agentID=${encodeURIComponent(agentID)}` : ""}`),
+    create: (directory: string, entry: Omit<MemoryEntry, "createdAt" | "updatedAt">, scope: string, agentID?: string) =>
+      req<MemoryEntry>(`/memory`, { method: "POST", body: JSON.stringify({ directory, ...entry, scope, agentID }) }),
+    update: (directory: string, name: string, updates: Partial<Pick<MemoryEntry, "description" | "type" | "content">>, scope: string, agentID?: string) =>
+      req<MemoryEntry>(`/memory/${encodeURIComponent(name)}`, { method: "PUT", body: JSON.stringify({ directory, ...updates, scope, agentID }) }),
+    delete: (directory: string, name: string, scope: string, agentID?: string) =>
+      req<void>(`/memory/${encodeURIComponent(name)}?directory=${encodeURIComponent(directory)}&scope=${scope}${agentID ? `&agentID=${encodeURIComponent(agentID)}` : ""}`, { method: "DELETE" }),
+  },
+}
+
+export type MemoryEntry = {
+  name: string
+  description: string
+  type: string
+  content: string
+  createdAt: number
+  updatedAt: number
 }

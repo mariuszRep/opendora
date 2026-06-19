@@ -29,7 +29,7 @@ import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { useUserProfile } from "@/hooks/use-user-profile"
 import { useVoiceSettings, formatHotkey, type HotkeyConfig } from "@/hooks/use-voice-settings"
 import { useTheme } from "next-themes"
-import { BotIcon, MessageSquareIcon, SettingsIcon, PlugIcon, UserIcon, ClockPlusIcon, WrenchIcon, SunIcon, MoonIcon, MonitorIcon, BookOpenIcon, MicIcon, Volume2Icon, KeyboardIcon, WorkflowIcon, ActivityIcon } from "lucide-react"
+import { BotIcon, MessageSquareIcon, SettingsIcon, PlugIcon, UserIcon, ClockPlusIcon, WrenchIcon, SunIcon, MoonIcon, MonitorIcon, BookOpenIcon, MicIcon, Volume2Icon, KeyboardIcon, WorkflowIcon, ActivityIcon, BrainIcon } from "lucide-react"
 import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -241,6 +241,14 @@ export default function SettingsPage() {
       description: "Create and run multi-step agent workflows",
       icon: WorkflowIcon,
       href: "/dashboard/settings/workflows",
+      count: null,
+      countLabel: null,
+    },
+    {
+      title: "Memory",
+      description: "Browse, edit, and manage agent memory entries",
+      icon: BrainIcon,
+      href: "/dashboard/settings/memory",
       count: null,
       countLabel: null,
     },

@@ -918,8 +918,11 @@ export namespace SessionPrompt {
           update: (id: string, patch: any) => cfg.schedule!.update(id, patch),
           remove: (id: string) => cfg.schedule!.remove(id),
         } : undefined,
+        emit: (type: string, payload: unknown) => {
+          cfg.bus?.publish({ type }, payload)
+        },
       },
-      agent: input.agent.name,
+      agent: input.agent.id ?? input.agent.name,
       messages: input.messages,
       metadata: async (val: { title?: string; metadata?: any }) => {
         const match = input.processor.partFromToolCall(options.toolCallId)

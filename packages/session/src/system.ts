@@ -4,6 +4,28 @@ import { getConfig } from "./config.ts"
 import { Session } from "./session.ts"
 import { InstructionPrompt } from "./instruction.ts"
 
+// Memory helpers — inlined to avoid a runtime dep on @opendora/tools (devDep only)
+interface MemoryEntry { name: string; description: string; type: string; content: string; createdAt: number; updatedAt: number }
+function parseMemoryEntries(raw: string): MemoryEntry[] {
+  try { return raw ? JSON.parse(raw) : [] } catch { return [] }
+}
+function serializeMemoryEntries(entries: MemoryEntry[]): string {
+  return entries.map(e => `---\nname: ${e.name}\ndescription: ${e.description}\ntype: ${e.type}\n---\n${e.content}`).join("\n\n")
+}
+async function findProjectFlowsDir(startDir: string): Promise<string> {
+  let dir = startDir
+  while (true) {
+    const candidate = path.join(dir, ".projectflows")
+    try { const s = await fs.stat(candidate); if (s.isDirectory()) return candidate } catch {}
+    const parent = path.dirname(dir)
+    if (parent === dir) throw new Error("No .projectflows directory found")
+    dir = parent
+  }
+}
+async function readMemoryFile(filePath: string): Promise<string> {
+  try { return await fs.readFile(filePath, "utf-8") } catch { return "" }
+}
+
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
 import PROMPT_ANTHROPIC_WITHOUT_TODO from "./prompt/qwen.txt"
 import PROMPT_BEAST from "./prompt/beast.txt"
@@ -125,6 +147,36 @@ export namespace SystemPrompt {
         : undefined
       for (const part of await InstructionPrompt.system(sessionCwd).catch(() => [] as string[])) {
         if (part) sections.push({ label: "Instructions", content: part })
+      }
+    }
+
+    // 3.5 Agent Memories — inject prior session memories when agent has memory_read
+    const hasMemoryTool = (input.agent?.tools as string[] | undefined)?.includes("memory_read") ?? false
+    if (hasMemoryTool) {
+      const memSession = input.sessionID ? await Session.get(input.sessionID).catch(() => undefined) : undefined
+      // Resolution order: session cwd → session directory (most reliable, always set in DB)
+      // → cfg.instance?.directory (may throw if no AsyncLocalStorage context in HTTP requests)
+      const instanceDir = (() => { try { return cfg.instance?.directory } catch { return undefined } })()
+      const candidates = [memSession?.cwd, memSession?.directory, instanceDir].filter(Boolean) as string[]
+      let pfDir: string | undefined
+      for (const candidate of candidates) {
+        const found = await findProjectFlowsDir(candidate).catch(() => null)
+        if (found) { pfDir = found; break }
+      }
+      if (pfDir) {
+        const agentId = input.agent?.id ?? ""
+        const [globalRaw, localRaw] = await Promise.all([
+          readMemoryFile(path.join(pfDir, "agents", "MEMORY.json")),
+          readMemoryFile(path.join(pfDir, "agents", agentId, "MEMORY.json")),
+        ])
+        const globalEntries = parseMemoryEntries(globalRaw)
+        const localEntries = parseMemoryEntries(localRaw)
+        if (globalEntries.length > 0 || localEntries.length > 0) {
+          const parts: string[] = ["# Memories\n\nThese memories from previous sessions inform your current task. Review them before acting."]
+          if (globalEntries.length > 0) parts.push(`\n## Global\n\n${serializeMemoryEntries(globalEntries)}`)
+          if (localEntries.length > 0) parts.push(`\n## Agent-specific\n\n${serializeMemoryEntries(localEntries)}`)
+          sections.push({ label: "Memories", content: parts.join("") })
+        }
       }
     }
 

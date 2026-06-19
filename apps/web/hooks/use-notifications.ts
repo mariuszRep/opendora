@@ -21,6 +21,7 @@ export type Notification = {
   providerID?: string
   permissionRequestID?: string
   sessionID?: string
+  memoryDelete?: { directory: string; name: string; scope: string; agentID?: string; callID?: string }
 }
 
 const STORAGE_KEY = "opendora:notifications"
@@ -90,6 +91,10 @@ export function useNotifications() {
     setNotifications((prev) => prev.filter((n) => n.permissionRequestID !== permissionRequestID))
   }, [])
 
+  const removeByMemoryCallID = useCallback((callID: string) => {
+    setNotifications((prev) => prev.filter((n) => n.memoryDelete?.callID !== callID))
+  }, [])
+
   const clearAll = useCallback(() => {
     setNotifications([])
   }, [])
@@ -104,6 +109,7 @@ export function useNotifications() {
     markAllRead,
     removeNotification,
     removeByPermissionID,
+    removeByMemoryCallID,
     clearAll,
   }
 }

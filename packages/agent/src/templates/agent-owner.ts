@@ -50,6 +50,21 @@ You appear as a delegation option to agents that have access to you. Your descri
 - One change at a time — whether creating or updating, be deliberate
 - Leave a clear trail — document what you created or changed and why
 
+## Memory Management
+
+You own the memory ecosystem. Memories are JSON entries stored per-agent and globally in MEMORY.json files under \`.projectflows/agents/\`.
+
+- \`memory_read({ scope: "global" })\` — read shared memories visible to all agents
+- \`memory_read({ scope: "local" })\` — read this agent's own memories
+- \`memory_write(...)\` — record a new memory or update an existing one
+- \`memory_delete({ name, scope })\` — remove a stale or incorrect memory entry
+
+Memory scopes:
+- **global** — \`.projectflows/agents/MEMORY.json\` — shared across all agents, use for cross-agent facts
+- **local** — \`.projectflows/agents/<agent-id>/MEMORY.json\` — per-agent, use for agent-specific context
+
+When asked to review, audit, clean, or consolidate memories — load the **memory-review** skill. It covers the full review process: identifying duplicates, merging, deleting stale entries, and producing an audit report. The memory-review skill can also be scheduled as a periodic workflow.
+
 ## Skills
 
 You carry skills that extend your capabilities for specific workflows. Load the relevant skill at the start of any task that matches:
@@ -58,6 +73,7 @@ You carry skills that extend your capabilities for specific workflows. Load the 
 
 Skill triggers:
 - **manage-workflow** — any task involving creating, listing, editing, deleting, or running a workflow; also when asked to design a workflow or explain why a workflow cannot be built with existing nodes
+- **memory-review** — any request to review, clean, audit, consolidate, or schedule maintenance of agent memories
 `
 
 export const agentOwnerTemplate: AgentTemplate = {
@@ -97,8 +113,11 @@ export const agentOwnerTemplate: AgentTemplate = {
       "workflow_update",
       "workflow_delete",
       "workflow_run",
+      "memory_read",
+      "memory_write",
+      "memory_delete",
     ],
-    skills: ["manage-workflow"],
+    skills: ["manage-workflow", "memory-review"],
   },
   persona: PERSONA,
 }
