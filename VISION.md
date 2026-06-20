@@ -14,7 +14,7 @@ Conversations and workflows are one durable execution model. A run — whether a
 ## Owns
 
 - Product-level architecture and boundaries for OpenDora.
-- User-facing applications: web UI, CLI, and TUI.
+- User-facing applications: web UI and CLI (CLI includes integrated terminal UI mode).
 - A typed SDK gateway for application access.
 - A server/service boundary that exposes OpenDora behavior.
 - Runtime execution for live agentic work.
@@ -34,7 +34,7 @@ Conversations and workflows are one durable execution model. A run — whether a
 ## Relationships
 
 ```text
-apps/web | apps/cli | apps/tui
+apps/web | apps/cli
   -> sdk
     -> server
       -> auth

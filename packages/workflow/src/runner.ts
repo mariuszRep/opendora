@@ -663,14 +663,27 @@ async function runSubGraph({
 
       result = JSON.stringify(applied)
 
+    } else if (d.nodeType === NodeTypeId.Output) {
+      const rawFields = (params.fields ?? {}) as Record<string, unknown>
+      const fields: Record<string, string> = {}
+      for (const [k, v] of Object.entries(rawFields)) fields[k] = String(v)
+      const resolved = resolveRefs(fields, input, ctx)
+      ctx["__workflow_output__"] = resolved
+      result = JSON.stringify(resolved, null, 2)
+      await injectMessage(
+        sessionId,
+        [{ type: "tool", tool: "workflow_output", input: fields, output: resolved }],
+        currentDir,
+        { ...workflowMeta, nodeID: currentId, nodeType: "output", nodeLabel },
+      )
     }
 
-    // Structured nodes already wrote the parsed object into ctx above; skip the string overwrite
-    if (d.nodeType !== NodeTypeId.Decide && d.nodeType !== NodeTypeId.Structured && storeAs !== undefined && result !== undefined) ctx[storeAs] = result
+    // Structured/Output nodes already wrote their parsed objects into ctx above; skip the string overwrite
+    if (d.nodeType !== NodeTypeId.Decide && d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && storeAs !== undefined && result !== undefined) ctx[storeAs] = result
 
     // Write under the stable node key so downstream nodes can use $nodeKey references.
-    // Structured already wrote the parsed object above; all other types write the string result.
-    if (d.nodeType !== NodeTypeId.Structured && nodeKey !== undefined && result !== undefined) {
+    // Structured/Output already wrote parsed objects above; all other types write the string result.
+    if (d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && nodeKey !== undefined && result !== undefined) {
       ctx[nodeKey] = result
     }
 
@@ -767,6 +780,7 @@ async function _runWorkflow({
   })
 
   const finalize = async (error?: string) => {
+    const workflowOutput = ctx["__workflow_output__"] as Record<string, unknown> | undefined
     const passed = steps.filter((s) => s.passed).length
     const failed = steps.filter((s) => !s.passed).length
     const lines = [
@@ -781,6 +795,17 @@ async function _runWorkflow({
     const cwd = await Session.effectiveDefaultPath(sessionId)
     await injectMessage(sessionId, [{ type: "text", text: summary }], cwd, baseWorkflowMeta)
     await Session.setWorkflowRun({ sessionID: sessionId, workflowRun: null })
+    if (workflowOutput !== undefined) {
+      const status = {
+        workflow: workflow.name,
+        completed: !error,
+        ...(error ? { error } : {}),
+        passed,
+        failed,
+        steps: steps.map((s) => ({ label: s.label, passed: s.passed })),
+      }
+      return JSON.stringify({ status, result: workflowOutput }, null, 2)
+    }
     return summary
   }
 

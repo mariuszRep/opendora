@@ -52,6 +52,10 @@ Workflow owns reusable process definitions and workflow domain behavior. Workflo
 - A workflow run may be nested inside a parent session, including schedule-created parent sessions and normal agent conversation sessions.
 - Runtime coordinates live execution.
 - Storage persists definitions and run state through stable contracts.
+- Workflow edges are unconditional by default; an edge with no routing configuration always routes to its target node.
+- Edges may optionally be configured as routing edges by selecting a structured output field from the source node and a specific expected value. The edge triggers only when that field matches the configured value.
+- Routing ownership belongs to the edge, not the source node. Decide, structured, and side-note nodes produce output, but each edge independently owns whether and how it routes on that output.
+- Routing configuration is field-to-single-value matching only. It does not include complex expressions, whole-array matching, or status/progress field conventions.
 
 ## Canonical Operations
 

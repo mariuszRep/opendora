@@ -9,8 +9,7 @@
 ## Owns
 
 - Web UI.
-- CLI.
-- TUI.
+- CLI (command-line and terminal UI).
 - Application-specific presentation, interaction, navigation, and user experience logic.
 
 ## Does Not Own
@@ -29,7 +28,7 @@
 
 ## Boundary Rules
 
-- Web, CLI, and TUI live under `apps/`.
+- Web and CLI live under `apps/`; CLI includes integrated terminal UI support.
 - Apps call SDK methods instead of hand-writing server calls or importing backend packages.
 - Apps must not duplicate package-owned domain behavior.
 - Apps must not bypass server auth, permission, validation, or runtime coordination.

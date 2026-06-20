@@ -216,7 +216,18 @@ export namespace Agent {
     const enabledSkills = await deriveEnabledSkills(entry)
     // Keep config.skills consistent with the rule-derived set so downstream
     // readers (system prompt, skill_list, skill_load) reflect permission rules.
-    entry.config.skills = enabledSkills
+    // Persist the change to storage so it survives across agent reloads.
+    if (JSON.stringify(entry.config.skills) !== JSON.stringify(enabledSkills)) {
+      console.log(`[Agent] Updating skills for ${entry.id}:`, entry.config.skills, "->", enabledSkills)
+      entry.config.skills = enabledSkills
+      try {
+        await AgentStorage.update(Instance.directory, entry.id, { skills: enabledSkills })
+        console.log(`[Agent] Successfully updated skills in storage for ${entry.id}`)
+      } catch (err) {
+        console.error(`[Agent] Failed to update skills in storage for ${entry.id}:`, err)
+        // If storage update fails, still use the in-memory value for this request
+      }
+    }
 
     // Start with base defaults (no user config yet)
     let permission = await buildBaseDefaults()

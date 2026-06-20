@@ -222,25 +222,24 @@ Move tests: `test/project/`, `test/scheduler.test.ts`, `test/snapshot/` → `pac
 
 ---
 
-## Phase 8 — Create `apps/cli` and `apps/tui`; Delete `packages/opencode`
+## Phase 8 — Create `apps/cli` (CLI + integrated TUI); Delete `packages/opencode`
 
 **After Phase 7, `opencode/src/` contains only:** `cli/`, `daemon/`, `plugin/`, `config/tui-*.ts`, `index.ts`, `preload-bindings-fix.ts`, `sql.d.ts`
 
 | Source | Destination |
 |--------|-------------|
 | `src/index.ts` | `apps/cli/src/index.ts` |
-| `src/cli/` (minus `cmd/tui/`) | `apps/cli/src/cli/` |
-| `src/cli/cmd/tui/` | `apps/tui/src/` |
+| `src/cli/` (including `cmd/tui/`) | `apps/cli/src/cli/` |
 | `src/daemon/` | `apps/cli/src/daemon/` |
 | `src/plugin/` | `apps/cli/src/plugin/` |
 
-`apps/cli` depends on: `@opendora/sdk` (or `@opendora/server` directly), `@opendora/runtime`, `@opendora/util`
+`apps/cli` depends on: `@opendora/sdk` (or `@opendora/server` directly), `@opendora/runtime`, `@opendora/util`, `@opentui/core`
 
-`apps/tui` depends on: `@opendora/sdk`, `@opentui/core`
+TUI runs as an integrated subcommand within `apps/cli` (e.g., `opencode tui`). There is no separate `apps/tui` package.
 
 **Delete `packages/opencode`** and remove from workspace root `package.json`.
 
-**Exit criteria:** `opencode` binary built from `apps/cli`; TUI launches from `apps/tui`; `packages/opencode` removed from monorepo. `turbo build` succeeds. All tests pass.
+**Exit criteria:** `opencode` binary built from `apps/cli`; TUI launches via CLI subcommand; `packages/opencode` removed from monorepo. `turbo build` succeeds. All tests pass.
 
 ---
 

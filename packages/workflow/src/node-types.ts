@@ -15,6 +15,7 @@ export const NodeTypeId = {
   ForEach: "for_each",
   RunWorkflow: "run_workflow",
   ConfigureSession: "configure_session",
+  Output: "output",
 } as const
 
 export type NodeTypeId = (typeof NodeTypeId)[keyof typeof NodeTypeId]

@@ -270,13 +270,16 @@ export default function AgentSettingsPage() {
   // agent we just track local state and seed rules on first save/load.
   async function handleToggleSkill(name: string) {
     const enabled = selectedSkills.includes(name)
+    const newSkills = enabled ? selectedSkills.filter((s) => s !== name) : [...selectedSkills, name]
+    
     if (isNew) {
-      setSelectedSkills((prev) => (enabled ? prev.filter((s) => s !== name) : [...prev, name]))
+      setSelectedSkills(newSkills)
       return
     }
+    
     if (enabled) {
       const ruleId = skillRuleIds[name]
-      setSelectedSkills((prev) => prev.filter((s) => s !== name))
+      setSelectedSkills(newSkills)
       setSkillRuleIds((prev) => {
         const next = { ...prev }
         delete next[name]
@@ -286,7 +289,7 @@ export default function AgentSettingsPage() {
         await opendora.permission.removeRule(ruleId, "agent", agentId).catch(() => { })
       }
     } else {
-      setSelectedSkills((prev) => [...prev, name])
+      setSelectedSkills(newSkills)
       try {
         const rule = await opendora.permission.addRule({
           scope: "agent",
@@ -298,6 +301,17 @@ export default function AgentSettingsPage() {
         })
         setSkillRuleIds((prev) => ({ ...prev, [name]: rule.id }))
       } catch { /* permission.rules.updated refresh will reconcile */ }
+    }
+    // Immediately update the agent's skills array in storage to keep it in sync
+    // with the permission rules. This ensures the session system prompt sees the
+    // correct skills without waiting for the agent to be reloaded.
+    try {
+      console.log(`[UI] Updating agent ${agentId} skills to:`, newSkills)
+      await updateAgent(agentId, { skills: newSkills })
+      console.log(`[UI] Successfully updated agent ${agentId} skills`)
+    } catch (err) {
+      console.error(`[UI] Failed to update agent ${agentId} skills:`, err)
+      // If update fails, the permission rule is still the source of truth
     }
   }
 
