@@ -483,11 +483,14 @@ export namespace SessionPrompt {
             } satisfies MessageV2.ToolPart)
           },
           async ask(req: any) {
+            const skillToolRules = [...(cfg.skillTools?.get(sessionID) ?? new Set<string>())]
+              .filter(t => !t.startsWith("__skill__:"))
+              .map(t => ({ permission: t, pattern: "*", action: "allow" as const }))
             await cfg.permissionNext?.ask({
               ...req,
               sessionID: sessionID,
               agentID: taskAgent.id,
-              ruleset: cfg.permissionNext?.merge?.(taskAgent.permission, []),
+              ruleset: cfg.permissionNext?.merge?.(taskAgent.permission, skillToolRules),
             })
           },
         }
@@ -942,12 +945,15 @@ export namespace SessionPrompt {
         }
       },
       async ask(req: any) {
+        const skillToolRules = [...(cfg.skillTools?.get(input.session.id) ?? new Set<string>())]
+          .filter(t => !t.startsWith("__skill__:"))
+          .map(t => ({ permission: t, pattern: "*", action: "allow" as const }))
         await cfg.permissionNext?.ask({
           ...req,
           sessionID: input.session.id,
           agentID: input.agent.id,
           tool: { messageID: input.processor.message.id, callID: options.toolCallId },
-          ruleset: cfg.permissionNext?.merge?.(input.agent.permission, []),
+          ruleset: cfg.permissionNext?.merge?.(input.agent.permission, skillToolRules),
         })
       },
     })

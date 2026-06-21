@@ -36,12 +36,13 @@ Storage is the exclusive persistence abstraction layer for OpenDora packages.
 - workflow
 - schedule
 - session
+- notification
 
 ## Boundary Rules
 
 - Storage is the only package that touches physical persistence backends.
 - Domain packages ask storage to persist domain records through stable contracts.
-- Persisted agents, providers, sessions, workflows, skills, schedules, permissions, auth identities, and tool state go through storage contracts.
+- Persisted agents, providers, sessions, workflows, skills, schedules, permissions, auth identities, notification records, and tool state go through storage contracts.
 - Domain packages must not choose or directly access JSON, SQLite, Postgres, files, or another backend.
 - Storage preserves persistence mechanics; domains preserve business meaning.
 - The run-state / checkpoint contract is persistence only: storage stores and retrieves run snapshots and journals but never decides when to checkpoint, resume, replay, or suspend. Runtime owns those decisions; session owns the run state shape.

@@ -217,11 +217,13 @@ export namespace Agent {
     // Keep config.skills consistent with the rule-derived set so downstream
     // readers (system prompt, skill_list, skill_load) reflect permission rules.
     // Persist the change to storage so it survives across agent reloads.
-    if (JSON.stringify(entry.config.skills) !== JSON.stringify(enabledSkills)) {
+    const sortedStored = [...(entry.config.skills ?? [])].sort()
+    const sortedDerived = [...enabledSkills].sort()
+    if (JSON.stringify(sortedStored) !== JSON.stringify(sortedDerived)) {
       console.log(`[Agent] Updating skills for ${entry.id}:`, entry.config.skills, "->", enabledSkills)
       entry.config.skills = enabledSkills
       try {
-        await AgentStorage.update(Instance.directory, entry.id, { skills: enabledSkills })
+        await AgentStorage.update(agentBaseDir(), entry.id, { skills: enabledSkills })
         console.log(`[Agent] Successfully updated skills in storage for ${entry.id}`)
       } catch (err) {
         console.error(`[Agent] Failed to update skills in storage for ${entry.id}:`, err)
@@ -252,9 +254,11 @@ export namespace Agent {
         "todoread", "todowrite", "question", "skill",
       ])
       const allowedTools = new Set(entry.config.tools)
+      // Only emit allow rules for listed tools. Unlisted tools get no static rule,
+      // so they fall through to DB check then user prompt — never silently denied.
       const toolRules: PermissionNext.LegacyRuleset = []
       for (const tool of TOOL_PERMISSIONS) {
-        toolRules.push({ permission: tool, pattern: "*", action: allowedTools.has(tool) ? "allow" : "deny" })
+        if (allowedTools.has(tool)) toolRules.push({ permission: tool, pattern: "*", action: "allow" })
       }
       permission = PermissionNext.merge(permission, toolRules)
     }
@@ -275,6 +279,20 @@ export namespace Agent {
     // Protect TRUNCATE_GLOB and skill dirs from simple wildcard external_directory denials,
     // while still honoring explicit per-path denials.
     permission = await reapplyWhitelist(permission, cfg.permission as Record<string, unknown> | undefined, agentCfg?.permission as Record<string, unknown> | undefined)
+
+    // Re-allow file reads within the configured directory after ALL other rules (including user
+    // config and reapplyWhitelist). This mirrors how reapplyWhitelist protects skill dirs:
+    // adding a directory to an agent via defaultPaths always grants glob/read/grep access there,
+    // regardless of tool restrictions or global deny rules.
+    if (projectPath) {
+      const dirGlob = path.join(projectPath, "*").replaceAll("\\", "/")
+      const dirDeep = path.join(projectPath, "**").replaceAll("\\", "/")
+      permission = PermissionNext.merge(permission, [
+        { permission: "glob", pattern: dirGlob, action: "allow" },
+        { permission: "grep", pattern: dirGlob, action: "allow" },
+        { permission: "read", pattern: dirDeep, action: "allow" },
+      ])
+    }
 
     const modelOverride = typeof agentCfg?.model === "string" ? parseModelStr(agentCfg.model) : undefined
 

@@ -30,6 +30,7 @@ Permission owns authorization policy across OpenDora domains. It creates, manage
 
 - server
 - runtime
+- notification (for permission-request notification history retention)
 - agent, skills, tools, workflow, schedule, session, and other domain packages that require policy checks or permission metadata.
 
 ## Boundary Rules
@@ -40,6 +41,7 @@ Permission owns authorization policy across OpenDora domains. It creates, manage
 - Agents, skills, tools, workflows, and schedules may declare required/default permissions, but they do not own permission lifecycle or evaluation.
 - Runtime and server must ask permission before protected actions.
 - Permission persists policies and assignments through storage contracts only.
+- Permission owns authorization and permission lifecycle. Notification retains permission request records as user-facing notification history after the user replies, marked resolved/rejected/allowed and removed from action-required count. Notification does not own authorization evaluation or permission lifecycle.
 
 ## Canonical Operations
 

@@ -19,6 +19,7 @@ Conversations and workflows are one durable execution model. A run — whether a
 - A server/service boundary that exposes OpenDora behavior.
 - Runtime execution for live agentic work.
 - Domain packages that own their own entities and behavior.
+- Notification as a first-class domain package: modular, persistent, object-driven notification records covering system errors, tool errors, provider issues, tool access/permission requests, workflow/run blockers, memory/status events, and similar system events surfaced to users.
 - A storage boundary for persistence.
 - A plugin boundary for installable OpenDora capabilities.
 - A mini-app integration boundary for standalone experiences that are visually and contextually integrated into OpenDora.
@@ -39,6 +40,7 @@ apps/web | apps/cli
     -> server
       -> auth
       -> permission
+      -> notification
       -> runtime
         -> agent
         -> skills
@@ -74,6 +76,11 @@ domain packages that persist data
 - Server is the API/service boundary that keeps OpenDora reachable, validates requests, applies auth/permission, exposes routes/streams, and coordinates package-owned operations.
 - Runtime is the execution engine that keeps executable work alive: agent runs, tool calls, provider invocations, workflow advancement, schedule-triggered execution, streaming, cancellation, retries, and run lifecycle.
 - Domain packages own their own entities and canonical behavior.
+- Notification is a first-class domain package owning durable, object-driven notification records surfaced to users. Notifications cover system errors, tool errors, provider issues, tool access/permission requests, workflow/run blockers, memory/status events, and similar system events.
+- Notification exposes a single canonical publish/create function that accepts a restricted but extensible notification object schema.
+- Notifications cross-link to exact context: permission request location, session, message, tool call, provider/settings, and workflow/run origin.
+- Permission owns authorization and permission lifecycle; notification owns durable user-facing notification records and cross-links. Permission requests are retained as notification history after reply, marked resolved/rejected/allowed, and removed from action-required count.
+- Notification persists through storage contracts only.
 - Storage is the only persistence boundary. Packages that need durable data use storage contracts instead of choosing JSON, SQLite, Postgres, files, or another backend directly.
 - Session is the universal execution ledger and records run state/history; it is not the execution engine.
 - A run is one durable, resumable, event-sourced execution; conversations and workflows share this model, and any conversation may be transformed into a reusable workflow.

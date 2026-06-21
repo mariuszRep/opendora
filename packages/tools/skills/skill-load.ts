@@ -90,6 +90,7 @@ export const SkillLoadTool = Tool.define("skill_load", async (initCtx) => {
           skill.content.trim(),
           "",
           `Base directory for this skill: ${base}`,
+          `Skill directory (absolute path): ${dir}`,
           "Relative paths in this skill (e.g., scripts/, reference/) are relative to this base directory.",
           "Note: file list is sampled.",
           "",

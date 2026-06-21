@@ -59,7 +59,7 @@ test("plan agent denies edits except .opencode/plans/*", async () => {
   })
 })
 
-test("explore agent denies edit and write", async () => {
+test("explore agent asks for edit and write (not in tools list)", async () => {
   await using tmp = await tmpdir()
   await Instance.provide({
     directory: tmp.path,
@@ -67,10 +67,11 @@ test("explore agent denies edit and write", async () => {
       const explore = await Agent.get("explore")
       expect(explore).toBeDefined()
       expect(explore?.mode).toBe("worker")
-      expect(evalPerm(explore, "edit")).toBe("deny")
-      expect(evalPerm(explore, "write")).toBe("deny")
-      expect(evalPerm(explore, "todoread")).toBe("deny")
-      expect(evalPerm(explore, "todowrite")).toBe("deny")
+      // Tools not in the tools list get "ask" (user is prompted), never silently denied
+      expect(evalPerm(explore, "edit")).toBe("ask")
+      expect(evalPerm(explore, "write")).toBe("ask")
+      expect(evalPerm(explore, "todoread")).toBe("ask")
+      expect(evalPerm(explore, "todowrite")).toBe("ask")
     },
   })
 })
@@ -89,7 +90,7 @@ test("explore agent asks for external directories and allows Truncate.GLOB", asy
   })
 })
 
-test("general agent denies todo tools", async () => {
+test("general agent asks for todo tools (not in tools list)", async () => {
   await using tmp = await tmpdir()
   await Instance.provide({
     directory: tmp.path,
@@ -98,8 +99,9 @@ test("general agent denies todo tools", async () => {
       expect(general).toBeDefined()
       expect(general?.mode).toBe("worker")
       expect(general?.hidden).toBeUndefined()
-      expect(evalPerm(general, "todoread")).toBe("deny")
-      expect(evalPerm(general, "todowrite")).toBe("deny")
+      // Tools not in the tools list get "ask" (user is prompted), never silently denied
+      expect(evalPerm(general, "todoread")).toBe("ask")
+      expect(evalPerm(general, "todowrite")).toBe("ask")
     },
   })
 })

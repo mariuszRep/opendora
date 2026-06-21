@@ -25,6 +25,7 @@ export const compactionTemplate: AgentTemplate = {
     mode: "primary",
     hidden: true,
     tools: [],
+    permission: { "*": "deny" },
   },
   persona: PERSONA,
 }
