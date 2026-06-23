@@ -1350,6 +1350,8 @@ export namespace Session {
     return count
   }
 
+  const _partDeltaSeq = new Map<string, number>()
+
   export const updatePartDelta = fn(
     z.object({
       sessionID: z.string(),
@@ -1359,7 +1361,10 @@ export namespace Session {
       delta: z.string(),
     }),
     async (input) => {
-      getConfig().bus?.publish(MessageV2.Event.PartDelta, input)
+      const key = `${input.partID}:${input.field}`
+      const seq = (_partDeltaSeq.get(key) ?? 0) + 1
+      _partDeltaSeq.set(key, seq)
+      getConfig().bus?.publish(MessageV2.Event.PartDelta, { ...input, seq })
     },
   )
 

@@ -38,6 +38,7 @@ Each definition specifies:
 | `workflow_run` | `run_workflow` | Executes another workflow by ID and waits for its result |
 | `workflow_configure_session` | `configure_session` | Patches session parameters (model, agent, paths, title, system prompt) |
 | `workflow_output` | `output` | Declares the workflow's return value (terminal node) |
+| `workflow_variable` | `variable` | Defines runtime values from static content and dynamic references to previous node outputs |
 
 Tool nodes (`node type: tool`) pass through to the action's own tool definition — they do not add a wrapper.
 

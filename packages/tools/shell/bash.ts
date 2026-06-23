@@ -243,7 +243,10 @@ export const BashTool = Tool.define("bash", async (ctx) => {
         detached: process.platform !== "win32",
       })
 
-      let output = ""
+      let stdout = ""
+      let stderr = ""
+
+      const combinedOutput = () => stderr ? stdout + stderr : stdout
 
       // Initialize metadata with empty output
       ctx.metadata({
@@ -253,19 +256,30 @@ export const BashTool = Tool.define("bash", async (ctx) => {
         },
       })
 
-      const append = (chunk: Buffer) => {
-        output += chunk.toString()
+      const appendStdout = (chunk: Buffer) => {
+        stdout += chunk.toString()
+        const combined = combinedOutput()
         ctx.metadata({
           metadata: {
-            // truncate the metadata to avoid GIANT blobs of data (has nothing to do w/ what agent can access)
-            output: output.length > MAX_METADATA_LENGTH ? output.slice(0, MAX_METADATA_LENGTH) + "\n\n..." : output,
+            output: combined.length > MAX_METADATA_LENGTH ? combined.slice(0, MAX_METADATA_LENGTH) + "\n\n..." : combined,
             description: params.description,
           },
         })
       }
 
-      proc.stdout?.on("data", append)
-      proc.stderr?.on("data", append)
+      const appendStderr = (chunk: Buffer) => {
+        stderr += chunk.toString()
+        const combined = combinedOutput()
+        ctx.metadata({
+          metadata: {
+            output: combined.length > MAX_METADATA_LENGTH ? combined.slice(0, MAX_METADATA_LENGTH) + "\n\n..." : combined,
+            description: params.description,
+          },
+        })
+      }
+
+      proc.stdout?.on("data", appendStdout)
+      proc.stderr?.on("data", appendStderr)
 
       let timedOut = false
       let aborted = false
@@ -320,17 +334,20 @@ export const BashTool = Tool.define("bash", async (ctx) => {
       }
 
       if (resultMetadata.length > 0) {
-        output += "\n\n<bash_metadata>\n" + resultMetadata.join("\n") + "\n</bash_metadata>"
+        const suffix = "\n\n<bash_metadata>\n" + resultMetadata.join("\n") + "\n</bash_metadata>"
+        stdout += suffix
       }
+
+      const displayOutput = combinedOutput()
 
       return {
         title: params.description,
         metadata: {
-          output: output.length > MAX_METADATA_LENGTH ? output.slice(0, MAX_METADATA_LENGTH) + "\n\n..." : output,
+          output: displayOutput.length > MAX_METADATA_LENGTH ? displayOutput.slice(0, MAX_METADATA_LENGTH) + "\n\n..." : displayOutput,
           exit: proc.exitCode,
           description: params.description,
         },
-        output,
+        output: stdout,
       }
     },
   }

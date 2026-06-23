@@ -43,6 +43,7 @@ An agent reading a session history must be able to understand exactly what happe
    | `configure_session` | `workflow_configure_session` |
    | `output` | `workflow_output` |
    | `tool` | the action's own tool name (pass-through) |
+   | `variable` | `workflow_variable` |
 
 ### What this enables
 
@@ -103,6 +104,76 @@ An agent reading a session history must be able to understand exactly what happe
 - Edges may optionally be configured as routing edges by selecting a structured output field from the source node and a specific expected value. The edge triggers only when that field matches the configured value.
 - Routing ownership belongs to the edge, not the source node. Decide, structured, and side-note nodes produce output, but each edge independently owns whether and how it routes on that output.
 - Routing configuration is field-to-single-value matching only. It does not include complex expressions, whole-array matching, or status/progress field conventions.
+
+## Variable Node
+
+The `variable` node type (`workflow_variable`) is a first-class Node-as-Tool for defining and shaping runtime data values within a workflow.
+
+### Purpose
+
+Workflow authors need a way to assemble deterministic data values — strings, arrays, objects, sets/lists of objects — from static content and dynamic references to previous node outputs, without forcing every data-shaping step through prompt/structured/tool nodes. The variable node fills this gap as a reusable data-shaping node.
+
+### Variable/value shapes
+
+A variable node may define one or more named values. Supported shapes include:
+- **Strings** — plain text values
+- **Arrays** — ordered lists of values (strings, numbers, or nested objects)
+- **Objects** — structured key/value maps
+- **Sets/lists of objects** — ordered collections of structured records
+
+Not limited to a single scalar variable. A single variable node may define and produce multiple named values of mixed shapes.
+
+### Reference/template resolution
+
+Values may include reference/template expressions that resolve against outputs from previous nodes. This allows static structures to include dynamic fragments from earlier nodes.
+
+Example: a variable node builds a search terms array:
+```
+[
+  "AI news ${dateFromOtherNode}",
+  "general AI events ${dateFromOtherNode}",
+  "new model releases ${dateFromOtherNode}"
+]
+```
+where `${dateFromOtherNode}` references a date/time value produced by an earlier node.
+
+### Pass-through values
+
+Other or upstream nodes may pass values into the variable node, overriding or supplementing the statically defined values at runtime.
+
+### Update semantics
+
+During a workflow run each variable entry supports two update modes:
+- **Replace/override** — the entry value is replaced by the resolved value on every execution.
+- **Append/collect** — for array entries, the resolved items are concatenated onto the existing array stored under the same key in the workflow context (from a previous execution of this node, e.g. across loop iterations). Falls back to replace if the existing value is not an array.
+
+`updateMode` is configured per entry, not globally, so a single Variable node can replace a string while appending to an array in the same execution.
+
+### Canonical storage shape
+
+Variable node configuration is stored in `node.parameters.variables` as an ordered array of `VariableEntry` objects. Each entry describes one named output value:
+
+```ts
+type VariableEntry = {
+  name: string                          // output key — referenced downstream as $nodeKey.name
+  type: "string" | "number" | "boolean" | "array"
+  value: string                         // for string / number / boolean — may contain $ref expressions
+  items: string[]                       // for array — each element may contain $ref expressions
+  updateMode: "replace" | "append"      // per-entry, defaults to "replace"
+}
+```
+
+The runner resolves each entry at execution time:
+- **string** — `resolveRef(entry.value)` coerced to `String`
+- **number** — `resolveRef(entry.value)` coerced to `Number`
+- **boolean** — `resolveRef(entry.value)` coerced to truthy boolean
+- **array** — `entry.items.map(item => resolveRef(item))` preserving resolved types per element
+
+The assembled output object `{ [entry.name]: resolvedValue, … }` is stored under `ctx[nodeKey]` and emitted as the `workflow_variable` tool part output.
+
+### Per-node documentation scope
+
+If workflow nodes do not yet have per-node scoped VISION docs, implementation planning should decide whether each node type should be isolated as its own documented entity/package/module within the workflow package and then treat the variable node consistently with whatever standard is chosen.
 
 ## Canonical Operations
 

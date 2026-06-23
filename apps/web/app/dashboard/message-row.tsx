@@ -514,6 +514,10 @@ export const MessageRow = React.memo(function MessageRow({
                           // Question tools waiting for user input should show "Awaiting Approval" not "Running"
                           const isQuestionWaiting = !!questionRequest && toolState.status === "running"
                           const state = toToolState(toolState.status, hasPermissionRequest || isQuestionWaiting)
+                          const retryAttemptNum = toolState.status === "running" && "metadata" in toolState ? (toolState.metadata as any)?.attempt as number | undefined : undefined
+                          const retryBadge = retryAttemptNum !== undefined && retryAttemptNum > 1
+                            ? <span className="rounded-full bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-medium text-yellow-600 dark:text-yellow-400">↻{retryAttemptNum}</span>
+                            : undefined
                           const toolInput = <ToolInput input={input ?? {}} />
                           const currentViewMode = questionViewModes[tool.id] ?? "view"
                           const handleViewModeChange = (mode: "code" | "view") => {
@@ -585,7 +589,7 @@ export const MessageRow = React.memo(function MessageRow({
                                 viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : isWebFetchToolCall ? currentWebFetchViewMode : undefined}
                                 onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : isSessionTreeToolCall ? handleSessionTreeViewModeChange : isWebFetchToolCall ? handleWebFetchViewModeChange : undefined}
                                 hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}
-                                actions={webFetchActions}
+                                actions={retryBadge || webFetchActions ? <>{retryBadge}{webFetchActions}</> : undefined}
                                 icon={isWorkflowMessage ? WorkflowIcon : undefined}
                               />
                               <ToolContent>
@@ -737,6 +741,10 @@ export const MessageRow = React.memo(function MessageRow({
                       const isPermissionTool = hasPermissionRequest
                       const permissionResponded = toolState.status === "completed" || toolState.status === "error"
                       const state = toToolState(toolState.status, hasPermissionRequest)
+                      const retryAttemptNum = toolState.status === "running" && "metadata" in toolState ? (toolState.metadata as any)?.attempt as number | undefined : undefined
+                      const retryBadge = retryAttemptNum !== undefined && retryAttemptNum > 1
+                        ? <span className="rounded-full bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-medium text-yellow-600 dark:text-yellow-400">↻{retryAttemptNum}</span>
+                        : undefined
                       const toolInput = <ToolInput input={input ?? {}} />
                       const currentViewMode = questionViewModes[tool.id] ?? "view"
                       const handleViewModeChange = (mode: "code" | "view") => {
@@ -810,7 +818,7 @@ export const MessageRow = React.memo(function MessageRow({
                             viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : isWebFetchToolCall ? currentWebFetchViewMode : undefined}
                             onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : isSessionTreeToolCall ? handleSessionTreeViewModeChange : isWebFetchToolCall ? handleWebFetchViewModeChange : undefined}
                             hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}
-                            actions={webFetchActions}
+                            actions={retryBadge || webFetchActions ? <>{retryBadge}{webFetchActions}</> : undefined}
                           />
                           <ToolContent>
                             {questionRequest ? (

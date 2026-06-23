@@ -1,8 +1,9 @@
 import { AsyncLocalStorage } from "async_hooks"
 import { Session } from "@opendora/session/session"
 import { SessionPrompt } from "@opendora/session/prompt"
+import { SessionStatus } from "@opendora/session/status"
 import { Identifier } from "@opendora/util/id"
-import { Workflow, WorkflowEdge, WorkflowNode, resolveRef, resolveRefs, resolveTemplate } from "./schema.ts"
+import { Workflow, WorkflowEdge, WorkflowNode, resolveRef, resolveRefs, resolveTemplate, resolveDeep } from "./schema.ts"
 import { NodeTypeId } from "./node-types.ts"
 
 // Tracks the chain of workflow IDs currently executing on this async call stack.
@@ -40,6 +41,7 @@ type WorkflowMeta = {
   nodeID?: string
   nodeType?: string
   nodeLabel?: string
+  attempt?: number
 }
 
 // ─── Node-as-Tool lifecycle helpers ───────────────────────────────────────────
@@ -88,7 +90,12 @@ async function startNodeToolPart(
     type: "tool",
     callID: partId,
     tool: toolName,
-    state: { status: "running", input, time: { start: startTime } },
+    state: {
+      status: "running",
+      input,
+      time: { start: startTime },
+      ...(meta.attempt !== undefined && meta.attempt > 1 ? { metadata: { attempt: meta.attempt } } : {}),
+    },
   } as any)
 
   return {
@@ -137,33 +144,6 @@ async function startNodeToolPart(
   }
 }
 
-// Injects a plain text assistant message — used for the workflow completion summary.
-async function injectTextMessage(
-  sessionId: string,
-  text: string,
-  directory: string,
-  meta: WorkflowMeta,
-): Promise<void> {
-  const now = Date.now()
-  const msgId = Identifier.ascending("message")
-  await Session.updateMessage({
-    id: msgId,
-    sessionID: sessionId,
-    role: "assistant",
-    from: { kind: "workflow", id: "workflow" },
-    time: { created: now, completed: now },
-    modelID: "workflow-runner",
-    providerID: "workflow",
-    mode: "workflow",
-    agent: "workflow",
-    path: { cwd: directory, root: directory },
-    cost: 0,
-    tokens: { total: 0, input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
-    workflowMeta: meta,
-  })
-  const partId = Identifier.ascending("part")
-  await Session.updatePart({ id: partId, sessionID: sessionId, messageID: msgId, type: "text", text })
-}
 
 type NodeModel = { providerID: string; modelID: string }
 
@@ -185,31 +165,42 @@ function buildJsonInstruction(schema: Record<string, unknown>): string {
 }
 
 function extractJsonFromText(text: string): unknown | null {
-  // Try the whole string first
   try { return JSON.parse(text.trim()) } catch {}
-  // Walk backward from the last } to find the largest valid object
-  let end = text.lastIndexOf("}")
-  while (end >= 0) {
-    const start = text.lastIndexOf("{", end)
-    if (start < 0) break
-    try { return JSON.parse(text.slice(start, end + 1)) } catch {}
-    end = text.lastIndexOf("}", end - 1)
+  // Try json code fence block
+  const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
+  if (fenceMatch) {
+    try { return JSON.parse(fenceMatch[1].trim()) } catch {}
+  }
+  // Walk forward with nesting depth — finds the first valid outermost object
+  let start = text.indexOf("{")
+  while (start >= 0) {
+    let depth = 0
+    for (let i = start; i < text.length; i++) {
+      if (text[i] === "{") depth++
+      else if (text[i] === "}") {
+        depth--
+        if (depth === 0) {
+          try { return JSON.parse(text.slice(start, i + 1)) } catch {}
+          break
+        }
+      }
+    }
+    start = text.indexOf("{", start + 1)
   }
   return null
 }
 
 async function agentStructuredPrompt(
   sessionId: string,
-  text: string,
   schema: Record<string, unknown>,
   model?: NodeModel,
 ): Promise<unknown> {
-  // For reasoning models (e.g. gpt-5.x) toolChoice:"required" causes them to reason about
-  // calling the tool but produce no actual response — the reasoning phase has no tool access.
-  // Use a plain text prompt with toolChoice:"none" instead: the model always produces real
-  // text output, and we extract the JSON from that text.
+  // Phase 2 of two-phase structured execution: the model has already analysed the session
+  // context in Phase 1 (agentPrompt). We only need to extract the JSON from that analysis.
+  // toolChoice:"none" forces a plain text response so we can extract JSON from it — required
+  // for reasoning models that don't support toolChoice:"required".
   const jsonInstruction = buildJsonInstruction(schema)
-  const fullPrompt = `${text}\n\n${jsonInstruction}`
+  const fullPrompt = `Based on your analysis above, extract the structured output.\n\n${jsonInstruction}`
 
   const result = await SessionPrompt.prompt({
     sessionID: sessionId,
@@ -420,12 +411,23 @@ async function runSubGraph({
     } else if (d.nodeType === NodeTypeId.Structured) {
       const schema = (d.outputSchema as Record<string, unknown>) ?? { type: "object", properties: {} }
       const resolvedPrompt = resolveTemplate(instructions ?? "", input, ctx)
-      nodeToolHandle = await startNodeToolPart(
-        sessionId, "workflow_structured",
-        { node: nodeLabel, instructions: resolvedPrompt },
+
+      // Phase 1: let the model analyse session context and reason about the task
+      const promptHandle = await startNodeToolPart(
+        sessionId, "workflow_prompt",
+        { instructions: resolvedPrompt, node: nodeLabel },
         currentDir, nodeMeta,
       )
-      const structured = await agentStructuredPrompt(sessionId, resolvedPrompt, schema, nodeModel)
+      const analysis = await agentPrompt(sessionId, resolvedPrompt, nodeModel)
+      await promptHandle.finish(analysis)
+
+      // Phase 2: extract structured JSON from the analysis now in session context
+      nodeToolHandle = await startNodeToolPart(
+        sessionId, "workflow_structured",
+        { node: nodeLabel, instructions: "Extract structured data from analysis above" },
+        currentDir, nodeMeta,
+      )
+      const structured = await agentStructuredPrompt(sessionId, schema, nodeModel)
       await nodeToolHandle.finish(structured)
       // Store the parsed object — both under the legacy storeAs key and the stable nodeKey.
       // This must happen here because result is a JSON string; writing result later would
@@ -464,17 +466,57 @@ async function runSubGraph({
 
       nodeToolHandle = await startNodeToolPart(sessionId, actionId, resolvedArgs, currentDir, nodeMeta)
 
-      const session = await Session.get(sessionId)
-      const { output, metadata: toolResultMetadata } = await _toolExecutor(actionId, resolvedArgs, agentArgs, {
-        sessionID: sessionId,
-        agent: session.agentID,
-        abort: new AbortController().signal,
-        messageID: nodeToolHandle.msgId,
-        partID: nodeToolHandle.partId,
-      })
-      result = output
+      const retryConfig = nd.retry as { maxAttempts?: number; delaySeconds?: number } | undefined
+      const maxAttempts = Math.max(1, retryConfig?.maxAttempts ?? 1)
+      const delayMs = Math.max(0, (retryConfig?.delaySeconds ?? 0) * 1000)
 
-      await nodeToolHandle.finish(output, toolResultMetadata as Record<string, unknown> | undefined)
+      let lastError: unknown
+      let toolOutput: string | undefined
+      let toolMeta: Record<string, unknown> | undefined
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        // Show retry attempt counter on the tool card when retrying
+        if (attempt > 1) {
+          await Session.updatePart({
+            id: nodeToolHandle.partId,
+            sessionID: sessionId,
+            messageID: nodeToolHandle.msgId,
+            type: "tool",
+            callID: nodeToolHandle.partId,
+            tool: actionId,
+            state: {
+              status: "running",
+              input: resolvedArgs,
+              time: { start: Date.now() },
+              metadata: { attempt },
+            },
+          } as any)
+        }
+        try {
+          const session = await Session.get(sessionId)
+          const { output, metadata: toolResultMetadata } = await _toolExecutor(actionId, resolvedArgs, agentArgs, {
+            sessionID: sessionId,
+            agent: session.agentID,
+            abort: new AbortController().signal,
+            messageID: nodeToolHandle.msgId,
+            partID: nodeToolHandle.partId,
+          })
+          toolOutput = output
+          toolMeta = toolResultMetadata as Record<string, unknown> | undefined
+          lastError = undefined
+          break
+        } catch (err) {
+          lastError = err
+          if (attempt < maxAttempts) {
+            await new Promise<void>((r) => setTimeout(r, delayMs))
+          }
+        }
+      }
+
+      if (lastError !== undefined) throw lastError
+      result = toolOutput!
+
+      await nodeToolHandle.finish(toolOutput!, toolMeta)
 
     } else if (d.nodeType === NodeTypeId.Decide) {
       const mode = (params.mode as string) ?? "agent"
@@ -548,45 +590,76 @@ async function runSubGraph({
       await nodeToolHandle.finish(newDir)
 
     } else if (d.nodeType === NodeTypeId.ForEach) {
+      const itemsMode = (params.itemsMode as string | undefined) ?? "reference"
       const itemsExpr = (params.items as string | undefined) ?? ""
+      const inlineItemsList = Array.isArray(params.itemsList) ? (params.itemsList as string[]) : null
       const itemVar = (params.item_variable as string | undefined) ?? "item"
       const collectKey = (params.collect as string | undefined) || undefined
       const subWf = d.subWorkflow as { nodes: WorkflowNode[]; edges: WorkflowEdge[] } | undefined
 
-      // Resolve the items array — support JSON string arrays from upstream nodes
-      const rawItems = itemsExpr ? resolveRef(itemsExpr, input, ctx) : []
-      const items: unknown[] = Array.isArray(rawItems)
-        ? rawItems
-        : typeof rawItems === "string"
-          ? (() => { try { const p = JSON.parse(rawItems); return Array.isArray(p) ? p : [rawItems] } catch { return rawItems ? [rawItems] : [] } })()
-          : rawItems != null ? [rawItems] : []
+      let items: unknown[]
+      if (itemsMode === "inline" && inlineItemsList !== null) {
+        // Inline mode: each item string is resolved independently — supports $ref expressions per item
+        items = inlineItemsList.map((item) => resolveRef(item, input, ctx))
+      } else {
+        // Reference mode: resolve expression to an array, then resolve any template expressions within string elements
+        const rawItems = itemsExpr ? resolveRef(itemsExpr, input, ctx) : []
+        const rawArray: unknown[] = Array.isArray(rawItems)
+          ? rawItems
+          : typeof rawItems === "string"
+            ? (() => { try { const p = JSON.parse(rawItems); return Array.isArray(p) ? p : [rawItems] } catch { return rawItems ? [rawItems] : [] } })()
+            : rawItems != null ? [rawItems] : []
+        items = rawArray.map((item) => typeof item === "string" ? resolveTemplate(item, input, ctx) : item)
+      }
 
       nodeToolHandle = await startNodeToolPart(
         sessionId, "workflow_foreach",
-        { items: itemsExpr, item_variable: itemVar, count: items.length },
+        { items: itemsMode === "inline" ? inlineItemsList : itemsExpr, item_variable: itemVar, count: items.length },
         currentDir, nodeMeta,
       )
 
       const iterResults: unknown[] = []
+      const MAX_RETRIES = 3
+      const RETRY_BASE_DELAY_MS = 2000
 
       for (let i = 0; i < items.length; i++) {
         const item = items[i]
-        // Each iteration gets a snapshot of the outer ctx + the current item
-        const iterCtx: Record<string, unknown> = { ...ctx, [itemVar]: item }
+        let iterCtx: Record<string, unknown> = { ...ctx, [itemVar]: item }
 
         if (subWf && subWf.nodes.length > 0) {
-          const iterSteps: GraphStep[] = []
-          await runSubGraph({
-            nodes: subWf.nodes,
-            edges: subWf.edges,
-            sessionId,
-            input,
-            ctx: iterCtx,
-            steps: iterSteps,
-            directory: currentDir,
-            workflowMeta,
-          })
-          steps.push(...iterSteps.map((s) => ({ ...s, label: `[${i}] ${s.label}` })))
+          let attempt = 0
+          while (true) {
+            attempt++
+            // Fresh context snapshot on each attempt so failed iteration state is discarded
+            iterCtx = { ...ctx, [itemVar]: item }
+            const iterSteps: GraphStep[] = []
+            try {
+              await runSubGraph({
+                nodes: subWf.nodes,
+                edges: subWf.edges,
+                sessionId,
+                input,
+                ctx: iterCtx,
+                steps: iterSteps,
+                directory: currentDir,
+                workflowMeta: { ...workflowMeta, ...(attempt > 1 ? { attempt } : {}) },
+              })
+              steps.push(...iterSteps.map((s) => ({ ...s, label: `[${i}] ${s.label}` })))
+              break
+            } catch (err) {
+              steps.push(...iterSteps.map((s) => ({ ...s, label: `[${i}] ${s.label}` })))
+              if (attempt >= MAX_RETRIES) throw err
+              const delay = RETRY_BASE_DELAY_MS * attempt
+              const errMsg = err instanceof Error ? err.message : String(err)
+              SessionStatus.set(sessionId, {
+                type: "retry",
+                attempt,
+                message: `[${i}] ${errMsg.slice(0, 120)}`,
+                next: Date.now() + delay,
+              })
+              await new Promise((r) => setTimeout(r, delay))
+            }
+          }
         }
 
         // Collect: use explicit collect key, or fall back to the item itself
@@ -675,6 +748,57 @@ async function runSubGraph({
       await nodeToolHandle.finish(`Session configured: ${summary}`, applied)
       result = JSON.stringify(applied)
 
+    } else if (d.nodeType === NodeTypeId.Variable) {
+      type VariableEntry = {
+        name: string
+        type: "string" | "number" | "boolean" | "array"
+        value: string
+        items: string[]
+        updateMode: "replace" | "append"
+      }
+      const entries = Array.isArray(params.variables) ? (params.variables as VariableEntry[]) : []
+
+      nodeToolHandle = await startNodeToolPart(
+        sessionId, "workflow_variable",
+        { variables: entries, node: nodeLabel },
+        currentDir, nodeMeta,
+      )
+
+      // Retrieve any previously stored object for append semantics
+      const existingObj = (nodeKey != null ? ctx[nodeKey] : (storeAs != null ? ctx[storeAs] : undefined)) as Record<string, unknown> | undefined
+      const outputValues: Record<string, unknown> = existingObj && typeof existingObj === "object" && !Array.isArray(existingObj)
+        ? { ...existingObj }
+        : {}
+
+      for (const entry of entries) {
+        if (!entry.name) continue
+        const entryUpdateMode = entry.updateMode ?? "replace"
+
+        let resolved: unknown
+        if (entry.type === "array") {
+          const resolvedItems = (entry.items ?? []).map((item) => resolveRef(item, input, ctx))
+          if (entryUpdateMode === "append" && Array.isArray(outputValues[entry.name])) {
+            resolved = [...(outputValues[entry.name] as unknown[]), ...resolvedItems]
+          } else {
+            resolved = resolvedItems
+          }
+        } else {
+          const raw = resolveRef(entry.value ?? "", input, ctx)
+          if (entry.type === "number") resolved = Number(raw)
+          else if (entry.type === "boolean") resolved = Boolean(raw) && raw !== "false" && raw !== "0"
+          else resolved = raw == null ? "" : String(raw)
+        }
+
+        outputValues[entry.name] = resolved
+      }
+
+      await nodeToolHandle.finish(outputValues)
+      result = JSON.stringify(outputValues)
+
+      // Store the object directly — skip the string overwrite in the general ctx write below
+      if (storeAs !== undefined) ctx[storeAs] = outputValues
+      if (nodeKey !== undefined) ctx[nodeKey] = outputValues
+
     } else if (d.nodeType === NodeTypeId.Output) {
       const rawFields = (params.fields ?? {}) as Record<string, unknown>
       const fields: Record<string, string> = {}
@@ -693,12 +817,12 @@ async function runSubGraph({
       await nodeToolHandle.finish(resolved)
     }
 
-    // Structured/Output/Decide nodes already wrote their parsed objects into ctx above; skip the string overwrite
-    if (d.nodeType !== NodeTypeId.Decide && d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && storeAs !== undefined && result !== undefined) ctx[storeAs] = result
+    // Structured/Output/Decide/Variable nodes already wrote their parsed objects into ctx above; skip the string overwrite
+    if (d.nodeType !== NodeTypeId.Decide && d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && d.nodeType !== NodeTypeId.Variable && storeAs !== undefined && result !== undefined) ctx[storeAs] = result
 
     // Write under the stable node key so downstream nodes can use $nodeKey references.
-    // Structured/Output already wrote parsed objects above; all other types write the string result.
-    if (d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && nodeKey !== undefined && result !== undefined) {
+    // Structured/Output/Variable already wrote parsed objects above; all other types write the string result.
+    if (d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && d.nodeType !== NodeTypeId.Variable && nodeKey !== undefined && result !== undefined) {
       ctx[nodeKey] = result
     }
 
@@ -785,17 +909,6 @@ async function _runWorkflow({
     const workflowOutput = ctx["__workflow_output__"] as Record<string, unknown> | undefined
     const passed = steps.filter((s) => s.passed).length
     const failed = steps.filter((s) => !s.passed).length
-    const lines = [
-      error
-        ? `Workflow "${workflow.name}" stopped — ${error}`
-        : `Workflow "${workflow.name}" completed`,
-      `${passed} passed, ${failed} failed`,
-      "",
-      ...steps.map((s) => `${s.passed ? "✓" : "✗"} ${s.label}`),
-    ]
-    const summary = lines.join("\n")
-    const cwd = await Session.effectiveDefaultPath(sessionId)
-    await injectTextMessage(sessionId, summary, cwd, baseWorkflowMeta)
     await Session.setWorkflowRun({ sessionID: sessionId, workflowRun: null })
     if (workflowOutput !== undefined) {
       const status = {
@@ -808,7 +921,15 @@ async function _runWorkflow({
       }
       return JSON.stringify({ status, result: workflowOutput }, null, 2)
     }
-    return summary
+    const lines = [
+      error
+        ? `Workflow "${workflow.name}" stopped — ${error}`
+        : `Workflow "${workflow.name}" completed`,
+      `${passed} passed, ${failed} failed`,
+      "",
+      ...steps.map((s) => `${s.passed ? "✓" : "✗"} ${s.label}`),
+    ]
+    return lines.join("\n")
   }
 
   try {

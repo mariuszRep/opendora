@@ -205,6 +205,8 @@ const TAB_MANIFEST: Record<NodeTypeId, TabId[]> = {
   [NodeTypeId.ForEach]:     ['general', 'input', 'output'],
   [NodeTypeId.RunWorkflow]: ['general', 'input', 'output'],
   [NodeTypeId.ConfigureSession]: ['general', 'input'],
+  [NodeTypeId.Variable]:    ['general', 'input', 'output'],
+  [NodeTypeId.Output]:      ['general', 'input'],
 }
 
 const TAB_LABELS: Record<TabId, string> = {
@@ -241,6 +243,7 @@ export type DrawerFormData = {
   outputSchema?: Record<string, unknown>
   edgeLabel?: string
   model?: NodeModel
+  retry?: { maxAttempts: number; delaySeconds: number }
 }
 
 interface WorkflowEditDrawerProps {
@@ -339,6 +342,15 @@ export function WorkflowEditDrawer({
   const [editingNodeData, setEditingNodeData] = React.useState<UnifiedNodeData | null>(null)
   const [activeTab, setActiveTab] = React.useState('general')
   const [toolSearch, setToolSearch] = React.useState('')
+  const [isDragging, setIsDragging] = React.useState(false)
+  const [dragY, setDragY] = React.useState(0)
+  const [dragStartY, setDragStartY] = React.useState(0)
+  React.useEffect(() => {
+    if (!open) {
+      setDragY(0)
+      setIsDragging(false)
+    }
+  }, [open])
   const { schemas, loading: loadingSchemas } = useToolSchemas()
   const allWorkflows = useWorkflowList()
   const availableWorkflows = currentWorkflowId
@@ -397,6 +409,7 @@ export function WorkflowEditDrawer({
           ? schemaPropsToJsonSchema(editingNodeData._schemaProps as SchemaProp[])
           : (editingNodeData.outputSchema as Record<string, unknown> | undefined),
         model: formData.model,
+        retry: editingNodeData.node.retry,
       })
     } else {
       onSave(formData)
@@ -652,6 +665,36 @@ export function WorkflowEditDrawer({
                     Open Canvas
                   </Button>
                 )}
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Variable) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="variable-label">Label</Label>
+                  <Input id="variable-label" value={editingNodeData.node.label || ''} onChange={(e) => handleNodeChange({ label: e.target.value })} placeholder="Variable" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="variable-description">Description</Label>
+                  <Textarea id="variable-description" value={editingNodeData.node.description || ''} onChange={(e) => handleNodeChange({ description: e.target.value })} placeholder="What values does this node define?" rows={2} />
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Output) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="output-label">Label</Label>
+                  <Input id="output-label" value={editingNodeData.node.label || ''} onChange={(e) => handleNodeChange({ label: e.target.value })} placeholder="Output" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="output-description">Description</Label>
+                  <Textarea id="output-description" value={editingNodeData.node.description || ''} onChange={(e) => handleNodeChange({ description: e.target.value })} placeholder="Describe what this workflow returns" rows={2} />
+                </div>
               </div>
             )
           }
@@ -1018,7 +1061,9 @@ export function WorkflowEditDrawer({
 
           if (nodeType === NodeTypeId.ForEach) {
             const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const itemsMode = (params.itemsMode as string) ?? 'reference'
             const itemsVal = (params.items as string) ?? ''
+            const inlineItems = (Array.isArray(params.itemsList) ? params.itemsList : []) as string[]
             const itemVar = (params.item_variable as string) ?? 'item'
             const collectVal = (params.collect as string) ?? ''
             const outputKey = (params.output as string) ?? 'results'
@@ -1028,17 +1073,71 @@ export function WorkflowEditDrawer({
             return (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Items array</Label>
-                  <ExpressionInput
-                    value={itemsVal}
-                    onChange={(v) => updateParams({ items: v || undefined })}
-                    suggestions={availableRefs}
-                    placeholder="$ctx.my_array"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Reference an upstream array. The loop body runs once per element. Also accepts a JSON string array from a previous node.
-                  </p>
+                  <Label>Items source</Label>
+                  <Select value={itemsMode} onValueChange={(v) => updateParams({ itemsMode: v })}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="reference">From reference</SelectItem>
+                      <SelectItem value="inline">Inline list</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                {itemsMode === 'inline' ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Items</Label>
+                      <Button variant="outline" size="sm" className="h-7 text-xs"
+                        onClick={() => updateParams({ itemsList: [...inlineItems, ''] })}>
+                        <Plus className="h-3 w-3 mr-1" />Add item
+                      </Button>
+                    </div>
+                    {inlineItems.length === 0 && (
+                      <p className="text-xs text-muted-foreground py-2 text-center">No items yet. Add items below — each one can reference upstream outputs using <code className="font-mono">$nodeKey.field</code>.</p>
+                    )}
+                    <div className="space-y-2">
+                      {inlineItems.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <div className="flex-1">
+                            <ExpressionInput
+                              value={item}
+                              onChange={(v) => {
+                                const updated = [...inlineItems]
+                                updated[idx] = v ?? ''
+                                updateParams({ itemsList: updated })
+                              }}
+                              suggestions={availableRefs}
+                              placeholder={`Item ${idx + 1} — use $nodeKey.field for dynamic values`}
+                            />
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => updateParams({ itemsList: inlineItems.filter((_, i) => i !== idx) })}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Each item runs one loop iteration. Use <code className="font-mono">$nodeKey.field</code> to embed dynamic values from earlier nodes.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Items array</Label>
+                    <ExpressionInput
+                      value={itemsVal}
+                      onChange={(v) => updateParams({ items: v || undefined })}
+                      suggestions={availableRefs}
+                      placeholder="$ctx.my_array"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Reference an upstream array. String elements may contain <code className="font-mono">$ref</code> expressions resolved at runtime.
+                    </p>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label>Item variable name</Label>
                   <Input
@@ -1075,6 +1174,201 @@ export function WorkflowEditDrawer({
                     The collected results array is stored as <code className="font-mono">$ctx.{outputKey || 'results'}</code> for downstream nodes.
                   </p>
                 </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Output) {
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const fields = (params.fields ?? {}) as Record<string, string>
+            const fieldEntries = Object.entries(fields)
+            const updateFields = (updated: Record<string, string>) =>
+              setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: { ...params, fields: updated } } })
+
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Output fields</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">Each field becomes a key in the returned <code className="font-mono">result</code> object.</p>
+                    </div>
+                    <Button variant="outline" size="sm" className="h-7 text-xs shrink-0"
+                      onClick={() => {
+                        const key = `field_${fieldEntries.length + 1}`
+                        updateFields({ ...fields, [key]: '' })
+                      }}>
+                      <Plus className="h-3 w-3 mr-1" />Add
+                    </Button>
+                  </div>
+                  {fieldEntries.length === 0 && (
+                    <p className="text-xs text-muted-foreground py-3 text-center">No fields yet. Add one to declare the workflow&apos;s return value.</p>
+                  )}
+                  <div className="space-y-2">
+                    {fieldEntries.map(([key, val], i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Input
+                          value={key}
+                          onChange={(e) => {
+                            const newKey = e.target.value
+                            const entries = fieldEntries.map(([k, v]) => [k, v] as [string, string])
+                            entries[i] = [newKey, val]
+                            updateFields(Object.fromEntries(entries))
+                          }}
+                          placeholder="field name"
+                          className="font-mono text-xs w-32 shrink-0"
+                        />
+                        <ExpressionInput
+                          value={val}
+                          onChange={(v) => updateFields({ ...fields, [key]: v })}
+                          suggestions={availableRefs}
+                          placeholder={`$nodeKey.field`}
+                        />
+                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => {
+                            const updated = { ...fields }
+                            delete updated[key]
+                            updateFields(updated)
+                          }}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Variable) {
+            type VarEntry = { name: string; type: string; value: string; items: string[]; updateMode: string }
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const variables = (Array.isArray(params.variables) ? params.variables : []) as VarEntry[]
+
+            const setVariables = (updated: VarEntry[]) =>
+              setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: { ...params, variables: updated } } })
+
+            const updateEntry = (i: number, patch: Partial<VarEntry>) => {
+              const next = variables.map((v, idx) => idx === i ? { ...v, ...patch } : v)
+              setVariables(next)
+            }
+
+            const VAR_TYPES = ['string', 'number', 'boolean', 'array'] as const
+
+            return (
+              <div className="space-y-3">
+                {variables.length === 0 && (
+                  <p className="text-xs text-muted-foreground py-3 text-center">No variables yet. Add one below.</p>
+                )}
+
+                {variables.map((entry, i) => (
+                  <div key={i} className="border rounded-md p-3 space-y-3">
+                    {/* Header row: name + type + remove */}
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={entry.name}
+                        onChange={(e) => updateEntry(i, { name: e.target.value })}
+                        placeholder="variable name"
+                        className="font-mono text-xs flex-1"
+                      />
+                      <Select
+                        value={entry.type ?? 'string'}
+                        onValueChange={(v) => updateEntry(i, { type: v })}
+                      >
+                        <SelectTrigger className="w-28 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {VAR_TYPES.map((t) => (
+                            <SelectItem key={t} value={t} className="text-xs font-mono">{t}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => setVariables(variables.filter((_, j) => j !== i))}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+
+                    {/* Value / items */}
+                    {(entry.type ?? 'string') === 'array' ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Items</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs px-2"
+                            onClick={() => updateEntry(i, { items: [...(entry.items ?? []), ''] })}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />Add item
+                          </Button>
+                        </div>
+                        {(entry.items ?? []).length === 0 && (
+                          <p className="text-xs text-muted-foreground text-center py-1">No items yet.</p>
+                        )}
+                        {(entry.items ?? []).map((item, j) => (
+                          <div key={j} className="flex items-center gap-1.5">
+                            <ExpressionInput
+                              value={item}
+                              onChange={(v) => {
+                                const next = [...(entry.items ?? [])]
+                                next[j] = v
+                                updateEntry(i, { items: next })
+                              }}
+                              suggestions={availableRefs}
+                              placeholder="value or $nodeKey.field"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                              onClick={() => updateEntry(i, { items: (entry.items ?? []).filter((_, k) => k !== j) })}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground">Value</span>
+                        <ExpressionInput
+                          value={entry.value ?? ''}
+                          onChange={(v) => updateEntry(i, { value: v })}
+                          suggestions={availableRefs}
+                          placeholder="value or $nodeKey.field"
+                        />
+                      </div>
+                    )}
+
+                    {/* Update mode */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground shrink-0">Update</span>
+                      <Select
+                        value={entry.updateMode ?? 'replace'}
+                        onValueChange={(v) => updateEntry(i, { updateMode: v })}
+                      >
+                        <SelectTrigger className="h-7 text-xs flex-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="replace" className="text-xs">Replace</SelectItem>
+                          <SelectItem value="append" className="text-xs">Append (arrays)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => setVariables([...variables, { name: '', type: 'string', value: '', items: [], updateMode: 'replace' }])}
+                >
+                  <Plus className="h-3 w-3 mr-1.5" />Add variable
+                </Button>
               </div>
             )
           }
@@ -1180,6 +1474,39 @@ export function WorkflowEditDrawer({
                       <SelectItem value="manual">Manual (User Approval)</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Retry on Failure</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Automatically retry this step if it fails. Set Max Retries to 0 to disable.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="retry-max" className="text-xs">Max retries</Label>
+                      <Input
+                        id="retry-max"
+                        type="number"
+                        min={0}
+                        max={10}
+                        value={editingNodeData.node.retry?.maxAttempts ?? 0}
+                        onChange={(e) => handleNodeChange({
+                          retry: { maxAttempts: Number(e.target.value), delaySeconds: editingNodeData.node.retry?.delaySeconds ?? 0 }
+                        })}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="retry-delay" className="text-xs">Delay (seconds)</Label>
+                      <Input
+                        id="retry-delay"
+                        type="number"
+                        min={0}
+                        value={editingNodeData.node.retry?.delaySeconds ?? 0}
+                        onChange={(e) => handleNodeChange({
+                          retry: { maxAttempts: editingNodeData.node.retry?.maxAttempts ?? 0, delaySeconds: Number(e.target.value) }
+                        })}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             )
@@ -1391,6 +1718,45 @@ export function WorkflowEditDrawer({
             )
           }
 
+          if (nodeType === NodeTypeId.Variable) {
+            const nodeKey = (editingNodeData.node as any).key as string | undefined
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const variables = (Array.isArray(params.variables) ? params.variables : []) as Array<{ name: string; type: string }>
+
+            if (!nodeKey) {
+              return (
+                <div className="py-6 text-center">
+                  <p className="text-xs text-muted-foreground">Save the node to see its reference key.</p>
+                </div>
+              )
+            }
+
+            return (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md border bg-muted/30">
+                  <span className="font-mono text-xs flex-1 text-foreground">${nodeKey}</span>
+                  <Badge variant="secondary" className="font-mono text-xs shrink-0">object</Badge>
+                </div>
+                {variables.filter((v) => v.name).length > 0 && (
+                  <div className="space-y-1">
+                    {variables.filter((v) => v.name).map((v) => (
+                      <div key={v.name} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/20">
+                        <span className="font-mono text-xs flex-1 text-foreground">${nodeKey}.{v.name}</span>
+                        <Badge variant="outline" className="font-mono text-[10px] px-1 py-0 shrink-0">
+                          {v.type ?? 'string'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Reference individual values as <code className="font-mono">${nodeKey}.&lt;name&gt;</code> in downstream nodes.
+                  The full object is available as <code className="font-mono">${nodeKey}</code>.
+                </p>
+              </div>
+            )
+          }
+
           return null
         }
 
@@ -1470,17 +1836,6 @@ export function WorkflowEditDrawer({
         return null
     }
   }
-
-  const [isDragging, setIsDragging] = React.useState(false)
-  const [dragY, setDragY] = React.useState(0)
-  const [dragStartY, setDragStartY] = React.useState(0)
-
-  React.useEffect(() => {
-    if (!open) {
-      setDragY(0)
-      setIsDragging(false)
-    }
-  }, [open])
 
   const handlePointerDown = (e: React.PointerEvent) => {
     setIsDragging(true)

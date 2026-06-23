@@ -533,6 +533,7 @@ function WorkflowEditorInner({
                 label: formData.label ?? n.data.node.label,
                 action_id: formData.action_id,
                 parameters: formData.parameters,
+                ...(formData.retry !== undefined ? { retry: formData.retry } : {}),
               },
               data: {
                 ...n.data.data,

@@ -152,6 +152,7 @@ export interface NodeProperties {
   status?: 'draft' | 'published' | 'archived'
   action_id?: string
   parameters?: Record<string, unknown>
+  retry?: { maxAttempts: number; delaySeconds: number }
 }
 
 export interface NodeDataConfig {

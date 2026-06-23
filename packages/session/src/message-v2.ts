@@ -546,6 +546,7 @@ export namespace MessageV2 {
         partID: z.string(),
         field: z.string(),
         delta: z.string(),
+        seq: z.number(),
       }),
     ),
     PartRemoved: defineBusEvent(
@@ -643,6 +644,16 @@ export namespace MessageV2 {
       }
 
       if (msg.info.role === "assistant") {
+        // Skip workflow-runner messages that have a running/pending tool — these are the
+        // currently-executing workflow node and should not appear in the model's context
+        // as "[Tool execution was interrupted]" noise. Completed workflow tools are kept.
+        if (
+          msg.info.providerID === "workflow" &&
+          msg.parts.some((p) => p.type === "tool" && (p.state.status === "running" || p.state.status === "pending"))
+        ) {
+          continue
+        }
+
         const differentModel = `${model.providerID}/${model.id}` !== `${msg.info.providerID}/${msg.info.modelID}`
         const media: Array<{ mime: string; url: string }> = []
         const prefix = attributionPrefix(msg.info)

@@ -216,6 +216,7 @@ export function useOpendora(opts?: {
   // Per-session message cache: serve stale-while-revalidate on session switch
   const messageCacheRef = useRef<Map<string, MessageWithParts[]>>(new Map())
   const messageFetchRef = useRef<Map<string, Promise<MessageWithParts[]>>>(new Map())
+  const deltaSeqRef = useRef(new Map<string, number>())
 
 
   const getAgentId = useCallback((agent: Agent & { id?: string }) => agent.id ?? agent.name, [])
@@ -660,6 +661,7 @@ export function useOpendora(opts?: {
         case "message.part.updated": {
           const { part } = (event as { type: string; properties: { part: Part } }).properties
           if (part.sessionID !== selectedSessionRef.current?.id) break
+          deltaSeqRef.current.delete(`${part.id}:text`)
           setMessages((prev) => {
             const msgIdx = prev.findIndex((m) => m.info.id === part.messageID)
             if (msgIdx === -1) return prev
@@ -673,11 +675,17 @@ export function useOpendora(opts?: {
           break
         }
         case "message.part.delta": {
-          const { sessionID, messageID, partID, field, delta } = (event as {
+          const { sessionID, messageID, partID, field, delta, seq } = (event as {
             type: string
-            properties: { sessionID: string; messageID: string; partID: string; field: string; delta: string }
+            properties: { sessionID: string; messageID: string; partID: string; field: string; delta: string; seq?: number }
           }).properties
           if (sessionID !== selectedSessionRef.current?.id) break
+          if (seq !== undefined) {
+            const seqKey = `${partID}:${field}`
+            const last = deltaSeqRef.current.get(seqKey) ?? 0
+            if (seq <= last) break
+            deltaSeqRef.current.set(seqKey, seq)
+          }
           setMessages((prev) => {
             const msgIdx = prev.findIndex((m) => m.info.id === messageID)
             if (msgIdx === -1) return prev

@@ -633,7 +633,8 @@ export namespace Server {
               // one network frame per token. Other event types are written immediately,
               // after flushing any pending delta first to preserve ordering.
               const FLUSH_MS = 33
-              let pending: { event: any; timer: ReturnType<typeof setTimeout> } | null = null
+              // accDelta/lastSeq are subscriber-local — never mutate the shared Bus payload object.
+              let pending: { event: any; accDelta: string; lastSeq: number; timer: ReturnType<typeof setTimeout> } | null = null
 
               // Serialise all SSE writes so a flushed delta always arrives at the
               // client before the non-delta event that follows it.
@@ -645,9 +646,13 @@ export namespace Server {
               function flushPending() {
                 if (!pending) return
                 clearTimeout(pending.timer)
-                const ev = pending.event
+                const { event, accDelta, lastSeq } = pending
                 pending = null
-                enqueue(() => stream.writeSSE({ data: JSON.stringify(ev) }))
+                const flushedEvent = {
+                  ...event,
+                  properties: { ...event.properties, delta: accDelta, seq: lastSeq },
+                }
+                enqueue(() => stream.writeSSE({ data: JSON.stringify(flushedEvent) }))
               }
 
               const unsub = Bus.subscribeAll((event) => {
@@ -659,12 +664,14 @@ export namespace Server {
                   }
                   return
                 }
-                if (pending && pending.event.properties.partID === event.properties.partID) {
+                const props = event.properties
+                if (pending && pending.event.properties.partID === props.partID) {
                   clearTimeout(pending.timer)
-                  pending.event.properties.delta += event.properties.delta
+                  pending.accDelta += props.delta
+                  pending.lastSeq = props.seq ?? pending.lastSeq
                 } else {
                   flushPending()
-                  pending = { event, timer: null as any }
+                  pending = { event, accDelta: props.delta, lastSeq: props.seq ?? 0, timer: null as any }
                 }
                 pending.timer = setTimeout(flushPending, FLUSH_MS)
               })

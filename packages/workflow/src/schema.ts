@@ -112,6 +112,23 @@ function getPath(obj: Record<string, unknown>, path: string): unknown {
   }, obj)
 }
 
+export function resolveDeep(
+  value: unknown,
+  input: Record<string, unknown>,
+  ctx: Record<string, unknown>,
+): unknown {
+  if (typeof value === "string") return resolveRef(value, input, ctx)
+  if (Array.isArray(value)) return value.map((item) => resolveDeep(item, input, ctx))
+  if (value !== null && typeof value === "object") {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = resolveDeep(v, input, ctx)
+    }
+    return out
+  }
+  return value
+}
+
 export function resolveTemplate(
   template: string,
   input: Record<string, unknown>,
