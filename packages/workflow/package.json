@@ -17,6 +17,7 @@
     "@opendora/agent": "workspace:*",
     "@opendora/session": "workspace:*",
     "@opendora/util": "workspace:*",
+    "ai": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"
   },

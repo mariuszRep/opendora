@@ -6,6 +6,53 @@
 
 Workflow owns reusable process definitions and workflow domain behavior. Workflows are the only executable unit that schedules may trigger.
 
+---
+
+## Node-as-Tool Standard
+
+Every workflow node type is a **first-class tool**. This is the core design contract:
+
+### Why
+
+An agent reading a session history must be able to understand exactly what happened during workflow execution — which nodes ran, what they received as input, and what they produced. The only way to guarantee this is to represent every node execution as a standard tool call, identical in shape to the tool calls the agent itself makes.
+
+### Contract for every node type
+
+1. **Tool definition** — Each node type has a canonical tool definition with a stable name, a description the agent can read, and a formal JSON schema for its inputs and outputs. These definitions live alongside the node registry (`node-registry.ts`) and are exported as first-class tool objects, not just internal labels.
+
+2. **Session visibility** — When a node executes, the runner must write a message with a tool part that follows the Vercel AI SDK lifecycle:
+   - `running` — created immediately when the node starts, so the UI reflects live state
+   - `completed` — updated with the node's output when it finishes successfully
+   - `error` — updated with the error message if the node fails
+
+   No node may complete without emitting a tool call. No tool part may be created in `completed` state atomically — the `running` phase is required so the session reflects in-progress execution.
+
+3. **workflowMeta on every part** — Every tool part must carry `workflowMeta` (`workflowID`, `workflowRunID`, `nodeID`, `nodeType`, `nodeLabel`) so the UI and any agent reading the session can trace the part back to the exact workflow run and node that produced it.
+
+4. **Stable tool names** — Tool names are stable public identifiers, not implementation details:
+
+   | Node type | Tool name |
+   |-----------|-----------|
+   | `parameters` | `workflow_parameters` |
+   | `prompt` | `workflow_prompt` |
+   | `structured` | `workflow_structured` |
+   | `decide` | `workflow_decide` |
+   | `set_workdir` | `workflow_set_workdir` |
+   | `for_each` | `workflow_foreach` |
+   | `run_workflow` | `workflow_run` |
+   | `configure_session` | `workflow_configure_session` |
+   | `output` | `workflow_output` |
+   | `tool` | the action's own tool name (pass-through) |
+
+### What this enables
+
+- An agent can inspect a session and read workflow execution exactly as it reads its own tool calls — no special-casing needed.
+- The UI renders every node as a collapsible tool card with live state, input, and output.
+- Error recovery is uniform: any node that fails shows its error state in the session and the workflow stops cleanly.
+- Future resumability can replay from the session's tool call history, because the history is complete and structured.
+
+---
+
 ## Owns
 
 - Workflow definitions.

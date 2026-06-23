@@ -447,14 +447,31 @@ export function useOpendora(opts?: {
       if (!cancelled) {
         setMessages((current) => {
           // Merge fetched messages with any SSE updates that arrived during the fetch.
-          // For each message, keep whichever version has more parts (SSE may have
-          // added streaming parts that aren't in the fetch snapshot yet).
+          // For each message, prefer the version with more parts (SSE may have added
+          // streaming parts not yet in the DB).  When part counts are equal, do a
+          // part-level merge: for text parts keep the longer accumulated text (the
+          // DB only writes at text-start "" and text-end, so the SSE-accumulated
+          // version always has more text mid-stream than the stale DB snapshot).
           const currentById = new Map(current.map((m) => [m.info.id, m]))
           const fetchedIds = new Set(msgs.map((m) => m.info.id))
           const merged = msgs.map((fetchedMsg) => {
             const currentMsg = currentById.get(fetchedMsg.info.id)
             if (!currentMsg) return fetchedMsg
-            return currentMsg.parts.length > fetchedMsg.parts.length ? currentMsg : fetchedMsg
+            if (currentMsg.parts.length > fetchedMsg.parts.length) return currentMsg
+            if (fetchedMsg.parts.length > currentMsg.parts.length) return fetchedMsg
+            // Same part count: merge part-by-part so we keep the most accumulated text.
+            const currentPartsById = new Map(currentMsg.parts.map((p) => [p.id, p]))
+            const mergedParts = fetchedMsg.parts.map((fp) => {
+              const cp = currentPartsById.get(fp.id)
+              if (!cp) return fp
+              if (fp.type === "text" && cp.type === "text") {
+                const fText = typeof (fp as any).text === "string" ? (fp as any).text : ""
+                const cText = typeof (cp as any).text === "string" ? (cp as any).text : ""
+                return cText.length > fText.length ? cp : fp
+              }
+              return fp
+            })
+            return { ...fetchedMsg, parts: mergedParts }
           })
           // Append any SSE-only messages not yet in the fetch snapshot (e.g. a new
           // assistant message that started streaming between fetch-start and fetch-end)

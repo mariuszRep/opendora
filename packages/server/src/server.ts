@@ -635,22 +635,27 @@ export namespace Server {
               const FLUSH_MS = 33
               let pending: { event: any; timer: ReturnType<typeof setTimeout> } | null = null
 
+              // Serialise all SSE writes so a flushed delta always arrives at the
+              // client before the non-delta event that follows it.
+              let writeQueue: Promise<void> = Promise.resolve()
+              function enqueue(write: () => Promise<void>): void {
+                writeQueue = writeQueue.then(write).catch(() => {})
+              }
+
               function flushPending() {
                 if (!pending) return
                 clearTimeout(pending.timer)
                 const ev = pending.event
                 pending = null
-                stream.writeSSE({ data: JSON.stringify(ev) })
+                enqueue(() => stream.writeSSE({ data: JSON.stringify(ev) }))
               }
 
-              const unsub = Bus.subscribeAll(async (event) => {
+              const unsub = Bus.subscribeAll((event) => {
                 if (event.type !== "message.part.delta") {
                   flushPending()
-                  await stream.writeSSE({
-                    data: JSON.stringify(event),
-                  })
+                  enqueue(() => stream.writeSSE({ data: JSON.stringify(event) }))
                   if (event.type === Bus.InstanceDisposed.type) {
-                    stream.close()
+                    writeQueue = writeQueue.then(() => stream.close()).catch(() => {})
                   }
                   return
                 }
@@ -667,12 +672,14 @@ export namespace Server {
               // Send heartbeat every 10s to prevent stalled proxy streams.
               const heartbeat = setInterval(() => {
                 flushPending()
-                stream.writeSSE({
-                  data: JSON.stringify({
-                    type: "server.heartbeat",
-                    properties: {},
+                enqueue(() =>
+                  stream.writeSSE({
+                    data: JSON.stringify({
+                      type: "server.heartbeat",
+                      properties: {},
+                    }),
                   }),
-                })
+                )
               }, 10_000)
 
               await new Promise<void>((resolve) => {

@@ -106,6 +106,8 @@ export namespace MessageV2 {
       type: z.literal("json_schema"),
       schema: z.record(z.string(), z.any()).meta({ ref: "JSONSchema" }),
       retryCount: z.number().int().min(0).default(2),
+      /** Override the tool name the model must call (defaults to "StructuredOutput"). */
+      toolName: z.string().optional(),
     })
     .meta({
       ref: "OutputFormatJsonSchema",

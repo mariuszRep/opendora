@@ -34,7 +34,6 @@ export function registerToolExecutor(executor: ToolExecutor) {
   _toolExecutor = executor
 }
 
-
 type WorkflowMeta = {
   workflowID: string
   workflowRunID: string
@@ -43,19 +42,110 @@ type WorkflowMeta = {
   nodeLabel?: string
 }
 
-type InjectedPart =
-  | { type: "text"; text: string }
-  | { type: "tool"; tool: string; input: Record<string, unknown>; output: unknown }
+// ─── Node-as-Tool lifecycle helpers ───────────────────────────────────────────
+// Every workflow node emits a standard tool call in the session:
+//   running  →  completed | error
+// These helpers encapsulate that lifecycle so it is identical across all node types.
 
-async function injectMessage(
+type NodeToolPartHandle = {
+  readonly msgId: string
+  readonly partId: string
+  finish(output: unknown, metadata?: Record<string, unknown>): Promise<void>
+  fail(error: string): Promise<void>
+}
+
+async function startNodeToolPart(
   sessionId: string,
-  parts: InjectedPart[],
+  toolName: string,
+  input: Record<string, unknown>,
   directory: string,
-  meta?: WorkflowMeta,
+  meta: WorkflowMeta,
+): Promise<NodeToolPartHandle> {
+  const startTime = Date.now()
+  const msgId = Identifier.ascending("message")
+  const partId = Identifier.ascending("part")
+
+  const baseMessage = {
+    sessionID: sessionId,
+    role: "assistant" as const,
+    from: { kind: "workflow" as const, id: "workflow" },
+    modelID: "workflow-runner",
+    providerID: "workflow",
+    mode: "workflow",
+    agent: "workflow",
+    path: { cwd: directory, root: directory },
+    cost: 0,
+    tokens: { total: 0, input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+    workflowMeta: meta,
+  }
+
+  await Session.updateMessage({ id: msgId, ...baseMessage, time: { created: startTime } })
+
+  await Session.updatePart({
+    id: partId,
+    sessionID: sessionId,
+    messageID: msgId,
+    type: "tool",
+    callID: partId,
+    tool: toolName,
+    state: { status: "running", input, time: { start: startTime } },
+  } as any)
+
+  return {
+    msgId,
+    partId,
+    async finish(output: unknown, metadata?: Record<string, unknown>) {
+      const endTime = Date.now()
+      await Session.updatePart({
+        id: partId,
+        sessionID: sessionId,
+        messageID: msgId,
+        type: "tool",
+        callID: partId,
+        tool: toolName,
+        state: {
+          status: "completed",
+          input,
+          output: typeof output === "string" ? output : JSON.stringify(output, null, 2),
+          title: toolName,
+          metadata: (metadata ?? {}) as any,
+          time: { start: startTime, end: endTime },
+        },
+      } as any)
+      await Session.updateMessage({ id: msgId, ...baseMessage, time: { created: startTime, completed: endTime } })
+    },
+    async fail(error: string) {
+      const endTime = Date.now()
+      await Session.updatePart({
+        id: partId,
+        sessionID: sessionId,
+        messageID: msgId,
+        type: "tool",
+        callID: partId,
+        tool: toolName,
+        state: {
+          status: "error",
+          input,
+          error,
+          time: { start: startTime, end: endTime },
+        },
+      } as any).catch(() => {})
+      await Session.updateMessage({
+        id: msgId, ...baseMessage, time: { created: startTime, completed: endTime },
+      }).catch(() => {})
+    },
+  }
+}
+
+// Injects a plain text assistant message — used for the workflow completion summary.
+async function injectTextMessage(
+  sessionId: string,
+  text: string,
+  directory: string,
+  meta: WorkflowMeta,
 ): Promise<void> {
   const now = Date.now()
   const msgId = Identifier.ascending("message")
-
   await Session.updateMessage({
     id: msgId,
     sessionID: sessionId,
@@ -69,32 +159,10 @@ async function injectMessage(
     path: { cwd: directory, root: directory },
     cost: 0,
     tokens: { total: 0, input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
-    ...(meta ? { workflowMeta: meta } : {}),
+    workflowMeta: meta,
   })
-
-  for (const p of parts) {
-    const partId = Identifier.ascending("part")
-    if (p.type === "text") {
-      await Session.updatePart({ id: partId, sessionID: sessionId, messageID: msgId, type: "text", text: p.text })
-    } else {
-      await Session.updatePart({
-        id: partId,
-        sessionID: sessionId,
-        messageID: msgId,
-        type: "tool",
-        callID: Identifier.ascending("part"),
-        tool: p.tool,
-        state: {
-          status: "completed",
-          input: p.input,
-          output: typeof p.output === "string" ? p.output : JSON.stringify(p.output, null, 2),
-          title: p.tool,
-          metadata: {},
-          time: { start: now, end: now },
-        },
-      })
-    }
-  }
+  const partId = Identifier.ascending("part")
+  await Session.updatePart({ id: partId, sessionID: sessionId, messageID: msgId, type: "text", text })
 }
 
 type NodeModel = { providerID: string; modelID: string }
@@ -189,7 +257,6 @@ async function agentPrompt(
     .trim()
 }
 
-
 function evaluateWhen(op: string, actual: unknown, expected: unknown): boolean {
   switch (op) {
     case "equals":      return actual === expected
@@ -276,14 +343,21 @@ async function runSubGraph({
     const nodeModel = (d.model as NodeModel | undefined) ?? carriedModel
     const nodeLabel = (nd.label as string | undefined) ?? d.nodeType as string ?? currentId
 
-    // Set when a Tool/RunWorkflow node creates its "running" tool part below, so the
-    // catch block can finalize it to "error" instead of leaving it stuck at "running".
-    let pendingToolPart: { id: string; messageID: string; tool: string; input: unknown } | undefined
+    // Set when a node creates its "running" tool part, so the catch block can
+    // finalize it to "error" instead of leaving it stuck at "running".
+    let nodeToolHandle: NodeToolPartHandle | undefined
 
     try {
 
     const currentDir = await Session.effectiveDefaultPath(sessionId)
     let result: string | undefined
+
+    const nodeMeta: WorkflowMeta = {
+      ...workflowMeta,
+      nodeID: currentId,
+      nodeType: String(d.nodeType ?? "unknown"),
+      nodeLabel,
+    }
 
     if (d.nodeType === NodeTypeId.Parameters) {
       type WfParam = { name: string; type?: string; description?: string; required?: boolean; enum?: string[] }
@@ -293,6 +367,8 @@ async function runSubGraph({
       for (const p of defs) {
         received[p.name] = Object.prototype.hasOwnProperty.call(input, p.name) ? input[p.name] : null
       }
+
+      nodeToolHandle = await startNodeToolPart(sessionId, "workflow_parameters", received, currentDir, nodeMeta)
 
       for (const p of defs) {
         const val = received[p.name]
@@ -328,27 +404,29 @@ async function runSubGraph({
         if (parts.length > 0) lines.push(`    ${parts.join(" ")}`)
       }
 
-      await injectMessage(sessionId, [{
-        type: "tool",
-        tool: "workflow_parameters",
-        input: received,
-        output: lines.join("\n"),
-      }], currentDir, { ...workflowMeta, nodeID: currentId, nodeType: String(d.nodeType ?? "parameters"), nodeLabel })
+      await nodeToolHandle.finish(lines.join("\n"))
       result = JSON.stringify(received)
 
     } else if (d.nodeType === NodeTypeId.Prompt) {
-      result = await agentPrompt(sessionId, resolveTemplate(instructions ?? "", input, ctx), nodeModel)
+      const resolvedText = resolveTemplate(instructions ?? "", input, ctx)
+      nodeToolHandle = await startNodeToolPart(
+        sessionId, "workflow_prompt",
+        { instructions: resolvedText, node: nodeLabel },
+        currentDir, nodeMeta,
+      )
+      result = await agentPrompt(sessionId, resolvedText, nodeModel)
+      await nodeToolHandle.finish(result)
 
     } else if (d.nodeType === NodeTypeId.Structured) {
       const schema = (d.outputSchema as Record<string, unknown>) ?? { type: "object", properties: {} }
       const resolvedPrompt = resolveTemplate(instructions ?? "", input, ctx)
+      nodeToolHandle = await startNodeToolPart(
+        sessionId, "workflow_structured",
+        { node: nodeLabel, instructions: resolvedPrompt },
+        currentDir, nodeMeta,
+      )
       const structured = await agentStructuredPrompt(sessionId, resolvedPrompt, schema, nodeModel)
-      await injectMessage(sessionId, [{
-        type: "tool",
-        tool: "workflow_structured",
-        input: { node: nodeLabel },
-        output: structured,
-      }], currentDir, { ...workflowMeta, nodeID: currentId, nodeType: String(d.nodeType ?? "structured"), nodeLabel })
+      await nodeToolHandle.finish(structured)
       // Store the parsed object — both under the legacy storeAs key and the stable nodeKey.
       // This must happen here because result is a JSON string; writing result later would
       // overwrite with a string, breaking $nodeKey.field path navigation.
@@ -384,87 +462,19 @@ async function runSubGraph({
 
       if (!resolvedArgs.workdir) resolvedArgs.workdir = currentDir
 
-      // Create message + tool part in "running" state BEFORE executing so the UI
-      // shows the tool card immediately (not only after the tool completes).
-      const toolMsgId = Identifier.ascending("message")
-      const toolPartId = Identifier.ascending("part")
-      const toolStartTime = Date.now()
-
-      await Session.updateMessage({
-        id: toolMsgId,
-        sessionID: sessionId,
-        role: "assistant",
-        from: { kind: "workflow", id: "workflow" },
-        time: { created: toolStartTime },
-        modelID: "workflow-runner",
-        providerID: "workflow",
-        mode: "workflow",
-        agent: "workflow",
-        path: { cwd: currentDir, root: currentDir },
-        cost: 0,
-        tokens: { total: 0, input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
-        workflowMeta: { ...workflowMeta, nodeID: currentId, nodeType: String(d.nodeType ?? "tool"), nodeLabel },
-      })
-
-      await Session.updatePart({
-        id: toolPartId,
-        sessionID: sessionId,
-        messageID: toolMsgId,
-        type: "tool",
-        callID: toolPartId,
-        tool: actionId,
-        state: {
-          status: "running",
-          input: resolvedArgs,
-          time: { start: toolStartTime },
-        },
-      } as any)
-      pendingToolPart = { id: toolPartId, messageID: toolMsgId, tool: actionId, input: resolvedArgs }
+      nodeToolHandle = await startNodeToolPart(sessionId, actionId, resolvedArgs, currentDir, nodeMeta)
 
       const session = await Session.get(sessionId)
       const { output, metadata: toolResultMetadata } = await _toolExecutor(actionId, resolvedArgs, agentArgs, {
         sessionID: sessionId,
         agent: session.agentID,
         abort: new AbortController().signal,
-        messageID: toolMsgId,
-        partID: toolPartId,
+        messageID: nodeToolHandle.msgId,
+        partID: nodeToolHandle.partId,
       })
       result = output
 
-      // Update the part to "completed" with the tool output.
-      await Session.updatePart({
-        id: toolPartId,
-        sessionID: sessionId,
-        messageID: toolMsgId,
-        type: "tool",
-        callID: toolPartId,
-        tool: actionId,
-        state: {
-          status: "completed",
-          input: resolvedArgs,
-          output: typeof output === "string" ? output : JSON.stringify(output, null, 2),
-          title: actionId,
-          metadata: (toolResultMetadata ?? {}) as any,
-          time: { start: toolStartTime, end: Date.now() },
-        },
-      } as any)
-
-      // Mark the message as completed.
-      await Session.updateMessage({
-        id: toolMsgId,
-        sessionID: sessionId,
-        role: "assistant",
-        from: { kind: "workflow", id: "workflow" },
-        time: { created: toolStartTime, completed: Date.now() },
-        modelID: "workflow-runner",
-        providerID: "workflow",
-        mode: "workflow",
-        agent: "workflow",
-        path: { cwd: currentDir, root: currentDir },
-        cost: 0,
-        tokens: { total: 0, input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
-        workflowMeta: { ...workflowMeta, nodeID: currentId, nodeType: String(d.nodeType ?? "tool"), nodeLabel },
-      })
+      await nodeToolHandle.finish(output, toolResultMetadata as Record<string, unknown> | undefined)
 
     } else if (d.nodeType === NodeTypeId.Decide) {
       const mode = (params.mode as string) ?? "agent"
@@ -472,6 +482,14 @@ async function runSubGraph({
         ? (params.cases as Array<{ label: string; when?: { op: string; value?: unknown } }>)
         : []
       const defaultLabel = params.default as string | undefined
+
+      const toolInput: Record<string, unknown> = {
+        mode,
+        cases: cases.map((c) => c.label),
+        ...(defaultLabel ? { default: defaultLabel } : {}),
+        ...(mode === "deterministic" ? { expression: params.input } : {}),
+      }
+      nodeToolHandle = await startNodeToolPart(sessionId, "workflow_decide", toolInput, currentDir, nodeMeta)
 
       if (mode === "deterministic") {
         const inputExpr = params.input as string | undefined
@@ -504,16 +522,7 @@ async function runSubGraph({
         throw new Error(`Decide node "${currentId}": agent returned "${String(result)}" which matched no case label and no default is defined`)
       }
 
-      await injectMessage(sessionId, [{
-        type: "tool",
-        tool: "workflow_decide",
-        input: {
-          mode,
-          cases: cases.map((c) => c.label),
-          ...(mode === "deterministic" ? { expression: params.input } : {}),
-        },
-        output: result,
-      }], currentDir)
+      await nodeToolHandle.finish(result)
 
       const autoKey = (nd.label as string | undefined)
         ?.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") || "decide"
@@ -524,16 +533,19 @@ async function runSubGraph({
     } else if (d.nodeType === NodeTypeId.SetWorkdir) {
       const pathExpr = (params.path as string | undefined) ?? ""
       if (!pathExpr) throw new Error(`SetWorkdir node "${currentId}": "path" parameter is required`)
+
+      nodeToolHandle = await startNodeToolPart(
+        sessionId, "workflow_set_workdir",
+        { path: pathExpr },
+        currentDir, nodeMeta,
+      )
+
       const resolved = String(resolveRef(pathExpr, input, ctx) ?? pathExpr)
       const newDir = resolved.split("\n").map((l) => l.trim()).filter(Boolean).at(-1) ?? resolved
       await Session.setCwd({ sessionID: sessionId, cwd: newDir })
       result = newDir
-      await injectMessage(sessionId, [{
-        type: "tool",
-        tool: "set_workdir",
-        input: { path: pathExpr },
-        output: newDir,
-      }], newDir)
+
+      await nodeToolHandle.finish(newDir)
 
     } else if (d.nodeType === NodeTypeId.ForEach) {
       const itemsExpr = (params.items as string | undefined) ?? ""
@@ -549,12 +561,11 @@ async function runSubGraph({
           ? (() => { try { const p = JSON.parse(rawItems); return Array.isArray(p) ? p : [rawItems] } catch { return rawItems ? [rawItems] : [] } })()
           : rawItems != null ? [rawItems] : []
 
-      await injectMessage(sessionId, [{
-        type: "tool",
-        tool: "workflow_foreach",
-        input: { items: itemsExpr, item_variable: itemVar, count: items.length },
-        output: `Iterating over ${items.length} item(s)`,
-      }], currentDir)
+      nodeToolHandle = await startNodeToolPart(
+        sessionId, "workflow_foreach",
+        { items: itemsExpr, item_variable: itemVar, count: items.length },
+        currentDir, nodeMeta,
+      )
 
       const iterResults: unknown[] = []
 
@@ -587,6 +598,7 @@ async function runSubGraph({
       }
 
       result = JSON.stringify(iterResults)
+      await nodeToolHandle.finish(iterResults, { count: items.length })
 
     } else if (d.nodeType === NodeTypeId.ConfigureSession) {
       const cfg = params as {
@@ -598,6 +610,12 @@ async function runSubGraph({
         path?: string
         readPath?: string
       }
+
+      nodeToolHandle = await startNodeToolPart(
+        sessionId, "workflow_configure_session",
+        params as Record<string, unknown>,
+        currentDir, nodeMeta,
+      )
 
       const applied: Record<string, unknown> = {}
 
@@ -654,31 +672,28 @@ async function runSubGraph({
         ? changedKeys.map((k) => `${k}=${JSON.stringify(applied[k])}`).join(", ")
         : "no changes"
 
-      await injectMessage(sessionId, [{
-        type: "tool",
-        tool: "workflow_configure_session",
-        input: applied,
-        output: `Session configured: ${summary}`,
-      }], currentDir, { ...workflowMeta, nodeID: currentId, nodeType: String(d.nodeType ?? "configure_session"), nodeLabel })
-
+      await nodeToolHandle.finish(`Session configured: ${summary}`, applied)
       result = JSON.stringify(applied)
 
     } else if (d.nodeType === NodeTypeId.Output) {
       const rawFields = (params.fields ?? {}) as Record<string, unknown>
       const fields: Record<string, string> = {}
       for (const [k, v] of Object.entries(rawFields)) fields[k] = String(v)
+
+      nodeToolHandle = await startNodeToolPart(
+        sessionId, "workflow_output",
+        fields as Record<string, unknown>,
+        currentDir, nodeMeta,
+      )
+
       const resolved = resolveRefs(fields, input, ctx)
       ctx["__workflow_output__"] = resolved
       result = JSON.stringify(resolved, null, 2)
-      await injectMessage(
-        sessionId,
-        [{ type: "tool", tool: "workflow_output", input: fields, output: resolved }],
-        currentDir,
-        { ...workflowMeta, nodeID: currentId, nodeType: "output", nodeLabel },
-      )
+
+      await nodeToolHandle.finish(resolved)
     }
 
-    // Structured/Output nodes already wrote their parsed objects into ctx above; skip the string overwrite
+    // Structured/Output/Decide nodes already wrote their parsed objects into ctx above; skip the string overwrite
     if (d.nodeType !== NodeTypeId.Decide && d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && storeAs !== undefined && result !== undefined) ctx[storeAs] = result
 
     // Write under the stable node key so downstream nodes can use $nodeKey references.
@@ -710,21 +725,8 @@ async function runSubGraph({
     steps.push({ label: nodeLabel, passed: true })
     } catch (err) {
       steps.push({ label: nodeLabel, passed: false })
-      if (pendingToolPart) {
-        await Session.updatePart({
-          id: pendingToolPart.id,
-          sessionID: sessionId,
-          messageID: pendingToolPart.messageID,
-          type: "tool",
-          callID: pendingToolPart.id,
-          tool: pendingToolPart.tool,
-          state: {
-            status: "error",
-            input: pendingToolPart.input,
-            error: err instanceof Error ? err.message : String(err),
-            time: { start: Date.now(), end: Date.now() },
-          },
-        } as any).catch(() => {})
+      if (nodeToolHandle) {
+        await nodeToolHandle.fail(err instanceof Error ? err.message : String(err)).catch(() => {})
       }
       throw err
     }
@@ -793,7 +795,7 @@ async function _runWorkflow({
     ]
     const summary = lines.join("\n")
     const cwd = await Session.effectiveDefaultPath(sessionId)
-    await injectMessage(sessionId, [{ type: "text", text: summary }], cwd, baseWorkflowMeta)
+    await injectTextMessage(sessionId, summary, cwd, baseWorkflowMeta)
     await Session.setWorkflowRun({ sessionID: sessionId, workflowRun: null })
     if (workflowOutput !== undefined) {
       const status = {
@@ -827,4 +829,3 @@ async function _runWorkflow({
 
   return finalize()
 }
-

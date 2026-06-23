@@ -412,14 +412,20 @@ const messageResponseComponents = {
 };
 
 export const MessageResponse = memo(
-  ({ className, ...props }: MessageResponseProps) => (
-    <Streamdown
-      className={cn("size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0", className)}
-      components={messageResponseComponents}
-      plugins={streamdownPlugins}
-      {...props}
-    />
-  ),
+  ({ className, ...props }: MessageResponseProps) => {
+    if (typeof props.children === "string" && props.children.length > 0) {
+      const words = props.children.slice(0, 200)
+      console.log("[MessageResponse] children:", JSON.stringify(words))
+    }
+    return (
+      <Streamdown
+        className={cn("size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0", className)}
+        components={messageResponseComponents}
+        plugins={streamdownPlugins}
+        {...props}
+      />
+    )
+  },
   (prevProps, nextProps) => prevProps.children === nextProps.children
 );
 

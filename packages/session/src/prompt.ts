@@ -55,7 +55,6 @@ IMPORTANT:
 - Complete all necessary research and tool calls BEFORE calling this tool
 - This tool provides your final answer - no further actions are taken after calling it`
 
-const STRUCTURED_OUTPUT_SYSTEM_PROMPT = `IMPORTANT: The user has requested structured output. You MUST use the StructuredOutput tool to provide your final response. Do NOT respond with plain text - you MUST call the StructuredOutput tool with your answer formatted according to the schema.`
 
 export namespace SessionPrompt {
   // Module-level state map — equivalent to Instance.state()
@@ -87,6 +86,16 @@ export namespace SessionPrompt {
   export function assertNotBusy(sessionID: string) {
     const match = state()[sessionID]
     if (match) throw new Session.BusyError(sessionID)
+  }
+
+  // In-memory store for extra tools that cannot be serialized to the DB.
+  // Keyed by sessionID — only one prompt is active per session at a time.
+  // done=true once any extra tool has been called → stops re-injecting and exits the loop.
+  const _extraToolsState = new Map<string, { tools: Record<string, AITool>; done: boolean }>()
+
+  export function markExtraToolsDone(sessionID: string) {
+    const entry = _extraToolsState.get(sessionID)
+    if (entry) entry.done = true
   }
 
   export const PromptInput = z.object({
@@ -180,6 +189,24 @@ export namespace SessionPrompt {
 
     return loop({ sessionID: input.sessionID })
   })
+
+  /**
+   * Like prompt() but injects extra tools for this turn only.
+   * The model is forced to call one of these tools (all other tools are stripped).
+   * The loop exits immediately after any extra tool is called.
+   * extraTools are kept in-memory and never serialized to the DB.
+   */
+  export async function promptWithExtraTools(
+    input: z.infer<typeof PromptInput>,
+    extraTools: Record<string, AITool>,
+  ): Promise<MessageV2.WithParts> {
+    _extraToolsState.set(input.sessionID, { tools: extraTools, done: false })
+    try {
+      return await prompt(input)
+    } finally {
+      _extraToolsState.delete(input.sessionID)
+    }
+  }
 
   export async function resolvePromptParts(template: string): Promise<PromptInput["parts"]> {
     const cfg = getConfig()
@@ -637,6 +664,10 @@ export namespace SessionPrompt {
         session,
       })
 
+      // Resolve extra tools early so we can use the entry in processor creation below.
+      const _extraToolsEntry = _extraToolsState.get(sessionID)
+      const _hasNamedStructuredTool = lastUser.format?.type === "json_schema" && lastUser.format.toolName != null
+
       const processor = SessionProcessor.create({
         assistantMessage: (await Session.updateMessage({
           id: Identifier.ascending("message"),
@@ -663,7 +694,9 @@ export namespace SessionPrompt {
             created: Date.now(),
           },
           sessionID,
-          ...(lastUser.hidden ? { hidden: true } : {}),
+          // When extra tools are present or json_schema uses a custom toolName, the model's
+          // tool call should be visible even if the triggering user message is hidden.
+          ...((lastUser.hidden && !_extraToolsEntry && !_hasNamedStructuredTool) ? { hidden: true } : {}),
         })) as MessageV2.Assistant,
         sessionID: sessionID,
         model,
@@ -694,20 +727,33 @@ export namespace SessionPrompt {
         messages: msgs,
       })
 
-      // Inject StructuredOutput tool if JSON schema mode enabled
+      // Inject StructuredOutput tool if JSON schema mode enabled.
+      // toolName overrides the tool name (e.g. "workflow_structured" for workflow nodes).
       if (lastUser.format?.type === "json_schema") {
-        tools["StructuredOutput"] = createStructuredOutputTool({
+        const structuredToolName = lastUser.format.toolName ?? "StructuredOutput"
+        tools[structuredToolName] = createStructuredOutputTool({
           schema: lastUser.format.schema,
           onSuccess(output: unknown) {
             structuredOutput = output
           },
         })
-        // Strip every other tool — model must call StructuredOutput immediately,
-        // no exploring with bash/read/etc. before answering.
+        // Strip every other tool — model must call the structured tool immediately.
         for (const id of Object.keys(tools)) {
-          if (id !== "StructuredOutput" && id !== "invalid") {
+          if (id !== structuredToolName && id !== "invalid") {
             delete tools[id]
           }
+        }
+      }
+
+      // Inject caller-supplied tools (e.g. workflow_decide, workflow_structured).
+      // Strip all other tools so the model is forced to call one of these.
+      // Skip if already done (tool was called in a prior iteration).
+      if (_extraToolsEntry && !_extraToolsEntry.done && Object.keys(_extraToolsEntry.tools).length > 0) {
+        for (const id of Object.keys(tools)) {
+          if (id !== "invalid") delete tools[id]
+        }
+        for (const [id, t] of Object.entries(_extraToolsEntry.tools)) {
+          tools[id] = t
         }
       }
 
@@ -743,7 +789,10 @@ export namespace SessionPrompt {
       // so both the agent loop and the UI preview use identical code.
       // Structured output requires an extra instruction appended after build().
       const format = lastUser.format ?? { type: "text" }
-      const structuredOutputSystem = format.type === "json_schema" ? [STRUCTURED_OUTPUT_SYSTEM_PROMPT] : []
+      const structuredToolName = format.type === "json_schema" ? (format.toolName ?? "StructuredOutput") : "StructuredOutput"
+      const structuredOutputSystem = format.type === "json_schema"
+        ? [`IMPORTANT: The user has requested structured output. You MUST use the \`${structuredToolName}\` tool to provide your final response. Do NOT respond with plain text - you MUST call the \`${structuredToolName}\` tool with your answer formatted according to the schema.`]
+        : []
 
       const result = await processor.process({
         user: lastUser,
@@ -764,7 +813,7 @@ export namespace SessionPrompt {
         ],
         tools,
         model,
-        toolChoice: format.type === "json_schema" ? "required" : (format.toolChoice ?? undefined),
+        toolChoice: (format.type === "json_schema" || (_extraToolsEntry && !_extraToolsEntry.done)) ? "required" : (format.toolChoice ?? undefined),
       })
 
       // If structured output was captured, save it and exit
@@ -774,6 +823,9 @@ export namespace SessionPrompt {
         await Session.updateMessage(processor.message)
         break
       }
+
+      // If extra tools were called this iteration, exit — the tool call IS the result
+      if (_extraToolsEntry?.done) break
 
       const modelFinished = processor.message.finish && !["tool-calls", "unknown"].includes(processor.message.finish)
 
@@ -824,8 +876,15 @@ export namespace SessionPrompt {
 
   async function lastModel(sessionID: string) {
     const cfg = getConfig()
-    for await (const item of MessageV2.stream(sessionID)) {
-      if (item.info.role === "user" && item.info.model) return item.info.model
+    // Walk the session chain: worker sessions have no user messages of their own,
+    // but their parentSessionID points to the session that spawned them.
+    let sid: string | undefined = sessionID
+    while (sid) {
+      for await (const item of MessageV2.stream(sid)) {
+        if (item.info.role === "user" && item.info.model) return item.info.model
+      }
+      const info: Session.Info | undefined = await Session.get(sid).catch(() => undefined)
+      sid = info?.parentSessionID ?? info?.replyToSessionID ?? undefined
     }
     const fallback = await cfg.provider?.defaultModel?.()
     if (!fallback?.providerID || !fallback?.modelID) {
