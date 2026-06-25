@@ -1,4 +1,5 @@
 import path from "path"
+import fs from "fs/promises"
 import z from "zod"
 import { Tool } from "@opendora/tools/tool"
 // @ts-ignore — skills depends on tools creating a circular workspace ref; resolved at runtime
@@ -24,16 +25,33 @@ export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
     "Load a specialized skill that provides domain-specific instructions and workflows.",
     "",
     "Your available skills are listed in the system prompt under 'Available Skills'.",
-    "When a task matches one of those skills, use this tool to load the full instructions.",
+    "When a task matches one of those skills, use this tool to activate it.",
     "",
-    "The skill will inject detailed instructions, workflows, and access to bundled resources (scripts, references, templates) into the conversation context.",
-    "",
-    'Tool output includes a `<skill_content name="...">` block with the loaded content.',
+    "The tool output includes a `<skill_content name=\"...\">` block with the skill location and a `<skill_resources>` listing of bundled files. Use your file-read tool to load the SKILL.md at the listed location before following the instructions.",
   ].join("\n")
 
   const parameters = z.object({
     name: z.string().describe("The name of the skill to load (see Available Skills in system prompt)"),
   })
+
+  async function listFiles(dir: string): Promise<string[]> {
+    const files: string[] = []
+    try {
+      const entries = await fs.readdir(dir, { withFileTypes: true })
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name)
+        if (entry.isDirectory()) {
+          const nested = await listFiles(fullPath)
+          files.push(...nested)
+        } else {
+          files.push(fullPath)
+        }
+      }
+    } catch {
+      // ignore directory read errors
+    }
+    return files
+  }
 
   return {
     description,
@@ -60,13 +78,33 @@ export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
       }
 
       const dir = path.dirname(skill.location)
+      const allFiles = await listFiles(dir)
+      const files = allFiles
+        .filter((f) => !f.endsWith("SKILL.md"))
+        .slice(0, 10)
+        .map((f) => `<file>${f}</file>`)
+        .join("\n")
+      const xmlName = skill.name.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 
       return {
         title: `Loaded skill: ${skill.name}`,
-        output: `Skill "${skill.name}" loaded from ${dir}/SKILL.md`,
+        output: [
+          `<skill_content name="${xmlName}">`,
+          `Skill "${skill.name}" is now active. Before following skill instructions, load the SKILL.md file at the location below.`,
+          ``,
+          `SKILL.md location: ${skill.location}`,
+          `Skill directory (absolute path): ${dir}`,
+          `Relative paths in this skill (e.g., scripts/, references/, assets/) are relative to this base directory.`,
+          ``,
+          "<skill_resources>",
+          files,
+          "</skill_resources>",
+          "</skill_content>",
+        ].join("\n"),
         metadata: {
           name: skill.name,
           dir,
+          location: skill.location,
         },
       }
     },

@@ -190,12 +190,28 @@ export namespace SystemPrompt {
         ? allSkills.filter((s: any) => agentSkillNames.includes(s.name))
         : []
       if (visibleSkills.length > 0) {
-        const rows = visibleSkills.map((s: any) => `| ${s.name} | ${(s.description ?? "").replace(/\|/g, "\\|")} |`)
-        const table = ["| Name | Description |", "| --- | --- |", ...rows].join("\n")
-        sections.push({
-          label: "Available Skills",
-          content: `# Available Skills\nUse the \`skill_load\` tool to load any of these skills when the task matches:\n\n${table}`,
-        })
+        const skillXml = visibleSkills
+          .filter((s: any) => !s.frontmatter?.["disable-model-invocation"])
+          .map((s: any) => {
+            const name = (s.name ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            const description = (s.description ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            const location = (s.location ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            return `<skill>\n  <name>${name}</name>\n  <description>${description}</description>\n  <location>${location}</location>\n</skill>`
+          })
+          .join("\n")
+
+        if (skillXml) {
+          sections.push({
+            label: "Available Skills",
+            content: [
+              "The following skills provide specialized instructions for specific tasks. When a task matches a skill's description, use your file-read tool to load the SKILL.md at the listed location before proceeding. When a skill references relative paths, resolve them against the skill's directory (the parent of SKILL.md).",
+              "",
+              "<available_skills>",
+              skillXml,
+              "</available_skills>",
+            ].join("\n"),
+          })
+        }
       }
     }
 

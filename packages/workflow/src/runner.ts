@@ -3,7 +3,8 @@ import { Session } from "@opendora/session/session"
 import { SessionPrompt } from "@opendora/session/prompt"
 import { SessionStatus } from "@opendora/session/status"
 import { Identifier } from "@opendora/util/id"
-import { Workflow, WorkflowEdge, WorkflowNode, resolveRef, resolveRefs, resolveTemplate, resolveDeep } from "./schema.ts"
+import { Workflow, WorkflowEdge, WorkflowNode } from "./schema.ts"
+import { resolveRef, resolveRefs, resolveTemplate, resolveDeep, resolveSchemaDescriptions } from "./refs.ts"
 import { NodeTypeId } from "./node-types.ts"
 
 // Tracks the chain of workflow IDs currently executing on this async call stack.
@@ -147,31 +148,50 @@ async function startNodeToolPart(
 
 type NodeModel = { providerID: string; modelID: string }
 
-function buildJsonInstruction(schema: Record<string, unknown>): string {
-  const props = (schema as any).properties ?? {}
-  const required: string[] = (schema as any).required ?? []
-  const lines = Object.entries(props).map(([key, val]: [string, any]) => {
-    const desc = val.description ? ` // ${val.description}` : ""
-    const enumStr = val.enum ? ` (one of: ${val.enum.join(", ")})` : ""
-    return `  "${key}": ...${enumStr}${desc}`
-  })
-  return [
-    `Respond with ONLY a valid JSON object — no prose, no markdown, no code fences.`,
-    `Use EXACTLY these field names (required: ${required.join(", ")}):`,
-    `{`,
-    ...lines,
-    `}`,
-  ].join("\n")
+// Renders a JSON schema as an annotated template the model can use as a writing guide.
+// Field descriptions appear as // comments; types and enums are shown as placeholder values.
+function schemaToTemplate(schema: Record<string, unknown>, depth = 0): string {
+  const pad = "  ".repeat(depth)
+  const inner = "  ".repeat(depth + 1)
+  const type = (schema as any).type as string | undefined
+  const desc = (schema as any).description as string | undefined
+  const comment = desc ? `  // ${desc}` : ""
+
+  if (type === "object") {
+    const props = (schema as any).properties as Record<string, Record<string, unknown>> ?? {}
+    const required = new Set<string>((schema as any).required ?? [])
+    const entries = Object.entries(props)
+    if (entries.length === 0) return `{}`
+    const lines = entries.map(([key, val]) => {
+      const opt = required.has(key) ? "" : "?"
+      return `${inner}"${key}${opt}": ${schemaToTemplate(val, depth + 1)}`
+    })
+    return `{${comment}\n${lines.join(",\n")}\n${pad}}`
+  }
+
+  if (type === "array") {
+    const items = (schema as any).items as Record<string, unknown> | undefined
+    const itemStr = items ? schemaToTemplate(items, depth + 1) : "..."
+    return `[${comment}\n${inner}${itemStr}\n${pad}]`
+  }
+
+  if ((schema as any).enum) {
+    const vals = ((schema as any).enum as unknown[]).map((v) => JSON.stringify(v)).join(" | ")
+    return `${vals}${comment}`
+  }
+
+  const placeholder = type === "string" ? `"string"` : type === "number" || type === "integer" ? `0` : type === "boolean" ? `true` : `null`
+  return `${placeholder}${comment}`
+}
+
+function hasProperties(schema: Record<string, unknown>): boolean {
+  return Object.keys((schema as any).properties ?? {}).length > 0
 }
 
 function extractJsonFromText(text: string): unknown | null {
   try { return JSON.parse(text.trim()) } catch {}
-  // Try json code fence block
   const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
-  if (fenceMatch) {
-    try { return JSON.parse(fenceMatch[1].trim()) } catch {}
-  }
-  // Walk forward with nesting depth — finds the first valid outermost object
+  if (fenceMatch?.[1]) { try { return JSON.parse(fenceMatch[1].trim()) } catch {} }
   let start = text.indexOf("{")
   while (start >= 0) {
     let depth = 0
@@ -179,10 +199,7 @@ function extractJsonFromText(text: string): unknown | null {
       if (text[i] === "{") depth++
       else if (text[i] === "}") {
         depth--
-        if (depth === 0) {
-          try { return JSON.parse(text.slice(start, i + 1)) } catch {}
-          break
-        }
+        if (depth === 0) { try { return JSON.parse(text.slice(start, i + 1)) } catch {} ; break }
       }
     }
     start = text.indexOf("{", start + 1)
@@ -190,42 +207,45 @@ function extractJsonFromText(text: string): unknown | null {
   return null
 }
 
-async function agentStructuredPrompt(
+// Run the structured node prompt and extract JSON from the model's text response.
+// toolChoice:"none" forces pure text output — no tool calls, no DSML, just text.
+// JSON is parsed deterministically by the node function, not by model behavior.
+async function agentStructuredJson(
   sessionId: string,
+  instructions: string,
   schema: Record<string, unknown>,
   model?: NodeModel,
 ): Promise<unknown> {
-  // Phase 2 of two-phase structured execution: the model has already analysed the session
-  // context in Phase 1 (agentPrompt). We only need to extract the JSON from that analysis.
-  // toolChoice:"none" forces a plain text response so we can extract JSON from it — required
-  // for reasoning models that don't support toolChoice:"required".
-  const jsonInstruction = buildJsonInstruction(schema)
-  const fullPrompt = `Based on your analysis above, extract the structured output.\n\n${jsonInstruction}`
+  const schemaGuide = hasProperties(schema)
+    ? [
+        "",
+        "Respond with ONLY a valid JSON object matching this structure:",
+        "```json",
+        schemaToTemplate(schema),
+        "```",
+        "Output only the JSON — no prose, no explanation, no extra keys.",
+      ].join("\n")
+    : "\n\nRespond with ONLY a valid JSON object capturing the key structured information. Output only the JSON."
 
   const result = await SessionPrompt.prompt({
     sessionID: sessionId,
-    parts: [{ type: "text", text: fullPrompt }],
+    parts: [{ type: "text", text: instructions + schemaGuide }],
     format: { type: "text", toolChoice: "none" },
-    hidden: true,
     ...(model ? { model } : {}),
   })
 
-  // For non-reasoning models that support StructuredOutput tool call
-  const structured = (result as any).info?.structured ?? null
-  if (structured !== null) return structured
-
-  // Primary path for reasoning models: extract JSON from the text response
-  const textContent = ((result as any).parts ?? [])
+  const text = ((result as any).parts ?? [])
     .filter((p: any) => p.type === "text" && !p.synthetic)
     .map((p: any) => p.text ?? "")
     .join("")
     .trim()
-  if (textContent) {
-    const extracted = extractJsonFromText(textContent)
+
+  if (text) {
+    const extracted = extractJsonFromText(text)
     if (extracted !== null) return extracted
   }
 
-  throw new Error(`Workflow structured node produced no output — stopping workflow`)
+  throw new Error(`Structured node: model did not produce extractable JSON`)
 }
 
 async function agentPrompt(
@@ -352,7 +372,12 @@ async function runSubGraph({
 
     if (d.nodeType === NodeTypeId.Parameters) {
       type WfParam = { name: string; type?: string; description?: string; required?: boolean; enum?: string[] }
-      const defs = Array.isArray(d.workflowParameters) ? (d.workflowParameters as WfParam[]) : []
+      const defs = Array.isArray(d.workflowParameters)
+        ? (d.workflowParameters as WfParam[]).map((p) => ({
+            ...p,
+            description: p.description ? resolveTemplate(p.description, input, ctx) : undefined,
+          }))
+        : []
 
       const received: Record<string, unknown> = {}
       for (const p of defs) {
@@ -409,26 +434,24 @@ async function runSubGraph({
       await nodeToolHandle.finish(result)
 
     } else if (d.nodeType === NodeTypeId.Structured) {
-      const schema = (d.outputSchema as Record<string, unknown>) ?? { type: "object", properties: {} }
+      const rawSchema = (d.outputSchema as Record<string, unknown>) ?? { type: "object", properties: {} }
+      const schema = resolveSchemaDescriptions(rawSchema, input, ctx)
       const resolvedPrompt = resolveTemplate(instructions ?? "", input, ctx)
+      const safeKey = (nodeKey ?? currentId).replace(/[^a-zA-Z0-9_]/g, "_").replace(/^([^a-zA-Z_])/, "_$1")
 
-      // Phase 1: let the model analyse session context and reason about the task
-      const promptHandle = await startNodeToolPart(
-        sessionId, "workflow_prompt",
-        { instructions: resolvedPrompt, node: nodeLabel },
-        currentDir, nodeMeta,
-      )
-      const analysis = await agentPrompt(sessionId, resolvedPrompt, nodeModel)
-      await promptHandle.finish(analysis)
-
-      // Phase 2: extract structured JSON from the analysis now in session context
       nodeToolHandle = await startNodeToolPart(
         sessionId, "workflow_structured",
-        { node: nodeLabel, instructions: "Extract structured data from analysis above" },
+        { node: nodeLabel, instructions: resolvedPrompt },
         currentDir, nodeMeta,
       )
-      const structured = await agentStructuredPrompt(sessionId, schema, nodeModel)
-      await nodeToolHandle.finish(structured)
+      const structured = await agentStructuredJson(sessionId, resolvedPrompt, schema, nodeModel)
+      const renderLayout = (d.renderLayout ?? undefined) as Record<string, unknown> | undefined
+      const displayProps = (d.schemaProps ?? undefined) as unknown[] | undefined
+      await nodeToolHandle.finish(structured, {
+        outputObject: structured,
+        ...(displayProps ? { displayProps } : {}),
+        ...(renderLayout ? { renderLayout } : {}),
+      })
       // Store the parsed object — both under the legacy storeAs key and the stable nodeKey.
       // This must happen here because result is a JSON string; writing result later would
       // overwrite with a string, breaking $nodeKey.field path navigation.
@@ -718,16 +741,18 @@ async function runSubGraph({
         applied.cwd = resolved
       }
       if (cfg.title) {
-        await Session.setTitle({ sessionID: sessionId, title: cfg.title })
-        applied.title = cfg.title
+        const resolved = resolveTemplate(cfg.title, input, ctx)
+        await Session.setTitle({ sessionID: sessionId, title: resolved })
+        applied.title = resolved
       }
       if (cfg.agentID) {
         await Session.setAgentID({ sessionID: sessionId, agentID: cfg.agentID })
         applied.agentID = cfg.agentID
       }
       if (cfg.systemPrompt) {
-        await Session.setSystemPrompt({ sessionID: sessionId, systemPrompt: cfg.systemPrompt })
-        applied.systemPrompt = cfg.systemPrompt
+        const resolved = resolveTemplate(cfg.systemPrompt, input, ctx)
+        await Session.setSystemPrompt({ sessionID: sessionId, systemPrompt: resolved })
+        applied.systemPrompt = resolved
       }
       if (cfg.path) {
         const resolved = String(resolveRef(cfg.path, input, ctx) ?? cfg.path)

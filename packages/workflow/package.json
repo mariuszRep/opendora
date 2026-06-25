@@ -7,6 +7,7 @@
   "private": true,
   "exports": {
     "./schema": "./src/schema.ts",
+    "./refs": "./src/refs.ts",
     "./storage": "./src/storage.ts",
     "./runner": "./src/runner.ts",
     "./routes": "./src/routes.ts",

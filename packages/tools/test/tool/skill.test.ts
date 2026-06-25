@@ -17,7 +17,7 @@ const baseCtx: Omit<Tool.Context, "ask"> = {
 }
 
 describe("tool.skill", () => {
-  test("description lists skill location URL", async () => {
+  test("description explains lazy pointer behavior", async () => {
     await using tmp = await tmpdir({
       git: true,
       init: async (dir) => {
@@ -43,8 +43,9 @@ description: Skill for tool tests.
         directory: tmp.path,
         fn: async () => {
           const tool = await SkillTool.init()
-          const skillPath = path.join(tmp.path, ".opencode", "skill", "tool-skill", "SKILL.md")
-          expect(tool.description).toContain(`<location>${pathToFileURL(skillPath).href}</location>`)
+          expect(tool.description).toContain("<skill_content")
+          expect(tool.description).toContain("<skill_resources>")
+          expect(tool.description).toContain("file-read tool")
         },
       })
     } finally {
@@ -52,7 +53,7 @@ description: Skill for tool tests.
     }
   })
 
-  test("execute returns skill content block with files", async () => {
+  test("execute returns lazy pointer <skill_content> block with <skill_resources>", async () => {
     await using tmp = await tmpdir({
       git: true,
       init: async (dir) => {
@@ -81,27 +82,25 @@ Use this skill.
         directory: tmp.path,
         fn: async () => {
           const tool = await SkillTool.init()
-          const requests: Array<Tool.AskInput> = []
           const ctx: Tool.Context = {
             ...baseCtx,
-            ask: async (req) => {
-              requests.push(req)
-            },
+            ask: async () => {},
           }
 
           const result = await tool.execute({ name: "tool-skill" }, ctx)
           const dir = path.join(tmp.path, ".opencode", "skill", "tool-skill")
+          const skillPath = path.join(dir, "SKILL.md")
           const file = path.resolve(dir, "scripts", "demo.txt")
 
-          expect(requests.length).toBe(1)
-          expect(requests[0]!.permission).toBe("skill")
-          expect(requests[0]!.patterns).toContain("tool-skill")
-          expect(requests[0]!.always).toContain("tool-skill")
-
           expect(result.metadata.dir).toBe(dir)
+          expect(result.metadata.location).toBe(skillPath)
           expect(result.output).toContain(`<skill_content name="tool-skill">`)
-          expect(result.output).toContain(`Base directory for this skill: ${pathToFileURL(dir).href}`)
+          expect(result.output).toContain(`SKILL.md location: ${skillPath}`)
+          expect(result.output).toContain(`Skill directory (absolute path): ${dir}`)
+          expect(result.output).toContain("<skill_resources>")
           expect(result.output).toContain(`<file>${file}</file>`)
+          expect(result.output).toContain("</skill_resources>")
+          expect(result.output).not.toContain("Use this skill.")
         },
       })
     } finally {

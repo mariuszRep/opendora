@@ -20,7 +20,8 @@ packages/skills/src/
 ## Key rules
 
 - **Skills are self-contained** — each skill is a directory with `SKILL.md` + optional supporting files
-- **Multi-hub support** — ClawHub, GitHub, Vercel, Anthropic registries
+- **Agent Skills compatible** — supports the agentskills.io SKILL.md format, including `scripts/`, `references/`, and `assets/` directories
+- **Multi-hub support** — ClawHub, GitHub, Vercel, Anthropic, and Agent Skills monorepo registries
 - **Precedence order** — Workspace → User → Bundled (first match wins)
 - **Lock file is source of truth** — `skills-lock.json` tracks installed skills
 - **Registry auto-detection** — source format determines registry (e.g., `owner/repo` → GitHub)
@@ -61,6 +62,11 @@ type SkillFrontmatter = {
   dependencies?: string[]
   permissions?: "allow" | "deny" | "ask"
   patterns?: string[]
+  license?: string
+  compatibility?: string
+  metadata?: Record<string, string>
+  "allowed-tools"?: string
+  "disable-model-invocation"?: boolean
 }
 ```
 
@@ -130,6 +136,13 @@ interface SkillRegistry {
 - Source: `https://raw.githubusercontent.com/anthropics/skills/main`
 - Format: SKILL.md + index.json
 - Official Anthropic skills
+
+**Agent Skills** (`agentskills` source in `skill.ts`)
+- Source: `https://github.com/<owner>/<repo>` with a top-level `skills/` directory
+- Format: SKILL.md + optional `scripts/`, `references/`, `assets/`
+- Install one skill: `agentskills:owner/repo/skill-name`
+- Install all skills: `agentskills:owner/repo`
+- Compatible with skills installed via `npx skills add`
 
 ## SkillManager
 
@@ -201,6 +214,7 @@ Source format determines registry:
 - `owner/repo` or `github.com/...` → GitHub
 - `vercel.com/...` or `vercel:...` → Vercel
 - `anthropic` or `anthropics` → Anthropic
+- `agentskills:owner/repo` or `agentskills:owner/repo/skill-name` → Agent Skills monorepo
 - Default: ClawHub
 
 ## Security

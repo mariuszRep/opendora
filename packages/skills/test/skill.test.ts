@@ -327,6 +327,102 @@ description: A skill in the .agents/skills directory.
   })
 })
 
+test("preserves Agent Skills frontmatter fields", async () => {
+  await using tmp = await tmpdir({
+    git: true,
+    init: async (dir) => {
+      const skillDir = path.join(dir, ".opencode", "skill", "agent-skills-frontmatter")
+      await Bun.write(
+        path.join(skillDir, "SKILL.md"),
+        `---
+name: agent-skills-frontmatter
+description: A skill with Agent Skills frontmatter fields.
+license: MIT
+compatibility: openai>=1.0.0
+metadata:
+  category: testing
+  author: opendora
+allowed-tools: read,write,edit
+disable-model-invocation: false
+---
+
+# Agent Skills Frontmatter
+`,
+      )
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const skills = await Skill.all()
+      expect(skills.length).toBe(1)
+      const skill = skills.find((s) => s.name === "agent-skills-frontmatter")
+      expect(skill).toBeDefined()
+      expect(skill!.frontmatter).toBeDefined()
+      expect(skill!.frontmatter!.license).toBe("MIT")
+      expect(skill!.frontmatter!.compatibility).toBe("openai>=1.0.0")
+      expect(skill!.frontmatter!.metadata).toEqual({ category: "testing", author: "opendora" })
+      expect(skill!.frontmatter!["allowed-tools"]).toBe("read,write,edit")
+      expect(skill!.frontmatter!["disable-model-invocation"]).toBe(false)
+    },
+  })
+})
+
+test("skips skills without a description", async () => {
+  await using tmp = await tmpdir({
+    git: true,
+    init: async (dir) => {
+      const skillDir = path.join(dir, ".opencode", "skill", "no-description")
+      await Bun.write(
+        path.join(skillDir, "SKILL.md"),
+        `---
+name: no-description
+---
+
+# No Description
+`,
+      )
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const skills = await Skill.all()
+      expect(skills).toEqual([])
+    },
+  })
+})
+
+test("warns but still loads skills with non-conforming names", async () => {
+  await using tmp = await tmpdir({
+    git: true,
+    init: async (dir) => {
+      const skillDir = path.join(dir, ".opencode", "skill", "BadSkillName")
+      await Bun.write(
+        path.join(skillDir, "SKILL.md"),
+        `---
+name: BadSkillName
+description: A skill with an invalid name.
+---
+
+# Bad Skill Name
+`,
+      )
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const skills = await Skill.all()
+      expect(skills.length).toBe(1)
+      expect(skills[0]!.name).toBe("BadSkillName")
+    },
+  })
+})
+
 test("properly resolves directories that skills live in", async () => {
   await using tmp = await tmpdir({
     git: true,

@@ -241,6 +241,8 @@ export type DrawerFormData = {
   type?: string
   workflowParameters?: WorkflowParameter[]
   outputSchema?: Record<string, unknown>
+  schemaProps?: import('@/components/workflow/schema-builder').SchemaProp[]
+  renderLayout?: import('@/lib/format-translator').RenderLayoutConfig
   edgeLabel?: string
   model?: NodeModel
   retry?: { maxAttempts: number; delaySeconds: number }
@@ -408,6 +410,8 @@ export function WorkflowEditDrawer({
         outputSchema: editingNodeData._schemaProps !== undefined
           ? schemaPropsToJsonSchema(editingNodeData._schemaProps as SchemaProp[])
           : (editingNodeData.outputSchema as Record<string, unknown> | undefined),
+        schemaProps: editingNodeData._schemaProps as SchemaProp[] | undefined,
+        renderLayout: (editingNodeData.renderLayout as import('@/lib/format-translator').RenderLayoutConfig | undefined),
         model: formData.model,
         retry: editingNodeData.node.retry,
       })
@@ -845,7 +849,7 @@ export function WorkflowEditDrawer({
                   <div>
                     <Label>Output schema</Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Define the JSON shape the agent must return. Fields are referenced as <code className="font-mono">${'$'}{(editingNodeData.node as any).key || 'node_key'}.<i>field</i></code>.
+                      Define the JSON shape and display for each field. Fields are referenced as <code className="font-mono">${'$'}{(editingNodeData.node as any).key || 'node_key'}.<i>field</i></code>.
                     </p>
                   </div>
                   {(() => {
@@ -862,9 +866,11 @@ export function WorkflowEditDrawer({
                   <SchemaBuilder
                     props={
                       (editingNodeData._schemaProps as SchemaProp[] | undefined) ??
+                      (editingNodeData.schemaProps as SchemaProp[] | undefined) ??
                       jsonSchemaToProps((editingNodeData.outputSchema as Record<string, unknown>) ?? { type: 'object', properties: {} })
                     }
                     onChange={(props) => setEditingNodeData({ ...editingNodeData, _schemaProps: props })}
+                    suggestions={availableRefs ?? []}
                   />
                 </div>
               </div>
@@ -905,7 +911,7 @@ export function WorkflowEditDrawer({
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
-                        <Textarea value={param.description} onChange={(e) => { const u = [...params]; u[i] = { ...u[i], description: e.target.value }; updateWfParams(u) }} placeholder="Description — shown to the LLM when this workflow runs" rows={2} className="text-xs resize-none" />
+                        <ExpressionInput value={param.description ?? ''} onChange={(v) => { const u = [...params]; u[i] = { ...u[i], description: v }; updateWfParams(u) }} suggestions={availableRefs ?? []} placeholder="Description — shown to the LLM when this workflow runs. Type $ to reference upstream outputs." className="text-xs" />
                         {(['string', 'number', 'integer'] as const).includes((param.type ?? 'string') as 'string' | 'number' | 'integer') && (
                           <div className="space-y-1">
                             <span className="text-xs text-muted-foreground">Allowed values <span className="opacity-60">(empty = accept any)</span></span>
@@ -1024,7 +1030,7 @@ export function WorkflowEditDrawer({
                 </div>
                 <div className="space-y-2">
                   <Label>Session title <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                  <Input value={titleVal} onChange={(e) => updateParams({ title: e.target.value || undefined })} placeholder="Leave blank to keep current title" />
+                  <ExpressionInput value={titleVal} onChange={(v) => updateParams({ title: v || undefined })} suggestions={availableRefs} placeholder="Leave blank to keep current title, or use $nodeKey.field" />
                 </div>
                 <div className="space-y-2">
                   <Label>Agent <span className="text-muted-foreground font-normal">(optional)</span></Label>
@@ -1045,7 +1051,13 @@ export function WorkflowEditDrawer({
                 </div>
                 <div className="space-y-2">
                   <Label>System prompt <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                  <Textarea value={systemPromptVal} onChange={(e) => updateParams({ systemPrompt: e.target.value || undefined })} placeholder="Leave blank to keep current system prompt" rows={3} />
+                  <PromptInput
+                    value={systemPromptVal}
+                    onChange={(v) => updateParams({ systemPrompt: v || undefined })}
+                    suggestions={availableRefs ?? []}
+                    placeholder="Leave blank to keep current system prompt. Type $ to reference upstream outputs."
+                    rows={3}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Write path boundary <span className="text-muted-foreground font-normal">(optional)</span></Label>
@@ -1512,7 +1524,27 @@ export function WorkflowEditDrawer({
             )
           }
 
-          if (nodeType === NodeTypeId.Prompt || nodeType === NodeTypeId.Structured) {
+          if (nodeType === NodeTypeId.Prompt) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <Cpu className="size-3.5" />
+                    Model
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Override the agent&apos;s default model for this node only. Leave blank to inherit.
+                  </p>
+                  <ModelPicker
+                    value={formData.model}
+                    onChange={(m) => setFormData((prev) => ({ ...prev, model: m }))}
+                  />
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Structured) {
             return (
               <div className="space-y-4">
                 <div className="space-y-2">

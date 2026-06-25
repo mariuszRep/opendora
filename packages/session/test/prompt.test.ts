@@ -213,6 +213,101 @@ describe("session.prompt agent variant", () => {
   })
 })
 
+describe("session.prompt available skills", () => {
+  test("includes Agent Skills <available_skills> XML catalog", async () => {
+    await using tmp = await tmpdir({
+      git: true,
+      init: async (dir) => {
+        const skillDir = path.join(dir, ".opencode", "skill", "xml-catalog-skill")
+        await Bun.write(
+          path.join(skillDir, "SKILL.md"),
+          `---
+name: xml-catalog-skill
+description: A skill for testing the XML catalog.
+---
+
+# XML Catalog Skill
+`,
+        )
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const mockAgent = {
+          id: "build",
+          name: "build",
+          tools: ["skill_load"],
+          config: { skills: ["xml-catalog-skill"] },
+        }
+
+        const mockModel = { api: { id: "gpt-5.2" }, providerID: "openai" }
+
+        const sections = await SystemPrompt.build({ agent: mockAgent, model: mockModel })
+        const skillSection = sections.find((s) => s.label === "Available Skills")
+        expect(skillSection).toBeDefined()
+        expect(skillSection!.content).toContain("<available_skills>")
+        expect(skillSection!.content).toContain("<name>xml-catalog-skill</name>")
+        expect(skillSection!.content).toContain("<description>A skill for testing the XML catalog.</description>")
+        expect(skillSection!.content).toContain("<location>")
+        expect(skillSection!.content).toContain("</available_skills>")
+      },
+    })
+  })
+
+  test("excludes skills with disable-model-invocation from the catalog", async () => {
+    await using tmp = await tmpdir({
+      git: true,
+      init: async (dir) => {
+        const enabledDir = path.join(dir, ".opencode", "skill", "enabled-skill")
+        await Bun.write(
+          path.join(enabledDir, "SKILL.md"),
+          `---
+name: enabled-skill
+description: An enabled skill.
+---
+
+# Enabled Skill
+`,
+        )
+        const disabledDir = path.join(dir, ".opencode", "skill", "disabled-skill")
+        await Bun.write(
+          path.join(disabledDir, "SKILL.md"),
+          `---
+name: disabled-skill
+description: A disabled skill.
+disable-model-invocation: true
+---
+
+# Disabled Skill
+`,
+        )
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const mockAgent = {
+          id: "build",
+          name: "build",
+          tools: ["skill_load"],
+          config: { skills: ["enabled-skill", "disabled-skill"] },
+        }
+
+        const mockModel = { api: { id: "gpt-5.2" }, providerID: "openai" }
+
+        const sections = await SystemPrompt.build({ agent: mockAgent, model: mockModel })
+        const skillSection = sections.find((s) => s.label === "Available Skills")
+        expect(skillSection).toBeDefined()
+        expect(skillSection!.content).toContain("<name>enabled-skill</name>")
+        expect(skillSection!.content).not.toContain("<name>disabled-skill</name>")
+      },
+    })
+  })
+})
+
 describe("session.prompt directory permissions", () => {
   test("includes directory permissions table when agent has path rules", async () => {
     await using tmp = await tmpdir({

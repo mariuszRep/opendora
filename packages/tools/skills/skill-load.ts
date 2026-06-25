@@ -81,28 +81,28 @@ export const SkillLoadTool = Tool.define("skill_load", async (initCtx) => {
           ].join("\n")
         : ""
 
+      const xmlName = skill.name.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+
       return {
         title: `Loaded skill: ${skill.name}`,
         output: [
-          `<skill_content name="${skill.name}">`,
-          `# Skill: ${skill.name}`,
-          "",
-          skill.content.trim(),
-          "",
-          `Base directory for this skill: ${base}`,
+          `<skill_content name="${xmlName}">`,
+          `Skill "${skill.name}" is now active. Before following skill instructions, load the SKILL.md file at the location below.`,
+          ``,
+          `SKILL.md location: ${skill.location}`,
           `Skill directory (absolute path): ${dir}`,
-          "Relative paths in this skill (e.g., scripts/, reference/) are relative to this base directory.",
-          "Note: file list is sampled.",
-          "",
-          "<skill_files>",
+          `Relative paths in this skill (e.g., scripts/, references/, assets/) are relative to this base directory.`,
+          ``,
+          "<skill_resources>",
           files,
-          "</skill_files>",
+          "</skill_resources>",
           "</skill_content>",
           toolsNotice,
         ].join("\n"),
         metadata: {
           name: skill.name,
           dir,
+          location: skill.location,
           parameter: params.name,
         },
       }

@@ -71,7 +71,7 @@ export function ProviderModelCard({
   return (
     <div
       className={cn(
-        "group flex items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-all duration-150",
+        "group flex items-center gap-2.5 rounded-md border px-3 py-2 text-left transition-all duration-150",
         containerCn[status]
       )}
     >
@@ -196,7 +196,7 @@ export function ModelSwitchCard({
   };
 
   return (
-    <div className="not-prose overflow-hidden rounded-md border bg-background text-foreground">
+    <div className="not-prose overflow-hidden rounded-lg border bg-background text-foreground">
       {/* Header: 3-col grid so center text is truly centered without clipping */}
       <div className="grid grid-cols-[1.5rem_1fr_1.5rem] items-center gap-2 bg-muted/80 px-4 py-3">
         <div className="flex items-center justify-start">

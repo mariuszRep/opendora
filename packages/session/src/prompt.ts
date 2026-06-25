@@ -794,12 +794,14 @@ export namespace SessionPrompt {
         ? [`IMPORTANT: The user has requested structured output. You MUST use the \`${structuredToolName}\` tool to provide your final response. Do NOT respond with plain text - you MUST call the \`${structuredToolName}\` tool with your answer formatted according to the schema.`]
         : []
 
+      const systemAdditions = [...structuredOutputSystem]
+
       const result = await processor.process({
         user: lastUser,
         agent,
         abort,
         sessionID,
-        system: structuredOutputSystem.length > 0 ? structuredOutputSystem : undefined,
+        system: systemAdditions.length > 0 ? systemAdditions : undefined,
         messages: [
           ...MessageV2.toModelMessages(msgs, model),
           ...(isLastStep

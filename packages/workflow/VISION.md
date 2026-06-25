@@ -54,6 +54,104 @@ An agent reading a session history must be able to understand exactly what happe
 
 ---
 
+## Structured output and format-switchable views
+
+Every workflow node emits its output as a canonical JSON payload so the UI can switch between multiple format views — JSON, YAML, XML, Markdown, HTML Code, and HTML View — without per-tool special-casing. JSON is always the source of truth; all other views are generated projections from the canonical data.
+
+### Canonical output envelope
+
+Every completed node tool part carries an output object with a stable shape:
+
+```ts
+{
+  // The node's primary result data — always a JSON-serializable object or array.
+  // For structured nodes this is the validated JSON from the model.
+  // For variable nodes this is the resolved values object.
+  // For output nodes this is the declared return fields.
+  // For tool nodes this is a JSON object parsed from the tool's output string.
+  // For prompt nodes this is the text response wrapped as { text: "..." }.
+  data: unknown,
+
+  // Optional format/display hints the UI uses to select a view mode.
+  // Absent hints mean the UI falls back to JSON view.
+  render?: {
+    // Preferred default view format when the user has not overridden.
+    // "json" shows raw JSON; "auto" lets the UI choose best-fit from
+    // the available projections (yaml, xml, markdown, html).
+    defaultView?: "json" | "yaml" | "xml" | "markdown" | "html" | "auto",
+
+    // Human-readable summary line shown in the collapsed tool header.
+    summary?: string,
+  }
+}
+```
+
+> **Note**: Render-layout preferences (arrayAs table/card/list, objectAs card/details, titleField, descriptionField, visible fields/order) are not part of the current envelope. They are handled in Phase 2 — see "Phase 2: Render layout customization" below.
+
+### Current migration state
+
+- Most workflow node types already produce structured data internally (parsed JSON objects for `structured`, `variable`, `foreach`, `output`, `configure_session`).
+- The `startNodeToolPart.finish()` method currently stringifies non-string output as pretty JSON, which strips structured metadata from the session part.
+- The runner stores parsed objects in workflow context (`ctx`) but the session tool part carries only the stringified form.
+- Tool nodes (`tool` pass-through) receive raw `output: string` from the tool executor, which must be parsed back to JSON for canonical form.
+- UI renders generic tool output as a JSON code block; only specialized tools have custom view/code toggles.
+
+### Target
+
+Node outputs should transition from `output: string` in session parts to the canonical `data` envelope with optional `render` hints. The `startNodeToolPart.finish()` signature should accept structured output and store it alongside the stringified version, so the UI can read either form.
+
+### Relationship to tools/VISION.md
+
+Tools also emit `output: string` from their `execute()` contract (see `packages/tools/tool.ts`). That contract is the source of the stringification problem for tool nodes. The `packages/tools/VISION.md` target (MCP-compatible `.json` definitions with `inputSchema`/`outputSchema`) does not mandate an output format. This workflow section defines the canonical output envelope that tools and workflow nodes should converge on, while `packages/tools` owns the per-tool output schema definitions that fill the envelope.
+
+### Format views
+
+The UI offers these switchable format views, all projected from the canonical JSON `data`:
+
+| Format | Description |
+|--------|-------------|
+| JSON | Raw canonical JSON — always the source of truth |
+| YAML | YAML projection via js-yaml or similar library |
+| XML | XML projection via generic JSON-to-XML conversion |
+| Markdown | Markdown projection; arrays of objects with uniform keys render as tables by default |
+| HTML Code | Generated HTML source code displayed in a code viewer |
+| HTML View | Generated HTML rendered in a sandboxed iframe |
+
+A shared JSON-to-format translator utility produces all projections from the canonical `data` object. The first implementation is one-way (JSON → all views). The translator lives in a shared location (e.g. `packages/workflow/src/format/` or a new shared package) that both the workflow runner and UI can import.
+
+### Phase 2: Render layout customization (structured node HTML render layout)
+
+The structured node may carry an optional `renderLayout` configuration that controls how its JSON output data is visually projected into generated HTML. This is a display-only layer on top of the canonical JSON source of truth; `outputSchema` and the canonical data shape remain unchanged.
+
+Configuration targets the two generated HTML formats (HTML Code and HTML View):
+
+- `arrayAs: "table" | "cards" | "list"` — how arrays of objects display in generated HTML
+- `objectAs: "card" | "details"` — how individual objects display
+- Field-role mappings for card/detail layouts:
+  - `titleField` — which field supplies the heading/title
+  - `descriptionField` — which field supplies the body/description text
+  - `statusField` — which field supplies a status badge or indicator
+  - `imageField` / `iconField` — which field supplies an image URL or icon
+  - `metadataFields` — which additional fields render as a metadata row/column
+  - `actions` — which fields supply action links or buttons
+- `visibleFields`, `fieldOrder` — which fields to show and in what display order
+
+Key constraints:
+- **JSON remains the source of truth.** `renderLayout` controls only how generated HTML projects the data for visual consumption.
+- **`outputSchema` is not modified.** The canonical data shape and its validation contract are preserved.
+- **HTML Code and HTML View both use the same generated HTML** from the shared translator utility established in phase 1.
+- **Sandboxed iframe** (`allow-scripts` without `allow-same-origin`) remains required for HTML View.
+- **Backward compatibility.** Structured nodes without `renderLayout` config use the default/auto rendering determined by the shared translator from phase 1.
+- **Format isolation.** JSON, YAML, XML, and Markdown projections are unaffected unless explicitly documented.
+
+This work is tracked in `.projectflows/goals/structured-node-html-render-layout/GOAL.md`. It is sequenced after the initial `structured-node-format-switching` goal (phase 1) because it depends on the shared translator utility and format-switching UI foundation established there.
+
+### Deferred: Bidirectional editing
+
+Parsing YAML/XML/Markdown/HTML back into JSON for editing is deferred. The first implementation is read-only format switching from the canonical JSON source. When bidirectional sync is added, the shared translator utility will gain parse functions for each format.
+
+---
+
 ## Owns
 
 - Workflow definitions.

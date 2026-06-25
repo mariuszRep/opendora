@@ -20,7 +20,8 @@
       "Read(//mnt/fileshare/projects/**)",
       "Bash(ls /home/mariusz/projects/projectflows/ 2>/dev/null | head -20)",
       "Read(//mnt/fileshare/projects/projectflows/**)",
-      "Read(//home/mariusz/projects/**)"
+      "Read(//home/mariusz/projects/**)",
+      "Bash(git stash *)"
     ]
   }
 }

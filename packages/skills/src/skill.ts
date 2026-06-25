@@ -17,6 +17,7 @@ import { Session } from "@opendora/session/session"
 import { Discovery } from "./discovery"
 import { Glob } from "@opendora/util/glob"
 import { State } from "@opendora/runtime/state"
+import { SkillFrontmatter } from "./types.ts"
 
 export namespace Skill {
   const log = Log.create({ service: "skill" })
@@ -32,6 +33,7 @@ export namespace Skill {
     location: z.string(),
     content: z.string(),
     tools: z.array(z.string()).optional(),
+    frontmatter: SkillFrontmatter.optional(),
   })
   export type Info = z.infer<typeof Info>
 
@@ -52,6 +54,28 @@ export namespace Skill {
       actual: z.string(),
     }) as any,
   )
+
+  // Agent Skills spec naming rules
+  // https://agentskills.io/specification
+  const SKILL_NAME_MAX_LENGTH = 64
+  const SKILL_NAME_REGEX = /^[a-z0-9](-?[a-z0-9])*$/
+
+  function validateSkillName(name: string, skillDir: string): { valid: boolean; warnings: string[] } {
+    const warnings: string[] = []
+    const parentName = path.basename(skillDir)
+
+    if (name !== parentName) {
+      warnings.push(`Skill name "${name}" does not match parent directory "${parentName}"`)
+    }
+    if (name.length > SKILL_NAME_MAX_LENGTH) {
+      warnings.push(`Skill name "${name}" exceeds ${SKILL_NAME_MAX_LENGTH} characters`)
+    }
+    if (!SKILL_NAME_REGEX.test(name)) {
+      warnings.push(`Skill name "${name}" contains invalid characters; expected lowercase alphanumeric and hyphens`)
+    }
+
+    return { valid: true, warnings }
+  }
 
   // External skill directories to search for (project-level and global)
   // These follow the directory layout used by Claude Code and other agents.
@@ -76,22 +100,42 @@ export namespace Skill {
 
       if (!md) return
 
-      const parsed = Info.pick({ name: true, description: true }).safeParse(md.data)
-      if (!parsed.success) return
+      // Agent Skills spec: a description is essential for disclosure; skip without one.
+      if (!md.data.description || typeof md.data.description !== "string" || md.data.description.trim() === "") {
+        log.error("skipping skill without description", { skill: match })
+        Bus.publish(Session.Event.Error, {
+          error: new NamedError.Unknown({ message: `Skill ${match} is missing a description` }).toObject(),
+        })
+        return
+      }
+
+      const frontmatter = SkillFrontmatter.safeParse(md.data)
+      if (!frontmatter.success) {
+        log.warn("skill frontmatter validation failed", { skill: match, issues: frontmatter.error.issues })
+      }
+
+      const name = String(md.data.name ?? "")
+      const description = String(md.data.description ?? "")
+      const skillDir = path.dirname(match)
+
+      const { warnings } = validateSkillName(name, skillDir)
+      for (const warning of warnings) {
+        log.warn("skill name warning", { skill: match, warning })
+      }
 
       // Warn on duplicate skill names
-      if (skills[parsed.data.name]) {
+      if (skills[name]) {
         log.warn("duplicate skill name", {
-          name: parsed.data.name,
-          existing: skills[parsed.data.name]!.location,
+          name,
+          existing: skills[name]!.location,
           duplicate: match,
         })
       }
 
-      dirs.add(path.dirname(match))
+      dirs.add(skillDir)
 
       // Read skill.json from same directory for tools and extra config
-      const skillJsonPath = path.join(path.dirname(match), "skill.json")
+      const skillJsonPath = path.join(skillDir, "skill.json")
       let skillConfig: JsonConfig | undefined
       try {
         const raw = await fs.readFile(skillJsonPath, "utf-8")
@@ -101,12 +145,13 @@ export namespace Skill {
         // skill.json is optional
       }
 
-      skills[parsed.data.name] = {
-        name: parsed.data.name,
-        description: parsed.data.description,
+      skills[name] = {
+        name,
+        description,
         location: match,
         content: md.content,
         tools: skillConfig?.tools,
+        frontmatter: frontmatter.success ? frontmatter.data : undefined,
       }
     }
 
@@ -420,6 +465,23 @@ export namespace Skill {
     return files
   }
 
+  /** List immediate subdirectories under a GitHub repo path */
+  async function listGitHubSubdirs(
+    owner: string,
+    repo: string,
+    dirPath: string,
+    ref = "main",
+  ): Promise<string[]> {
+    const headers = { Accept: "application/vnd.github+json" }
+    const contentsUrl = `${GITHUB_API}/repos/${owner}/${repo}/contents/${dirPath}?ref=${ref}`
+    const res = await fetch(contentsUrl, { headers })
+    if (!res.ok) {
+      throw new Error(`GitHub list failed for ${owner}/${repo}/${dirPath}@${ref}: ${res.status} ${res.statusText}`)
+    }
+    const entries = (await res.json()) as Array<{ type: string; name: string }>
+    return entries.filter((e) => e.type === "dir").map((e) => e.name)
+  }
+
   export async function install(source: string, options?: { registry?: string; version?: string }) {
     let registry = options?.registry
     let skillPath = source
@@ -486,6 +548,53 @@ export namespace Skill {
       return
     }
 
+    // Agent Skills monorepo registry: agentskills:owner/repo or agentskills:owner/repo/skill-name
+    // These repos have a top-level skills/ directory containing individual skill folders.
+    if (registry === "agentskills") {
+      const parts = skillPath.split("/")
+      if (parts.length < 2) throw new Error(`Agent Skills source must be "owner/repo" or "owner/repo/skill-name", got: ${skillPath}`)
+      const owner = parts[0]!
+      const repo = parts[1]!
+      const skillName = parts.slice(2).join("/")
+      const ref = options?.version ?? "main"
+      const skillsDir = "skills"
+
+      if (skillName) {
+        const fullPath = `${skillsDir}/${skillName}`
+        log.info("fetching skill from agentskills repo", { owner, repo, skillName, ref })
+        const files = await fetchGitHubDir(owner, repo, fullPath, ref)
+        const skillDir = path.join(installBase, skillName)
+        await fs.mkdir(skillDir, { recursive: true })
+        for (const [filename, content] of files) {
+          const dest = path.join(skillDir, filename)
+          await fs.mkdir(path.dirname(dest), { recursive: true })
+          await fs.writeFile(dest, content, "utf-8")
+        }
+        log.info("installed skill from agentskills repo", { skillName, files: files.size, skillDir })
+      } else {
+        log.info("fetching all skills from agentskills repo", { owner, repo, ref })
+        const subdirs = await listGitHubSubdirs(owner, repo, skillsDir, ref)
+        if (subdirs.length === 0) {
+          throw new Error(`No skills found in "skills/" directory of ${owner}/${repo}@${ref}`)
+        }
+        for (const subdir of subdirs) {
+          const fullPath = `${skillsDir}/${subdir}`
+          const files = await fetchGitHubDir(owner, repo, fullPath, ref)
+          const skillDir = path.join(installBase, subdir)
+          await fs.mkdir(skillDir, { recursive: true })
+          for (const [filename, content] of files) {
+            const dest = path.join(skillDir, filename)
+            await fs.mkdir(path.dirname(dest), { recursive: true })
+            await fs.writeFile(dest, content, "utf-8")
+          }
+          log.info("installed skill from agentskills repo", { skillName: subdir, files: files.size, skillDir })
+        }
+      }
+
+      reload()
+      return
+    }
+
     // ClawHub registry
     if (registry === "clawhub" || (!registry && !skillPath.includes("/"))) {
       const CLAWHUB_API = "https://clawhub.ai"
@@ -526,6 +635,8 @@ export namespace Skill {
       `  vercel:skills/nextjs             (Vercel agent-resources repo)\n` +
       `  github:owner/repo                (any GitHub repo)\n` +
       `  github:owner/repo/path           (sub-path in a GitHub repo)\n` +
+      `  agentskills:owner/repo           (Agent Skills monorepo, installs all skills/)\n` +
+      `  agentskills:owner/repo/skill-name (Agent Skills monorepo, installs one skill)\n` +
       `  clawhub:skill-name               (ClawHub registry)`,
     )
   }

@@ -50,6 +50,7 @@ import { SessionTreeToolContent, isSessionTreeTool, getSessionTreeToolTitle } fr
 import { WebFetchToolContent, isWebFetchTool, getWebFetchToolTitle, getWebFetchUrl } from "@/components/ai-elements/webfetch-tool"
 import { isSkillLoadTool, getSkillLoadToolTitle, getSkillLoadDefinition } from "@/components/ai-elements/skill-load-tool"
 import { MemoryWriteToolContent, isMemoryWriteTool, getMemoryWriteToolTitle } from "@/components/ai-elements/memory-write-tool"
+import { FormatSwitcher } from "@/components/ai-elements/format-switcher"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAgentColor } from "@/lib/agent-colors"
 import { BellIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, Link2Icon, PanelRightIcon, Volume2Icon, VolumeXIcon, WorkflowIcon } from "lucide-react"
@@ -257,22 +258,6 @@ export const MessageRow = React.memo(function MessageRow({
           style={info.role === "user" ? { marginLeft: 0 } : undefined}
           from={info.role === "user" ? "user" : "assistant"}
           key={info.id}
-          onMouseEnter={(e) => {
-            const messageActions = e.currentTarget.querySelector('[data-message-actions]') as HTMLElement
-            if (messageActions) {
-              messageActions.style.opacity = '1'
-              messageActions.style.visibility = 'visible'
-              messageActions.style.pointerEvents = 'auto'
-            }
-          }}
-          onMouseLeave={(e) => {
-            const messageActions = e.currentTarget.querySelector('[data-message-actions]') as HTMLElement
-            if (messageActions) {
-              messageActions.style.opacity = '0'
-              messageActions.style.visibility = 'hidden'
-              messageActions.style.pointerEvents = 'none'
-            }
-          }}
         >
           {info.role === "user" ? (
             <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3">
@@ -341,8 +326,7 @@ export const MessageRow = React.memo(function MessageRow({
                   })()}
                 </MessageContent>
                 <MessageActions
-                  className="relative mt-1 w-full"
-                  style={{ opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
+                  className="relative mt-1 w-full invisible opacity-0 group-hover/message:visible group-hover/message:opacity-100 transition-all"
                   data-message-actions
                 >
                   {content && (
@@ -487,6 +471,10 @@ export const MessageRow = React.memo(function MessageRow({
                           const input = "input" in toolState ? toolState.input : undefined
                           const output = "output" in toolState ? formatToolPayload((toolState as any).output) : undefined
                           const error = "error" in toolState ? formatToolPayload((toolState as any).error) : undefined
+                          const outputObject = "metadata" in toolState ? (toolState as any).metadata?.outputObject : undefined
+                          const hasOutputObject = outputObject !== undefined && outputObject !== null
+                          const renderLayout = "metadata" in toolState ? (toolState as any).metadata?.renderLayout : undefined
+                          const displayProps = "metadata" in toolState ? (toolState as any).metadata?.displayProps : undefined
                           const answered =
                             "metadata" in toolState && Array.isArray((toolState as any).metadata?.answers)
                               ? ((toolState as any).metadata.answers as string[][])
@@ -635,9 +623,11 @@ export const MessageRow = React.memo(function MessageRow({
                                 ) : (
                                   toolInput
                                 )}
-                                {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !isMemoryWriteToolCall && !questionRequest && (output || error) ? (
-                                  <ToolOutput errorText={error} output={output} />
-                                ) : null}
+                                {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !isMemoryWriteToolCall && !questionRequest && (
+                                  hasOutputObject
+                                    ? <FormatSwitcher data={outputObject} displayProps={displayProps} renderLayout={renderLayout} />
+                                    : (output || error) ? <ToolOutput errorText={error} output={output} /> : null
+                                )}
                               </ToolContent>
                             </Tool>
                           )
@@ -716,6 +706,10 @@ export const MessageRow = React.memo(function MessageRow({
                       const input = "input" in toolState ? toolState.input : undefined
                       const output = "output" in toolState ? formatToolPayload((toolState as any).output) : undefined
                       const error = "error" in toolState ? formatToolPayload((toolState as any).error) : undefined
+                      const outputObject = "metadata" in toolState ? (toolState as any).metadata?.outputObject : undefined
+                      const hasOutputObject = outputObject !== undefined && outputObject !== null
+                      const renderLayout = "metadata" in toolState ? (toolState as any).metadata?.renderLayout : undefined
+                      const displayProps = "metadata" in toolState ? (toolState as any).metadata?.displayProps : undefined
                       const answered =
                         "metadata" in toolState && Array.isArray((toolState as any).metadata?.answers)
                           ? ((toolState as any).metadata.answers as string[][])
@@ -863,9 +857,11 @@ export const MessageRow = React.memo(function MessageRow({
                             ) : (
                               toolInput
                             )}
-                            {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !isMemoryWriteToolCall && !questionRequest && !isPermissionTool && (output || error) ? (
-                              <ToolOutput errorText={error} output={output} />
-                            ) : null}
+                            {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !isMemoryWriteToolCall && !questionRequest && !isPermissionTool && (
+                              hasOutputObject
+                                ? <FormatSwitcher data={outputObject} displayProps={displayProps} renderLayout={renderLayout} />
+                                : (output || error) ? <ToolOutput errorText={error} output={output} /> : null
+                            )}
                           </ToolContent>
                         </Tool>
                       )
@@ -877,8 +873,7 @@ export const MessageRow = React.memo(function MessageRow({
             )}
             {info.role === "assistant" ? (
               <MessageActions
-                className="relative mt-1 w-full"
-                style={{ opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
+                className="relative mt-1 w-full invisible opacity-0 group-hover/message:visible group-hover/message:opacity-100 transition-all"
                 data-message-actions
               >
                 {content && (

@@ -527,6 +527,8 @@ function WorkflowEditorInner({
               ...(formData.agentArgs !== undefined ? { agentArgs: formData.agentArgs } : {}),
               ...(formData.workflowParameters !== undefined ? { workflowParameters: formData.workflowParameters } : {}),
               ...(formData.outputSchema !== undefined ? { outputSchema: formData.outputSchema } : {}),
+              ...(formData.schemaProps !== undefined ? { schemaProps: formData.schemaProps } : {}),
+              ...(formData.renderLayout !== undefined ? { renderLayout: formData.renderLayout } : formData.renderLayout === null ? { renderLayout: undefined } : {}),
               model: formData.model ?? undefined,
               node: {
                 ...n.data.node,
