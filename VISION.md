@@ -11,6 +11,10 @@ OpenDora is intended to remain lightweight at its core while supporting an ecosy
 
 Conversations and workflows are one durable execution model. A run — whether a normal conversation or a workflow — is a single durable, resumable, event-sourced execution. A normal conversation is the simplest workflow (message → reply); a workflow is the same run with more structure; and any conversation can be transformed into a reusable workflow.
 
+Agent Builder is the durable agent-definition authoring model. It reuses the workflow/canvas authoring experience to compose agent definitions rather than execute work. Agent Builder canvas nodes compose agent persona, configuration, tools, skills, and permissions; the builder/page save action compiles the connected graph into existing agent definition fields. Form-style section editing remains available as alternate projections or section views of the same node-defined agent definition — the graph is canonical, forms are views. Agent Builder graph semantics are composition and compilation, not workflow execution.
+
+OpenDora surfaces should use a consistent connected-node/line visual language when displaying linear or branching chains. Chat reply chains, agent definition sections (in graph view), workflow execution nodes, and branching workflow/graph histories should share a common visual idiom inspired by git graph representations: a dot or node per item, a line connecting the sequence, and branching lines for diverging paths. This principle applies across chat, workflow, and Agent Builder surfaces.
+
 ## Owns
 
 - Product-level architecture and boundaries for OpenDora.
@@ -91,6 +95,7 @@ domain packages that persist data
 - Mini-apps are standalone application experiences integrated into OpenDora visually and contextually; they are distinct from core modules and from ordinary plugin capability contributions.
 - Mini-apps must use OpenDora-approved context, permission, storage, and UI/design-system contracts instead of depending on app internals.
 - Extension UI must be built from OpenDora-approved primitives and design-system contracts so plugins and mini-apps remain visually consistent without copying app-owned implementation details.
+- Agent Builder reuses workflow/canvas authoring infrastructure but owns composition/compilation semantics distinct from workflow execution. It does not change scheduled workflow execution ownership.
 
 ## Canonical Operations / Contracts
 

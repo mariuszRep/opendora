@@ -3,268 +3,127 @@
 Decompose `@opendora/opencode` into the canonical packages defined by VISION.md.
 After migration this package becomes a thin CLI wrapper (`cli/`, `daemon/`, `index.ts`) that imports from properly structured domain packages.
 
-**Three packages defined in VISION.md that need to be created:**
-- `packages/storage/` — VISION.md stub only, no package.json yet
-- `packages/server/` — VISION.md stub only, no package.json yet
-- `packages/runtime/` — VISION.md stub only, no package.json yet
+---
+
+## Status: Phase 8 — Final deletion of `packages/opencode`
+
+**All Phases 1–7 are complete.** Every domain module has been moved to its canonical `@opendora/*` package; all files remaining in `packages/opencode/src/` (outside `cli/`, `daemon/`, `util/color|keybind|rpc`, `index.ts`, `sql.d.ts`, `preload-bindings-fix.ts`) are 1-line re-export redirects.
+
+**`apps/cli` already exists** (`packages/opencode` is no longer its source). `apps/cli/src/` uses direct `@opendora/*` imports throughout. Zero external packages depend on `@opendora/opencode`.
 
 ---
 
-## Phase 1 — Promote Pure Utilities to `@opendora/util`
+## ✅ Phase 1 — Promote Pure Utilities to `@opendora/util`
 
-**Simple: folder moves + cleanup + tests. No new packages.**
-
-Files to move from `src/util/` → `packages/util/src/`:
-
-| File | Action |
-|------|--------|
-| `util/abort.ts` | Move |
-| `util/archive.ts` | Move |
-| `util/context.ts` | Move |
-| `util/defer.ts` | Move |
-| `util/eventloop.ts` | Move |
-| `util/format.ts` | Move |
-| `util/git.ts` | Move |
-| `util/locale.ts` | Move |
-| `util/queue.ts` | Move |
-| `util/signal.ts` | Move |
-| `util/timeout.ts` | Move |
-| `util/token.ts` | Move |
-| `util/wildcard.ts` | Move |
-| `util/scrap.ts` | Delete |
-
-Files that **stay** in opencode (TUI/CLI-only):
-- `util/color.ts` — ANSI terminal escapes
-- `util/keybind.ts` — depends on `@opentui/core`
-- `util/rpc.ts` — Web Worker RPC for TUI threads
-
-Files that are already 1-line re-exports (keep as redirects):
-`util/filesystem.ts`, `util/fn.ts`, `util/glob.ts`, `util/iife.ts`, `util/lazy.ts`, `util/lock.ts`, `util/log.ts`, `util/process.ts`, `util/proxied.ts`
-
-**Pattern:** After moving, leave a 1-line re-export redirect at the old path (matches the existing `log.ts` / `lock.ts` pattern). Move matching test files from `test/util/` to `packages/util/src/`.
-
-**Exit criteria:** `packages/util/src/` has all 13 new modules; `src/util/` contains only re-exports or TUI-specific files; `bun test` passes in both packages.
+All 13 files moved. `src/util/` files are re-export redirects or TUI-specific originals.
 
 ---
 
-## Phase 2 — Move Bus Event Types to `@opendora/util`
+## ✅ Phase 2 — Move Bus Event Types to `@opendora/util`
 
-**Simple: two self-contained files with no `Instance` dependency.**
-
-| File | Action |
-|------|--------|
-| `bus/bus-event.ts` | Move to `packages/util/src/bus-event.ts` |
-| `bus/global.ts` | Move to `packages/util/src/global-bus.ts` |
-| `bus/index.ts` (the `Bus` class) | Stays — depends on `Instance.state()`, moves in Phase 5 |
-
-Original paths become 1-line re-export redirects.
-
-**Exit criteria:** `BusEvent` and `GlobalBus` exported from `@opendora/util`; `bus/bus-event.ts` and `bus/global.ts` are re-export redirects.
+`BusEvent` and `GlobalBus` exported from `@opendora/util`. `bus/bus-event.ts` and `bus/global.ts` are re-export redirects.
 
 ---
 
-## Phase 3 — Create `@opendora/storage`
+## ✅ Phase 3 — Create `@opendora/storage`
 
-**Medium: new package, all physical persistence moves here.**
-
-Files to move from `src/` → `packages/storage/src/`:
-
-| Source | Destination |
-|--------|-------------|
-| `storage/db.ts` | `storage/src/db.ts` |
-| `storage/storage.ts` | `storage/src/json-storage.ts` |
-| `storage/json-migration.ts` | `storage/src/json-migration.ts` |
-| `storage/schema.ts` | `storage/src/schema.ts` |
-| `storage/schema.sql.ts` | `storage/src/schema.sql.ts` |
-| `storage/permission.sql.ts` | `storage/src/permission-rule.sql.ts` |
-| `project/project.sql.ts` | `storage/src/project.sql.ts` |
-| `control/control.sql.ts` | `storage/src/control.sql.ts` |
-| `share/share.sql.ts` | `storage/src/share.sql.ts` |
-| `migration/` (all SQL) | `packages/storage/migration/` |
-
-SQL table files move because `schema.ts` re-exports them all — they are pure persistence schema with no domain logic. Original paths become re-export redirects.
-
-**New `packages/storage/package.json`:**
-```json
-{
-  "name": "@opendora/storage",
-  "version": "1.2.15",
-  "private": true,
-  "type": "module",
-  "exports": { "./*": "./src/*.ts" },
-  "dependencies": {
-    "@opendora/util": "workspace:*",
-    "@opendora/session": "workspace:*",
-    "@opendora/schedule": "workspace:*",
-    "@opendora/permission": "workspace:*",
-    "drizzle-orm": "<inherit>",
-    "zod": "catalog:"
-  },
-  "devDependencies": { "drizzle-kit": "<inherit>", "@types/bun": "catalog:", "typescript": "catalog:" }
-}
-```
-
-**opencode/package.json:** add `@opendora/storage: workspace:*`, remove `drizzle-orm` and `drizzle-kit`.
-
-**Import updates (~16 files):** All `@/storage/db` → `@opendora/storage/db`. Affected: `schedule.ts`, `index.ts`, `project/project.ts`, `worktree/index.ts`, `share/share-next.ts`, `control/index.ts`, `permission/next.ts`, `server/server.ts`, `server/routes/*.ts`.
-
-Move `test/storage/json-migration.test.ts` → `packages/storage/`.
-
-**Exit criteria:** `packages/storage/` has package.json + all migrations; opencode imports `Database`/`Storage` from `@opendora/storage`; `bun drizzle-kit generate` runs from storage package.
+All storage, schema, and SQL files moved. `packages/storage/` has package.json + all migrations. opencode imports are redirects.
 
 ---
 
-## Phase 4 — Create `@opendora/server`
+## ✅ Phase 4 — Create `@opendora/server`
 
-**Medium-hard: new package, all HTTP routes move here.**
-
-Files to move from `src/server/` → `packages/server/src/`:
-
-| Source | Destination |
-|--------|-------------|
-| `server/server.ts` | `server/src/server.ts` |
-| `server/routes/` (all 19 files) | `server/src/routes/` |
-| `server/configure-session-core.ts` | `server/src/configure-session-core.ts` |
-| `server/error.ts` | `server/src/error.ts` |
-| `server/event.ts` | `server/src/event.ts` |
-| `server/mdns.ts` | `server/src/mdns.ts` |
-
-`server.ts` imports ~40 opencode-internal modules. Remaining opencode imports resolve via `@opendora/opencode/...` (its `./*` export) as an **interim state** until those domains also migrate in later phases.
-
-**New `packages/server/package.json`** depends on: `@opendora/storage`, `@opendora/util`, `@opendora/session`, `@opendora/tools`, `@opendora/schedule`, `@opendora/workflow`, `@opendora/agent`, `@opendora/permission`, `@opendora/auth`, `@opendora/opencode` (interim), `hono`, `hono-openapi`, `bonjour-service`.
-
-**opencode/package.json:** add `@opendora/server: workspace:*`, remove `hono`, `hono-openapi`, `bonjour-service`.
-
-**opencode CLI:** `src/cli/cmd/serve.ts` calls `Server.listen()` imported from `@opendora/server`.
-
-Move `test/server/` → `packages/server/test/`.
-
-**Exit criteria:** `packages/server/` has package.json; `Server.listen()` callable from opencode CLI; all server tests pass; opencode no longer bundles Hono directly.
+All server files (server.ts + all 19 routes + configure-session-core, error, event, mdns) moved to `packages/server/`. All `src/server/` files are re-export redirects.
 
 ---
 
-## Phase 5 — Create `@opendora/runtime` (Instance + Execution Context)
+## ✅ Phase 5 — Create `@opendora/runtime`
 
-**Hard: new package, the central `Instance.state()` context moves here.**
-
-`Instance.state()` is imported by ~15 subsystems — this is the biggest coordination step.
-
-Files to move → `packages/runtime/src/`:
-
-| Source | Destination |
-|--------|-------------|
-| `project/instance.ts` | `runtime/src/instance.ts` |
-| `project/state.ts` | `runtime/src/state.ts` |
-| `project/project.ts` | `runtime/src/project.ts` |
-| `project/vcs.ts` | `runtime/src/vcs.ts` |
-| `project/bootstrap.ts` | `runtime/src/bootstrap.ts` |
-| `bus/index.ts` (Bus class) | `runtime/src/bus.ts` |
-| `scheduler/index.ts` | `runtime/src/scheduler.ts` |
-| `snapshot/index.ts` | `runtime/src/snapshot.ts` |
-| `env/index.ts` | `runtime/src/env.ts` |
-| `worktree/index.ts` | `runtime/src/worktree.ts` |
-
-All `@/project/instance`, `@/bus`, `@/scheduler`, `@/snapshot`, `@/env`, `@/worktree` imports across opencode update to `@opendora/runtime/...`.
-
-Move tests: `test/project/`, `test/scheduler.test.ts`, `test/snapshot/` → `packages/runtime/test/`.
-
-**Exit criteria:** `Instance`, `Project`, `State`, `Bus`, `Scheduler`, `Snapshot`, `Env`, `Worktree` exported from `@opendora/runtime`; all moved tests pass.
+`Instance`, `Project`, `State`, `Bus`, `Scheduler`, `Snapshot`, `Env`, `Worktree` all exported from `@opendora/runtime`. All `src/project/`, `src/bus/`, `src/scheduler/`, `src/snapshot/`, `src/worktree/` files are re-export redirects.
 
 ---
 
-## Phase 6 — Domain Module Consolidation
-
-**Hard: move modules into their canonical packages. Modules with remaining opencode-internal deps use interim `@opendora/opencode/...` imports until Phase 7 clears those deps.**
-
-> **Shipped (branch `migration/phase-6-domain-modules`):** lsp, mcp, ide, pty, auth, control, question, format.
-> **Blocked by opencode↔runtime cycle:** skill, file (watcher/time), permission/next, share/share-next — originals stay in opencode; copies exist in target packages but are not yet wired as re-export stubs.
+## ✅ Phase 6 — Domain Module Consolidation
 
 | Source | Destination | Status |
 |--------|-------------|--------|
-| `lsp/` (4 files) | `@opendora/server/lsp/` | ✅ Shipped — stub redirects in place |
-| `mcp/` (4 files) | `@opendora/server/mcp/` | ✅ Shipped — stub redirects in place |
-| `ide/index.ts` | `@opendora/server/ide` | ✅ Shipped — stub redirect in place |
-| `pty/index.ts` | `@opendora/server/pty` | ✅ Shipped — stub redirect in place |
-| `auth/` (2 files) | `@opendora/auth` | ✅ Shipped — stub redirect in place |
-| `control/index.ts` | `@opendora/storage` | ✅ Shipped — stub redirect in place |
-| `question/index.ts` | `@opendora/runtime` | ✅ Shipped — stub redirect in place |
-| `format/` (2 files) | `@opendora/runtime` (not util — needs Instance/Bus/Config) | ✅ Shipped — stub redirects in place |
-| `skill/` (3 files) | `@opendora/skills` | 🔶 Copies in skills/; opencode originals retained (runtime↔opencode cycle) |
-| `file/` (watcher, time) | `@opendora/tools` | 🔶 Blocked — tools cannot take opencode/runtime deps without new cycles |
-| `permission/next.ts` | `@opendora/server` (bridge code) | 🔶 Blocked — callers all in opencode; cycles if moved to permission pkg |
-| `share/share-next.ts` | `@opendora/session` | 🔶 Blocked — session cannot take opencode/runtime deps without new cycles |
+| `lsp/` (4 files) | `@opendora/server/lsp/` | ✅ |
+| `mcp/` (4 files) | `@opendora/server/mcp/` | ✅ |
+| `ide/index.ts` | `@opendora/server/ide` | ✅ |
+| `pty/index.ts` | `@opendora/server/pty` | ✅ |
+| `auth/` (2 files) | `@opendora/auth` | ✅ |
+| `control/index.ts` | `@opendora/storage` | ✅ |
+| `question/index.ts` | `@opendora/runtime` | ✅ |
+| `format/` (2 files) | `@opendora/runtime` | ✅ |
+| `skill/` (3 files) | `@opendora/skills` | ✅ |
+| `file/watcher.ts`, `file/time.ts` | `@opendora/tools` | ✅ |
+| `permission/next.ts` | `@opendora/permission` | ✅ |
+| `share/share-next.ts` | `@opendora/session` | ✅ |
 
-**Cycle note:** `@opendora/runtime` ↔ `@opendora/opencode` is a pre-existing cycle from Phase 5 that breaks `bun turbo typecheck`. Resolving it (Phase 7) unblocks the remaining rows above.
-
-**Exit criteria (full):** `src/` contains only: `cli/`, `daemon/`, `plugin/`, `command/`, `config/`, `acp/`, `tool/`, `bun/`, `agent.ts`, `schedule.ts`, `index.ts`.
+All items complete. All original `src/` paths are re-export redirects.
 
 ---
 
-## Phase 7 — Final CLI Cleanup
+## ✅ Phase 7 — Final CLI Cleanup
 
-**Complex: last business logic leaves opencode; tool/ alignment with VISION.md.**
+| Source | Final Destination | Status |
+|--------|-------------------|--------|
+| `agent.ts` | `@opendora/runtime/agent` | ✅ redirect |
+| `schedule.ts` | `@opendora/schedule/service` | ✅ redirect |
+| `acp/` (4 files) | `@opendora/server/acp/*` | ✅ redirects |
+| `command/index.ts` | `@opendora/server/command` | ✅ redirect |
+| `config/` (all 6 files) | `@opendora/config/*` | ✅ redirects (including tui-schema, tui) |
+| `tool/` (9 files) | `@opendora/tools/*` | ✅ redirects |
+| `session/` (8 files) | `@opendora/session/*` | ✅ redirects |
+| `permission/index.ts` | — dead code; replaced by `PermissionNext` in `@opendora/permission/next` | ✅ delete |
+| `plugin/` (3 files) | Stays in opencode → `apps/cli` | — in apps/cli |
+| `daemon/` (12 files) | Stays in opencode → `apps/cli` | — in apps/cli |
+| `cli/` | Already in `apps/cli/src/cli/` with updated imports | — in apps/cli |
 
-| Source | Final Destination |
-|--------|-------------------|
-| `agent.ts` (top-level) | `@opendora/runtime` |
-| `schedule.ts` (top-level) | `@opendora/runtime` |
-| `acp/` (4 files) | `@opendora/server` |
-| `command/` (3 files) | `@opendora/server` |
-| `config/config.ts` | `@opendora/runtime` |
-| `tool/` (41 files) | `@opendora/tools` — each tool audited to call canonical package ops |
-| `plugin/` (3 files) | Stays in opencode (CLI entry-point concern) |
-| `daemon/` (12 files) | Stays in opencode (systemd/launchd is CLI deployment) |
-| `config/tui-schema.ts`, keybindings | Stays in opencode (TUI-specific) |
-
-**Final state of `src/`:** `cli/`, `daemon/`, `plugin/`, `config/tui-*.ts`, `index.ts`, `preload-bindings-fix.ts`, `sql.d.ts`.
-
-**opencode/package.json final deps:** `@opendora/runtime`, `@opendora/server`, `@opendora/storage`, `@opendora/tools`, `@opendora/util`, `@opendora/sdk` — no longer the inverse.
+**`permission/index.ts` note:** The 210-line `Permission.ask/respond` namespace is **not imported** by any file in `apps/cli` or any `@opendora/*` package. Runtime permission handling is fully handled by `PermissionNext` in `@opendora/permission/next`. Delete the file; no redirect needed.
 
 ---
 
-## Phase 8 — Create `apps/cli` (CLI + integrated TUI); Delete `packages/opencode`
+## 🔴 Phase 8 — Delete `packages/opencode`
 
-**After Phase 7, `opencode/src/` contains only:** `cli/`, `daemon/`, `plugin/`, `config/tui-*.ts`, `index.ts`, `preload-bindings-fix.ts`, `sql.d.ts`
+`apps/cli` is the new canonical CLI package (`@opendora/cli`). It is already:
+- In the workspace (`apps/*` glob in root `package.json`)
+- Using direct `@opendora/*` imports (no `@/` aliases, no `@opendora/opencode` dep)
+- Wired in turbo (`@opendora/cli#test` exists in `turbo.json`)
 
-| Source | Destination |
-|--------|-------------|
-| `src/index.ts` | `apps/cli/src/index.ts` |
-| `src/cli/` (including `cmd/tui/`) | `apps/cli/src/cli/` |
-| `src/daemon/` | `apps/cli/src/daemon/` |
-| `src/plugin/` | `apps/cli/src/plugin/` |
+Zero external packages or source files import from `@opendora/opencode`.
 
-`apps/cli` depends on: `@opendora/sdk` (or `@opendora/server` directly), `@opendora/runtime`, `@opendora/util`, `@opentui/core`
+### Deletion checklist
 
-TUI runs as an integrated subcommand within `apps/cli` (e.g., `opencode tui`). There is no separate `apps/tui` package.
+1. **Delete `packages/opencode/src/permission/index.ts`** — dead code, no callers outside opencode itself
+2. **Remove `"packages/opencode"` from `workspaces.packages`** in root `package.json`
+3. **Delete `packages/opencode/`** directory from the repo
+4. **Run `bun install`** — updates `bun.lock` to remove `@opendora/opencode` entries
+5. **Run `bun turbo typecheck`** — verify zero errors across workspace
+6. **Run `bun turbo build`** — verify `@opendora/cli` builds and all other packages build
+7. **Smoke-test CLI** — `./apps/cli/bin/opencode --version` or equivalent
 
-**Delete `packages/opencode`** and remove from workspace root `package.json`.
+### What lives in `apps/cli` permanently
 
-**Exit criteria:** `opencode` binary built from `apps/cli`; TUI launches via CLI subcommand; `packages/opencode` removed from monorepo. `turbo build` succeeds. All tests pass.
+| Path | Reason |
+|------|--------|
+| `src/cli/` | CLI commands and TUI |
+| `src/daemon/` | systemd/launchd deployment |
+| `src/plugin/` | CLI entry-point plugin loading |
+| `src/util/color.ts` | ANSI terminal escapes — TUI-only, no @opendora/util equivalent |
+| `src/util/keybind.ts` | Depends on `@opentui/core` — TUI-only |
+| `src/util/rpc.ts` | Web Worker RPC for TUI threads — TUI-only |
+| `src/index.ts` | CLI entry point |
+| `src/sql.d.ts` | Bun SQL type declaration |
+| `src/preload-bindings-fix.ts` | Runtime binding fix |
 
 ---
 
-## Cross-Cutting Rules
+## Verification (Phase 8)
 
-**Dependency order is strict:** 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8.
-- Phase 3 needs `context`/`lazy` from Phase 1
-- Phase 4 needs `@opendora/storage` from Phase 3
-- Phase 5 needs `@opendora/storage` from Phase 3
-- Phase 6 needs `Instance` from Phase 5
-- Phase 8 needs opencode fully hollowed out from Phases 6/7
-
-**Re-export redirect pattern:** When moving a file, leave a 1-line re-export at the old path. The existing `src/util/log.ts` is the model.
-
-**`@/` path alias:** `tsconfig.json` maps `@/ → ./src/`. Never add new `@/...` imports — always use workspace package imports. Remove `paths` entries as directories empty out.
-
-**Working state invariant:** `bun run build` and all tests pass before starting the next phase.
-
-## Verification
-
-For each phase:
-1. `bun run typecheck` passes in both destination package and opencode
-2. `bun test` passes in both packages
-3. `turbo build` produces no errors across the workspace
-4. opencode CLI still works: `bun run src/index.ts serve`
-5. Phase 3+: `bun drizzle-kit generate` runs from `packages/storage/`
-6. Phase 4+: HTTP server starts and responds to health check
-7. Phase 5+: Agent session creation works end-to-end via CLI
+1. `bun turbo typecheck` passes across all packages (no @opendora/opencode in dependency graph)
+2. `bun turbo build` succeeds
+3. `bun test` passes in `apps/cli` and all other packages
+4. CLI binary works: `./apps/cli/bin/opencode serve`
+5. HTTP server starts and responds to health check
+6. Agent session creation works end-to-end via CLI

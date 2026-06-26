@@ -32,3 +32,7 @@
 - Apps call SDK methods instead of hand-writing server calls or importing backend packages.
 - Apps must not duplicate package-owned domain behavior.
 - Apps must not bypass server auth, permission, validation, or runtime coordination.
+
+## Visual Language
+
+OpenDora should use a consistent connected-node/line visual language across chat reply chains, agent definition sections, workflow nodes, and branching workflow/graph histories. Inspired by git graph representations, items appear as dots or nodes connected by lines in sequence, with branching lines for diverging paths. Apps own the presentation of this visual language; backend graph semantics and connectivity rules remain in packages.
