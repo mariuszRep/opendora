@@ -32,7 +32,15 @@ export namespace Auth {
     })
     .meta({ ref: "WellKnownAuth" })
 
-  export const Info = z.discriminatedUnion("type", [Oauth, Api, WellKnown]).meta({ ref: "Auth" })
+  export const Url = z
+    .object({
+      type: z.literal("url"),
+      url: z.string(),
+      key: z.string().optional(),
+    })
+    .meta({ ref: "UrlAuth" })
+
+  export const Info = z.discriminatedUnion("type", [Oauth, Api, WellKnown, Url]).meta({ ref: "Auth" })
   export type Info = z.infer<typeof Info>
 
   const filepath = path.join(Global.Path.providers, "auth.json")

@@ -19,6 +19,9 @@ export function useTextToSpeech() {
       }
       audioRef.current = null
     }
+    if (typeof window !== "undefined" && window.speechSynthesis?.speaking) {
+      window.speechSynthesis.cancel()
+    }
     setPlayingId(null)
     setIsLoading(false)
   }, [])
@@ -44,6 +47,27 @@ export function useTextToSpeech() {
 
       try {
         setError(null)
+
+        if (settings.tts.provider === "browser-native") {
+          if (typeof window === "undefined" || !window.speechSynthesis) {
+            throw new Error("Browser TTS not supported")
+          }
+          window.speechSynthesis.cancel()
+          const utterance = new SpeechSynthesisUtterance(text)
+          utterance.onend = () => {
+            setPlayingId(null)
+            setIsLoading(false)
+          }
+          utterance.onerror = () => {
+            setPlayingId(null)
+            setIsLoading(false)
+            setError("Browser TTS failed")
+          }
+          window.speechSynthesis.speak(utterance)
+          setIsLoading(false)
+          return
+        }
+
         const { opendora } = await import("@/lib/opendora")
         const blob = await opendora.voice.tts({
           text,

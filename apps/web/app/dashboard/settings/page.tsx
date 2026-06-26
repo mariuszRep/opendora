@@ -33,6 +33,7 @@ import { BotIcon, MessageSquareIcon, SettingsIcon, PlugIcon, UserIcon, ClockPlus
 import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import { toast } from "sonner"
 import { AGENT_COLORS } from "@/lib/agent-colors"
 import { opendora } from "@/lib/opendora"
 
@@ -92,6 +93,9 @@ export default function SettingsPage() {
   const [timezone, setTimezone] = useState("UTC")
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string>("")
   const [workflows, setWorkflows] = useState<any[]>([])
+  const [localWhisperUrl, setLocalWhisperUrl] = useState("")
+  const [localWhisperKey, setLocalWhisperKey] = useState("")
+  const [savingLocalWhisper, setSavingLocalWhisper] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -124,8 +128,9 @@ export default function SettingsPage() {
   }
 
   const handleSetWorkflow = (workflowId: string) => {
-    setSelectedWorkflowId(workflowId)
-    opendora.general.update({ selectedWorkflowId: workflowId }).catch(() => {})
+    const id = workflowId === "none" ? "" : workflowId
+    setSelectedWorkflowId(id)
+    opendora.general.update({ selectedWorkflowId: id }).catch(() => {})
   }
 
   // Hotkey recording effect
@@ -168,6 +173,25 @@ export default function SettingsPage() {
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [recordingHotkey, voiceSettings.pushToTalk, updateVoiceSettings])
+
+  const saveLocalWhisperConfig = async () => {
+    if (!localWhisperUrl.trim()) return
+    setSavingLocalWhisper(true)
+    try {
+      await opendora.auth.set("local-whisper", {
+        type: "url",
+        url: localWhisperUrl.trim().replace(/\/$/, ""),
+        ...(localWhisperKey.trim() ? { key: localWhisperKey.trim() } : {}),
+      })
+      toast.success("Local Whisper server saved")
+      setLocalWhisperUrl("")
+      setLocalWhisperKey("")
+    } catch {
+      toast.error("Failed to save Local Whisper configuration")
+    } finally {
+      setSavingLocalWhisper(false)
+    }
+  }
 
   const settingsCards = [
     {
@@ -373,12 +397,12 @@ export default function SettingsPage() {
             {/* Workflow Selector */}
             <div className="space-y-2">
               <Label htmlFor="workflow">Default Workflow</Label>
-              <Select value={selectedWorkflowId} onValueChange={handleSetWorkflow}>
+              <Select value={selectedWorkflowId || "none"} onValueChange={handleSetWorkflow}>
                 <SelectTrigger id="workflow" className="w-full">
                   <SelectValue placeholder="Select workflow…" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {workflows.map((w) => (
                     <SelectItem key={w.id} value={w.id}>
                       {w.name}
@@ -447,10 +471,39 @@ export default function SettingsPage() {
                         <SelectItem value="browser-native">Browser Native (free)</SelectItem>
                         <SelectItem value="openai-whisper">OpenAI Whisper</SelectItem>
                         <SelectItem value="google-gemini">Google Gemini</SelectItem>
+                        <SelectItem value="local-whisper">Local Whisper Server</SelectItem>
                         <SelectItem value="disabled">Disabled</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                  {voiceSettings.stt.provider === "local-whisper" && (
+                    <div className="space-y-2 pt-1">
+                      <Label className="text-xs">Server URL</Label>
+                      <Input
+                        placeholder="http://localhost:8000"
+                        value={localWhisperUrl}
+                        onChange={(e) => setLocalWhisperUrl(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && saveLocalWhisperConfig()}
+                        className="text-sm"
+                      />
+                      <Label className="text-xs">Bearer Token (optional)</Label>
+                      <Input
+                        type="password"
+                        placeholder="sk-..."
+                        value={localWhisperKey}
+                        onChange={(e) => setLocalWhisperKey(e.target.value)}
+                        className="text-sm"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={saveLocalWhisperConfig}
+                        disabled={!localWhisperUrl.trim() || savingLocalWhisper}
+                        className="w-full"
+                      >
+                        {savingLocalWhisper ? "Saving…" : "Save Server URL"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="border-t pt-4 space-y-4">
@@ -468,6 +521,7 @@ export default function SettingsPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="browser-native">Browser Native (free, robotic)</SelectItem>
                         <SelectItem value="openai">OpenAI TTS</SelectItem>
                         <SelectItem value="google-gemini">Google Gemini TTS</SelectItem>
                         <SelectItem value="disabled">Disabled</SelectItem>

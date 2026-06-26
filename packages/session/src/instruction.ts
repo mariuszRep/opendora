@@ -31,7 +31,7 @@ function instanceWorktree(): string {
 
 function globalFiles() {
   const files: string[] = []
-  const configDir = process.env.OPENCODE_CONFIG_DIR
+  const configDir = process.env.PROJECTFLOWS_CONFIG_DIR
   if (configDir) {
     files.push(path.join(configDir, "AGENTS.md"))
   }
@@ -39,7 +39,7 @@ function globalFiles() {
   if (globalConfigPath) {
     files.push(path.join(globalConfigPath, "AGENTS.md"))
   }
-  if (!(process.env.OPENCODE_DISABLE_CLAUDE_CODE_PROMPT === "1")) {
+  if (!(process.env.PROJECTFLOWS_DISABLE_CLAUDE_CODE_PROMPT === "1")) {
     files.push(path.join(os.homedir(), ".claude", "CLAUDE.md"))
   }
   return files
@@ -108,13 +108,13 @@ async function globUp(pattern: string, dir: string, root: string): Promise<strin
 async function resolveRelative(instruction: string): Promise<string[]> {
   const directory = instanceDirectory()
   const worktree = instanceWorktree()
-  if (!(process.env.OPENCODE_DISABLE_PROJECT_CONFIG === "1")) {
+  if (!(process.env.PROJECTFLOWS_DISABLE_PROJECT_CONFIG === "1")) {
     return globUp(instruction, directory, worktree).catch(() => [])
   }
-  const configDir = process.env.OPENCODE_CONFIG_DIR
+  const configDir = process.env.PROJECTFLOWS_CONFIG_DIR
   if (!configDir) {
     log.warn(
-      `Skipping relative instruction "${instruction}" - no OPENCODE_CONFIG_DIR set while project config is disabled`,
+      `Skipping relative instruction "${instruction}" - no PROJECTFLOWS_CONFIG_DIR set while project config is disabled`,
     )
     return []
   }
@@ -151,7 +151,7 @@ export namespace InstructionPrompt {
     const worktree = instanceWorktree()
     const paths = new Set<string>()
 
-    if (!(process.env.OPENCODE_DISABLE_PROJECT_CONFIG === "1")) {
+    if (!(process.env.PROJECTFLOWS_DISABLE_PROJECT_CONFIG === "1")) {
       for (const file of FILES) {
         const matches = await findUp(file, directory, worktree)
         if (matches.length > 0) {

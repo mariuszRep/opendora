@@ -338,7 +338,11 @@ export namespace SessionProcessor {
                     usage: value.usage,
                     metadata: value.providerMetadata,
                   })
-                  input.assistantMessage.finish = value.finishReason
+                  const rawFinishReason = value.finishReason as any
+                  const finishReason: string = (typeof rawFinishReason === "object" && rawFinishReason !== null
+                    ? rawFinishReason.unified
+                    : rawFinishReason) ?? "unknown"
+                  input.assistantMessage.finish = finishReason
                   input.assistantMessage.cost += usage.cost
                   input.assistantMessage.tokens = usage.tokens
                   capturedTokens.input     += usage.tokens.input
@@ -352,7 +356,7 @@ export namespace SessionProcessor {
 
                   await input.updatePart({
                     id: Identifier.ascending("part"),
-                    reason: value.finishReason,
+                    reason: finishReason,
                     snapshot: stepSnapshot,
                     messageID: input.assistantMessage.id,
                     sessionID: input.assistantMessage.sessionID,

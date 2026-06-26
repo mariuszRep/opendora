@@ -427,7 +427,7 @@ export namespace Session {
     }
 
     const config = await cfg.config?.get() ?? {}
-    if (!input.parentSessionID && (process.env.OPENCODE_AUTO_SHARE || config.share === "auto"))
+    if (!input.parentSessionID && (process.env.PROJECTFLOWS_AUTO_SHARE || config.share === "auto"))
       share(id).catch(() => {})
 
     // Publish so ACP can register the session and not drop subsequent message events.

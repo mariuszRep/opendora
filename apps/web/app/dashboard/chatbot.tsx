@@ -777,14 +777,23 @@ export const Chatbot = () => {
   const handleAudioRecorded = useCallback(async (audioBlob: Blob) => {
     try {
       const { opendora } = await import("@/lib/opendora")
-      const provider = settings.stt.provider === "google-gemini" ? "google-gemini" : "openai-whisper"
+      const provider =
+        settings.stt.provider === "google-gemini" ? "google-gemini"
+        : settings.stt.provider === "local-whisper" ? "local-whisper"
+        : "openai-whisper"
       const result = await opendora.voice.stt(audioBlob, { provider })
       return result.text || ""
     } catch (error) {
       console.error("STT error:", error)
       const errorMessage = error instanceof Error ? error.message : "Transcription error"
       if (errorMessage.includes("not configured")) {
-        toast.error("OpenAI not configured. Please connect OpenAI in Settings → Providers.")
+        if (settings.stt.provider === "local-whisper") {
+          toast.error("Local Whisper server not configured. Go to Settings → Voice → Speech-to-Text and enter your server URL.")
+        } else if (settings.stt.provider === "google-gemini") {
+          toast.error("Google API key not configured. Please connect Google in Settings → Providers.")
+        } else {
+          toast.error("OpenAI not configured. Please connect OpenAI in Settings → Providers.")
+        }
       } else {
         toast.error("Transcription failed")
       }
@@ -1037,7 +1046,7 @@ export const Chatbot = () => {
                   forceMode={
                     settings.stt.provider === "disabled"
                       ? "none"
-                      : settings.stt.provider === "openai-whisper" || settings.stt.provider === "google-gemini"
+                      : settings.stt.provider === "openai-whisper" || settings.stt.provider === "google-gemini" || settings.stt.provider === "local-whisper"
                         ? "media-recorder"
                         : undefined
                   }

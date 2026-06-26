@@ -53,7 +53,7 @@ export namespace Config {
   }
 
   export function managedConfigDir() {
-    return process.env.OPENCODE_TEST_MANAGED_CONFIG_DIR || systemManagedConfigDir()
+    return process.env.PROJECTFLOWS_TEST_MANAGED_CONFIG_DIR || systemManagedConfigDir()
   }
 
   const managedDir = managedConfigDir()
@@ -113,13 +113,13 @@ export namespace Config {
     result = mergeConfigConcatArrays(result, await global())
 
     // Custom config path overrides global config.
-    if (Flag.OPENCODE_CONFIG) {
-      result = mergeConfigConcatArrays(result, await loadFile(Flag.OPENCODE_CONFIG))
-      log.debug("loaded custom config", { path: Flag.OPENCODE_CONFIG })
+    if (Flag.PROJECTFLOWS_CONFIG) {
+      result = mergeConfigConcatArrays(result, await loadFile(Flag.PROJECTFLOWS_CONFIG))
+      log.debug("loaded custom config", { path: Flag.PROJECTFLOWS_CONFIG })
     }
 
     // Project config overrides global and remote config.
-    if (!Flag.OPENCODE_DISABLE_PROJECT_CONFIG) {
+    if (!Flag.PROJECTFLOWS_DISABLE_PROJECT_CONFIG) {
       const projectFiles = await ConfigPaths.projectFiles("opencode", Instance.directory, Instance.worktree)
       for (const file of projectFiles) {
         result = mergeConfigConcatArrays(result, await loadFile(file))
@@ -133,14 +133,14 @@ export namespace Config {
     const directories = await ConfigPaths.directories(Instance.directory, Instance.worktree)
 
     // .projectflows directory config overrides (project and global) config sources.
-    if (Flag.OPENCODE_CONFIG_DIR) {
-      log.debug("loading config from OPENCODE_CONFIG_DIR", { path: Flag.OPENCODE_CONFIG_DIR })
+    if (Flag.PROJECTFLOWS_CONFIG_DIR) {
+      log.debug("loading config from PROJECTFLOWS_CONFIG_DIR", { path: Flag.PROJECTFLOWS_CONFIG_DIR })
     }
 
     const deps = []
 
     for (const dir of unique(directories)) {
-      if (dir.endsWith(".projectflows") || dir.endsWith(".opencode") || dir === Flag.OPENCODE_CONFIG_DIR) {
+      if (dir.endsWith(".projectflows") || dir.endsWith(".opencode") || dir === Flag.PROJECTFLOWS_CONFIG_DIR) {
         for (const file of ["projectflows.jsonc", "projectflows.json", "opencode.jsonc", "opencode.json", "opendora.jsonc", "opendora.json"]) {
           log.debug(`loading config from ${path.join(dir, file)}`)
           result = mergeConfigConcatArrays(result, await loadFile(path.join(dir, file)))
@@ -153,7 +153,7 @@ export namespace Config {
 
       deps.push(
         iife(async () => {
-          const isManaged = dir === Global.Path.config || dir === Flag.OPENCODE_CONFIG_DIR
+          const isManaged = dir === Global.Path.config || dir === Flag.PROJECTFLOWS_CONFIG_DIR
           const shouldInstall = await needsInstall(dir, isManaged)
           if (shouldInstall) await installDependencies(dir)
         }),
@@ -166,15 +166,15 @@ export namespace Config {
     }
 
     // Inline config content overrides all non-managed config sources.
-    if (process.env.OPENCODE_CONFIG_CONTENT) {
+    if (process.env.PROJECTFLOWS_CONFIG_CONTENT) {
       result = mergeConfigConcatArrays(
         result,
-        await load(process.env.OPENCODE_CONFIG_CONTENT, {
+        await load(process.env.PROJECTFLOWS_CONFIG_CONTENT, {
           dir: Instance.directory,
-          source: "OPENCODE_CONFIG_CONTENT",
+          source: "PROJECTFLOWS_CONFIG_CONTENT",
         }),
       )
-      log.debug("loaded custom config from OPENCODE_CONFIG_CONTENT")
+      log.debug("loaded custom config from PROJECTFLOWS_CONFIG_CONTENT")
     }
 
     // Load managed config files last (highest priority) - enterprise admin-controlled
@@ -197,8 +197,8 @@ export namespace Config {
       })
     }
 
-    if (Flag.OPENCODE_PERMISSION) {
-      result.permission = mergeDeep(result.permission ?? {}, JSON.parse(Flag.OPENCODE_PERMISSION))
+    if (Flag.PROJECTFLOWS_PERMISSION) {
+      result.permission = mergeDeep(result.permission ?? {}, JSON.parse(Flag.PROJECTFLOWS_PERMISSION))
     }
 
     // Backwards compatibility: legacy top-level `tools` config
@@ -223,10 +223,10 @@ export namespace Config {
     }
 
     // Apply flag overrides for compaction settings
-    if (Flag.OPENCODE_DISABLE_AUTOCOMPACT) {
+    if (Flag.PROJECTFLOWS_DISABLE_AUTOCOMPACT) {
       result.compaction = { ...result.compaction, auto: false }
     }
-    if (Flag.OPENCODE_DISABLE_PRUNE) {
+    if (Flag.PROJECTFLOWS_DISABLE_PRUNE) {
       result.compaction = { ...result.compaction, prune: false }
     }
 
@@ -1282,9 +1282,9 @@ export namespace Config {
   export async function update(config: Info) {
     // Determine the correct config file to write to
     let filepath: string
-    if (Flag.OPENCODE_CONFIG_DIR) {
+    if (Flag.PROJECTFLOWS_CONFIG_DIR) {
       // Write to .projectflows/projectflows.json when using custom config dir
-      filepath = path.join(Flag.OPENCODE_CONFIG_DIR, "projectflows.json")
+      filepath = path.join(Flag.PROJECTFLOWS_CONFIG_DIR, "projectflows.json")
     } else {
       // Otherwise write to project's opencode.json
       const projectFiles = await ConfigPaths.projectFiles("opencode", Instance.directory, Instance.worktree)

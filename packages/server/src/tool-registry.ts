@@ -22,15 +22,15 @@ configureTruncation((text, agent) => Truncate.output(text, {}, agent as any))
 
 // Wire up opencode-specific configuration
 configureRegistry({
-  clientType: Flag.OPENCODE_CLIENT,
+  clientType: Flag.PROJECTFLOWS_CLIENT,
   getInstanceKey() {
     try { return Instance.directory } catch { return undefined }
   },
   flags: {
-    enableQuestion: Flag.OPENCODE_ENABLE_QUESTION_TOOL,
-    enableExa: Flag.OPENCODE_ENABLE_EXA,
-    enableLspTool: Flag.OPENCODE_EXPERIMENTAL_LSP_TOOL,
-    enablePlanMode: Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE,
+    enableQuestion: Flag.PROJECTFLOWS_ENABLE_QUESTION_TOOL,
+    enableExa: Flag.PROJECTFLOWS_ENABLE_EXA,
+    enableLspTool: Flag.PROJECTFLOWS_EXPERIMENTAL_LSP_TOOL,
+    enablePlanMode: Flag.PROJECTFLOWS_EXPERIMENTAL_PLAN_MODE,
     // enableBatchTool is checked dynamically in tools() via Config
     enableBatchTool: false,
   },

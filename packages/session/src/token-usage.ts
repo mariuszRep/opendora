@@ -204,6 +204,8 @@ export namespace TokenUsage {
 
       const rl = parseRateLimitHeaders(input.headers)
 
+      const safeInt = (n: number | undefined | null) => (Number.isFinite(n as number) ? Math.floor(n as number) : 0)
+
       db.insert(TokenUsageTable)
         .values({
           id:         Identifier.ascending("token_usage"),
@@ -213,18 +215,18 @@ export namespace TokenUsage {
           agent_id:   input.agentID  ?? null,
           project_id: input.projectID ?? null,
 
-          provider_id: input.providerID,
-          model_id:    input.modelID,
-          purpose:     input.purpose,
+          provider_id: input.providerID ?? "unknown",
+          model_id:    input.modelID ?? "unknown",
+          purpose:     input.purpose ?? "other",
 
-          input_tokens:       input.tokens.input,
-          output_tokens:      input.tokens.output,
-          cache_read_tokens:  input.tokens.cacheRead,
-          cache_write_tokens: input.tokens.cacheWrite,
-          reasoning_tokens:   input.tokens.reasoning,
+          input_tokens:       safeInt(input.tokens.input),
+          output_tokens:      safeInt(input.tokens.output),
+          cache_read_tokens:  safeInt(input.tokens.cacheRead),
+          cache_write_tokens: safeInt(input.tokens.cacheWrite),
+          reasoning_tokens:   safeInt(input.tokens.reasoning),
 
-          cost_usd:           actualCost,
-          estimated_cost_usd: estimatedCost,
+          cost_usd:           Number.isFinite(actualCost) ? actualCost : 0,
+          estimated_cost_usd: Number.isFinite(estimatedCost) ? estimatedCost : 0,
           is_free:            isFreeModel,
 
           rl_requests_limit:     rl.rl_requests_limit,

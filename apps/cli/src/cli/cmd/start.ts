@@ -51,7 +51,7 @@ export const StartCommand = cmd({
           environment: {
             // Single, deterministic data/config root in the user's home folder,
             // independent of where the server is started from.
-            OPENCODE_CONFIG_DIR: path.join(os.homedir(), ".projectflows"),
+            PROJECTFLOWS_CONFIG_DIR: path.join(os.homedir(), ".projectflows"),
             OPENDORA_SERVICE_VERSION: Installation.VERSION,
           },
           description: `OpenDora Server (v${Installation.VERSION})`,

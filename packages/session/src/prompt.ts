@@ -1660,7 +1660,7 @@ export namespace SessionPrompt {
     }
 
     // Original logic when experimental plan mode is disabled
-    if (!process.env.OPENCODE_EXPERIMENTAL_PLAN_MODE) {
+    if (!process.env.PROJECTFLOWS_EXPERIMENTAL_PLAN_MODE) {
       return input.messages
     }
 

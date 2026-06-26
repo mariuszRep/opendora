@@ -471,6 +471,7 @@ export type AuthInfo =
   | { type: "api"; key: string }
   | { type: "oauth"; refresh: string; access: string; expires: number; accountId?: string; enterpriseUrl?: string }
   | { type: "wellknown"; key: string; token: string }
+  | { type: "url"; url: string; key?: string }
 
 export type Event =
   | { type: "server.connected"; properties: Record<string, never> }
@@ -697,7 +698,7 @@ export const opendora = {
     toolSchemas: () => req<ToolSchema[]>("/agent/tools/schema"),
   },
   voice: {
-    stt: async (audioBlob: Blob, options?: { provider?: "openai-whisper" | "google-gemini" }): Promise<{ text: string }> => {
+    stt: async (audioBlob: Blob, options?: { provider?: "openai-whisper" | "google-gemini" | "local-whisper" }): Promise<{ text: string }> => {
       const formData = new FormData()
       formData.append("audio", audioBlob)
       if (options?.provider) formData.append("provider", options.provider)

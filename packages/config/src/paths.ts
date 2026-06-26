@@ -22,7 +22,7 @@ export namespace ConfigPaths {
   export async function directories(directory: string, worktree: string) {
     const dirs = [
       Global.Path.config,
-      ...(!Flag.OPENCODE_DISABLE_PROJECT_CONFIG
+      ...(!Flag.PROJECTFLOWS_DISABLE_PROJECT_CONFIG
         ? await Array.fromAsync(
             Filesystem.up({
               targets: [".opencode", ".projectflows"],
@@ -38,7 +38,7 @@ export namespace ConfigPaths {
           stop: Global.Path.home,
         }),
       )),
-      ...(Flag.OPENCODE_CONFIG_DIR ? [Flag.OPENCODE_CONFIG_DIR] : []),
+      ...(Flag.PROJECTFLOWS_CONFIG_DIR ? [Flag.PROJECTFLOWS_CONFIG_DIR] : []),
     ]
     // Deduplicate while preserving order (last entry wins in config merge)
     return [...new Set(dirs)]

@@ -5,12 +5,12 @@ import { opendora } from "@/lib/opendora"
 
 export interface VoiceSettings {
   stt: {
-    provider: "openai-whisper" | "google-gemini" | "browser-native" | "disabled"
+    provider: "openai-whisper" | "google-gemini" | "local-whisper" | "browser-native" | "disabled"
     openaiModel?: "whisper-1"
     geminiModel?: string
   }
   tts: {
-    provider: "openai" | "google-gemini" | "disabled"
+    provider: "openai" | "google-gemini" | "browser-native" | "disabled"
     openaiModel?: "tts-1" | "tts-1-hd"
     voice?: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer"
     speed?: number

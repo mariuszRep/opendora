@@ -70,6 +70,37 @@ export const VoiceRoutes = lazy(() =>
             )
           }
 
+          if (provider === "local-whisper") {
+            const config = await Auth.get("local-whisper")
+            if (!config || config.type !== "url" || !config.url) {
+              return c.json(
+                { error: "Local Whisper server URL not configured. Please add it via: Settings → Voice → Speech-to-Text → Local Whisper Server URL" },
+                { status: 401 },
+              )
+            }
+
+            const whisperForm = new FormData()
+            whisperForm.append("file", audio, "recording.webm")
+
+            const headers: Record<string, string> = {}
+            if (config.key) headers["Authorization"] = `Bearer ${config.key}`
+
+            const response = await fetch(`${config.url.replace(/\/$/, "")}/v1/audio/transcriptions`, {
+              method: "POST",
+              headers,
+              body: whisperForm,
+            })
+
+            if (!response.ok) {
+              const errorText = await response.text()
+              console.error("Local Whisper STT error:", errorText)
+              return c.json({ error: "Local Whisper transcription failed" }, { status: response.status as any })
+            }
+
+            const result = await response.json() as any
+            return c.json({ text: result.text })
+          }
+
           if (provider === "google-gemini") {
             const auth = await Auth.get("google")
             if (!auth || auth.type !== "api") {

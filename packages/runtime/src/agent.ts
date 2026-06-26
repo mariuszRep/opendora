@@ -322,7 +322,7 @@ export namespace Agent {
   }
 
   function agentBaseDir() {
-    return Flag.OPENCODE_CONFIG_DIR ? path.dirname(Flag.OPENCODE_CONFIG_DIR) : Instance.directory
+    return Flag.PROJECTFLOWS_CONFIG_DIR ? path.dirname(Flag.PROJECTFLOWS_CONFIG_DIR) : Instance.directory
   }
 
   // Agent definitions are file-based (one agent.json + PERSONA.md read per agent).
