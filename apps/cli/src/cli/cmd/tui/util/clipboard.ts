@@ -1,6 +1,6 @@
 import { $ } from "bun"
 import { platform, release } from "os"
-import clipboardy from "clipboardy"
+import * as clipboardy from "clipboardy"
 import { lazy } from "@projectflows/util/lazy"
 import { tmpdir } from "os"
 import path from "path"

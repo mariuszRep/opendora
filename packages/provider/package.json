@@ -43,6 +43,7 @@
     "@ai-sdk/togetherai": "*",
     "@ai-sdk/vercel": "*",
     "@ai-sdk/xai": "*",
+    "ai-gateway-provider": "*",
     "@aws-sdk/credential-providers": "*",
     "@gitlab/gitlab-ai-provider": "*",
     "@openrouter/ai-sdk-provider": "*",

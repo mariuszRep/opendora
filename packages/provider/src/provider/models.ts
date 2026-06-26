@@ -5,7 +5,7 @@ import * as Version from "@projectflows/util/version"
 import { Flag } from "@projectflows/util/flag"
 import { lazy } from "@projectflows/util/lazy"
 import { Filesystem } from "@projectflows/util/filesystem"
-import { ModelsDev as ModelsDevSchema } from "./models-schema"
+import { ModelsDevSchema } from "./models-schema"
 
 // Try to import bundled snapshot (generated at build time)
 // Falls back to undefined in dev mode when snapshot doesn't exist

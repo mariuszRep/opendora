@@ -173,6 +173,7 @@ for (const item of targets) {
     tsconfig: "./tsconfig.json",
     plugins: [solidPlugin],
     sourcemap: "external",
+    external: ["chromium-bidi", "electron"],
     compile: {
       autoloadBunfig: false,
       autoloadDotenv: false,
