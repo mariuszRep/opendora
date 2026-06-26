@@ -32,14 +32,12 @@ export const StartCommand = cmd({
           projectRoot = path.dirname(projectRoot)
         }
         
-        const opencodePath = path.join(projectRoot, "packages/opencode")
-        
         const programArguments = [
           bunPath,
           "run",
           "--cwd",
           projectRoot,
-          path.join(opencodePath, "src/index.ts"),
+          path.join(projectRoot, "apps/cli/src/index.ts"),
           "serve",
           "--port",
           "4096",

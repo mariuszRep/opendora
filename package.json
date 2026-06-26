@@ -24,7 +24,6 @@
       "packages/permission",
       "packages/script",
       "packages/tools",
-      "packages/opencode",
       "packages/provider",
       "packages/sdk/js",
       "packages/util",
