@@ -1,13 +1,13 @@
 import path from "path"
 import { describe, expect, test } from "bun:test"
 import { fileURLToPath } from "url"
-import { Instance } from "@opendora/runtime/instance"
+import { Instance } from "@projectflows/runtime/instance"
 import { Session } from "../src/session"
-import { configureSessionCore } from "@opendora/server/configure-session-core"
+import { configureSessionCore } from "@projectflows/server/configure-session-core"
 import { MessageV2 } from "../src/message-v2"
 import { SessionPrompt } from "../src/prompt"
 import { SystemPrompt } from "../src/system"
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 import { tmpdir } from "./fixture/fixture"
 
 Log.init({ print: false })

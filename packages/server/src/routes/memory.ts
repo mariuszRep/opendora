@@ -8,9 +8,9 @@ import {
   readMemoryFile,
   writeMemoryFile,
   type MemoryEntry,
-} from "@opendora/tools/memory/lib"
+} from "@projectflows/tools/memory/lib"
 import { errors } from "../error"
-import { lazy } from "@opendora/util/lazy"
+import { lazy } from "@projectflows/util/lazy"
 
 const MemoryEntrySchema = z.object({
   name: z.string(),

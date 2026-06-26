@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test"
 import { PermissionNext } from "../src/next"
-import { Config } from "@opendora/config/config"
-import { Instance } from "@opendora/runtime/instance"
+import { Config } from "@projectflows/config/config"
+import { Instance } from "@projectflows/runtime/instance"
 import { tmpdir } from "./fixture/fixture"
 
 describe("PermissionNext.evaluate for permission.task", () => {

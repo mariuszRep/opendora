@@ -1,8 +1,8 @@
-import { BusEvent } from "@opendora/util/bus-event"
+import { BusEvent } from "@projectflows/util/bus-event"
 import z from "zod"
 
 /**
- * Shared with @opendora/tools File/FileWatcher so runtime (format.ts, vcs.ts) can
+ * Shared with @projectflows/tools File/FileWatcher so runtime (format.ts, vcs.ts) can
  * subscribe to these events without depending on the package that owns the
  * implementation — tools already depends on runtime, so the reverse would cycle.
  */

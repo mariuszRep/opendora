@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "version": "1.0.0",
-  "name": "@opendora/workflow",
+  "name": "@projectflows/workflow",
   "type": "module",
   "license": "MIT",
   "private": true,
@@ -15,9 +15,9 @@
     "./node-registry": "./src/node-registry.ts"
   },
   "dependencies": {
-    "@opendora/agent": "workspace:*",
-    "@opendora/session": "workspace:*",
-    "@opendora/util": "workspace:*",
+    "@projectflows/agent": "workspace:*",
+    "@projectflows/session": "workspace:*",
+    "@projectflows/util": "workspace:*",
     "ai": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"

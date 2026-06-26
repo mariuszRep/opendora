@@ -1,12 +1,12 @@
 import type { Argv } from "yargs"
 import { cmd } from "./cmd"
-import { Session } from "@opendora/session/session"
-import { fromRow as sessionFromRow } from "@opendora/session/from-row"
+import { Session } from "@projectflows/session/session"
+import { fromRow as sessionFromRow } from "@projectflows/session/from-row"
 import { bootstrap } from "../bootstrap"
-import { Database } from "@opendora/storage/db"
-import { SessionTable } from "@opendora/session/sql"
-import { Project } from "@opendora/runtime/project"
-import { Instance } from "@opendora/runtime/instance"
+import { Database } from "@projectflows/storage/db"
+import { SessionTable } from "@projectflows/session/sql"
+import { Project } from "@projectflows/runtime/project"
+import { Instance } from "@projectflows/runtime/instance"
 
 interface SessionStats {
   totalSessions: number

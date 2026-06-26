@@ -1,8 +1,8 @@
-import { Server } from "@opendora/server/server"
+import { Server } from "@projectflows/server/server"
 import { UI } from "../ui"
 import { cmd } from "./cmd"
 import { withNetworkOptions, resolveNetworkOptions } from "../network"
-import { Flag } from "@opendora/util/flag"
+import { Flag } from "@projectflows/util/flag"
 import open from "open"
 import { networkInterfaces } from "os"
 

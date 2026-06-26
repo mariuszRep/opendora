@@ -1,6 +1,6 @@
 import { createMemo } from "solid-js"
 import { useSync } from "./sync"
-import { Global } from "@opendora/util/global"
+import { Global } from "@projectflows/util/global"
 
 export function useDirectory() {
   const sync = useSync()

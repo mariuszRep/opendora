@@ -2,10 +2,10 @@ import { test, expect } from "bun:test"
 import path from "path"
 
 import { tmpdir } from "./fixture/fixture"
-import { Instance } from "@opendora/runtime/instance"
+import { Instance } from "@projectflows/runtime/instance"
 import { Provider } from "../src/provider/provider"
-import { Env } from "@opendora/runtime/env"
-import { Global } from "@opendora/util/global"
+import { Env } from "@projectflows/runtime/env"
+import { Global } from "@projectflows/util/global"
 
 test("GitLab Duo: loads provider with API key from environment", async () => {
   await using tmp = await tmpdir({

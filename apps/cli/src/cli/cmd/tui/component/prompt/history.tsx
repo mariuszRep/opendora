@@ -1,11 +1,11 @@
 import path from "path"
-import { Global } from "@opendora/util/global"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import { Global } from "@projectflows/util/global"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
 import { onMount } from "solid-js"
 import { createStore, produce, unwrap } from "solid-js/store"
 import { createSimpleContext } from "../../context/helper"
 import { appendFile, writeFile } from "fs/promises"
-import type { AgentPart, FilePart, TextPart } from "@opendora/sdk/v2"
+import type { AgentPart, FilePart, TextPart } from "@projectflows/sdk/v2"
 
 export type PromptInfo = {
   input: string

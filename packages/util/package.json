@@ -1,5 +1,5 @@
 {
-  "name": "@opendora/util",
+  "name": "@projectflows/util",
   "version": "1.2.15",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
     "test": "bun test --timeout 30000"
   },
   "dependencies": {
-    "@opendora/permission": "workspace:*",
+    "@projectflows/permission": "workspace:*",
     "zod": "catalog:",
     "glob": "13.0.5",
     "minimatch": "10.0.3"

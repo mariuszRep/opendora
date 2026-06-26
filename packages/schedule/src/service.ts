@@ -4,10 +4,10 @@
  */
 import { existsSync, readFileSync } from "fs"
 import path from "path"
-import { Database } from "@opendora/storage/db"
-import { ScheduleTable } from "@opendora/schedule/sql"
-import type { ScheduleDispatchFn } from "@opendora/schedule/cron-scheduler"
-import { Global } from "@opendora/util/global"
+import { Database } from "@projectflows/storage/db"
+import { ScheduleTable } from "@projectflows/schedule/sql"
+import type { ScheduleDispatchFn } from "@projectflows/schedule/cron-scheduler"
+import { Global } from "@projectflows/util/global"
 import { eq } from "drizzle-orm"
 import { ulid } from "ulid"
 

@@ -1,10 +1,10 @@
 import { describe, test, expect } from "bun:test"
 import path from "path"
 import fs from "fs/promises"
-import { EditTool } from "@opendora/tools/filesystem/edit"
-import { Instance } from "@opendora/runtime/instance"
+import { EditTool } from "@projectflows/tools/filesystem/edit"
+import { Instance } from "@projectflows/runtime/instance"
 import { tmpdir } from "../fixture/fixture"
-import { FileTime } from "@opendora/tools/file/time"
+import { FileTime } from "@projectflows/tools/file/time"
 
 const ctx = {
   sessionID: "test-edit-session",
@@ -74,7 +74,7 @@ describe("tool.edit", () => {
       await Instance.provide({
         directory: tmp.path,
         fn: async () => {
-          const { Bus } = await import("@opendora/runtime/bus")
+          const { Bus } = await import("@projectflows/runtime/bus")
           const { File } = await import("../../file")
           const { FileWatcher } = await import("../../file/watcher")
 
@@ -295,7 +295,7 @@ describe("tool.edit", () => {
         fn: async () => {
           FileTime.read(ctx.sessionID, filepath)
 
-          const { Bus } = await import("@opendora/runtime/bus")
+          const { Bus } = await import("@projectflows/runtime/bus")
           const { File } = await import("../../file")
           const { FileWatcher } = await import("../../file/watcher")
 

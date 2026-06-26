@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test"
 import path from "path"
 import fs from "fs/promises"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
 import { tmpdir } from "./fixture/fixture"
 
 describe("filesystem", () => {

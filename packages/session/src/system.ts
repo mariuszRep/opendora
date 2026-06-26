@@ -4,7 +4,7 @@ import { getConfig } from "./config.ts"
 import { Session } from "./session.ts"
 import { InstructionPrompt } from "./instruction.ts"
 
-// Memory helpers — inlined to avoid a runtime dep on @opendora/tools (devDep only)
+// Memory helpers — inlined to avoid a runtime dep on @projectflows/tools (devDep only)
 interface MemoryEntry { name: string; description: string; type: string; content: string; createdAt: number; updatedAt: number }
 function parseMemoryEntries(raw: string): MemoryEntry[] {
   try { return raw ? JSON.parse(raw) : [] } catch { return [] }

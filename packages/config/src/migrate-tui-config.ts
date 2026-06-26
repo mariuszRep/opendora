@@ -4,11 +4,11 @@ import { unique } from "remeda"
 import z from "zod"
 import { ConfigPaths } from "./paths"
 import { TuiInfo, TuiOptions } from "./tui-schema"
-import { Instance } from "@opendora/runtime/instance"
-import { Flag } from "@opendora/util/flag"
-import { Log } from "@opendora/util/log"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
-import { Global } from "@opendora/util/global"
+import { Instance } from "@projectflows/runtime/instance"
+import { Flag } from "@projectflows/util/flag"
+import { Log } from "@projectflows/util/log"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
+import { Global } from "@projectflows/util/global"
 
 const log = Log.create({ service: "tui.migrate" })
 

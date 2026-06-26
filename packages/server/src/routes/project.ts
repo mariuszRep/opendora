@@ -1,11 +1,11 @@
 import { Hono } from "hono"
 import { describeRoute, validator } from "hono-openapi"
 import { resolver } from "hono-openapi"
-import { Instance } from "@opendora/runtime/instance"
-import { Project } from "@opendora/runtime/project"
+import { Instance } from "@projectflows/runtime/instance"
+import { Project } from "@projectflows/runtime/project"
 import z from "zod"
 import { errors } from "../error"
-import { lazy } from "@opendora/util/lazy"
+import { lazy } from "@projectflows/util/lazy"
 
 export const ProjectRoutes = lazy(() =>
   new Hono()

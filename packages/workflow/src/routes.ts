@@ -5,9 +5,9 @@
 
 import { Hono } from "hono"
 import { WorkflowStorage } from "./storage.ts"
-import { Session } from "@opendora/session/session"
+import { Session } from "@projectflows/session/session"
 import { runWorkflow } from "./runner.ts"
-import { Agent } from "@opendora/agent"
+import { Agent } from "@projectflows/agent"
 
 export function WorkflowRoutes() {
   const app = new Hono()

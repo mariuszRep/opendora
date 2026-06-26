@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
-import type { Tool } from "@opendora/tools/tool"
-import { Instance } from "@opendora/runtime/instance"
-import { assertExternalDirectory } from "@opendora/tools/system/external-directory"
+import type { Tool } from "@projectflows/tools/tool"
+import { Instance } from "@projectflows/runtime/instance"
+import { assertExternalDirectory } from "@projectflows/tools/system/external-directory"
 
 const baseCtx: Omit<Tool.Context, "ask"> = {
   sessionID: "test",

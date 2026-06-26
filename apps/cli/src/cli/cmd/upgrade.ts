@@ -1,7 +1,7 @@
 import type { Argv } from "yargs"
 import { UI } from "../ui"
 import * as prompts from "@clack/prompts"
-import { Installation } from "@opendora/util/installation"
+import { Installation } from "@projectflows/util/installation"
 
 export const UpgradeCommand = {
   command: "upgrade [target]",

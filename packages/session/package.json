@@ -1,5 +1,5 @@
 {
-  "name": "@opendora/session",
+  "name": "@projectflows/session",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -43,20 +43,20 @@
   "devDependencies": {
     "@types/bun": "catalog:",
     "@types/node": "catalog:",
-    "@opendora/server": "workspace:*",
-    "@opendora/tools": "workspace:*",
+    "@projectflows/server": "workspace:*",
+    "@projectflows/tools": "workspace:*",
     "@typescript/native-preview": "catalog:",
     "tsx": "^4.19.0",
     "typescript": "catalog:"
   },
   "dependencies": {
-    "@opendora/config": "workspace:*",
-    "@opendora/permission": "workspace:*",
-    "@opendora/provider": "workspace:*",
-    "@opendora/runtime": "workspace:*",
-    "@opendora/sdk": "workspace:*",
-    "@opendora/storage": "workspace:*",
-    "@opendora/util": "workspace:*",
+    "@projectflows/config": "workspace:*",
+    "@projectflows/permission": "workspace:*",
+    "@projectflows/provider": "workspace:*",
+    "@projectflows/runtime": "workspace:*",
+    "@projectflows/sdk": "workspace:*",
+    "@projectflows/storage": "workspace:*",
+    "@projectflows/util": "workspace:*",
     "ai": "catalog:",
     "decimal.js": "10.5.0",
     "drizzle-orm": "catalog:",

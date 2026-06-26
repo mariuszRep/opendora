@@ -1,10 +1,10 @@
 import { test, expect, beforeEach } from "bun:test"
 import os from "os"
 import { PermissionNext } from "../src/next"
-import { Instance } from "@opendora/runtime/instance"
+import { Instance } from "@projectflows/runtime/instance"
 import { tmpdir } from "./fixture/fixture"
-import { Database } from "@opendora/storage/db"
-import { PermissionRuleTable } from "@opendora/storage/permission-rule.sql"
+import { Database } from "@projectflows/storage/db"
+import { PermissionRuleTable } from "@projectflows/storage/permission-rule.sql"
 
 // Reset the singleton store + clean persisted DB rules before each test.
 // Without this, session/agent rules saved by one test pollute subsequent tests

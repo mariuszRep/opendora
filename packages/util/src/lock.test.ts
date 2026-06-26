@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { Lock } from "@opendora/util/lock"
+import { Lock } from "@projectflows/util/lock"
 
 function tick() {
   return new Promise<void>((r) => queueMicrotask(r))

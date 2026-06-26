@@ -1,13 +1,13 @@
 import type { Argv } from "yargs"
 import { UI } from "../ui"
 import * as prompts from "@clack/prompts"
-import { Installation } from "@opendora/util/installation"
-import { Global } from "@opendora/util/global"
+import { Installation } from "@projectflows/util/installation"
+import { Global } from "@projectflows/util/global"
 import { $ } from "bun"
 import fs from "fs/promises"
 import path from "path"
 import os from "os"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
 
 interface UninstallArgs {
   keepConfig: boolean

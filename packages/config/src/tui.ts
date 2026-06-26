@@ -5,10 +5,10 @@ import { Config } from "./config"
 import { ConfigPaths } from "./paths"
 import { migrateTuiConfig } from "./migrate-tui-config"
 import { TuiInfo } from "./tui-schema"
-import { Instance } from "@opendora/runtime/instance"
-import { Flag } from "@opendora/util/flag"
-import { Log } from "@opendora/util/log"
-import { Global } from "@opendora/util/global"
+import { Instance } from "@projectflows/runtime/instance"
+import { Flag } from "@projectflows/util/flag"
+import { Log } from "@projectflows/util/log"
+import { Global } from "@projectflows/util/global"
 
 export namespace TuiConfig {
   const log = Log.create({ service: "tui.config" })

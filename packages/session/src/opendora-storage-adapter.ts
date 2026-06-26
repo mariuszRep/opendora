@@ -13,7 +13,7 @@ import type { StorageAdapter } from "./storage/adapter"
 import type { SessionMeta, SessionFilter, Message, MessagePart } from "./types"
 import { eq, and } from "drizzle-orm"
 import { SessionTable, MessageTable, PartTable } from "./session.sql"
-import type { Permission } from "@opendora/permission"
+import type { Permission } from "@projectflows/permission"
 import type { RetentionPolicy, SendPolicy, SessionType, SessionStatus } from "./types"
 import { getConfig } from "./config"
 

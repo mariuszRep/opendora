@@ -6,7 +6,7 @@
 import fs from "fs/promises"
 import fsSync from "fs"
 import path from "path"
-import { Global } from "@opendora/util/global"
+import { Global } from "@projectflows/util/global"
 import { Workflow } from "./schema.ts"
 
 export namespace WorkflowStorage {

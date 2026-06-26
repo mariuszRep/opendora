@@ -6,9 +6,9 @@ import path from "path"
 import fs from "fs/promises"
 import { readFileSync, readdirSync } from "fs"
 import { JsonMigration } from "../src/json-migration"
-import { Global } from "@opendora/util/global"
+import { Global } from "@projectflows/util/global"
 import { ProjectTable } from "../src/project.sql"
-import { SessionTable, MessageTable, PartTable, TodoTable } from "@opendora/session/sql"
+import { SessionTable, MessageTable, PartTable, TodoTable } from "@projectflows/session/sql"
 import { SessionShareTable } from "../src/share.sql"
 
 // Test fixtures

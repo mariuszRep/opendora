@@ -11,8 +11,8 @@
  */
 
 import z from "zod"
-import { fn } from "@opendora/util/fn"
-import { Identifier } from "@opendora/util/id"
+import { fn } from "@projectflows/util/fn"
+import { Identifier } from "@projectflows/util/id"
 import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
 import { LLM } from "./llm.ts"

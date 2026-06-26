@@ -1,9 +1,9 @@
 import { test, expect, describe } from "bun:test"
 import path from "path"
 import fs from "fs/promises"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
-import { File } from "@opendora/tools/file"
-import { Instance } from "@opendora/runtime/instance"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
+import { File } from "@projectflows/tools/file"
+import { Instance } from "@projectflows/runtime/instance"
 import { tmpdir } from "../fixture/fixture"
 
 describe("Filesystem.contains", () => {

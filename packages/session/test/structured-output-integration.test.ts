@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test"
 import path from "path"
 import { Session } from "../src/session"
 import { SessionPrompt } from "../src/prompt"
-import { Log } from "@opendora/util/log"
-import { Instance } from "@opendora/runtime/instance"
+import { Log } from "@projectflows/util/log"
+import { Instance } from "@projectflows/runtime/instance"
 import { MessageV2 } from "../src/message-v2"
 
 const projectRoot = path.join(__dirname, "../..")

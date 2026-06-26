@@ -1,12 +1,12 @@
 import type { Hooks, PluginInput } from "@opencode-ai/plugin"
-import { Log } from "@opendora/util/log"
-import { Installation } from "@opendora/util/installation"
-import { Auth, OAUTH_DUMMY_KEY } from "@opendora/auth"
+import { Log } from "@projectflows/util/log"
+import { Installation } from "@projectflows/util/installation"
+import { Auth, OAUTH_DUMMY_KEY } from "@projectflows/auth"
 import os from "os"
-import { Provider } from "@opendora/provider/provider"
-import { ProviderTransform } from "@opendora/provider/transform"
-import { Bus } from "@opendora/runtime/bus"
-import { BusEvent } from "@opendora/util/bus-event"
+import { Provider } from "@projectflows/provider/provider"
+import { ProviderTransform } from "@projectflows/provider/transform"
+import { Bus } from "@projectflows/runtime/bus"
+import { BusEvent } from "@projectflows/util/bus-event"
 
 const log = Log.create({ service: "plugin.codex" })
 

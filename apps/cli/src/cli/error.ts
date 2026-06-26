@@ -1,7 +1,7 @@
-import { ConfigMarkdown } from "@opendora/config/markdown"
-import { Config } from "@opendora/config/config"
-import { MCP } from "@opendora/server/mcp/index"
-import { Provider } from "@opendora/provider/provider"
+import { ConfigMarkdown } from "@projectflows/config/markdown"
+import { Config } from "@projectflows/config/config"
+import { MCP } from "@projectflows/server/mcp/index"
+import { Provider } from "@projectflows/provider/provider"
 import { UI } from "./ui"
 
 export function FormatError(input: unknown) {

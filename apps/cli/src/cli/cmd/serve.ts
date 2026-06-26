@@ -1,7 +1,7 @@
-import { Server } from "@opendora/server/server"
+import { Server } from "@projectflows/server/server"
 import { cmd } from "./cmd"
 import { withNetworkOptions, resolveNetworkOptions } from "../network"
-import { Flag } from "@opendora/util/flag"
+import { Flag } from "@projectflows/util/flag"
 
 export const ServeCommand = cmd({
   command: "serve",

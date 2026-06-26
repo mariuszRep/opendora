@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
 import { SessionCompaction } from "../src/compaction"
-import { Token } from "@opendora/util/token"
-import { Instance } from "@opendora/runtime/instance"
-import { Log } from "@opendora/util/log"
+import { Token } from "@projectflows/util/token"
+import { Instance } from "@projectflows/runtime/instance"
+import { Log } from "@projectflows/util/log"
 import { tmpdir } from "./fixture/fixture"
 import { Session } from "../src/session"
-import type { Provider } from "@opendora/provider/provider"
+import type { Provider } from "@projectflows/provider/provider"
 
 Log.init({ print: false })
 

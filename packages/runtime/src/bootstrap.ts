@@ -1,9 +1,9 @@
 import { Format } from "./format"
 import { Instance } from "./instance"
 import { Vcs } from "./vcs"
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 import { Snapshot } from "./snapshot"
-import { Skill } from "@opendora/skills/skill"
+import { Skill } from "@projectflows/skills/skill"
 
 /**
  * Packages above runtime (server, tools, session) register their own bootstrap

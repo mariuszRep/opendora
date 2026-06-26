@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
-import { Instance } from "@opendora/runtime/instance"
-import { Pty } from "@opendora/server/pty"
+import { Instance } from "@projectflows/runtime/instance"
+import { Pty } from "@projectflows/server/pty"
 import { tmpdir } from "../fixture/fixture"
 
 describe("pty", () => {

@@ -13,7 +13,7 @@ import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
 import { SessionRetry } from "./retry.ts"
 import { SessionStatus } from "./status.ts"
-import { Identifier } from "@opendora/util/id"
+import { Identifier } from "@projectflows/util/id"
 import { LLM } from "./llm.ts"
 import { SessionEvents } from "./events.ts"
 import { TokenUsage } from "./token-usage.ts"
@@ -23,7 +23,7 @@ function iife<T>(fn: () => T): T {
   return fn()
 }
 
-// Mirrors ProviderError.OVERFLOW_PATTERNS from @opendora/provider without a cross-package dep.
+// Mirrors ProviderError.OVERFLOW_PATTERNS from @projectflows/provider without a cross-package dep.
 const OVERFLOW_PATTERNS: RegExp[] = [
   /prompt is too long/i,
   /input is too long for requested model/i,
@@ -47,8 +47,8 @@ function isOverflowMessage(msg: string): boolean {
 
 /**
  * Map an HTTP status code (and optional message) to a semantic error kind string.
- * Mirrors ProviderError.classifyErrorKind() from @opendora/provider without
- * creating a cross-package dependency from @opendora/session.
+ * Mirrors ProviderError.classifyErrorKind() from @projectflows/provider without
+ * creating a cross-package dependency from @projectflows/session.
  */
 function classifyErrorKind(statusCode: number | undefined, message?: string): string {
   if (message && isOverflowMessage(message)) return "overflow"

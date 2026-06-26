@@ -6,7 +6,7 @@
  * MessageV2 tables (`session`, `message`, `part`), preserving the vendor
  * origin and raw records for lossless round-trip.
  *
- *   import { importClaudeSession, importCodexSession } from "@opendora/session/import"
+ *   import { importClaudeSession, importCodexSession } from "@projectflows/session/import"
  */
 
 export { importClaudeSession } from "./claude"

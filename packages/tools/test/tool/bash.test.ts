@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test"
 import os from "os"
 import path from "path"
-import "@opendora/tools/tool"
-import { BashTool } from "@opendora/tools/shell"
-import { Instance } from "@opendora/runtime/instance"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import "@projectflows/tools/tool"
+import { BashTool } from "@projectflows/tools/shell"
+import { Instance } from "@projectflows/runtime/instance"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
 import { tmpdir } from "../fixture/fixture"
-import type { Tool } from "@opendora/tools/tool"
-import { Truncate } from "@opendora/tools/truncation-impl"
+import type { Tool } from "@projectflows/tools/tool"
+import { Truncate } from "@projectflows/tools/truncation-impl"
 
 const ctx = {
   sessionID: "test",

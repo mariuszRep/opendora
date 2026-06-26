@@ -5,7 +5,7 @@ import {
   type RefSuggestion as BaseRefSuggestion,
   type RefNode,
   type RefEdge,
-} from '@opendora/workflow/refs'
+} from '@projectflows/workflow/refs'
 
 export type RefSuggestion = BaseRefSuggestion
 

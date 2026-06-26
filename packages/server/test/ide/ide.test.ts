@@ -1,5 +1,5 @@
 import { describe, expect, test, afterEach } from "bun:test"
-import { Ide } from "@opendora/server/ide"
+import { Ide } from "@projectflows/server/ide"
 
 describe("ide", () => {
   const original = { ...process.env }

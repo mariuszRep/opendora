@@ -3,7 +3,7 @@ import z from "zod"
 import { Tool } from "../tool.ts"
 import toolDef from "./codesearch.json"
 import { abortAfterAny } from "../lib/abort.ts"
-import { get as getConfig } from "@opendora/util/config"
+import { get as getConfig } from "@projectflows/util/config"
 
 const API_CONFIG = {
   BASE_URL: "https://mcp.exa.ai",

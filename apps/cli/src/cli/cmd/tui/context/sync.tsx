@@ -17,17 +17,17 @@ import type {
   ProviderListResponse,
   ProviderAuthMethod,
   VcsInfo,
-} from "@opendora/sdk/v2"
+} from "@projectflows/sdk/v2"
 import { createStore, produce, reconcile } from "solid-js/store"
 import { useSDK } from "@tui/context/sdk"
-import { Binary } from "@opendora/util/binary"
+import { Binary } from "@projectflows/util/binary"
 import { createSimpleContext } from "./helper"
-import type { Snapshot } from "@opendora/runtime/snapshot"
+import type { Snapshot } from "@projectflows/runtime/snapshot"
 import { useExit } from "./exit"
 import { useArgs } from "./args"
 import { batch, onMount } from "solid-js"
-import { Log } from "@opendora/util/log"
-import type { Path } from "@opendora/sdk"
+import { Log } from "@projectflows/util/log"
+import type { Path } from "@projectflows/sdk"
 
 export const { use: useSync, provider: SyncProvider } = createSimpleContext({
   name: "Sync",

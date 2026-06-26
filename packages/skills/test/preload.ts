@@ -7,7 +7,7 @@ import { afterAll } from "bun:test"
 const dir = path.join(os.tmpdir(), "opencode-test-data-" + process.pid)
 await fs.mkdir(dir, { recursive: true })
 afterAll(async () => {
-  const { Database } = await import("@opendora/storage/db")
+  const { Database } = await import("@projectflows/storage/db")
   Database.close()
   const busy = (error: unknown) =>
     typeof error === "object" && error !== null && "code" in error && error.code === "EBUSY"
@@ -57,5 +57,5 @@ delete process.env["FIREWORKS_API_KEY"]
 delete process.env["CEREBRAS_API_KEY"]
 delete process.env["SAMBANOVA_API_KEY"]
 
-const { Log } = await import("@opendora/util/log")
+const { Log } = await import("@projectflows/util/log")
 Log.init({ print: false, dev: true, level: "DEBUG" })

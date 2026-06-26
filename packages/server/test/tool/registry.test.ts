@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test"
 import path from "path"
 import fs from "fs/promises"
 import { tmpdir } from "../fixture/fixture"
-import { Instance } from "@opendora/runtime/instance"
-import { ToolRegistry } from "@opendora/server/tool-registry"
+import { Instance } from "@projectflows/runtime/instance"
+import { ToolRegistry } from "@projectflows/server/tool-registry"
 
 describe("tool.registry", () => {
   test("loads tools from .opencode/tool (singular)", async () => {

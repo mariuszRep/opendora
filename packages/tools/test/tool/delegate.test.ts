@@ -1,10 +1,10 @@
 import { describe, expect, test, beforeEach } from "bun:test"
 import path from "path"
-import { DelegateTool } from "@opendora/tools/communication/delegate"
-import { Instance } from "@opendora/runtime/instance"
-import { Session } from "@opendora/session/session"
-import { MessageV2 } from "@opendora/session/message"
-import { Skill } from "@opendora/skills/skill"
+import { DelegateTool } from "@projectflows/tools/communication/delegate"
+import { Instance } from "@projectflows/runtime/instance"
+import { Session } from "@projectflows/session/session"
+import { MessageV2 } from "@projectflows/session/message"
+import { Skill } from "@projectflows/skills/skill"
 import { tmpdir } from "../fixture/fixture"
 
 const ctx = {

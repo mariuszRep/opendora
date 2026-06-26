@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import { tokenStart, partialToken, type RefSuggestion } from '@opendora/workflow/refs'
+import { tokenStart, partialToken, type RefSuggestion } from '@projectflows/workflow/refs'
 import { RefDropdown } from './ref-dropdown'
 
 interface ExpressionInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {

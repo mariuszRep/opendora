@@ -1,13 +1,13 @@
 import { Hono } from "hono"
 import { describeRoute, resolver, validator } from "hono-openapi"
 import z from "zod"
-import { Agent } from "@opendora/runtime/agent"
-import { AgentStorage } from "@opendora/agent"
-import { ToolRegistry } from "@opendora/server/tool-registry"
+import { Agent } from "@projectflows/runtime/agent"
+import { AgentStorage } from "@projectflows/agent"
+import { ToolRegistry } from "@projectflows/server/tool-registry"
 import { MCP } from "../mcp"
-import { lazy } from "@opendora/util/lazy"
+import { lazy } from "@projectflows/util/lazy"
 import { errors } from "../error"
-import { Session } from "@opendora/session/session"
+import { Session } from "@projectflows/session/session"
 
 const ModelRef = z.object({ modelID: z.string(), providerID: z.string() })
 

@@ -6,7 +6,7 @@ import type {
   OAuthClientInformationFull,
 } from "@modelcontextprotocol/sdk/shared/auth.js"
 import { McpAuth } from "./auth"
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 
 const log = Log.create({ service: "mcp.oauth" })
 

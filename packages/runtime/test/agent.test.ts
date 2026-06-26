@@ -3,7 +3,7 @@ import path from "path"
 import { tmpdir } from "./fixture/fixture"
 import { Instance } from "../src/instance"
 import { Agent } from "../src/agent"
-import { PermissionNext } from "@opendora/permission/next"
+import { PermissionNext } from "@projectflows/permission/next"
 
 // Helper to evaluate permission for a tool with wildcard pattern
 function evalPerm(agent: Agent.Info | undefined, permission: string): PermissionNext.Action | undefined {
@@ -77,7 +77,7 @@ test("explore agent asks for edit and write (not in tools list)", async () => {
 })
 
 test("explore agent asks for external directories and allows Truncate.GLOB", async () => {
-  const { Truncate } = await import("@opendora/tools/truncation-impl")
+  const { Truncate } = await import("@projectflows/tools/truncation-impl")
   await using tmp = await tmpdir()
   await Instance.provide({
     directory: tmp.path,
@@ -465,7 +465,7 @@ test("legacy tools config maps write/edit/patch/multiedit to edit permission", a
 })
 
 test("Truncate.GLOB is allowed even when user denies external_directory globally", async () => {
-  const { Truncate } = await import("@opendora/tools/truncation-impl")
+  const { Truncate } = await import("@projectflows/tools/truncation-impl")
   await using tmp = await tmpdir({
     config: {
       permission: {
@@ -485,7 +485,7 @@ test("Truncate.GLOB is allowed even when user denies external_directory globally
 })
 
 test("Truncate.GLOB is allowed even when user denies external_directory per-agent", async () => {
-  const { Truncate } = await import("@opendora/tools/truncation-impl")
+  const { Truncate } = await import("@projectflows/tools/truncation-impl")
   await using tmp = await tmpdir({
     config: {
       agent: {
@@ -509,7 +509,7 @@ test("Truncate.GLOB is allowed even when user denies external_directory per-agen
 })
 
 test("explicit Truncate.GLOB deny is respected", async () => {
-  const { Truncate } = await import("@opendora/tools/truncation-impl")
+  const { Truncate } = await import("@projectflows/tools/truncation-impl")
   await using tmp = await tmpdir({
     config: {
       permission: {

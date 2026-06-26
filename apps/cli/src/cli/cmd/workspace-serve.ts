@@ -1,6 +1,6 @@
 import { cmd } from "./cmd"
 import { withNetworkOptions, resolveNetworkOptions } from "../network"
-import { Installation } from "@opendora/util/installation"
+import { Installation } from "@projectflows/util/installation"
 
 export const WorkspaceServeCommand = cmd({
   command: "workspace-serve",

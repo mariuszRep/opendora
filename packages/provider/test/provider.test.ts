@@ -2,9 +2,9 @@ import { test, expect } from "bun:test"
 import path from "path"
 
 import { tmpdir } from "./fixture/fixture"
-import { Instance } from "@opendora/runtime/instance"
+import { Instance } from "@projectflows/runtime/instance"
 import { Provider } from "../src/provider/provider"
-import { Env } from "@opendora/runtime/env"
+import { Env } from "@projectflows/runtime/env"
 
 test("provider loaded from env variable", async () => {
   await using tmp = await tmpdir({

@@ -1,8 +1,8 @@
 import { describe, test, expect } from "bun:test"
 import path from "path"
 import fs from "fs/promises"
-import { WriteTool } from "@opendora/tools/filesystem/write"
-import { Instance } from "@opendora/runtime/instance"
+import { WriteTool } from "@projectflows/tools/filesystem/write"
+import { Instance } from "@projectflows/runtime/instance"
 import { tmpdir } from "../fixture/fixture"
 
 const ctx = {

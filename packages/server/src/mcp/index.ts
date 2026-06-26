@@ -9,18 +9,18 @@ import {
   type Tool as MCPToolDef,
   ToolListChangedNotificationSchema,
 } from "@modelcontextprotocol/sdk/types.js"
-import { Config } from "@opendora/config/config"
-import { Log } from "@opendora/util/log"
-import { NamedError } from "@opendora/util/error"
+import { Config } from "@projectflows/config/config"
+import { Log } from "@projectflows/util/log"
+import { NamedError } from "@projectflows/util/error"
 import z from "zod/v4"
-import { Instance } from "@opendora/runtime/instance"
-import { Installation } from "@opendora/util/installation"
-import { withTimeout } from "@opendora/util/timeout"
+import { Instance } from "@projectflows/runtime/instance"
+import { Installation } from "@projectflows/util/installation"
+import { withTimeout } from "@projectflows/util/timeout"
 import { McpOAuthProvider } from "./oauth-provider"
 import { McpOAuthCallback } from "./oauth-callback"
 import { McpAuth } from "./auth"
-import { BusEvent } from "@opendora/util/bus-event"
-import { Bus } from "@opendora/runtime/bus"
+import { BusEvent } from "@projectflows/util/bus-event"
+import { Bus } from "@projectflows/runtime/bus"
 import open from "open"
 
 export namespace MCP {

@@ -1,10 +1,10 @@
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 import { bootstrap } from "../bootstrap"
 import { cmd } from "./cmd"
 import { AgentSideConnection, ndJsonStream } from "@agentclientprotocol/sdk"
-import { ACP } from "@opendora/server/acp/agent"
-import { Server } from "@opendora/server/server"
-import { createOpencodeClient } from "@opendora/sdk/v2"
+import { ACP } from "@projectflows/server/acp/agent"
+import { Server } from "@projectflows/server/server"
+import { createOpencodeClient } from "@projectflows/sdk/v2"
 import { withNetworkOptions, resolveNetworkOptions } from "../network"
 
 const log = Log.create({ service: "acp-command" })

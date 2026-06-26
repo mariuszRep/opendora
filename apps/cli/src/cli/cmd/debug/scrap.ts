@@ -1,6 +1,6 @@
 import { EOL } from "os"
-import { Project } from "@opendora/runtime/project"
-import { Log } from "@opendora/util/log"
+import { Project } from "@projectflows/runtime/project"
+import { Log } from "@projectflows/util/log"
 import { cmd } from "../cmd"
 
 export const ScrapCommand = cmd({

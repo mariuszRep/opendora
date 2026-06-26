@@ -1,4 +1,4 @@
-import { Global } from "@opendora/util/global"
+import { Global } from "@projectflows/util/global"
 import { bootstrap } from "../../bootstrap"
 import { cmd } from "../cmd"
 import { ConfigCommand } from "./config"

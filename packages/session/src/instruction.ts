@@ -3,7 +3,7 @@ import os from "os"
 import fs from "fs/promises"
 import { getConfig } from "./config.ts"
 import type { MessageV2 } from "./message-v2.ts"
-import { Instance } from "@opendora/runtime/instance"
+import { Instance } from "@projectflows/runtime/instance"
 
 const log = { warn: (...a: any[]) => console.warn("[instruction]", ...a) }
 

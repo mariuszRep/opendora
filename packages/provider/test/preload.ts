@@ -55,15 +55,15 @@ delete process.env["FIREWORKS_API_KEY"]
 delete process.env["CEREBRAS_API_KEY"]
 delete process.env["SAMBANOVA_API_KEY"]
 
-const { Log } = await import("@opendora/util/log")
+const { Log } = await import("@projectflows/util/log")
 Log.init({ print: false, dev: true, level: "DEBUG" })
 
-const { register: registerConfig } = await import("@opendora/util/config")
-const { Config } = await import("@opendora/config/config")
+const { register: registerConfig } = await import("@projectflows/util/config")
+const { Config } = await import("@projectflows/config/config")
 registerConfig(() => Config.get())
 
-const { register: registerPluginList } = await import("@opendora/provider/plugin")
-const { Instance } = await import("@opendora/runtime/instance")
+const { register: registerPluginList } = await import("@projectflows/provider/plugin")
+const { Instance } = await import("@projectflows/runtime/instance")
 registerPluginList(async () => {
   const pluginDir = path.join(Instance.directory, ".opencode", "plugin")
   const plugins: any[] = []

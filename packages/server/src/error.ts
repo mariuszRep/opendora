@@ -1,6 +1,6 @@
 import { resolver } from "hono-openapi"
 import z from "zod"
-import { NotFoundError } from "@opendora/storage/db"
+import { NotFoundError } from "@projectflows/storage/db"
 
 export const ERRORS = {
   409: {

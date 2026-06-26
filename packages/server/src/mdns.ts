@@ -1,4 +1,4 @@
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 import { Bonjour } from "bonjour-service"
 
 const log = Log.create({ service: "mdns" })

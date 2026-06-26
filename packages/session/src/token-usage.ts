@@ -7,7 +7,7 @@
  */
 
 import { Decimal } from "decimal.js"
-import { Identifier } from "@opendora/util/id"
+import { Identifier } from "@projectflows/util/id"
 import { getConfig } from "./config.ts"
 import { TokenUsageTable } from "./token-usage.sql.ts"
 

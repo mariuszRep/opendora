@@ -1,13 +1,13 @@
 import fs from "fs/promises"
 import path from "path"
-import { Global } from "@opendora/util/global"
-import { Identifier } from "@opendora/util/id"
-import { PermissionNext } from "@opendora/permission/next"
-import type { Agent } from "@opendora/runtime/agent"
-import { Scheduler } from "@opendora/runtime/scheduler"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
-import { Glob } from "@opendora/util/glob"
-import { registerBootstrapHook } from "@opendora/runtime/bootstrap"
+import { Global } from "@projectflows/util/global"
+import { Identifier } from "@projectflows/util/id"
+import { PermissionNext } from "@projectflows/permission/next"
+import type { Agent } from "@projectflows/runtime/agent"
+import { Scheduler } from "@projectflows/runtime/scheduler"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
+import { Glob } from "@projectflows/util/glob"
+import { registerBootstrapHook } from "@projectflows/runtime/bootstrap"
 
 export namespace Truncate {
   export const MAX_LINES = 2000

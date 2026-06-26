@@ -1,6 +1,6 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
-import { NodeRegistry, NodeTypeId } from "@opendora/workflow/node-registry"
+import { NodeRegistry, NodeTypeId } from "@projectflows/workflow/node-registry"
 import toolDef from "./workflow-node-catalog.json"
 
 const TOOL_NODE_NOTE =

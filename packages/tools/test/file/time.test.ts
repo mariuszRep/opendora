@@ -1,9 +1,9 @@
 import { describe, test, expect, beforeEach } from "bun:test"
 import path from "path"
 import fs from "fs/promises"
-import { FileTime } from "@opendora/tools/file/time"
-import { Instance } from "@opendora/runtime/instance"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import { FileTime } from "@projectflows/tools/file/time"
+import { Instance } from "@projectflows/runtime/instance"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
 import { tmpdir } from "../fixture/fixture"
 
 describe("file/time", () => {
@@ -156,7 +156,7 @@ describe("file/time", () => {
       await Instance.provide({
         directory: tmp.path,
         fn: async () => {
-          const { Flag } = await import("@opendora/util/flag")
+          const { Flag } = await import("@projectflows/util/flag")
           const original = Flag.OPENCODE_DISABLE_FILETIME_CHECK
           ;(Flag as { OPENCODE_DISABLE_FILETIME_CHECK: boolean }).OPENCODE_DISABLE_FILETIME_CHECK = true
 

@@ -2,10 +2,10 @@ import path from "path"
 import os from "os"
 import z from "zod"
 import { type ParseError as JsoncParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser"
-import { NamedError } from "@opendora/util/error"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
-import { Flag } from "@opendora/util/flag"
-import { Global } from "@opendora/util/global"
+import { NamedError } from "@projectflows/util/error"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
+import { Flag } from "@projectflows/util/flag"
+import { Global } from "@projectflows/util/global"
 
 export namespace ConfigPaths {
   export async function projectFiles(name: string, directory: string, worktree: string) {

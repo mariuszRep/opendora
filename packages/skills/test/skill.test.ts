@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import { Skill } from "../src/skill"
-import { Instance } from "@opendora/runtime/instance"
+import { Instance } from "@projectflows/runtime/instance"
 import { tmpdir } from "./fixture/fixture"
 import path from "path"
 import fs from "fs/promises"

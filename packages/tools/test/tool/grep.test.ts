@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
-import { GrepTool } from "@opendora/tools/filesystem/grep"
-import { Instance } from "@opendora/runtime/instance"
+import { GrepTool } from "@projectflows/tools/filesystem/grep"
+import { Instance } from "@projectflows/runtime/instance"
 import { tmpdir } from "../fixture/fixture"
 
 const ctx = {

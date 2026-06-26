@@ -1,5 +1,5 @@
 import { EOL } from "os"
-import { Config } from "@opendora/config/config"
+import { Config } from "@projectflows/config/config"
 import { bootstrap } from "../../bootstrap"
 import { cmd } from "../cmd"
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@opendora/provider",
+  "name": "@projectflows/provider",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
@@ -18,11 +18,11 @@
     "typescript": "catalog:"
   },
   "dependencies": {
-    "@opendora/auth": "workspace:*",
-    "@opendora/config": "workspace:*",
-    "@opendora/runtime": "workspace:*",
-    "@opendora/tools": "workspace:*",
-    "@opendora/util": "workspace:*",
+    "@projectflows/auth": "workspace:*",
+    "@projectflows/config": "workspace:*",
+    "@projectflows/runtime": "workspace:*",
+    "@projectflows/tools": "workspace:*",
+    "@projectflows/util": "workspace:*",
     "@opencode-ai/plugin": "*",
     "@ai-sdk/amazon-bedrock": "*",
     "@ai-sdk/anthropic": "*",

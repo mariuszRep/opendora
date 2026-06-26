@@ -3,11 +3,11 @@ import path from "path"
 import { unlink } from "fs/promises"
 
 import { tmpdir } from "./fixture/fixture"
-import { Instance } from "@opendora/runtime/instance"
+import { Instance } from "@projectflows/runtime/instance"
 import { Provider } from "../src/provider/provider"
-import { Env } from "@opendora/runtime/env"
-import { Global } from "@opendora/util/global"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import { Env } from "@projectflows/runtime/env"
+import { Global } from "@projectflows/util/global"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
 
 test("Bedrock: config region takes precedence over AWS_REGION env var", async () => {
   await using tmp = await tmpdir({

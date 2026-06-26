@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { REF_PATTERN, tokenStart, type RefSuggestion } from '@opendora/workflow/refs'
+import { REF_PATTERN, tokenStart, type RefSuggestion } from '@projectflows/workflow/refs'
 import { RefDropdown } from './ref-dropdown'
 
 function buildHTML(text: string) {

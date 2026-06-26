@@ -1,19 +1,19 @@
 /**
- * Server-side wiring for @opendora/tools ToolRegistry: configures it with
+ * Server-side wiring for @projectflows/tools ToolRegistry: configures it with
  * runtime dependencies (Plugin, Instance, disk-backed truncation) that only
  * make sense once a server process is running.
  */
-import { ToolRegistry } from "@opendora/tools/registry"
-import { configureRegistry } from "@opendora/tools/registry"
-import { configure as configureTruncation } from "@opendora/tools/truncation"
-import { Flag } from "@opendora/util/flag"
-import { Config } from "@opendora/config/config"
+import { ToolRegistry } from "@projectflows/tools/registry"
+import { configureRegistry } from "@projectflows/tools/registry"
+import { configure as configureTruncation } from "@projectflows/tools/truncation"
+import { Flag } from "@projectflows/util/flag"
+import { Config } from "@projectflows/config/config"
 import { Plugin } from "./plugin"
-import { Instance } from "@opendora/runtime/instance"
+import { Instance } from "@projectflows/runtime/instance"
 import type { ToolDefinition, ToolContext as PluginToolContext } from "@opencode-ai/plugin"
-import { Truncate } from "@opendora/tools/truncation-impl"
+import { Truncate } from "@projectflows/tools/truncation-impl"
 import z from "zod"
-import type { Tool } from "@opendora/tools/tool"
+import type { Tool } from "@projectflows/tools/tool"
 
 export { ToolRegistry }
 

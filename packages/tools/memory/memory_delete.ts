@@ -2,7 +2,7 @@ import z from "zod"
 import * as fs from "fs/promises"
 import { Tool } from "../tool.ts"
 import { directory } from "../host.ts"
-import { Instance } from "@opendora/runtime/instance"
+import { Instance } from "@projectflows/runtime/instance"
 import {
   findProjectFlowsDirCandidates,
   resolveMemoryPath,

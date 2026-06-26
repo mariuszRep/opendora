@@ -1,4 +1,4 @@
-import type { NamedError } from "@opendora/util/error"
+import type { NamedError } from "@projectflows/util/error"
 import { MessageV2 } from "./message-v2"
 
 // Inline iife utility

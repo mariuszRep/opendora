@@ -1,6 +1,6 @@
 import { EOL } from "os"
-import { Ripgrep } from "@opendora/tools/filesystem/lib/ripgrep"
-import { Instance } from "@opendora/runtime/instance"
+import { Ripgrep } from "@projectflows/tools/filesystem/lib/ripgrep"
+import { Instance } from "@projectflows/runtime/instance"
 import { bootstrap } from "../../bootstrap"
 import { cmd } from "../cmd"
 

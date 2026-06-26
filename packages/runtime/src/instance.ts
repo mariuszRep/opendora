@@ -1,10 +1,10 @@
-import { Log } from "@opendora/util/log"
-import { Context } from "@opendora/util/context"
+import { Log } from "@projectflows/util/log"
+import { Context } from "@projectflows/util/context"
 import { Project } from "./project"
 import { State } from "./state"
-import { iife } from "@opendora/util/iife"
-import { GlobalBus } from "@opendora/util/global-bus"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import { iife } from "@projectflows/util/iife"
+import { GlobalBus } from "@projectflows/util/global-bus"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
 
 interface Context {
   directory: string

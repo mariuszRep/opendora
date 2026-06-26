@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test"
-import { Instance } from "@opendora/runtime/instance"
-import { Project } from "@opendora/runtime/project"
-import { Session } from "@opendora/session/session"
-import { Log } from "@opendora/util/log"
+import { Instance } from "@projectflows/runtime/instance"
+import { Project } from "@projectflows/runtime/project"
+import { Session } from "@projectflows/session/session"
+import { Log } from "@projectflows/util/log"
 import { tmpdir } from "./fixture/fixture"
-import { configureSessionCore } from "@opendora/server/configure-session-core"
+import { configureSessionCore } from "@projectflows/server/configure-session-core"
 
 Log.init({ print: false })
 

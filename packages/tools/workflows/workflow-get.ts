@@ -1,7 +1,7 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
-import { WorkflowStorage } from "@opendora/workflow/storage"
+import { WorkflowStorage } from "@projectflows/workflow/storage"
 import toolDef from "./workflow-get.json"
 
 export const WorkflowGetTool = Tool.define("workflow_get", async () => {

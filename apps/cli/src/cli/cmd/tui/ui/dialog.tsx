@@ -4,7 +4,7 @@ import { useTheme } from "@tui/context/theme"
 import { MouseButton, Renderable, RGBA } from "@opentui/core"
 import { createStore } from "solid-js/store"
 import { useToast } from "./toast"
-import { Flag } from "@opendora/util/flag"
+import { Flag } from "@projectflows/util/flag"
 import { Selection } from "@tui/util/selection"
 
 export function Dialog(

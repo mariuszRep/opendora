@@ -1,9 +1,9 @@
-import { BusEvent } from "@opendora/util/bus-event"
-import { Bus } from "@opendora/runtime/bus"
+import { BusEvent } from "@projectflows/util/bus-event"
+import { Bus } from "@projectflows/runtime/bus"
 import { spawn } from "bun"
 import z from "zod"
-import { NamedError } from "@opendora/util/error"
-import { Log } from "@opendora/util/log"
+import { NamedError } from "@projectflows/util/error"
+import { Log } from "@projectflows/util/log"
 
 const SUPPORTED_IDES = [
   { name: "Windsurf" as const, cmd: "windsurf" },

@@ -1,15 +1,15 @@
-import { BusEvent } from "@opendora/util/bus-event"
+import { BusEvent } from "@projectflows/util/bus-event"
 import path from "path"
 import { $ } from "bun"
 import z from "zod"
-import { NamedError } from "@opendora/util/error"
-import { Log } from "@opendora/util/log"
-import { iife } from "@opendora/util/iife"
-import { Flag } from "@opendora/util/flag"
+import { NamedError } from "@projectflows/util/error"
+import { Log } from "@projectflows/util/log"
+import { iife } from "@projectflows/util/iife"
+import { Flag } from "@projectflows/util/flag"
 
 declare global {
-  const OPENCODE_VERSION: string
-  const OPENCODE_CHANNEL: string
+  const PROJECTFLOWS_VERSION: string
+  const PROJECTFLOWS_CHANNEL: string
 }
 
 export namespace Installation {
@@ -189,9 +189,9 @@ export namespace Installation {
     await $`${process.execPath} --version`.nothrow().quiet().text()
   }
 
-  export const VERSION = typeof OPENCODE_VERSION === "string" ? OPENCODE_VERSION : "local"
-  export const CHANNEL = typeof OPENCODE_CHANNEL === "string" ? OPENCODE_CHANNEL : "local"
-  export const USER_AGENT = `opencode/${CHANNEL}/${VERSION}/${Flag.OPENCODE_CLIENT}`
+  export const VERSION = typeof PROJECTFLOWS_VERSION === "string" ? PROJECTFLOWS_VERSION : "local"
+  export const CHANNEL = typeof PROJECTFLOWS_CHANNEL === "string" ? PROJECTFLOWS_CHANNEL : "local"
+  export const USER_AGENT = `projectflows/${CHANNEL}/${VERSION}/${Flag.PROJECTFLOWS_CLIENT}`
 
   export async function latest(installMethod?: Method) {
     const detectedMethod = installMethod || (await method())

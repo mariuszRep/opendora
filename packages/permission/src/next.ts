@@ -1,5 +1,5 @@
 /**
- * Thin adapter wiring @opendora/permission into the opencode runtime.
+ * Thin adapter wiring @projectflows/permission into the opencode runtime.
  *
  * Responsibilities:
  *  - Provide the Permission.DB implementation using the project DB
@@ -19,11 +19,11 @@ import {
   extractPathBoundaries as _extractPathBoundaries,
   type AskInput,
   type PermissionStore,
-} from "@opendora/permission"
-import { Database, eq, and } from "@opendora/storage/db"
-import { PermissionRuleTable } from "@opendora/storage/permission-rule.sql"
-import { Bus } from "@opendora/runtime/bus"
-import { BusEvent } from "@opendora/util/bus-event"
+} from "@projectflows/permission"
+import { Database, eq, and } from "@projectflows/storage/db"
+import { PermissionRuleTable } from "@projectflows/storage/permission-rule.sql"
+import { Bus } from "@projectflows/runtime/bus"
+import { BusEvent } from "@projectflows/util/bus-event"
 import z from "zod"
 import type { Hono } from "hono"
 

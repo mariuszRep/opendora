@@ -1,11 +1,11 @@
 import { $ } from "bun"
 import { platform, release } from "os"
 import clipboardy from "clipboardy"
-import { lazy } from "@opendora/util/lazy"
+import { lazy } from "@projectflows/util/lazy"
 import { tmpdir } from "os"
 import path from "path"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
-import { Process } from "@opendora/util/process"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
+import { Process } from "@projectflows/util/process"
 
 /**
  * Writes text to clipboard via OSC 52 escape sequence.

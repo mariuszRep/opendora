@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
-import { Instance } from "@opendora/runtime/instance"
-import { Session } from "@opendora/session/session"
-import { Log } from "@opendora/util/log"
-import { configureSessionCore } from "@opendora/server/configure-session-core"
+import { Instance } from "@projectflows/runtime/instance"
+import { Session } from "@projectflows/session/session"
+import { Log } from "@projectflows/util/log"
+import { configureSessionCore } from "@projectflows/server/configure-session-core"
 
 const projectRoot = path.join(__dirname, "../..")
 Log.init({ print: false })

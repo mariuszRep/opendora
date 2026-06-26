@@ -1,6 +1,6 @@
 import z from "zod"
 import { EOL } from "os"
-import { NamedError } from "@opendora/util/error"
+import { NamedError } from "@projectflows/util/error"
 import { logo as glyphs } from "./logo"
 
 export namespace UI {

@@ -1,7 +1,7 @@
-import { NamedError } from "@opendora/util/error"
+import { NamedError } from "@projectflows/util/error"
 import matter from "gray-matter"
 import { z } from "zod"
-import { Filesystem } from "@opendora/util/filesystem"
+import { Filesystem } from "@projectflows/util/filesystem"
 
 export namespace ConfigMarkdown {
   export const FILE_REGEX = /(?<![\w`])@(\.?[^\s`,.]*(?:\.[^\s`,.]+)*)/g

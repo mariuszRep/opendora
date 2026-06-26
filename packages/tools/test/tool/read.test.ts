@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
-import { ReadTool } from "@opendora/tools/filesystem/read"
-import { Instance } from "@opendora/runtime/instance"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import { ReadTool } from "@projectflows/tools/filesystem/read"
+import { Instance } from "@projectflows/runtime/instance"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
 import { tmpdir } from "../fixture/fixture"
-import { PermissionNext } from "@opendora/permission/next"
-import { Agent } from "@opendora/runtime/agent"
-import type { Tool } from "@opendora/tools/tool"
+import { PermissionNext } from "@projectflows/permission/next"
+import { Agent } from "@projectflows/runtime/agent"
+import type { Tool } from "@projectflows/tools/tool"
 
 const FIXTURES_DIR = path.join(import.meta.dir, "fixtures")
 

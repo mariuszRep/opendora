@@ -10,10 +10,10 @@ import { readFileSync, readdirSync, writeFileSync, mkdtempSync } from "fs"
 import path from "path"
 import os from "os"
 
-import { importClaudeSession } from "@opendora/session/import"
-import { importCodexSession } from "@opendora/session/import"
-import { configure } from "@opendora/session/config"
-import * as schema from "@opendora/session/sql"
+import { importClaudeSession } from "@projectflows/session/import"
+import { importCodexSession } from "@projectflows/session/import"
+import { configure } from "@projectflows/session/config"
+import * as schema from "@projectflows/session/sql"
 
 const sqlite = new Database(":memory:")
 sqlite.run("PRAGMA foreign_keys = ON")

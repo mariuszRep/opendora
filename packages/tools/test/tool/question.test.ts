@@ -1,7 +1,7 @@
 import { describe, expect, test, spyOn, beforeEach, afterEach } from "bun:test"
 import { z } from "zod"
-import { QuestionTool } from "@opendora/tools/communication/question"
-import * as QuestionModule from "@opendora/runtime/question"
+import { QuestionTool } from "@projectflows/tools/communication/question"
+import * as QuestionModule from "@projectflows/runtime/question"
 
 const ctx = {
   sessionID: "test-session",

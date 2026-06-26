@@ -1,19 +1,19 @@
 /**
  * Agent management for OpenCode
- * Now powered by @opendora/agent with template-based agents
+ * Now powered by @projectflows/agent with template-based agents
  */
 import z from "zod"
-import { Agent as AgentCore, AgentStorage } from "@opendora/agent"
-import { Instance } from "@opendora/runtime/instance"
-import { PermissionNext } from "@opendora/permission/next"
-import { Provider } from "@opendora/provider/provider"
+import { Agent as AgentCore, AgentStorage } from "@projectflows/agent"
+import { Instance } from "@projectflows/runtime/instance"
+import { PermissionNext } from "@projectflows/permission/next"
+import { Provider } from "@projectflows/provider/provider"
 import { generateObject } from "ai"
-import { Config } from "@opendora/config/config"
+import { Config } from "@projectflows/config/config"
 import path from "path"
 import { pipe, sortBy } from "remeda"
-import { Flag } from "@opendora/util/flag"
-import { Global } from "@opendora/util/global"
-import { Skill } from "@opendora/skills/skill"
+import { Flag } from "@projectflows/util/flag"
+import { Global } from "@projectflows/util/global"
+import { Skill } from "@projectflows/skills/skill"
 
 import PROMPT_GENERATE from "./generate.txt"
 
@@ -21,7 +21,7 @@ export namespace Agent {
   const PRIMARY_AGENT_MODES = new Set(["primary", "all"] as const)
   const WORKER_AGENT_MODES = new Set(["worker", "subagent", "all"] as const)
 
-  // Matches Truncate.GLOB from @opendora/tools (tool-output dir glob)
+  // Matches Truncate.GLOB from @projectflows/tools (tool-output dir glob)
   const TRUNCATE_GLOB = path.join(Global.Path.data, "tool-output", "*")
 
   export function isPrimaryMode(mode: string): boolean {
@@ -439,7 +439,7 @@ export namespace Agent {
     return primaryVisible.id
   }
 
-  // ── File-based CRUD (delegates to @opendora/agent) ───────────────────────
+  // ── File-based CRUD (delegates to @projectflows/agent) ───────────────────────
 
   export async function create(id: string, config: AgentStorage.Config, persona = "", injection = "") {
     const result = await AgentCore.create(agentBaseDir(), id, config, persona, injection)

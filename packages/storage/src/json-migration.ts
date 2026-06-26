@@ -1,14 +1,14 @@
 import { Database } from "bun:sqlite"
 import { drizzle } from "drizzle-orm/bun-sqlite"
-import { Global } from "@opendora/util/global"
-import { Log } from "@opendora/util/log"
+import { Global } from "@projectflows/util/global"
+import { Log } from "@projectflows/util/log"
 import { ProjectTable } from "./project.sql"
-import { SessionTable, MessageTable, PartTable, TodoTable } from "@opendora/session/sql"
+import { SessionTable, MessageTable, PartTable, TodoTable } from "@projectflows/session/sql"
 import { SessionShareTable } from "./share.sql"
 import path from "path"
 import { existsSync } from "fs"
-import { Filesystem } from "@opendora/util/filesystem"
-import { Glob } from "@opendora/util/glob"
+import { Filesystem } from "@projectflows/util/filesystem"
+import { Glob } from "@projectflows/util/glob"
 
 export namespace JsonMigration {
   const log = Log.create({ service: "json-migration" })

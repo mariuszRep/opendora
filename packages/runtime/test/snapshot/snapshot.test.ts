@@ -4,7 +4,7 @@ import fs from "fs/promises"
 import path from "path"
 import { Snapshot } from "../../src/snapshot"
 import { Instance } from "../../src/instance"
-import { Filesystem } from "@opendora/util/filesystem"
+import { Filesystem } from "@projectflows/util/filesystem"
 import { tmpdir } from "../fixture/fixture"
 
 // Git always outputs /-separated paths internally. Snapshot.patch() joins them

@@ -1,7 +1,7 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
-import { WorkflowStorage } from "@opendora/workflow/storage"
+import { WorkflowStorage } from "@projectflows/workflow/storage"
 import toolDef from "./workflow-delete.json"
 
 export const WorkflowDeleteTool = Tool.define("workflow_delete", async () => {

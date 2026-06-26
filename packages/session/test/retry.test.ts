@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import type { NamedError } from "@opendora/util/error"
+import type { NamedError } from "@projectflows/util/error"
 import { APICallError } from "ai"
 import { SessionRetry } from "../src/retry"
 import { MessageV2 } from "../src/message-v2"

@@ -1,10 +1,10 @@
-import { Global } from "@opendora/util/global"
-import { Log } from "@opendora/util/log"
+import { Global } from "@projectflows/util/global"
+import { Log } from "@projectflows/util/log"
 import path from "path"
-import * as Version from "@opendora/util/version"
-import { Flag } from "@opendora/util/flag"
-import { lazy } from "@opendora/util/lazy"
-import { Filesystem } from "@opendora/util/filesystem"
+import * as Version from "@projectflows/util/version"
+import { Flag } from "@projectflows/util/flag"
+import { lazy } from "@projectflows/util/lazy"
+import { Filesystem } from "@projectflows/util/filesystem"
 import { ModelsDev as ModelsDevSchema } from "./models-schema"
 
 // Try to import bundled snapshot (generated at build time)

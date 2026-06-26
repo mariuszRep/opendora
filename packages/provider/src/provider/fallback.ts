@@ -8,7 +8,7 @@
 
 import { readFile, writeFile, mkdir } from "fs/promises"
 import { join, dirname } from "path"
-import { Global } from "@opendora/util/global"
+import { Global } from "@projectflows/util/global"
 import { ProviderError } from "./error"
 import { ProviderTimeout } from "./timeout"
 
@@ -24,7 +24,7 @@ export namespace ProviderFallback {
     slots: Slot[]
   }
 
-  /** Re-export for callers that only depend on @opendora/provider/fallback. */
+  /** Re-export for callers that only depend on @projectflows/provider/fallback. */
   export function isFallbackEligible(kind: ProviderError.ErrorKind): boolean {
     return ProviderError.isFallbackEligible(kind)
   }

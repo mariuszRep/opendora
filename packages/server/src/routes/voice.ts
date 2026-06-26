@@ -1,9 +1,9 @@
 import { Hono } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { Auth } from "@opendora/auth"
+import { Auth } from "@projectflows/auth"
 import { errors } from "../error"
-import { lazy } from "@opendora/util/lazy"
+import { lazy } from "@projectflows/util/lazy"
 
 function pcmToWav(pcmBuffer: ArrayBuffer, sampleRate = 24000, numChannels = 1, bitsPerSample = 16): ArrayBuffer {
   const dataSize = pcmBuffer.byteLength

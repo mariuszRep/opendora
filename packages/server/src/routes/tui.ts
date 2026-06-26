@@ -1,12 +1,12 @@
 import { Hono, type Context } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { Bus } from "@opendora/runtime/bus"
-import { Session } from "@opendora/session/session"
-import { TuiEvent } from "@opendora/runtime/tui-event"
-import { AsyncQueue } from "@opendora/util/queue"
+import { Bus } from "@projectflows/runtime/bus"
+import { Session } from "@projectflows/session/session"
+import { TuiEvent } from "@projectflows/runtime/tui-event"
+import { AsyncQueue } from "@projectflows/util/queue"
 import { errors } from "../error"
-import { lazy } from "@opendora/util/lazy"
+import { lazy } from "@projectflows/util/lazy"
 
 const TuiRequest = z.object({
   path: z.string(),

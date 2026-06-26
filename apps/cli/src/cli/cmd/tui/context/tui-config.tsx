@@ -1,4 +1,4 @@
-import { TuiConfig } from "@opendora/config/tui"
+import { TuiConfig } from "@projectflows/config/tui"
 import { createSimpleContext } from "./helper"
 
 export const { use: useTuiConfig, provider: TuiConfigProvider } = createSimpleContext({

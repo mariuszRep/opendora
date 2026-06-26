@@ -1,5 +1,5 @@
 /**
- * @opendora/agent - Template-based agent management
+ * @projectflows/agent - Template-based agent management
  *
  * All agents are file-based with no "native" vs "file" distinction.
  * Default agents are seeded from templates on first run.

@@ -1,5 +1,5 @@
 import path from "node:path";
-import { Global } from "@opendora/util/global";
+import { Global } from "@projectflows/util/global";
 
 const windowsAbsolutePath = /^[a-zA-Z]:[\\/]/;
 const windowsUncPath = /^\\\\/;

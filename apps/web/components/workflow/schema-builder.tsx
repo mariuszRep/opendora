@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { ExpressionInput } from "./expression-input"
-import { type RefSuggestion } from "@opendora/workflow/refs"
+import { type RefSuggestion } from "@projectflows/workflow/refs"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

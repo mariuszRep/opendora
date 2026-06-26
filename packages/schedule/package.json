@@ -1,5 +1,5 @@
 {
-  "name": "@opendora/schedule",
+  "name": "@projectflows/schedule",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -9,9 +9,9 @@
     "./service": "./src/service.ts"
   },
   "dependencies": {
-    "@opendora/session": "workspace:*",
-    "@opendora/storage": "workspace:*",
-    "@opendora/util": "workspace:*",
+    "@projectflows/session": "workspace:*",
+    "@projectflows/storage": "workspace:*",
+    "@projectflows/util": "workspace:*",
     "croner": "9.0.0",
     "drizzle-orm": "catalog:",
     "ulid": "catalog:",

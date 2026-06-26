@@ -1,9 +1,9 @@
 import { describe, expect, test, beforeEach } from "bun:test"
 import path from "path"
-import { LSPClient } from "@opendora/server/lsp/client"
-import { LSPServer } from "@opendora/server/lsp/server"
-import { Instance } from "@opendora/runtime/instance"
-import { Log } from "@opendora/util/log"
+import { LSPClient } from "@projectflows/server/lsp/client"
+import { LSPServer } from "@projectflows/server/lsp/server"
+import { Instance } from "@projectflows/runtime/instance"
+import { Log } from "@projectflows/util/log"
 
 // Minimal fake LSP server that speaks JSON-RPC over stdio
 function spawnFakeServer() {

@@ -1,1 +1,1 @@
-export { TuiEvent } from "@opendora/runtime/tui-event"
+export { TuiEvent } from "@projectflows/runtime/tui-event"

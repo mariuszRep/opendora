@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
 import { pathToFileURL } from "url"
-import type { Tool } from "@opendora/tools/tool"
-import { Instance } from "@opendora/runtime/instance"
-import { SkillTool } from "@opendora/tools/skill-load-tool"
+import type { Tool } from "@projectflows/tools/tool"
+import { Instance } from "@projectflows/runtime/instance"
+import { SkillTool } from "@projectflows/tools/skill-load-tool"
 import { tmpdir } from "../fixture/fixture"
 
 const baseCtx: Omit<Tool.Context, "ask"> = {

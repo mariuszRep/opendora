@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 import path from "path"
 import { InstructionPrompt } from "../src/instruction"
-import { Instance } from "@opendora/runtime/instance"
-import { Global } from "@opendora/util/global"
+import { Instance } from "@projectflows/runtime/instance"
+import { Global } from "@projectflows/util/global"
 import { tmpdir } from "./fixture/fixture"
 
 describe("InstructionPrompt.resolve", () => {

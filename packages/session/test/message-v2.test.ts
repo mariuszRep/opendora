@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { APICallError } from "ai"
 import { MessageV2 } from "../src/message-v2"
-import type { Provider } from "@opendora/provider/provider"
+import type { Provider } from "@projectflows/provider/provider"
 
 const sessionID = "session"
 const model: Provider.Model = {

@@ -1,14 +1,14 @@
 import { Bus } from "./bus"
 import { FileEditedEvent } from "./file-events"
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 import path from "path"
 import z from "zod"
 
 import * as Formatter from "./formatter"
-import { Config } from "@opendora/config/config"
+import { Config } from "@projectflows/config/config"
 import { mergeDeep } from "remeda"
 import { Instance } from "./instance"
-import { Process } from "@opendora/util/process"
+import { Process } from "@projectflows/util/process"
 
 export namespace Format {
   const log = Log.create({ service: "format" })

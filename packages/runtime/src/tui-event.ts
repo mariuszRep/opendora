@@ -1,8 +1,8 @@
-import { BusEvent } from "@opendora/util/bus-event"
+import { BusEvent } from "@projectflows/util/bus-event"
 import z from "zod"
 
 /**
- * Shared between @opendora/server (routes/tui.ts) and apps/cli's TUI so the
+ * Shared between @projectflows/server (routes/tui.ts) and apps/cli's TUI so the
  * server can publish TUI-directed events without depending on the app.
  */
 export const TuiEvent = {

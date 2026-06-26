@@ -2,8 +2,8 @@ import { cmd } from "../cmd"
 import { UI } from "@/cli/ui"
 import { tui } from "./app"
 import { win32DisableProcessedInput, win32InstallCtrlCGuard } from "./win32"
-import { TuiConfig } from "@opendora/config/tui"
-import { Instance } from "@opendora/runtime/instance"
+import { TuiConfig } from "@projectflows/config/tui"
+import { Instance } from "@projectflows/runtime/instance"
 import { existsSync } from "fs"
 
 export const AttachCommand = cmd({

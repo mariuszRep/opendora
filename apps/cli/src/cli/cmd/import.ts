@@ -1,14 +1,14 @@
 import type { Argv } from "yargs"
-import type { Session as SDKSession, Message, Part } from "@opendora/sdk/v2"
-import { Session } from "@opendora/session/session"
+import type { Session as SDKSession, Message, Part } from "@projectflows/sdk/v2"
+import { Session } from "@projectflows/session/session"
 import { cmd } from "./cmd"
 import { bootstrap } from "../bootstrap"
-import { Database, eq } from "@opendora/storage/db"
-import { SessionTable, MessageTable, PartTable } from "@opendora/session/sql"
-import { Instance } from "@opendora/runtime/instance"
-import { ShareNext } from "@opendora/session/share-next"
+import { Database, eq } from "@projectflows/storage/db"
+import { SessionTable, MessageTable, PartTable } from "@projectflows/session/sql"
+import { Instance } from "@projectflows/runtime/instance"
+import { ShareNext } from "@projectflows/session/share-next"
 import { EOL } from "os"
-import { Filesystem as Fs } from "@opendora/tools/filesystem/lib/primitives"
+import { Filesystem as Fs } from "@projectflows/tools/filesystem/lib/primitives"
 
 export type ShareData =
   | { type: "session"; data: SDKSession }

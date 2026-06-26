@@ -1,4 +1,4 @@
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 import { OAUTH_CALLBACK_PORT, OAUTH_CALLBACK_PATH } from "./oauth-provider"
 
 const log = Log.create({ service: "mcp.oauth-callback" })

@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test"
-import { ACP } from "@opendora/server/acp/agent"
+import { ACP } from "@projectflows/server/acp/agent"
 import type { AgentSideConnection } from "@agentclientprotocol/sdk"
-import type { Event, EventMessagePartUpdated, ToolStatePending, ToolStateRunning } from "@opendora/sdk/v2"
-import { Instance } from "@opendora/runtime/instance"
+import type { Event, EventMessagePartUpdated, ToolStatePending, ToolStateRunning } from "@projectflows/sdk/v2"
+import { Instance } from "@projectflows/runtime/instance"
 import { tmpdir } from "../fixture/fixture"
 
 type SessionUpdateParams = Parameters<AgentSideConnection["sessionUpdate"]>[0]

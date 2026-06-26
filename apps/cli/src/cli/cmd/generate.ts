@@ -1,4 +1,4 @@
-import { Server } from "@opendora/server/server"
+import { Server } from "@projectflows/server/server"
 import type { CommandModule } from "yargs"
 
 export const GenerateCommand = {
@@ -14,7 +14,7 @@ export const GenerateCommand = {
           {
             lang: "js",
             source: [
-              `import { createOpencodeClient } from "@opendora/sdk`,
+              `import { createOpencodeClient } from "@projectflows/sdk`,
               ``,
               `const client = createOpencodeClient()`,
               `await client.${operation.operationId}({`,

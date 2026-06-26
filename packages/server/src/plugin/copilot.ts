@@ -1,6 +1,6 @@
 import type { Hooks, PluginInput } from "@opencode-ai/plugin"
-import { Installation } from "@opendora/util/installation"
-import { iife } from "@opendora/util/iife"
+import { Installation } from "@projectflows/util/installation"
+import { iife } from "@projectflows/util/iife"
 
 const CLIENT_ID = "Ov23li8tweQw6odWQebz"
 // Add a small safety buffer when polling to avoid hitting the server

@@ -1,6 +1,6 @@
-import { Slug } from "@opendora/util/slug"
-import { fn } from "@opendora/util/fn"
-import { Identifier } from "@opendora/util/id"
+import { Slug } from "@projectflows/util/slug"
+import { fn } from "@projectflows/util/fn"
+import { Identifier } from "@projectflows/util/id"
 import path from "path"
 import { Decimal } from "decimal.js"
 import z from "zod"
@@ -16,7 +16,7 @@ import { openDoraStorageAdapter } from "./opendora-storage-adapter.ts"
 import { SessionManager } from "./session-manager"
 import { RetentionDaemon } from "./daemon"
 import type { SessionType, RetentionPolicy, SendPolicy, CreateSessionOptions, PongOptions } from "./types"
-import { NotFoundError } from "@opendora/storage/db"
+import { NotFoundError } from "@projectflows/storage/db"
 
 // Inline iife utility
 function iife<T>(fn: () => T): T {

@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
 import * as fs from "fs/promises"
-import { ApplyPatchTool } from "@opendora/tools/filesystem/apply_patch"
-import { Instance } from "@opendora/runtime/instance"
+import { ApplyPatchTool } from "@projectflows/tools/filesystem/apply_patch"
+import { Instance } from "@projectflows/runtime/instance"
 import { tmpdir } from "../fixture/fixture"
 
 const baseCtx = {

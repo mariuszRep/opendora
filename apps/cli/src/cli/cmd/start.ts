@@ -1,6 +1,6 @@
 import { cmd } from "./cmd"
 import { resolveService } from "../../daemon/service"
-import { Installation } from "@opendora/util/installation"
+import { Installation } from "@projectflows/util/installation"
 import path from "path"
 import os from "os"
 

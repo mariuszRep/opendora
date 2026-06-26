@@ -1,17 +1,17 @@
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 import path from "path"
 import { pathToFileURL, fileURLToPath } from "url"
 import { createRequire } from "module"
 import os from "os"
 import z from "zod"
-import { ModelsDev } from "@opendora/provider/models"
+import { ModelsDev } from "@projectflows/provider/models"
 import { mergeDeep, pipe, unique } from "remeda"
-import { Global } from "@opendora/util/global"
+import { Global } from "@projectflows/util/global"
 import fs from "fs/promises"
-import { lazy } from "@opendora/util/lazy"
-import { NamedError } from "@opendora/util/error"
-import { Flag } from "@opendora/util/flag"
-import { Auth } from "@opendora/auth"
+import { lazy } from "@projectflows/util/lazy"
+import { NamedError } from "@projectflows/util/error"
+import { Flag } from "@projectflows/util/flag"
+import { Auth } from "@projectflows/auth"
 import {
   type ParseError as JsoncParseError,
   applyEdits,
@@ -19,20 +19,20 @@ import {
   parse as parseJsonc,
   printParseErrorCode,
 } from "jsonc-parser"
-import { Instance } from "@opendora/runtime/instance"
-import { BunProc } from "@opendora/util/bun"
-import { Installation } from "@opendora/util/installation"
+import { Instance } from "@projectflows/runtime/instance"
+import { BunProc } from "@projectflows/util/bun"
+import { Installation } from "@projectflows/util/installation"
 import { ConfigMarkdown } from "./markdown"
 import { constants, existsSync } from "fs"
-import { Bus } from "@opendora/runtime/bus"
-import { GlobalBus } from "@opendora/util/global-bus"
-import { Glob } from "@opendora/util/glob"
-import { PackageRegistry } from "@opendora/util/bun-registry"
-import { proxied } from "@opendora/util/proxied"
-import { iife } from "@opendora/util/iife"
-import { Control } from "@opendora/storage/control"
+import { Bus } from "@projectflows/runtime/bus"
+import { GlobalBus } from "@projectflows/util/global-bus"
+import { Glob } from "@projectflows/util/glob"
+import { PackageRegistry } from "@projectflows/util/bun-registry"
+import { proxied } from "@projectflows/util/proxied"
+import { iife } from "@projectflows/util/iife"
+import { Control } from "@projectflows/storage/control"
 import { ConfigPaths } from "./paths"
-import { Filesystem } from "@opendora/util/filesystem"
+import { Filesystem } from "@projectflows/util/filesystem"
 
 export namespace Config {
   const ModelId = z.string().meta({ $ref: "https://models.dev/model-schema.json#/$defs/Model" })
@@ -351,7 +351,7 @@ export namespace Config {
         const message = ConfigMarkdown.FrontmatterError.isInstance(err)
           ? err.data.message
           : `Failed to parse command ${item}`
-        const { Session } = await import("@opendora/session/session")
+        const { Session } = await import("@projectflows/session/session")
         Bus.publish(Session.Event.Error, { error: new NamedError.Unknown({ message }).toObject() })
         log.error("failed to load command", { command: item, err })
         return undefined
@@ -395,7 +395,7 @@ export namespace Config {
         const message = ConfigMarkdown.FrontmatterError.isInstance(err)
           ? err.data.message
           : `Failed to parse mode ${item}`
-        const { Session } = await import("@opendora/session/session")
+        const { Session } = await import("@projectflows/session/session")
         Bus.publish(Session.Event.Error, { error: new NamedError.Unknown({ message }).toObject() })
         log.error("failed to load mode", { mode: item, err })
         return undefined
@@ -1390,7 +1390,7 @@ export namespace Config {
         GlobalBus.emit("event", {
           directory: "global",
           payload: {
-            // global.disposed event type — avoids importing @opendora/server to break the circular dep
+            // global.disposed event type — avoids importing @projectflows/server to break the circular dep
             type: "global.disposed",
             properties: {},
           },

@@ -1,7 +1,7 @@
-import { Instance } from "@opendora/runtime/instance"
-import { Log } from "@opendora/util/log"
-import { Flag } from "@opendora/util/flag"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import { Instance } from "@projectflows/runtime/instance"
+import { Log } from "@projectflows/util/log"
+import { Flag } from "@projectflows/util/flag"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
 
 export namespace FileTime {
   const log = Log.create({ service: "file.time" })

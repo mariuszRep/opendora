@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { ACP } from "@opendora/server/acp/agent"
+import { ACP } from "@projectflows/server/acp/agent"
 import type { Agent as ACPAgent } from "@agentclientprotocol/sdk"
 
 /**

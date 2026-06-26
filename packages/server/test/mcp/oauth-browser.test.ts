@@ -100,9 +100,9 @@ beforeEach(() => {
 
 // Import modules after mocking
 const { MCP } = await import("../../src/mcp/index")
-const { Bus } = await import("@opendora/runtime/bus")
+const { Bus } = await import("@projectflows/runtime/bus")
 const { McpOAuthCallback } = await import("../../src/mcp/oauth-callback")
-const { Instance } = await import("@opendora/runtime/instance")
+const { Instance } = await import("@projectflows/runtime/instance")
 const { tmpdir } = await import("../fixture/fixture")
 
 test("BrowserOpenFailed event is published when open() throws", async () => {

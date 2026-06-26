@@ -1,13 +1,13 @@
 import { test, expect, describe, mock, afterEach } from "bun:test"
 import { Config } from "../src/config"
-import { Instance } from "@opendora/runtime/instance"
-import { Auth } from "@opendora/auth"
+import { Instance } from "@projectflows/runtime/instance"
+import { Auth } from "@projectflows/auth"
 import { tmpdir } from "./fixture/fixture"
 import path from "path"
 import fs from "fs/promises"
 import { pathToFileURL } from "url"
-import { Global } from "@opendora/util/global"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import { Global } from "@projectflows/util/global"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
 
 // Get managed config directory from environment (set in preload.ts)
 const managedConfigDir = process.env.OPENCODE_TEST_MANAGED_CONFIG_DIR!

@@ -1,7 +1,7 @@
-import { Bus } from "@opendora/runtime/bus"
-import { Config } from "@opendora/config/config"
-import { Flag } from "@opendora/util/flag"
-import { Installation } from "@opendora/util/installation"
+import { Bus } from "@projectflows/runtime/bus"
+import { Config } from "@projectflows/config/config"
+import { Flag } from "@projectflows/util/flag"
+import { Installation } from "@projectflows/util/installation"
 
 export async function upgrade() {
   const config = await Config.global()

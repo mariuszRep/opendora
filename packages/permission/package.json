@@ -1,5 +1,5 @@
 {
-  "name": "@opendora/permission",
+  "name": "@projectflows/permission",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@hono/zod-validator": "catalog:",
-    "@opendora/runtime": "workspace:*",
-    "@opendora/storage": "workspace:*",
-    "@opendora/util": "workspace:*",
+    "@projectflows/runtime": "workspace:*",
+    "@projectflows/storage": "workspace:*",
+    "@projectflows/util": "workspace:*",
     "hono": "catalog:",
     "zod": "catalog:"
   },
@@ -23,7 +23,7 @@
   "devDependencies": {
     "@types/bun": "catalog:",
     "@types/node": "^20.14.10",
-    "@opendora/config": "workspace:*",
+    "@projectflows/config": "workspace:*",
     "@typescript/native-preview": "catalog:",
     "typescript": "catalog:"
   }

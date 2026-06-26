@@ -1,5 +1,5 @@
 import { EOL } from "os"
-import { Skill } from "@opendora/skills/skill"
+import { Skill } from "@projectflows/skills/skill"
 import { bootstrap } from "../../bootstrap"
 import { cmd } from "../cmd"
 

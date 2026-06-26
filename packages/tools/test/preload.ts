@@ -55,7 +55,7 @@ delete process.env["FIREWORKS_API_KEY"]
 delete process.env["CEREBRAS_API_KEY"]
 delete process.env["SAMBANOVA_API_KEY"]
 
-const { Log } = await import("@opendora/util/log")
+const { Log } = await import("@projectflows/util/log")
 process.env["OPENCODE_MODELS_PATH"] = path.join(import.meta.dir, "tool", "fixtures", "models-api.json")
 
 Log.init({ print: false, dev: true, level: "DEBUG" })

@@ -1,5 +1,5 @@
 import z from "zod"
-import { NamedError } from "@opendora/util/error"
+import { NamedError } from "@projectflows/util/error"
 import { APICallError, convertToModelMessages, LoadAPIKeyError, type ModelMessage, type UIMessage } from "ai"
 import { getConfig } from "./config"
 import { MessageTable, PartTable } from "./session.sql"

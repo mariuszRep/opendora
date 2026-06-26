@@ -1,5 +1,5 @@
 import type { Argv, InferredOptionTypes } from "yargs"
-import { Config } from "@opendora/config/config"
+import { Config } from "@projectflows/config/config"
 
 const options = {
   port: {

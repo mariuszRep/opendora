@@ -1,5 +1,5 @@
-import type { AssistantMessage, Part, UserMessage } from "@opendora/sdk/v2"
-import { Locale } from "@opendora/util/locale"
+import type { AssistantMessage, Part, UserMessage } from "@projectflows/sdk/v2"
+import { Locale } from "@projectflows/util/locale"
 
 export type TranscriptOptions = {
   thinking: boolean

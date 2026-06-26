@@ -4,11 +4,11 @@ import { Session } from "../src/session"
 import { SessionRevert } from "../src/revert"
 import { SessionCompaction } from "../src/compaction"
 import { MessageV2 } from "../src/message-v2"
-import { Log } from "@opendora/util/log"
-import { Instance } from "@opendora/runtime/instance"
-import { Identifier } from "@opendora/util/id"
+import { Log } from "@projectflows/util/log"
+import { Instance } from "@projectflows/runtime/instance"
+import { Identifier } from "@projectflows/util/id"
 import { tmpdir } from "./fixture/fixture"
-import { configureSessionCore } from "@opendora/server/configure-session-core"
+import { configureSessionCore } from "@projectflows/server/configure-session-core"
 
 const projectRoot = path.join(__dirname, "../..")
 Log.init({ print: false })

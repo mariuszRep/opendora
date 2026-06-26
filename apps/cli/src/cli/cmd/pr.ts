@@ -1,6 +1,6 @@
 import { UI } from "../ui"
 import { cmd } from "./cmd"
-import { Instance } from "@opendora/runtime/instance"
+import { Instance } from "@projectflows/runtime/instance"
 import { $ } from "bun"
 
 export const PrCommand = cmd({

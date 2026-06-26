@@ -1,9 +1,9 @@
 import { test, expect } from "bun:test"
 import path from "path"
 import { tmpdir } from "../fixture/fixture"
-import { Instance } from "@opendora/runtime/instance"
-import { Config } from "@opendora/config/config"
-import { Agent as AgentSvc } from "@opendora/runtime/agent"
+import { Instance } from "@projectflows/runtime/instance"
+import { Config } from "@projectflows/config/config"
+import { Agent as AgentSvc } from "@projectflows/runtime/agent"
 import { Color } from "../../src/util/color"
 
 test("agent color parsed from project config", async () => {

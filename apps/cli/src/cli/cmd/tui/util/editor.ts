@@ -1,10 +1,10 @@
-import { defer } from "@opendora/util/defer"
+import { defer } from "@projectflows/util/defer"
 import { rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { CliRenderer } from "@opentui/core"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
-import { Process } from "@opendora/util/process"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
+import { Process } from "@projectflows/util/process"
 
 export namespace Editor {
   export async function open(opts: { value: string; renderer: CliRenderer }): Promise<string | undefined> {

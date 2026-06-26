@@ -1,9 +1,9 @@
-import { BusEvent } from "@opendora/util/bus-event"
+import { BusEvent } from "@projectflows/util/bus-event"
 import { Bus } from "./bus"
 import { $ } from "bun"
 import path from "path"
 import z from "zod"
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 import { Instance } from "./instance"
 import { FileWatcherUpdatedEvent } from "./file-events"
 

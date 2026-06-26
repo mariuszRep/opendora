@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test"
 import path from "path"
 import fs from "fs/promises"
-import { Glob } from "@opendora/util/glob"
+import { Glob } from "@projectflows/util/glob"
 import { tmpdir } from "./test-fixture"
 
 describe("Glob", () => {

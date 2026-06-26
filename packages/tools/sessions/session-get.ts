@@ -2,7 +2,7 @@ import z from "zod"
 import { Tool } from "../tool"
 import { host } from "../host"
 import toolDef from "./session-get.json"
-import { MessageV2 } from "@opendora/session"
+import { MessageV2 } from "@projectflows/session"
 
 const parameters = z.object({
   session_id: z.string().describe("ID of the session to retrieve"),

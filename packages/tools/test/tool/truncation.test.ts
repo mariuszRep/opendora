@@ -1,7 +1,7 @@
 import { describe, test, expect, afterAll } from "bun:test"
-import { Truncate } from "@opendora/tools/truncation-impl"
-import { Identifier } from "@opendora/util/id"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import { Truncate } from "@projectflows/tools/truncation-impl"
+import { Identifier } from "@projectflows/util/id"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
 import fs from "fs/promises"
 import path from "path"
 

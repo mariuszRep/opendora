@@ -1,10 +1,10 @@
 import path from "path"
 import fs from "fs/promises"
 import z from "zod"
-import { Tool } from "@opendora/tools/tool"
+import { Tool } from "@projectflows/tools/tool"
 // @ts-ignore — skills depends on tools creating a circular workspace ref; resolved at runtime
-import { Skill } from "@opendora/skills/skill"
-import { addSkillTools } from "@opendora/session/skill-tools"
+import { Skill } from "@projectflows/skills/skill"
+import { addSkillTools } from "@projectflows/session/skill-tools"
 
 // Tool to load and use a specific skill
 export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
