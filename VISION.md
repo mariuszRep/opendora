@@ -15,6 +15,8 @@ Agent Builder is the durable agent-definition authoring model. It reuses the wor
 
 OpenDora surfaces should use a consistent connected-node/line visual language when displaying linear or branching chains. Chat reply chains, agent definition sections (in graph view), workflow execution nodes, and branching workflow/graph histories should share a common visual idiom inspired by git graph representations: a dot or node per item, a line connecting the sequence, and branching lines for diverging paths. This principle applies across chat, workflow, and Agent Builder surfaces.
 
+The graph-backed session ledger and its UI projection are one delivery — stored flow must be correctly projectable in the UI. Chat display encompasses both compact git-style rails for normal conversation views and full graph layout for expanded workflow, canvas, and debug views. Apps own presentation projections; session owns the ledger shape, typed edges, and display-order data that feed them.
+
 ## Owns
 
 - Product-level architecture and boundaries for OpenDora.
