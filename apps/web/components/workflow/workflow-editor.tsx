@@ -80,7 +80,7 @@ function normalizeNodeData(raw: unknown): WorkflowNodeData {
   return {
     ...(d as WorkflowNodeData),
     node: node
-      ? { ...defaults.node, ...(node as WorkflowNodeData['node']), label: (node.label as string) || defaults.node.label }
+      ? { ...defaults.node, ...(node as unknown as WorkflowNodeData['node']), label: (node.label as string) || defaults.node.label }
       : defaults.node,
     data: (d.data as WorkflowNodeData['data']) ?? defaults.data,
   }
@@ -527,12 +527,15 @@ function WorkflowEditorInner({
               ...(formData.agentArgs !== undefined ? { agentArgs: formData.agentArgs } : {}),
               ...(formData.workflowParameters !== undefined ? { workflowParameters: formData.workflowParameters } : {}),
               ...(formData.outputSchema !== undefined ? { outputSchema: formData.outputSchema } : {}),
+              ...(formData.schemaProps !== undefined ? { schemaProps: formData.schemaProps } : {}),
+              ...(formData.renderLayout !== undefined ? { renderLayout: formData.renderLayout } : formData.renderLayout === null ? { renderLayout: undefined } : {}),
               model: formData.model ?? undefined,
               node: {
                 ...n.data.node,
                 label: formData.label ?? n.data.node.label,
                 action_id: formData.action_id,
                 parameters: formData.parameters,
+                ...(formData.retry !== undefined ? { retry: formData.retry } : {}),
               },
               data: {
                 ...n.data.data,

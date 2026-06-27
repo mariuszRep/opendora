@@ -72,7 +72,7 @@ export function RefDropdown({ open, items, activeIndex, anchorRef, onSelect, onH
     >
       {items.map((s, i) => (
         <button
-          key={s.ref}
+          key={`${s.ref}-${i}`}
           type="button"
           className={cn(
             'w-full text-left px-3 py-2 text-xs transition-colors hover:bg-accent',

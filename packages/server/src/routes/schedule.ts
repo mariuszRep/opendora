@@ -1,16 +1,16 @@
 import { Hono } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { Database } from "@opendora/storage/db"
-import { ScheduleTable } from "@opendora/schedule/sql"
-import type { ScheduleDispatchFn } from "@opendora/schedule/cron-scheduler"
+import { Database } from "@projectflows/storage/db"
+import { ScheduleTable } from "@projectflows/schedule/sql"
+import type { ScheduleDispatchFn } from "@projectflows/schedule/cron-scheduler"
 import { eq } from "drizzle-orm"
 import { ulid } from "ulid"
-import { Agent } from "@opendora/opencode/agent"
-import { Provider } from "@opendora/provider/provider"
-import { LLM } from "@opendora/session/llm"
-import { Log } from "@opendora/util/log"
-import { Identifier } from "@opendora/util/id"
+import { Agent } from "@projectflows/runtime/agent"
+import { Provider } from "@projectflows/provider/provider"
+import { LLM } from "@projectflows/session/llm"
+import { Log } from "@projectflows/util/log"
+import { Identifier } from "@projectflows/util/id"
 import { getGlobalTimezone } from "./general"
 
 const log = Log.create({ service: "schedule-name" })
@@ -64,7 +64,7 @@ async function generateScheduleName(workflowId: string, description?: string): P
       ],
     })
     result.usage.then(async (usage) => {
-      const { TokenUsage } = await import("@opendora/session/token-usage")
+      const { TokenUsage } = await import("@projectflows/session/token-usage")
       await TokenUsage.record({
         providerID: model.providerID,
         modelID:    model.id,

@@ -1,16 +1,30 @@
 {
-  "name": "@opendora/permission",
+  "name": "@projectflows/permission",
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./pattern": "./src/pattern.ts",
+    "./arity": "./src/arity.ts",
+    "./next": "./src/next.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "catalog:",
+    "@projectflows/runtime": "workspace:*",
+    "@projectflows/storage": "workspace:*",
+    "@projectflows/util": "workspace:*",
     "hono": "catalog:",
     "zod": "catalog:"
   },
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "test": "bun test --timeout 30000"
+  },
   "devDependencies": {
-    "@types/node": "^20.14.10"
+    "@types/bun": "catalog:",
+    "@types/node": "^20.14.10",
+    "@projectflows/config": "workspace:*",
+    "@typescript/native-preview": "catalog:",
+    "typescript": "catalog:"
   }
 }

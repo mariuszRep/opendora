@@ -6,10 +6,11 @@ import toolDef from ".//mouse-position.json"
 
 export const DesktopMousePositionTool = Tool.define("desktop_mouse_position", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({})
   return {
     description: toolDef.description,
-    parameters: z.object({}),
-    async execute(_params, ctx) {
+    parameters,
+    async execute(_params: z.infer<typeof parameters>, ctx) {
       assertNotSandbox(sandbox)
       assertDisplay()
       await ctx.ask({

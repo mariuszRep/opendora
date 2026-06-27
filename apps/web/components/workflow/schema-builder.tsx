@@ -7,14 +7,22 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import { ExpressionInput } from "./expression-input"
+import { type RefSuggestion } from "@projectflows/workflow/refs"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ScalarType = "string" | "number" | "boolean"
 export type PropType = ScalarType | "array" | "object"
 export type ArrayItemType = ScalarType | "object"
+
+export interface FieldDisplay {
+  /** How to render this field's value */
+  as?: string
+  /** Semantic role when inside a card/list item */
+  role?: string
+}
 
 export interface SchemaProp {
   name: string
@@ -27,6 +35,8 @@ export interface SchemaProp {
   itemType?: ArrayItemType
   /** Properties when type === "array" && itemType === "object" */
   itemProperties?: SchemaProp[]
+  /** Display configuration (UI-only, not included in JSON Schema) */
+  display?: FieldDisplay
 }
 
 // ─── JSON Schema ↔ SchemaProp conversion ─────────────────────────────────────
@@ -111,6 +121,18 @@ export function jsonSchemaToProps(schema: Record<string, unknown>): SchemaProp[]
 
 // ─── PropRow ──────────────────────────────────────────────────────────────────
 
+function getDisplayOptions(type: PropType, itemType?: ArrayItemType): { value: string; label: string }[] {
+  const base = [{ value: "auto", label: "Auto" }]
+  if (type === "string") return [...base, { value: "text", label: "Text" }, { value: "link", label: "Link" }, { value: "badge", label: "Badge" }, { value: "image", label: "Image" }, { value: "hidden", label: "Hidden" }]
+  if (type === "number" || type === "boolean") return [...base, { value: "text", label: "Text" }, { value: "badge", label: "Badge" }, { value: "hidden", label: "Hidden" }]
+  if (type === "array") {
+    if (itemType === "object") return [...base, { value: "table", label: "Table" }, { value: "cards", label: "Cards" }, { value: "list", label: "List" }, { value: "hidden", label: "Hidden" }]
+    return [...base, { value: "list", label: "List" }, { value: "badges", label: "Badges" }, { value: "comma", label: "Comma-separated" }, { value: "hidden", label: "Hidden" }]
+  }
+  if (type === "object") return [...base, { value: "card", label: "Card" }, { value: "details", label: "Details" }, { value: "hidden", label: "Hidden" }]
+  return base
+}
+
 const PROP_TYPES: { value: PropType; label: string }[] = [
   { value: "string", label: "string" },
   { value: "number", label: "number" },
@@ -129,11 +151,14 @@ const ITEM_TYPES: { value: ArrayItemType; label: string }[] = [
 interface PropRowProps {
   prop: SchemaProp
   depth: number
+  suggestions: RefSuggestion[]
   onChange: (updated: SchemaProp) => void
   onDelete: () => void
+  /** When true, show a Role selector (scalar fields inside array-of-object items) */
+  showRole?: boolean
 }
 
-function PropRow({ prop, depth, onChange, onDelete }: PropRowProps) {
+function PropRow({ prop, depth, suggestions, onChange, onDelete, showRole }: PropRowProps) {
   const [expanded, setExpanded] = useState(true)
   const hasChildren = prop.type === "object" || (prop.type === "array" && prop.itemType === "object")
 
@@ -207,12 +232,12 @@ function PropRow({ prop, depth, onChange, onDelete }: PropRowProps) {
 
       {/* Description */}
       <div className="px-2 pb-2 pl-8">
-        <Textarea
+        <ExpressionInput
           value={prop.description}
-          onChange={(e) => update({ description: e.target.value })}
+          onChange={(v) => update({ description: v })}
+          suggestions={suggestions}
           placeholder="Description — helps the agent understand what to put here"
-          rows={1}
-          className="text-xs resize-none min-h-0"
+          className="text-xs min-h-0"
         />
       </div>
 
@@ -244,6 +269,46 @@ function PropRow({ prop, depth, onChange, onDelete }: PropRowProps) {
         </div>
       )}
 
+      {/* Display configuration */}
+      <div className="px-2 pb-2 pl-8 flex items-center gap-2 flex-wrap">
+        <span className="text-xs text-muted-foreground shrink-0">Display</span>
+        <Select
+          value={prop.display?.as ?? "auto"}
+          onValueChange={(v) => update({ display: { ...prop.display, as: v } })}
+        >
+          <SelectTrigger className="h-7 w-28 text-xs shrink-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {getDisplayOptions(prop.type, prop.itemType).map((o) => (
+              <SelectItem key={o.value} value={o.value} className="text-xs">
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {showRole && (prop.type === "string" || prop.type === "number" || prop.type === "boolean") && (
+          <>
+            <span className="text-xs text-muted-foreground shrink-0">Role</span>
+            <Select
+              value={prop.display?.role ?? "none"}
+              onValueChange={(v) => update({ display: { ...prop.display, role: v } })}
+            >
+              <SelectTrigger className="h-7 w-28 text-xs shrink-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none" className="text-xs">None</SelectItem>
+                <SelectItem value="title" className="text-xs">Title</SelectItem>
+                <SelectItem value="description" className="text-xs">Description</SelectItem>
+                <SelectItem value="status" className="text-xs">Status (badge)</SelectItem>
+                <SelectItem value="image" className="text-xs">Image</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        )}
+      </div>
+
       {/* Nested properties — object children or array-of-object items */}
       {expanded && hasChildren && (
         <div className="px-2 pb-2 pl-8">
@@ -251,6 +316,7 @@ function PropRow({ prop, depth, onChange, onDelete }: PropRowProps) {
             <SchemaBuilder
               props={prop.properties ?? []}
               onChange={(updated) => update({ properties: updated })}
+              suggestions={suggestions}
               depth={depth + 1}
             />
           )}
@@ -260,7 +326,9 @@ function PropRow({ prop, depth, onChange, onDelete }: PropRowProps) {
               <SchemaBuilder
                 props={prop.itemProperties ?? []}
                 onChange={(updated) => update({ itemProperties: updated })}
+                suggestions={suggestions}
                 depth={depth + 1}
+                showRole
               />
             </div>
           )}
@@ -275,10 +343,12 @@ function PropRow({ prop, depth, onChange, onDelete }: PropRowProps) {
 interface SchemaBuilderProps {
   props: SchemaProp[]
   onChange: (props: SchemaProp[]) => void
+  suggestions?: RefSuggestion[]
   depth?: number
+  showRole?: boolean
 }
 
-export function SchemaBuilder({ props, onChange, depth = 0 }: SchemaBuilderProps) {
+export function SchemaBuilder({ props, onChange, suggestions = [], depth = 0, showRole }: SchemaBuilderProps) {
   const addProp = () =>
     onChange([...props, { name: "", type: "string", description: "", required: false }])
 
@@ -303,8 +373,10 @@ export function SchemaBuilder({ props, onChange, depth = 0 }: SchemaBuilderProps
           key={i}
           prop={p}
           depth={depth}
+          suggestions={suggestions}
           onChange={(updated) => updateProp(i, updated)}
           onDelete={() => deleteProp(i)}
+          showRole={showRole}
         />
       ))}
 

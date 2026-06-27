@@ -5,10 +5,10 @@ import { Config } from "./config"
 import { ConfigPaths } from "./paths"
 import { migrateTuiConfig } from "./migrate-tui-config"
 import { TuiInfo } from "./tui-schema"
-import { Instance } from "@opendora/runtime/instance"
-import { Flag } from "@opendora/util/flag"
-import { Log } from "@opendora/util/log"
-import { Global } from "@opendora/util/global"
+import { Instance } from "@projectflows/runtime/instance"
+import { Flag } from "@projectflows/util/flag"
+import { Log } from "@projectflows/util/log"
+import { Global } from "@projectflows/util/global"
 
 export namespace TuiConfig {
   const log = Log.create({ service: "tui.config" })
@@ -22,11 +22,11 @@ export namespace TuiConfig {
   }
 
   function customPath() {
-    return Flag.OPENCODE_TUI_CONFIG
+    return Flag.PROJECTFLOWS_TUI_CONFIG
   }
 
   const state = Instance.state(async () => {
-    let projectFiles = Flag.OPENCODE_DISABLE_PROJECT_CONFIG
+    let projectFiles = Flag.PROJECTFLOWS_DISABLE_PROJECT_CONFIG
       ? []
       : await ConfigPaths.projectFiles("tui", Instance.directory, Instance.worktree)
     const directories = await ConfigPaths.directories(Instance.directory, Instance.worktree)
@@ -34,7 +34,7 @@ export namespace TuiConfig {
     const managed = Config.managedConfigDir()
     await migrateTuiConfig({ directories, custom, managed })
     // Re-compute after migration since migrateTuiConfig may have created new tui.json files
-    projectFiles = Flag.OPENCODE_DISABLE_PROJECT_CONFIG
+    projectFiles = Flag.PROJECTFLOWS_DISABLE_PROJECT_CONFIG
       ? []
       : await ConfigPaths.projectFiles("tui", Instance.directory, Instance.worktree)
 
@@ -54,7 +54,8 @@ export namespace TuiConfig {
     }
 
     for (const dir of unique(directories)) {
-      if (!dir.endsWith(".projectflows") && dir !== Flag.OPENCODE_CONFIG_DIR) continue
+      if (dir === Global.Path.config) continue // already loaded in the global section above
+      if ((!dir.endsWith(".projectflows") && !dir.endsWith(".opencode")) && dir !== Flag.PROJECTFLOWS_CONFIG_DIR) continue
       for (const file of ConfigPaths.fileInDirectory(dir, "tui")) {
         result = mergeInfo(result, await loadFile(file))
       }

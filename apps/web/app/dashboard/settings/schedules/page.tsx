@@ -10,13 +10,13 @@ import { opendora, type Schedule } from "@/lib/opendora"
 import { ScheduleDialog } from "@/components/sessions/schedule-dialog"
 
 function displayPromptFor(schedule: Schedule): string {
-  if (schedule.action_type === "tool") {
+  if (schedule.action_type === "tool" && schedule.prompt) {
     try {
       const p = JSON.parse(schedule.prompt)
       if (typeof p === "object" && p !== null && typeof p.prompt === "string") return p.prompt
     } catch {}
   }
-  return schedule.prompt
+  return schedule.prompt ?? ""
 }
 
 export default function SchedulesSettingsPage() {

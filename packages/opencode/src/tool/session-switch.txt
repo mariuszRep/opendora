@@ -1,9 +1,0 @@
-Switch to a different session in OpenDora. This tool enables agents to change their working context by switching to another session.
-
-Use this tool to:
-- Switch context to a specific session ID
-- Verify target session exists before switching
-- Get session details for the target session
-- Maintain context awareness during session transitions
-
-This tool prepares the agent for working in a new session context and provides guidance on next steps for interaction.

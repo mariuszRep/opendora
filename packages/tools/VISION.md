@@ -101,6 +101,51 @@ The MCP server for a group:
 
 ---
 
+## Tool output standardization
+
+### Current contract
+
+Every tool's `execute()` returns `{ title, metadata, output: string, attachments? }` (see `packages/tools/tool.ts`). The `output` field is typed as `string`. Tools that produce structured data must manually `JSON.stringify` their results into this field. The `metadata` field can carry structured data but is inconsistently used and not part of the tool's declared schema.
+
+### Why this is a problem
+
+1. **Loss of structure** — When a tool produces JSON, the string round-trip discards type information. Downstream consumers (workflow runner, UI renderer) must re-parse to get structured access.
+2. **No output schema** — MCP tool definitions declare `inputSchema` but not output shape. There is no contract describing what a tool produces, only what it accepts.
+3. **Inconsistent rendering** — Since the UI receives only a string, generic tool output is displayed as a JSON code block with no structure-aware rendering.
+4. **Workflow tool nodes** — When a tool node pass-through executes, its `output: string` reaches the workflow runner, which must guess whether to parse it as JSON or keep it as text. The runner currently stores the raw string in `ctx` and stringifies it again for the session tool part.
+
+### Target
+
+Over time, tool outputs should expose a canonical result object alongside the string representation, while preserving MCP compatibility. The target shape is:
+
+```
+execute() returns {
+  title: string,
+  metadata: Record<string, unknown>,
+  output: string,              // human-readable string (MCP-compatible, preserved)
+  outputObject?: unknown,      // structured result as a parsed JSON object/array/value
+  render?: {
+    defaultView?: "json" | "auto",
+    summary?: string,
+  }
+}
+```
+
+### Constraints
+
+- The `output: string` field must never be removed — it is the MCP-compatible human-readable form.
+- `outputObject` is additive and optional. Tools that produce structured data can populate it alongside `output`.
+- The `render` object in the target shape above does **not** include layout-preference hints (`as`, `fields`, `arrayAs`, `objectAs`, etc.). Those are deferred to a later phase. The current priority is format selection (JSON/YAML/XML/Markdown/HTML) via a shared translator utility, not card/table visual customization.
+- Per-tool `outputSchema` should be declared in each tool's `.json` definition (or `.ts` schema) so the runtime and UI know what shape to expect without ad-hoc parsing.
+- Migration must be incremental — not all tools need to change at once. Tools that emit pure text (e.g. `bash`, `webfetch`) may never need `outputObject`.
+- The `packages/workflow/VISION.md § Structured output and format-switchable views` defines the canonical output envelope (with format projections for JSON/YAML/XML/Markdown/HTML) that workflow nodes use; this section defines the tool-level contract that feeds into it.
+
+### Relationship to workflow package
+
+Workflow structured/variable/output nodes already produce parsed objects internally (stored in workflow `ctx` before stringification). The tool `execute()` contract is the main barrier to propagating those objects through the session tool part to the UI. Closing this gap requires coordinated changes in both `packages/tools` (output contract) and `packages/workflow` (runner serialization).
+
+---
+
 ## What is removed
 
 | Removed | Replaced by |

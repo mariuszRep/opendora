@@ -36,7 +36,8 @@ Workflow holds the largest single change: `src/runner.ts` currently keeps run st
 ## Cross-cutting rules
 
 - Run state flows through storage contracts only — never module-local variables as the source of truth.
-- Keep node-kind authoring (Parameters/Prompt/Structured/Tool/RunWorkflow/Decide/SetWorkdir/ForEach) and its UI/runtime type parity intact; this migration changes *how state is stored and replayed*, not the node vocabulary.
+- Keep node-kind authoring (Parameters/Prompt/Structured/Tool/RunWorkflow/Decide/SetWorkdir/ForEach/ConfigureSession) and its UI/runtime type parity intact; this migration changes *how state is stored and replayed*, not the node vocabulary.
+- **ConfigureSession node** (`configure_session`) — shipped, with side panel UI. Patches mutable session parameters (model, cwd, title, agentID, systemPrompt, path, readPath), stored in `node.parameters` like other node types (not a separate `data.sessionConfig` field) so the existing drawer save path persists them with no extra plumbing. Model changes are stamped into message history via a hidden `noReply` prompt so `lastModel()` carries them forward to subsequent nodes.
 - Update `.opendora/skill/manage-workflow/SKILL.md` in the same change whenever runtime semantics it describes change.
 
 ## Cross-references

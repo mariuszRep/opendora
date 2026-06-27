@@ -5,6 +5,7 @@ export const SkillSourceType = z.enum([
   "github",
   "vercel",
   "anthropic",
+  "agentskills",
   "local",
   "npm",
   "url",
@@ -36,6 +37,11 @@ export const SkillFrontmatter = z.object({
   dependencies: z.array(z.string()).optional(),
   permissions: z.enum(["allow", "deny", "ask"]).optional(),
   patterns: z.array(z.string()).optional(),
+  license: z.string().optional(),
+  compatibility: z.string().optional(),
+  metadata: z.record(z.string()).optional(),
+  "allowed-tools": z.string().optional(),
+  "disable-model-invocation": z.boolean().optional(),
 })
 
 export type SkillFrontmatter = z.infer<typeof SkillFrontmatter>

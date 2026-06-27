@@ -1045,7 +1045,7 @@ export class Session2 extends HeyApiClient {
       sessionType?: "role" | "scope" | "worker" | "scratchpad"
       agentID?: string
       ownerID?: string
-      ownerKind?: "user" | "agent" | "service"
+      ownerKind?: "user" | "agent" | "workflow"
       retention?: {
         autoArchive?: boolean
         autoDelete?: boolean

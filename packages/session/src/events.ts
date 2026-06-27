@@ -10,7 +10,7 @@ import { MessageV2 } from "./message-v2"
 export { MessageV2 }
 
 // Inline BusEvent.define — same pattern as opencode/src/bus/bus-event.ts
-// TODO: use @opendora/bus when it exists
+// TODO: use @projectflows/bus when it exists
 function defineBusEvent<Type extends string, Properties extends z.ZodType>(
   type: Type,
   properties: Properties,

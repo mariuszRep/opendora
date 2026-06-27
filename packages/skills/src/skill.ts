@@ -3,20 +3,21 @@ import path from "path"
 import os from "os"
 import fs from "fs/promises"
 import { watch } from "chokidar"
-import { Config } from "@opendora/config/config"
-import { Instance } from "@opendora/runtime/instance"
-import { NamedError } from "@opendora/util/error"
-import { ConfigMarkdown } from "@opendora/config/markdown"
-import { Log } from "@opendora/util/log"
-import { Global } from "@opendora/util/global"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
-import { Flag } from "@opendora/util/flag"
-import { Bus } from "@opendora/runtime/bus"
-import { BusEvent } from "@opendora/util/bus-event"
-import { Session } from "@opendora/session/session"
+import { Config } from "@projectflows/config/config"
+import { Instance } from "@projectflows/runtime/instance"
+import { NamedError } from "@projectflows/util/error"
+import { ConfigMarkdown } from "@projectflows/config/markdown"
+import { Log } from "@projectflows/util/log"
+import { Global } from "@projectflows/util/global"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
+import { Flag } from "@projectflows/util/flag"
+import { Bus } from "@projectflows/runtime/bus"
+import { BusEvent } from "@projectflows/util/bus-event"
+import { Session } from "@projectflows/session/session"
 import { Discovery } from "./discovery"
-import { Glob } from "@opendora/util/glob"
-import { State } from "@opendora/runtime/state"
+import { Glob } from "@projectflows/util/glob"
+import { State } from "@projectflows/runtime/state"
+import { SkillFrontmatter } from "./types.ts"
 
 export namespace Skill {
   const log = Log.create({ service: "skill" })
@@ -31,8 +32,8 @@ export namespace Skill {
     description: z.string(),
     location: z.string(),
     content: z.string(),
-    origin: z.string().optional(),
     tools: z.array(z.string()).optional(),
+    frontmatter: SkillFrontmatter.optional(),
   })
   export type Info = z.infer<typeof Info>
 
@@ -41,8 +42,8 @@ export namespace Skill {
     z.object({
       path: z.string(),
       message: z.string().optional(),
-      issues: z.custom<z.core.$ZodIssue[]>().optional(),
-    }),
+      issues: z.array(z.any()).optional(),
+    }) as any,
   )
 
   export const NameMismatchError = NamedError.create(
@@ -51,8 +52,30 @@ export namespace Skill {
       path: z.string(),
       expected: z.string(),
       actual: z.string(),
-    }),
+    }) as any,
   )
+
+  // Agent Skills spec naming rules
+  // https://agentskills.io/specification
+  const SKILL_NAME_MAX_LENGTH = 64
+  const SKILL_NAME_REGEX = /^[a-z0-9](-?[a-z0-9])*$/
+
+  function validateSkillName(name: string, skillDir: string): { valid: boolean; warnings: string[] } {
+    const warnings: string[] = []
+    const parentName = path.basename(skillDir)
+
+    if (name !== parentName) {
+      warnings.push(`Skill name "${name}" does not match parent directory "${parentName}"`)
+    }
+    if (name.length > SKILL_NAME_MAX_LENGTH) {
+      warnings.push(`Skill name "${name}" exceeds ${SKILL_NAME_MAX_LENGTH} characters`)
+    }
+    if (!SKILL_NAME_REGEX.test(name)) {
+      warnings.push(`Skill name "${name}" contains invalid characters; expected lowercase alphanumeric and hyphens`)
+    }
+
+    return { valid: true, warnings }
+  }
 
   // External skill directories to search for (project-level and global)
   // These follow the directory layout used by Claude Code and other agents.
@@ -77,22 +100,42 @@ export namespace Skill {
 
       if (!md) return
 
-      const parsed = Info.pick({ name: true, description: true }).safeParse(md.data)
-      if (!parsed.success) return
+      // Agent Skills spec: a description is essential for disclosure; skip without one.
+      if (!md.data.description || typeof md.data.description !== "string" || md.data.description.trim() === "") {
+        log.error("skipping skill without description", { skill: match })
+        Bus.publish(Session.Event.Error, {
+          error: new NamedError.Unknown({ message: `Skill ${match} is missing a description` }).toObject(),
+        })
+        return
+      }
+
+      const frontmatter = SkillFrontmatter.safeParse(md.data)
+      if (!frontmatter.success) {
+        log.warn("skill frontmatter validation failed", { skill: match, issues: frontmatter.error.issues })
+      }
+
+      const name = String(md.data.name ?? "")
+      const description = String(md.data.description ?? "")
+      const skillDir = path.dirname(match)
+
+      const { warnings } = validateSkillName(name, skillDir)
+      for (const warning of warnings) {
+        log.warn("skill name warning", { skill: match, warning })
+      }
 
       // Warn on duplicate skill names
-      if (skills[parsed.data.name]) {
+      if (skills[name]) {
         log.warn("duplicate skill name", {
-          name: parsed.data.name,
-          existing: skills[parsed.data.name].location,
+          name,
+          existing: skills[name]!.location,
           duplicate: match,
         })
       }
 
-      dirs.add(path.dirname(match))
+      dirs.add(skillDir)
 
       // Read skill.json from same directory for tools and extra config
-      const skillJsonPath = path.join(path.dirname(match), "skill.json")
+      const skillJsonPath = path.join(skillDir, "skill.json")
       let skillConfig: JsonConfig | undefined
       try {
         const raw = await fs.readFile(skillJsonPath, "utf-8")
@@ -102,13 +145,13 @@ export namespace Skill {
         // skill.json is optional
       }
 
-      skills[parsed.data.name] = {
-        name: parsed.data.name,
-        description: parsed.data.description,
+      skills[name] = {
+        name,
+        description,
         location: match,
         content: md.content,
-        origin: typeof md.data?.origin === "string" ? md.data.origin : undefined,
         tools: skillConfig?.tools,
+        frontmatter: frontmatter.success ? frontmatter.data : undefined,
       }
     }
 
@@ -128,7 +171,7 @@ export namespace Skill {
 
     // Scan external skill directories (.claude/skills/, .agents/skills/, etc.)
     // Load global (home) first, then project-level (so project-level overwrites)
-    if (!Flag.OPENCODE_DISABLE_EXTERNAL_SKILLS) {
+    if (!Flag.PROJECTFLOWS_DISABLE_EXTERNAL_SKILLS) {
       for (const dir of EXTERNAL_DIRS) {
         const root = path.join(Global.Path.home, dir)
         if (!(await Filesystem.isDir(root))) continue
@@ -242,12 +285,17 @@ export namespace Skill {
   }
 
   export async function save(location: string, body: string) {
-    // Preserve existing frontmatter — skill.content is body-only (gray-matter strips ---...---).
-    // Reconstruct the full file so the skill remains valid after reload.
-    const existing = await fs.readFile(location, "utf-8").catch(() => "")
-    const fmMatch = existing.match(/^(---[\s\S]*?---\r?\n?)/)
-    const frontmatter = fmMatch ? fmMatch[1] : ""
-    await fs.writeFile(location, frontmatter + body, "utf-8")
+    // If the caller supplied frontmatter, write the content as-is (their frontmatter wins).
+    // If not, preserve the existing frontmatter so the skill stays valid after reload.
+    const hasFrontmatter = /^---[\s\S]*?---/.test(body)
+    if (hasFrontmatter) {
+      await fs.writeFile(location, body, "utf-8")
+    } else {
+      const existing = await fs.readFile(location, "utf-8").catch(() => "")
+      const fmMatch = existing.match(/^(---[\s\S]*?---\r?\n?)/)
+      const frontmatter = fmMatch ? fmMatch[1] : ""
+      await fs.writeFile(location, frontmatter + body, "utf-8")
+    }
     reload()
   }
 
@@ -295,7 +343,7 @@ export namespace Skill {
             const mdData = await mdRes.json() as any
             const content = Buffer.from(mdData.content.replace(/\n/g, ""), "base64").toString("utf-8")
             const m = content.match(/^description:\s*(.+)$/m)
-            if (m) description = m[1].trim().replace(/^['"]|['"]$/g, "")
+            if (m) description = m[1]!.trim().replace(/^['"]|['"]$/g, "")
           }
         } catch {}
         return {
@@ -417,6 +465,23 @@ export namespace Skill {
     return files
   }
 
+  /** List immediate subdirectories under a GitHub repo path */
+  async function listGitHubSubdirs(
+    owner: string,
+    repo: string,
+    dirPath: string,
+    ref = "main",
+  ): Promise<string[]> {
+    const headers = { Accept: "application/vnd.github+json" }
+    const contentsUrl = `${GITHUB_API}/repos/${owner}/${repo}/contents/${dirPath}?ref=${ref}`
+    const res = await fetch(contentsUrl, { headers })
+    if (!res.ok) {
+      throw new Error(`GitHub list failed for ${owner}/${repo}/${dirPath}@${ref}: ${res.status} ${res.statusText}`)
+    }
+    const entries = (await res.json()) as Array<{ type: string; name: string }>
+    return entries.filter((e) => e.type === "dir").map((e) => e.name)
+  }
+
   export async function install(source: string, options?: { registry?: string; version?: string }) {
     let registry = options?.registry
     let skillPath = source
@@ -429,7 +494,7 @@ export namespace Skill {
 
     const dirs = await Config.directories()
     const installBase = dirs.length > 0
-      ? path.join(dirs[0], "skill")
+      ? path.join(dirs[0]!, "skill")
       : path.join(Instance.directory, ".projectflows", "skill")
 
     // GitHub-hosted registries (anthropic, vercel)
@@ -452,7 +517,6 @@ export namespace Skill {
         await fs.writeFile(dest, content, "utf-8")
       }
       log.info("installed skill", { skillName, files: files.size, skillDir })
-      await injectOrigin(skillDir, registry ?? "github")
       reload()
       return
     }
@@ -461,8 +525,8 @@ export namespace Skill {
     if (registry === "github") {
       const parts = skillPath.split("/")
       if (parts.length < 2) throw new Error(`GitHub source must be "owner/repo" or "owner/repo/path", got: ${skillPath}`)
-      const owner = parts[0]
-      const repo = parts[1]
+      const owner = parts[0]!
+      const repo = parts[1]!
       const subPath = parts.slice(2).join("/")
       const ref = options?.version ?? "main"
       const skillName = subPath ? subPath.split("/").pop()! : repo
@@ -480,7 +544,53 @@ export namespace Skill {
         await fs.writeFile(dest, content, "utf-8")
       }
       log.info("installed skill from github", { skillName, files: files.size, skillDir })
-      await injectOrigin(skillDir, "github")
+      reload()
+      return
+    }
+
+    // Agent Skills monorepo registry: agentskills:owner/repo or agentskills:owner/repo/skill-name
+    // These repos have a top-level skills/ directory containing individual skill folders.
+    if (registry === "agentskills") {
+      const parts = skillPath.split("/")
+      if (parts.length < 2) throw new Error(`Agent Skills source must be "owner/repo" or "owner/repo/skill-name", got: ${skillPath}`)
+      const owner = parts[0]!
+      const repo = parts[1]!
+      const skillName = parts.slice(2).join("/")
+      const ref = options?.version ?? "main"
+      const skillsDir = "skills"
+
+      if (skillName) {
+        const fullPath = `${skillsDir}/${skillName}`
+        log.info("fetching skill from agentskills repo", { owner, repo, skillName, ref })
+        const files = await fetchGitHubDir(owner, repo, fullPath, ref)
+        const skillDir = path.join(installBase, skillName)
+        await fs.mkdir(skillDir, { recursive: true })
+        for (const [filename, content] of files) {
+          const dest = path.join(skillDir, filename)
+          await fs.mkdir(path.dirname(dest), { recursive: true })
+          await fs.writeFile(dest, content, "utf-8")
+        }
+        log.info("installed skill from agentskills repo", { skillName, files: files.size, skillDir })
+      } else {
+        log.info("fetching all skills from agentskills repo", { owner, repo, ref })
+        const subdirs = await listGitHubSubdirs(owner, repo, skillsDir, ref)
+        if (subdirs.length === 0) {
+          throw new Error(`No skills found in "skills/" directory of ${owner}/${repo}@${ref}`)
+        }
+        for (const subdir of subdirs) {
+          const fullPath = `${skillsDir}/${subdir}`
+          const files = await fetchGitHubDir(owner, repo, fullPath, ref)
+          const skillDir = path.join(installBase, subdir)
+          await fs.mkdir(skillDir, { recursive: true })
+          for (const [filename, content] of files) {
+            const dest = path.join(skillDir, filename)
+            await fs.mkdir(path.dirname(dest), { recursive: true })
+            await fs.writeFile(dest, content, "utf-8")
+          }
+          log.info("installed skill from agentskills repo", { skillName: subdir, files: files.size, skillDir })
+        }
+      }
+
       reload()
       return
     }
@@ -514,7 +624,6 @@ export namespace Skill {
         await fs.writeFile(path.join(skillDir, "SKILL.md"), content, "utf-8")
       }
       log.info("installed skill from clawhub", { skillName, skillDir })
-      await injectOrigin(skillDir, "clawhub")
       reload()
       return
     }
@@ -526,6 +635,8 @@ export namespace Skill {
       `  vercel:skills/nextjs             (Vercel agent-resources repo)\n` +
       `  github:owner/repo                (any GitHub repo)\n` +
       `  github:owner/repo/path           (sub-path in a GitHub repo)\n` +
+      `  agentskills:owner/repo           (Agent Skills monorepo, installs all skills/)\n` +
+      `  agentskills:owner/repo/skill-name (Agent Skills monorepo, installs one skill)\n` +
       `  clawhub:skill-name               (ClawHub registry)`,
     )
   }
@@ -534,30 +645,7 @@ export namespace Skill {
     return all()
   }
 
-  /** Inject or overwrite the `origin:` field in an installed skill's SKILL.md */
-  async function injectOrigin(skillDir: string, origin: string) {
-    const skillMdPath = path.join(skillDir, "SKILL.md")
-    try {
-      const raw = await fs.readFile(skillMdPath, "utf-8")
-      const fmPattern = /^---\r?\n([\s\S]*?)\r?\n---/
-      let updated: string
-      if (fmPattern.test(raw)) {
-        updated = raw.replace(fmPattern, (_, fm) => {
-          const cleaned = fm.replace(/^origin:.*$/m, "").replace(/\n{2,}/g, "\n").trim()
-          return `---\n${cleaned}\norigin: ${origin}\n---`
-        })
-      } else {
-        updated = `---\norigin: ${origin}\n---\n\n${raw}`
-      }
-      if (updated !== raw) {
-        await fs.writeFile(skillMdPath, updated, "utf-8")
-      }
-    } catch {
-      log.warn("could not inject origin into SKILL.md", { skillDir, origin })
-    }
-  }
-
-  /** Create a new local skill under the first .projectflows/skill/ directory */
+/** Create a new local skill under the first .projectflows/skill/ directory */
   export async function create(params: {
     name: string
     description: string
@@ -566,7 +654,7 @@ export namespace Skill {
   }): Promise<{ dir: string }> {
     const dirs = await Config.directories()
     const installBase = dirs.length > 0
-      ? path.join(dirs[0], "skill")
+      ? path.join(dirs[0]!, "skill")
       : path.join(Instance.directory, ".projectflows", "skill")
 
     const skillDir = path.join(installBase, params.name)
@@ -578,7 +666,6 @@ export namespace Skill {
     const fmLines: string[] = [
       `name: ${params.name}`,
       `description: ${safeDesc}`,
-      `origin: projectflows`,
     ]
 
     const skillMd = `---\n${fmLines.join("\n")}\n---\n\n${params.content ?? ""}`

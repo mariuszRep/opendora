@@ -1,17 +1,20 @@
 {
-  "name": "@opendora/schedule",
+  "name": "@projectflows/schedule",
   "version": "0.1.0",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
     "./sql": "./src/schedule.sql.ts",
-    "./cron-scheduler": "./src/cron-scheduler.ts"
+    "./cron-scheduler": "./src/cron-scheduler.ts",
+    "./service": "./src/service.ts"
   },
   "dependencies": {
-    "@opendora/session": "workspace:*",
-    "@opendora/util": "workspace:*",
+    "@projectflows/session": "workspace:*",
+    "@projectflows/storage": "workspace:*",
+    "@projectflows/util": "workspace:*",
     "croner": "9.0.0",
     "drizzle-orm": "catalog:",
+    "ulid": "catalog:",
     "zod": "catalog:"
   }
 }

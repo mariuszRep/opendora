@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import type { RefSuggestion } from '@/lib/workflow-refs'
+import { tokenStart, partialToken, type RefSuggestion } from '@projectflows/workflow/refs'
 import { RefDropdown } from './ref-dropdown'
 
 interface ExpressionInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
@@ -17,20 +17,6 @@ export function ExpressionInput({ value, onChange, suggestions, className, ...pr
   const [activeIndex, setActiveIndex] = React.useState(0)
   const inputRef = React.useRef<HTMLInputElement>(null)
   const justSelected = React.useRef(false)
-
-  function tokenStart(val: string, cursor: number): number {
-    for (let i = cursor - 1; i >= 0; i--) {
-      if (val[i] === '$') return i
-      if (/[\s,;)}]/.test(val[i])) return -1
-    }
-    return -1
-  }
-
-  function partialToken(val: string, cursor: number): string | null {
-    const start = tokenStart(val, cursor)
-    if (start === -1) return null
-    return val.slice(start, cursor)
-  }
 
   const filtered = React.useMemo(() => {
     const partial = partialToken(value, value.length)
@@ -59,7 +45,7 @@ export function ExpressionInput({ value, onChange, suggestions, className, ...pr
     const start = tokenStart(value, cur)
     if (start === -1) { onChange(suggestion.ref); setOpen(false); return }
     const rest = value.slice(cur)
-    const endOffset = rest.search(/[\s,;)}\]]/)
+    const endOffset = rest.search(/[\s,;)\}\]]/)
     const end = endOffset === -1 ? value.length : cur + endOffset
     onChange(value.slice(0, start) + suggestion.ref + value.slice(end))
     setOpen(false)

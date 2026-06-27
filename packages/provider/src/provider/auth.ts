@@ -1,14 +1,14 @@
-import { state as instanceState } from "@opendora/util/instance"
+import { Instance } from "@projectflows/runtime/instance"
 import { list as listPlugins } from "./plugin"
 import { map, filter, pipe, fromEntries, mapValues } from "remeda"
 import z from "zod"
-import { fn } from "@opendora/util/fn"
+import { fn } from "@projectflows/util/fn"
 import type { AuthOuathResult, Hooks } from "@opencode-ai/plugin"
-import { NamedError } from "@opendora/util/error"
-import { Auth } from "@opendora/auth"
+import { NamedError } from "@projectflows/util/error"
+import { Auth } from "@projectflows/auth"
 
 export namespace ProviderAuth {
-  const state = instanceState(async () => {
+  const state = Instance.state(async () => {
     const methods = pipe(
       await listPlugins(),
       filter((x) => x.auth?.provider !== undefined),

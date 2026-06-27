@@ -2,27 +2,21 @@ import fs from "fs/promises"
 import path from "path"
 import os from "os"
 
-// Determine the ProjectFlows root directory:
-//   1. OPENCODE_CONFIG_DIR env var (explicit override)
-//   2. Walk up from cwd to find the nearest .projectflows directory
-//   3. ~/.projectflows (installed via npm/pnpm/bun)
-const home = process.env.OPENCODE_TEST_HOME || os.homedir()
+// Determine the ProjectFlows root directory. This is a SINGLE, deterministic
+// data/config root so sessions and storage are identical regardless of the
+// current working directory or how the server was started:
+//   1. PROJECTFLOWS_CONFIG_DIR env var (explicit override)
+//   2. PROJECTFLOWS_TEST_HOME (test isolation)
+//   3. ~/.projectflows (the user's home folder)
+const home = process.env.PROJECTFLOWS_TEST_HOME || os.homedir()
 
 async function findRoot(): Promise<string> {
-  if (process.env.OPENCODE_CONFIG_DIR) return process.env.OPENCODE_CONFIG_DIR
-  // In test environments, skip the cwd walk to avoid picking up real runtime config
-  if (process.env.OPENCODE_TEST_HOME) return path.join(process.env.OPENCODE_TEST_HOME, ".projectflows")
+  if (process.env.PROJECTFLOWS_CONFIG_DIR) return process.env.PROJECTFLOWS_CONFIG_DIR
+  if (process.env.PROJECTFLOWS_TEST_HOME) return path.join(process.env.PROJECTFLOWS_TEST_HOME, ".projectflows")
 
-  // Walk up from cwd looking for a .projectflows directory
-  let dir = process.cwd()
-  while (true) {
-    const candidate = path.join(dir, ".projectflows")
-    if (await fs.access(candidate).then(() => true).catch(() => false)) return candidate
-    const parent = path.dirname(dir)
-    if (parent === dir) break
-    dir = parent
-  }
-
+  // Always resolve to a single root in the user's home folder. We intentionally
+  // do NOT walk up from process.cwd(), so the data/config directory never
+  // changes based on where the process is launched.
   return path.join(home, ".projectflows")
 }
 
@@ -30,9 +24,9 @@ const root = await findRoot()
 
 export namespace Global {
   export const Path = {
-    // Allow override via OPENCODE_TEST_HOME for test isolation
+    // Allow override via PROJECTFLOWS_TEST_HOME for test isolation
     get home() {
-      return process.env.OPENCODE_TEST_HOME || os.homedir()
+      return process.env.PROJECTFLOWS_TEST_HOME || os.homedir()
     },
     // Primary data/storage directory (DB, sessions, snapshots, auth)
     data: path.join(root, "storage"),

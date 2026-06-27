@@ -3,7 +3,7 @@
 export type Actor =
   | { kind: "user"; id: string }
   | { kind: "agent"; id: string }
-  | { kind: "service"; id: string }
+  | { kind: "workflow"; id: string }
 
 // ─── Messages ─────────────────────────────────────────────────────────────────
 
@@ -20,7 +20,7 @@ export type MessagePart =
   | { type: "file"; mimeType: string; url: string }
   | { type: "reasoning"; text: string }
 
-export type InputProvenance = "user" | "agent" | "service"
+export type InputProvenance = "user" | "agent" | "workflow"
 
 export type Message = {
   id: string
@@ -130,6 +130,7 @@ export type SessionMeta = {
   retention: RetentionPolicy
   sendPolicy?: SendPolicy
   agentId?: string                // agent assigned to handle pings in this session
+  model?: string                  // model override for this session (providerID:modelID or fallback:groupID)
   systemPrompt?: string           // boundary prompt prepended to all agent system prompts
   path?: string                   // write boundary — hard enforced; inherited by child sessions
   readPath?: string               // read boundary — soft enforced (approval outside this); inherited by child sessions

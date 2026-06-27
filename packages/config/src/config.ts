@@ -1,17 +1,17 @@
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 import path from "path"
 import { pathToFileURL, fileURLToPath } from "url"
 import { createRequire } from "module"
 import os from "os"
 import z from "zod"
-import { ModelsDev } from "@opendora/provider/models"
+import { ModelsDev } from "@projectflows/provider/models"
 import { mergeDeep, pipe, unique } from "remeda"
-import { Global } from "@opendora/util/global"
+import { Global } from "@projectflows/util/global"
 import fs from "fs/promises"
-import { lazy } from "@opendora/util/lazy"
-import { NamedError } from "@opendora/util/error"
-import { Flag } from "@opendora/util/flag"
-import { Auth } from "@opendora/auth"
+import { lazy } from "@projectflows/util/lazy"
+import { NamedError } from "@projectflows/util/error"
+import { Flag } from "@projectflows/util/flag"
+import { Auth } from "@projectflows/auth"
 import {
   type ParseError as JsoncParseError,
   applyEdits,
@@ -19,20 +19,20 @@ import {
   parse as parseJsonc,
   printParseErrorCode,
 } from "jsonc-parser"
-import { Instance } from "@opendora/runtime/instance"
-import { BunProc } from "@opendora/util/bun"
-import { Installation } from "@opendora/opencode/installation"
+import { Instance } from "@projectflows/runtime/instance"
+import { BunProc } from "@projectflows/util/bun"
+import { Installation } from "@projectflows/util/installation"
 import { ConfigMarkdown } from "./markdown"
 import { constants, existsSync } from "fs"
-import { Bus } from "@opendora/runtime/bus"
-import { GlobalBus } from "@opendora/util/global-bus"
-import { Glob } from "@opendora/util/glob"
-import { PackageRegistry } from "@opendora/util/bun-registry"
-import { proxied } from "@opendora/util/proxied"
-import { iife } from "@opendora/util/iife"
-import { Control } from "@opendora/storage/control"
+import { Bus } from "@projectflows/runtime/bus"
+import { GlobalBus } from "@projectflows/util/global-bus"
+import { Glob } from "@projectflows/util/glob"
+import { PackageRegistry } from "@projectflows/util/bun-registry"
+import { proxied } from "@projectflows/util/proxied"
+import { iife } from "@projectflows/util/iife"
+import { Control } from "@projectflows/storage/control"
 import { ConfigPaths } from "./paths"
-import { Filesystem } from "@opendora/util/filesystem"
+import { Filesystem } from "@projectflows/util/filesystem"
 
 export namespace Config {
   const ModelId = z.string().meta({ $ref: "https://models.dev/model-schema.json#/$defs/Model" })
@@ -53,7 +53,7 @@ export namespace Config {
   }
 
   export function managedConfigDir() {
-    return process.env.OPENCODE_TEST_MANAGED_CONFIG_DIR || systemManagedConfigDir()
+    return process.env.PROJECTFLOWS_TEST_MANAGED_CONFIG_DIR || systemManagedConfigDir()
   }
 
   const managedDir = managedConfigDir()
@@ -113,13 +113,13 @@ export namespace Config {
     result = mergeConfigConcatArrays(result, await global())
 
     // Custom config path overrides global config.
-    if (Flag.OPENCODE_CONFIG) {
-      result = mergeConfigConcatArrays(result, await loadFile(Flag.OPENCODE_CONFIG))
-      log.debug("loaded custom config", { path: Flag.OPENCODE_CONFIG })
+    if (Flag.PROJECTFLOWS_CONFIG) {
+      result = mergeConfigConcatArrays(result, await loadFile(Flag.PROJECTFLOWS_CONFIG))
+      log.debug("loaded custom config", { path: Flag.PROJECTFLOWS_CONFIG })
     }
 
     // Project config overrides global and remote config.
-    if (!Flag.OPENCODE_DISABLE_PROJECT_CONFIG) {
+    if (!Flag.PROJECTFLOWS_DISABLE_PROJECT_CONFIG) {
       const projectFiles = await ConfigPaths.projectFiles("opencode", Instance.directory, Instance.worktree)
       for (const file of projectFiles) {
         result = mergeConfigConcatArrays(result, await loadFile(file))
@@ -133,14 +133,14 @@ export namespace Config {
     const directories = await ConfigPaths.directories(Instance.directory, Instance.worktree)
 
     // .projectflows directory config overrides (project and global) config sources.
-    if (Flag.OPENCODE_CONFIG_DIR) {
-      log.debug("loading config from OPENCODE_CONFIG_DIR", { path: Flag.OPENCODE_CONFIG_DIR })
+    if (Flag.PROJECTFLOWS_CONFIG_DIR) {
+      log.debug("loading config from PROJECTFLOWS_CONFIG_DIR", { path: Flag.PROJECTFLOWS_CONFIG_DIR })
     }
 
     const deps = []
 
     for (const dir of unique(directories)) {
-      if (dir.endsWith(".projectflows") || dir.endsWith(".opencode") || dir === Flag.OPENCODE_CONFIG_DIR) {
+      if (dir.endsWith(".projectflows") || dir.endsWith(".opencode") || dir === Flag.PROJECTFLOWS_CONFIG_DIR) {
         for (const file of ["projectflows.jsonc", "projectflows.json", "opencode.jsonc", "opencode.json", "opendora.jsonc", "opendora.json"]) {
           log.debug(`loading config from ${path.join(dir, file)}`)
           result = mergeConfigConcatArrays(result, await loadFile(path.join(dir, file)))
@@ -153,7 +153,8 @@ export namespace Config {
 
       deps.push(
         iife(async () => {
-          const shouldInstall = await needsInstall(dir)
+          const isManaged = dir === Global.Path.config || dir === Flag.PROJECTFLOWS_CONFIG_DIR
+          const shouldInstall = await needsInstall(dir, isManaged)
           if (shouldInstall) await installDependencies(dir)
         }),
       )
@@ -165,15 +166,15 @@ export namespace Config {
     }
 
     // Inline config content overrides all non-managed config sources.
-    if (process.env.OPENCODE_CONFIG_CONTENT) {
+    if (process.env.PROJECTFLOWS_CONFIG_CONTENT) {
       result = mergeConfigConcatArrays(
         result,
-        await load(process.env.OPENCODE_CONFIG_CONTENT, {
+        await load(process.env.PROJECTFLOWS_CONFIG_CONTENT, {
           dir: Instance.directory,
-          source: "OPENCODE_CONFIG_CONTENT",
+          source: "PROJECTFLOWS_CONFIG_CONTENT",
         }),
       )
-      log.debug("loaded custom config from OPENCODE_CONFIG_CONTENT")
+      log.debug("loaded custom config from PROJECTFLOWS_CONFIG_CONTENT")
     }
 
     // Load managed config files last (highest priority) - enterprise admin-controlled
@@ -196,8 +197,8 @@ export namespace Config {
       })
     }
 
-    if (Flag.OPENCODE_PERMISSION) {
-      result.permission = mergeDeep(result.permission ?? {}, JSON.parse(Flag.OPENCODE_PERMISSION))
+    if (Flag.PROJECTFLOWS_PERMISSION) {
+      result.permission = mergeDeep(result.permission ?? {}, JSON.parse(Flag.PROJECTFLOWS_PERMISSION))
     }
 
     // Backwards compatibility: legacy top-level `tools` config
@@ -222,10 +223,10 @@ export namespace Config {
     }
 
     // Apply flag overrides for compaction settings
-    if (Flag.OPENCODE_DISABLE_AUTOCOMPACT) {
+    if (Flag.PROJECTFLOWS_DISABLE_AUTOCOMPACT) {
       result.compaction = { ...result.compaction, auto: false }
     }
-    if (Flag.OPENCODE_DISABLE_PRUNE) {
+    if (Flag.PROJECTFLOWS_DISABLE_PRUNE) {
       result.compaction = { ...result.compaction, prune: false }
     }
 
@@ -284,7 +285,7 @@ export namespace Config {
     }
   }
 
-  export async function needsInstall(dir: string) {
+  export async function needsInstall(dir: string, managed = false) {
     // Some config dirs may be read-only.
     // Installing deps there will fail; skip installation in that case.
     const writable = await isWritable(dir)
@@ -293,11 +294,16 @@ export namespace Config {
       return false
     }
 
+    const pkg = path.join(dir, "package.json")
+    const pkgExists = await Filesystem.exists(pkg)
+
+    // For project-level dirs (not the global config dir), only install if the
+    // user already has a package.json there. Never auto-create one.
+    if (!managed && !pkgExists) return false
+
     const nodeModules = path.join(dir, "node_modules")
     if (!existsSync(nodeModules)) return true
 
-    const pkg = path.join(dir, "package.json")
-    const pkgExists = await Filesystem.exists(pkg)
     if (!pkgExists) return true
 
     const parsed = await Filesystem.readJson<{ dependencies?: Record<string, string> }>(pkg).catch(() => null)
@@ -345,7 +351,7 @@ export namespace Config {
         const message = ConfigMarkdown.FrontmatterError.isInstance(err)
           ? err.data.message
           : `Failed to parse command ${item}`
-        const { Session } = await import("@opendora/session/session")
+        const { Session } = await import("@projectflows/session/session")
         Bus.publish(Session.Event.Error, { error: new NamedError.Unknown({ message }).toObject() })
         log.error("failed to load command", { command: item, err })
         return undefined
@@ -371,43 +377,10 @@ export namespace Config {
     return result
   }
 
-  async function loadAgent(dir: string) {
-    const result: Record<string, Agent> = {}
-
-    for (const item of await Glob.scan("{agent,agents}/**/*.md", {
-      cwd: dir,
-      absolute: true,
-      dot: true,
-      symlink: true,
-    })) {
-      const md = await ConfigMarkdown.parse(item).catch(async (err) => {
-        const message = ConfigMarkdown.FrontmatterError.isInstance(err)
-          ? err.data.message
-          : `Failed to parse agent ${item}`
-        const { Session } = await import("@opendora/session/session")
-        Bus.publish(Session.Event.Error, { error: new NamedError.Unknown({ message }).toObject() })
-        log.error("failed to load agent", { agent: item, err })
-        return undefined
-      })
-      if (!md) continue
-
-      const patterns = ["/.projectflows/agent/", "/.projectflows/agents/", "/.opencode/agent/", "/.opencode/agents/", "/agent/", "/agents/"]
-      const file = rel(item, patterns) ?? path.basename(item)
-      const agentName = trim(file)
-
-      const config = {
-        name: agentName,
-        ...md.data,
-        prompt: md.content.trim(),
-      }
-      const parsed = Agent.safeParse(config)
-      if (parsed.success) {
-        result[config.name] = parsed.data
-        continue
-      }
-      throw new InvalidError({ path: item, issues: parsed.error.issues }, { cause: parsed.error })
-    }
-    return result
+  async function loadAgent(_dir: string) {
+    // Agents are defined exclusively by agent.json files in .projectflows/agents/<id>/
+    // and loaded via AgentStorage.loadAll(). .md files are auxiliary content only.
+    return {} as Record<string, Agent>
   }
 
   async function loadMode(dir: string) {
@@ -422,7 +395,7 @@ export namespace Config {
         const message = ConfigMarkdown.FrontmatterError.isInstance(err)
           ? err.data.message
           : `Failed to parse mode ${item}`
-        const { Session } = await import("@opendora/session/session")
+        const { Session } = await import("@projectflows/session/session")
         Bus.publish(Session.Event.Error, { error: new NamedError.Unknown({ message }).toObject() })
         log.error("failed to load mode", { mode: item, err })
         return undefined
@@ -1264,7 +1237,7 @@ export namespace Config {
       const data = parsed.data
       if (data.plugin && isFile) {
         for (let i = 0; i < data.plugin.length; i++) {
-          const plugin = data.plugin[i]
+          const plugin = data.plugin[i]!
           try {
             data.plugin[i] = import.meta.resolve!(plugin, options.path)
           } catch (e) {
@@ -1309,9 +1282,9 @@ export namespace Config {
   export async function update(config: Info) {
     // Determine the correct config file to write to
     let filepath: string
-    if (Flag.OPENCODE_CONFIG_DIR) {
+    if (Flag.PROJECTFLOWS_CONFIG_DIR) {
       // Write to .projectflows/projectflows.json when using custom config dir
-      filepath = path.join(Flag.OPENCODE_CONFIG_DIR, "projectflows.json")
+      filepath = path.join(Flag.PROJECTFLOWS_CONFIG_DIR, "projectflows.json")
     } else {
       // Otherwise write to project's opencode.json
       const projectFiles = await ConfigPaths.projectFiles("opencode", Instance.directory, Instance.worktree)
@@ -1330,7 +1303,7 @@ export namespace Config {
     for (const file of candidates) {
       if (existsSync(file)) return file
     }
-    return candidates[0]
+    return candidates[0]!
   }
 
   function isRecord(value: unknown): value is Record<string, unknown> {
@@ -1363,7 +1336,7 @@ export namespace Config {
         .map((e) => {
           const beforeOffset = text.substring(0, e.offset).split("\n")
           const line = beforeOffset.length
-          const column = beforeOffset[beforeOffset.length - 1].length + 1
+          const column = beforeOffset[beforeOffset.length - 1]!.length + 1
           const problemLine = lines[line - 1]
 
           const error = `${printParseErrorCode(e.error)} at line ${line}, column ${column}`
@@ -1417,7 +1390,7 @@ export namespace Config {
         GlobalBus.emit("event", {
           directory: "global",
           payload: {
-            // global.disposed event type — avoids importing @opendora/server to break the circular dep
+            // global.disposed event type — avoids importing @projectflows/server to break the circular dep
             type: "global.disposed",
             properties: {},
           },

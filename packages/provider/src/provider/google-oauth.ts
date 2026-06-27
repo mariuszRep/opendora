@@ -155,8 +155,8 @@ export namespace GoogleOAuth {
 
             resolve({
               access_token: tokens.access_token!,
-              refresh_token: tokens.refresh_token,
-              expiry_date: tokens.expiry_date,
+              refresh_token: tokens.refresh_token ?? undefined,
+              expiry_date: tokens.expiry_date ?? undefined,
               email,
             })
           } catch (error) {
@@ -198,7 +198,7 @@ export namespace GoogleOAuth {
 
     return {
       access_token: credentials.access_token!,
-      expiry_date: credentials.expiry_date,
+      expiry_date: credentials.expiry_date ?? undefined,
     }
   }
 

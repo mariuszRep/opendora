@@ -6,13 +6,14 @@ import toolDef from "./screen-screenshot-window.json"
 
 export const PyAutoGUIScreenScreenshotWindowTool = Tool.define("pyautogui_screen_screenshot_window", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    window_id: z.number().int().positive(),
+    path: z.string().optional(),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      window_id: z.number().int().positive(),
-      path: z.string().optional(),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")
 
       await ctx.ask({

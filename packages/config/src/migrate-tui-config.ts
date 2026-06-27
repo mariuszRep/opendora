@@ -4,11 +4,11 @@ import { unique } from "remeda"
 import z from "zod"
 import { ConfigPaths } from "./paths"
 import { TuiInfo, TuiOptions } from "./tui-schema"
-import { Instance } from "@opendora/runtime/instance"
-import { Flag } from "@opendora/util/flag"
-import { Log } from "@opendora/util/log"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
-import { Global } from "@opendora/util/global"
+import { Instance } from "@projectflows/runtime/instance"
+import { Flag } from "@projectflows/util/flag"
+import { Log } from "@projectflows/util/log"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
+import { Global } from "@projectflows/util/global"
 
 const log = Log.create({ service: "tui.migrate" })
 
@@ -135,14 +135,14 @@ async function backupAndStripLegacy(file: string, source: string) {
 }
 
 async function opencodeFiles(input: { directories: string[]; managed: string }) {
-  const project = Flag.OPENCODE_DISABLE_PROJECT_CONFIG
+  const project = Flag.PROJECTFLOWS_DISABLE_PROJECT_CONFIG
     ? []
     : await ConfigPaths.projectFiles("opencode", Instance.directory, Instance.worktree)
   const files = [...project, ...ConfigPaths.fileInDirectory(Global.Path.config, "opencode")]
   for (const dir of unique(input.directories)) {
     files.push(...ConfigPaths.fileInDirectory(dir, "opencode"))
   }
-  if (Flag.OPENCODE_CONFIG) files.push(Flag.OPENCODE_CONFIG)
+  if (Flag.PROJECTFLOWS_CONFIG) files.push(Flag.PROJECTFLOWS_CONFIG)
   files.push(...ConfigPaths.fileInDirectory(input.managed, "opencode"))
 
   const existing = await Promise.all(

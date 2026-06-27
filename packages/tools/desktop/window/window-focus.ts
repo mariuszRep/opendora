@@ -7,12 +7,13 @@ import toolDef from ".//window-focus.json"
 
 export const DesktopWindowFocusTool = Tool.define("desktop_window_focus", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    title: z.string().min(1).describe("Window title or substring to match"),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      title: z.string().min(1).describe("Window title or substring to match"),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       assertNotSandbox(sandbox)
       assertDisplay()
       await ctx.ask({

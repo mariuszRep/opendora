@@ -2,6 +2,7 @@
 -- path: write boundary (hard enforced)
 -- read_path: soft boundary (triggers approval outside this)
 ALTER TABLE session ADD COLUMN path TEXT;
+--> statement-breakpoint
 ALTER TABLE session ADD COLUMN read_path TEXT;
 
 -- Note: We do NOT drop filesystem_config, tool_policy, or default_path columns

@@ -1,8 +1,8 @@
 import { Hono } from "hono"
 import { describeRoute, resolver, validator } from "hono-openapi"
-import { RegistrationSchema } from "@opendora/auth/registration"
+import { RegistrationSchema } from "@projectflows/auth/registration"
 import { errors } from "../error"
-import { lazy } from "@opendora/util/lazy"
+import { lazy } from "@projectflows/util/lazy"
 import z from "zod"
 
 export const AuthRoutes = lazy(() =>

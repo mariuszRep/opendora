@@ -1,7 +1,7 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
-import { WorkflowStorage } from "@opendora/workflow/storage"
+import { WorkflowStorage } from "@projectflows/workflow/storage"
 import toolDef from "./workflow-list.json"
 
 export const WorkflowListTool = Tool.define("workflow_list", async () => {
@@ -10,7 +10,7 @@ export const WorkflowListTool = Tool.define("workflow_list", async () => {
   return {
     description: toolDef.description,
     parameters,
-    async execute(_params: z.infer<typeof parameters>, ctx) {
+    async execute(_params: z.infer<typeof parameters>, ctx): Promise<{ title: string; metadata: Record<string, any>; output: string }> {
       const directory = host(ctx).worktree
       const workflows = await WorkflowStorage.list(directory)
 

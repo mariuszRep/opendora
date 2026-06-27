@@ -18,22 +18,23 @@ export const GlobTool = Tool.define("glob", {
       ),
   }),
   async execute(params, ctx) {
+    const dir = directory(ctx)
+    let search = params.path ?? dir
+    search = path.isAbsolute(search) ? search : path.resolve(dir, search)
+
     await ctx.ask({
       permission: "glob",
-      patterns: [params.pattern],
-      always: ["*"],
+      patterns: [path.join(search, params.pattern).replaceAll("\\", "/")],
+      always: [path.join(search, "*").replaceAll("\\", "/")],
       metadata: {
         pattern: params.pattern,
         path: params.path,
       },
     })
 
-    const dir = directory(ctx)
     const wt = worktree(ctx)
     const ripgrep = host(ctx).ripgrep
 
-    let search = params.path ?? dir
-    search = path.isAbsolute(search) ? search : path.resolve(dir, search)
     await assertExternalDirectory(ctx, search, { kind: "directory" })
 
     const limit = 100

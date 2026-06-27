@@ -5,13 +5,14 @@ import toolDef from "./keyboard-up.json"
 
 export const PyAutoGUIKeyboardUpTool = Tool.define("pyautogui_keyboard_up", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    key: z.string(),
+    window_id: z.number().int().optional().describe("X11 window ID to target directly (bypasses compositor focus)"),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      key: z.string(),
-      window_id: z.number().int().optional().describe("X11 window ID to target directly (bypasses compositor focus)"),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")
 
       await ctx.ask({

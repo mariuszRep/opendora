@@ -16,6 +16,7 @@ apps
     -> server
       -> auth
       -> permission
+      -> notification
       -> runtime
         -> agent
         -> skills
@@ -34,6 +35,7 @@ tools      -> storage
 workflow   -> storage
 schedule   -> storage
 session    -> storage
+notification -> storage
 ```
 
 ## Boundary rules
@@ -46,6 +48,9 @@ session    -> storage
 - Runtime is the execution engine: it keeps executable work alive and orchestrates agent runs, skills, providers, tools, workflows, schedules, sessions, streaming, cancellation, retries, and run lifecycle.
 - Session is the universal execution ledger and run-capture format for agent runs, workflow runs, schedule-triggered runs, and other executable work. A run is one durable, resumable, event-sourced execution; a conversation is the simplest workflow and any conversation may be transformed into a reusable workflow.
 - Domain packages own their domain behavior and expose canonical operations for their entities.
+- Notification is a domain package that owns durable, cross-linked notification records for system events surfaced to users. It exposes a single canonical publish/create function accepting a restricted but extensible notification object. Notification persists through storage contracts.
+- Notification cross-links to permission request locations, sessions, messages, tool calls, provider/settings, and workflow/run context without owning the source domain logic.
+- Permission owns authorization and permission lifecycle; notification retains permission request records as user-facing notification history after the request is replied to, marked resolved/rejected/allowed, and removed from action-required count.
 - Storage is the only persistence boundary. Packages that need durable data use storage contracts instead of choosing JSON, SQLite, Postgres, files, or another backend directly.
 
 ## Canonical Operations

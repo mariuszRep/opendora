@@ -11,8 +11,8 @@
  */
 
 import z from "zod"
-import { fn } from "@opendora/util/fn"
-import { Identifier } from "@opendora/util/id"
+import { fn } from "@projectflows/util/fn"
+import { Identifier } from "@projectflows/util/id"
 import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
 import { LLM } from "./llm.ts"
@@ -50,11 +50,10 @@ export namespace SessionCompaction {
     const configLimit = configVal?.compaction?.modelLimits?.[modelKey]?.context
     const context = configLimit ?? rawContext
 
-    // When the model's context window is unknown (0 or missing), use a conservative
-    // 100K fallback rather than disabling the check entirely. This ensures proactive
-    // compaction still fires for models whose limits aren't in the database.
-    const FALLBACK_CONTEXT = 100_000
-    const effectiveContext = (!context || context === 0) ? FALLBACK_CONTEXT : context
+    // When the model's context window is unknown (0 or missing), we can't determine
+    // overflow — return false rather than using a fallback that may trigger incorrectly.
+    if (!context || context === 0) return false
+    const effectiveContext = context
 
     const count =
       input.tokens.total ||
@@ -107,12 +106,12 @@ export namespace SessionCompaction {
     let turns = 0
 
     loop: for (let msgIndex = msgs.length - 1; msgIndex >= 0; msgIndex--) {
-      const msg = msgs[msgIndex]
+      const msg = msgs[msgIndex]!
       if (msg.info.role === "user") turns++
       if (turns < 2) continue
       if (msg.info.role === "assistant" && (msg.info as any).summary) break loop
       for (let partIndex = msg.parts.length - 1; partIndex >= 0; partIndex--) {
-        const part = msg.parts[partIndex]
+        const part = msg.parts[partIndex]!
         if (part.type === "tool")
           if (part.state.status === "completed") {
             if (PRUNE_PROTECTED_TOOLS.includes(part.tool)) continue

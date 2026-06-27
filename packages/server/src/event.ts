@@ -1,4 +1,4 @@
-import { BusEvent } from "@opendora/util/bus-event"
+import { BusEvent } from "@projectflows/util/bus-event"
 import z from "zod"
 
 export const Event = {

@@ -71,7 +71,8 @@ const fakeSvc = {
     setParentSessionIDCalled++
     setParentSessionIDSessionId = opts.sessionID
     setParentSessionIDValue = opts.parentSessionID
-    if (store[opts.sessionID]) store[opts.sessionID].parentSessionID = opts.parentSessionID
+    const entry = store[opts.sessionID]
+    if (entry) entry.parentSessionID = opts.parentSessionID
   },
   async setSessionStatus(id: string, value: string): Promise<void> {
     setSessionStatusCalled++
@@ -271,13 +272,13 @@ await run("title update and restore works round-trip", async () => {
   const result1 = await tool.execute({ session_id: "ses_a", title: "Updated Title" }, makeCtx("ses_a") as any)
   const data1 = JSON.parse(result1.output)
   assert(data1.changes?.title?.new === "Updated Title", "first change should succeed")
-  assert(store["ses_a"].title === "Updated Title", "store should be updated")
+  assert(store["ses_a"]!.title === "Updated Title", "store should be updated")
 
   // Restore: change back to original "Session A"
   const result2 = await tool.execute({ session_id: "ses_a", title: "Session A" }, makeCtx("ses_a") as any)
   const data2 = JSON.parse(result2.output)
   assert(data2.changes?.title?.new === "Session A", "restore should succeed")
-  assert(store["ses_a"].title === "Session A", "store should be restored")
+  assert(store["ses_a"]!.title === "Session A", "store should be restored")
 })
 
 // 11. Parent session update validates parent exists

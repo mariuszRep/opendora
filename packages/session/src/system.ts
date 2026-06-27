@@ -4,6 +4,28 @@ import { getConfig } from "./config.ts"
 import { Session } from "./session.ts"
 import { InstructionPrompt } from "./instruction.ts"
 
+// Memory helpers — inlined to avoid a runtime dep on @projectflows/tools (devDep only)
+interface MemoryEntry { name: string; description: string; type: string; content: string; createdAt: number; updatedAt: number }
+function parseMemoryEntries(raw: string): MemoryEntry[] {
+  try { return raw ? JSON.parse(raw) : [] } catch { return [] }
+}
+function serializeMemoryEntries(entries: MemoryEntry[]): string {
+  return entries.map(e => `---\nname: ${e.name}\ndescription: ${e.description}\ntype: ${e.type}\n---\n${e.content}`).join("\n\n")
+}
+async function findProjectFlowsDir(startDir: string): Promise<string> {
+  let dir = startDir
+  while (true) {
+    const candidate = path.join(dir, ".projectflows")
+    try { const s = await fs.stat(candidate); if (s.isDirectory()) return candidate } catch {}
+    const parent = path.dirname(dir)
+    if (parent === dir) throw new Error("No .projectflows directory found")
+    dir = parent
+  }
+}
+async function readMemoryFile(filePath: string): Promise<string> {
+  try { return await fs.readFile(filePath, "utf-8") } catch { return "" }
+}
+
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
 import PROMPT_ANTHROPIC_WITHOUT_TODO from "./prompt/qwen.txt"
 import PROMPT_BEAST from "./prompt/beast.txt"
@@ -128,6 +150,36 @@ export namespace SystemPrompt {
       }
     }
 
+    // 3.5 Agent Memories — inject prior session memories when agent has memory_read
+    const hasMemoryTool = (input.agent?.tools as string[] | undefined)?.includes("memory_read") ?? false
+    if (hasMemoryTool) {
+      const memSession = input.sessionID ? await Session.get(input.sessionID).catch(() => undefined) : undefined
+      // Resolution order: session cwd → session directory (most reliable, always set in DB)
+      // → cfg.instance?.directory (may throw if no AsyncLocalStorage context in HTTP requests)
+      const instanceDir = (() => { try { return cfg.instance?.directory } catch { return undefined } })()
+      const candidates = [memSession?.cwd, memSession?.directory, instanceDir].filter(Boolean) as string[]
+      let pfDir: string | undefined
+      for (const candidate of candidates) {
+        const found = await findProjectFlowsDir(candidate).catch(() => null)
+        if (found) { pfDir = found; break }
+      }
+      if (pfDir) {
+        const agentId = input.agent?.id ?? ""
+        const [globalRaw, localRaw] = await Promise.all([
+          readMemoryFile(path.join(pfDir, "agents", "MEMORY.json")),
+          readMemoryFile(path.join(pfDir, "agents", agentId, "MEMORY.json")),
+        ])
+        const globalEntries = parseMemoryEntries(globalRaw)
+        const localEntries = parseMemoryEntries(localRaw)
+        if (globalEntries.length > 0 || localEntries.length > 0) {
+          const parts: string[] = ["# Memories\n\nThese memories from previous sessions inform your current task. Review them before acting."]
+          if (globalEntries.length > 0) parts.push(`\n## Global\n\n${serializeMemoryEntries(globalEntries)}`)
+          if (localEntries.length > 0) parts.push(`\n## Agent-specific\n\n${serializeMemoryEntries(localEntries)}`)
+          sections.push({ label: "Memories", content: parts.join("") })
+        }
+      }
+    }
+
     // 4. Available Skills — list assigned skills so the agent knows what to load
     const agentToolsList = input.agent?.tools as string[] | undefined
     const hasSkillLoadTool = agentToolsList?.includes("skill_load") ?? false
@@ -138,12 +190,28 @@ export namespace SystemPrompt {
         ? allSkills.filter((s: any) => agentSkillNames.includes(s.name))
         : []
       if (visibleSkills.length > 0) {
-        const rows = visibleSkills.map((s: any) => `| ${s.name} | ${(s.description ?? "").replace(/\|/g, "\\|")} |`)
-        const table = ["| Name | Description |", "| --- | --- |", ...rows].join("\n")
-        sections.push({
-          label: "Available Skills",
-          content: `# Available Skills\nUse the \`skill_load\` tool to load any of these skills when the task matches:\n\n${table}`,
-        })
+        const skillXml = visibleSkills
+          .filter((s: any) => !s.frontmatter?.["disable-model-invocation"])
+          .map((s: any) => {
+            const name = (s.name ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            const description = (s.description ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            const location = (s.location ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            return `<skill>\n  <name>${name}</name>\n  <description>${description}</description>\n  <location>${location}</location>\n</skill>`
+          })
+          .join("\n")
+
+        if (skillXml) {
+          sections.push({
+            label: "Available Skills",
+            content: [
+              "The following skills provide specialized instructions for specific tasks. When a task matches a skill's description, use your file-read tool to load the SKILL.md at the listed location before proceeding. When a skill references relative paths, resolve them against the skill's directory (the parent of SKILL.md).",
+              "",
+              "<available_skills>",
+              skillXml,
+              "</available_skills>",
+            ].join("\n"),
+          })
+        }
       }
     }
 
@@ -179,6 +247,57 @@ export namespace SystemPrompt {
           })
         }
       }
+    }
+
+    // 4c. Directory Permissions — show allowed directories from path.read/path.write rules
+    // Also show session working directory and path boundaries even without explicit rules
+    const dirRows: string[] = []
+    let hasDirInfo = false
+
+    // Add session working directory if available
+    if (input.sessionID) {
+      const session = await Session.get(input.sessionID).catch(() => undefined)
+      if (session?.cwd) {
+        dirRows.push(`| ${session.cwd} | working directory |`)
+        hasDirInfo = true
+      }
+      if (session?.path) {
+        dirRows.push(`| ${session.path} | write boundary |`)
+        hasDirInfo = true
+      }
+      if (session?.readPath && session.readPath !== session.path) {
+        dirRows.push(`| ${session.readPath} | read boundary |`)
+        hasDirInfo = true
+      }
+    }
+
+    // Add explicit path permission rules if available
+    if (input.agent?.permission && cfg.permissionNext?.extractPathBoundaries) {
+      const pathBoundaries = cfg.permissionNext.extractPathBoundaries(input.agent.permission)
+      
+      // Add write paths
+      for (const writePath of pathBoundaries.writePaths) {
+        if (!dirRows.some((row) => row.includes(writePath))) {
+          dirRows.push(`| ${writePath} | write |`)
+          hasDirInfo = true
+        }
+      }
+      
+      // Add read path if different from write paths
+      if (pathBoundaries.readPath && !pathBoundaries.writePaths.includes(pathBoundaries.readPath)) {
+        if (!dirRows.some((row) => row.includes(pathBoundaries.readPath))) {
+          dirRows.push(`| ${pathBoundaries.readPath} | read |`)
+          hasDirInfo = true
+        }
+      }
+    }
+    
+    if (hasDirInfo) {
+      const table = ["| Path | Access |", "| --- | --- |", ...dirRows].join("\n")
+      sections.push({
+        label: "Directory Permissions",
+        content: `# Directory Permissions\nYou have the following directory access permissions:\n\n${table}`,
+      })
     }
 
     // 5. Session/user system override (mirrors user.system in llm.ts)

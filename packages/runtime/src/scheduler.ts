@@ -1,5 +1,5 @@
 import { Instance } from "./instance"
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 
 export namespace Scheduler {
   const log = Log.create({ service: "scheduler" })

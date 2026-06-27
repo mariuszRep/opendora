@@ -111,6 +111,8 @@ export default function AgentSettingsPage() {
       return acc
     }, {})
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
+  // Maps skill name -> agent-scoped permission rule id (source of truth for enabled skills)
+  const [skillRuleIds, setSkillRuleIds] = useState<Record<string, string>>({})
   const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
   const [skillSearch, setSkillSearch] = useState("")
@@ -208,6 +210,36 @@ export default function AgentSettingsPage() {
     setInjection((agent as any).injection ?? "")
   }, [agentId, agent]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Load enabled skills from agent-scoped `skill` permission rules (source of truth).
+  // Keeps the toggle in sync when rules change elsewhere (e.g. permissions sheet).
+  useEffect(() => {
+    if (!agentId || isNew) return
+    let cancelled = false
+    const load = async () => {
+      try {
+        const rules = await opendora.permission.listRules("agent", agentId)
+        if (cancelled) return
+        const ids: Record<string, string> = {}
+        for (const r of rules) {
+          if (r.resource === "skill" && r.action === "allow") ids[r.pattern] = r.id
+        }
+        setSkillRuleIds(ids)
+        setSelectedSkills(Object.keys(ids))
+      } catch { /* ignore — fall back to agent.skills already set */ }
+    }
+    load()
+    const unsub = opendora.events.subscribe((event) => {
+      if (
+        event.type === "permission.rules.updated" &&
+        event.properties.scope === "agent" &&
+        event.properties.scope_id === agentId
+      ) {
+        load()
+      }
+    })
+    return () => { cancelled = true; unsub() }
+  }, [agentId, isNew])
+
   // Load persona separately (network call, only on id change)
   useEffect(() => {
     if (!id || isNew) return
@@ -230,6 +262,57 @@ export default function AgentSettingsPage() {
     setSelectedTools((prev) =>
       prev.includes(toolId) ? prev.filter((t) => t !== toolId) : [...prev, toolId],
     )
+  }
+
+  // Enabling a skill creates an agent-scoped `skill` allow rule (the load
+  // permission); disabling removes it. Rules are the source of truth, so the
+  // toggle, system prompt, and skill_load stay in sync. For a not-yet-created
+  // agent we just track local state and seed rules on first save/load.
+  async function handleToggleSkill(name: string) {
+    const enabled = selectedSkills.includes(name)
+    const newSkills = enabled ? selectedSkills.filter((s) => s !== name) : [...selectedSkills, name]
+    
+    if (isNew) {
+      setSelectedSkills(newSkills)
+      return
+    }
+    
+    if (enabled) {
+      const ruleId = skillRuleIds[name]
+      setSelectedSkills(newSkills)
+      setSkillRuleIds((prev) => {
+        const next = { ...prev }
+        delete next[name]
+        return next
+      })
+      if (ruleId) {
+        await opendora.permission.removeRule(ruleId, "agent", agentId).catch(() => { })
+      }
+    } else {
+      setSelectedSkills(newSkills)
+      try {
+        const rule = await opendora.permission.addRule({
+          scope: "agent",
+          scope_id: agentId,
+          resource: "skill",
+          access: "execute",
+          pattern: name,
+          action: "allow",
+        })
+        setSkillRuleIds((prev) => ({ ...prev, [name]: rule.id }))
+      } catch { /* permission.rules.updated refresh will reconcile */ }
+    }
+    // Immediately update the agent's skills array in storage to keep it in sync
+    // with the permission rules. This ensures the session system prompt sees the
+    // correct skills without waiting for the agent to be reloaded.
+    try {
+      console.log(`[UI] Updating agent ${agentId} skills to:`, newSkills)
+      await updateAgent(agentId, { skills: newSkills })
+      console.log(`[UI] Successfully updated agent ${agentId} skills`)
+    } catch (err) {
+      console.error(`[UI] Failed to update agent ${agentId} skills:`, err)
+      // If update fails, the permission rule is still the source of truth
+    }
   }
 
   async function handleGenerate() {
@@ -269,7 +352,9 @@ export default function AgentSettingsPage() {
         model,
         fallback_model: fallbackModel,
         tools: selectedTools.length > 0 ? selectedTools : undefined,
-        skills: selectedSkills,
+        // For new agents, seed skills[] so the migration can create rules.
+        // For existing agents, omit skills[] since they're derived from rules.
+        skills: isNew ? selectedSkills : undefined,
         workflows: selectedWorkflows,
         toolConfig: (() => {
           const tc: any = {}
@@ -1042,11 +1127,7 @@ export default function AgentSettingsPage() {
                           <Switch
                             size="sm"
                             checked={enabled}
-                            onCheckedChange={() =>
-                              setSelectedSkills((prev) =>
-                                enabled ? prev.filter((s) => s !== skill.name) : [...prev, skill.name]
-                              )
-                            }
+                            onCheckedChange={() => handleToggleSkill(skill.name)}
                             onClick={(e) => e.stopPropagation()}
                           />
                         }

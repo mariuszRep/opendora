@@ -1,9 +1,9 @@
 import { text } from "node:stream/consumers"
-import { BunProc } from "@opendora/util/bun"
+import { BunProc } from "@projectflows/util/bun"
 import { Instance } from "./instance"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
-import { Process } from "@opendora/util/process"
-import { Flag } from "@opendora/util/flag"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
+import { Process } from "@projectflows/util/process"
+import { Flag } from "@projectflows/util/flag"
 
 export interface Info {
   name: string
@@ -87,7 +87,7 @@ export const oxfmt: Info = {
   },
   extensions: [".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts"],
   async enabled() {
-    if (!Flag.OPENCODE_EXPERIMENTAL_OXFMT) return false
+    if (!Flag.PROJECTFLOWS_EXPERIMENTAL_OXFMT) return false
     const items = await Filesystem.findUp("package.json", Instance.directory, Instance.worktree)
     for (const item of items) {
       const json = await Filesystem.readJson<{
@@ -186,7 +186,7 @@ export const ruff: Info = {
       const found = await Filesystem.findUp(config, Instance.directory, Instance.worktree)
       if (found.length > 0) {
         if (config === "pyproject.toml") {
-          const content = await Filesystem.readText(found[0])
+          const content = await Filesystem.readText(found[0]!)
           if (content.includes("[tool.ruff]")) return true
         } else {
           return true
@@ -197,7 +197,7 @@ export const ruff: Info = {
     for (const dep of deps) {
       const found = await Filesystem.findUp(dep, Instance.directory, Instance.worktree)
       if (found.length > 0) {
-        const content = await Filesystem.readText(found[0])
+        const content = await Filesystem.readText(found[0]!)
         if (content.includes("ruff")) return true
       }
     }
@@ -223,7 +223,7 @@ export const rlang: Info = {
       const output = await text(proc.stdout)
 
       // Check for "Air: An R language server and formatter"
-      const firstLine = output.split("\n")[0]
+      const firstLine = output.split("\n")[0] ?? ""
       const hasR = firstLine.includes("R language")
       const hasFormatter = firstLine.includes("formatter")
       return hasR && hasFormatter

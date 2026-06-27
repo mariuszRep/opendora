@@ -10,18 +10,38 @@
       },
       "workflow": {
         "type": "object",
-        "description": "Complete replacement workflow JSON. All fields are overwritten. See workflow_create for the full schema including all five node types (parameters, prompt, structured, tool, decide), variable references, and edge routing.",
+        "description": "Complete replacement workflow JSON. All fields are overwritten. See workflow_create for workflow schema guidance; call tool_list/tool_get to verify any tool-node action_id values before updating them.",
         "properties": {
-          "id":          { "type": "string" },
-          "name":        { "type": "string" },
-          "description": { "type": "string" },
-          "version":     { "type": "string" },
-          "nodes":       { "type": "array" },
-          "edges":       { "type": "array" }
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "nodes": {
+            "type": "array"
+          },
+          "edges": {
+            "type": "array"
+          }
         },
-        "required": ["id", "name", "nodes", "edges"]
+        "required": [
+          "id",
+          "name",
+          "nodes",
+          "edges"
+        ]
       }
     },
-    "required": ["id", "workflow"]
+    "required": [
+      "id",
+      "workflow"
+    ]
   }
 }

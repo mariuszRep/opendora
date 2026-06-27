@@ -9,7 +9,7 @@
 
 import fs from "fs"
 import readline from "readline"
-import { Identifier } from "@opendora/util/id"
+import { Identifier } from "@projectflows/util/id"
 import { getConfig } from "../config"
 import { SessionTable, MessageTable, PartTable } from "../session.sql"
 import type { MessageV2 } from "../message-v2"

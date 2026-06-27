@@ -80,19 +80,19 @@ export async function parseKeys(combo: string): Promise<NutKey[]> {
 function resolveKeyName(part: string, Key: typeof NutKey): NutKey | undefined {
   // Named aliases
   const alias = KEY_MAP[part]
-  if (alias) return (Key as Record<string, NutKey>)[alias]
+  if (alias) return (Key as unknown as Record<string, NutKey>)[alias]
 
   // Single letter a-z
-  if (/^[a-z]$/.test(part)) return (Key as Record<string, NutKey>)[part.toUpperCase()]
+  if (/^[a-z]$/.test(part)) return (Key as unknown as Record<string, NutKey>)[part.toUpperCase()]
 
   // Digit 0-9
-  if (/^\d$/.test(part)) return (Key as Record<string, NutKey>)[`Num${part}`]
+  if (/^\d$/.test(part)) return (Key as unknown as Record<string, NutKey>)[`Num${part}`]
 
   // Function keys f1-f24
   const fMatch = part.match(/^f(\d{1,2})$/)
   if (fMatch) {
-    const n = parseInt(fMatch[1], 10)
-    if (n >= 1 && n <= 24) return (Key as Record<string, NutKey>)[`F${n}`]
+    const n = parseInt(fMatch[1]!, 10)
+    if (n >= 1 && n <= 24) return (Key as unknown as Record<string, NutKey>)[`F${n}`]
   }
 
   return undefined

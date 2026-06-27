@@ -7,14 +7,15 @@ import toolDef from ".//window-resize.json"
 
 export const DesktopWindowResizeTool = Tool.define("desktop_window_resize", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    title: z.string().min(1).describe("Window title or substring to match"),
+    width: z.number().int().positive().describe("New window width in pixels"),
+    height: z.number().int().positive().describe("New window height in pixels"),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      title: z.string().min(1).describe("Window title or substring to match"),
-      width: z.number().int().positive().describe("New window width in pixels"),
-      height: z.number().int().positive().describe("New window height in pixels"),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       assertNotSandbox(sandbox)
       assertDisplay()
       await ctx.ask({

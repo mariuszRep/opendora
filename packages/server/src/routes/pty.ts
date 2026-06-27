@@ -3,9 +3,9 @@ import { describeRoute, validator, resolver } from "hono-openapi"
 import { upgradeWebSocket } from "hono/bun"
 import z from "zod"
 import { Pty } from "../pty"
-import { NotFoundError } from "@opendora/storage/db"
+import { NotFoundError } from "@projectflows/storage/db"
 import { errors } from "../error"
-import { lazy } from "@opendora/util/lazy"
+import { lazy } from "@projectflows/util/lazy"
 
 export const PtyRoutes = lazy(() =>
   new Hono()

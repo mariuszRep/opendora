@@ -1,4 +1,4 @@
-// ─── Original @opendora/session exports ──────────────────────────────────────
+// ─── Original @projectflows/session exports ──────────────────────────────────────
 export { Session as PingPongSession } from "./pingpong-session"
 export { SessionManager } from "./session-manager"
 export { SessionQueue } from "./session-queue"

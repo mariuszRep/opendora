@@ -4,8 +4,8 @@ import type { JSONSchema7 } from "@ai-sdk/provider"
 import type { JSONSchema } from "zod/v4/core"
 import type { Provider } from "./provider"
 import type { ModelsDev } from "./models"
-import { iife } from "@opendora/util/iife"
-import { Flag } from "@opendora/util/flag"
+import { iife } from "@projectflows/util/iife"
+import { Flag } from "@projectflows/util/flag"
 
 type Modality = NonNullable<ModelsDev.Model["modalities"]>["input"][number]
 
@@ -18,7 +18,7 @@ function mimeToModality(mime: string): Modality | undefined {
 }
 
 export namespace ProviderTransform {
-  export const OUTPUT_TOKEN_MAX = Flag.OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX || 32_000
+  export const OUTPUT_TOKEN_MAX = Flag.PROJECTFLOWS_EXPERIMENTAL_OUTPUT_TOKEN_MAX || 32_000
 
   // Maps npm package to the key the AI SDK expects for providerOptions
   function sdkKey(npm: string): string | undefined {
@@ -94,7 +94,7 @@ export namespace ProviderTransform {
     ) {
       const result: ModelMessage[] = []
       for (let i = 0; i < msgs.length; i++) {
-        const msg = msgs[i]
+        const msg = msgs[i]!
         const nextMsg = msgs[i + 1]
 
         if ((msg.role === "assistant" || msg.role === "tool") && Array.isArray(msg.content)) {
@@ -232,7 +232,7 @@ export namespace ProviderTransform {
           }
         }
 
-        const mime = part.type === "image" ? part.image.toString().split(";")[0].replace("data:", "") : part.mediaType
+        const mime = part.type === "image" ? (part.image.toString().split(";")[0] ?? "").replace("data:", "") : part.mediaType
         const filename = part.type === "file" ? part.filename : undefined
         const modality = mimeToModality(mime)
         if (!modality) return part

@@ -1,11 +1,11 @@
-import { BusEvent } from "@opendora/util/bus-event"
+import { BusEvent } from "@projectflows/util/bus-event"
 import { Bus } from "./bus"
 import { $ } from "bun"
 import path from "path"
 import z from "zod"
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 import { Instance } from "./instance"
-import { FileWatcher } from "@opendora/opencode/file/watcher"
+import { FileWatcherUpdatedEvent } from "./file-events"
 
 const log = Log.create({ service: "vcs" })
 
@@ -46,7 +46,7 @@ export namespace Vcs {
       let current = await currentBranch()
       log.info("initialized", { branch: current })
 
-      const unsubscribe = Bus.subscribe(FileWatcher.Event.Updated, async (evt) => {
+      const unsubscribe = Bus.subscribe(FileWatcherUpdatedEvent, async (evt) => {
         if (evt.properties.file.endsWith("HEAD")) return
         const next = await currentBranch()
         if (next !== current) {

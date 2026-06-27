@@ -94,7 +94,7 @@ export namespace LLM {
       )
     }
 
-    const header = system[0]
+    const header = system[0]!
     await cfg.plugin?.trigger(
       "experimental.chat.system.transform",
       { sessionID: input.sessionID, model: input.model },
@@ -241,7 +241,7 @@ export namespace LLM {
               "x-opencode-project": cfg.instance?.project?.id ?? "unknown",
               "x-opencode-session": input.sessionID,
               "x-opencode-request": input.user.id,
-              "x-opencode-client": process.env.OPENCODE_CLIENT ?? "cli",
+              "x-projectflows-client": process.env.PROJECTFLOWS_CLIENT ?? "cli",
               "User-Agent": `opencode/${cfg.installationVersion ?? "local"}`,
             }
           : input.model.providerID !== "anthropic"
@@ -268,8 +268,7 @@ export namespace LLM {
           {
             async transformParams(args) {
               if (args.type === "stream") {
-                // @ts-expect-error
-                args.params.prompt = cfg.providerTransform?.message(args.params.prompt, input.model, options)
+                ;(args.params as any).prompt = cfg.providerTransform?.message((args.params as any).prompt, input.model, options)
               }
               return args.params
             },

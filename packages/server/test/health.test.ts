@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test"
-import { Installation } from "@opendora/opencode/installation"
-import { GlobalRoutes } from "@opendora/server/routes/global"
-import { Log } from "@opendora/util/log"
+import { Installation } from "@projectflows/util/installation"
+import { GlobalRoutes } from "@projectflows/server/routes/global"
+import { Log } from "@projectflows/util/log"
 
 let server: ReturnType<typeof Bun.serve>
 

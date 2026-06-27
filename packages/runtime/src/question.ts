@@ -1,8 +1,8 @@
 import { Bus } from "./bus"
-import { BusEvent } from "@opendora/util/bus-event"
-import { Identifier } from "@opendora/util/id"
+import { BusEvent } from "@projectflows/util/bus-event"
+import { Identifier } from "@projectflows/util/id"
 import { Instance } from "./instance"
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 import z from "zod"
 
 export namespace Question {

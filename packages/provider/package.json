@@ -1,16 +1,28 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@opendora/provider",
+  "name": "@projectflows/provider",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "test": "bun test --timeout 30000"
+  },
   "exports": {
     "./*": "./src/provider/*.ts"
   },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "typescript": "catalog:"
+  },
   "dependencies": {
-    "@opendora/auth": "workspace:*",
-    "@opendora/util": "workspace:*",
+    "@projectflows/auth": "workspace:*",
+    "@projectflows/config": "workspace:*",
+    "@projectflows/runtime": "workspace:*",
+    "@projectflows/tools": "workspace:*",
+    "@projectflows/util": "workspace:*",
     "@opencode-ai/plugin": "*",
     "@ai-sdk/amazon-bedrock": "*",
     "@ai-sdk/anthropic": "*",
@@ -31,6 +43,7 @@
     "@ai-sdk/togetherai": "*",
     "@ai-sdk/vercel": "*",
     "@ai-sdk/xai": "*",
+    "ai-gateway-provider": "*",
     "@aws-sdk/credential-providers": "*",
     "@gitlab/gitlab-ai-provider": "*",
     "@openrouter/ai-sdk-provider": "*",

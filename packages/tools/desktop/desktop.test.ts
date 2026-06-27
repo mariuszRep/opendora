@@ -109,8 +109,6 @@ const fakeNut = {
 // Override the module-level loader for tests
 async function withFakeNut<T>(fn: () => Promise<T>): Promise<T> {
   resetNut()
-  // Patch the dynamic import by intercepting the cached promise slot
-  const { default: nutModule } = await import("./lib/nut.ts")
   // We use the resetNut + direct slot injection pattern:
   // Since we can't easily mock dynamic imports in Bun without additional tooling,
   // we call getNut() once with a spy and verify ctx.ask was called instead.

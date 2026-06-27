@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { opendora, type Session } from "@/lib/opendora"
 import { cn } from "@/lib/utils"
 import {
@@ -52,6 +52,29 @@ function formatSessionTitle(session: Session): string {
     hour: "2-digit",
     minute: "2-digit",
   })
+}
+
+function buildSessionIndexes(sessions: Session[]) {
+  const roots: Session[] = []
+  const childrenMap = new Map<string, Session[]>()
+
+  for (const session of sessions) {
+    if (!session.parentSessionID) {
+      roots.push(session)
+      continue
+    }
+
+    const existing = childrenMap.get(session.parentSessionID) ?? []
+    existing.push(session)
+    childrenMap.set(session.parentSessionID, existing)
+  }
+
+  roots.sort((a, b) => b.time.updated - a.time.updated)
+  for (const children of childrenMap.values()) {
+    children.sort((a, b) => a.time.created - b.time.created)
+  }
+
+  return { roots, childrenMap }
 }
 
 type TreeRowProps = {
@@ -205,6 +228,7 @@ export function SessionTreePanel({
   const [rootLoading, setRootLoading] = useState(false)
   const [loadError, setLoadError] = useState<string>()
   const [rootSessions, setRootSessions] = useState<Session[]>([])
+  const sessionIndexes = useMemo(() => buildSessionIndexes(sessions), [sessions])
 
   const setStore = useCallback((update: (prev: Store) => Store) => {
     const next = update(storeRef.current)
@@ -216,36 +240,32 @@ export function SessionTreePanel({
     setRootLoading(true)
     setLoadError(undefined)
     try {
-      // Filter to only root sessions (no parentSessionID)
-      const roots = sessions.filter((s) => !s.parentSessionID)
-      
-      // Sort by most recently updated
-      roots.sort((a, b) => b.time.updated - a.time.updated)
+      const { roots, childrenMap } = sessionIndexes
 
-      setStore(() => {
+      setStore((prev) => {
         const nodes: Record<string, SessionNode> = {}
-        
-        // Build a map of parent -> children to know which sessions have children
-        const childrenMap = new Map<string, Session[]>()
+
         for (const session of sessions) {
-          if (session.parentSessionID) {
-            const existing = childrenMap.get(session.parentSessionID) || []
-            existing.push(session)
-            childrenMap.set(session.parentSessionID, existing)
-          }
-        }
-        
-        for (const session of roots) {
-          const hasChildren = childrenMap.has(session.id)
+          const previous = prev.nodes[session.id]
           nodes[session.id] = {
             session,
             children: [],
-            expanded: false,
-            loaded: false,
-            loading: false,
-            hasChildren, // Track if this session has children
+            expanded: previous?.expanded ?? false,
+            loaded: previous?.loaded ?? false,
+            loading: previous?.loading ?? false,
+            hasChildren: childrenMap.has(session.id),
           }
         }
+
+        for (const session of sessions) {
+          const node = nodes[session.id]
+          if (!node || !node.loaded) continue
+
+          node.children = (childrenMap.get(session.id) ?? [])
+            .map((child) => nodes[child.id])
+            .filter((childNode): childNode is SessionNode => Boolean(childNode))
+        }
+
         return { nodes }
       })
       setRootSessions(roots)
@@ -254,13 +274,9 @@ export function SessionTreePanel({
     } finally {
       setRootLoading(false)
     }
-  }, [setStore, sessions])
+  }, [setStore, sessions, sessionIndexes])
 
   useEffect(() => {
-    storeRef.current = emptyStore()
-    _setStore(emptyStore())
-    setRootSessions([])
-    setLoadError(undefined)
     loadRoots()
   }, [loadRoots])
 
@@ -279,7 +295,7 @@ export function SessionTreePanel({
             ...nodes,
             [nodeId]: { ...node, expanded: false }
           }
-          
+
           for (const child of node.children) {
             Object.assign(updatedNodes, collapseDescendants(child.session.id, updatedNodes))
           }
@@ -304,6 +320,28 @@ export function SessionTreePanel({
       // Already loaded
       if (current.loaded || current.loading) return
 
+      const knownChildren = sessionIndexes.childrenMap.get(sessionId)
+      if (knownChildren) {
+        setStore((prev) => ({
+          nodes: (() => {
+            const childNodes = knownChildren
+              .map((child) => prev.nodes[child.id])
+              .filter((childNode): childNode is SessionNode => Boolean(childNode))
+
+            return {
+              ...prev.nodes,
+              [sessionId]: {
+                ...prev.nodes[sessionId]!,
+                loaded: true,
+                loading: false,
+                children: childNodes,
+              },
+            }
+          })(),
+        }))
+        return
+      }
+
       // Mark loading
       setStore((prev) => ({
         nodes: {
@@ -320,7 +358,7 @@ export function SessionTreePanel({
 
         // Check which children have their own children using the sessions prop (no extra API calls)
         const childrenWithGrandchildren = children.map((child) => {
-          const hasChildren = sessions.some((s) => s.parentSessionID === child.id)
+          const hasChildren = sessionIndexes.childrenMap.has(child.id)
           return { child, hasChildren }
         })
 
@@ -361,7 +399,7 @@ export function SessionTreePanel({
         }))
       }
     },
-    [setStore],
+    [setStore, sessionIndexes],
   )
 
   const handleSessionClick = useCallback(

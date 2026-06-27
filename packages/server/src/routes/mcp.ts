@@ -2,9 +2,9 @@ import { Hono } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
 import { MCP } from "../mcp"
-import { Config } from "@opendora/config/config"
+import { Config } from "@projectflows/config/config"
 import { errors } from "../error"
-import { lazy } from "@opendora/util/lazy"
+import { lazy } from "@projectflows/util/lazy"
 
 export const McpRoutes = lazy(() =>
   new Hono()

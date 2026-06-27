@@ -95,7 +95,7 @@ export namespace ProviderUsageFile {
       }
 
       const now = Date.now()
-      const prev = existing.models[modelID] ?? {}
+      const prev: Partial<ModelUsageState> = existing.models[modelID] ?? {}
 
       existing.models[modelID] = {
         ...prev,

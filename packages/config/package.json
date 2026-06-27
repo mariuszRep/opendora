@@ -1,24 +1,24 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@opendora/config",
+  "name": "@projectflows/config",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test --timeout 30000"
   },
   "exports": {
     "./*": "./src/*.ts"
   },
   "dependencies": {
-    "@opendora/auth": "workspace:*",
-    "@opendora/opencode": "workspace:*",
-    "@opendora/provider": "workspace:*",
-    "@opendora/runtime": "workspace:*",
-    "@opendora/session": "workspace:*",
-    "@opendora/storage": "workspace:*",
-    "@opendora/tools": "workspace:*",
-    "@opendora/util": "workspace:*",
+    "@projectflows/auth": "workspace:*",
+    "@projectflows/provider": "workspace:*",
+    "@projectflows/runtime": "workspace:*",
+    "@projectflows/session": "workspace:*",
+    "@projectflows/storage": "workspace:*",
+    "@projectflows/tools": "workspace:*",
+    "@projectflows/util": "workspace:*",
     "gray-matter": "4.0.3",
     "jsonc-parser": "3.3.1",
     "remeda": "catalog:",

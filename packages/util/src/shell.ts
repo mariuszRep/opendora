@@ -38,7 +38,7 @@ export namespace Shell {
 
   function fallback() {
     if (process.platform === "win32") {
-      if (Flag.OPENCODE_GIT_BASH_PATH) return Flag.OPENCODE_GIT_BASH_PATH
+      if (Flag.PROJECTFLOWS_GIT_BASH_PATH) return Flag.PROJECTFLOWS_GIT_BASH_PATH
       const git = Bun.which("git")
       if (git) {
         // git.exe is typically at: C:\Program Files\Git\cmd\git.exe
@@ -56,13 +56,13 @@ export namespace Shell {
 
   export const preferred = lazy(() => {
     const s = process.env.SHELL
-    if (s) return s
+    if (s && existsSync(s)) return s
     return fallback()
   })
 
   export const acceptable = lazy(() => {
     const s = process.env.SHELL
-    if (s && !BLACKLIST.has(process.platform === "win32" ? path.win32.basename(s) : path.basename(s))) return s
+    if (s && existsSync(s) && !BLACKLIST.has(process.platform === "win32" ? path.win32.basename(s) : path.basename(s))) return s
     return fallback()
   })
 }

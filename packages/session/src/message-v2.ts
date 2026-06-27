@@ -1,5 +1,5 @@
 import z from "zod"
-import { NamedError } from "@opendora/util/error"
+import { NamedError } from "@projectflows/util/error"
 import { APICallError, convertToModelMessages, LoadAPIKeyError, type ModelMessage, type UIMessage } from "ai"
 import { getConfig } from "./config"
 import { MessageTable, PartTable } from "./session.sql"
@@ -51,7 +51,7 @@ type SystemError = Error & { code?: string; syscall?: string }
 export namespace MessageV2 {
   export const Actor = z
     .object({
-      kind: z.enum(["user", "agent", "service", "scheduler"]),
+      kind: z.enum(["user", "agent", "workflow", "scheduler"]),
       id: z.string(),
     })
     .meta({
@@ -106,6 +106,8 @@ export namespace MessageV2 {
       type: z.literal("json_schema"),
       schema: z.record(z.string(), z.any()).meta({ ref: "JSONSchema" }),
       retryCount: z.number().int().min(0).default(2),
+      /** Override the tool name the model must call (defaults to "StructuredOutput"). */
+      toolName: z.string().optional(),
     })
     .meta({
       ref: "OutputFormatJsonSchema",
@@ -497,6 +499,15 @@ export namespace MessageV2 {
     variant: z.string().optional(),
     finish: z.string().optional(),
     hidden: z.boolean().optional(),
+    workflowMeta: z
+      .object({
+        workflowID: z.string(),
+        workflowRunID: z.string(),
+        nodeID: z.string().optional(),
+        nodeType: z.string().optional(),
+        nodeLabel: z.string().optional(),
+      })
+      .optional(),
   }).meta({
     ref: "AssistantMessage",
   })
@@ -535,6 +546,7 @@ export namespace MessageV2 {
         partID: z.string(),
         field: z.string(),
         delta: z.string(),
+        seq: z.number(),
       }),
     ),
     PartRemoved: defineBusEvent(
@@ -632,6 +644,16 @@ export namespace MessageV2 {
       }
 
       if (msg.info.role === "assistant") {
+        // Skip workflow-runner messages that have a running/pending tool — these are the
+        // currently-executing workflow node and should not appear in the model's context
+        // as "[Tool execution was interrupted]" noise. Completed workflow tools are kept.
+        if (
+          msg.info.providerID === "workflow" &&
+          msg.parts.some((p) => p.type === "tool" && (p.state.status === "running" || p.state.status === "pending"))
+        ) {
+          continue
+        }
+
         const differentModel = `${model.providerID}/${model.id}` !== `${msg.info.providerID}/${msg.info.modelID}`
         const media: Array<{ mime: string; url: string }> = []
         const prefix = attributionPrefix(msg.info)
@@ -791,7 +813,7 @@ export namespace MessageV2 {
         if (parentMsgId) {
           ;(info as any).parentMessageID = parentMsgId
           const parentSessionID = parentSessionByMsgId.get(parentMsgId)
-          if (parentSessionID) ;(info as any).parentSessionID = parentSessionID
+          if (parentSessionID) (info as any).parentSessionID = parentSessionID
         }
         yield {
           info,
@@ -830,7 +852,7 @@ export namespace MessageV2 {
         .from(MessageTable)
         .where(eq(MessageTable.id, parentMsgId))
         .get()
-      if (parentRow) ;(info as any).parentSessionID = parentRow.session_id
+      if (parentRow) (info as any).parentSessionID = parentRow.session_id
     }
     return {
       info,
@@ -849,7 +871,7 @@ export namespace MessageV2 {
         msg.parts.some((part) => part.type === "compaction")
       )
         break
-      if (msg.info.role === "assistant" && msg.info.summary && msg.info.finish) completed.add(msg.info.parentID)
+      if (msg.info.role === "assistant" && msg.info.summary && msg.info.finish && msg.info.parentID) completed.add(msg.info.parentID)
     }
     result.reverse()
     return result
@@ -880,18 +902,110 @@ export namespace MessageV2 {
           { cause: e },
         ).toObject()
       case APICallError.isInstance(e): {
-        // TODO: replace with real ProviderError.parseAPICallError when Provider is migrated
-        const apiErr = e as any
+        const apiErr = e as APICallError
+        const message = apiErr.message ?? "API error"
+        const statusCode = apiErr.statusCode
+
+        // Detect context overflow from message patterns or status codes
+        const overflowPatterns = [
+          /prompt is too long/i,
+          /exceeds the context window/i,
+          /exceeds the maximum number of tokens/i,
+          /reduce the length of the messages/i,
+          /400 status code \(no body\)/i,
+          /413 status code \(no body\)/i,
+        ]
+        const isOverflow = overflowPatterns.some((p) => p.test(message))
+
+        if (isOverflow && statusCode !== 429) {
+          return new MessageV2.ContextOverflowError(
+            { message: "Input exceeds context window of this model", responseBody: apiErr.responseBody },
+            { cause: e },
+          ).toObject()
+        }
+
+        // OpenAI 404 is transient (model routing) — retry
+        if (ctx.providerID === "openai" && statusCode === 404) {
+          return new MessageV2.APIError(
+            {
+              message,
+              statusCode,
+              isRetryable: true,
+              responseHeaders: apiErr.responseHeaders,
+              responseBody: apiErr.responseBody,
+            },
+            { cause: e },
+          ).toObject()
+        }
+
+        // Special handling for github-copilot 403 errors
+        if (ctx.providerID === "github-copilot" && statusCode === 403) {
+          return new MessageV2.APIError(
+            {
+              message:
+                "Please reauthenticate with the copilot provider to ensure your credentials work properly with OpenCode.",
+              statusCode,
+              isRetryable: apiErr.isRetryable ?? false,
+              responseHeaders: apiErr.responseHeaders,
+              responseBody: apiErr.responseBody,
+              metadata: { url: apiErr.url },
+            },
+            { cause: e },
+          ).toObject()
+        }
+
         return new MessageV2.APIError(
           {
-            message: apiErr.message ?? "API error",
-            statusCode: apiErr.statusCode,
+            message,
+            statusCode,
             isRetryable: apiErr.isRetryable ?? false,
             responseHeaders: apiErr.responseHeaders,
             responseBody: apiErr.responseBody,
           },
           { cause: e },
         ).toObject()
+      }
+      case typeof e === "object" && e !== null && (e as any).type === "error": {
+        // Handle structured error objects (e.g., from provider error parsing)
+        const errObj = e as { error?: { code?: string; message?: string } }
+        const code = errObj.error?.code
+        const responseBody = JSON.stringify(e)
+
+        switch (code) {
+          case "context_length_exceeded":
+            return new MessageV2.ContextOverflowError(
+              { message: "Input exceeds context window of this model", responseBody },
+              { cause: e },
+            ).toObject()
+          case "insufficient_quota":
+            return new MessageV2.APIError(
+              { message: "Quota exceeded. Check your plan and billing details.", isRetryable: false, responseBody },
+              { cause: e },
+            ).toObject()
+          case "usage_not_included":
+            return new MessageV2.APIError(
+              {
+                message: "To use Codex with your ChatGPT plan, upgrade to Plus: https://chatgpt.com/explore/plus.",
+                isRetryable: false,
+                responseBody,
+              },
+              { cause: e },
+            ).toObject()
+          case "invalid_prompt":
+            return new MessageV2.APIError(
+              {
+                message: errObj.error?.message ?? "Invalid prompt",
+                isRetryable: false,
+                responseBody,
+              },
+              { cause: e },
+            ).toObject()
+          default:
+            return new MessageV2.APIError(
+              { message: errObj.error?.message ?? "API error", isRetryable: false, responseBody },
+              { cause: e },
+            ).toObject()
+        }
       }
       case e instanceof Error:
         return new NamedError.Unknown({ message: e.toString() }, { cause: e }).toObject()

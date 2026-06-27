@@ -1,5 +1,5 @@
 // ─── Node Type Registry (UI Layer) ───────────────────────────────────────────
-// Bridges canonical definitions from @opendora/workflow to UI-specific rendering.
+// Bridges canonical definitions from @projectflows/workflow to UI-specific rendering.
 // Icon mapping: lucide icon name strings → React components.
 
 import {
@@ -8,15 +8,17 @@ import {
   type NodeDefinition,
   type NodeHandleDefinition,
   type NodeConstraints,
-} from "@opendora/workflow/node-registry"
-import type { WorkflowNodePayload } from "@opendora/workflow/node-types"
+} from "@projectflows/workflow/node-registry"
+import type { WorkflowNodePayload } from "@projectflows/workflow/node-types"
 import {
   Braces,
   FolderOpen,
   GitBranch,
+  Layers,
   MessageSquare,
   Play,
   Repeat,
+  Settings2,
   SlidersHorizontal,
   Wrench,
   type LucideIcon,
@@ -30,9 +32,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Braces,
   FolderOpen,
   GitBranch,
+  Layers,
   MessageSquare,
   Play,
   Repeat,
+  Settings2,
   SlidersHorizontal,
   Wrench,
 }
@@ -109,5 +113,5 @@ export function getDefaultNodeData(type: NodeType) {
 }
 
 // Re-export canonical types and helpers for convenient access from UI code
-export { NodeRegistry, NodeTypeId } from "@opendora/workflow/node-registry"
-export type { NodeDefinition, NodeHandleDefinition, NodeConstraints } from "@opendora/workflow/node-registry"
+export { NodeRegistry, NodeTypeId } from "@projectflows/workflow/node-registry"
+export type { NodeDefinition, NodeHandleDefinition, NodeConstraints } from "@projectflows/workflow/node-registry"

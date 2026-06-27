@@ -1,4 +1,4 @@
-import { createOpencodeClient, createOpencodeServer } from "@opendora/sdk"
+import { createOpencodeClient, createOpencodeServer } from "@projectflows/sdk"
 import { pathToFileURL } from "bun"
 
 const server = await createOpencodeServer()

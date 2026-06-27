@@ -10,7 +10,7 @@ export class ClawHubRegistry implements SkillRegistry {
       if (!response.ok) {
         throw new Error(`ClawHub search failed: ${response.statusText}`)
       }
-      const data = await response.json()
+      const data = await response.json() as any
       return (data.skills || []).map((skill: any) => ({
         name: skill.name,
         description: skill.description || "",
@@ -71,7 +71,7 @@ export class ClawHubRegistry implements SkillRegistry {
         }
       }
 
-      const data = await response.json()
+      const data = await response.json() as any
       return {
         safe: data.safe !== false,
         warnings: data.warnings || [],
@@ -95,7 +95,7 @@ export class ClawHubRegistry implements SkillRegistry {
       if (!response.ok) {
         throw new Error(`ClawHub list failed: ${response.statusText}`)
       }
-      const data = await response.json()
+      const data = await response.json() as any
       return (data.skills || []).map((skill: any) => ({
         name: skill.name,
         description: skill.description || "",
@@ -118,6 +118,7 @@ export class ClawHubRegistry implements SkillRegistry {
     const files = new Map<string, string>()
     
     try {
+      // @ts-ignore - tar-stream types not installed but package is available at runtime
       const { default: tar } = await import("tar-stream")
       const { createGunzip } = await import("zlib")
       const { Readable } = await import("stream")

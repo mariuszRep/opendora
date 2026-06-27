@@ -1,5 +1,5 @@
 {
-  "name": "@opendora/agent",
+  "name": "@projectflows/agent",
   "version": "0.1.0",
   "type": "module",
   "exports": {

@@ -1,5 +1,5 @@
 {
-  "name": "@opendora/auth",
+  "name": "@projectflows/auth",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
     "./*": "./src/*.ts"
   },
   "dependencies": {
-    "@opendora/util": "workspace:*",
+    "@projectflows/util": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {

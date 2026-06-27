@@ -5,7 +5,7 @@ import toolDef from "./agent-get.json"
 
 export const AgentGetTool = Tool.define(
   "agent_get",
-  async () => ({
+  (async () => ({
     description: toolDef.description,
 
     parameters: z.object({
@@ -18,7 +18,7 @@ export const AgentGetTool = Tool.define(
         ),
     }),
 
-    async execute(args: { id: string; view?: "config" | "persona" | "injection" | "tools" | "skills" | "workflows" | "system_prompt" }, ctx) {
+    async execute(args: { id: string; view?: "config" | "persona" | "injection" | "tools" | "skills" | "workflows" | "system_prompt" }, ctx: any) {
       await ctx.ask({
         permission: "agent_get",
         patterns: [],
@@ -201,5 +201,5 @@ export const AgentGetTool = Tool.define(
 
       throw new Error(`Unknown view: ${view}`)
     },
-  })
+  })) as any
 )

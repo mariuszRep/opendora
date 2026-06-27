@@ -5,7 +5,7 @@ import {
   type HandleType,
   type NodeHandleDefinition,
   type NodeConstraints,
-} from "@opendora/workflow/node-registry"
+} from "@projectflows/workflow/node-registry"
 import type { NodeType } from "./unified-node"
 import type { Edge } from "@xyflow/react"
 
@@ -17,10 +17,10 @@ export type {
   HandleConnectionRule,
   NodeHandleDefinition,
   NodeConstraints,
-} from "@opendora/workflow/node-registry"
+} from "@projectflows/workflow/node-registry"
 
 export {
-  /** @deprecated Import from @opendora/workflow/node-registry directly */
+  /** @deprecated Import from @projectflows/workflow/node-registry directly */
   NodeTypeId,
 }
 

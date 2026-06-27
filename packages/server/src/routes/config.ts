@@ -1,12 +1,12 @@
 import { Hono } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { Config } from "@opendora/config/config"
-import { Provider } from "@opendora/provider/provider"
+import { Config } from "@projectflows/config/config"
+import { Provider } from "@projectflows/provider/provider"
 import { mapValues } from "remeda"
 import { errors } from "../error"
-import { Log } from "@opendora/util/log"
-import { lazy } from "@opendora/util/lazy"
+import { Log } from "@projectflows/util/log"
+import { lazy } from "@projectflows/util/lazy"
 
 const log = Log.create({ service: "server" })
 

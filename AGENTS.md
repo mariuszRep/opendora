@@ -31,8 +31,7 @@ See the nearest `VISION.md` where present for target intent. During migration, t
 
 **Target applications:**
 - `apps/web` — web frontend
-- `apps/cli` — CLI binary
-- `apps/tui` — terminal UI
+- `apps/cli` — CLI binary with integrated terminal UI (TUI) mode/subcommand
 - `server/` — Hono API server + typed client export
 
 **Target packages (self-contained, no cross-pollination):**

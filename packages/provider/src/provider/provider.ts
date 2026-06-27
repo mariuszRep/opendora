@@ -1,21 +1,22 @@
 import z from "zod"
 import os from "os"
 import fuzzysort from "fuzzysort"
-import { get as getConfig } from "@opendora/util/config"
+import { get as getConfig } from "@projectflows/util/config"
 import { mapValues, mergeDeep, omit, pickBy, sortBy } from "remeda"
 import { NoSuchModelError, type Provider as SDK } from "ai"
-import { Log } from "@opendora/util/log"
-import { BunProc } from "@opendora/util/bun"
+import { Log } from "@projectflows/util/log"
+import { BunProc } from "@projectflows/util/bun"
 import { list as listPlugins } from "./plugin"
 import { ModelsDev } from "./models"
-import { NamedError } from "@opendora/util/error"
-import { Auth } from "@opendora/auth"
-import { state as instanceState } from "@opendora/util/instance"
-import { Flag } from "@opendora/util/flag"
-import { iife } from "@opendora/util/iife"
-import { Global } from "@opendora/util/global"
+import { NamedError } from "@projectflows/util/error"
+import { Auth } from "@projectflows/auth"
+import { Instance } from "@projectflows/runtime/instance"
+import { Env } from "@projectflows/runtime/env"
+import { Flag } from "@projectflows/util/flag"
+import { iife } from "@projectflows/util/iife"
+import { Global } from "@projectflows/util/global"
 import path from "path"
-import { Filesystem } from "@opendora/util/filesystem"
+import { Filesystem } from "@projectflows/util/filesystem"
 
 // Direct imports for bundled providers
 import { createAmazonBedrock, type AmazonBedrockProviderSettings } from "@ai-sdk/amazon-bedrock"
@@ -42,7 +43,7 @@ import { createGitLab, VERSION as GITLAB_PROVIDER_VERSION } from "@gitlab/gitlab
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers"
 import { GoogleAuth } from "google-auth-library"
 import { ProviderTransform } from "./transform"
-import * as Version from "@opendora/util/version"
+import * as Version from "@projectflows/util/version"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -99,10 +100,12 @@ export namespace Provider {
     "@ai-sdk/deepinfra": createDeepInfra,
     "@ai-sdk/cerebras": createCerebras,
     "@ai-sdk/cohere": createCohere,
+    // @ts-expect-error - GatewayProvider uses @ai-sdk/provider@3 types vs @ai-sdk/provider@2 in BUNDLED_PROVIDERS
     "@ai-sdk/gateway": createGateway,
     "@ai-sdk/togetherai": createTogetherAI,
     "@ai-sdk/perplexity": createPerplexity,
     "@ai-sdk/vercel": createVercel,
+    // @ts-expect-error - GitLabProvider uses a different @ai-sdk/provider version than BUNDLED_PROVIDERS expects
     "@gitlab/gitlab-ai-provider": createGitLab,
     // @ts-ignore (TODO: kill this code so we dont have to maintain it)
     "@ai-sdk/github-copilot": createGitHubCopilotOpenAICompatible,
@@ -117,7 +120,7 @@ export namespace Provider {
 
   async function loadOpencodeProvider(input: Info) {
     const auth = await Auth.get(input.id)
-    const env = { ...process.env }
+    const env = Env.all()
     const envKey = input.env.map((item) => env[item]).find(Boolean)
     const config = await getConfig()
     const configKey = config.provider?.[input.id]?.options?.apiKey
@@ -236,32 +239,30 @@ export namespace Provider {
 
       // Region precedence: 1) config file, 2) env var, 3) default
       const configRegion = providerConfig?.options?.region
-      const envRegion = process.env["AWS_REGION"]
+      const envRegion = Env.get("AWS_REGION")
       const defaultRegion = configRegion ?? envRegion ?? "us-east-1"
 
       // Profile: config file takes precedence over env var
       const configProfile = providerConfig?.options?.profile
-      const envProfile = process.env["AWS_PROFILE"]
+      const envProfile = Env.get("AWS_PROFILE")
       const profile = configProfile ?? envProfile
 
-      const awsAccessKeyId = process.env["AWS_ACCESS_KEY_ID"]
+      const awsAccessKeyId = Env.get("AWS_ACCESS_KEY_ID")
 
-      // TODO: Using process.env directly because Env.set only updates a process.env shallow copy,
-      // until the scope of the Env API is clarified (test only or runtime?)
       const awsBearerToken = iife(() => {
-        const envToken = process.env.AWS_BEARER_TOKEN_BEDROCK
+        const envToken = Env.get("AWS_BEARER_TOKEN_BEDROCK")
         if (envToken) return envToken
         if (auth?.type === "api") {
-          process.env.AWS_BEARER_TOKEN_BEDROCK = auth.key
+          Env.set("AWS_BEARER_TOKEN_BEDROCK", auth.key)
           return auth.key
         }
         return undefined
       })
 
-      const awsWebIdentityTokenFile = process.env["AWS_WEB_IDENTITY_TOKEN_FILE"]
+      const awsWebIdentityTokenFile = Env.get("AWS_WEB_IDENTITY_TOKEN_FILE")
 
       const containerCreds = Boolean(
-        process.env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI || process.env.AWS_CONTAINER_CREDENTIALS_FULL_URI,
+        Env.get("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI") || Env.get("AWS_CONTAINER_CREDENTIALS_FULL_URI"),
       )
 
       if (!profile && !awsAccessKeyId && !awsBearerToken && !awsWebIdentityTokenFile && !containerCreds)
@@ -415,7 +416,7 @@ export namespace Provider {
         options: {
           project,
           location,
-          fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+          fetch: async (input: string | URL | Request, init?: RequestInit) => {
             const auth = new GoogleAuth()
             const client = await auth.getApplicationDefault()
             const token = await client.credential.getAccessToken()
@@ -572,7 +573,9 @@ export namespace Provider {
       }
 
       // Use official ai-gateway-provider package (v2.x for AI SDK v5 compatibility)
+      // @ts-ignore - ai-gateway-provider is a workspace-level dep, available at runtime
       const { createAiGateway } = await import("ai-gateway-provider")
+      // @ts-ignore
       const { createUnified } = await import("ai-gateway-provider/providers/unified")
 
       const aigateway = createAiGateway({ accountId, gateway, apiKey: apiToken })
@@ -778,7 +781,7 @@ export namespace Provider {
     }
   }
 
-  const state = instanceState(async () => {
+  const state = Instance.state(async () => {
     using _ = log.time("state")
     const config = await getConfig()
     const modelsDev = await ModelsDev.get()
@@ -841,7 +844,7 @@ export namespace Provider {
 
     log.info("init")
 
-    const configProviders = Object.entries(config.provider ?? {})
+    const configProviders = Object.entries((config.provider ?? {}) as Record<string, any>)
 
     // Add GitHub Copilot Enterprise provider that inherits from GitHub Copilot
     if (database["github-copilot"]) {
@@ -882,7 +885,7 @@ export namespace Provider {
         models: existing?.models ?? {},
       }
 
-      for (const [modelID, model] of Object.entries(provider.models ?? {})) {
+      for (const [modelID, model] of Object.entries((provider.models ?? {}) as Record<string, any>)) {
         const existingModel = parsed.models[model.id ?? modelID]
         const name = iife(() => {
           if (model.name) return model.name
@@ -943,10 +946,10 @@ export namespace Provider {
           release_date: model.release_date ?? existingModel?.release_date ?? "",
           variants: {},
         }
-        const merged = mergeDeep(ProviderTransform.variants(parsedModel), model.variants ?? {})
+        const merged = mergeDeep(ProviderTransform.variants(parsedModel), model.variants ?? {}) as Record<string, any>
         parsedModel.variants = mapValues(
-          pickBy(merged, (v) => !v.disabled),
-          (v) => omit(v, ["disabled"]),
+          pickBy(merged, (v) => !(v as any).disabled),
+          (v) => omit(v as any, ["disabled"]),
         )
         parsed.models[modelID] = parsedModel
       }
@@ -954,7 +957,7 @@ export namespace Provider {
     }
 
     // load env
-    const env = { ...process.env }
+    const env = Env.all()
     for (const [providerID, provider] of Object.entries(database)) {
       if (disabled.has(providerID)) continue
       const apiKey = provider.env.map((item) => env[item]).find(Boolean)
@@ -997,7 +1000,7 @@ export namespace Provider {
 
       // Load for the main provider if auth exists
       if (auth) {
-        const options = await plugin.auth.loader(() => Auth.get(providerID) as any, database[plugin.auth.provider])
+        const options = await plugin.auth.loader(() => Auth.get(providerID) as any, database[plugin.auth.provider]!)
         const opts = options ?? {}
         const patch: Partial<Info> = providers[providerID] 
           ? { options: opts } 
@@ -1013,7 +1016,7 @@ export namespace Provider {
           if (enterpriseAuth) {
             const enterpriseOptions = await plugin.auth.loader(
               () => Auth.get(enterpriseProviderID) as any,
-              database[enterpriseProviderID],
+              database[enterpriseProviderID]!,
             )
             const opts = enterpriseOptions ?? {}
             const patch: Partial<Info> = providers[enterpriseProviderID]
@@ -1062,7 +1065,7 @@ export namespace Provider {
         model.api.id = model.api.id ?? model.id ?? modelID
         if (modelID === "gpt-5-chat-latest" || (providerID === "openrouter" && modelID === "openai/gpt-5-chat"))
           delete provider.models[modelID]
-        if (model.status === "alpha" && !Flag.OPENCODE_ENABLE_EXPERIMENTAL_MODELS) delete provider.models[modelID]
+        if (model.status === "alpha" && !Flag.PROJECTFLOWS_ENABLE_EXPERIMENTAL_MODELS) delete provider.models[modelID]
         if (model.status === "deprecated") delete provider.models[modelID]
         if (
           (configProvider?.blacklist && configProvider.blacklist.includes(modelID)) ||
@@ -1075,10 +1078,10 @@ export namespace Provider {
         // Filter out disabled variants from config
         const configVariants = configProvider?.models?.[modelID]?.variants
         if (configVariants && model.variants) {
-          const merged = mergeDeep(model.variants, configVariants)
+          const merged = mergeDeep(model.variants, configVariants) as Record<string, any>
           model.variants = mapValues(
-            pickBy(merged, (v) => !v.disabled),
-            (v) => omit(v, ["disabled"]),
+            pickBy(merged, (v) => !(v as any).disabled),
+            (v) => omit(v as any, ["disabled"]),
           )
         }
       }
@@ -1260,7 +1263,6 @@ export namespace Provider {
       const availableModels = Object.keys(provider.models)
       const matches = fuzzysort.go(modelID, availableModels, { limit: 3, threshold: -10000 })
       const suggestions = matches.map((m) => m.target)
-      if (matches.length > 0) return provider.models[matches[0].target]!
       throw new ModelNotFoundError({ providerID, modelID, suggestions })
     }
     return info
@@ -1275,8 +1277,9 @@ export namespace Provider {
     const sdk = await getSDK(model)
 
     try {
-      const language = s.modelLoaders[model.providerID] && provider
-        ? await s.modelLoaders[model.providerID](sdk, model.api.id, provider.options)
+      const modelLoader = s.modelLoaders[model.providerID]
+      const language = typeof modelLoader === "function" && provider
+        ? await modelLoader(sdk, model.api.id, provider.options)
         : sdk.languageModel(model.api.id)
       s.models.set(key, language)
       return language
@@ -1414,7 +1417,7 @@ export namespace Provider {
   export function parseModel(model: string) {
     const [providerID, ...rest] = model.split("/")
     return {
-      providerID: providerID,
+      providerID: providerID ?? "",
       modelID: rest.join("/"),
     }
   }

@@ -130,6 +130,14 @@ function useWorkflowList() {
   return workflows
 }
 
+function useAgentList() {
+  const [agents, setAgents] = React.useState<Array<{ id?: string; name: string }>>([])
+  React.useEffect(() => {
+    opendora.agent.list().then(setAgents).catch(() => {})
+  }, [])
+  return agents
+}
+
 function useWorkflowParams(workflowId: string) {
   const [wfParams, setWfParams] = React.useState<WorkflowParameter[]>([])
   const [loading, setLoading] = React.useState(false)
@@ -196,6 +204,9 @@ const TAB_MANIFEST: Record<NodeTypeId, TabId[]> = {
   [NodeTypeId.SetWorkdir]:  ['general', 'input'],
   [NodeTypeId.ForEach]:     ['general', 'input', 'output'],
   [NodeTypeId.RunWorkflow]: ['general', 'input', 'output'],
+  [NodeTypeId.ConfigureSession]: ['general', 'input'],
+  [NodeTypeId.Variable]:    ['general', 'input', 'output'],
+  [NodeTypeId.Output]:      ['general', 'input'],
 }
 
 const TAB_LABELS: Record<TabId, string> = {
@@ -230,8 +241,11 @@ export type DrawerFormData = {
   type?: string
   workflowParameters?: WorkflowParameter[]
   outputSchema?: Record<string, unknown>
+  schemaProps?: import('@/components/workflow/schema-builder').SchemaProp[]
+  renderLayout?: import('@/lib/format-translator').RenderLayoutConfig
   edgeLabel?: string
   model?: NodeModel
+  retry?: { maxAttempts: number; delaySeconds: number }
 }
 
 interface WorkflowEditDrawerProps {
@@ -330,11 +344,21 @@ export function WorkflowEditDrawer({
   const [editingNodeData, setEditingNodeData] = React.useState<UnifiedNodeData | null>(null)
   const [activeTab, setActiveTab] = React.useState('general')
   const [toolSearch, setToolSearch] = React.useState('')
+  const [isDragging, setIsDragging] = React.useState(false)
+  const [dragY, setDragY] = React.useState(0)
+  const [dragStartY, setDragStartY] = React.useState(0)
+  React.useEffect(() => {
+    if (!open) {
+      setDragY(0)
+      setIsDragging(false)
+    }
+  }, [open])
   const { schemas, loading: loadingSchemas } = useToolSchemas()
   const allWorkflows = useWorkflowList()
   const availableWorkflows = currentWorkflowId
     ? allWorkflows.filter((w) => w.id !== currentWorkflowId)
     : allWorkflows
+  const agentList = useAgentList()
 
   // Tracked separately so useWorkflowParams always has a stable hook call
   const runWorkflowId = editingNodeData?.nodeType === NodeTypeId.RunWorkflow
@@ -386,7 +410,10 @@ export function WorkflowEditDrawer({
         outputSchema: editingNodeData._schemaProps !== undefined
           ? schemaPropsToJsonSchema(editingNodeData._schemaProps as SchemaProp[])
           : (editingNodeData.outputSchema as Record<string, unknown> | undefined),
+        schemaProps: editingNodeData._schemaProps as SchemaProp[] | undefined,
+        renderLayout: (editingNodeData.renderLayout as import('@/lib/format-translator').RenderLayoutConfig | undefined),
         model: formData.model,
+        retry: editingNodeData.node.retry,
       })
     } else {
       onSave(formData)
@@ -605,6 +632,21 @@ export function WorkflowEditDrawer({
             )
           }
 
+          if (nodeType === NodeTypeId.ConfigureSession) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="configsession-label">Label</Label>
+                  <Input id="configsession-label" value={editingNodeData.node.label || ''} onChange={(e) => handleNodeChange({ label: e.target.value })} placeholder="Configure Session" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="configsession-description">Description</Label>
+                  <Textarea id="configsession-description" value={editingNodeData.node.description || ''} onChange={(e) => handleNodeChange({ description: e.target.value })} placeholder="Why is the session being reconfigured here?" rows={2} />
+                </div>
+              </div>
+            )
+          }
+
           if (nodeType === NodeTypeId.ForEach) {
             return (
               <div className="space-y-4">
@@ -627,6 +669,36 @@ export function WorkflowEditDrawer({
                     Open Canvas
                   </Button>
                 )}
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Variable) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="variable-label">Label</Label>
+                  <Input id="variable-label" value={editingNodeData.node.label || ''} onChange={(e) => handleNodeChange({ label: e.target.value })} placeholder="Variable" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="variable-description">Description</Label>
+                  <Textarea id="variable-description" value={editingNodeData.node.description || ''} onChange={(e) => handleNodeChange({ description: e.target.value })} placeholder="What values does this node define?" rows={2} />
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Output) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="output-label">Label</Label>
+                  <Input id="output-label" value={editingNodeData.node.label || ''} onChange={(e) => handleNodeChange({ label: e.target.value })} placeholder="Output" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="output-description">Description</Label>
+                  <Textarea id="output-description" value={editingNodeData.node.description || ''} onChange={(e) => handleNodeChange({ description: e.target.value })} placeholder="Describe what this workflow returns" rows={2} />
+                </div>
               </div>
             )
           }
@@ -734,6 +806,7 @@ export function WorkflowEditDrawer({
                     required={required}
                     values={parameters}
                     agentArgs={editingNodeData.agentArgs ?? []}
+                    availableRefs={availableRefs}
                     onChange={(updated) => setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: updated } })}
                     onAgentArgsChange={(updated) => setEditingNodeData({ ...editingNodeData, agentArgs: updated })}
                   />
@@ -776,7 +849,7 @@ export function WorkflowEditDrawer({
                   <div>
                     <Label>Output schema</Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Define the JSON shape the agent must return. Fields are referenced as <code className="font-mono">${'$'}{(editingNodeData.node as any).key || 'node_key'}.<i>field</i></code>.
+                      Define the JSON shape and display for each field. Fields are referenced as <code className="font-mono">${'$'}{(editingNodeData.node as any).key || 'node_key'}.<i>field</i></code>.
                     </p>
                   </div>
                   {(() => {
@@ -793,9 +866,11 @@ export function WorkflowEditDrawer({
                   <SchemaBuilder
                     props={
                       (editingNodeData._schemaProps as SchemaProp[] | undefined) ??
+                      (editingNodeData.schemaProps as SchemaProp[] | undefined) ??
                       jsonSchemaToProps((editingNodeData.outputSchema as Record<string, unknown>) ?? { type: 'object', properties: {} })
                     }
                     onChange={(props) => setEditingNodeData({ ...editingNodeData, _schemaProps: props })}
+                    suggestions={availableRefs ?? []}
                   />
                 </div>
               </div>
@@ -836,7 +911,7 @@ export function WorkflowEditDrawer({
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
-                        <Textarea value={param.description} onChange={(e) => { const u = [...params]; u[i] = { ...u[i], description: e.target.value }; updateWfParams(u) }} placeholder="Description — shown to the LLM when this workflow runs" rows={2} className="text-xs resize-none" />
+                        <ExpressionInput value={param.description ?? ''} onChange={(v) => { const u = [...params]; u[i] = { ...u[i], description: v }; updateWfParams(u) }} suggestions={availableRefs ?? []} placeholder="Description — shown to the LLM when this workflow runs. Type $ to reference upstream outputs." className="text-xs" />
                         {(['string', 'number', 'integer'] as const).includes((param.type ?? 'string') as 'string' | 'number' | 'integer') && (
                           <div className="space-y-1">
                             <span className="text-xs text-muted-foreground">Allowed values <span className="opacity-60">(empty = accept any)</span></span>
@@ -930,9 +1005,77 @@ export function WorkflowEditDrawer({
             )
           }
 
+          if (nodeType === NodeTypeId.ConfigureSession) {
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const model = (params.model as NodeModel | null | undefined) ?? undefined
+            const cwdVal = (params.cwd as string) ?? ''
+            const titleVal = (params.title as string) ?? ''
+            const agentIDVal = (params.agentID as string) ?? ''
+            const systemPromptVal = (params.systemPrompt as string) ?? ''
+            const pathVal = (params.path as string) ?? ''
+            const readPathVal = (params.readPath as string) ?? ''
+            const updateParams = (updates: Record<string, unknown>) => {
+              setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: { ...params, ...updates } } })
+            }
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Model</Label>
+                  <ModelPicker value={model} onChange={(m) => updateParams({ model: m ?? null })} />
+                  <p className="text-xs text-muted-foreground">Sets the session&apos;s active model from this node forward. Subsequent nodes inherit it until changed again or reset to &quot;Agent default&quot;.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Working directory <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <ExpressionInput value={cwdVal} onChange={(v) => updateParams({ cwd: v || undefined })} suggestions={availableRefs} placeholder="$ctx.project_directory" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Session title <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <ExpressionInput value={titleVal} onChange={(v) => updateParams({ title: v || undefined })} suggestions={availableRefs} placeholder="Leave blank to keep current title, or use $nodeKey.field" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Agent <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Combobox
+                    value={agentIDVal || null}
+                    onValueChange={(id) => updateParams({ agentID: id ?? undefined })}
+                  >
+                    <ComboboxInput placeholder="Keep current agent…" showClear />
+                    <ComboboxContent>
+                      <ComboboxEmpty>No agents found.</ComboboxEmpty>
+                      <ComboboxList>
+                        {agentList.map((a) => (
+                          <ComboboxItem key={a.id ?? a.name} value={a.id ?? a.name}>{a.name}</ComboboxItem>
+                        ))}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
+                </div>
+                <div className="space-y-2">
+                  <Label>System prompt <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <PromptInput
+                    value={systemPromptVal}
+                    onChange={(v) => updateParams({ systemPrompt: v || undefined })}
+                    suggestions={availableRefs ?? []}
+                    placeholder="Leave blank to keep current system prompt. Type $ to reference upstream outputs."
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Write path boundary <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <ExpressionInput value={pathVal} onChange={(v) => updateParams({ path: v || undefined })} suggestions={availableRefs} placeholder="$ctx.write_path" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Read path boundary <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <ExpressionInput value={readPathVal} onChange={(v) => updateParams({ readPath: v || undefined })} suggestions={availableRefs} placeholder="$ctx.read_path" />
+                </div>
+              </div>
+            )
+          }
+
           if (nodeType === NodeTypeId.ForEach) {
             const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const itemsMode = (params.itemsMode as string) ?? 'reference'
             const itemsVal = (params.items as string) ?? ''
+            const inlineItems = (Array.isArray(params.itemsList) ? params.itemsList : []) as string[]
             const itemVar = (params.item_variable as string) ?? 'item'
             const collectVal = (params.collect as string) ?? ''
             const outputKey = (params.output as string) ?? 'results'
@@ -942,17 +1085,71 @@ export function WorkflowEditDrawer({
             return (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Items array</Label>
-                  <ExpressionInput
-                    value={itemsVal}
-                    onChange={(v) => updateParams({ items: v || undefined })}
-                    suggestions={availableRefs}
-                    placeholder="$ctx.my_array"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Reference an upstream array. The loop body runs once per element. Also accepts a JSON string array from a previous node.
-                  </p>
+                  <Label>Items source</Label>
+                  <Select value={itemsMode} onValueChange={(v) => updateParams({ itemsMode: v })}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="reference">From reference</SelectItem>
+                      <SelectItem value="inline">Inline list</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                {itemsMode === 'inline' ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Items</Label>
+                      <Button variant="outline" size="sm" className="h-7 text-xs"
+                        onClick={() => updateParams({ itemsList: [...inlineItems, ''] })}>
+                        <Plus className="h-3 w-3 mr-1" />Add item
+                      </Button>
+                    </div>
+                    {inlineItems.length === 0 && (
+                      <p className="text-xs text-muted-foreground py-2 text-center">No items yet. Add items below — each one can reference upstream outputs using <code className="font-mono">$nodeKey.field</code>.</p>
+                    )}
+                    <div className="space-y-2">
+                      {inlineItems.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <div className="flex-1">
+                            <ExpressionInput
+                              value={item}
+                              onChange={(v) => {
+                                const updated = [...inlineItems]
+                                updated[idx] = v ?? ''
+                                updateParams({ itemsList: updated })
+                              }}
+                              suggestions={availableRefs}
+                              placeholder={`Item ${idx + 1} — use $nodeKey.field for dynamic values`}
+                            />
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => updateParams({ itemsList: inlineItems.filter((_, i) => i !== idx) })}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Each item runs one loop iteration. Use <code className="font-mono">$nodeKey.field</code> to embed dynamic values from earlier nodes.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Items array</Label>
+                    <ExpressionInput
+                      value={itemsVal}
+                      onChange={(v) => updateParams({ items: v || undefined })}
+                      suggestions={availableRefs}
+                      placeholder="$ctx.my_array"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Reference an upstream array. String elements may contain <code className="font-mono">$ref</code> expressions resolved at runtime.
+                    </p>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label>Item variable name</Label>
                   <Input
@@ -989,6 +1186,201 @@ export function WorkflowEditDrawer({
                     The collected results array is stored as <code className="font-mono">$ctx.{outputKey || 'results'}</code> for downstream nodes.
                   </p>
                 </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Output) {
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const fields = (params.fields ?? {}) as Record<string, string>
+            const fieldEntries = Object.entries(fields)
+            const updateFields = (updated: Record<string, string>) =>
+              setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: { ...params, fields: updated } } })
+
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Output fields</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">Each field becomes a key in the returned <code className="font-mono">result</code> object.</p>
+                    </div>
+                    <Button variant="outline" size="sm" className="h-7 text-xs shrink-0"
+                      onClick={() => {
+                        const key = `field_${fieldEntries.length + 1}`
+                        updateFields({ ...fields, [key]: '' })
+                      }}>
+                      <Plus className="h-3 w-3 mr-1" />Add
+                    </Button>
+                  </div>
+                  {fieldEntries.length === 0 && (
+                    <p className="text-xs text-muted-foreground py-3 text-center">No fields yet. Add one to declare the workflow&apos;s return value.</p>
+                  )}
+                  <div className="space-y-2">
+                    {fieldEntries.map(([key, val], i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Input
+                          value={key}
+                          onChange={(e) => {
+                            const newKey = e.target.value
+                            const entries = fieldEntries.map(([k, v]) => [k, v] as [string, string])
+                            entries[i] = [newKey, val]
+                            updateFields(Object.fromEntries(entries))
+                          }}
+                          placeholder="field name"
+                          className="font-mono text-xs w-32 shrink-0"
+                        />
+                        <ExpressionInput
+                          value={val}
+                          onChange={(v) => updateFields({ ...fields, [key]: v })}
+                          suggestions={availableRefs}
+                          placeholder={`$nodeKey.field`}
+                        />
+                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => {
+                            const updated = { ...fields }
+                            delete updated[key]
+                            updateFields(updated)
+                          }}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Variable) {
+            type VarEntry = { name: string; type: string; value: string; items: string[]; updateMode: string }
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const variables = (Array.isArray(params.variables) ? params.variables : []) as VarEntry[]
+
+            const setVariables = (updated: VarEntry[]) =>
+              setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: { ...params, variables: updated } } })
+
+            const updateEntry = (i: number, patch: Partial<VarEntry>) => {
+              const next = variables.map((v, idx) => idx === i ? { ...v, ...patch } : v)
+              setVariables(next)
+            }
+
+            const VAR_TYPES = ['string', 'number', 'boolean', 'array'] as const
+
+            return (
+              <div className="space-y-3">
+                {variables.length === 0 && (
+                  <p className="text-xs text-muted-foreground py-3 text-center">No variables yet. Add one below.</p>
+                )}
+
+                {variables.map((entry, i) => (
+                  <div key={i} className="border rounded-md p-3 space-y-3">
+                    {/* Header row: name + type + remove */}
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={entry.name}
+                        onChange={(e) => updateEntry(i, { name: e.target.value })}
+                        placeholder="variable name"
+                        className="font-mono text-xs flex-1"
+                      />
+                      <Select
+                        value={entry.type ?? 'string'}
+                        onValueChange={(v) => updateEntry(i, { type: v })}
+                      >
+                        <SelectTrigger className="w-28 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {VAR_TYPES.map((t) => (
+                            <SelectItem key={t} value={t} className="text-xs font-mono">{t}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => setVariables(variables.filter((_, j) => j !== i))}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+
+                    {/* Value / items */}
+                    {(entry.type ?? 'string') === 'array' ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Items</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs px-2"
+                            onClick={() => updateEntry(i, { items: [...(entry.items ?? []), ''] })}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />Add item
+                          </Button>
+                        </div>
+                        {(entry.items ?? []).length === 0 && (
+                          <p className="text-xs text-muted-foreground text-center py-1">No items yet.</p>
+                        )}
+                        {(entry.items ?? []).map((item, j) => (
+                          <div key={j} className="flex items-center gap-1.5">
+                            <ExpressionInput
+                              value={item}
+                              onChange={(v) => {
+                                const next = [...(entry.items ?? [])]
+                                next[j] = v
+                                updateEntry(i, { items: next })
+                              }}
+                              suggestions={availableRefs}
+                              placeholder="value or $nodeKey.field"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                              onClick={() => updateEntry(i, { items: (entry.items ?? []).filter((_, k) => k !== j) })}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground">Value</span>
+                        <ExpressionInput
+                          value={entry.value ?? ''}
+                          onChange={(v) => updateEntry(i, { value: v })}
+                          suggestions={availableRefs}
+                          placeholder="value or $nodeKey.field"
+                        />
+                      </div>
+                    )}
+
+                    {/* Update mode */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground shrink-0">Update</span>
+                      <Select
+                        value={entry.updateMode ?? 'replace'}
+                        onValueChange={(v) => updateEntry(i, { updateMode: v })}
+                      >
+                        <SelectTrigger className="h-7 text-xs flex-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="replace" className="text-xs">Replace</SelectItem>
+                          <SelectItem value="append" className="text-xs">Append (arrays)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => setVariables([...variables, { name: '', type: 'string', value: '', items: [], updateMode: 'replace' }])}
+                >
+                  <Plus className="h-3 w-3 mr-1.5" />Add variable
+                </Button>
               </div>
             )
           }
@@ -1095,11 +1487,64 @@ export function WorkflowEditDrawer({
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label>Retry on Failure</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Automatically retry this step if it fails. Set Max Retries to 0 to disable.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="retry-max" className="text-xs">Max retries</Label>
+                      <Input
+                        id="retry-max"
+                        type="number"
+                        min={0}
+                        max={10}
+                        value={editingNodeData.node.retry?.maxAttempts ?? 0}
+                        onChange={(e) => handleNodeChange({
+                          retry: { maxAttempts: Number(e.target.value), delaySeconds: editingNodeData.node.retry?.delaySeconds ?? 0 }
+                        })}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="retry-delay" className="text-xs">Delay (seconds)</Label>
+                      <Input
+                        id="retry-delay"
+                        type="number"
+                        min={0}
+                        value={editingNodeData.node.retry?.delaySeconds ?? 0}
+                        onChange={(e) => handleNodeChange({
+                          retry: { maxAttempts: editingNodeData.node.retry?.maxAttempts ?? 0, delaySeconds: Number(e.target.value) }
+                        })}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             )
           }
 
-          if (nodeType === NodeTypeId.Prompt || nodeType === NodeTypeId.Structured) {
+          if (nodeType === NodeTypeId.Prompt) {
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <Cpu className="size-3.5" />
+                    Model
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Override the agent&apos;s default model for this node only. Leave blank to inherit.
+                  </p>
+                  <ModelPicker
+                    value={formData.model}
+                    onChange={(m) => setFormData((prev) => ({ ...prev, model: m }))}
+                  />
+                </div>
+              </div>
+            )
+          }
+
+          if (nodeType === NodeTypeId.Structured) {
             return (
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -1305,6 +1750,45 @@ export function WorkflowEditDrawer({
             )
           }
 
+          if (nodeType === NodeTypeId.Variable) {
+            const nodeKey = (editingNodeData.node as any).key as string | undefined
+            const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
+            const variables = (Array.isArray(params.variables) ? params.variables : []) as Array<{ name: string; type: string }>
+
+            if (!nodeKey) {
+              return (
+                <div className="py-6 text-center">
+                  <p className="text-xs text-muted-foreground">Save the node to see its reference key.</p>
+                </div>
+              )
+            }
+
+            return (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md border bg-muted/30">
+                  <span className="font-mono text-xs flex-1 text-foreground">${nodeKey}</span>
+                  <Badge variant="secondary" className="font-mono text-xs shrink-0">object</Badge>
+                </div>
+                {variables.filter((v) => v.name).length > 0 && (
+                  <div className="space-y-1">
+                    {variables.filter((v) => v.name).map((v) => (
+                      <div key={v.name} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/20">
+                        <span className="font-mono text-xs flex-1 text-foreground">${nodeKey}.{v.name}</span>
+                        <Badge variant="outline" className="font-mono text-[10px] px-1 py-0 shrink-0">
+                          {v.type ?? 'string'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Reference individual values as <code className="font-mono">${nodeKey}.&lt;name&gt;</code> in downstream nodes.
+                  The full object is available as <code className="font-mono">${nodeKey}</code>.
+                </p>
+              </div>
+            )
+          }
+
           return null
         }
 
@@ -1384,17 +1868,6 @@ export function WorkflowEditDrawer({
         return null
     }
   }
-
-  const [isDragging, setIsDragging] = React.useState(false)
-  const [dragY, setDragY] = React.useState(0)
-  const [dragStartY, setDragStartY] = React.useState(0)
-
-  React.useEffect(() => {
-    if (!open) {
-      setDragY(0)
-      setIsDragging(false)
-    }
-  }, [open])
 
   const handlePointerDown = (e: React.PointerEvent) => {
     setIsDragging(true)

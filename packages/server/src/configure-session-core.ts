@@ -1,46 +1,46 @@
 /**
- * Configures @opendora/session with opencode's runtime dependencies.
+ * Configures @projectflows/session with opencode's runtime dependencies.
  * Call once at startup, after the Database is initialized.
  */
-import { configure } from "@opendora/session"
-import { Database } from "@opendora/storage/db"
-import { Global } from "@opendora/util/global"
-import { Bus } from "@opendora/runtime/bus"
-import { BusEvent } from "@opendora/util/bus-event"
-import { Config } from "@opendora/config/config"
-import { Storage } from "@opendora/storage/json-storage"
-import { Snapshot } from "@opendora/runtime/snapshot"
-import { Instance } from "@opendora/runtime/instance"
-import { Agent } from "@opendora/opencode/agent"
-import { PermissionNext } from "@opendora/opencode/permission/next"
-import { Plugin } from "@opendora/opencode/plugin"
-import { Scheduler } from "@opendora/runtime/scheduler"
+import { configure } from "@projectflows/session"
+import { Database } from "@projectflows/storage/db"
+import { Global } from "@projectflows/util/global"
+import { Bus } from "@projectflows/runtime/bus"
+import { BusEvent } from "@projectflows/util/bus-event"
+import { Config } from "@projectflows/config/config"
+import { Storage } from "@projectflows/storage/json-storage"
+import { Snapshot } from "@projectflows/runtime/snapshot"
+import { Instance } from "@projectflows/runtime/instance"
+import { Agent } from "@projectflows/runtime/agent"
+import { PermissionNext } from "@projectflows/permission/next"
+import { Plugin } from "./plugin"
+import { Scheduler } from "@projectflows/runtime/scheduler"
 import { LSP } from "./lsp"
-import { Provider } from "@opendora/provider/provider"
-import { ProviderTransform } from "@opendora/provider/transform"
-import { ProviderFallback } from "@opendora/provider/fallback"
-import { ProviderTimeout } from "@opendora/provider/timeout"
-import { ProviderError } from "@opendora/provider/error"
-import { Installation } from "@opendora/opencode/installation"
-import { ToolRegistry } from "@opendora/opencode/tool/registry"
+import { Provider } from "@projectflows/provider/provider"
+import { ProviderTransform } from "@projectflows/provider/transform"
+import { ProviderFallback } from "@projectflows/provider/fallback"
+import { ProviderTimeout } from "@projectflows/provider/timeout"
+import { ProviderError } from "@projectflows/provider/error"
+import { Installation } from "@projectflows/util/installation"
+import { ToolRegistry } from "@projectflows/server/tool-registry"
 import { MCP } from "./mcp"
-import { ReadTool } from "@opendora/tools/filesystem"
-import { FileTime } from "@opendora/opencode/file/time"
-import { ConfigMarkdown } from "@opendora/config/markdown"
-import { Command } from "@opendora/opencode/command"
-import { TaskTool } from "@opendora/opencode/tool/task"
-import { Shell } from "@opendora/util/shell"
-import { Truncate } from "@opendora/opencode/tool/truncation"
-import { Skill } from "@opendora/skills/skill"
-import { WorkflowStorage } from "@opendora/workflow/storage"
-import { Ripgrep } from "@opendora/tools/filesystem/lib/ripgrep"
-import { SessionPrompt } from "@opendora/session/prompt"
-import { Session } from "@opendora/session/session"
-import { Question } from "@opendora/runtime/question"
-import { Schedule } from "@opendora/opencode/schedule"
-import { addSkillTools, getSkillTools } from "@opendora/session/skill-tools"
-import { register as registerConfig } from "@opendora/util/config"
-import { register as registerPluginList } from "@opendora/provider/plugin"
+import { ReadTool } from "@projectflows/tools/filesystem"
+import { FileTime } from "@projectflows/tools/file/time"
+import { ConfigMarkdown } from "@projectflows/config/markdown"
+import { Command } from "@projectflows/server/command"
+import { TaskTool } from "@projectflows/tools/system/task"
+import { Shell } from "@projectflows/util/shell"
+import { Truncate } from "@projectflows/tools/truncation-impl"
+import { Skill } from "@projectflows/skills/skill"
+import { WorkflowStorage } from "@projectflows/workflow/storage"
+import { Ripgrep } from "@projectflows/tools/filesystem/lib/ripgrep"
+import { SessionPrompt } from "@projectflows/session/prompt"
+import { Session } from "@projectflows/session/session"
+import { Question } from "@projectflows/runtime/question"
+import { Schedule } from "@projectflows/schedule/service"
+import { addSkillTools, getSkillTools } from "@projectflows/session/skill-tools"
+import { register as registerConfig } from "@projectflows/util/config"
+import { register as registerPluginList } from "@projectflows/provider/plugin"
 
 async function enrichAgent(agent: any): Promise<any> {
   const allowedAgents: string[] | undefined = agent?.config?.toolConfig?.delegate?.allowedAgents
@@ -80,7 +80,7 @@ export function configureSessionCore() {
     },
     dataPath: Global.Path.data,
     providersPath: Global.Path.providers,
-    globalConfigPath: Global.Path.config,
+    get globalConfigPath() { return Global.Path.config },
     installationVersion: Installation.VERSION,
     opencodeBus: {
       publish(eventDef: any, payload: any) {

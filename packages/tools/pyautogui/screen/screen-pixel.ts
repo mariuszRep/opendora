@@ -5,13 +5,14 @@ import toolDef from "./screen-pixel.json"
 
 export const PyAutoGUIScreenPixelTool = Tool.define("pyautogui_screen_pixel", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    x: z.number().int(),
+    y: z.number().int(),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      x: z.number().int(),
-      y: z.number().int(),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")
 
       await ctx.ask({

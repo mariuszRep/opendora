@@ -7,14 +7,15 @@ import toolDef from ".//window-move.json"
 
 export const DesktopWindowMoveTool = Tool.define("desktop_window_move", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    title: z.string().min(1).describe("Window title or substring to match"),
+    x: z.number().int().describe("New X position of the window's top-left corner"),
+    y: z.number().int().describe("New Y position of the window's top-left corner"),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      title: z.string().min(1).describe("Window title or substring to match"),
-      x: z.number().int().describe("New X position of the window's top-left corner"),
-      y: z.number().int().describe("New Y position of the window's top-left corner"),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       assertNotSandbox(sandbox)
       assertDisplay()
       await ctx.ask({

@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
-import { Instance } from "@opendora/opencode/project/instance"
-import { Session } from "@opendora/session/session"
-import { Log } from "@opendora/util/log"
-import { configureSessionCore } from "@opendora/server/configure-session-core"
+import { Instance } from "@projectflows/runtime/instance"
+import { Session } from "@projectflows/session/session"
+import { Log } from "@projectflows/util/log"
+import { configureSessionCore } from "@projectflows/server/configure-session-core"
 
 const projectRoot = path.join(__dirname, "../..")
 Log.init({ print: false })
@@ -37,7 +37,7 @@ describe("Session.list", () => {
       fn: async () => {
         configureSessionCore()
         const root = await Session.create({ title: "root-session" })
-        const child = await Session.create({ title: "child-session", parentID: root.id })
+        const child = await Session.create({ title: "child-session", parentSessionID: root.id })
 
         const sessions = [...Session.list({ roots: true })]
         const ids = sessions.map((s) => s.id)

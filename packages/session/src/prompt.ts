@@ -2,8 +2,8 @@ import path from "path"
 import os from "os"
 import fs from "fs/promises"
 import z from "zod"
-import { fn } from "@opendora/util/fn"
-import { Identifier } from "@opendora/util/id"
+import { fn } from "@projectflows/util/fn"
+import { Identifier } from "@projectflows/util/id"
 import { MessageV2 } from "./message-v2.ts"
 import { SessionRevert } from "./revert.ts"
 import { Session } from "./session.ts"
@@ -13,7 +13,7 @@ import { getConfig } from "./config.ts"
 import { InstructionPrompt } from "./instruction.ts"
 import MAX_STEPS from "./prompt/max-steps.txt"
 import { SessionSummary } from "./summary.ts"
-import { NamedError } from "@opendora/util/error"
+import { NamedError } from "@projectflows/util/error"
 import { SessionProcessor } from "./processor.ts"
 import { SessionStatus } from "./status.ts"
 import { LLM } from "./llm.ts"
@@ -55,7 +55,6 @@ IMPORTANT:
 - Complete all necessary research and tool calls BEFORE calling this tool
 - This tool provides your final answer - no further actions are taken after calling it`
 
-const STRUCTURED_OUTPUT_SYSTEM_PROMPT = `IMPORTANT: The user has requested structured output. You MUST use the StructuredOutput tool to provide your final response. Do NOT respond with plain text - you MUST call the StructuredOutput tool with your answer formatted according to the schema.`
 
 export namespace SessionPrompt {
   // Module-level state map — equivalent to Instance.state()
@@ -89,6 +88,16 @@ export namespace SessionPrompt {
     if (match) throw new Session.BusyError(sessionID)
   }
 
+  // In-memory store for extra tools that cannot be serialized to the DB.
+  // Keyed by sessionID — only one prompt is active per session at a time.
+  // done=true once any extra tool has been called → stops re-injecting and exits the loop.
+  const _extraToolsState = new Map<string, { tools: Record<string, AITool>; done: boolean }>()
+
+  export function markExtraToolsDone(sessionID: string) {
+    const entry = _extraToolsState.get(sessionID)
+    if (entry) entry.done = true
+  }
+
   export const PromptInput = z.object({
     sessionID: Identifier.schema("session"),
     messageID: Identifier.schema("message").optional(),
@@ -108,6 +117,7 @@ export namespace SessionPrompt {
     system: z.string().optional(),
     variant: z.string().optional(),
     schedule_id: z.string().optional(),
+    tools: z.record(z.string(), z.boolean()).optional(),
     parts: z.array(
       z.discriminatedUnion("type", [
         MessageV2.TextPart.omit({
@@ -157,7 +167,10 @@ export namespace SessionPrompt {
 
   export const prompt = fn(PromptInput, async (input) => {
     const session = await Session.get(input.sessionID)
-    await SessionRevert.cleanup(session)
+    await SessionRevert.cleanup(session, {
+      getMessages: async (sid) => { const r = [] as MessageV2.WithParts[]; for await (const m of MessageV2.stream(sid)) r.push(m); return r },
+      clearRevert: Session.clearRevert,
+    })
 
     const message = await createUserMessage(input)
     await Session.touch(input.sessionID)
@@ -176,6 +189,24 @@ export namespace SessionPrompt {
 
     return loop({ sessionID: input.sessionID })
   })
+
+  /**
+   * Like prompt() but injects extra tools for this turn only.
+   * The model is forced to call one of these tools (all other tools are stripped).
+   * The loop exits immediately after any extra tool is called.
+   * extraTools are kept in-memory and never serialized to the DB.
+   */
+  export async function promptWithExtraTools(
+    input: z.infer<typeof PromptInput>,
+    extraTools: Record<string, AITool>,
+  ): Promise<MessageV2.WithParts> {
+    _extraToolsState.set(input.sessionID, { tools: extraTools, done: false })
+    try {
+      return await prompt(input)
+    } finally {
+      _extraToolsState.delete(input.sessionID)
+    }
+  }
 
   export async function resolvePromptParts(template: string): Promise<PromptInput["parts"]> {
     const cfg = getConfig()
@@ -297,7 +328,7 @@ export namespace SessionPrompt {
         })
       }
       return new Promise<MessageV2.WithParts>((resolve, reject) => {
-        const callbacks = state()[sessionID].callbacks
+        const callbacks = state()[sessionID]!.callbacks
         callbacks.push({ resolve, reject })
       })
     }
@@ -320,7 +351,7 @@ export namespace SessionPrompt {
       let lastFinished: MessageV2.Assistant | undefined
       let tasks: (MessageV2.CompactionPart | MessageV2.SubtaskPart)[] = []
       for (let i = msgs.length - 1; i >= 0; i--) {
-        const msg = msgs[i]
+        const msg = msgs[i]!
         if (!lastUser && msg.info.role === "user") lastUser = msg.info as MessageV2.User
         if (!lastAssistant && msg.info.role === "assistant") lastAssistant = msg.info as MessageV2.Assistant
         if (!lastFinished && msg.info.role === "assistant" && msg.info.finish)
@@ -479,11 +510,14 @@ export namespace SessionPrompt {
             } satisfies MessageV2.ToolPart)
           },
           async ask(req: any) {
+            const skillToolRules = [...(cfg.skillTools?.get(sessionID) ?? new Set<string>())]
+              .filter(t => !t.startsWith("__skill__:"))
+              .map(t => ({ permission: t, pattern: "*", action: "allow" as const }))
             await cfg.permissionNext?.ask({
               ...req,
               sessionID: sessionID,
               agentID: taskAgent.id,
-              ruleset: cfg.permissionNext?.merge?.(taskAgent.permission, []),
+              ruleset: cfg.permissionNext?.merge?.(taskAgent.permission, skillToolRules),
             })
           },
         }
@@ -568,7 +602,7 @@ export namespace SessionPrompt {
 
         // Check if the tool result has stopAfterReply flag set
         if (result?.metadata?.stopAfterReply === true) {
-          log.info("stopAfterReply detected, breaking loop", { agent: task.agent, tool: task.tool })
+          log.info("stopAfterReply detected, breaking loop", { agent: task.agent, tool: (task as any).tool })
           break
         }
 
@@ -630,6 +664,10 @@ export namespace SessionPrompt {
         session,
       })
 
+      // Resolve extra tools early so we can use the entry in processor creation below.
+      const _extraToolsEntry = _extraToolsState.get(sessionID)
+      const _hasNamedStructuredTool = lastUser.format?.type === "json_schema" && lastUser.format.toolName != null
+
       const processor = SessionProcessor.create({
         assistantMessage: (await Session.updateMessage({
           id: Identifier.ascending("message"),
@@ -656,7 +694,9 @@ export namespace SessionPrompt {
             created: Date.now(),
           },
           sessionID,
-          ...(lastUser.hidden ? { hidden: true } : {}),
+          // When extra tools are present or json_schema uses a custom toolName, the model's
+          // tool call should be visible even if the triggering user message is hidden.
+          ...((lastUser.hidden && !_extraToolsEntry && !_hasNamedStructuredTool) ? { hidden: true } : {}),
         })) as MessageV2.Assistant,
         sessionID: sessionID,
         model,
@@ -687,20 +727,33 @@ export namespace SessionPrompt {
         messages: msgs,
       })
 
-      // Inject StructuredOutput tool if JSON schema mode enabled
+      // Inject StructuredOutput tool if JSON schema mode enabled.
+      // toolName overrides the tool name (e.g. "workflow_structured" for workflow nodes).
       if (lastUser.format?.type === "json_schema") {
-        tools["StructuredOutput"] = createStructuredOutputTool({
+        const structuredToolName = lastUser.format.toolName ?? "StructuredOutput"
+        tools[structuredToolName] = createStructuredOutputTool({
           schema: lastUser.format.schema,
           onSuccess(output: unknown) {
             structuredOutput = output
           },
         })
-        // Strip every other tool — model must call StructuredOutput immediately,
-        // no exploring with bash/read/etc. before answering.
+        // Strip every other tool — model must call the structured tool immediately.
         for (const id of Object.keys(tools)) {
-          if (id !== "StructuredOutput" && id !== "invalid") {
+          if (id !== structuredToolName && id !== "invalid") {
             delete tools[id]
           }
+        }
+      }
+
+      // Inject caller-supplied tools (e.g. workflow_decide, workflow_structured).
+      // Strip all other tools so the model is forced to call one of these.
+      // Skip if already done (tool was called in a prior iteration).
+      if (_extraToolsEntry && !_extraToolsEntry.done && Object.keys(_extraToolsEntry.tools).length > 0) {
+        for (const id of Object.keys(tools)) {
+          if (id !== "invalid") delete tools[id]
+        }
+        for (const [id, t] of Object.entries(_extraToolsEntry.tools)) {
+          tools[id] = t
         }
       }
 
@@ -736,14 +789,19 @@ export namespace SessionPrompt {
       // so both the agent loop and the UI preview use identical code.
       // Structured output requires an extra instruction appended after build().
       const format = lastUser.format ?? { type: "text" }
-      const structuredOutputSystem = format.type === "json_schema" ? [STRUCTURED_OUTPUT_SYSTEM_PROMPT] : []
+      const structuredToolName = format.type === "json_schema" ? (format.toolName ?? "StructuredOutput") : "StructuredOutput"
+      const structuredOutputSystem = format.type === "json_schema"
+        ? [`IMPORTANT: The user has requested structured output. You MUST use the \`${structuredToolName}\` tool to provide your final response. Do NOT respond with plain text - you MUST call the \`${structuredToolName}\` tool with your answer formatted according to the schema.`]
+        : []
+
+      const systemAdditions = [...structuredOutputSystem]
 
       const result = await processor.process({
         user: lastUser,
         agent,
         abort,
         sessionID,
-        system: structuredOutputSystem.length > 0 ? structuredOutputSystem : undefined,
+        system: systemAdditions.length > 0 ? systemAdditions : undefined,
         messages: [
           ...MessageV2.toModelMessages(msgs, model),
           ...(isLastStep
@@ -757,7 +815,7 @@ export namespace SessionPrompt {
         ],
         tools,
         model,
-        toolChoice: format.type === "json_schema" ? "required" : (format.toolChoice ?? undefined),
+        toolChoice: (format.type === "json_schema" || (_extraToolsEntry && !_extraToolsEntry.done)) ? "required" : (format.toolChoice ?? undefined),
       })
 
       // If structured output was captured, save it and exit
@@ -767,6 +825,9 @@ export namespace SessionPrompt {
         await Session.updateMessage(processor.message)
         break
       }
+
+      // If extra tools were called this iteration, exit — the tool call IS the result
+      if (_extraToolsEntry?.done) break
 
       const modelFinished = processor.message.finish && !["tool-calls", "unknown"].includes(processor.message.finish)
 
@@ -817,8 +878,15 @@ export namespace SessionPrompt {
 
   async function lastModel(sessionID: string) {
     const cfg = getConfig()
-    for await (const item of MessageV2.stream(sessionID)) {
-      if (item.info.role === "user" && item.info.model) return item.info.model
+    // Walk the session chain: worker sessions have no user messages of their own,
+    // but their parentSessionID points to the session that spawned them.
+    let sid: string | undefined = sessionID
+    while (sid) {
+      for await (const item of MessageV2.stream(sid)) {
+        if (item.info.role === "user" && item.info.model) return item.info.model
+      }
+      const info: Session.Info | undefined = await Session.get(sid).catch(() => undefined)
+      sid = info?.parentSessionID ?? info?.replyToSessionID ?? undefined
     }
     const fallback = await cfg.provider?.defaultModel?.()
     if (!fallback?.providerID || !fallback?.modelID) {
@@ -869,6 +937,8 @@ export namespace SessionPrompt {
           update: (name: string) => cfg.skill?.update?.(name),
           uninstall: (name: string) => cfg.skill?.uninstall?.(name),
           list: () => cfg.skill?.list?.(),
+          save: (location: string, content: string) => cfg.skill?.save?.(location, content),
+          saveConfig: (name: string, patch: { tools?: string[] }) => cfg.skill?.saveConfig?.(name, patch),
         },
         agents: {
           list: () => cfg.agent?.list?.(),
@@ -889,7 +959,7 @@ export namespace SessionPrompt {
           list: (filter?: any) => Session.list(filter),
           children: (id: string) => Session.children(id),
           get: (id: string) => Session.get(id),
-          messages: (id: string) => Session.messages(id),
+          messages: (id: string) => Session.messages({ sessionID: id }),
           create: (opts: any) => Session.create(opts),
           ensureMainSession: (agentID: string) => Session.ensureMainSession(agentID),
           setReplyToSessionID: (opts: any) => Session.setReplyToSessionID(opts),
@@ -912,8 +982,11 @@ export namespace SessionPrompt {
           update: (id: string, patch: any) => cfg.schedule!.update(id, patch),
           remove: (id: string) => cfg.schedule!.remove(id),
         } : undefined,
+        emit: (type: string, payload: unknown) => {
+          cfg.bus?.publish({ type }, payload)
+        },
       },
-      agent: input.agent.name,
+      agent: input.agent.id ?? input.agent.name,
       messages: input.messages,
       metadata: async (val: { title?: string; metadata?: any }) => {
         const match = input.processor.partFromToolCall(options.toolCallId)
@@ -933,12 +1006,15 @@ export namespace SessionPrompt {
         }
       },
       async ask(req: any) {
+        const skillToolRules = [...(cfg.skillTools?.get(input.session.id) ?? new Set<string>())]
+          .filter(t => !t.startsWith("__skill__:"))
+          .map(t => ({ permission: t, pattern: "*", action: "allow" as const }))
         await cfg.permissionNext?.ask({
           ...req,
           sessionID: input.session.id,
           agentID: input.agent.id,
           tool: { messageID: input.processor.message.id, callID: options.toolCallId },
-          ruleset: cfg.permissionNext?.merge?.(input.agent.permission, []),
+          ruleset: cfg.permissionNext?.merge?.(input.agent.permission, skillToolRules),
         })
       },
     })
@@ -1162,7 +1238,7 @@ export namespace SessionPrompt {
       source = "defaultAgent"
     }
     console.log(`[prompt] createUserMessage sessionID=${input.sessionID} resolvedAgent=${agentName} source=${source}`)
-    const agent = await (cfg.agent?.getByIdOrName?.(agentName) ?? cfg.agent?.get?.(agentName))
+    const agent = await (cfg.agent?.getByIdOrName?.(agentName ?? "") ?? cfg.agent?.get?.(agentName ?? ""))
     if (!agent) throw new Error(`Unknown agent: ${input.agent}`)
     console.log(`[prompt] createUserMessage resolved agent.id=${agent.id} agent.name=${agent.name}`)
 
@@ -1327,7 +1403,7 @@ export namespace SessionPrompt {
                   end: url.searchParams.get("end"),
                 }
                 if (range.start != null) {
-                  const filePathURI = part.url.split("?")[0]
+                  const filePathURI = part.url.split("?")[0]!
                   let start = parseInt(range.start)
                   let end = range.end ? parseInt(range.end) : undefined
                   if (start === end) {
@@ -1365,13 +1441,18 @@ export namespace SessionPrompt {
 
                 await cfg.readTool?.init?.()
                   .then(async (t: any) => {
-                    const model2 = await cfg.provider?.getModel(info.model.providerID, info.model.modelID)
+                    const model2 = await cfg.provider?.getModel(info.model.providerID, info.model.modelID).catch(() => undefined)
                     const readCtx: any = {
                       sessionID: input.sessionID,
                       abort: new AbortController().signal,
-                      agent: input.agent?.name ?? input.agent,
+                      agent: input.agent,
                       messageID: info.id,
-                      extra: { bypassCwdCheck: true, model: model2 },
+                      extra: {
+                        bypassCwdCheck: true,
+                        model: model2,
+                        directory: cfg.instance?.directory ?? process.cwd(),
+                        worktree: cfg.instance?.worktree ?? process.cwd(),
+                      },
                       messages: [],
                       metadata: async () => {},
                       ask: async () => {},
@@ -1428,7 +1509,7 @@ export namespace SessionPrompt {
                 const listCtx: any = {
                   sessionID: input.sessionID,
                   abort: new AbortController().signal,
-                  agent: input.agent?.name ?? input.agent,
+                  agent: input.agent,
                   messageID: info.id,
                   extra: { bypassCwdCheck: true },
                   messages: [],
@@ -1579,7 +1660,7 @@ export namespace SessionPrompt {
     }
 
     // Original logic when experimental plan mode is disabled
-    if (!process.env.OPENCODE_EXPERIMENTAL_PLAN_MODE) {
+    if (!process.env.PROJECTFLOWS_EXPERIMENTAL_PLAN_MODE) {
       return input.messages
     }
 
@@ -1661,7 +1742,10 @@ export namespace SessionPrompt {
     const cfg = getConfig()
     const session = await Session.get(input.sessionID)
     if (session.revert) {
-      await SessionRevert.cleanup(session)
+      await SessionRevert.cleanup(session, {
+        getMessages: async (sid) => { const r = [] as MessageV2.WithParts[]; for await (const m of MessageV2.stream(sid)) r.push(m); return r },
+        clearRevert: Session.clearRevert,
+      })
     }
     const agent = await (cfg.agent?.getByIdOrName?.(input.agent) ?? cfg.agent?.get?.(input.agent))
     if (!agent) throw new Error(`Unknown agent: ${input.agent}`)
@@ -1779,7 +1863,7 @@ export namespace SessionPrompt {
     }
 
     const matchingInvocation = invocations[shellName] ?? invocations[""]
-    const args = matchingInvocation?.args
+    const args = matchingInvocation?.args ?? []
 
     const shellEnv = await cfg.plugin?.trigger(
       "shell.env",
@@ -1789,7 +1873,7 @@ export namespace SessionPrompt {
     const proc = spawn(shell, args, {
       cwd,
       detached: process.platform !== "win32",
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ["ignore", "pipe", "pipe"] as ["ignore", "pipe", "pipe"],
       env: {
         ...process.env,
         ...shellEnv.env,
@@ -1998,7 +2082,7 @@ export namespace SessionPrompt {
             providerID: taskModel.providerID,
             modelID: taskModel.modelID,
           },
-          prompt: templateParts.find((y: any) => y.type === "text")?.text ?? "",
+          prompt: (templateParts.find((y: any) => y.type === "text") as any)?.text ?? "",
         },
       ]
       : [...templateParts, ...(input.parts ?? [])]
@@ -2074,7 +2158,7 @@ export namespace SessionPrompt {
     }
 
     const contextMessages = input.history.slice(0, firstRealUserIdx + 1)
-    const firstRealUser = contextMessages[firstRealUserIdx]
+    const firstRealUser = contextMessages[firstRealUserIdx]!
 
     const subtaskParts = firstRealUser.parts.filter((p) => p.type === "subtask") as MessageV2.SubtaskPart[]
     const hasOnlySubtaskParts = subtaskParts.length > 0 && firstRealUser.parts.every((p) => p.type === "subtask")

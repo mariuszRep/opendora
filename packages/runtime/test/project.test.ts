@@ -1,21 +1,21 @@
 import { describe, expect, mock, test } from "bun:test"
 import { Project } from "../src/project"
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 import { $ } from "bun"
 import path from "path"
 import { tmpdir } from "./fixture/fixture"
-import { Filesystem } from "@opendora/util/filesystem"
-import { GlobalBus } from "@opendora/util/global-bus"
+import { Filesystem } from "@projectflows/util/filesystem"
+import { GlobalBus } from "@projectflows/util/global-bus"
 
 Log.init({ print: false })
 
-const gitModule = await import("@opendora/util/git")
+const gitModule = await import("@projectflows/util/git")
 const originalGit = gitModule.git
 
 type Mode = "none" | "rev-list-fail" | "top-fail" | "common-dir-fail"
 let mode: Mode = "none"
 
-mock.module("@opendora/util/git", () => ({
+mock.module("@projectflows/util/git", () => ({
   git: (args: string[], opts: { cwd: string; env?: Record<string, string> }) => {
     const cmd = ["git", ...args].join(" ")
     if (

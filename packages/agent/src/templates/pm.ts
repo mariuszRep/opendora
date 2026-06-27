@@ -68,6 +68,7 @@ export const pmTemplate: AgentTemplate = {
     name: "pm",
     description: "Project Manager agent specialized in orchestrating end-to-end feature implementation through coordinated sub-sessions",
     mode: "primary",
+    hidden: true,
     skills: ["pm-feature-workflow"],
     tools: [
       "bash",
@@ -86,6 +87,9 @@ export const pmTemplate: AgentTemplate = {
       "agent_delete",
       "agent_list",
       "agent_get",
+      "memory_read",
+      "memory_write",
+      "memory_delete",
     ],
     temperature: 0.7,
     steps: 50,

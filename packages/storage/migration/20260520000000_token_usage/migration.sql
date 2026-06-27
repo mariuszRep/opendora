@@ -32,7 +32,11 @@ CREATE TABLE IF NOT EXISTS token_usage (
   rl_tokens_remaining    INTEGER,
   rl_tokens_reset_at     INTEGER
 );
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS token_usage_provider_model_time_idx ON token_usage(provider_id, model_id, time);
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS token_usage_session_idx             ON token_usage(session_id);
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS token_usage_agent_time_idx          ON token_usage(agent_id, time);
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS token_usage_project_time_idx        ON token_usage(project_id, time)

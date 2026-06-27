@@ -53,9 +53,10 @@ export type UseOpendoraResult = {
   agentSessions: Session[]
   selectedSession: Session | null
   selectSession: (id: string, agentIdHint?: string) => void
-  createSession: (sessionType?: SessionType) => Promise<string>
+  createSession: (sessionType?: SessionType, agentID?: string) => Promise<string>
   setSessionAgent: (sessionID: string, agentID: string | null) => Promise<void>
   setAgentMainSession: (agentID: string, sessionID: string) => Promise<void>
+  setSessionModel: (sessionID: string, model: string | null) => Promise<void>
   activeSessions: Set<string>
   // Messages
   messages: MessageWithParts[]
@@ -214,6 +215,8 @@ export function useOpendora(opts?: {
   const questionRequestsRef = useRef<Record<string, QuestionRequest[]>>({})
   // Per-session message cache: serve stale-while-revalidate on session switch
   const messageCacheRef = useRef<Map<string, MessageWithParts[]>>(new Map())
+  const messageFetchRef = useRef<Map<string, Promise<MessageWithParts[]>>>(new Map())
+  const deltaSeqRef = useRef(new Map<string, number>())
 
 
   const getAgentId = useCallback((agent: Agent & { id?: string }) => agent.id ?? agent.name, [])
@@ -257,6 +260,20 @@ export function useOpendora(opts?: {
   const refreshSchedules = useCallback(async () => {
     const data = await opendora.schedule.list()
     setSchedules(data)
+  }, [])
+
+  const fetchSessionMessages = useCallback((sessionID: string) => {
+    const existing = messageFetchRef.current.get(sessionID)
+    if (existing) return existing
+
+    const request = opendora.session.messages(sessionID)
+      .finally(() => {
+        if (messageFetchRef.current.get(sessionID) === request) {
+          messageFetchRef.current.delete(sessionID)
+        }
+      })
+    messageFetchRef.current.set(sessionID, request)
+    return request
   }, [])
 
   useEffect(() => {
@@ -427,18 +444,35 @@ export function useOpendora(opts?: {
     // Capture id in closure so the cache write is always for the right session
     // even after the effect cleanup fires (user switched away mid-fetch).
     const fetchingForId = selectedSessionId
-    opendora.session.messages(fetchingForId).then((msgs) => {
+    fetchSessionMessages(fetchingForId).then((msgs) => {
       if (!cancelled) {
         setMessages((current) => {
           // Merge fetched messages with any SSE updates that arrived during the fetch.
-          // For each message, keep whichever version has more parts (SSE may have
-          // added streaming parts that aren't in the fetch snapshot yet).
+          // For each message, prefer the version with more parts (SSE may have added
+          // streaming parts not yet in the DB).  When part counts are equal, do a
+          // part-level merge: for text parts keep the longer accumulated text (the
+          // DB only writes at text-start "" and text-end, so the SSE-accumulated
+          // version always has more text mid-stream than the stale DB snapshot).
           const currentById = new Map(current.map((m) => [m.info.id, m]))
           const fetchedIds = new Set(msgs.map((m) => m.info.id))
           const merged = msgs.map((fetchedMsg) => {
             const currentMsg = currentById.get(fetchedMsg.info.id)
             if (!currentMsg) return fetchedMsg
-            return currentMsg.parts.length > fetchedMsg.parts.length ? currentMsg : fetchedMsg
+            if (currentMsg.parts.length > fetchedMsg.parts.length) return currentMsg
+            if (fetchedMsg.parts.length > currentMsg.parts.length) return fetchedMsg
+            // Same part count: merge part-by-part so we keep the most accumulated text.
+            const currentPartsById = new Map(currentMsg.parts.map((p) => [p.id, p]))
+            const mergedParts = fetchedMsg.parts.map((fp) => {
+              const cp = currentPartsById.get(fp.id)
+              if (!cp) return fp
+              if (fp.type === "text" && cp.type === "text") {
+                const fText = typeof (fp as any).text === "string" ? (fp as any).text : ""
+                const cText = typeof (cp as any).text === "string" ? (cp as any).text : ""
+                return cText.length > fText.length ? cp : fp
+              }
+              return fp
+            })
+            return { ...fetchedMsg, parts: mergedParts }
           })
           // Append any SSE-only messages not yet in the fetch snapshot (e.g. a new
           // assistant message that started streaming between fetch-start and fetch-end)
@@ -460,7 +494,7 @@ export function useOpendora(opts?: {
       }
     }).catch((err) => { console.error("[messages] fetch failed", fetchingForId, err) })
     return () => { cancelled = true }
-  }, [selectedSessionId])
+  }, [selectedSessionId, fetchSessionMessages])
 
   useEffect(() => {
     const requestedSessionID = searchParams.get("session")
@@ -625,20 +659,47 @@ export function useOpendora(opts?: {
           break
         }
         case "message.part.updated": {
-          const { part, delta } = (event as { type: string; properties: { part: Part; delta?: string } }).properties
+          const { part } = (event as { type: string; properties: { part: Part } }).properties
           if (part.sessionID !== selectedSessionRef.current?.id) break
-          setMessages((prev) =>
-            prev.map((m) => {
-              if (m.info.id !== part.messageID) return m
-              const idx = m.parts.findIndex((p) => p.id === part.id)
-              if (idx === -1) return { ...m, parts: [...m.parts, part] }
-              if (delta && part.type === "text") {
-                const existing = m.parts[idx] as { type: "text"; text: string;[k: string]: unknown }
-                return { ...m, parts: m.parts.map((p, i) => (i === idx ? { ...part, text: existing.text + delta } : p)) }
-              }
-              return { ...m, parts: m.parts.map((p, i) => (i === idx ? part : p)) }
-            }),
-          )
+          deltaSeqRef.current.delete(`${part.id}:text`)
+          setMessages((prev) => {
+            const msgIdx = prev.findIndex((m) => m.info.id === part.messageID)
+            if (msgIdx === -1) return prev
+            const m = prev[msgIdx]
+            const idx = m.parts.findIndex((p) => p.id === part.id)
+            const newParts = idx === -1 ? [...m.parts, part] : m.parts.map((p, i) => (i === idx ? part : p))
+            const next = prev.slice()
+            next[msgIdx] = { ...m, parts: newParts }
+            return next
+          })
+          break
+        }
+        case "message.part.delta": {
+          const { sessionID, messageID, partID, field, delta, seq } = (event as {
+            type: string
+            properties: { sessionID: string; messageID: string; partID: string; field: string; delta: string; seq?: number }
+          }).properties
+          if (sessionID !== selectedSessionRef.current?.id) break
+          if (seq !== undefined) {
+            const seqKey = `${partID}:${field}`
+            const last = deltaSeqRef.current.get(seqKey) ?? 0
+            if (seq <= last) break
+            deltaSeqRef.current.set(seqKey, seq)
+          }
+          setMessages((prev) => {
+            const msgIdx = prev.findIndex((m) => m.info.id === messageID)
+            if (msgIdx === -1) return prev
+            const m = prev[msgIdx]
+            const idx = m.parts.findIndex((p) => p.id === partID)
+            if (idx === -1) return prev
+            const part = m.parts[idx] as Part & Record<string, unknown>
+            const existing = typeof part[field] === "string" ? (part[field] as string) : ""
+            const newPart = { ...part, [field]: existing + delta }
+            const newParts = m.parts.map((p, i) => (i === idx ? newPart : p))
+            const next = prev.slice()
+            next[msgIdx] = { ...m, parts: newParts }
+            return next
+          })
           break
         }
         case "session.fallback.switched": {
@@ -783,6 +844,19 @@ export function useOpendora(opts?: {
               })
           break
         }
+        case "memory.write": {
+          const p = (event as { type: string; properties: { sessionID: string; agentID: string; callID?: string; directory?: string; name: string; description: string; scope: string; action: string } }).properties
+          if (p.directory) {
+            notify?.({
+              type: "info",
+              title: `Memory ${p.action}: ${p.name}`,
+              message: p.description,
+              duration: 8000,
+              memoryDelete: { directory: p.directory, name: p.name, scope: p.scope, agentID: p.agentID, callID: p.callID },
+            })
+          }
+          break
+        }
       }
     }, () => {
       // SSE reconnected — reload active sessions so spinners reflect true server state.
@@ -841,7 +915,7 @@ export function useOpendora(opts?: {
         if (cached && cached.length > 0) {
           setMessages(cached)
         } else {
-          opendora.session.messages(id).then((msgs) => {
+          fetchSessionMessages(id).then((msgs) => {
             if (msgs.length > 0) setMessages(msgs)
           }).catch(() => {})
         }
@@ -886,18 +960,20 @@ export function useOpendora(opts?: {
     if (pathname !== "/dashboard") {
       router.push(`/dashboard?session=${id}`, { scroll: false })
     }
-  }, [rememberSessionForAgent, router, pathname])
+  }, [rememberSessionForAgent, router, pathname, fetchSessionMessages])
 
-  const createSession = useCallback(async (sessionType?: SessionType): Promise<string> => {
+  const createSession = useCallback(async (sessionType?: SessionType, agentID?: string): Promise<string> => {
+    const effectiveAgentID = agentID !== undefined ? agentID : selectedAgent
     try {
       const session = await opendora.session.create({
         sessionType: sessionType ?? "scope",
-        ...(selectedAgent ? { agentID: selectedAgent } : {}),
+        ...(effectiveAgentID ? { agentID: effectiveAgentID } : {}),
       })
       setSessions((prev) => {
         if (prev.find((s) => s.id === session.id)) return prev
         return [session, ...prev]
       })
+      if (effectiveAgentID) setSelectedAgent(effectiveAgentID)
       setSelectedSessionId(session.id)
       router.push(`/dashboard?session=${session.id}`, { scroll: false })
       // Update ref immediately to avoid race condition
@@ -1030,6 +1106,18 @@ export function useOpendora(opts?: {
     },
     [],
   )
+
+  const setSessionModel = useCallback(async (sessionID: string, model: string | null): Promise<void> => {
+    // Optimistic update so the model useEffect doesn't revert the selector
+    setSessions((prev) => prev.map((s) => (s.id === sessionID ? { ...s, model: model ?? undefined } : s)))
+    try {
+      await opendora.session.update(sessionID, { model: model ?? undefined })
+    } catch (err) {
+      // Revert on failure
+      setSessions((prev) => prev.map((s) => (s.id === sessionID ? { ...s, model: undefined } : s)))
+      console.error("Failed to update session model:", err)
+    }
+  }, [])
 
   const setSessionAgent = useCallback(async (sessionID: string, agentID: string | null): Promise<void> => {
     const updated = await opendora.session.setAgent(sessionID, agentID)
@@ -1172,6 +1260,7 @@ export function useOpendora(opts?: {
     createSession,
     setSessionAgent,
     setAgentMainSession,
+    setSessionModel,
     activeSessions,
     messages,
     questionRequests: questionRequests[selectedSessionId ?? ""] ?? [],

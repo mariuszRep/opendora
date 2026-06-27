@@ -52,10 +52,10 @@ export namespace Process {
     if (cmd.length === 0) throw new Error("Command is required")
     opts.abort?.throwIfAborted()
 
-    const proc = launch(cmd[0], cmd.slice(1), {
+    const proc = launch(cmd[0]!, cmd.slice(1), {
       cwd: opts.cwd,
       env: opts.env === null ? {} : opts.env ? { ...process.env, ...opts.env } : undefined,
-      stdio: [opts.stdin ?? "ignore", opts.stdout ?? "ignore", opts.stderr ?? "ignore"],
+      stdio: [opts.stdin ?? "ignore", opts.stdout ?? "ignore", opts.stderr ?? "ignore"] as [Stdio, Stdio, Stdio],
     })
 
     let closed = false

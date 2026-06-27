@@ -1,11 +1,11 @@
 import { $ } from "bun"
 import path from "path"
 import fs from "fs/promises"
-import { Log } from "@opendora/util/log"
-import { Flag } from "@opendora/util/flag"
-import { Global } from "@opendora/util/global"
+import { Log } from "@projectflows/util/log"
+import { Flag } from "@projectflows/util/flag"
+import { Global } from "@projectflows/util/global"
 import z from "zod"
-import { Config } from "@opendora/config/config"
+import { Config } from "@projectflows/config/config"
 import { Instance } from "./instance"
 import { Scheduler } from "./scheduler"
 
@@ -24,7 +24,7 @@ export namespace Snapshot {
   }
 
   export async function cleanup() {
-    if (Instance.project.vcs !== "git" || Flag.OPENCODE_CLIENT === "acp") return
+    if (Instance.project.vcs !== "git" || Flag.PROJECTFLOWS_CLIENT === "acp") return
     const cfg = await Config.get()
     if (cfg.snapshot === false) return
     const git = gitdir()
@@ -49,7 +49,7 @@ export namespace Snapshot {
   }
 
   export async function track() {
-    if (Instance.project.vcs !== "git" || Flag.OPENCODE_CLIENT === "acp") return
+    if (Instance.project.vcs !== "git" || Flag.PROJECTFLOWS_CLIENT === "acp") return
     const cfg = await Config.get()
     if (cfg.snapshot === false) return
     const git = gitdir()
@@ -225,7 +225,7 @@ export namespace Snapshot {
       .nothrow()
       .lines()) {
       if (!line) continue
-      const [additions, deletions, file] = line.split("\t")
+      const [additions = "0", deletions = "0", file = ""] = line.split("\t")
       const isBinaryFile = additions === "-" && deletions === "-"
       const before = isBinaryFile
         ? ""

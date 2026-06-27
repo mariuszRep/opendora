@@ -2,9 +2,9 @@ import z from "zod"
 import { mkdirSync } from "fs"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
-import { Session } from "@opendora/session/session"
-import { WorkflowStorage } from "@opendora/workflow/storage"
-import { runWorkflow } from "@opendora/workflow/runner"
+import { Session } from "@projectflows/session/session"
+import { WorkflowStorage } from "@projectflows/workflow/storage"
+import { runWorkflow } from "@projectflows/workflow/runner"
 import toolDef from "./workflow-run.json"
 
 export const WorkflowRunTool = Tool.define("workflow_run", async (initCtx) => {
@@ -90,7 +90,7 @@ export const WorkflowRunTool = Tool.define("workflow_run", async (initCtx) => {
         title: `Workflow: ${workflow.name}`,
         sessionType: "worker",
         agentID: agentId,
-        ownerKind: "service",
+        ownerKind: "workflow",
         parentSessionID: ctx.sessionID,
       })
       await Session.setCwd({ sessionID: session.id, cwd: workdir })

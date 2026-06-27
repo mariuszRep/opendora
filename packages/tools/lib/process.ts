@@ -53,10 +53,10 @@ export namespace Process {
     opts.abort?.throwIfAborted()
 
     const { LD_PRELOAD: _ldPreload, ...cleanEnv } = process.env
-    const proc = launch(cmd[0], cmd.slice(1), {
+    const proc = launch(cmd[0]!, cmd.slice(1), {
       cwd: opts.cwd,
       env: opts.env === null ? {} : opts.env ? { ...cleanEnv, ...opts.env } : { ...cleanEnv },
-      stdio: [opts.stdin ?? "ignore", opts.stdout ?? "ignore", opts.stderr ?? "ignore"],
+      stdio: [opts.stdin ?? "ignore", opts.stdout ?? "ignore", opts.stderr ?? "ignore"] as [Stdio, Stdio, Stdio],
     })
 
     let closed = false

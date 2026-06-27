@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
-import { Session } from "@opendora/session/session"
-import { Log } from "@opendora/util/log"
-import { Instance } from "@opendora/opencode/project/instance"
-import { Server } from "@opendora/server/server"
-import { configureSessionCore } from "@opendora/server/configure-session-core"
+import { Session } from "@projectflows/session/session"
+import { Log } from "@projectflows/util/log"
+import { Instance } from "@projectflows/runtime/instance"
+import { Server } from "@projectflows/server/server"
+import { configureSessionCore } from "@projectflows/server/configure-session-core"
 
 const projectRoot = path.join(__dirname, "../..")
 Log.init({ print: false })
@@ -22,7 +22,7 @@ describe("tui.selectSession endpoint", () => {
         const app = Server.App()
         const response = await app.request("/tui/select-session", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-opencode-directory": projectRoot },
           body: JSON.stringify({ sessionID: session.id }),
         })
 
@@ -48,7 +48,7 @@ describe("tui.selectSession endpoint", () => {
         const app = Server.App()
         const response = await app.request("/tui/select-session", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-opencode-directory": projectRoot },
           body: JSON.stringify({ sessionID: nonExistentSessionID }),
         })
 
@@ -70,7 +70,7 @@ describe("tui.selectSession endpoint", () => {
         const app = Server.App()
         const response = await app.request("/tui/select-session", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-opencode-directory": projectRoot },
           body: JSON.stringify({ sessionID: invalidSessionID }),
         })
 

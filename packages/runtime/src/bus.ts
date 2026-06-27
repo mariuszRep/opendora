@@ -1,8 +1,8 @@
 import z from "zod"
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 import { Instance } from "./instance"
-import { BusEvent } from "@opendora/util/bus-event"
-import { GlobalBus } from "@opendora/util/global-bus"
+import { BusEvent } from "@projectflows/util/bus-event"
+import { GlobalBus } from "@projectflows/util/global-bus"
 
 export namespace Bus {
   const log = Log.create({ service: "bus" })

@@ -1,3 +1,4 @@
+// @ts-ignore - optional dependency, installed only when postgres adapter is used
 import postgres from "postgres"
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { eq, and, desc, type SQL } from "drizzle-orm"

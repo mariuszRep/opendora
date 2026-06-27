@@ -1,5 +1,5 @@
 import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core"
-import type { Permission } from "@opendora/permission"
+import type { Permission } from "@projectflows/permission"
 
 export const PermissionRuleTable = sqliteTable(
   "permission_rule",

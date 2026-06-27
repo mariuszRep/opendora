@@ -13,7 +13,7 @@ import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
 import { SessionRetry } from "./retry.ts"
 import { SessionStatus } from "./status.ts"
-import { Identifier } from "@opendora/util/id"
+import { Identifier } from "@projectflows/util/id"
 import { LLM } from "./llm.ts"
 import { SessionEvents } from "./events.ts"
 import { TokenUsage } from "./token-usage.ts"
@@ -23,7 +23,7 @@ function iife<T>(fn: () => T): T {
   return fn()
 }
 
-// Mirrors ProviderError.OVERFLOW_PATTERNS from @opendora/provider without a cross-package dep.
+// Mirrors ProviderError.OVERFLOW_PATTERNS from @projectflows/provider without a cross-package dep.
 const OVERFLOW_PATTERNS: RegExp[] = [
   /prompt is too long/i,
   /input is too long for requested model/i,
@@ -47,8 +47,8 @@ function isOverflowMessage(msg: string): boolean {
 
 /**
  * Map an HTTP status code (and optional message) to a semantic error kind string.
- * Mirrors ProviderError.classifyErrorKind() from @opendora/provider without
- * creating a cross-package dependency from @opendora/session.
+ * Mirrors ProviderError.classifyErrorKind() from @projectflows/provider without
+ * creating a cross-package dependency from @projectflows/session.
  */
 function classifyErrorKind(statusCode: number | undefined, message?: string): string {
   if (message && isOverflowMessage(message)) return "overflow"
@@ -117,10 +117,10 @@ export namespace SessionProcessor {
           : true
 
         while (true) {
+          let capturedTokens = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0 }
           try {
             let currentText: MessageV2.TextPart | undefined
             let reasoningMap: Record<string, MessageV2.ReasoningPart> = {}
-            let capturedTokens = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0 }
 
             const stream = await LLM.stream(streamInput)
             for await (const value of stream.fullStream) {
@@ -236,10 +236,10 @@ export namespace SessionProcessor {
                       const permissionNext = getConfig().permissionNext
                       const agentSvc = getConfig().agent
                       if (permissionNext && agentSvc) {
-                        let agent = await agentSvc.getByIdOrName(input.assistantMessage.agent)
+                        let agent = await agentSvc.getByIdOrName?.(input.assistantMessage.agent)
                         if (!agent) {
-                          const defaultAgentName = await agentSvc.defaultAgent()
-                          agent = await agentSvc.get(defaultAgentName)
+                          const defaultAgentName = await agentSvc.defaultAgent?.()
+                          agent = defaultAgentName ? await agentSvc.get(defaultAgentName) : undefined
                         }
                         if (agent) {
                           await permissionNext.ask({
@@ -338,7 +338,11 @@ export namespace SessionProcessor {
                     usage: value.usage,
                     metadata: value.providerMetadata,
                   })
-                  input.assistantMessage.finish = value.finishReason
+                  const rawFinishReason = value.finishReason as any
+                  const finishReason: string = (typeof rawFinishReason === "object" && rawFinishReason !== null
+                    ? rawFinishReason.unified
+                    : rawFinishReason) ?? "unknown"
+                  input.assistantMessage.finish = finishReason
                   input.assistantMessage.cost += usage.cost
                   input.assistantMessage.tokens = usage.tokens
                   capturedTokens.input     += usage.tokens.input
@@ -352,7 +356,7 @@ export namespace SessionProcessor {
 
                   await input.updatePart({
                     id: Identifier.ascending("part"),
-                    reason: value.finishReason,
+                    reason: finishReason,
                     snapshot: stepSnapshot,
                     messageID: input.assistantMessage.id,
                     sessionID: input.assistantMessage.sessionID,
@@ -550,7 +554,8 @@ export namespace SessionProcessor {
 
                 const nextSlot = result?.nextSlot ?? (result && "providerID" in result ? result : null)
                 if (nextSlot && "providerID" in nextSlot) {
-                  const nextModel = await getConfig().provider?.getModel(nextSlot.providerID, nextSlot.modelID)
+                  const slot = nextSlot as { providerID: string; modelID: string }
+                  const nextModel = await getConfig().provider?.getModel(slot.providerID, slot.modelID)
                   if (nextModel) {
                     streamInput = { ...streamInput, model: nextModel }
                     input.model = nextModel

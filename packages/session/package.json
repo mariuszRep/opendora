@@ -1,5 +1,5 @@
 {
-  "name": "@opendora/session",
+  "name": "@projectflows/session",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -33,16 +33,30 @@
     "./import":                 "./src/import/index.ts",
     "./token-usage-sql":        "./src/token-usage.sql.ts",
     "./token-usage":            "./src/token-usage.ts",
-    "./token-usage-file":       "./src/token-usage-file.ts"
+    "./token-usage-file":       "./src/token-usage-file.ts",
+    "./share-next":             "./src/share-next.ts"
+  },
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "test": "bun test --timeout 30000"
   },
   "devDependencies": {
+    "@types/bun": "catalog:",
     "@types/node": "catalog:",
+    "@projectflows/server": "workspace:*",
+    "@projectflows/tools": "workspace:*",
+    "@typescript/native-preview": "catalog:",
     "tsx": "^4.19.0",
     "typescript": "catalog:"
   },
   "dependencies": {
-    "@opendora/permission": "workspace:*",
-    "@opendora/util": "workspace:*",
+    "@projectflows/config": "workspace:*",
+    "@projectflows/permission": "workspace:*",
+    "@projectflows/provider": "workspace:*",
+    "@projectflows/runtime": "workspace:*",
+    "@projectflows/sdk": "workspace:*",
+    "@projectflows/storage": "workspace:*",
+    "@projectflows/util": "workspace:*",
     "ai": "catalog:",
     "decimal.js": "10.5.0",
     "drizzle-orm": "catalog:",

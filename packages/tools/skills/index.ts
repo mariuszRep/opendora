@@ -1,4 +1,4 @@
-export { SkillLoadTool, SkillTool } from "./skill.ts"
+export { SkillLoadTool, SkillTool } from "./skill-load.ts"
 export { SkillListTool } from "./skill-list.ts"
 export { SkillSearchTool } from "./skill-search.ts"
 export { SkillInstallTool } from "./skill-install.ts"

@@ -4,7 +4,7 @@ import fs from "fs/promises"
 import path from "path"
 import { Instance } from "../src/instance"
 import { Worktree } from "../src/worktree"
-import { Filesystem } from "@opendora/util/filesystem"
+import { Filesystem } from "@projectflows/util/filesystem"
 import { tmpdir } from "./fixture/fixture"
 
 describe("Worktree.remove", () => {

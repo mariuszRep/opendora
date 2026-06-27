@@ -1,4 +1,4 @@
-import { Log } from "@opendora/util/log"
+import { Log } from "@projectflows/util/log"
 
 export namespace State {
   interface Entry {

@@ -2,11 +2,8 @@
 
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import type { RefSuggestion } from '@/lib/workflow-refs'
+import { REF_PATTERN, tokenStart, type RefSuggestion } from '@projectflows/workflow/refs'
 import { RefDropdown } from './ref-dropdown'
-
-// Highlight $ref tokens. Updated to match new $nodeKey format too.
-const REF_PATTERN = /(\$(?:(?:input|output|ctx)\.[a-zA-Z0-9_.]+|[a-z][a-z0-9_]*(?:\.[a-zA-Z0-9_.]+)?))/g
 
 function buildHTML(text: string) {
   REF_PATTERN.lastIndex = 0
@@ -48,14 +45,6 @@ function setOffset(el: HTMLElement, offset: number) {
   const sel = window.getSelection()
   sel?.removeAllRanges()
   sel?.addRange(r)
-}
-
-function tokenStart(val: string, cur: number): number {
-  for (let i = cur - 1; i >= 0; i--) {
-    if (val[i] === '$') return i
-    if (/[\s,;)}\]]/.test(val[i])) return -1
-  }
-  return -1
 }
 
 interface PromptInputProps {
@@ -113,7 +102,7 @@ export function PromptInput({ value, onChange, suggestions, placeholder, classNa
     const start = tokenStart(value, cur)
     if (start === -1) { onChange(s.ref); setOpen(false); return }
     const rest = value.slice(cur)
-    const endOffset = rest.search(/[\s,;)}\]]/)
+    const endOffset = rest.search(/[\s,;)\}\]]/)
     pendingCursor.current = start + s.ref.length
     onChange(value.slice(0, start) + s.ref + value.slice(endOffset === -1 ? value.length : cur + endOffset))
     setOpen(false)

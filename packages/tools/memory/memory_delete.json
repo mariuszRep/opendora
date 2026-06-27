@@ -1,0 +1,19 @@
+{
+  "name": "memory_delete",
+  "description": "Delete a memory entry by name from MEMORY.json. Use to remove stale, incorrect, or superseded memories.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Name of the memory entry to delete"
+      },
+      "scope": {
+        "type": "string",
+        "enum": ["global", "local"],
+        "description": "global = .projectflows/agents/MEMORY.json (all agents); local = .projectflows/agents/<this-agent>/MEMORY.json (this agent only)"
+      }
+    },
+    "required": ["name", "scope"]
+  }
+}

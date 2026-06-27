@@ -1,19 +1,19 @@
 import z from "zod"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
 import path from "path"
-import { Database, eq } from "@opendora/storage/db"
-import { ProjectTable } from "@opendora/storage/project.sql"
-import { SessionTable } from "@opendora/session/sql"
-import { Log } from "@opendora/util/log"
-import { Flag } from "@opendora/util/flag"
-import { work } from "@opendora/util/queue"
-import { fn } from "@opendora/util/fn"
-import { BusEvent } from "@opendora/util/bus-event"
-import { iife } from "@opendora/util/iife"
-import { GlobalBus } from "@opendora/util/global-bus"
+import { Database, eq } from "@projectflows/storage/db"
+import { ProjectTable } from "@projectflows/storage/project.sql"
+import { SessionTable } from "@projectflows/session/sql"
+import { Log } from "@projectflows/util/log"
+import { Flag } from "@projectflows/util/flag"
+import { work } from "@projectflows/util/queue"
+import { fn } from "@projectflows/util/fn"
+import { BusEvent } from "@projectflows/util/bus-event"
+import { iife } from "@projectflows/util/iife"
+import { GlobalBus } from "@projectflows/util/global-bus"
 import { existsSync } from "fs"
-import { git } from "@opendora/util/git"
-import { Glob } from "@opendora/util/glob"
+import { git } from "@projectflows/util/git"
+import { Glob } from "@projectflows/util/glob"
 
 export namespace Project {
   const log = Log.create({ service: "project" })
@@ -109,7 +109,7 @@ export namespace Project {
             id: id ?? "global",
             worktree: sandbox,
             sandbox: sandbox,
-            vcs: Info.shape.vcs.parse(Flag.OPENCODE_FAKE_VCS),
+            vcs: Info.shape.vcs.parse(Flag.PROJECTFLOWS_FAKE_VCS),
           }
         }
 
@@ -132,7 +132,7 @@ export namespace Project {
               id: "global",
               worktree: sandbox,
               sandbox: sandbox,
-              vcs: Info.shape.vcs.parse(Flag.OPENCODE_FAKE_VCS),
+              vcs: Info.shape.vcs.parse(Flag.PROJECTFLOWS_FAKE_VCS),
             }
           }
 
@@ -162,7 +162,7 @@ export namespace Project {
             id,
             sandbox,
             worktree: sandbox,
-            vcs: Info.shape.vcs.parse(Flag.OPENCODE_FAKE_VCS),
+            vcs: Info.shape.vcs.parse(Flag.PROJECTFLOWS_FAKE_VCS),
           }
         }
 
@@ -183,7 +183,7 @@ export namespace Project {
             id,
             sandbox,
             worktree: sandbox,
-            vcs: Info.shape.vcs.parse(Flag.OPENCODE_FAKE_VCS),
+            vcs: Info.shape.vcs.parse(Flag.PROJECTFLOWS_FAKE_VCS),
           }
         }
 
@@ -199,7 +199,7 @@ export namespace Project {
         id: "global",
         worktree: "/",
         sandbox: "/",
-        vcs: Info.shape.vcs.parse(Flag.OPENCODE_FAKE_VCS),
+        vcs: Info.shape.vcs.parse(Flag.PROJECTFLOWS_FAKE_VCS),
       }
     })
 
@@ -222,7 +222,7 @@ export namespace Project {
       return fresh
     })
 
-    if (Flag.OPENCODE_EXPERIMENTAL_ICON_DISCOVERY) discover(existing)
+    if (Flag.PROJECTFLOWS_EXPERIMENTAL_ICON_DISCOVERY) discover(existing)
 
     const result: Info = {
       ...existing,

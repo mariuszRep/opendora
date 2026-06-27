@@ -1,6 +1,6 @@
-import { Slug } from "@opendora/util/slug"
-import { fn } from "@opendora/util/fn"
-import { Identifier } from "@opendora/util/id"
+import { Slug } from "@projectflows/util/slug"
+import { fn } from "@projectflows/util/fn"
+import { Identifier } from "@projectflows/util/id"
 import path from "path"
 import { Decimal } from "decimal.js"
 import z from "zod"
@@ -16,17 +16,7 @@ import { openDoraStorageAdapter } from "./opendora-storage-adapter.ts"
 import { SessionManager } from "./session-manager"
 import { RetentionDaemon } from "./daemon"
 import type { SessionType, RetentionPolicy, SendPolicy, CreateSessionOptions, PongOptions } from "./types"
-
-// Inline NotFoundError
-class NotFoundError extends Error {
-  constructor(public readonly data: { message: string }) {
-    super(data.message)
-    this.name = "NotFoundError"
-  }
-  static isInstance(e: unknown): e is NotFoundError {
-    return e instanceof NotFoundError
-  }
-}
+import { NotFoundError } from "@projectflows/storage/db"
 
 // Inline iife utility
 function iife<T>(fn: () => T): T {
@@ -166,15 +156,15 @@ export namespace Session {
   function getForkedTitle(title: string): string {
     const match = title.match(/^(.+) \(fork #(\d+)\)$/)
     if (match) {
-      const base = match[1]
-      const num = parseInt(match[2], 10)
+      const base = match[1]!
+      const num = parseInt(match[2]!, 10)
       return `${base} (fork #${num + 1})`
     }
     return `${title} (fork #1)`
   }
 
   const SessionTypeSchema = z.enum(["role", "scope", "worker", "scratchpad"])
-  const SessionStatusSchema = z.enum(["active", "archived", "closed"])
+  const SessionStatusSchema = z.enum(["active", "archived", "closed", "waiting"])
 
   export const Info = z
     .object({
@@ -216,7 +206,7 @@ export namespace Session {
       sessionStatus: SessionStatusSchema.optional(),
       agentID: z.string().optional(),
       ownerID: z.string().optional(),
-      ownerKind: z.enum(["user", "agent", "service"]).optional(),
+      ownerKind: z.enum(["user", "agent", "workflow"]).optional(),
       allowedAgents: z.array(z.string()).optional(),
       sendPolicy: z.object({ allow: z.array(z.string()), deny: z.array(z.string()) }).optional(),
       retention: z
@@ -229,6 +219,7 @@ export namespace Session {
           onExpire: z.enum(["archive", "close", "delete"]).optional(),
         })
         .optional(),
+      model: z.string().optional(),
       path: z.string().optional(),
       readPath: z.string().optional(),
       cwd: z.string().optional(),
@@ -242,6 +233,13 @@ export namespace Session {
           cacheRead: z.number(),
           cacheWrite: z.number(),
           compactionCount: z.number(),
+        })
+        .optional(),
+      workflowRun: z
+        .object({
+          workflowID: z.string(),
+          workflowRunID: z.string(),
+          startedAt: z.number(),
         })
         .optional(),
     })
@@ -369,7 +367,7 @@ export namespace Session {
     sessionType?: SessionType
     agentID?: string
     ownerID?: string
-    ownerKind?: "user" | "agent" | "service"
+    ownerKind?: "user" | "agent" | "workflow"
     retention?: Partial<RetentionPolicy>
     sendPolicy?: SendPolicy
     spawnDepth?: number
@@ -429,11 +427,12 @@ export namespace Session {
     }
 
     const config = await cfg.config?.get() ?? {}
-    if (!input.parentID && (process.env.OPENCODE_AUTO_SHARE || config.share === "auto"))
+    if (!input.parentSessionID && (process.env.PROJECTFLOWS_AUTO_SHARE || config.share === "auto"))
       share(id).catch(() => {})
 
     // Publish so ACP can register the session and not drop subsequent message events.
-    cfg.bus?.publish(Event.Updated, { info: result })
+    cfg.bus?.publish(Event.Created, { info: result })?.catch(() => {})
+    cfg.bus?.publish(Event.Updated, { info: result })?.catch(() => {})
 
     return result
   }
@@ -460,7 +459,7 @@ export namespace Session {
     if (config.share === "disabled") {
       throw new Error("Sharing is disabled in configuration")
     }
-    const { ShareNext } = await import("@/share/share-next")
+    const { ShareNext } = await import("./share/share-next.ts")
     const s = await ShareNext.create(id)
     const db = cfg.db
     const row = db.update(SessionTable).set({ share_url: s.url }).where(eq(SessionTable.id, id)).returning().get()
@@ -472,7 +471,7 @@ export namespace Session {
 
   export const unshare = fn(Identifier.schema("session"), async (id) => {
     const cfg = getConfig()
-    const { ShareNext } = await import("@/share/share-next")
+    const { ShareNext } = await import("./share/share-next.ts")
     await ShareNext.remove(id)
     const db = cfg.db
     const row = db.update(SessionTable).set({ share_url: null }).where(eq(SessionTable.id, id)).returning().get()
@@ -864,13 +863,39 @@ export namespace Session {
     z.object({
       sessionID: Identifier.schema("session"),
       ownerID: z.string(),
-      ownerKind: z.enum(["user", "agent", "service"]).default("user"),
+      ownerKind: z.enum(["user", "agent", "workflow"]).default("user"),
     }),
     async (input) => {
       const db = getConfig().db
       const row = db
         .update(SessionTable)
         .set({ owner_id: input.ownerID, owner_kind: input.ownerKind, time_updated: Date.now() })
+        .where(eq(SessionTable.id, input.sessionID))
+        .returning()
+        .get()
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      const info = fromRow(row)
+      getConfig().bus?.publish(Event.Updated, { info })
+      return info
+    },
+  )
+
+  export const setWorkflowRun = fn(
+    z.object({
+      sessionID: Identifier.schema("session"),
+      workflowRun: z
+        .object({
+          workflowID: z.string(),
+          workflowRunID: z.string(),
+          startedAt: z.number(),
+        })
+        .nullable(),
+    }),
+    async (input) => {
+      const db = getConfig().db
+      const row = db
+        .update(SessionTable)
+        .set({ workflow_run: input.workflowRun, time_updated: Date.now() })
         .where(eq(SessionTable.id, input.sessionID))
         .returning()
         .get()
@@ -1000,6 +1025,19 @@ export namespace Session {
     },
   )
 
+  export const setModel = fn(
+    z.object({ sessionID: Identifier.schema("session"), model: z.string().nullable() }),
+    async (input) => {
+      await sessionManager.update(input.sessionID, { model: input.model ?? undefined })
+      const db = getConfig().db
+      const row = db.select().from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get()
+      if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+      const info = fromRow(row)
+      getConfig().bus?.publish(Event.Updated, { info })
+      return info
+    },
+  )
+
   export const incrementTokens = fn(
     z.object({
       sessionID: z.string(),
@@ -1078,6 +1116,7 @@ export namespace Session {
       sessionType: "role",
       agentID,
       retention: { onExpire: "archive" },
+      path: agentDefaultPath,
     })
   }
 
@@ -1172,7 +1211,7 @@ export namespace Session {
         ...msg,
         parentMessageID: parent_message_id,
         ...(parentRow ? { parentSessionID: parentRow.session_id } : {}),
-      } as MessageV2.Info
+      } as unknown as MessageV2.Info
     }
     cfg.bus?.publish(MessageV2.Event.Updated, { info: infoForBus })
     return msg
@@ -1311,6 +1350,8 @@ export namespace Session {
     return count
   }
 
+  const _partDeltaSeq = new Map<string, number>()
+
   export const updatePartDelta = fn(
     z.object({
       sessionID: z.string(),
@@ -1320,7 +1361,10 @@ export namespace Session {
       delta: z.string(),
     }),
     async (input) => {
-      getConfig().bus?.publish(MessageV2.Event.PartDelta, input)
+      const key = `${input.partID}:${input.field}`
+      const seq = (_partDeltaSeq.get(key) ?? 0) + 1
+      _partDeltaSeq.set(key, seq)
+      getConfig().bus?.publish(MessageV2.Event.PartDelta, { ...input, seq })
     },
   )
 

@@ -1,11 +1,11 @@
 // ─── Canonical Node Type ─────────────────────────────────────────────────────
-// Imported from centralized definitions in @opendora/workflow/node-types.
+// Imported from centralized definitions in @projectflows/workflow/node-types.
 // This is the single source of truth — do not redefine NodeType here.
 
-import { NodeTypeId } from "@opendora/workflow/node-types"
+import { NodeTypeId } from "@projectflows/workflow/node-types"
 
 /**
- * @deprecated Import `NodeTypeId` from `@opendora/workflow/node-types` instead.
+ * @deprecated Import `NodeTypeId` from `@projectflows/workflow/node-types` instead.
  * Kept as a backward-compatible alias.
  */
 export type NodeType = NodeTypeId
@@ -152,6 +152,7 @@ export interface NodeProperties {
   status?: 'draft' | 'published' | 'archived'
   action_id?: string
   parameters?: Record<string, unknown>
+  retry?: { maxAttempts: number; delaySeconds: number }
 }
 
 export interface NodeDataConfig {

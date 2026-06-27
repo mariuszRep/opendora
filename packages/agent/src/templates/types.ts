@@ -28,6 +28,7 @@ export const AgentConfig = z.object({
   injectInstructions: z.boolean().optional(),
   defaultPaths: z.array(z.string()).optional(),
   sandbox: z.boolean().optional(),
+  permission: z.record(z.string(), z.union([z.string(), z.record(z.string(), z.string())])).optional(),
 })
 
 export type AgentConfig = z.infer<typeof AgentConfig>

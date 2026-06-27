@@ -24,7 +24,7 @@ export function ScheduleCard({
   onEdit,
 }: Pick<ScheduleCardProps, "schedule" | "onEdit">) {
   const color = getAgentColor(schedule.color)
-  const delegate = schedule.action_type === "tool" ? parseDelegate(schedule.prompt) : null
+  const delegate = schedule.action_type === "tool" ? parseDelegate(schedule.prompt ?? "") : null
   const displayPrompt = delegate ? delegate.prompt : schedule.prompt
 
   return (

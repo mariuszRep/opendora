@@ -1,7 +1,7 @@
 import path from "path"
 import z from "zod"
-import { Global } from "@opendora/util/global"
-import { Filesystem } from "@opendora/util/filesystem"
+import { Global } from "@projectflows/util/global"
+import { Filesystem } from "@projectflows/util/filesystem"
 
 export namespace McpAuth {
   export const Tokens = z.object({

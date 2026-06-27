@@ -12,6 +12,7 @@ import {
   FileIcon,
   BotIcon,
   WrenchIcon,
+  SparklesIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -66,6 +67,7 @@ const RESOURCE_OPTIONS = [
   { value: "network", label: "Network", icon: GlobeIcon },
   { value: "tool", label: "Tool", icon: WrenchIcon },
   { value: "agent", label: "Agent", icon: BotIcon },
+  { value: "skill", label: "Skill", icon: SparklesIcon },
 ]
 
 const ACCESS_OPTIONS = [

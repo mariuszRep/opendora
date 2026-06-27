@@ -1,5 +1,5 @@
 {
-  "name": "@opendora/skills",
+  "name": "@projectflows/skills",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -12,12 +12,11 @@
     "./discovery": "./src/discovery.ts"
   },
   "dependencies": {
-    "@opendora/config": "workspace:*",
-    "@opendora/opencode": "workspace:*",
-    "@opendora/runtime": "workspace:*",
-    "@opendora/session": "workspace:*",
-    "@opendora/tools": "workspace:*",
-    "@opendora/util": "workspace:*",
+    "@projectflows/config": "workspace:*",
+    "@projectflows/runtime": "workspace:*",
+    "@projectflows/session": "workspace:*",
+    "@projectflows/tools": "workspace:*",
+    "@projectflows/util": "workspace:*",
     "chokidar": "4.0.3",
     "zod": "^3.22.4",
     "yaml": "^2.3.4"
@@ -26,10 +25,12 @@
     "@tsconfig/bun": "catalog:",
     "@types/bun": "catalog:",
     "@types/node": "^20.11.5",
+    "@projectflows/storage": "workspace:*",
     "@typescript/native-preview": "catalog:",
     "typescript": "catalog:"
   },
   "scripts": {
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "test": "bun test --timeout 30000"
   }
 }

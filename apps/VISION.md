@@ -9,8 +9,7 @@
 ## Owns
 
 - Web UI.
-- CLI.
-- TUI.
+- CLI (command-line and terminal UI).
 - Application-specific presentation, interaction, navigation, and user experience logic.
 
 ## Does Not Own
@@ -29,7 +28,40 @@
 
 ## Boundary Rules
 
-- Web, CLI, and TUI live under `apps/`.
+- Web and CLI live under `apps/`; CLI includes integrated terminal UI support.
 - Apps call SDK methods instead of hand-writing server calls or importing backend packages.
 - Apps must not duplicate package-owned domain behavior.
 - Apps must not bypass server auth, permission, validation, or runtime coordination.
+
+## Visual Language
+
+OpenDora should use a consistent connected-node/line visual language across chat reply chains, agent definition sections, workflow nodes, and branching workflow/graph histories. Inspired by git graph representations, items appear as dots or nodes connected by lines in sequence, with branching lines for diverging paths. Apps own the presentation of this visual language; backend graph semantics and connectivity rules remain in packages.
+
+### Chat side rail projection
+
+Each visible chat/session entry shows a compact git-style side rail projecting session lineage. The side rail is a presentation-layer projection of session graph data — the source of truth is session entries/messages, typed edges, and display order, not component state.
+
+- Normal chat renders as one continuous chronological rail.
+- Branch visualization appears only when workflow/agent execution creates multiple outgoing edges from one entry.
+- Fan-in/merge visually rejoins paths where graph edges indicate convergence.
+- Parallel outputs display in event time or explicit display_order while lineage follows edges.
+
+Existing chat rendering is reused and extended rather than replaced. Current spinner/loading treatment while an agent or workflow is thinking or running is preserved.
+
+### Rendering approaches
+
+- **@gitgraph/react** — provides the compact git-style chat side rail where feasible and validated. It is a presentation-layer concern only, coexisting with existing app components. It does not change backend or session ownership.
+- **React Flow** — provides full/expanded workflow, canvas, debug views, and Agent Builder graph composition, following React Flow standards and patterns: nodes/edges shape, stable node IDs, typed edges, branch/fan-out/fan-in semantics, layout/projection separation, and memoized/custom node-like renderers. Backend-specific UI concerns must not leak into session or storage domains.
+
+### Visual markers
+
+Session entries use consistent markers based on entry actor:
+
+| Actor | Marker |
+|---|---|
+| assistant / agent | Dot |
+| user | Dot with surrounding circle |
+| workflow | Circle |
+| system | Subdued/internal marker, or hidden/collapsed unless relevant |
+
+Different assistant/agent identities may use different colors while preserving the same `assistant` actor model. Identity/color is presentation metadata, not a separate actor type.

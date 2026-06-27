@@ -21,7 +21,7 @@ export const generalTemplate: AgentTemplate = {
     name: "general",
     description: "General-purpose agent for researching complex questions and executing multi-step tasks. Use this agent to execute multiple units of work in parallel.",
     mode: "worker",
-    tools: ["bash", "read", "glob", "grep", "edit", "write", "task", "webfetch", "websearch", "codesearch", "apply_patch"],
+    tools: ["bash", "read", "glob", "grep", "edit", "write", "task", "webfetch", "websearch", "codesearch", "apply_patch", "memory_read", "memory_write", "memory_delete"],
   },
   persona: PERSONA,
 }

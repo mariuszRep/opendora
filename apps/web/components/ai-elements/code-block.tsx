@@ -27,7 +27,7 @@ import type {
   HighlighterGeneric,
   ThemedToken,
 } from "shiki";
-import { createHighlighter } from "shiki";
+import { bundledLanguages, createHighlighter } from "shiki";
 
 // Shiki uses bitflags for font styles: 1=italic, 2=bold, 4=underline
 // oxlint-disable-next-line eslint(no-bitwise)
@@ -155,11 +155,21 @@ const getHighlighter = (
     return cached;
   }
 
+  const safeLanguage: BundledLanguage =
+    language in bundledLanguages ? language : "text";
+
+  const cachedSafe = highlighterCache.get(safeLanguage);
+  if (cachedSafe) {
+    highlighterCache.set(language, cachedSafe);
+    return cachedSafe;
+  }
+
   const highlighterPromise = createHighlighter({
-    langs: [language],
+    langs: [safeLanguage],
     themes: ["github-light", "github-dark"],
   });
 
+  highlighterCache.set(safeLanguage, highlighterPromise);
   highlighterCache.set(language, highlighterPromise);
   return highlighterPromise;
 };
@@ -309,7 +319,7 @@ export const CodeBlockContainer = ({
 }: HTMLAttributes<HTMLDivElement> & { language: string }) => (
   <div
     className={cn(
-      "group relative w-full overflow-hidden rounded-md border bg-background text-foreground",
+      "group relative w-full overflow-hidden rounded-lg border bg-background text-foreground",
       className
     )}
     data-language={language}

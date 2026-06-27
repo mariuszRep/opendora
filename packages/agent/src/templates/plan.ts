@@ -117,6 +117,7 @@ export const planTemplate: AgentTemplate = {
     mode: "primary",
     tools: ["bash", "read", "glob", "grep", "task", "webfetch", "websearch", "codesearch", "question"],
     enableInjection: true,
+    permission: { edit: { "*": "deny", ".opencode/plans/*": "allow" } },
   },
   persona: PERSONA,
   injection: INJECTION,

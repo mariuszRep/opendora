@@ -40,8 +40,8 @@ const exportPattern = /export\s*\{([^}]+)\}\s*from\s*["']([^"']+)["']/g
 const tools: Array<{ exportName: string; sourceFile: string }> = []
 
 for (const match of indexContent.matchAll(exportPattern)) {
-  const names = match[1].split(",").map((n) => n.trim()).filter(Boolean)
-  const sourceFile = match[2].replace(/\.ts$/, "")
+  const names = match[1]!.split(",").map((n) => n.trim()).filter(Boolean)
+  const sourceFile = match[2]!.replace(/\.ts$/, "")
   for (const name of names) {
     tools.push({ exportName: name, sourceFile })
   }

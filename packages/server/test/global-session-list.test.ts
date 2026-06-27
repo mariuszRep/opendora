@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test"
-import { Instance } from "@opendora/opencode/project/instance"
-import { Project } from "@opendora/opencode/project/project"
-import { Session } from "@opendora/session/session"
-import { Log } from "@opendora/util/log"
+import { Instance } from "@projectflows/runtime/instance"
+import { Project } from "@projectflows/runtime/project"
+import { Session } from "@projectflows/session/session"
+import { Log } from "@projectflows/util/log"
 import { tmpdir } from "./fixture/fixture"
-import { configureSessionCore } from "@opendora/server/configure-session-core"
+import { configureSessionCore } from "@projectflows/server/configure-session-core"
 
 Log.init({ print: false })
 
@@ -79,9 +79,9 @@ describe("Session.listGlobal", () => {
 
     const page = [...Session.listGlobal({ directory: tmp.path, limit: 1 })]
     expect(page.length).toBe(1)
-    expect(page[0].id).toBe(second.id)
+    expect(page[0]!.id).toBe(second.id)
 
-    const next = [...Session.listGlobal({ directory: tmp.path, limit: 10, cursor: page[0].time.updated })]
+    const next = [...Session.listGlobal({ directory: tmp.path, limit: 10, cursor: page[0]!.time.updated })]
     const ids = next.map((session) => session.id)
 
     expect(ids).toContain(first.id)

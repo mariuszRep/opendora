@@ -7,9 +7,9 @@ export const SkillInstallTool = Tool.define("skill_install", async (_initCtx) =>
   const description = toolDef.description
 
   const parameters = z.object({
-    source: z.string().describe("Source identifier (e.g., 'openclaw/filesystem', 'shadcn/ui', 'vercel:nextjs')"),
+    source: z.string().describe("Source identifier (e.g., 'openclaw/filesystem', 'shadcn/ui', 'vercel:nextjs', 'agentskills:owner/repo')"),
     registry: z
-      .enum(["clawhub", "github", "vercel", "anthropic"])
+      .enum(["clawhub", "github", "vercel", "anthropic", "agentskills"])
       .optional()
       .describe("Registry to install from (auto-detected if not specified)"),
     version: z.string().optional().describe("Specific version to install (default: latest)"),
@@ -23,13 +23,6 @@ export const SkillInstallTool = Tool.define("skill_install", async (_initCtx) =>
       if (!skills?.install) {
         throw new Error("Skill installation is not available in this context")
       }
-
-      await ctx.ask({
-        permission: "skill_install",
-        patterns: [params.source],
-        always: [],
-        metadata: { source: params.source, registry: params.registry, version: params.version },
-      })
 
       await skills.install(params.source, {
         registry: params.registry,

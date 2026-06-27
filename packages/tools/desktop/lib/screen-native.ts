@@ -214,7 +214,7 @@ export async function captureComposite(destPath: string): Promise<{ width: numbe
       child.on("close", (code: number) => (code === 0 ? resolve(out) : reject(new Error("xdotool geometry"))))
     })
     const [w, h] = sizeOut.trim().split(/\s+/).map(Number)
-    if (w > 0 && h > 0) { screenW = w; screenH = h }
+    if (w !== undefined && h !== undefined && w > 0 && h > 0) { screenW = w; screenH = h }
   } catch { /* keep defaults */ }
 
   await fs.mkdir(path.dirname(destPath), { recursive: true })
@@ -319,8 +319,8 @@ function decodePngPixel(buf: Buffer): PixelColor {
     const type = buf.slice(off + 4, off + 8).toString("ascii")
     const data = buf.slice(off + 8, off + 8 + len)
     if (type === "IHDR") {
-      bitDepth = data[8]
-      colorType = data[9]
+      bitDepth = data[8] ?? 0
+      colorType = data[9] ?? 0
     } else if (type === "IDAT") {
       idat = data
       break
@@ -335,9 +335,9 @@ function decodePngPixel(buf: Buffer): PixelColor {
   const raw = zlib.inflateSync(idat)
   // For a 1×1 image: [filterByte, r, g, b, (a)?]. Filter byte 0 = None.
   if (raw.length < 4) throw new Error("PNG payload too small")
-  const r = raw[1]
-  const g = raw[2]
-  const b = raw[3]
+  const r = raw[1] ?? 0
+  const g = raw[2] ?? 0
+  const b = raw[3] ?? 0
   // color types: 2=RGB, 6=RGBA, 0=gray, 4=gray+a, 3=palette (unsupported here)
   if (colorType === 0 || colorType === 4) return { r, g: r, b: r }
   return { r, g, b }

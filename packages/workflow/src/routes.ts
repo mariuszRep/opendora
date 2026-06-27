@@ -5,9 +5,9 @@
 
 import { Hono } from "hono"
 import { WorkflowStorage } from "./storage.ts"
-import { Session } from "@opendora/session/session"
+import { Session } from "@projectflows/session/session"
 import { runWorkflow } from "./runner.ts"
-import { Agent } from "@opendora/agent"
+import { Agent } from "@projectflows/agent"
 
 export function WorkflowRoutes() {
   const app = new Hono()
@@ -97,7 +97,7 @@ export function WorkflowRoutes() {
       title: `Workflow: ${workflow.name}`,
       sessionType: "worker",
       agentID: agentId,
-      ownerKind: "service",
+      ownerKind: "workflow",
       ...(body.parentSessionId && { parentSessionID: body.parentSessionId }),
     })
     await Session.setCwd({ sessionID: session.id, cwd: directory })

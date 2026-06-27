@@ -2,7 +2,7 @@ import z from "zod"
 import { Tool } from "../tool.ts"
 import toolDef from "./websearch.json"
 import { abortAfterAny } from "../lib/abort.ts"
-import { get as getConfig } from "@opendora/util/config"
+import { get as getConfig } from "@projectflows/util/config"
 
 const API_CONFIG = {
   BASE_URL: "https://mcp.exa.ai",
@@ -136,7 +136,7 @@ export const WebSearchTool = Tool.define("websearch", async () => {
             const data: McpSearchResponse = JSON.parse(line.substring(6))
             if (data.result && data.result.content && data.result.content.length > 0) {
               return {
-                output: data.result.content[0].text,
+                output: data.result.content[0]!.text,
                 title: `Web search: ${params.query}`,
                 metadata: {},
               }

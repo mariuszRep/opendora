@@ -123,6 +123,7 @@ export const productOwnerTemplate: AgentTemplate = {
     description:
       "Owns product and software work: feature intake, requirements discovery, specification, approval, and delivery handoff to the Product Engineer. Start here for any new feature, bug fix, integration, or architectural change. Produces a confirmed, build-ready specification before any implementation begins.",
     mode: "primary",
+    hidden: true,
     temperature: 0.4,
     steps: 50,
     color: "red",
@@ -141,6 +142,9 @@ export const productOwnerTemplate: AgentTemplate = {
       "grep",
       "codesearch",
       "write",
+      "memory_read",
+      "memory_write",
+      "memory_delete",
     ],
     skills: ["requirements", "project-context"],
     toolConfig: {

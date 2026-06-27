@@ -1,15 +1,15 @@
 import { Hono } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { ToolRegistry } from "@opendora/opencode/tool/registry"
-import { Worktree } from "@opendora/runtime/worktree"
-import { Instance } from "@opendora/runtime/instance"
-import { Project } from "@opendora/runtime/project"
+import { ToolRegistry } from "@projectflows/server/tool-registry"
+import { Worktree } from "@projectflows/runtime/worktree"
+import { Instance } from "@projectflows/runtime/instance"
+import { Project } from "@projectflows/runtime/project"
 import { MCP } from "../mcp"
-import { Session } from "@opendora/session/session"
+import { Session } from "@projectflows/session/session"
 import { zodToJsonSchema } from "zod-to-json-schema"
 import { errors } from "../error"
-import { lazy } from "@opendora/util/lazy"
+import { lazy } from "@projectflows/util/lazy"
 
 export const ExperimentalRoutes = lazy(() =>
   new Hono()

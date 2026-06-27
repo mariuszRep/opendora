@@ -16,6 +16,7 @@ export type NotifyOptions = {
   sessionID?: string
   duration?: number
   silent?: boolean
+  memoryDelete?: { directory: string; name: string; scope: string; agentID?: string; callID?: string }
 }
 
 export function useNotify() {
@@ -33,7 +34,7 @@ export function useNotify() {
 
   const notify = useCallback(
     (opts: NotifyOptions) => {
-      const { type, title, message, action, providerID, permissionRequestID, sessionID, duration, silent } = opts
+      const { type, title, message, action, providerID, permissionRequestID, sessionID, duration, silent, memoryDelete } = opts
 
       const notifAction = action
         ? {
@@ -42,7 +43,7 @@ export function useNotify() {
           }
         : undefined
 
-      addNotification({ type, title, message, action: notifAction, providerID, permissionRequestID, sessionID })
+      addNotification({ type, title, message, action: notifAction, providerID, permissionRequestID, sessionID, memoryDelete })
 
       if (!silent) {
         playNotificationSound({ variant: type === "permission_request" || type === "error" ? "alert" : "default" })

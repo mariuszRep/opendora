@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@opendora/runtime",
+  "name": "@projectflows/runtime",
   "version": "1.2.15",
   "private": true,
   "type": "module",
@@ -8,15 +8,21 @@
     "typecheck": "tsgo --noEmit",
     "test": "bun test --timeout 30000"
   },
-  "exports": { "./*": "./src/*.ts" },
+  "exports": {
+    "./*": "./src/*.ts",
+    "./agent": "./src/agent.ts"
+  },
   "dependencies": {
-    "@opendora/config": "workspace:*",
-    "@opendora/opencode": "workspace:*",
-    "@opendora/session": "workspace:*",
-    "@opendora/skills": "workspace:*",
-    "@opendora/storage": "workspace:*",
-    "@opendora/tools": "workspace:*",
-    "@opendora/util": "workspace:*",
+    "@projectflows/agent": "workspace:*",
+    "@projectflows/config": "workspace:*",
+    "@projectflows/permission": "workspace:*",
+    "@projectflows/provider": "workspace:*",
+    "@projectflows/session": "workspace:*",
+    "@projectflows/skills": "workspace:*",
+    "@projectflows/storage": "workspace:*",
+    "@projectflows/tools": "workspace:*",
+    "@projectflows/util": "workspace:*",
+    "ai": "catalog:",
     "drizzle-orm": "catalog:",
     "remeda": "catalog:",
     "zod": "catalog:"

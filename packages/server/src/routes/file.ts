@@ -1,11 +1,11 @@
 import { Hono } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { File } from "@opendora/opencode/file"
-import { Ripgrep } from "@opendora/tools/filesystem/lib/ripgrep"
+import { File } from "@projectflows/tools/file"
+import { Ripgrep } from "@projectflows/tools/filesystem/lib/ripgrep"
 import { LSP } from "../lsp"
-import { Instance } from "@opendora/runtime/instance"
-import { lazy } from "@opendora/util/lazy"
+import { Instance } from "@projectflows/runtime/instance"
+import { lazy } from "@projectflows/util/lazy"
 
 export const FileRoutes = lazy(() =>
   new Hono()

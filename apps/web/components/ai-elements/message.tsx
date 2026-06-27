@@ -412,14 +412,17 @@ const messageResponseComponents = {
 };
 
 export const MessageResponse = memo(
-  ({ className, ...props }: MessageResponseProps) => (
-    <Streamdown
-      className={cn("size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0", className)}
-      components={messageResponseComponents}
-      plugins={streamdownPlugins}
-      {...props}
-    />
-  ),
+  ({ className, ...props }: MessageResponseProps) => {
+    return (
+      <Streamdown
+        mode="static"
+        className={cn("size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0", className)}
+        components={messageResponseComponents}
+        plugins={streamdownPlugins}
+        {...props}
+      />
+    )
+  },
   (prevProps, nextProps) => prevProps.children === nextProps.children
 );
 

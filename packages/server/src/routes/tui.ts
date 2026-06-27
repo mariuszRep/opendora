@@ -1,12 +1,12 @@
 import { Hono, type Context } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { Bus } from "@opendora/runtime/bus"
-import { Session } from "@opendora/session/session"
-import { TuiEvent } from "@opendora/opencode/cli/cmd/tui/event"
-import { AsyncQueue } from "@opendora/util/queue"
+import { Bus } from "@projectflows/runtime/bus"
+import { Session } from "@projectflows/session/session"
+import { TuiEvent } from "@projectflows/runtime/tui-event"
+import { AsyncQueue } from "@projectflows/util/queue"
 import { errors } from "../error"
-import { lazy } from "@opendora/util/lazy"
+import { lazy } from "@projectflows/util/lazy"
 
 const TuiRequest = z.object({
   path: z.string(),
@@ -267,7 +267,7 @@ export const TuiRoutes = lazy(() =>
       async (c) => {
         const command = c.req.valid("json").command
         await Bus.publish(TuiEvent.CommandExecute, {
-          command: {
+          command: ({
             session_new: "session.new",
             session_share: "session.share",
             session_interrupt: "session.interrupt",
@@ -281,7 +281,7 @@ export const TuiRoutes = lazy(() =>
             messages_first: "session.first",
             messages_last: "session.last",
             agent_cycle: "agent.cycle",
-          }[command],
+          } as Record<string, string>)[command] ?? "",
         })
         return c.json(true)
       },

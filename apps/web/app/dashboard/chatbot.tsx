@@ -8,22 +8,6 @@ import {
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation"
 import {
-  Message,
-  MessageAction,
-  MessageActions,
-  MessageBranch,
-  MessageBranchContent,
-  MessageContent,
-  MessageResponse,
-} from "@/components/ai-elements/message"
-import {
-  Tool,
-  ToolContent,
-  ToolHeader,
-  ToolInput,
-  ToolOutput,
-} from "@/components/ai-elements/tool"
-import {
   ModelSelector,
   ModelSelectorContent,
   ModelSelectorEmpty,
@@ -58,11 +42,6 @@ import {
   AttachmentInfo,
   AttachmentRemove,
 } from "@/components/ai-elements/attachments"
-import {
-  Reasoning,
-  ReasoningContent,
-  ReasoningTrigger,
-} from "@/components/ai-elements/reasoning"
 import { SpeechInput } from "@/components/ai-elements/speech-input"
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion"
 import {
@@ -79,10 +58,9 @@ import {
   ContextTrigger,
 } from "@/components/ai-elements/context"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
+import { MessageRow } from "./message-row"
 
-import { QuestionTool, QuestionStep } from "@/components/questions/question-tool"
-import { PermissionTool } from "@/components/permissions/permission-tool"
-import { ModelSwitchCard } from "@/components/ai-elements/model-switch-card"
+import { QuestionStep } from "@/components/questions/question-tool"
 import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart, FallbackSwitchPart } from "@/lib/opendora"
 import { opendora } from "@/lib/opendora"
 import { useUserProfile } from "@/hooks/use-user-profile"
@@ -91,17 +69,12 @@ import { useVoiceSettings, formatHotkey } from "@/hooks/use-voice-settings"
 import { useTextToSpeech } from "@/hooks/use-text-to-speech"
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder"
 import { usePushToTalk } from "@/hooks/use-push-to-talk"
-import { DelegateToolContent, isDelegateTool, getDelegateToolTitle } from "@/components/ai-elements/delegate-tool"
-import { TodoToolContent, isTodoTool, getTodoToolTitle } from "@/components/ai-elements/todo-tool"
-import { SessionTreeToolContent, isSessionTreeTool, getSessionTreeToolTitle } from "@/components/ai-elements/session-tree-tool"
-import { WebFetchToolContent, isWebFetchTool, getWebFetchToolTitle, getWebFetchUrl } from "@/components/ai-elements/webfetch-tool"
-import { isSkillLoadTool, getSkillLoadToolTitle, getSkillLoadDefinition } from "@/components/ai-elements/skill-load-tool"
+import { ParentSessionBanner } from "@/components/ai-elements/delegate-tool"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BellIcon, CheckIcon, ClockAlertIcon, ComponentIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, FileIcon, KeyIcon, Link2Icon, PanelRightIcon, SquareSlash, Volume2Icon, VolumeXIcon, WorkflowIcon } from "lucide-react"
+import { BellIcon, CheckIcon, ClockAlertIcon, ComponentIcon, FileIcon, KeyIcon, SquareSlash } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
-import { Spinner } from "@/components/ui/spinner"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -119,15 +92,15 @@ function getTextParts(parts: Part[]): TextPart[] {
 }
 
 
-function getHiddenParts(parts: Part[]): TextPart[] {
+export function getHiddenParts(parts: Part[]): TextPart[] {
   return parts.filter((p): p is TextPart => p.type === "text" && !!p.hidden)
 }
 
-function getReasoningPart(parts: Part[]): ReasoningPart | undefined {
+export function getReasoningPart(parts: Part[]): ReasoningPart | undefined {
   return parts.find((p): p is ReasoningPart => p.type === "reasoning")
 }
 
-function getToolParts(parts: Part[]): ToolPart[] {
+export function getToolParts(parts: Part[]): ToolPart[] {
   return parts.filter((p): p is ToolPart => p.type === "tool")
 }
 
@@ -144,16 +117,16 @@ function formatResetAt(resetAt: number): string {
   return `in ${m}m`
 }
 
-type FilePart = { type: "file"; id: string; sessionID: string; messageID: string; url: string; mime?: string; filename?: string }
-function getFileParts(parts: Part[]): FilePart[] {
+export type FilePart = { type: "file"; id: string; sessionID: string; messageID: string; url: string; mime?: string; filename?: string }
+export function getFileParts(parts: Part[]): FilePart[] {
   return parts.filter((p): p is FilePart => p.type === "file")
 }
 
-function getMessageText(parts: Part[]): string {
+export function getMessageText(parts: Part[]): string {
   return getTextParts(parts).map((p) => p.text).join("")
 }
 
-function formatToolPayload(value: unknown): string {
+export function formatToolPayload(value: unknown): string {
   if (value == null) return ""
   if (typeof value === "string") return value
   try {
@@ -163,7 +136,7 @@ function formatToolPayload(value: unknown): string {
   }
 }
 
-function toToolState(status: ToolPart["state"]["status"], hasPermissionRequest?: boolean) {
+export function toToolState(status: ToolPart["state"]["status"], hasPermissionRequest?: boolean) {
   switch (status) {
     case "pending":
       return "input-streaming"
@@ -178,15 +151,15 @@ function toToolState(status: ToolPart["state"]["status"], hasPermissionRequest?:
   }
 }
 
-type FailedSlotInfo = { providerID: string; modelID: string; statusCode?: number; resetAt?: number }
+export type FailedSlotInfo = { providerID: string; modelID: string; statusCode?: number; resetAt?: number }
 
-type TimelineStep =
+export type TimelineStep =
   | { key: string; kind: "reasoning"; content: ReasoningPart }
   | { key: string; kind: "tool"; content: ToolPart }
   | { key: string; kind: "fallback-switch"; content: FallbackSwitchPart; allFailedSlots: FailedSlotInfo[] }
   | { key: string; kind: "reply"; content?: string; error?: AssistantMessage["error"] }
 
-function getTimelineSteps(parts: Part[], error?: AssistantMessage["error"]): TimelineStep[] {
+export function getTimelineSteps(parts: Part[], error?: AssistantMessage["error"]): TimelineStep[] {
   const reasoning = getReasoningPart(parts)
   const tools = getToolParts(parts)
   const fallbackSwitches = getFallbackSwitchParts(parts)
@@ -297,6 +270,7 @@ export const Chatbot = () => {
     toggleWebPreview,
     setWebPreviewUrl,
     openFilePreview,
+    setSessionModel,
   } = useOpendoraContext()
 
   const { userName, userColor } = useUserProfile()
@@ -409,7 +383,27 @@ export const Chatbot = () => {
     }
   }, [messages])
 
+  // Initialize model selector from session's model (preferred) or agent's model (fallback)
   useEffect(() => {
+    // First check if session has a model override
+    if (selectedSession?.model) {
+      const modelParts = selectedSession.model.split(":")
+      if (modelParts.length === 2) {
+        const [providerID, modelID] = modelParts
+        if (providerID === "fallback") {
+          setSelectedGroupId(modelID)
+          setSelectedProviderID(null)
+          setSelectedModelID(null)
+        } else {
+          setSelectedGroupId(null)
+          setSelectedProviderID(providerID)
+          setSelectedModelID(modelID)
+        }
+        return
+      }
+    }
+
+    // Fall back to agent's model if session has no model override
     const agent = agents.find((a) => (a as any)._id === selectedAgent)
     if (agent?.model?.providerID === "fallback") {
       setSelectedGroupId(agent.model.modelID)
@@ -424,7 +418,7 @@ export const Chatbot = () => {
       setSelectedProviderID(null)
       setSelectedModelID(null)
     }
-  }, [selectedAgent, agents])
+  }, [selectedAgent, agents, selectedSession])
 
   // Focus input when a session is selected
   useEffect(() => {
@@ -441,22 +435,13 @@ export const Chatbot = () => {
     setQuestionSelections(Array.from({ length: n }, () => []))
   }, [activeQuestionId, selectedSession?.id])
 
-  // Update agent's preferred model when user changes it in chat interface
-  const updateAgentModel = useCallback(async (providerID: string, modelID: string) => {
-    const agent = agents.find((a) => (a as any)._id === selectedAgent)
-    if (!agent || !selectedAgent) return
-
-    // Don't update if it's the same as the current agent model
-    if (agent.model?.providerID === providerID && agent.model?.modelID === modelID) return
-
-    try {
-      await updateAgent(selectedAgent, {
-        model: { providerID, modelID }
-      })
-    } catch (err) {
-      console.error("Failed to update agent model:", err)
-    }
-  }, [selectedAgent, agents, updateAgent])
+  // Update session's model when user changes it in chat interface
+  const updateSessionModel = useCallback(async (providerID: string, modelID: string) => {
+    if (!selectedSession) return
+    const modelString = `${providerID}:${modelID}`
+    if (selectedSession.model === modelString) return
+    await setSessionModel(selectedSession.id, modelString)
+  }, [selectedSession, setSessionModel])
 
   const { modelList, modelsByProvider } = useModelList()
 
@@ -792,20 +777,35 @@ export const Chatbot = () => {
   const handleAudioRecorded = useCallback(async (audioBlob: Blob) => {
     try {
       const { opendora } = await import("@/lib/opendora")
-      const provider = settings.stt.provider === "google-gemini" ? "google-gemini" : "openai-whisper"
+      const provider =
+        settings.stt.provider === "google-gemini" ? "google-gemini"
+        : settings.stt.provider === "local-whisper" ? "local-whisper"
+        : "openai-whisper"
       const result = await opendora.voice.stt(audioBlob, { provider })
       return result.text || ""
     } catch (error) {
       console.error("STT error:", error)
       const errorMessage = error instanceof Error ? error.message : "Transcription error"
       if (errorMessage.includes("not configured")) {
-        toast.error("OpenAI not configured. Please connect OpenAI in Settings → Providers.")
+        if (settings.stt.provider === "local-whisper") {
+          toast.error("Local Whisper server not configured. Go to Settings → Voice → Speech-to-Text and enter your server URL.")
+        } else if (settings.stt.provider === "google-gemini") {
+          toast.error("Google API key not configured. Please connect Google in Settings → Providers.")
+        } else {
+          toast.error("OpenAI not configured. Please connect OpenAI in Settings → Providers.")
+        }
       } else {
         toast.error("Transcription failed")
       }
       return ""
     }
   }, [settings.stt.provider])
+
+  const sessionsById = useMemo(() => new Map(sessions.map((s) => [s.id, s])), [sessions])
+  const agentsById = useMemo(() => new Map(agents.map((a) => [(a as any)._id, a])), [agents])
+  const agentsByName = useMemo(() => new Map(agents.map((a) => [a.name, a])), [agents])
+  const schedulesById = useMemo(() => new Map(schedules.map((s) => [s.id, s])), [schedules])
+  const schedulesBySessionId = useMemo(() => new Map(schedules.filter((s) => s.session_id).map((s) => [s.session_id as string, s])), [schedules])
 
   return (
     <div className="relative flex size-full flex-col divide-y overflow-hidden">
@@ -827,785 +827,111 @@ export const Chatbot = () => {
           </Suggestions>
         </div>
       ) : (
+        <>
+        {(() => {
+          const chatParentSession = selectedSession.parentSessionID
+            ? sessionsById.get(selectedSession.parentSessionID)
+            : undefined
+          return chatParentSession ? (
+            <ParentSessionBanner
+              parentSession={chatParentSession}
+              onSelectSession={selectSession}
+            />
+          ) : null
+        })()}
         <Conversation key={selectedSession.id}>
           <ConversationContent className={cn(isChatCentered && "max-w-3xl mx-auto w-full")}>
             {messages.map(({ info, parts }, msgIndex) => {
               if ((info as UserMessage | AssistantMessage).hidden) return null
-              const rawContent = getMessageText(parts)
-              // Strip the "user: NAME\n\n" attribution prefix added before sending so it doesn't leak into the bubble
-              const content = info.role === "user"
-                ? rawContent.replace(/^user: [^\n]+\n\n/, "")
-                : rawContent
-              const reasoning = getReasoningPart(parts)
-              const tools = getToolParts(parts)
-              const hasTools = tools.length > 0
-              const hasCodeBlock = content.includes("```")
-              const shouldUseFullWidth = hasTools || hasCodeBlock
-              const msgError = info.role === "assistant" ? (info as AssistantMessage).error : undefined
-              const hasTimeline = info.role === "assistant"
-              const timelineSteps = hasTimeline ? getTimelineSteps(parts, msgError) : []
-              const msgParentSessionID = info.role === "user"
-                ? (info as UserMessage).parentSessionID
-                : info.role === "assistant"
-                  ? (info as AssistantMessage).parentSessionID
-                  : undefined
-              const msgParentMessageID = info.role === "user"
-                ? (info as UserMessage).parentMessageID
-                : info.role === "assistant"
-                  ? (info as AssistantMessage).parentMessageID
-                  : undefined
-              const parentSession = msgParentSessionID ? sessions.find((s) => s.id === msgParentSessionID) : undefined
-              const parentAgentId = parentSession?.agentID
-              const parentAgent = parentAgentId
-                ? agents.find((a) => (a as any)._id === parentAgentId || a.name === parentAgentId)
-                : undefined
-              const hasLinkedParentMessage = msgParentSessionID !== undefined
-              const msgDotColor = hasLinkedParentMessage
-                ? (parentAgent ? getAgentColor((parentAgent as any).color).hex : undefined)
-                : undefined
-              const msgScheduleId = info.role === "user"
-                ? (info as UserMessage).schedule_id
-                : info.role === "assistant"
-                  ? (info as AssistantMessage).schedule_id
-                  : undefined
-              const isSchedulerAssistant = info.role === "assistant" && (info as AssistantMessage).from?.kind === "scheduler"
-              const isWorkflowMessage = info.role === "assistant" && (info as AssistantMessage).from?.kind === "service"
-              const msgSchedule = msgScheduleId
-                ? schedules.find(s => s.id === msgScheduleId)
-                : isSchedulerAssistant
-                  ? schedules.find(s => s.session_id === selectedSession?.id)
-                  : undefined
-              const userRingColor = msgSchedule
-                ? getAgentColor(msgSchedule.color).hex
-                : msgDotColor ?? userDotColor
-              const sessionAgentId = selectedSession?.agentID
-              const assistantAuthorId = info.role === "assistant"
-                ? (info as AssistantMessage).from?.kind === "agent"
-                  ? (info as AssistantMessage).from?.id
-                  : (info as AssistantMessage).agent
-                : undefined
-              const assistantAgentId = info.role === "assistant"
-                ? (info as AssistantMessage).agent ?? assistantAuthorId
-                : undefined
-              const assistantAgent = assistantAgentId
-                ? agents.find((a) => (a as any)._id === assistantAgentId || a.name === assistantAgentId)
-                : undefined
-              const assistantAuthor = assistantAuthorId
-                ? agents.find((a) => (a as any)._id === assistantAuthorId || a.name === assistantAuthorId)
-                : assistantAgent
-              const isAssistantContribution =
-                info.role === "assistant" &&
-                !!assistantAuthorId &&
-                !!sessionAgentId &&
-                assistantAuthorId !== sessionAgentId
-              const assistantContributionColor = assistantAuthor
-                ? getAgentColor((assistantAuthor as any).color).hex
-                : undefined
-              const schedulerColor = (isSchedulerAssistant && msgSchedule)
-                ? getAgentColor(msgSchedule.color).hex
-                : undefined
-              const assistantMessageColor = schedulerColor ?? assistantContributionColor ?? agentDotColor
+              // Skip rendering an in-flight assistant row that has no visible content yet —
+              // the Thinking indicator below covers that waiting state and must hide only
+              // when the same condition becomes false (they share getTimelineSteps as the
+              // source of truth so the transition is atomic: Thinking gone ↔ row appears).
+              if (info.role === "assistant" && (status === "streaming" || status === "submitted")) {
+                const msgError = (info as AssistantMessage).error
+                if (getTimelineSteps(parts, msgError).length === 0) return null
+              }
               return (
-                <div key={info.id} id={`msg-${info.id}`} className={cn(hasTimeline && "w-full")}>
-                <MessageBranch defaultBranch={0}>
-                  <MessageBranchContent>
-                    <Message
-                      className={cn(
-                        "group/message",
-                        shouldUseFullWidth && info.role === "assistant" && "max-w-full"
-                      )}
-                      style={info.role === "user" ? { marginLeft: 0 } : undefined}
-                      from={info.role === "user" ? "user" : "assistant"}
-                      key={info.id}
-                      onMouseEnter={(e) => {
-                        const messageActions = e.currentTarget.querySelector('[data-message-actions]') as HTMLElement
-                        if (messageActions) {
-                          messageActions.style.opacity = '1'
-                          messageActions.style.visibility = 'visible'
-                          messageActions.style.pointerEvents = 'auto'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        const messageActions = e.currentTarget.querySelector('[data-message-actions]') as HTMLElement
-                        if (messageActions) {
-                          messageActions.style.opacity = '0'
-                          messageActions.style.visibility = 'hidden'
-                          messageActions.style.pointerEvents = 'none'
-                        }
-                      }}
-                    >
-                      {info.role === "user" ? (
-                        <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3">
-                          <div className="relative self-stretch">
-                            <button
-                              className="absolute left-1/2 top-[10px] size-4 -translate-x-1/2 rounded-full"
-                              style={{ outline: "none" }}
-                              title={msgSchedule ? `Scheduled: ${msgSchedule.cron_expression}` : undefined}
-                              onClick={msgSchedule ? () => setOpenScheduleId(msgSchedule.id) : undefined}
-                            >
-                              <div
-                                className="absolute inset-0 rounded-full border-2"
-                                style={{ borderColor: userRingColor }}
-                              />
-                              <div
-                                className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                                style={{ backgroundColor: userRingColor }}
-                              />
-                            </button>
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            <MessageContent className="!ml-0">
-                              {(() => {
-                                const fileParts = getFileParts(parts)
-                                const imageParts = fileParts.filter(fp => fp.mime?.startsWith("image/"))
-                                const nonImageParts = fileParts.filter(fp => !fp.mime?.startsWith("image/"))
-                                
-                                return (
-                                  <>
-                                    {imageParts.length > 0 && (
-                                      <div className="mb-2 flex flex-wrap gap-2">
-                                        {imageParts.map((fp) => (
-                                          <img
-                                            key={fp.id}
-                                            src={fp.url}
-                                            alt={fp.filename ?? "image"}
-                                            className="max-h-32 max-w-full rounded-lg object-contain"
-                                          />
-                                        ))}
-                                      </div>
-                                    )}
-                                    {content ? <MessageResponse>{content}</MessageResponse> : null}
-                                    {nonImageParts.length > 0 && (
-                                      <div className="mt-2">
-                                        <Attachments variant="inline">
-                                          {nonImageParts.map((fp) => (
-                                            <Attachment
-                                              key={fp.id}
-                                              data={{
-                                                type: "file",
-                                                id: fp.id,
-                                                url: fp.url,
-                                                filename: fp.filename,
-                                                mediaType: fp.mime,
-                                              } as any}
-                                            >
-                                              <AttachmentPreview />
-                                              <AttachmentInfo />
-                                            </Attachment>
-                                          ))}
-                                        </Attachments>
-                                      </div>
-                                    )}
-                                  </>
-                                )
-                              })()}
-                            </MessageContent>
-                            <MessageActions
-                              className="relative mt-1 w-full"
-                              style={{ opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
-                              data-message-actions
-                            >
-                              {content && (
-                                <MessageAction
-                                  label="Copy"
-                                  onClick={() => handleCopy(content)}
-                                  tooltip="Copy to clipboard"
-                                  variant="outline"
-                                >
-                                  <CopyIcon className="size-4" />
-                                </MessageAction>
-                              )}
-                              {content && isTtsEnabled && (
-                                <MessageAction
-                                  label={playingId === info.id ? "Stop" : "Listen"}
-                                  onClick={() => handleSpeak(content, info.id)}
-                                  tooltip={playingId === info.id ? "Stop speaking" : "Read aloud"}
-                                  variant="outline"
-                                  disabled={isTtsLoading && playingId === info.id}
-                                >
-                                  {isTtsLoading && playingId === info.id ? (
-                                    <Spinner className="size-4" />
-                                  ) : playingId === info.id ? (
-                                    <VolumeXIcon className="size-4" />
-                                  ) : (
-                                    <Volume2Icon className="size-4" />
-                                  )}
-                                </MessageAction>
-                              )}
-                              {msgParentSessionID && (
-                                <MessageAction
-                                  label="Source"
-                                  onClick={() => handleGoToMessage(msgParentSessionID, msgParentMessageID ?? "")}
-                                  tooltip="Back to source"
-                                  variant="outline"
-                                >
-                                  <Link2Icon className="size-4" />
-                                </MessageAction>
-                              )}
-                              {msgSchedule && (
-                                <MessageAction
-                                  label="Schedule"
-                                  onClick={() => setOpenScheduleId(msgSchedule.id)}
-                                  tooltip="View schedule settings"
-                                  variant="outline"
-                                >
-                                  <BellIcon className="size-4" />
-                                </MessageAction>
-                              )}
-                              {getHiddenParts(parts).length > 0 && (
-                                <MessageAction
-                                  label="Contract"
-                                  onClick={() => setExpandedContractParts(prev => ({ ...prev, [info.id]: !prev[info.id] }))}
-                                  tooltip={expandedContractParts[info.id] ? "Hide delegation contract" : "Show delegation contract"}
-                                  variant="outline"
-                                >
-                                  {expandedContractParts[info.id]
-                                    ? <EyeOffIcon className="size-4" />
-                                    : <EyeIcon className="size-4" />
-                                  }
-                                </MessageAction>
-                              )}
-                              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground whitespace-nowrap">
-                                {msgSchedule ? "scheduler" : "user"}{userName ? `: ${userName}` : ""}
-                              </span>
-                            </MessageActions>
-                            {expandedContractParts[info.id] && getHiddenParts(parts).length > 0 && (
-                              <div className="rounded border border-dashed bg-muted/30 px-3 py-2 font-mono text-xs text-muted-foreground whitespace-pre-wrap">
-                                {getHiddenParts(parts).map(p => p.text).join("\n")}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                      <div>
-                        {hasTimeline ? (
-                          <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3">
-                            {timelineSteps.map((step, stepIndex) => {
-                              // Line only connects steps within this same reply — never crosses message boundaries
-                              const stepConnectsToNext = stepIndex < timelineSteps.length - 1
-                              const isActiveDot =
-                                status === "streaming" &&
-                                msgIndex === messages.length - 1 &&
-                                stepIndex === timelineSteps.length - 1
-
-                              return (
-                                <div key={step.key} className="contents">
-                                  <div className={cn("relative self-stretch", stepConnectsToNext && "pb-3")}>
-                                    {stepConnectsToNext ? (
-                                      <div
-                                        className="absolute left-1/2 top-[22px] bottom-0 w-px -translate-x-1/2 bg-border"
-                                        aria-hidden="true"
-                                      />
-                                    ) : null}
-                                    <div className="absolute left-1/2 top-[6px] size-4 -translate-x-1/2">
-                                      {isActiveDot && (
-                                        <div
-                                          className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
-                                          style={{ borderTopColor: assistantMessageColor }}
-                                          aria-hidden="true"
-                                        />
-                                      )}
-                                      <div
-                                        className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                                        style={{ backgroundColor: assistantMessageColor }}
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className={cn("min-w-0", stepConnectsToNext && "pb-3")}>
-                                    {step.kind === "reasoning" ? (
-                                      <Reasoning
-                                        duration={
-                                          step.content.time?.end && step.content.time?.start
-                                            ? step.content.time.end - step.content.time.start
-                                            : undefined
-                                        }
-                                      >
-                                        <ReasoningTrigger />
-                                        <ReasoningContent>{step.content.text}</ReasoningContent>
-                                      </Reasoning>
-                                    ) : null}
-                                    {step.kind === "fallback-switch" ? (() => {
-                                      const groupDef = modelGroups.find(g => g.id === step.content.groupID)
-                                      return (
-                                        <ModelSwitchCard
-                                          fallbackGroup={groupDef ? {
-                                            id: groupDef.id,
-                                            name: groupDef.name,
-                                            slots: groupDef.models.map(m => ({ providerID: m.providerID, modelID: m.modelID, modelName: modelList.find(ml => ml.providerID === m.providerID && ml.modelID === m.modelID)?.modelName })),
-                                          } : undefined}
-                                          currentSlot={step.content.newSlot}
-                                          failedSlots={step.allFailedSlots}
-                                          retryAttempt={sessionRetryStatus[selectedSession?.id ?? ""]?.attempt}
-                                          retryDelay={sessionRetryStatus[selectedSession?.id ?? ""]?.next ? sessionRetryStatus[selectedSession?.id ?? ""]!.next - Date.now() : undefined}
-                                        />
-                                      )
-                                    })() : null}
-                                    {step.kind === "tool" ? (() => {
-                                      const tool = step.content
-                                      // Guard: legacy sessions stored state as a string ("result"/"call"); normalize to object
-                                      const toolState = typeof tool.state === "object" && tool.state !== null ? tool.state : {} as typeof tool.state
-                                      const input = "input" in toolState ? toolState.input : undefined
-                                      const output = "output" in toolState ? formatToolPayload((toolState as any).output) : undefined
-                                      const error = "error" in toolState ? formatToolPayload((toolState as any).error) : undefined
-                                      const answered =
-                                        "metadata" in toolState && Array.isArray((toolState as any).metadata?.answers)
-                                          ? ((toolState as any).metadata.answers as string[][])
-                                          : undefined
-                                      const questionRequest = tool.tool === "question"
-                                        ? questionRequests.find((request) => request.tool?.callID === tool.callID) ?? (
-                                            Array.isArray(input?.questions)
-                                              ? {
-                                                  id: tool.callID,
-                                                  sessionID: tool.sessionID,
-                                                  questions: input.questions,
-                                                  tool: {
-                                                    messageID: tool.messageID,
-                                                    callID: tool.callID,
-                                                  },
-                                                }
-                                              : undefined
-                                          )
-                                        : undefined
-                                      
-                                      const permissionRequest = permissionRequests.find((request) => request.tool?.call_id === tool.callID)
-                                      const hasPermissionRequest = !!permissionRequest
-                                      const isPermissionTool = hasPermissionRequest
-                                      const permissionResponded = toolState.status === "completed" || toolState.status === "error"
-                                      // Question tools waiting for user input should show "Awaiting Approval" not "Running"
-                                      const isQuestionWaiting = !!questionRequest && toolState.status === "running"
-                                      const state = toToolState(toolState.status, hasPermissionRequest || isQuestionWaiting)
-                                      const toolInput = <ToolInput input={input ?? {}} />
-                                      const currentViewMode = questionViewModes[tool.id] ?? "view"
-                                      const handleViewModeChange = (mode: "code" | "view") => {
-                                        setQuestionViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                                      }
-                                      const isDelegateToolCall = isDelegateTool(tool.tool)
-                                      const currentDelegateViewMode = delegateViewModes[tool.id] ?? "view"
-                                      const handleDelegateViewModeChange = (mode: "code" | "view") => {
-                                        setDelegateViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                                      }
-                                      const isTodoToolCall = isTodoTool(tool.tool)
-                                      const currentTodoViewMode = todoViewModes[tool.id] ?? "view"
-                                      const handleTodoViewModeChange = (mode: "code" | "view") => {
-                                        setTodoViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                                      }
-                                      const isSessionTreeToolCall = isSessionTreeTool(tool.tool)
-                                      const currentSessionTreeViewMode = sessionTreeViewModes[tool.id] ?? "view"
-                                      const handleSessionTreeViewModeChange = (mode: "code" | "view") => {
-                                        setSessionTreeViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                                      }
-                                      const isWebFetchToolCall = isWebFetchTool(tool.tool)
-                                      const currentWebFetchViewMode = webfetchViewModes[tool.id] ?? "code"
-                                      const handleWebFetchViewModeChange = (mode: "code" | "view") => {
-                                        setWebfetchViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                                      }
-                                      const webFetchToolUrl = isWebFetchToolCall ? getWebFetchUrl(tool) : undefined
-                                      const isSkillLoadToolCall = isSkillLoadTool(tool.tool)
-                                      const skillLoadDefinitionPath = isSkillLoadToolCall ? getSkillLoadDefinition(tool) : undefined
-                                      const webFetchActions = isWebFetchToolCall ? (
-                                        <TooltipProvider>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); if (webFetchToolUrl) { if (!webPreviewOpen) setWebPreviewUrl(webFetchToolUrl); toggleWebPreview() } }}>
-                                                <PanelRightIcon className="size-4 text-muted-foreground" />
-                                              </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent>Open in Panel</TooltipContent>
-                                          </Tooltip>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); if (webFetchToolUrl) window.open(webFetchToolUrl, "_blank") }}>
-                                                <ExternalLinkIcon className="size-4 text-muted-foreground" />
-                                              </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent>Open</TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
-                                      ) : isSkillLoadToolCall && skillLoadDefinitionPath ? (
-                                        <TooltipProvider>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); openFilePreview(skillLoadDefinitionPath, skillLoadDefinitionPath) }}>
-                                                <PanelRightIcon className="size-4 text-muted-foreground" />
-                                              </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent>Open in Panel</TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
-                                      ) : undefined
-
-                                      return (
-                                        <Tool defaultOpen={false}>
-                                          <ToolHeader
-                                            state={state}
-                                            title={isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : isSkillLoadToolCall ? getSkillLoadToolTitle(tool) : tool.tool}
-                                            toolName={tool.tool}
-                                            type="dynamic-tool"
-                                            viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : isWebFetchToolCall ? currentWebFetchViewMode : undefined}
-                                            onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : isSessionTreeToolCall ? handleSessionTreeViewModeChange : isWebFetchToolCall ? handleWebFetchViewModeChange : undefined}
-                                            hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}
-                                            actions={webFetchActions}
-                                            icon={isWorkflowMessage ? WorkflowIcon : undefined}
-                                          />
-                                          <ToolContent>
-                                            {questionRequest ? (
-                                              <QuestionTool
-                                                answered={answered}
-                                                json={toolInput}
-                                                onReject={rejectQuestion}
-                                                onReply={replyQuestion}
-                                                request={questionRequest}
-                                                viewMode={currentViewMode}
-                                                onViewModeChange={handleViewModeChange}
-                                              />
-                                            ) : isPermissionTool && permissionRequest ? (
-                                              <PermissionTool
-                                                request={permissionRequest}
-                                                onReply={replyPermission}
-                                                responded={permissionResponded}
-                                              />
-                                            ) : isDelegateToolCall ? (
-                                              currentDelegateViewMode === "code" ? toolInput : (
-                                                <DelegateToolContent
-                                                  tool={tool}
-                                                  sessions={sessions}
-                                                  onSelectSession={selectSession}
-                                                  onGoToMessage={handleGoToMessage}
-                                                />
-                                              )
-                                            ) : isTodoToolCall ? (
-                                              currentTodoViewMode === "code" ? toolInput : (
-                                                <TodoToolContent tool={tool} />
-                                              )
-                                            ) : isSessionTreeToolCall ? (
-                                              currentSessionTreeViewMode === "code" ? toolInput : (
-                                                <SessionTreeToolContent tool={tool} />
-                                              )
-                                            ) : isWebFetchToolCall ? (
-                                              currentWebFetchViewMode === "code" ? toolInput : (
-                                                <WebFetchToolContent tool={tool} />
-                                              )
-                                            ) : (
-                                              toolInput
-                                            )}
-                                            {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !questionRequest && (output || error) ? (
-                                              <ToolOutput errorText={error} output={output} />
-                                            ) : null}
-                                          </ToolContent>
-                                        </Tool>
-                                      )
-                                    })() : null}
-                                    {step.kind === "reply" ? (
-                                      <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
-                                        {step.error ? (
-                                          <>
-                                            {((step.error.data as { message?: string })?.message?.toLowerCase().includes("provider") || (step.error.data as { message?: string })?.message?.toLowerCase().includes("rate limit")) ? (
-                                              <ModelSwitchCard
-                                                fallbackGroup={selectedGroupId && modelGroups.find(g => g.id === selectedGroupId) ? {
-                                                  id: selectedGroupId,
-                                                  name: modelGroups.find(g => g.id === selectedGroupId)!.name,
-                                                  slots: modelGroups.find(g => g.id === selectedGroupId)!.models.map(m => ({ providerID: m.providerID, modelID: m.modelID, modelName: modelList.find(ml => ml.providerID === m.providerID && ml.modelID === m.modelID)?.modelName })),
-                                                } : undefined}
-                                                currentSlot={selectedModel ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID, modelName: selectedModel.modelName } : undefined}
-                                                failedSlots={selectedModel ? [{
-                                                  providerID: selectedModel.providerID,
-                                                  modelID: selectedModel.modelID,
-                                                }] : []}
-                                                errorMessage={(step.error.data as { message?: string })?.message ?? step.error.name}
-                                                retryAttempt={sessionRetryStatus[selectedSession?.id ?? ""]?.attempt}
-                                                retryDelay={sessionRetryStatus[selectedSession?.id ?? ""]?.next ? sessionRetryStatus[selectedSession?.id ?? ""]!.next - Date.now() : undefined}
-                                              />
-                                            ) : (
-                                              <p className="text-destructive text-sm">
-                                                {String((step.error.data as { message?: string })?.message ?? step.error.name)}
-                                              </p>
-                                            )}
-                                          </>
-                                        ) : null}
-                                        {step.content ? <MessageResponse>{step.content}</MessageResponse> : null}
-                                      </MessageContent>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        ) : (
-                          <>
-                            {reasoning && (
-                              <Reasoning
-                                duration={
-                                  reasoning.time?.end && reasoning.time?.start
-                                    ? reasoning.time.end - reasoning.time.start
-                                    : undefined
-                                }
-                              >
-                                <ReasoningTrigger />
-                                <ReasoningContent>{reasoning.text}</ReasoningContent>
-                              </Reasoning>
-                            )}
-                            {msgError ? (
-                              <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
-                                <ModelSwitchCard
-                                  fallbackGroup={selectedGroupId && modelGroups.find(g => g.id === selectedGroupId) ? {
-                                    id: selectedGroupId,
-                                    name: modelGroups.find(g => g.id === selectedGroupId)!.name,
-                                    slots: modelGroups.find(g => g.id === selectedGroupId)!.models.map(m => ({ providerID: m.providerID, modelID: m.modelID, modelName: modelList.find(ml => ml.providerID === m.providerID && ml.modelID === m.modelID)?.modelName })),
-                                  } : undefined}
-                                  currentSlot={selectedModel ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID, modelName: selectedModel.modelName } : undefined}
-                                  failedSlots={selectedModel ? [{
-                                    providerID: selectedModel.providerID,
-                                    modelID: selectedModel.modelID,
-                                  }] : []}
-                                  errorMessage={(msgError?.data as { message?: string })?.message ?? msgError?.name}
-                                  retryAttempt={sessionRetryStatus[selectedSession?.id ?? ""]?.attempt}
-                                  retryDelay={sessionRetryStatus[selectedSession?.id ?? ""]?.next ? sessionRetryStatus[selectedSession?.id ?? ""]!.next - Date.now() : undefined}
-                                />
-                              </MessageContent>
-                            ) : (
-                              <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
-                                {tools.map((tool) => {
-                                  const toolState = typeof tool.state === "object" && tool.state !== null ? tool.state : {} as typeof tool.state
-                                  const input = "input" in toolState ? toolState.input : undefined
-                                  const output = "output" in toolState ? formatToolPayload((toolState as any).output) : undefined
-                                  const error = "error" in toolState ? formatToolPayload((toolState as any).error) : undefined
-                                  const answered =
-                                    "metadata" in toolState && Array.isArray((toolState as any).metadata?.answers)
-                                      ? ((toolState as any).metadata.answers as string[][])
-                                      : undefined
-                                  const questionRequest = tool.tool === "question"
-                                    ? questionRequests.find((request) => request.tool?.callID === tool.callID) ?? (
-                                        Array.isArray(input?.questions)
-                                          ? {
-                                              id: tool.callID,
-                                              sessionID: tool.sessionID,
-                                              questions: input.questions,
-                                              tool: {
-                                                messageID: tool.messageID,
-                                                callID: tool.callID,
-                                              },
-                                            }
-                                          : undefined
-                                      )
-                                    : undefined
-                                  
-                                  const permissionRequest = permissionRequests.find((request) => request.tool?.call_id === tool.callID)
-                                  const hasPermissionRequest = !!permissionRequest
-                                  const isPermissionTool = hasPermissionRequest
-                                  const permissionResponded = toolState.status === "completed" || toolState.status === "error"
-                                  const state = toToolState(toolState.status, hasPermissionRequest)
-                                  const toolInput = <ToolInput input={input ?? {}} />
-                                  const currentViewMode = questionViewModes[tool.id] ?? "view"
-                                  const handleViewModeChange = (mode: "code" | "view") => {
-                                    setQuestionViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                                  }
-                                  const isDelegateToolCall = isDelegateTool(tool.tool)
-                                  const currentDelegateViewMode = delegateViewModes[tool.id] ?? "view"
-                                  const handleDelegateViewModeChange = (mode: "code" | "view") => {
-                                    setDelegateViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                                  }
-                                  const isTodoToolCall = isTodoTool(tool.tool)
-                                  const currentTodoViewMode = todoViewModes[tool.id] ?? "view"
-                                  const handleTodoViewModeChange = (mode: "code" | "view") => {
-                                    setTodoViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                                  }
-                                  const isSessionTreeToolCall = isSessionTreeTool(tool.tool)
-                                  const currentSessionTreeViewMode = sessionTreeViewModes[tool.id] ?? "view"
-                                  const handleSessionTreeViewModeChange = (mode: "code" | "view") => {
-                                    setSessionTreeViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                                  }
-                                  const isWebFetchToolCall = isWebFetchTool(tool.tool)
-                                  const currentWebFetchViewMode = webfetchViewModes[tool.id] ?? "code"
-                                  const handleWebFetchViewModeChange = (mode: "code" | "view") => {
-                                    setWebfetchViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                                  }
-                                  const webFetchToolUrl = isWebFetchToolCall ? getWebFetchUrl(tool) : undefined
-                                  const isSkillLoadToolCall = isSkillLoadTool(tool.tool)
-                                  const skillLoadDefinitionPath = isSkillLoadToolCall ? getSkillLoadDefinition(tool) : undefined
-                                  const webFetchActions = isWebFetchToolCall ? (
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); if (webFetchToolUrl) { if (!webPreviewOpen) setWebPreviewUrl(webFetchToolUrl); toggleWebPreview() } }}>
-                                            <PanelRightIcon className="size-4 text-muted-foreground" />
-                                          </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>Open in Panel</TooltipContent>
-                                      </Tooltip>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); if (webFetchToolUrl) window.open(webFetchToolUrl, "_blank") }}>
-                                            <ExternalLinkIcon className="size-4 text-muted-foreground" />
-                                          </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>Open</TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  ) : isSkillLoadToolCall && skillLoadDefinitionPath ? (
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); openFilePreview(skillLoadDefinitionPath, skillLoadDefinitionPath) }}>
-                                            <PanelRightIcon className="size-4 text-muted-foreground" />
-                                          </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>Open in Panel</TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  ) : undefined
-                                  return (
-                                    <Tool
-                                      defaultOpen={false}
-                                      key={tool.id}
-                                    >
-                                      <ToolHeader
-                                        state={state}
-                                        title={isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : isSkillLoadToolCall ? getSkillLoadToolTitle(tool) : tool.tool}
-                                        toolName={tool.tool}
-                                        type="dynamic-tool"
-                                        viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : isWebFetchToolCall ? currentWebFetchViewMode : undefined}
-                                        onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : isSessionTreeToolCall ? handleSessionTreeViewModeChange : isWebFetchToolCall ? handleWebFetchViewModeChange : undefined}
-                                        hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}
-                                        actions={webFetchActions}
-                                      />
-                                      <ToolContent>
-                                        {questionRequest ? (
-                                          <QuestionTool
-                                            answered={answered}
-                                            json={toolInput}
-                                            onReject={rejectQuestion}
-                                            onReply={replyQuestion}
-                                            request={questionRequest}
-                                            viewMode={currentViewMode}
-                                            onViewModeChange={handleViewModeChange}
-                                          />
-                                        ) : isPermissionTool && permissionRequest ? (
-                                          <PermissionTool
-                                            request={permissionRequest}
-                                            onReply={replyPermission}
-                                            responded={permissionResponded}
-                                          />
-                                        ) : isDelegateToolCall ? (
-                                          currentDelegateViewMode === "code" ? toolInput : (
-                                            <DelegateToolContent
-                                              tool={tool}
-                                              sessions={sessions}
-                                              onSelectSession={selectSession}
-                                              onGoToMessage={handleGoToMessage}
-                                            />
-                                          )
-                                        ) : isTodoToolCall ? (
-                                          currentTodoViewMode === "code" ? toolInput : (
-                                            <TodoToolContent tool={tool} />
-                                          )
-                                        ) : isSessionTreeToolCall ? (
-                                          currentSessionTreeViewMode === "code" ? toolInput : (
-                                            <SessionTreeToolContent tool={tool} />
-                                          )
-                                        ) : isWebFetchToolCall ? (
-                                          currentWebFetchViewMode === "code" ? toolInput : (
-                                            <WebFetchToolContent tool={tool} />
-                                          )
-                                        ) : (
-                                          toolInput
-                                        )}
-                                        {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !questionRequest && !isPermissionTool && (output || error) ? (
-                                          <ToolOutput errorText={error} output={output} />
-                                        ) : null}
-                                      </ToolContent>
-                                    </Tool>
-                                  )
-                                })}
-                                {content ? <MessageResponse>{content}</MessageResponse> : null}
-                              </MessageContent>
-                            )}
-                          </>
-                        )}
-                        {info.role === "assistant" ? (
-                          <MessageActions
-                            className="relative mt-1 w-full"
-                            style={{ opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
-                            data-message-actions
-                          >
-                            {content && (
-                              <MessageAction
-                                label="Copy"
-                                onClick={() => handleCopy(content)}
-                                tooltip="Copy to clipboard"
-                                variant="outline"
-                              >
-                                <CopyIcon className="size-4" />
-                              </MessageAction>
-                            )}
-                            {content && isTtsEnabled && (
-                              <MessageAction
-                                label={playingId === info.id ? "Stop" : "Listen"}
-                                onClick={() => handleSpeak(content, info.id)}
-                                tooltip={playingId === info.id ? "Stop speaking" : "Read aloud"}
-                                variant="outline"
-                                disabled={isTtsLoading && playingId === info.id}
-                              >
-                                {isTtsLoading && playingId === info.id ? (
-                                  <Spinner className="size-4" />
-                                ) : playingId === info.id ? (
-                                  <VolumeXIcon className="size-4" />
-                                ) : (
-                                  <Volume2Icon className="size-4" />
-                                )}
-                              </MessageAction>
-                            )}
-                            {msgParentSessionID && (
-                              <MessageAction
-                                label="Source"
-                                onClick={() => handleGoToMessage(msgParentSessionID, msgParentMessageID ?? "")}
-                                tooltip="Back to source"
-                                variant="outline"
-                              >
-                                <Link2Icon className="size-4" />
-                              </MessageAction>
-                            )}
-                            <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground max-w-[80%] truncate">
-                              {isSchedulerAssistant
-                                ? `scheduler${userName ? `: ${userName}` : ""}`
-                                : (() => {
-                                    const displayName = assistantAuthor?.name ?? assistantAgent?.name ?? assistantAuthorId ?? assistantAgentId
-                                    return `agent${displayName ? `: ${displayName}` : ""}`
-                                  })()
-                              }
-                            </span>
-                          </MessageActions>
-                        ) : null}
-                      </div>
-                      )}
-                    </Message>
-                  </MessageBranchContent>
-                </MessageBranch>
-                </div>
+                <MessageRow
+                  key={info.id}
+                  info={info}
+                  parts={parts}
+                  msgIndex={msgIndex}
+                  messagesLength={messages.length}
+                  status={status}
+                  sessions={sessions}
+                  sessionsById={sessionsById}
+                  agentsById={agentsById}
+                  agentsByName={agentsByName}
+                  schedulesById={schedulesById}
+                  schedulesBySessionId={schedulesBySessionId}
+                  selectedSession={selectedSession}
+                  userDotColor={userDotColor}
+                  agentDotColor={agentDotColor}
+                  playingId={playingId}
+                  isTtsLoading={isTtsLoading}
+                  isTtsEnabled={isTtsEnabled}
+                  handleCopy={handleCopy}
+                  handleSpeak={handleSpeak}
+                  setOpenScheduleId={setOpenScheduleId}
+                  handleGoToMessage={handleGoToMessage}
+                  userName={userName}
+                  expandedContractParts={expandedContractParts}
+                  setExpandedContractParts={setExpandedContractParts}
+                  questionViewModes={questionViewModes}
+                  setQuestionViewModes={setQuestionViewModes}
+                  delegateViewModes={delegateViewModes}
+                  setDelegateViewModes={setDelegateViewModes}
+                  todoViewModes={todoViewModes}
+                  setTodoViewModes={setTodoViewModes}
+                  sessionTreeViewModes={sessionTreeViewModes}
+                  setSessionTreeViewModes={setSessionTreeViewModes}
+                  webfetchViewModes={webfetchViewModes}
+                  setWebfetchViewModes={setWebfetchViewModes}
+                  questionRequests={questionRequests}
+                  replyQuestion={replyQuestion}
+                  rejectQuestion={rejectQuestion}
+                  permissionRequests={permissionRequests}
+                  replyPermission={replyPermission}
+                  selectedAgent={selectedAgent}
+                  selectedModel={selectedModel}
+                  selectedGroupId={selectedGroupId}
+                  modelGroups={modelGroups}
+                  modelList={modelList}
+                  sessionRetryStatus={sessionRetryStatus}
+                  webPreviewOpen={webPreviewOpen}
+                  toggleWebPreview={toggleWebPreview}
+                  setWebPreviewUrl={setWebPreviewUrl}
+                  openFilePreview={openFilePreview}
+                  selectSession={selectSession}
+                />
               )
           })}
           {(status === "submitted" || (status === "streaming" && (() => {
-            const last = messages[messages.length - 1]
-            return !last || last.info.role === "user" || (last.info.role === "assistant" && last.parts.length === 0)
+            // Mirror the MessageRow skip condition exactly: Thinking hides the instant the
+            // row would show, and shows whenever the row is suppressed. Using getTimelineSteps
+            // as the shared gate means no gap/flicker between the indicator and the content.
+            let lastAssistant: typeof messages[0] | undefined
+            for (let i = messages.length - 1; i >= 0; i--) {
+              if (messages[i].info.role === "assistant") { lastAssistant = messages[i]; break }
+            }
+            if (!lastAssistant) return true
+            const msgError = (lastAssistant.info as AssistantMessage).error
+            return getTimelineSteps(lastAssistant.parts, msgError).length === 0
           })())) && (
             <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3 w-full">
               <div className="relative size-4 mt-[3px]">
+                <div
+                  className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
+                  style={{ borderTopColor: agentDotColor }}
+                  aria-hidden="true"
+                />
                 <div
                   className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
                   style={{ backgroundColor: agentDotColor }}
                 />
               </div>
-              <div className="flex items-center gap-2 h-5">
-                <div className="relative size-4 shrink-0">
-                  <div
-                    className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
-                    style={{ borderTopColor: agentDotColor }}
-                    aria-hidden="true"
-                  />
-                  <div
-                    className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                    style={{ backgroundColor: agentDotColor }}
-                  />
-                </div>
+              <div className="flex items-center h-5">
                 <span className="text-xs text-muted-foreground">Thinking…</span>
               </div>
             </div>
@@ -1613,6 +939,7 @@ export const Chatbot = () => {
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>
+        </>
       )}
 
       <div className="grid shrink-0 gap-4 pt-4">
@@ -1719,7 +1046,7 @@ export const Chatbot = () => {
                   forceMode={
                     settings.stt.provider === "disabled"
                       ? "none"
-                      : settings.stt.provider === "openai-whisper" || settings.stt.provider === "google-gemini"
+                      : settings.stt.provider === "openai-whisper" || settings.stt.provider === "google-gemini" || settings.stt.provider === "local-whisper"
                         ? "media-recorder"
                         : undefined
                   }
@@ -1795,7 +1122,7 @@ export const Chatbot = () => {
                                     setSelectedProviderID(null)
                                     setSelectedModelID(null)
                                     setModelSelectorOpen(false)
-                                    updateAgentModel("fallback", g.id)
+                                    updateSessionModel("fallback", g.id)
                                   }}
                                 >
                                   <ComponentIcon className="size-3 shrink-0" />
@@ -1838,7 +1165,7 @@ export const Chatbot = () => {
                                     setSelectedModelID(m.modelID)
                                     setSelectedGroupId(null)
                                     setModelSelectorOpen(false)
-                                    updateAgentModel(m.providerID, m.modelID)
+                                    updateSessionModel(m.providerID, m.modelID)
                                   }}
                                   value={`${m.providerID}:${m.modelID}`}
                                 >

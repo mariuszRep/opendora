@@ -12,18 +12,19 @@ const pointSchema = z.object({
 
 export const DesktopMouseDragTool = Tool.define("desktop_mouse_drag", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    from: pointSchema.describe("Start position {x, y}"),
+    to: pointSchema.describe("End position {x, y}"),
+    button: z
+      .enum(["left", "right", "middle"])
+      .optional()
+      .describe("Mouse button to hold during drag (default: left)"),
+    speed: z.number().int().positive().optional().describe("Mouse speed in pixels/sec"),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      from: pointSchema.describe("Start position {x, y}"),
-      to: pointSchema.describe("End position {x, y}"),
-      button: z
-        .enum(["left", "right", "middle"])
-        .optional()
-        .describe("Mouse button to hold during drag (default: left)"),
-      speed: z.number().int().positive().optional().describe("Mouse speed in pixels/sec"),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       assertNotSandbox(sandbox)
       assertDisplay()
       await ctx.ask({

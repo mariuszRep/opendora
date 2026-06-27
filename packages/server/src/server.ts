@@ -1,6 +1,6 @@
-import { BusEvent } from "@opendora/util/bus-event"
-import { Bus } from "@opendora/runtime/bus"
-import { Log } from "@opendora/util/log"
+import { BusEvent } from "@projectflows/util/bus-event"
+import { Bus } from "@projectflows/runtime/bus"
+import { Log } from "@projectflows/util/log"
 import { describeRoute, generateSpecs, validator, resolver, openAPIRouteHandler } from "hono-openapi"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
@@ -8,18 +8,18 @@ import { streamSSE } from "hono/streaming"
 import { proxy } from "hono/proxy"
 import { basicAuth } from "hono/basic-auth"
 import z, { toJSONSchema as zodToJSONSchema } from "zod"
-import { Provider } from "@opendora/provider/provider"
-import { NamedError } from "@opendora/util/error"
+import { Provider } from "@projectflows/provider/provider"
+import { NamedError } from "@projectflows/util/error"
 import { LSP } from "./lsp"
-import { Format } from "@opendora/runtime/format"
+import { Format } from "@projectflows/runtime/format"
 import { TuiRoutes } from "./routes/tui"
-import { Instance } from "@opendora/runtime/instance"
-import { Vcs } from "@opendora/runtime/vcs"
-import { Skill } from "@opendora/skills/skill"
-import { Auth } from "@opendora/auth"
-import { Flag } from "@opendora/util/flag"
-import { Command } from "@opendora/opencode/command"
-import { Global } from "@opendora/util/global"
+import { Instance } from "@projectflows/runtime/instance"
+import { Vcs } from "@projectflows/runtime/vcs"
+import { Skill } from "@projectflows/skills/skill"
+import { Auth } from "@projectflows/auth"
+import { Flag } from "@projectflows/util/flag"
+import { Command } from "@projectflows/server/command"
+import { Global } from "@projectflows/util/global"
 import { ProjectRoutes } from "./routes/project"
 import { SessionRoutes } from "./routes/session"
 import { PtyRoutes } from "./routes/pty"
@@ -28,20 +28,20 @@ import { FileRoutes } from "./routes/file"
 import { ConfigRoutes } from "./routes/config"
 import { ExperimentalRoutes } from "./routes/experimental"
 import { ProviderRoutes } from "./routes/provider"
-import { startBrowserControlServiceFromConfig, stopBrowserControlService } from "@opendora/tools/browser"
+import { startBrowserControlServiceFromConfig, stopBrowserControlService } from "@projectflows/tools/browser"
 import { AgentRoutes } from "./routes/agent"
 import { ScheduleRoutes } from "./routes/schedule"
-import { WorkflowRoutes } from "@opendora/workflow/routes"
-import { registerToolExecutor } from "@opendora/workflow/runner"
-import { addSkillTools, getSkillTools } from "@opendora/session/skill-tools"
-import { CronScheduler, type ScheduleDispatchFn } from "@opendora/schedule/cron-scheduler"
-import { Schedule } from "@opendora/opencode/schedule"
-import { Database } from "@opendora/storage/db"
-import { Agent } from "@opendora/opencode/agent"
-import { ToolRegistry } from "@opendora/opencode/tool/registry"
-import { lazy } from "@opendora/util/lazy"
-import { InstanceBootstrap } from "@opendora/runtime/bootstrap"
-import { NotFoundError } from "@opendora/storage/db"
+import { WorkflowRoutes } from "@projectflows/workflow/routes"
+import { registerToolExecutor } from "@projectflows/workflow/runner"
+import { addSkillTools, getSkillTools } from "@projectflows/session/skill-tools"
+import { CronScheduler, type ScheduleDispatchFn } from "@projectflows/schedule/cron-scheduler"
+import { Schedule } from "@projectflows/schedule/service"
+import { Database } from "@projectflows/storage/db"
+import { Agent } from "@projectflows/runtime/agent"
+import { ToolRegistry } from "@projectflows/server/tool-registry"
+import { lazy } from "@projectflows/util/lazy"
+import { InstanceBootstrap } from "@projectflows/runtime/bootstrap"
+import { NotFoundError } from "@projectflows/storage/db"
 import type { ContentfulStatusCode } from "hono/utils/http-status"
 import { websocket } from "hono/bun"
 import { HTTPException } from "hono/http-exception"
@@ -54,15 +54,17 @@ import { AuthRoutes } from "./routes/auth"
 import { UserRoutes } from "./routes/user"
 import { GeneralRoutes, getGlobalTimezone } from "./routes/general"
 import { UsageRoutes } from "./routes/usage"
+import { MemoryRoutes } from "./routes/memory"
 import { MDNS } from "./mdns"
-import { BusBridge } from "@opendora/session/bus-bridge"
-import { retentionDaemon, sessionManager } from "@opendora/session/session"
+import { BusBridge } from "@projectflows/session/bus-bridge"
+import { retentionDaemon, sessionManager } from "@projectflows/session/session"
 import { configureSessionCore } from "./configure-session-core"
-import { openDoraStorageAdapter } from "@opendora/session/storage-adapter"
-import { Session } from "@opendora/session/session"
-import { Identifier } from "@opendora/util/id"
+import { openDoraStorageAdapter } from "@projectflows/session/storage-adapter"
+import { Session } from "@projectflows/session/session"
+import { SessionPrompt } from "@projectflows/session/prompt"
+import { Identifier } from "@projectflows/util/id"
 import { generateText, jsonSchema, tool as aiTool } from "ai"
-import { MessageV2 } from "@opendora/session/message"
+import { MessageV2 } from "@projectflows/session/message"
 
 // @ts-ignore This global is needed to prevent ai-sdk from logging warnings to stdout https://github.com/vercel/ai/blob/2dc67e0ef538307f21368db32d5a12345d98831b/packages/ai/src/logger/log-warnings.ts#L85
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -105,9 +107,9 @@ export namespace Server {
           // Allow CORS preflight requests to succeed without auth.
           // Browser clients sending Authorization headers will preflight with OPTIONS.
           if (c.req.method === "OPTIONS") return next()
-          const password = Flag.OPENCODE_SERVER_PASSWORD
+          const password = Flag.PROJECTFLOWS_SERVER_PASSWORD
           if (!password) return next()
-          const username = Flag.OPENCODE_SERVER_USERNAME ?? "opencode"
+          const username = Flag.PROJECTFLOWS_SERVER_USERNAME ?? "projectflows"
           return basicAuth({ username, password })(c, next)
         })
         .use(async (c, next) => {
@@ -224,7 +226,7 @@ export namespace Server {
         )
         .use(async (c, next) => {
           if (c.req.path === "/log") return next()
-          const raw = c.req.query("directory") || c.req.header("x-opencode-directory") || process.env.OPENCODE_PROJECT_ROOT || process.cwd()
+          const raw = c.req.query("directory") || c.req.header("x-projectflows-directory") || process.env.PROJECTFLOWS_PROJECT_ROOT || process.cwd()
           const directory = (() => {
             try {
               return decodeURIComponent(raw)
@@ -268,6 +270,7 @@ export namespace Server {
         .route("/user", UserRoutes())
         .route("/general", GeneralRoutes())
         .route("/usage", UsageRoutes())
+        .route("/memory", MemoryRoutes())
         .route("/", FileRoutes())
         .route("/mcp", McpRoutes())
         .route("/tui", TuiRoutes())
@@ -624,27 +627,71 @@ export namespace Server {
                   properties: {},
                 }),
               })
-              const unsub = Bus.subscribeAll(async (event) => {
-                await stream.writeSSE({
-                  data: JSON.stringify(event),
-                })
-                if (event.type === Bus.InstanceDisposed.type) {
-                  stream.close()
+
+              // Coalesce consecutive message.part.delta events for the same part into
+              // one SSE write every FLUSH_MS, so a fast-streaming response doesn't send
+              // one network frame per token. Other event types are written immediately,
+              // after flushing any pending delta first to preserve ordering.
+              const FLUSH_MS = 33
+              // accDelta/lastSeq are subscriber-local — never mutate the shared Bus payload object.
+              let pending: { event: any; accDelta: string; lastSeq: number; timer: ReturnType<typeof setTimeout> } | null = null
+
+              // Serialise all SSE writes so a flushed delta always arrives at the
+              // client before the non-delta event that follows it.
+              let writeQueue: Promise<void> = Promise.resolve()
+              function enqueue(write: () => Promise<void>): void {
+                writeQueue = writeQueue.then(write).catch(() => {})
+              }
+
+              function flushPending() {
+                if (!pending) return
+                clearTimeout(pending.timer)
+                const { event, accDelta, lastSeq } = pending
+                pending = null
+                const flushedEvent = {
+                  ...event,
+                  properties: { ...event.properties, delta: accDelta, seq: lastSeq },
                 }
+                enqueue(() => stream.writeSSE({ data: JSON.stringify(flushedEvent) }))
+              }
+
+              const unsub = Bus.subscribeAll((event) => {
+                if (event.type !== "message.part.delta") {
+                  flushPending()
+                  enqueue(() => stream.writeSSE({ data: JSON.stringify(event) }))
+                  if (event.type === Bus.InstanceDisposed.type) {
+                    writeQueue = writeQueue.then(() => stream.close()).catch(() => {})
+                  }
+                  return
+                }
+                const props = event.properties
+                if (pending && pending.event.properties.partID === props.partID) {
+                  clearTimeout(pending.timer)
+                  pending.accDelta += props.delta
+                  pending.lastSeq = props.seq ?? pending.lastSeq
+                } else {
+                  flushPending()
+                  pending = { event, accDelta: props.delta, lastSeq: props.seq ?? 0, timer: null as any }
+                }
+                pending.timer = setTimeout(flushPending, FLUSH_MS)
               })
 
               // Send heartbeat every 10s to prevent stalled proxy streams.
               const heartbeat = setInterval(() => {
-                stream.writeSSE({
-                  data: JSON.stringify({
-                    type: "server.heartbeat",
-                    properties: {},
+                flushPending()
+                enqueue(() =>
+                  stream.writeSSE({
+                    data: JSON.stringify({
+                      type: "server.heartbeat",
+                      properties: {},
+                    }),
                   }),
-                })
+                )
               }, 10_000)
 
               await new Promise<void>((resolve) => {
                 stream.onAbort(() => {
+                  flushPending()
                   clearInterval(heartbeat)
                   unsub()
                   resolve()
@@ -709,11 +756,28 @@ export namespace Server {
 
       const execCtx = {
         sessionID: ctx.sessionID,
-        messageID: "workflow-runner",
+        messageID: ctx.messageID ?? Identifier.ascending("message"),
         agent: ctx.agent ?? "",
         abort: ctx.abort ?? new AbortController().signal,
         messages: [],
-        metadata: (_input: { title?: string; metadata?: unknown }) => {},
+        metadata: async (input: { title?: string; metadata?: unknown }) => {
+          if (ctx.partID && ctx.messageID) {
+            await Session.updatePart({
+              id: ctx.partID,
+              sessionID: ctx.sessionID,
+              messageID: ctx.messageID,
+              type: "tool",
+              callID: ctx.partID,
+              tool: toolId,
+              state: {
+                status: "running",
+                input: finalArgs,
+                metadata: input.metadata as any,
+                time: { start: Date.now() },
+              },
+            } as any)
+          }
+        },
         ask: async (_input: unknown) => {},
         extra: {
           directory: sessionDirectory,
@@ -732,11 +796,16 @@ export namespace Server {
             list: () => Agent.list(),
             get: (id: string) => Agent.get(id),
           },
+          prompt: (opts: any) => SessionPrompt.prompt(opts),
+          resolvePromptParts: (template: string) => SessionPrompt.resolvePromptParts(template),
           session: {
             list: (filter?: any) => Session.list(filter),
             get: (id: string) => Session.get(id),
             messages: (id: string) => Session.messages({ sessionID: id }),
             setTitle: (id: string, title: string) => Session.setTitle({ sessionID: id, title }),
+            create: (input: any) => Session.create(input),
+            ensureMainSession: (agentID: string) => Session.ensureMainSession(agentID),
+            setReplyToSessionID: (input: any) => Session.setReplyToSessionID(input),
           },
         },
       }
@@ -797,7 +866,7 @@ export namespace Server {
       }
 
       const result = await toolDef.execute(finalArgs, execCtx)
-      return { output: result.output }
+      return { output: result.output, metadata: result.metadata }
     })
 
     // Clear out any tool parts left in pending/running state by a previous

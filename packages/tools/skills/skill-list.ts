@@ -3,7 +3,7 @@ import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
 
-export const SkillListTool = Tool.define("skill_list", async (_initCtx) => {
+export const SkillListTool = Tool.define("skill_list", async () => {
   const description = [
     "List available skills.",
     "",
@@ -31,7 +31,7 @@ export const SkillListTool = Tool.define("skill_list", async (_initCtx) => {
   return {
     description,
     parameters,
-    async execute(params: z.infer<typeof parameters>, ctx) {
+    async execute(params: z.infer<typeof parameters>, ctx): Promise<{ title: string; metadata: Record<string, any>; output: string }> {
       const skills = host(ctx).skills
       if (!skills) {
         throw new Error("Skill service is not available in this context")
@@ -110,7 +110,6 @@ export const SkillListTool = Tool.define("skill_list", async (_initCtx) => {
             `  <skill>`,
             `    <name>${skill.name}</name>`,
             `    <description>${skill.description}</description>`,
-            `    <origin>${skill.origin ?? "unknown"}</origin>`,
             `    <location>${pathToFileURL(skill.location).href}</location>`,
             `  </skill>`,
           ]),

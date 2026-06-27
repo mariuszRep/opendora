@@ -25,11 +25,12 @@ export function convertToOpenAICompatibleChatMessages(prompt: LanguageModelV2Pro
       }
 
       case "user": {
-        if (content.length === 1 && content[0].type === "text") {
+        const firstPart = content[0]
+        if (content.length === 1 && firstPart?.type === "text") {
           messages.push({
             role: "user",
-            content: content[0].text,
-            ...getOpenAIMetadata(content[0]),
+            content: firstPart.text,
+            ...getOpenAIMetadata(firstPart),
           })
           break
         }

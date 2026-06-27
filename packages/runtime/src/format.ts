@@ -1,14 +1,14 @@
 import { Bus } from "./bus"
-import { File } from "@opendora/opencode/file"
-import { Log } from "@opendora/util/log"
+import { FileEditedEvent } from "./file-events"
+import { Log } from "@projectflows/util/log"
 import path from "path"
 import z from "zod"
 
 import * as Formatter from "./formatter"
-import { Config } from "@opendora/config/config"
+import { Config } from "@projectflows/config/config"
 import { mergeDeep } from "remeda"
 import { Instance } from "./instance"
-import { Process } from "@opendora/util/process"
+import { Process } from "@projectflows/util/process"
 
 export namespace Format {
   const log = Log.create({ service: "format" })
@@ -45,11 +45,11 @@ export namespace Format {
         delete formatters[name]
         continue
       }
-      const result: Formatter.Info = mergeDeep(formatters[name] ?? {}, {
+      const result = mergeDeep(formatters[name] ?? {}, {
         command: [],
         extensions: [],
         ...item,
-      })
+      }) as Formatter.Info
 
       if (result.command.length === 0) continue
 
@@ -103,7 +103,7 @@ export namespace Format {
 
   export function init() {
     log.info("init")
-    Bus.subscribe(File.Event.Edited, async (payload) => {
+    Bus.subscribe(FileEditedEvent, async (payload) => {
       const file = payload.properties.file
       log.info("formatting", { file })
       const ext = path.extname(file)

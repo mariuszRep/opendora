@@ -11,14 +11,15 @@ const pointSchema = z.object({
 
 export const PyAutoGUIMultiClickTool = Tool.define("pyautogui_multi_click", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    points: z.array(pointSchema).min(1),
+    hold_ctrl: z.boolean().optional(),
+    delay_ms: z.number().int().nonnegative().optional(),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      points: z.array(pointSchema).min(1),
-      hold_ctrl: z.boolean().optional(),
-      delay_ms: z.number().int().nonnegative().optional(),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       if (sandbox) throw new Error("pyautogui tools are disabled in sandbox mode")
 
       await ctx.ask({

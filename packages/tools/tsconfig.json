@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@tsconfig/bun/tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["bun"]
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["browser/plugin-sdk/**", "browser/sdk-stubs/**", "browser/src/**", "browser/adapter.ts"]
+}

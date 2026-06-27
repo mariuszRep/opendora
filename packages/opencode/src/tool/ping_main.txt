@@ -1,4 +1,0 @@
-Use this tool to ping another agent's main session.
-
-This targets the agent's long-lived `role` session, creating it if needed.
-Use it when you want to continue work in that agent's persistent thread, such as `plan (main)` or `build (main)`.

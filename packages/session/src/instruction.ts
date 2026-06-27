@@ -3,6 +3,7 @@ import os from "os"
 import fs from "fs/promises"
 import { getConfig } from "./config.ts"
 import type { MessageV2 } from "./message-v2.ts"
+import { Instance } from "@projectflows/runtime/instance"
 
 const log = { warn: (...a: any[]) => console.warn("[instruction]", ...a) }
 
@@ -12,9 +13,25 @@ const FILES = [
   "CONTEXT.md", // deprecated
 ]
 
+function instanceDirectory(): string {
+  try {
+    return Instance.directory
+  } catch {
+    return getConfig().instance?.directory ?? process.cwd()
+  }
+}
+
+function instanceWorktree(): string {
+  try {
+    return Instance.worktree
+  } catch {
+    return getConfig().instance?.worktree ?? process.cwd()
+  }
+}
+
 function globalFiles() {
   const files: string[] = []
-  const configDir = process.env.OPENCODE_CONFIG_DIR
+  const configDir = process.env.PROJECTFLOWS_CONFIG_DIR
   if (configDir) {
     files.push(path.join(configDir, "AGENTS.md"))
   }
@@ -22,7 +39,7 @@ function globalFiles() {
   if (globalConfigPath) {
     files.push(path.join(globalConfigPath, "AGENTS.md"))
   }
-  if (!(process.env.OPENCODE_DISABLE_CLAUDE_CODE_PROMPT === "1")) {
+  if (!(process.env.PROJECTFLOWS_DISABLE_CLAUDE_CODE_PROMPT === "1")) {
     files.push(path.join(os.homedir(), ".claude", "CLAUDE.md"))
   }
   return files
@@ -89,16 +106,15 @@ async function globUp(pattern: string, dir: string, root: string): Promise<strin
 }
 
 async function resolveRelative(instruction: string): Promise<string[]> {
-  const cfg = getConfig()
-  const directory = process.cwd()
-  const worktree = cfg.instance?.worktree ?? process.cwd()
-  if (!(process.env.OPENCODE_DISABLE_PROJECT_CONFIG === "1")) {
+  const directory = instanceDirectory()
+  const worktree = instanceWorktree()
+  if (!(process.env.PROJECTFLOWS_DISABLE_PROJECT_CONFIG === "1")) {
     return globUp(instruction, directory, worktree).catch(() => [])
   }
-  const configDir = process.env.OPENCODE_CONFIG_DIR
+  const configDir = process.env.PROJECTFLOWS_CONFIG_DIR
   if (!configDir) {
     log.warn(
-      `Skipping relative instruction "${instruction}" - no OPENCODE_CONFIG_DIR set while project config is disabled`,
+      `Skipping relative instruction "${instruction}" - no PROJECTFLOWS_CONFIG_DIR set while project config is disabled`,
     )
     return []
   }
@@ -131,11 +147,11 @@ export namespace InstructionPrompt {
   export async function systemPaths() {
     const cfg = getConfig()
     const config = await cfg.config?.get() ?? {}
-    const directory = process.cwd()
-    const worktree = cfg.instance?.worktree ?? process.cwd()
+    const directory = instanceDirectory()
+    const worktree = instanceWorktree()
     const paths = new Set<string>()
 
-    if (!(process.env.OPENCODE_DISABLE_PROJECT_CONFIG === "1")) {
+    if (!(process.env.PROJECTFLOWS_DISABLE_PROJECT_CONFIG === "1")) {
       for (const file of FILES) {
         const matches = await findUp(file, directory, worktree)
         if (matches.length > 0) {
@@ -238,7 +254,7 @@ export namespace InstructionPrompt {
 
     const target = path.resolve(filepath)
     let current = path.dirname(target)
-    const root = path.resolve(process.cwd())
+    const root = instanceWorktree()
 
     while (current.startsWith(root) && current !== root) {
       const found = await find(current)

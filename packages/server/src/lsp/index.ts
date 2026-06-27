@@ -1,15 +1,15 @@
-import { BusEvent } from "@opendora/util/bus-event"
-import { Bus } from "@opendora/runtime/bus"
-import { Log } from "@opendora/util/log"
+import { BusEvent } from "@projectflows/util/bus-event"
+import { Bus } from "@projectflows/runtime/bus"
+import { Log } from "@projectflows/util/log"
 import { LSPClient } from "./client"
 import path from "path"
 import { pathToFileURL, fileURLToPath } from "url"
 import { LSPServer } from "./server"
 import z from "zod"
-import { Config } from "@opendora/config/config"
+import { Config } from "@projectflows/config/config"
 import { spawn } from "child_process"
-import { Instance } from "@opendora/runtime/instance"
-import { Flag } from "@opendora/util/flag"
+import { Instance } from "@projectflows/runtime/instance"
+import { Flag } from "@projectflows/util/flag"
 
 export namespace LSP {
   const log = Log.create({ service: "lsp" })
@@ -62,7 +62,7 @@ export namespace LSP {
   export type DocumentSymbol = z.infer<typeof DocumentSymbol>
 
   const filterExperimentalServers = (servers: Record<string, LSPServer.Info>) => {
-    if (Flag.OPENCODE_EXPERIMENTAL_LSP_TY) {
+    if (Flag.PROJECTFLOWS_EXPERIMENTAL_LSP_TY) {
       // If experimental flag is enabled, disable pyright
       if (servers["pyright"]) {
         log.info("LSP server pyright is disabled because OPENCODE_EXPERIMENTAL_LSP_TY is enabled")

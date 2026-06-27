@@ -1,1 +1,1 @@
-export { Wildcard } from "@opendora/permission/pattern"
+export { Wildcard } from "@projectflows/permission/pattern"

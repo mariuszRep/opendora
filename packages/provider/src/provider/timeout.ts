@@ -8,7 +8,7 @@
 
 import { readFile, writeFile, mkdir } from "fs/promises"
 import { join, dirname } from "path"
-import { Global } from "@opendora/util/global"
+import { Global } from "@projectflows/util/global"
 import { ProviderError } from "./error"
 
 export namespace ProviderTimeout {

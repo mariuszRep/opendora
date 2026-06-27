@@ -2,10 +2,10 @@ import path from "path"
 import os from "os"
 import z from "zod"
 import { type ParseError as JsoncParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser"
-import { NamedError } from "@opendora/util/error"
-import { Filesystem } from "@opendora/tools/filesystem/lib/primitives"
-import { Flag } from "@opendora/util/flag"
-import { Global } from "@opendora/util/global"
+import { NamedError } from "@projectflows/util/error"
+import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
+import { Flag } from "@projectflows/util/flag"
+import { Global } from "@projectflows/util/global"
 
 export namespace ConfigPaths {
   export async function projectFiles(name: string, directory: string, worktree: string) {
@@ -22,7 +22,7 @@ export namespace ConfigPaths {
   export async function directories(directory: string, worktree: string) {
     const dirs = [
       Global.Path.config,
-      ...(!Flag.OPENCODE_DISABLE_PROJECT_CONFIG
+      ...(!Flag.PROJECTFLOWS_DISABLE_PROJECT_CONFIG
         ? await Array.fromAsync(
             Filesystem.up({
               targets: [".opencode", ".projectflows"],
@@ -38,7 +38,7 @@ export namespace ConfigPaths {
           stop: Global.Path.home,
         }),
       )),
-      ...(Flag.OPENCODE_CONFIG_DIR ? [Flag.OPENCODE_CONFIG_DIR] : []),
+      ...(Flag.PROJECTFLOWS_CONFIG_DIR ? [Flag.PROJECTFLOWS_CONFIG_DIR] : []),
     ]
     // Deduplicate while preserving order (last entry wins in config merge)
     return [...new Set(dirs)]
@@ -155,7 +155,7 @@ export namespace ConfigPaths {
         .map((e) => {
           const beforeOffset = text.substring(0, e.offset).split("\n")
           const line = beforeOffset.length
-          const column = beforeOffset[beforeOffset.length - 1].length + 1
+          const column = beforeOffset[beforeOffset.length - 1]!.length + 1
           const problemLine = lines[line - 1]
 
           const error = `${printParseErrorCode(e.error)} at line ${line}, column ${column}`

@@ -1,5 +1,5 @@
 /**
- * Injectable configuration for @opendora/session.
+ * Injectable configuration for @projectflows/session.
  * Call configure() once at startup before using any session functions.
  */
 
@@ -15,7 +15,7 @@ export interface SessionCoreConfig {
     get(): Promise<any>
     directories(): Promise<string[]>
   }
-  /** Provider service — typed as any until @opendora/provider exists */
+  /** Provider service — typed as any until @projectflows/provider exists */
   provider?: {
     getLanguage(model: any): Promise<any>
     getProvider(providerID: string): Promise<any>
@@ -77,7 +77,7 @@ export interface SessionCoreConfig {
   opencodeBus?: {
     publish(eventDef: any, payload: any): void
   }
-  /** Snapshot service — typed as any until @opendora/snapshot exists */
+  /** Snapshot service — typed as any until @projectflows/snapshot exists */
   snapshot?: any
   /** Plugin service */
   plugin?: {
@@ -189,6 +189,8 @@ export interface SessionCoreConfig {
     all?(): Promise<any[]>
     search?(query: string, registries?: string[]): Promise<any[]>
     install?(source: string, options?: any): Promise<void>
+    create?(params: any): Promise<any>
+    remove?(name: string): Promise<void>
     update?(name: string): Promise<void>
     uninstall?(name: string): Promise<void>
     list?(): Promise<any[]>
@@ -247,6 +249,6 @@ export function configure(config: SessionCoreConfig) {
 }
 
 export function getConfig(): SessionCoreConfig {
-  if (!_config) throw new Error("@opendora/session not configured — call configure() first")
+  if (!_config) throw new Error("@projectflows/session not configured — call configure() first")
   return _config
 }

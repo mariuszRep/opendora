@@ -25,27 +25,28 @@ const regionSchema = z.object({
 
 export const DesktopScreenCaptureTool = Tool.define("desktop_screen_capture", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    region: regionSchema
+      .optional()
+      .describe("Capture only this region {x, y, width, height}; omit for full screen"),
+    windowTitle: z
+      .string()
+      .optional()
+      .describe(
+        "Capture only the window whose title contains this substring. Takes precedence over region. On WSLg this is the only reliable way to get real pixels — full-screen capture returns a black image because there is no composited root.",
+      ),
+    windowId: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe("Capture the window with this numeric X11 window ID. Overrides windowTitle."),
+    path: z.string().optional().describe("Output file path (PNG). Defaults to a temp file."),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      region: regionSchema
-        .optional()
-        .describe("Capture only this region {x, y, width, height}; omit for full screen"),
-      windowTitle: z
-        .string()
-        .optional()
-        .describe(
-          "Capture only the window whose title contains this substring. Takes precedence over region. On WSLg this is the only reliable way to get real pixels — full-screen capture returns a black image because there is no composited root.",
-        ),
-      windowId: z
-        .number()
-        .int()
-        .positive()
-        .optional()
-        .describe("Capture the window with this numeric X11 window ID. Overrides windowTitle."),
-      path: z.string().optional().describe("Output file path (PNG). Defaults to a temp file."),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       assertNotSandbox(sandbox)
       assertDisplay()
 

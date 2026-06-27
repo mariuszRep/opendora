@@ -18,9 +18,31 @@ export default function VoiceSettingsPage() {
   const [recordingKeys, setRecordingKeys] = useState<string[]>([])
   const [googleApiKey, setGoogleApiKey] = useState("")
   const [savingGoogleKey, setSavingGoogleKey] = useState(false)
+  const [localWhisperUrl, setLocalWhisperUrl] = useState("")
+  const [localWhisperKey, setLocalWhisperKey] = useState("")
+  const [savingLocalWhisper, setSavingLocalWhisper] = useState(false)
 
   const needsGemini = settings.stt.provider === "google-gemini" || settings.tts.provider === "google-gemini"
   const needsOpenAI = settings.stt.provider === "openai-whisper" || settings.tts.provider === "openai"
+
+  const saveLocalWhisperConfig = async () => {
+    if (!localWhisperUrl.trim()) return
+    setSavingLocalWhisper(true)
+    try {
+      await opendora.auth.set("local-whisper", {
+        type: "url",
+        url: localWhisperUrl.trim().replace(/\/$/, ""),
+        ...(localWhisperKey.trim() ? { key: localWhisperKey.trim() } : {}),
+      })
+      toast.success("Local Whisper server saved")
+      setLocalWhisperUrl("")
+      setLocalWhisperKey("")
+    } catch {
+      toast.error("Failed to save Local Whisper configuration")
+    } finally {
+      setSavingLocalWhisper(false)
+    }
+  }
 
   const saveGoogleApiKey = async () => {
     if (!googleApiKey.trim()) return
@@ -213,7 +235,7 @@ export default function VoiceSettingsPage() {
                       updateSettings({
                         stt: {
                           ...settings.stt,
-                          provider: e.target.value as "openai-whisper" | "google-gemini" | "browser-native" | "disabled",
+                          provider: e.target.value as "openai-whisper" | "google-gemini" | "local-whisper" | "browser-native" | "disabled",
                         },
                       })
                     }
@@ -222,6 +244,7 @@ export default function VoiceSettingsPage() {
                     <option value="browser-native">Browser Native (Chrome/Edge only, free)</option>
                     <option value="openai-whisper">OpenAI Whisper</option>
                     <option value="google-gemini">Google Gemini</option>
+                    <option value="local-whisper">Local Whisper Server</option>
                     <option value="disabled">Disabled</option>
                   </select>
                   <p className="text-xs text-muted-foreground">
@@ -231,6 +254,8 @@ export default function VoiceSettingsPage() {
                       "Uses OpenAI's Whisper model for high-quality transcription. Requires an OpenAI API key."}
                     {settings.stt.provider === "google-gemini" &&
                       "Uses Google Gemini for transcription. Requires a Google API key."}
+                    {settings.stt.provider === "local-whisper" &&
+                      "Routes audio to a local Whisper server (OpenAI-compatible API). No cloud API key required."}
                     {settings.stt.provider === "disabled" && "Voice input will be disabled."}
                   </p>
                 </div>
@@ -277,17 +302,20 @@ export default function VoiceSettingsPage() {
                       updateSettings({
                         tts: {
                           ...settings.tts,
-                          provider: e.target.value as "openai" | "google-gemini" | "disabled",
+                          provider: e.target.value as "openai" | "google-gemini" | "browser-native" | "disabled",
                         },
                       })
                     }
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
+                    <option value="browser-native">Browser Native (free, robotic)</option>
                     <option value="openai">OpenAI TTS</option>
                     <option value="google-gemini">Google Gemini TTS</option>
                     <option value="disabled">Disabled</option>
                   </select>
                   <p className="text-xs text-muted-foreground">
+                    {settings.tts.provider === "browser-native" &&
+                      "Uses the browser's built-in speech synthesis. Free, no API key required. Voice quality varies by OS/browser."}
                     {settings.tts.provider === "openai" &&
                       "Uses OpenAI's text-to-speech API. Requires an OpenAI API key."}
                     {settings.tts.provider === "google-gemini" &&
@@ -573,6 +601,51 @@ export default function VoiceSettingsPage() {
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">
                   Browser-native uses Chrome/Edge's built-in speech recognition. It's free and works offline. Push-to-talk also uses the browser API directly — no backend calls.
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Local Whisper server setup */}
+            {settings.stt.provider === "local-whisper" && (
+              <Card className="border-green-500/50">
+                <CardHeader>
+                  <CardTitle className="text-base">Local Whisper Server</CardTitle>
+                  <CardDescription>
+                    Connect to a locally-running Whisper server with an OpenAI-compatible API (e.g. faster-whisper-server, whisper.cpp HTTP, LocalAI).
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Server URL</label>
+                    <input
+                      type="url"
+                      placeholder="http://localhost:8000"
+                      value={localWhisperUrl}
+                      onChange={(e) => setLocalWhisperUrl(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      The server must expose <span className="font-mono">POST /v1/audio/transcriptions</span>.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Bearer token (optional)</label>
+                    <input
+                      type="password"
+                      placeholder="Only needed if your server requires authentication"
+                      value={localWhisperKey}
+                      onChange={(e) => setLocalWhisperKey(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && saveLocalWhisperConfig()}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
+                  <Button
+                    onClick={saveLocalWhisperConfig}
+                    disabled={!localWhisperUrl.trim() || savingLocalWhisper}
+                    size="sm"
+                  >
+                    {savingLocalWhisper ? "Saving..." : "Save"}
+                  </Button>
                 </CardContent>
               </Card>
             )}

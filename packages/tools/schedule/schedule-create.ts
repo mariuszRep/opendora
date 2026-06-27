@@ -65,7 +65,7 @@ export const ScheduleCreateTool = Tool.define("schedule_create", async () => ({
       session_id: sessionId,
       name: args.name,
       color: args.color,
-    }) as any
+    } as any) as any
 
     return {
       title: "Schedule Created",

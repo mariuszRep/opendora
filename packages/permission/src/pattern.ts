@@ -32,7 +32,7 @@ export namespace Wildcard {
     let result = undefined
     for (const [pattern, value] of sorted) {
       const parts = pattern.split(/\s+/)
-      if (!match(input.head, parts[0])) continue
+      if (!match(input.head, parts[0] ?? "")) continue
       if (parts.length === 1 || matchSequence(input.tail, parts.slice(1))) result = value
     }
     return result
@@ -41,9 +41,10 @@ export namespace Wildcard {
   function matchSequence(items: string[], patterns: string[]): boolean {
     if (patterns.length === 0) return true
     const [pattern, ...rest] = patterns
+    if (!pattern) return false
     if (pattern === "*") return matchSequence(items, rest)
     for (let i = 0; i < items.length; i++) {
-      if (match(items[i], pattern) && matchSequence(items.slice(i + 1), rest)) return true
+      if (match(items[i]!, pattern) && matchSequence(items.slice(i + 1), rest)) return true
     }
     return false
   }

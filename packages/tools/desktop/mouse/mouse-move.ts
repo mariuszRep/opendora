@@ -6,15 +6,16 @@ import toolDef from ".//mouse-move.json"
 
 export const DesktopMouseMoveTool = Tool.define("desktop_mouse_move", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    x: z.number().int().describe("Target X coordinate in pixels"),
+    y: z.number().int().describe("Target Y coordinate in pixels"),
+    smooth: z.boolean().optional().describe("Use smooth animated movement (default: true)"),
+    speed: z.number().int().positive().optional().describe("Mouse speed in pixels/sec (default: 1000)"),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      x: z.number().int().describe("Target X coordinate in pixels"),
-      y: z.number().int().describe("Target Y coordinate in pixels"),
-      smooth: z.boolean().optional().describe("Use smooth animated movement (default: true)"),
-      speed: z.number().int().positive().optional().describe("Mouse speed in pixels/sec (default: 1000)"),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       assertNotSandbox(sandbox)
       assertDisplay()
       await ctx.ask({

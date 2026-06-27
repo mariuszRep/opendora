@@ -68,7 +68,7 @@ const resolveWasm = (asset: string) => {
   return fileURLToPath(url)
 }
 
-let _parser: ReturnType<typeof import("web-tree-sitter").then> | null = null
+let _parser: any | null = null
 async function getParser() {
   if (_parser) return _parser
   const { Parser } = await import("web-tree-sitter")
@@ -105,24 +105,26 @@ export const BashTool = Tool.define("bash", async (ctx) => {
     .replace("${maxLines}", String(MAX_LINES))
     .replace("${maxBytes}", MAX_BYTES_LABEL)
 
+  const parameters = z.object({
+    command: z.string().describe("The command to execute"),
+    timeout: z.number().describe("Optional timeout in milliseconds").optional(),
+    workdir: z
+      .string()
+      .describe(
+        "The working directory to run the command in. Use this instead of 'cd' commands.",
+      )
+      .optional(),
+    description: z
+      .string()
+      .describe(
+        "Clear, concise description of what this command does in 5-10 words. Examples:\nInput: ls\nOutput: Lists files in current directory\n\nInput: git status\nOutput: Shows working tree status\n\nInput: npm install\nOutput: Installs package dependencies\n\nInput: mkdir foo\nOutput: Creates directory 'foo'",
+      ),
+  })
+
   return {
     description,
-    parameters: z.object({
-      command: z.string().describe("The command to execute"),
-      timeout: z.number().describe("Optional timeout in milliseconds").optional(),
-      workdir: z
-        .string()
-        .describe(
-          "The working directory to run the command in. Use this instead of 'cd' commands.",
-        )
-        .optional(),
-      description: z
-        .string()
-        .describe(
-          "Clear, concise description of what this command does in 5-10 words. Examples:\nInput: ls\nOutput: Lists files in current directory\n\nInput: git status\nOutput: Shows working tree status\n\nInput: npm install\nOutput: Installs package dependencies\n\nInput: mkdir foo\nOutput: Creates directory 'foo'",
-        ),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       const h = host(ctx)
       const dir = directory(ctx)
       const cwd = params.workdir || dir
@@ -241,7 +243,10 @@ export const BashTool = Tool.define("bash", async (ctx) => {
         detached: process.platform !== "win32",
       })
 
-      let output = ""
+      let stdout = ""
+      let stderr = ""
+
+      const combinedOutput = () => stderr ? stdout + stderr : stdout
 
       // Initialize metadata with empty output
       ctx.metadata({
@@ -251,19 +256,30 @@ export const BashTool = Tool.define("bash", async (ctx) => {
         },
       })
 
-      const append = (chunk: Buffer) => {
-        output += chunk.toString()
+      const appendStdout = (chunk: Buffer) => {
+        stdout += chunk.toString()
+        const combined = combinedOutput()
         ctx.metadata({
           metadata: {
-            // truncate the metadata to avoid GIANT blobs of data (has nothing to do w/ what agent can access)
-            output: output.length > MAX_METADATA_LENGTH ? output.slice(0, MAX_METADATA_LENGTH) + "\n\n..." : output,
+            output: combined.length > MAX_METADATA_LENGTH ? combined.slice(0, MAX_METADATA_LENGTH) + "\n\n..." : combined,
             description: params.description,
           },
         })
       }
 
-      proc.stdout?.on("data", append)
-      proc.stderr?.on("data", append)
+      const appendStderr = (chunk: Buffer) => {
+        stderr += chunk.toString()
+        const combined = combinedOutput()
+        ctx.metadata({
+          metadata: {
+            output: combined.length > MAX_METADATA_LENGTH ? combined.slice(0, MAX_METADATA_LENGTH) + "\n\n..." : combined,
+            description: params.description,
+          },
+        })
+      }
+
+      proc.stdout?.on("data", appendStdout)
+      proc.stderr?.on("data", appendStderr)
 
       let timedOut = false
       let aborted = false
@@ -318,17 +334,20 @@ export const BashTool = Tool.define("bash", async (ctx) => {
       }
 
       if (resultMetadata.length > 0) {
-        output += "\n\n<bash_metadata>\n" + resultMetadata.join("\n") + "\n</bash_metadata>"
+        const suffix = "\n\n<bash_metadata>\n" + resultMetadata.join("\n") + "\n</bash_metadata>"
+        stdout += suffix
       }
+
+      const displayOutput = combinedOutput()
 
       return {
         title: params.description,
         metadata: {
-          output: output.length > MAX_METADATA_LENGTH ? output.slice(0, MAX_METADATA_LENGTH) + "\n\n..." : output,
+          output: displayOutput.length > MAX_METADATA_LENGTH ? displayOutput.slice(0, MAX_METADATA_LENGTH) + "\n\n..." : displayOutput,
           exit: proc.exitCode,
           description: params.description,
         },
-        output,
+        output: stdout,
       }
     },
   }

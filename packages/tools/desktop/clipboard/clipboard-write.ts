@@ -7,12 +7,13 @@ import toolDef from ".//clipboard-write.json"
 
 export const DesktopClipboardWriteTool = Tool.define("desktop_clipboard_write", async (initCtx) => {
   const sandbox = initCtx?.agent?.config?.sandbox ?? false
+  const parameters = z.object({
+    text: z.string().describe("Text to place in the clipboard"),
+  })
   return {
     description: toolDef.description,
-    parameters: z.object({
-      text: z.string().describe("Text to place in the clipboard"),
-    }),
-    async execute(params, ctx) {
+    parameters,
+    async execute(params: z.infer<typeof parameters>, ctx) {
       assertNotSandbox(sandbox)
       assertDisplay()
       await ctx.ask({

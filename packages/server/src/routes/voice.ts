@@ -1,9 +1,9 @@
 import { Hono } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { Auth } from "@opendora/auth"
+import { Auth } from "@projectflows/auth"
 import { errors } from "../error"
-import { lazy } from "@opendora/util/lazy"
+import { lazy } from "@projectflows/util/lazy"
 
 function pcmToWav(pcmBuffer: ArrayBuffer, sampleRate = 24000, numChannels = 1, bitsPerSample = 16): ArrayBuffer {
   const dataSize = pcmBuffer.byteLength
@@ -70,6 +70,52 @@ export const VoiceRoutes = lazy(() =>
             )
           }
 
+          if (provider === "local-whisper") {
+            try {
+              console.log("[whisper] step 1: reading auth config")
+              const config = await Auth.get("local-whisper")
+              console.log("[whisper] step 2: config type =", config?.type, "url =", (config as any)?.url)
+
+              if (!config || config.type !== "url" || !config.url) {
+                return c.json(
+                  { error: "Local Whisper server URL not configured. Please add it via: Settings → Voice → Speech-to-Text → Local Whisper Server URL" },
+                  { status: 401 },
+                )
+              }
+
+              console.log("[whisper] step 3: audio size =", audio.size, "type =", audio.type)
+              const whisperForm = new FormData()
+              whisperForm.append("file", audio, "recording.webm")
+
+              const headers: Record<string, string> = {}
+              if (config.key) headers["Authorization"] = `Bearer ${config.key}`
+
+              const whisperUrl = `${config.url.replace(/\/$/, "")}/v1/audio/transcriptions`
+              console.log("[whisper] step 4: fetching", whisperUrl)
+
+              const response = await fetch(whisperUrl, {
+                method: "POST",
+                headers,
+                body: whisperForm,
+              })
+
+              console.log("[whisper] step 5: response status =", response.status)
+
+              if (!response.ok) {
+                const errorText = await response.text()
+                console.error("[whisper] server error:", errorText)
+                return c.json({ error: `Local Whisper transcription failed: ${errorText}` }, { status: response.status as any })
+              }
+
+              const result = await response.json() as any
+              console.log("[whisper] step 6: result =", result)
+              return c.json({ text: result.text ?? "" })
+            } catch (whisperErr: any) {
+              console.error("[whisper] exception:", whisperErr?.message ?? whisperErr)
+              return c.json({ error: `Local Whisper error: ${whisperErr?.message ?? String(whisperErr)}` }, { status: 500 })
+            }
+          }
+
           if (provider === "google-gemini") {
             const auth = await Auth.get("google")
             if (!auth || auth.type !== "api") {
@@ -104,7 +150,7 @@ export const VoiceRoutes = lazy(() =>
               return c.json({ error: "Transcription failed" }, { status: response.status as any })
             }
 
-            const result = await response.json()
+            const result = await response.json() as any
             const text = result?.candidates?.[0]?.content?.parts?.[0]?.text ?? ""
             return c.json({ text: text.trim() })
           }
@@ -136,7 +182,7 @@ export const VoiceRoutes = lazy(() =>
             return c.json({ error: "Transcription failed" }, { status: response.status as any })
           }
 
-          const result = await response.json()
+          const result = await response.json() as any
           return c.json({ text: result.text })
         } catch (error) {
           console.error("STT route error:", error)
@@ -227,7 +273,7 @@ export const VoiceRoutes = lazy(() =>
               return c.json({ error: "Text-to-speech generation failed" }, { status: response.status as any })
             }
 
-            const result = await response.json()
+            const result = await response.json() as any
             const part = result?.candidates?.[0]?.content?.parts?.[0]
             if (!part?.inlineData?.data) {
               return c.json({ error: "No audio data in Gemini response" }, { status: 500 })

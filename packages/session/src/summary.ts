@@ -10,9 +10,9 @@
 
 import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
-import { Identifier } from "@opendora/util/id"
+import { Identifier } from "@projectflows/util/id"
 import z from "zod"
-import { fn } from "@opendora/util/fn"
+import { fn } from "@projectflows/util/fn"
 
 // Inline unquoteGitPath
 function unquoteGitPath(input: string): string {

@@ -1,6 +1,6 @@
 import z from "zod"
 
-export namespace ModelsDev {
+export namespace ModelsDevSchema {
   export const Model = z.object({
     id: z.string(),
     name: z.string(),

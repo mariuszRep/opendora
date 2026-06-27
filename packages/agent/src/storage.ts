@@ -134,15 +134,28 @@ export namespace AgentStorage {
   }
 
   export async function loadAll(baseDir: string): Promise<Entry[]> {
-    await ensureRoot(baseDir)
+    const root = await ensureRoot(baseDir)
     const index = await readIndex(baseDir)
+    const indexMap = new Map(index.agents.map((a) => [a.id, a]))
+
+    // Scan subdirectories — only entries backed by a valid agent.json are returned.
+    // Files (LOG.md, INJECTION.md, PERSONA.md, …) and dirs without agent.json are
+    // silently skipped, so they can never bleed into the agent panel.
+    const entries = await fs.readdir(root, { withFileTypes: true }).catch(() => [] as fs.Dirent[])
     const results: Entry[] = []
-    for (const row of index.agents) {
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
       try {
-        const entry = await load(baseDir, row.id)
-        results.push(entry)
+        const loaded = await load(baseDir, entry.name)
+        // Overlay index metadata (mode, hidden) that may not live in agent.json
+        const meta = indexMap.get(entry.name)
+        if (meta) {
+          if (meta.mode && !loaded.config.mode) (loaded.config as any).mode = meta.mode
+          if (meta.hidden !== undefined && loaded.config.hidden === undefined) (loaded.config as any).hidden = meta.hidden
+        }
+        results.push(loaded)
       } catch {
-        // Skip unreadable agents
+        // Skip dirs without a valid agent.json
       }
     }
     return results

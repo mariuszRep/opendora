@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { BellIcon, XIcon, CheckIcon, CheckCheckIcon, Volume2Icon, VolumeXIcon, ShieldAlertIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Notification } from "@/hooks/use-notifications"
-import type { PermissionReply } from "@/lib/opendora"
+import { opendora, type PermissionReply } from "@/lib/opendora"
+import { dispatchMemoryWriteAction } from "@/components/ai-elements/memory-write-tool"
 import { isNotificationsMuted, setNotificationsMuted } from "@/lib/notification-sound"
 import { useEffect, useState } from "react"
 
@@ -190,6 +191,20 @@ export function NotificationBlade({
                         )}
                       </div>
                     </div>
+                  ) : n.memoryDelete ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 w-fit text-xs"
+                      onClick={async () => {
+                        const { directory, name, scope, agentID, callID } = n.memoryDelete!
+                        await opendora.memory.delete(directory, name, scope, agentID).catch(() => {})
+                        if (callID) dispatchMemoryWriteAction(callID, "discarded")
+                        onRemove(n.id)
+                      }}
+                    >
+                      Discard
+                    </Button>
                   ) : (
                     n.action && (
                       <Button

@@ -1,10 +1,10 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { directory } from "../host.ts"
+import { Instance } from "@projectflows/runtime/instance"
 import {
-  parseEntries,
-  serializeEntries,
-  findProjectFlowsDir,
+  entriesToMarkdown,
+  findProjectFlowsDirCandidates,
   resolveMemoryPath,
   readMemoryFile,
 } from "./lib.ts"
@@ -12,7 +12,7 @@ import toolDef from "./memory_read.json"
 
 const parameters = z.object({
   scope: z.enum(["global", "local", "both"]).optional().default("both").describe(
-    "Which MEMORY.md to read. global = shared, local = this agent only, both = merge (default)",
+    "Which MEMORY.json to read. global = shared, local = this agent only, both = merge (default)",
   ),
   name: z.string().optional().describe("Read a specific entry by name. Omit to read all entries."),
 })
@@ -21,7 +21,9 @@ export const MemoryReadTool = Tool.define("memory_read", {
   description: toolDef.description,
   parameters,
   async execute(params, ctx) {
-    const opendoraDir = await findProjectFlowsDir(directory(ctx))
+    const toolDir = (() => { try { return directory(ctx) } catch { return undefined } })()
+    const instanceDir = (() => { try { return Instance.directory } catch { return undefined } })()
+    const opendoraDir = await findProjectFlowsDirCandidates([toolDir, instanceDir])
     const scope = params.scope ?? "both"
 
     const targets: Array<{ label: string; file: string }> = []
@@ -36,15 +38,12 @@ export const MemoryReadTool = Tool.define("memory_read", {
     let totalEntries = 0
 
     for (const { label, file } of targets) {
-      const raw = await readMemoryFile(file)
-      if (!raw) continue
-
-      let entries = parseEntries(raw)
+      let entries = await readMemoryFile(file)
       if (params.name) entries = entries.filter(e => e.name === params.name)
       if (entries.length === 0) continue
 
       totalEntries += entries.length
-      sections.push(`## ${label} memory\n\n${serializeEntries(entries)}`)
+      sections.push(`## ${label} memory\n\n${entriesToMarkdown(entries)}`)
     }
 
     if (sections.length === 0) {
