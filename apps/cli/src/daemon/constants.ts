@@ -1,8 +1,8 @@
-// Service labels and names for OpenDora
-export const SERVER_LAUNCH_AGENT_LABEL = "ai.opendora.server";
-export const SERVER_SYSTEMD_SERVICE_NAME = "opendora-server";
-export const SERVER_WINDOWS_TASK_NAME = "OpenDora Server";
-export const SERVER_SERVICE_MARKER = "opendora";
+// Service labels and names for ProjectFlows
+export const SERVER_LAUNCH_AGENT_LABEL = "ai.projectflows.server";
+export const SERVER_SYSTEMD_SERVICE_NAME = "projectflows-server";
+export const SERVER_WINDOWS_TASK_NAME = "ProjectFlows Server";
+export const SERVER_SERVICE_MARKER = "projectflows";
 export const SERVER_SERVICE_KIND = "server";
 
 export function resolveServerLaunchAgentLabel(): string {
@@ -20,9 +20,9 @@ export function resolveServerWindowsTaskName(): string {
 export function formatServerServiceDescription(params?: { version?: string }): string {
   const version = params?.version?.trim();
   if (!version) {
-    return "OpenDora Server";
+    return "ProjectFlows Server";
   }
-  return `OpenDora Server (v${version})`;
+  return `ProjectFlows Server (v${version})`;
 }
 
 export function resolveServerServiceDescription(params: {
@@ -33,7 +33,7 @@ export function resolveServerServiceDescription(params: {
   return (
     params.description ??
     formatServerServiceDescription({
-      version: params.environment?.OPENDORA_SERVICE_VERSION ?? params.env.OPENDORA_SERVICE_VERSION,
+      version: params.environment?.PROJECTFLOWS_SERVICE_VERSION ?? params.env.PROJECTFLOWS_SERVICE_VERSION,
     })
   );
 }

@@ -2,7 +2,7 @@
 
 import { Chatbot } from './chatbot'
 import { Header } from './header'
-import { useOpendoraContext } from './opendora-context'
+import { useOpendoraContext } from './projectflows-context'
 import { PreviewPanel } from "@/components/ai-elements/preview-panel"
 
 export default function Page() {

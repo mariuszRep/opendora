@@ -1,6 +1,6 @@
 "use client"
 
-import type { ToolPart } from "@/lib/opendora"
+import type { ToolPart } from "@/lib/projectflows"
 
 export function getSkillLoadDefinition(tool: ToolPart): string | undefined {
   // Try to get the skill directory from tool metadata

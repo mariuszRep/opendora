@@ -34,8 +34,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { opendora, type Agent, type AgentConfig, type Provider, type Skill, type Workflow } from "@/lib/opendora"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
+import { opendora, type Agent, type AgentConfig, type Provider, type Skill, type Workflow } from "@/lib/projectflows"
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
 import {
   HIDDEN_TOOLS,

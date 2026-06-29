@@ -23,7 +23,7 @@ import {
   type Schedule,
   type Session,
   type SessionType,
-} from "@/lib/opendora"
+} from "@/lib/projectflows"
 
 export type ChatStatus = "ready" | "submitted" | "streaming" | "error"
 
@@ -100,7 +100,7 @@ export type UseOpendoraResult = {
   modelGroups: { id: string; name: string; models: { providerID: string; modelID: string }[] }[]
   refreshModelGroups: () => Promise<void>
   // Provider timeout status (includes per-model cooldowns)
-  providerTimeouts: Record<string, import("@/lib/opendora").ProviderTimeoutInfo>
+  providerTimeouts: Record<string, import("@/lib/projectflows").ProviderTimeoutInfo>
   refreshProviderTimeouts: () => Promise<void>
   // Auth expired providers
   authExpiredProviders: Record<string, boolean>
@@ -184,7 +184,7 @@ export function useOpendora(opts?: {
   const [fallbackActiveSlots, setFallbackActiveSlots] = useState<Record<string, { providerID: string; modelID: string }>>({})
   const [modelFilters, setModelFilters] = useState<Record<string, "all" | "free" | "none">>({})
   const [modelGroups, setModelGroups] = useState<{ id: string; name: string; models: { providerID: string; modelID: string }[] }[]>([])
-  const [providerTimeouts, setProviderTimeouts] = useState<Record<string, import("@/lib/opendora").ProviderTimeoutInfo>>({})
+  const [providerTimeouts, setProviderTimeouts] = useState<Record<string, import("@/lib/projectflows").ProviderTimeoutInfo>>({})
   const [authExpiredProviders, setAuthExpiredProviders] = useState<Record<string, boolean>>({})
   const [allAgents, setAllAgents] = useState<(Agent & { _id: string })[]>([])
   const [selectedAgent, setSelectedAgent] = useState<string>("")

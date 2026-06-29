@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ChevronRightIcon, ChevronDownIcon, PencilIcon, Trash2Icon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { opendora, type MemoryEntry } from "@/lib/opendora"
+import { opendora, type MemoryEntry } from "@/lib/projectflows"
 import { MessageResponse } from "@/components/ai-elements/message"
 import { MemoryEntryEditor } from "./memory-entry-editor"
 

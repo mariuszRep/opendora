@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { opendora, type ToolSchema } from "@/lib/opendora"
+import { opendora, type ToolSchema } from "@/lib/projectflows"
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
 
 type GlobalConfig = {

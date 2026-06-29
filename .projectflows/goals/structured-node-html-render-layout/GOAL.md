@@ -69,7 +69,7 @@ Product/non-goal constraints:
 Relevant technical/project constraints:
 
 - Read root `AGENTS.md` before implementation.
-- Read root `MIGRATION.md` before touching tool or workflow runner state.
+- Read `.projectflows/goals/unified-durable-run/GOAL.md` before touching tool or workflow runner state.
 - Read `.projectflows/goals/structured-node-format-switching/GOAL.md` to understand phase-1 integration points.
 - Preserve existing patterns established in phase 1:
   - Shared translator location and function signature pattern.

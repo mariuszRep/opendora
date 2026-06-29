@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { opendora } from "@/lib/opendora"
+import { opendora } from "@/lib/projectflows"
 
 export function useUserProfile() {
   const [userName, setUserNameState] = useState("")

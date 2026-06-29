@@ -68,7 +68,7 @@ export function useTextToSpeech() {
           return
         }
 
-        const { opendora } = await import("@/lib/opendora")
+        const { opendora } = await import("@/lib/projectflows")
         const blob = await opendora.voice.tts({
           text,
           provider: settings.tts.provider === "google-gemini" ? "google-gemini" : "openai",

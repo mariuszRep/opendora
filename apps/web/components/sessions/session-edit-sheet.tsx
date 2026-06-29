@@ -34,9 +34,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import type { Session, SessionType, RetentionPolicy, Schedule } from "@/lib/opendora"
-import { opendora } from "@/lib/opendora"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
+import type { Session, SessionType, RetentionPolicy, Schedule } from "@/lib/projectflows"
+import { opendora } from "@/lib/projectflows"
 import { ScheduleDialog } from "./schedule-dialog"
 import { FolderPickerDialog } from "./folder-picker-dialog"
 import { toast } from "sonner"

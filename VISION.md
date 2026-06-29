@@ -1,7 +1,12 @@
-# VISION.md — OpenDora
+# VISION.md — OpenDora / Projectflows
 
 > Owner: human. Approved intent only.
 > This document records durable product/system intent, not roadmap or implementation status.
+>
+> **Naming note:** Projectflows is the canonical product direction. OpenDora/opendora remains
+> the legacy repo, binary, and package naming during the transition. Documentation and code
+> reference both names; new delivery work uses Projectflows as the product name while
+> honoring existing opendora-based paths, binaries, and packages until a coordinated rename.
 
 ## Intent
 
@@ -21,8 +26,8 @@ The graph-backed session ledger and its UI projection are one delivery — store
 
 ## Owns
 
-- Product-level architecture and boundaries for OpenDora.
-- User-facing applications: web UI and CLI (CLI includes integrated terminal UI mode).
+- Product-level architecture and boundaries for OpenDora / Projectflows.
+- User-facing applications: web UI, CLI (CLI includes integrated terminal UI mode), and desktop application (Phase 2, Tauri-based cross-platform shell).
 - A typed SDK gateway for application access.
 - A server/service boundary that exposes OpenDora behavior.
 - Runtime execution for live agentic work.
@@ -43,7 +48,7 @@ The graph-backed session ledger and its UI projection are one delivery — store
 ## Relationships
 
 ```text
-apps/web | apps/cli
+apps/web | apps/cli | apps/desktop
   -> sdk
     -> server
       -> auth
@@ -100,6 +105,7 @@ domain packages that persist data
 - Mini-apps must use OpenDora-approved context, permission, storage, and UI/design-system contracts instead of depending on app internals.
 - Extension UI must be built from OpenDora-approved primitives and design-system contracts so plugins and mini-apps remain visually consistent without copying app-owned implementation details.
 - Agent Builder reuses workflow/canvas authoring infrastructure but owns composition/compilation semantics distinct from workflow execution. It does not change scheduled workflow execution ownership.
+- Desktop application (Phase 2) is a Tauri v2 shell that wraps the same statically-exported web UI. It follows the same app rules: uses SDK, does not import backend internals, reuses shared UI components where feasible.
 
 ## Canonical Operations / Contracts
 

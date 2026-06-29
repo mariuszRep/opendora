@@ -1,6 +1,6 @@
 "use client"
 
-import type { ToolPart } from "@/lib/opendora"
+import type { ToolPart } from "@/lib/projectflows"
 import {
   WebPreview,
   WebPreviewBody,

@@ -11,8 +11,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import type { Session, Schedule } from "@/lib/opendora"
-import { opendora } from "@/lib/opendora"
+import type { Session, Schedule } from "@/lib/projectflows"
+import { opendora } from "@/lib/projectflows"
 import { ScheduleDialog } from "./schedule-dialog"
 
 interface SessionSchedulesSheetProps {

@@ -5,7 +5,7 @@ import { GlobeIcon, TerminalIcon, ScrollTextIcon, XIcon, PlayIcon, RefreshCwIcon
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { opendora, type FileContent } from "@/lib/opendora"
+import { opendora, type FileContent } from "@/lib/projectflows"
 import { WebPreview, WebPreviewBody } from "@/components/ai-elements/web-preview"
 import { detectLanguage } from "@/components/ai-elements/file-preview"
 import { CodeBlock } from "@/components/ai-elements/code-block"

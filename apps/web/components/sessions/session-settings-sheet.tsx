@@ -44,9 +44,9 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
 } from "@/components/ai-elements/model-selector"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import type { Session, SessionType, RetentionPolicy } from "@/lib/opendora"
-import { opendora } from "@/lib/opendora"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
+import type { Session, SessionType, RetentionPolicy } from "@/lib/projectflows"
+import { opendora } from "@/lib/projectflows"
 import { useModelList } from "@/hooks/use-model-list"
 import { FolderPickerDialog } from "./folder-picker-dialog"
 

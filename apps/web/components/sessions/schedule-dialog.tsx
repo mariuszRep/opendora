@@ -14,8 +14,8 @@ import { CronInput, cronToHuman } from "@/components/ui/cron-input"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { opendora, type Schedule, type Session, type Workflow } from "@/lib/opendora"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
+import { opendora, type Schedule, type Session, type Workflow } from "@/lib/projectflows"
 import { toast } from "sonner"
 import { AGENT_COLORS } from "@/lib/agent-colors"
 import { PlayIcon, TrashIcon, PencilIcon } from "lucide-react"

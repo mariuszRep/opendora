@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { opendora, type ProviderUsageState } from "@/lib/opendora"
+import { opendora, type ProviderUsageState } from "@/lib/projectflows"
 
 const POLL_INTERVAL_MS = 30_000
 

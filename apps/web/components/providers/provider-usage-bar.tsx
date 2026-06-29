@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
-import type { ModelUsageState } from "@/lib/opendora"
+import type { ModelUsageState } from "@/lib/projectflows"
 
 export interface ProviderUsageBarProps {
   providerID: string

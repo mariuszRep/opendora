@@ -44,7 +44,7 @@ import type {
   PermissionRequest,
   PermissionReply,
   EntryEdge,
-} from "@/lib/opendora"
+} from "@/lib/projectflows"
 import { DelegateToolContent, isDelegateTool, getDelegateToolTitle } from "@/components/ai-elements/delegate-tool"
 import { TodoToolContent, isTodoTool, getTodoToolTitle } from "@/components/ai-elements/todo-tool"
 import { SessionTreeToolContent, isSessionTreeTool, getSessionTreeToolTitle } from "@/components/ai-elements/session-tree-tool"
@@ -124,16 +124,6 @@ export type MessageRowProps = {
   outgoingEdge?: EntryEdge
 }
 
-function edgeLineClass(edge: EntryEdge | undefined): string {
-  if (!edge) return "bg-border"
-  // delegation: reply_to edge with metadata.delegation = true
-  if (edge.type === "reply_to" && edge.metadata?.delegation) return "bg-orange-400/70"
-  switch (edge.type) {
-    case "contains": return "bg-purple-400/70"
-    case "used": return "bg-orange-400/70"
-    default: return "bg-border"
-  }
-}
 
 export const MessageRow = React.memo(function MessageRow({
   info,
@@ -278,9 +268,10 @@ export const MessageRow = React.memo(function MessageRow({
           {info.role === "user" ? (
             <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3">
               <div className="relative self-stretch">
-                {incomingEdge && (
+                {msgIndex > 0 && (
                   <div
-                    className={cn("absolute left-1/2 -translate-x-1/2 top-0 h-[10px] w-px", edgeLineClass(incomingEdge))}
+                    className="absolute left-1/2 -translate-x-1/2 top-0 h-[10px] w-[2px]"
+                    style={{ backgroundColor: userRingColor, opacity: 0.55 }}
                     aria-hidden="true"
                   />
                 )}
@@ -291,17 +282,14 @@ export const MessageRow = React.memo(function MessageRow({
                   onClick={msgSchedule ? () => setOpenScheduleId(msgSchedule.id) : undefined}
                 >
                   <div
-                    className="absolute inset-0 rounded-full border-2"
-                    style={{ borderColor: userRingColor }}
-                  />
-                  <div
-                    className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    className="absolute left-1/2 top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
                     style={{ backgroundColor: userRingColor }}
                   />
                 </button>
-                {outgoingEdge && (
+                {msgIndex < messagesLength - 1 && (
                   <div
-                    className={cn("absolute left-1/2 -translate-x-1/2 top-[26px] bottom-0 w-px", edgeLineClass(outgoingEdge))}
+                    className="absolute left-1/2 -translate-x-1/2 top-[26px] w-[2px]"
+                    style={{ backgroundColor: userRingColor, opacity: 0.55, bottom: '-2rem' }}
                     aria-hidden="true"
                   />
                 )}
@@ -444,21 +432,24 @@ export const MessageRow = React.memo(function MessageRow({
 
                   return (
                     <div key={step.key} className="contents">
-                      <div className={cn("relative self-stretch", (stepConnectsToNext || (isLastStep && outgoingEdge)) && "pb-3")}>
-                        {isFirstStep && incomingEdge && (
+                      <div className={cn("relative self-stretch", (stepConnectsToNext || (isLastStep && msgIndex < messagesLength - 1)) && "pb-3")}>
+                        {isFirstStep && msgIndex > 0 && (
                           <div
-                            className={cn("absolute left-1/2 -translate-x-1/2 top-0 h-[6px] w-px", edgeLineClass(incomingEdge))}
+                            className="absolute left-1/2 -translate-x-1/2 top-0 h-[6px] w-[2px]"
+                            style={{ backgroundColor: assistantMessageColor, opacity: 0.55 }}
                             aria-hidden="true"
                           />
                         )}
                         {stepConnectsToNext ? (
                           <div
-                            className="absolute left-1/2 top-[22px] bottom-0 w-px -translate-x-1/2 bg-border"
+                            className="absolute left-1/2 top-[22px] bottom-0 w-[2px] -translate-x-1/2"
+                            style={{ backgroundColor: assistantMessageColor, opacity: 0.55 }}
                             aria-hidden="true"
                           />
-                        ) : (isLastStep && outgoingEdge) ? (
+                        ) : (isLastStep && msgIndex < messagesLength - 1) ? (
                           <div
-                            className={cn("absolute left-1/2 -translate-x-1/2 top-[22px] bottom-0 w-px", edgeLineClass(outgoingEdge))}
+                            className="absolute left-1/2 -translate-x-1/2 top-[22px] w-[2px]"
+                            style={{ backgroundColor: assistantMessageColor, opacity: 0.55, bottom: '-2rem' }}
                             aria-hidden="true"
                           />
                         ) : null}
@@ -471,12 +462,12 @@ export const MessageRow = React.memo(function MessageRow({
                             />
                           )}
                           <div
-                            className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                            className="absolute left-1/2 top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
                             style={{ backgroundColor: assistantMessageColor }}
                           />
                         </div>
                       </div>
-                      <div className={cn("min-w-0", (stepConnectsToNext || (isLastStep && outgoingEdge)) && "pb-3")}>
+                      <div className={cn("min-w-0", (stepConnectsToNext || (isLastStep && msgIndex < messagesLength - 1)) && "pb-3")}>
                         {step.kind === "reasoning" ? (
                           <Reasoning
                             duration={

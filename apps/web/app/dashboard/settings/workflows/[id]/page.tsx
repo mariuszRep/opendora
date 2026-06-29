@@ -24,8 +24,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { opendora, type Workflow } from "@/lib/opendora"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
+import { opendora, type Workflow } from "@/lib/projectflows"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 
 export default function WorkflowEditorPage() {
   const params = useParams()

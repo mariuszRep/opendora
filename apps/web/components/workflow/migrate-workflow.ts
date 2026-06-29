@@ -1,4 +1,4 @@
-import type { Workflow } from '@/lib/opendora'
+import type { Workflow } from '@/lib/projectflows'
 import type { WorkflowNodeData, NodeType } from '@/components/react-flow/unified-node'
 import { generateUniqueNodeName } from '@/components/react-flow/node-utils'
 

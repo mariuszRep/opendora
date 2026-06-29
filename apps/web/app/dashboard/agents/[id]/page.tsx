@@ -47,8 +47,8 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
 } from "@/components/ai-elements/model-selector"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { opendora, type AgentConfig, type Skill, type Workflow } from "@/lib/opendora"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
+import { opendora, type AgentConfig, type Skill, type Workflow } from "@/lib/projectflows"
 import { SettingsCard } from "@/components/settings/settings-card"
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
 import {

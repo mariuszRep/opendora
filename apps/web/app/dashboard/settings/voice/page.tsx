@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { useVoiceSettings, formatHotkey, type HotkeyConfig } from "@/hooks/use-voice-settings"
 import { Volume2Icon, MicIcon, RotateCcwIcon, KeyboardIcon } from "lucide-react"
 import { toast } from "sonner"
-import { opendora } from "@/lib/opendora"
+import { opendora } from "@/lib/projectflows"
 
 export default function VoiceSettingsPage() {
   const router = useRouter()

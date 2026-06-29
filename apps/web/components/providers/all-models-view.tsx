@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ModelSelectorLogo } from "@/components/ai-elements/model-selector"
 import { cn } from "@/lib/utils"
-import type { Provider } from "@/lib/opendora"
+import type { Provider } from "@/lib/projectflows"
 import { formatTokens, formatCost, type ProviderModel } from "./provider-models-panel"
 
 interface AllModelsViewProps {

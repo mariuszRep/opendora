@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { SettingsCard } from "@/components/settings/settings-card"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 import { SettingsIcon, PlusIcon, BotIcon, EyeOffIcon } from "lucide-react"
 
 // AgentCard component for displaying individual agents

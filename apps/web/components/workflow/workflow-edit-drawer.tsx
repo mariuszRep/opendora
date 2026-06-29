@@ -35,7 +35,7 @@ import { getNodeTypeMetadata, NodeTypeId } from '@/components/react-flow/node-ty
 import { resolveNodeType } from '@/components/react-flow/node-utils'
 import { useToolSchemas } from '@/hooks/use-tool-schemas'
 import { ToolParameterForm } from './tool-parameter-form'
-import { opendora, type ToolSchema, type ToolSchemaProperty, type Workflow as WorkflowDef } from '@/lib/opendora'
+import { opendora, type ToolSchema, type ToolSchemaProperty, type Workflow as WorkflowDef } from '@/lib/projectflows'
 import { useModelList } from '@/hooks/use-model-list'
 import {
   ModelSelector,

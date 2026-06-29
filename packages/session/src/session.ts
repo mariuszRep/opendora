@@ -12,7 +12,7 @@ import { eq, and, gte, isNull, desc, like, inArray, lt, sql, asc } from "drizzle
 import { MessageV2 } from "./message-v2.ts"
 import { SessionEvents } from "./events.ts"
 import { fromRow } from "./from-row.ts"
-import { openDoraStorageAdapter } from "./opendora-storage-adapter.ts"
+import { openDoraStorageAdapter } from "./projectflows-storage-adapter.ts"
 import { SessionManager } from "./session-manager"
 import { RetentionDaemon } from "./daemon"
 import type { SessionType, RetentionPolicy, SendPolicy, CreateSessionOptions, PongOptions, EdgeType, Edge } from "./types"

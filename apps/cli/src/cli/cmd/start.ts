@@ -6,7 +6,7 @@ import os from "os"
 
 export const StartCommand = cmd({
   command: "start",
-  describe: "start the opendora server in the background",
+  describe: "start the projectflows server in the background",
   handler: async () => {
     const service = resolveService()
     const env = process.env as Record<string, string | undefined>
@@ -27,7 +27,7 @@ export const StartCommand = cmd({
           const pkgPath = path.join(projectRoot, "package.json")
           try {
             const pkg = await Bun.file(pkgPath).json()
-            if (pkg.name === "opendora") break
+            if (pkg.name === "projectflows") break
           } catch {}
           projectRoot = path.dirname(projectRoot)
         }
@@ -52,9 +52,9 @@ export const StartCommand = cmd({
             // Single, deterministic data/config root in the user's home folder,
             // independent of where the server is started from.
             PROJECTFLOWS_CONFIG_DIR: path.join(os.homedir(), ".projectflows"),
-            OPENDORA_SERVICE_VERSION: Installation.VERSION,
+            PROJECTFLOWS_SERVICE_VERSION: Installation.VERSION,
           },
-          description: `OpenDora Server (v${Installation.VERSION})`,
+          description: `ProjectFlows Server (v${Installation.VERSION})`,
         })
 
         console.log("✓ Service installed")
@@ -63,11 +63,11 @@ export const StartCommand = cmd({
       // Start the service
       await service.restart({ stdout: process.stdout, env })
       
-      console.log("✓ OpenDora is running on http://localhost:4096")
-      console.log("\nUse 'opendora status' to check the server status")
-      console.log("Use 'opendora stop' to stop the server")
+      console.log("✓ ProjectFlows is running on http://localhost:4096")
+      console.log("\nUse 'projectflows status' to check the server status")
+      console.log("Use 'projectflows stop' to stop the server")
     } catch (error) {
-      console.error("Failed to start OpenDora:", error instanceof Error ? error.message : error)
+      console.error("Failed to start ProjectFlows:", error instanceof Error ? error.message : error)
       process.exit(1)
     }
   },

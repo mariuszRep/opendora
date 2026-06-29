@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { useOpendoraContext } from "./opendora-context"
+import { useOpendoraContext } from "./projectflows-context"
 import { FileTreePanel } from "@/components/file-tree/file-tree-panel"
 import { SessionTreePanel } from "@/components/sessions/session-tree-panel"
-import type { FileNode } from "@/lib/opendora"
+import type { FileNode } from "@/lib/projectflows"
 import { sessionOwnPaths, agentPaths, mergePaths } from "@/lib/paths"
 import type { ReactNode } from "react"
 import { ChevronDownIcon, RefreshCwIcon } from "lucide-react"

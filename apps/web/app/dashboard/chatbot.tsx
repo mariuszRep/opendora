@@ -57,11 +57,11 @@ import {
   ContextReasoningUsage,
   ContextTrigger,
 } from "@/components/ai-elements/context"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 import { MessageRow } from "./message-row"
 import { QuestionStep } from "@/components/questions/question-tool"
-import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart, FallbackSwitchPart, Edge } from "@/lib/opendora"
-import { opendora } from "@/lib/opendora"
+import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart, FallbackSwitchPart, Edge } from "@/lib/projectflows"
+import { opendora } from "@/lib/projectflows"
 import { useUserProfile } from "@/hooks/use-user-profile"
 import { ScheduleDialog } from "@/components/sessions/schedule-dialog"
 import { useVoiceSettings, formatHotkey } from "@/hooks/use-voice-settings"
@@ -783,7 +783,7 @@ export const Chatbot = () => {
 
   const handleAudioRecorded = useCallback(async (audioBlob: Blob) => {
     try {
-      const { opendora } = await import("@/lib/opendora")
+      const { opendora } = await import("@/lib/projectflows")
       const provider =
         settings.stt.provider === "google-gemini" ? "google-gemini"
         : settings.stt.provider === "local-whisper" ? "local-whisper"

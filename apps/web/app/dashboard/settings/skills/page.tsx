@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { MessageResponse } from "@/components/ai-elements/message"
 import { CodeViewToggle } from "@/components/ui/code-view-toggle"
-import { opendora, type Skill } from "@/lib/opendora"
+import { opendora, type Skill } from "@/lib/projectflows"
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
 import { HIDDEN_TOOLS } from "@/lib/tool-groups"
 

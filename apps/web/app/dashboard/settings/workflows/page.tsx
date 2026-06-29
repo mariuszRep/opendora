@@ -16,7 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { opendora, type Workflow } from "@/lib/opendora"
+import { opendora, type Workflow } from "@/lib/projectflows"
 
 export default function WorkflowsPage() {
   const router = useRouter()

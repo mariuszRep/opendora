@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, type ReactNode } from "react"
-import { useOpendora, type UseOpendoraResult } from "@/hooks/use-opendora"
+import { useOpendora, type UseOpendoraResult } from "@/hooks/use-projectflows"
 import { useNotify, type NotifyOptions } from "@/hooks/use-notify"
 import type { Notification } from "@/hooks/use-notifications"
 

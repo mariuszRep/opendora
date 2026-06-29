@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { opendora, type ToolSchema } from '@/lib/opendora'
+import { opendora, type ToolSchema } from '@/lib/projectflows'
 
 let _cache: ToolSchema[] | null = null
 let _promise: Promise<ToolSchema[]> | null = null

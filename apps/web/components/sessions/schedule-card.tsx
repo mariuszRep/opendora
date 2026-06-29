@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { BellRingIcon, ClockPlusIcon } from "lucide-react"
-import type { Schedule } from "@/lib/opendora"
+import type { Schedule } from "@/lib/projectflows"
 import { getAgentColor } from "@/lib/agent-colors"
 
 export interface ScheduleCardProps {

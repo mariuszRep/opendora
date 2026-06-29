@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { opendora, type TokenUsageRecord, type Session } from "@/lib/opendora"
+import { opendora, type TokenUsageRecord, type Session } from "@/lib/projectflows"
 
 export type TimeRange = "7d" | "30d" | "90d" | "12m"
 

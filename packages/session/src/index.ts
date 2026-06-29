@@ -31,8 +31,8 @@ export * from "./status"
 export * from "./session.sql"
 
 // Storage adapter
-export { OpenDoraStorageAdapter, openDoraStorageAdapter, rowToMeta } from "./opendora-storage-adapter"
-export type { CreateContext } from "./opendora-storage-adapter"
+export { OpenDoraStorageAdapter, openDoraStorageAdapter, rowToMeta } from "./projectflows-storage-adapter"
+export type { CreateContext } from "./projectflows-storage-adapter"
 
 // Bus bridge
 export { BusBridge } from "./bus-bridge"

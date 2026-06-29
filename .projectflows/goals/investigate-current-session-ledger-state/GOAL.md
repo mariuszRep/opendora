@@ -71,8 +71,8 @@ Without this investigation, the refactor goal is flying blind — risks around b
 - **`packages/runtime/VISION.md`**: Runtime orchestrates; session records; run state goes through storage.
 - **Existing `session-graph-ledger-and-chat-rail/GOAL.md`**: The target refactor goal this investigation feeds into. Contains target schema, edge type list, and phased implementation plan.
 - **Existing `chat-side-rail/GOAL.md`**: Superseded UI-only goal; retained for UI-phase guidance.
-- **`/MIGRATION.md`**: Unified Durable Run migration phases — checkpoint contract, checkpoint-driven runner, suspend/resume, unified executor, conversation→workflow projection.
-- **`packages/session/MIGRATION.md`**: Session's slice of the UR migration — run state shape, resume replaces reconcile, suspended status, built-in chat workflow.
+- **`.projectflows/goals/unified-durable-run/GOAL.md`**: Unified Durable Run migration phases — checkpoint contract, checkpoint-driven runner, suspend/resume, unified executor, conversation→workflow projection.
+- **`packages/session/MIGRATION.md`**: _(replaced by the unified-durable-run GOAL)_ — session's slice of the UR migration was run state shape, resume replaces reconcile, suspended status, built-in chat workflow.
 
 ### Product/non-goal constraints
 
@@ -90,7 +90,7 @@ Without this investigation, the refactor goal is flying blind — risks around b
 ### Relevant technical/project constraints
 
 - Read `AGENTS.md` at each scope before changing code during implementation phase.
-- Read relevant `MIGRATION.md` files before changing run state, checkpointing, workflow runner, or conversation loop.
+- Read `.projectflows/goals/unified-durable-run/GOAL.md` before changing run state, checkpointing, workflow runner, or conversation loop.
 - Do not modify source code during this investigation phase.
 - Do not introduce new dependencies.
 - All findings must be backed by file paths and line references in the investigation report.
@@ -152,7 +152,7 @@ Inspect and document (do NOT change):
 - **Storage**: `storage.ts` — workflow definition persistence.
 - **Edge routing**: how workflow edges (in the workflow graph sense, not the session edge sense) route execution between nodes. Note: these are different from session `EntryEdge` — document the terminology collision.
 - **Tests**: any tests in `packages/workflow/test/`.
-- **MIGRATION**: `packages/workflow/MIGRATION.md` — checkpoint-driven runner phase.
+- **Durable run goal**: `.projectflows/goals/unified-durable-run/GOAL.md` — checkpoint-driven runner phase (replaced `packages/workflow/MIGRATION.md`).
 
 ### 4. packages/runtime — write paths for agent/tool/workflow execution
 
@@ -179,11 +179,7 @@ Inspect and document (do NOT change):
 
 ### 7. Migration files and tests relevant to session/message history
 
-- **Root MIGRATION.md**: document the Unified Durable Run migration phases.
-- **packages/session/MIGRATION.md**: session's migration plan.
-- **packages/workflow/MIGRATION.md**: workflow's migration plan.
-- **packages/storage/MIGRATION.md**: storage's migration plan.
-- **packages/runtime/MIGRATION.md**: runtime's migration plan.
+- **`.projectflows/goals/unified-durable-run/GOAL.md`**: master Unified Durable Run migration goal (replaced root and package MIGRATION.md files).
 - **Existing tests**: identify tests that cover session creation, message ordering, forking, edge creation, graph migration, workflow run capture.
 
 ## Out of Scope
@@ -195,7 +191,7 @@ Inspect and document (do NOT change):
 - Changing UI rendering, layout, or components.
 - Changing workflow runner behavior or node-as-tool lifecycle.
 - Adding or removing any dependencies (npm, bun, system).
-- Editing any VISION.md, CONVENTIONS.md, AGENTS.md, or MIGRATION.md files.
+- Editing any VISION.md, CONVENTIONS.md, AGENTS.md, or GOAL.md files (except within the investigation report itself).
 - Running database migrations or modifying schema files.
 - Writing or modifying test files.
 - Modifying configuration or build files.
@@ -374,7 +370,7 @@ Inspect and document (do NOT change):
 
 8. **Multiple storage backends**: SQLite, Postgres, and JSONL storage adapters all have slightly different schemas and migration paths. The universal edges model must be supported across all of them.
 
-9. **Run state / checkpoint migration**: The root `MIGRATION.md` describes a separate but related migration (checkpoint-driven runner, suspend/resume, unified executor). The entries+edges refactor may intersect with these phases — the investigation should flag dependencies.
+9. **Run state / checkpoint migration**: The `.projectflows/goals/unified-durable-run/GOAL.md` describes a separate but related migration (checkpoint-driven runner, suspend/resume, unified executor). The entries+edges refactor may intersect with these phases — the investigation should flag dependencies.
 
 ## Verification Expectations
 

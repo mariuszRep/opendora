@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ModelRow, type ProviderModel } from "./provider-models-panel"
-import type { AuthMethod, Provider } from "@/lib/opendora"
+import type { AuthMethod, Provider } from "@/lib/projectflows"
 
 function logoID(id: string) {
   return id === "opencode-private" ? "opencode" : id

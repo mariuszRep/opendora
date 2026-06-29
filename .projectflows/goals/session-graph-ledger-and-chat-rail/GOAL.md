@@ -136,11 +136,11 @@ The investigation goal at `.projectflows/goals/investigate-current-session-ledge
 - **`packages/storage/VISION.md`**: Storage is the exclusive persistence abstraction; session graph persists through stable storage contracts; single physical edge table for all cross-entity relationships; SQLite/relational tables acceptable; indexed contains-edge support.
 - **`packages/workflow/VISION.md`**: Workflows are reusable definitions; no workflow_templates; workflow run/session linkage; Node-as-Tool standard; workflow-run capture through session.
 - **`packages/runtime/VISION.md`**: Runtime orchestrates execution; session records the ledger and state; runtime writes execution context, events, and output into session.
-- **`AGENTS.md`**: Repository rules, boundary preservation, migration awareness via `MIGRATION.md`.
+- **`AGENTS.md`**: Repository rules, boundary preservation, migration awareness via `.projectflows/goals/unified-durable-run/GOAL.md`.
 - **Existing `investigate-current-session-ledger-state/GOAL.md`**: Phase 0 prerequisite — its findings drive this migration's sequencing.
 - **Existing `chat-side-rail/GOAL.md`**: Superseded UI-only goal; retained for UI-phase implementation guidance if a downstream chat rail goal is created.
-- **`MIGRATION.md` (root)**: Unified Durable Run migration phases.
-- **`packages/session/MIGRATION.md`**: Session's slice of migration — run state shape.
+- **`.projectflows/goals/unified-durable-run/GOAL.md`**: Unified Durable Run migration phases (checkpoint contract, suspend/resume, unified executor).
+- **`packages/session/MIGRATION.md`**: _(replaced by the unified-durable-run GOAL)_ — session's slice of migration was run state shape.
 
 ### Product/non-goal constraints
 
@@ -160,7 +160,7 @@ The investigation goal at `.projectflows/goals/investigate-current-session-ledge
 ### Relevant technical/project constraints
 
 - Read `AGENTS.md` at each scope before changing code.
-- Read relevant `MIGRATION.md` files before changing run state, checkpointing, workflow runner, or conversation loop.
+- Read `.projectflows/goals/unified-durable-run/GOAL.md` before changing run state, checkpointing, workflow runner, or conversation loop.
 - Keep changes scoped to the package or app being edited.
 - Do not silently contradict parent scope documents.
 - Preserve existing behavior unless the task explicitly changes it.
@@ -516,7 +516,7 @@ Prepare test sessions with:
 
 11. **Multiple storage backends**: SQLite, Postgres, and JSONL storage adapters all have different schemas and migration paths. The universal edges model must be supported across all of them.
 
-12. **Run state/checkpoint migration intersection**: The root `MIGRATION.md` describes a separate but related migration (checkpoint-driven runner, suspend/resume, unified executor). The entries+edges refactor may intersect with these phases.
+12. **Run state/checkpoint migration intersection**: The `.projectflows/goals/unified-durable-run/GOAL.md` describes a separate but related migration (checkpoint-driven runner, suspend/resume, unified executor). The entries+edges refactor may intersect with these phases.
 
 ## Verification Expectations
 

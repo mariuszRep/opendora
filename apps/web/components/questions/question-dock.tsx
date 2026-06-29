@@ -14,7 +14,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item"
-import type { QuestionAnswer, QuestionRequest } from "@/lib/opendora"
+import type { QuestionAnswer, QuestionRequest } from "@/lib/projectflows"
 import { CircleIcon } from "lucide-react"
 
 function QuestionStep(props: {

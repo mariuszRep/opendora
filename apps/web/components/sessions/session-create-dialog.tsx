@@ -12,7 +12,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { getAgentColor } from "@/lib/agent-colors"
-import type { Agent, SessionType } from "@/lib/opendora"
+import type { Agent, SessionType } from "@/lib/projectflows"
 
 interface SessionCreateDialogProps {
   open: boolean

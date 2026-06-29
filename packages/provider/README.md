@@ -1,6 +1,10 @@
-# Provider Authentication
+# @opendora/provider
 
-## Adding Provider Credentials
+AI provider and model access for OpenDora runtime execution.
+
+## Provider Authentication
+
+### Adding Provider Credentials
 
 From the OpenDora repository root:
 
@@ -14,15 +18,15 @@ This will:
 3. Ask for your API key
 4. Store it securely in `.opendora/auth.json`
 
-## Alternative Methods
+### Alternative Methods
 
-### Environment Variable
+#### Environment Variable
 
 ```bash
 export PROVIDER_API_KEY="your-api-key-here"
 ```
 
-### Configuration File
+#### Configuration File
 
 Add to `.opendora/opendora.json`:
 
@@ -38,14 +42,19 @@ Add to `.opendora/opendora.json`:
 }
 ```
 
-## Managing Credentials
+### Managing Credentials
 
-### List stored credentials
+#### List stored credentials
 ```bash
 bun run dev auth list
 ```
 
-### Remove credentials
+#### Remove credentials
 ```bash
 bun run dev auth logout <provider-name>
 ```
+
+## See also
+
+- [VISION.md](./VISION.md) — package vision and boundaries
+- [AGENTS.md](./AGENTS.md) — agent working instructions

@@ -5,7 +5,7 @@ import type { BundledLanguage } from "shiki"
 import { XIcon, RefreshCwIcon, FileIcon } from "lucide-react"
 import { CodeBlock } from "@/components/ai-elements/code-block"
 import { Button } from "@/components/ui/button"
-import { opendora, type FileContent } from "@/lib/opendora"
+import { opendora, type FileContent } from "@/lib/projectflows"
 import { cn } from "@/lib/utils"
 
 // ── Language detection ───────────────────────────────────────────────────────

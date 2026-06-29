@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 import { useUserProfile } from "@/hooks/use-user-profile"
 import { useVoiceSettings, formatHotkey, type HotkeyConfig } from "@/hooks/use-voice-settings"
 import { useTheme } from "next-themes"
@@ -35,7 +35,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import { AGENT_COLORS } from "@/lib/agent-colors"
-import { opendora } from "@/lib/opendora"
+import { opendora } from "@/lib/projectflows"
 
 const COMMON_TIMEZONES = [
   "UTC",

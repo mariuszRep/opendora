@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { opendora, type FileNode } from "@/lib/opendora"
+import { opendora, type FileNode } from "@/lib/projectflows"
 import { cn } from "@/lib/utils"
 
 interface FolderPickerDialogProps {

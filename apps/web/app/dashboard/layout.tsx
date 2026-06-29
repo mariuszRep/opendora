@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { AppSidebar } from '@/components/app-sidebar'
-import { OpendoraProvider } from './opendora-context'
+import { OpendoraProvider } from './projectflows-context'
 import { DashboardShell } from './dashboard-shell'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
