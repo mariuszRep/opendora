@@ -8,6 +8,36 @@ const OPENDORA_URL = process.env.NEXT_PUBLIC_OPENDORA_URL
 
 export type SessionType = "role" | "scope" | "worker" | "scratchpad"
 
+export type EdgeType =
+  | "instantiated_as"
+  | "contains"
+  | "forked_from"
+  | "forked_at"
+  | "reply_to"
+  | "caused"
+  | "produced"
+  | "used"
+  | "branch"
+  | "merge"
+
+export type EntryNodeType = "workflow" | "session" | "entry" | "tool" | "artifact"
+
+export type Edge = {
+  id: string
+  from_type: EntryNodeType
+  from_id: string
+  to_type: EntryNodeType
+  to_id: string
+  type: EdgeType
+  seq_in_parent?: number
+  label?: string
+  metadata?: Record<string, unknown>
+  created_at: string
+}
+
+/** @deprecated Use Edge */
+export type EntryEdge = Edge
+
 export type RetentionPolicy = {
   autoArchive?: boolean
   autoDelete?: boolean
@@ -541,6 +571,7 @@ export const opendora = {
       loadedSkillNames: string[]
     }>(`/session/${sessionID}/system-prompt`),
     messages: (sessionID: string) => req<MessageWithParts[]>(`/session/${sessionID}/message`),
+    graph: (sessionID: string) => req<{ messages: MessageWithParts[]; edges: Edge[] }>(`/session/${sessionID}/graph`),
     abort: (sessionID: string) =>
       req<boolean>(`/session/${sessionID}/abort`, { method: "POST", body: JSON.stringify({}) }),
     compact: (sessionID: string, model: { providerID: string; modelID: string }) =>

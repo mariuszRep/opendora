@@ -7,15 +7,15 @@ import z from "zod"
 import { type ProviderMetadata } from "ai"
 import { getConfig } from "./config.ts"
 import type { SQL } from "drizzle-orm"
-import { SessionTable, MessageTable, PartTable, ProjectTable } from "./session.sql.ts"
-import { eq, and, gte, isNull, desc, like, inArray, lt, sql } from "drizzle-orm"
+import { SessionTable, MessageTable, PartTable, ProjectTable, EntryEdgeTable, EdgesTable, EntriesTable } from "./session.sql.ts"
+import { eq, and, gte, isNull, desc, like, inArray, lt, sql, asc } from "drizzle-orm"
 import { MessageV2 } from "./message-v2.ts"
 import { SessionEvents } from "./events.ts"
 import { fromRow } from "./from-row.ts"
 import { openDoraStorageAdapter } from "./opendora-storage-adapter.ts"
 import { SessionManager } from "./session-manager"
 import { RetentionDaemon } from "./daemon"
-import type { SessionType, RetentionPolicy, SendPolicy, CreateSessionOptions, PongOptions } from "./types"
+import type { SessionType, RetentionPolicy, SendPolicy, CreateSessionOptions, PongOptions, EdgeType, Edge } from "./types"
 import { NotFoundError } from "@projectflows/storage/db"
 
 // Inline iife utility
@@ -686,12 +686,35 @@ export namespace Session {
       limit: z.number().optional(),
     }),
     async (input) => {
+      const db = getConfig().db
+
+      // Check for canonical seq_in_parent ordering via contains edges
+      const containsEdges = db
+        .select({ to_id: EdgesTable.to_id, seq_in_parent: EdgesTable.seq_in_parent })
+        .from(EdgesTable)
+        .where(
+          and(
+            eq(EdgesTable.from_type, "session"),
+            eq(EdgesTable.from_id, input.sessionID),
+            eq(EdgesTable.type, "contains"),
+          ),
+        )
+        .orderBy(asc(EdgesTable.seq_in_parent))
+        .all()
+
       const result = [] as MessageV2.WithParts[]
       for await (const msg of MessageV2.stream(input.sessionID)) {
         if (input.limit && result.length >= input.limit) break
         result.push(msg)
       }
       result.reverse()
+
+      if (containsEdges.length > 0) {
+        const seqMap = new Map<string, number>()
+        for (const edge of containsEdges) seqMap.set(edge.to_id, edge.seq_in_parent ?? 0)
+        result.sort((a, b) => (seqMap.get(a.info.id) ?? 0) - (seqMap.get(b.info.id) ?? 0))
+      }
+
       return result
     },
   )
@@ -1212,6 +1235,41 @@ export namespace Session {
         parentMessageID: parent_message_id,
         ...(parentRow ? { parentSessionID: parentRow.session_id } : {}),
       } as unknown as MessageV2.Info
+
+      // Record a typed edge in the universal edges table — only on first write.
+      // Cross-session parent → reply_to with delegation metadata; same-session → reply_to.
+      if (parentMessageID) {
+        const isDelegation = parentRow && parentRow.session_id !== msg.sessionID
+        const existingEdge = db
+          .select({ id: EdgesTable.id })
+          .from(EdgesTable)
+          .where(
+            and(
+              eq(EdgesTable.from_id, parent_message_id),
+              eq(EdgesTable.to_id, id),
+              eq(EdgesTable.type, "reply_to"),
+            ),
+          )
+          .limit(1)
+          .get()
+        if (!existingEdge) {
+          db.insert(EdgesTable)
+            .values({
+              id: Identifier.ascending("edge"),
+              from_type: "entry",
+              from_id: parent_message_id,
+              to_type: "entry",
+              to_id: id,
+              type: "reply_to",
+              seq_in_parent: null,
+              label: null,
+              metadata: isDelegation ? { delegation: true } : null,
+              created_at: new Date().toISOString(),
+            })
+            .onConflictDoNothing()
+            .run()
+        }
+      }
     }
     cfg.bus?.publish(MessageV2.Event.Updated, { info: infoForBus })
     return msg
@@ -1436,6 +1494,126 @@ export namespace Session {
         ),
         tokens,
       }
+    },
+  )
+
+  // ─── Graph-backed ledger ──────────────────────────────────────────────────
+
+  export const addEdge = fn(
+    z.object({
+      from_type: z.string(),
+      from_id: z.string(),
+      to_type: z.string(),
+      to_id: z.string(),
+      type: z.string() as z.ZodType<EdgeType>,
+      seq_in_parent: z.number().optional(),
+      label: z.string().optional(),
+      metadata: z.record(z.string(), z.unknown()).optional(),
+    }),
+    async (input): Promise<Edge> => {
+      const db = getConfig().db
+      const id = Identifier.ascending("edge")
+      const created_at = new Date().toISOString()
+      db.insert(EdgesTable)
+        .values({
+          id,
+          from_type: input.from_type,
+          from_id: input.from_id,
+          to_type: input.to_type,
+          to_id: input.to_id,
+          type: input.type,
+          seq_in_parent: input.seq_in_parent ?? null,
+          label: input.label ?? null,
+          metadata: input.metadata ?? null,
+          created_at,
+        })
+        .onConflictDoNothing()
+        .run()
+      return {
+        id,
+        from_type: input.from_type as import("./types").EntryNodeType,
+        from_id: input.from_id,
+        to_type: input.to_type as import("./types").EntryNodeType,
+        to_id: input.to_id,
+        type: input.type,
+        seq_in_parent: input.seq_in_parent,
+        label: input.label,
+        metadata: input.metadata,
+        created_at,
+      }
+    },
+  )
+
+  export const getEdges = fn(
+    Identifier.schema("session"),
+    async (sessionID): Promise<Edge[]> => {
+      const db = getConfig().db
+      // Return all edges where from_id or to_id is this session, OR entries belonging to this session
+      // For the chat rail, we want reply_to + contains edges where the session entries are involved.
+      // We get this by fetching all edges where from_id = sessionID (contains, etc.)
+      // plus entry-to-entry edges by joining through contains edges.
+      const containsEdges = db
+        .select()
+        .from(EdgesTable)
+        .where(
+          and(
+            eq(EdgesTable.from_type, "session"),
+            eq(EdgesTable.from_id, sessionID),
+          ),
+        )
+        .orderBy(asc(EdgesTable.seq_in_parent), asc(EdgesTable.created_at))
+        .all()
+
+      // Collect entry IDs in this session
+      const entryIds: string[] = []
+      for (const e of containsEdges) {
+        if (e.to_type === "entry") entryIds.push(e.to_id)
+      }
+
+      // Also fetch entry-to-entry edges for entries in this session
+      const entryEdges = entryIds.length > 0
+        ? db
+          .select()
+          .from(EdgesTable)
+          .where(
+            and(
+              eq(EdgesTable.from_type, "entry"),
+              inArray(EdgesTable.from_id, entryIds),
+            ),
+          )
+          .orderBy(asc(EdgesTable.created_at))
+          .all()
+        : []
+
+      const allRows = [...containsEdges, ...entryEdges]
+      return allRows.map((row) => ({
+        id: row.id,
+        from_type: row.from_type as import("./types").EntryNodeType,
+        from_id: row.from_id,
+        to_type: row.to_type as import("./types").EntryNodeType,
+        to_id: row.to_id,
+        type: row.type as EdgeType,
+        seq_in_parent: row.seq_in_parent ?? undefined,
+        label: row.label ?? undefined,
+        metadata: (row.metadata as Record<string, unknown> | null) ?? undefined,
+        created_at: row.created_at,
+      }))
+    },
+  )
+
+  export type SessionGraph = {
+    messages: MessageV2.WithParts[]
+    edges: Edge[]
+  }
+
+  export const getGraph = fn(
+    Identifier.schema("session"),
+    async (sessionID): Promise<SessionGraph> => {
+      const [msgs, edges] = await Promise.all([
+        messages({ sessionID }),
+        getEdges(sessionID),
+      ])
+      return { messages: msgs, edges }
     },
   )
 

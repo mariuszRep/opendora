@@ -13,6 +13,7 @@ export namespace Identifier {
     tool: "tool",
     token_usage: "tku",
     workflow_run: "wfr",
+    edge: "edg",
   } as const
 
   export function schema(prefix: keyof typeof prefixes) {

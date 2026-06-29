@@ -59,9 +59,8 @@ import {
 } from "@/components/ai-elements/context"
 import { useOpendoraContext } from "@/app/dashboard/opendora-context"
 import { MessageRow } from "./message-row"
-
 import { QuestionStep } from "@/components/questions/question-tool"
-import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart, FallbackSwitchPart } from "@/lib/opendora"
+import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart, FallbackSwitchPart, Edge } from "@/lib/opendora"
 import { opendora } from "@/lib/opendora"
 import { useUserProfile } from "@/hooks/use-user-profile"
 import { ScheduleDialog } from "@/components/sessions/schedule-dialog"
@@ -488,6 +487,14 @@ export const Chatbot = () => {
 
   const userDotColor = useMemo(() => getAgentColor(userColor).hex, [userColor])
 
+  // ─── Session graph edges for the chat side rail ──────────────────────────
+  const [sessionEdges, setSessionEdges] = useState<Edge[]>([])
+  useEffect(() => {
+    if (!selectedSession?.id) { setSessionEdges([]); return }
+    opendora.session.graph(selectedSession.id)
+      .then((g) => setSessionEdges(g?.edges ?? []))
+      .catch(() => setSessionEdges([]))
+  }, [selectedSession?.id])
 
   const scrollToMessageIdRef = useRef<string | null>(null)
 
@@ -851,6 +858,8 @@ export const Chatbot = () => {
                 const msgError = (info as AssistantMessage).error
                 if (getTimelineSteps(parts, msgError).length === 0) return null
               }
+              const incomingEdge = sessionEdges.find(e => e.to_type === "entry" && e.to_id === info.id)
+              const outgoingEdge = sessionEdges.find(e => e.from_type === "entry" && e.from_id === info.id)
               return (
                 <MessageRow
                   key={info.id}
@@ -858,6 +867,8 @@ export const Chatbot = () => {
                   parts={parts}
                   msgIndex={msgIndex}
                   messagesLength={messages.length}
+                  incomingEdge={incomingEdge}
+                  outgoingEdge={outgoingEdge}
                   status={status}
                   sessions={sessions}
                   sessionsById={sessionsById}

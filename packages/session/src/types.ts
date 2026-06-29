@@ -2,8 +2,67 @@
 
 export type Actor =
   | { kind: "user"; id: string }
-  | { kind: "agent"; id: string }
+  | { kind: "assistant"; id: string }
+  | { kind: "agent"; id: string }   // deprecated: kept for backward compat; use "assistant"
   | { kind: "workflow"; id: string }
+  | { kind: "system"; id: string }
+
+// ─── Graph edge types (universal) ────────────────────────────────────────────
+
+export type EdgeType =
+  | "instantiated_as"  // workflow → session
+  | "contains"         // session → entry (with seq_in_parent for display order)
+  | "forked_from"      // session → session (source)
+  | "forked_at"        // session → entry (fork point)
+  | "reply_to"         // entry → entry (sequential chat response)
+  | "caused"           // entry → entry (tool result, retry, error)
+  | "produced"         // entry → entry/artifact (output)
+  | "used"             // entry → tool/artifact/resource
+  | "branch"           // entry → entry (fan-out)
+  | "merge"            // entry → entry (fan-in)
+
+// ─── Graph node types ────────────────────────────────────────────────────────
+
+export type EntryNodeType = "workflow" | "session" | "entry" | "tool" | "artifact"
+
+// ─── Universal edge ───────────────────────────────────────────────────────────
+
+export type Edge = {
+  id: string
+  from_type: EntryNodeType
+  from_id: string
+  to_type: EntryNodeType
+  to_id: string
+  type: EdgeType
+  seq_in_parent?: number
+  label?: string
+  metadata?: Record<string, unknown>
+  created_at: string
+}
+
+/** @deprecated Use Edge */
+export type EntryEdge = Edge
+
+// ─── Entries ──────────────────────────────────────────────────────────────────
+
+export type EntryType =
+  | "message"
+  | "tool_call"
+  | "tool_result"
+  | "workflow_step"
+  | "error"
+  | "system_event"
+
+export type Entry = {
+  id: string
+  type: EntryType
+  actor: string
+  runner_type: string
+  content_text?: string
+  payload_json?: Record<string, unknown>
+  status: string
+  created_at: string
+}
 
 // ─── Messages ─────────────────────────────────────────────────────────────────
 

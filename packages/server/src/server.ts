@@ -61,6 +61,7 @@ import { retentionDaemon, sessionManager } from "@projectflows/session/session"
 import { configureSessionCore } from "./configure-session-core"
 import { openDoraStorageAdapter } from "@projectflows/session/storage-adapter"
 import { Session } from "@projectflows/session/session"
+import { migrateAllSessions } from "@projectflows/session"
 import { SessionPrompt } from "@projectflows/session/prompt"
 import { Identifier } from "@projectflows/util/id"
 import { generateText, jsonSchema, tool as aiTool } from "ai"
@@ -874,6 +875,12 @@ export namespace Server {
     // at "Pending" forever with no way to approve, dismiss, or retry.
     Session.reconcileInterruptedToolParts().catch((err) => {
       log.warn("reconcileInterruptedToolParts failed", { error: err instanceof Error ? err.message : String(err) })
+    })
+
+    // Backfill reply edges for any existing sessions that pre-date the graph ledger.
+    // Idempotent — sessions with edges already are skipped.
+    migrateAllSessions().catch((err) => {
+      log.warn("graph-migration backfill failed", { error: err instanceof Error ? err.message : String(err) })
     })
     _corsWhitelist = opts.cors ?? []
 
