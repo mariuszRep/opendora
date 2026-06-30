@@ -1,6 +1,6 @@
 import { sqliteTable, text, integer, index, primaryKey } from "drizzle-orm/sqlite-core"
 import type { MessageV2 } from "./message-v2"
-import type { SessionType, SessionStatus, RetentionPolicy, SendPolicy } from "./types"
+import type { SessionType, SessionStatus, RetentionPolicy, SendPolicy, EdgeType, EntryType } from "./types"
 
 // Inlined from @/storage/schema.sql — 2-line helper
 const Timestamps = {
@@ -141,6 +141,31 @@ export const PartTable = sqliteTable(
   ],
 )
 
+export const EntryEdgeTable = sqliteTable(
+  "entry_edge",
+  {
+    id: text().primaryKey(),
+    // Hard FK to session — cascade delete cleans up edges when session is removed
+    session_id: text()
+      .notNull()
+      .references(() => SessionTable.id, { onDelete: "cascade" }),
+    // Soft references to message entries — no FK so edges survive individual message deletes
+    // and support cross-session delegation edges
+    source_entry_id: text().notNull(),
+    target_entry_id: text().notNull(),
+    edge_type: text().notNull().$type<EdgeType>(),
+    display_order: integer(),
+    metadata: text({ mode: "json" }).$type<Record<string, unknown>>(),
+    ...Timestamps,
+  },
+  (table) => [
+    index("entry_edge_session_idx").on(table.session_id),
+    index("entry_edge_source_idx").on(table.source_entry_id),
+    index("entry_edge_target_idx").on(table.target_entry_id),
+    index("entry_edge_session_type_idx").on(table.session_id, table.edge_type),
+  ],
+)
+
 export const TodoTable = sqliteTable(
   "todo",
   {
@@ -156,6 +181,43 @@ export const TodoTable = sqliteTable(
   (table) => [
     primaryKey({ columns: [table.session_id, table.position] }),
     index("todo_session_idx").on(table.session_id),
+  ],
+)
+
+// ─── Universal entries ledger ─────────────────────────────────────────────────
+
+export const EntriesTable = sqliteTable("entries", {
+  id: text().primaryKey(),
+  type: text().notNull().$type<EntryType>(),
+  actor: text().notNull(),
+  runner_type: text().notNull(),
+  content_text: text(),
+  payload_json: text({ mode: "json" }).$type<Record<string, unknown>>(),
+  status: text().notNull(),
+  created_at: text().notNull(),
+})
+
+// ─── Universal edges table ────────────────────────────────────────────────────
+
+export const EdgesTable = sqliteTable(
+  "edges",
+  {
+    id: text().primaryKey(),
+    from_type: text().notNull(),
+    from_id: text().notNull(),
+    to_type: text().notNull(),
+    to_id: text().notNull(),
+    type: text().notNull().$type<EdgeType>(),
+    seq_in_parent: integer(),
+    label: text(),
+    metadata: text({ mode: "json" }).$type<Record<string, unknown>>(),
+    created_at: text().notNull(),
+  },
+  (t) => [
+    index("edges_from_idx").on(t.from_type, t.from_id),
+    index("edges_to_idx").on(t.to_type, t.to_id),
+    index("edges_type_idx").on(t.type),
+    index("edges_contains_idx").on(t.from_type, t.from_id, t.type, t.seq_in_parent),
   ],
 )
 

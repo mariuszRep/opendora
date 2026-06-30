@@ -1,6 +1,6 @@
 "use client"
 
-import type { ToolPart } from "@/lib/opendora"
+import type { ToolPart } from "@/lib/projectflows"
 import { SessionTreeView, type SessionTreeNode } from "@/components/sessions/session-tree-view"
 
 type SessionTreeOutput = {

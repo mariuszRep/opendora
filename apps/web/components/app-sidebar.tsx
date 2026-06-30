@@ -1,6 +1,6 @@
 "use client"
 
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 import { NotificationBlade } from "@/components/notifications/notification-blade"
 import { SessionEditSheet } from "@/components/sessions/session-edit-sheet"
 import { SessionCreateDialog, SESSION_TYPE_CONFIG } from "@/components/sessions/session-create-dialog"
@@ -19,7 +19,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
-import type { Session, SessionType } from "@/lib/opendora"
+import type { Session, SessionType } from "@/lib/projectflows"
 import { getAgentColor } from "@/lib/agent-colors"
 import { BellIcon, BotIcon, FolderTreeIcon, MessageSquareIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, NetworkIcon, GalleryHorizontalIcon, GlobeIcon } from "lucide-react"
 import { useRouter } from "next/navigation"

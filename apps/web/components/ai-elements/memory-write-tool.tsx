@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { opendora, type ToolPart } from "@/lib/opendora"
+import { opendora, type ToolPart } from "@/lib/projectflows"
 import { useNotifications } from "@/hooks/use-notifications"
 import { BrainIcon, ChevronDownIcon, ChevronRightIcon } from "lucide-react"
 import { MessageResponse } from "@/components/ai-elements/message"

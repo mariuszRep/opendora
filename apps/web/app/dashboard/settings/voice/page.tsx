@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { useVoiceSettings, formatHotkey, type HotkeyConfig } from "@/hooks/use-voice-settings"
 import { Volume2Icon, MicIcon, RotateCcwIcon, KeyboardIcon } from "lucide-react"
 import { toast } from "sonner"
-import { opendora } from "@/lib/opendora"
+import { opendora } from "@/lib/projectflows"
 
 export default function VoiceSettingsPage() {
   const router = useRouter()
@@ -21,9 +21,18 @@ export default function VoiceSettingsPage() {
   const [localWhisperUrl, setLocalWhisperUrl] = useState("")
   const [localWhisperKey, setLocalWhisperKey] = useState("")
   const [savingLocalWhisper, setSavingLocalWhisper] = useState(false)
+  const [localWhisperConfigured, setLocalWhisperConfigured] = useState<boolean | null>(null)
 
   const needsGemini = settings.stt.provider === "google-gemini" || settings.tts.provider === "google-gemini"
   const needsOpenAI = settings.stt.provider === "openai-whisper" || settings.tts.provider === "openai"
+
+  useEffect(() => {
+    if (settings.stt.provider === "local-whisper") {
+      opendora.auth.status("local-whisper")
+        .then((r) => setLocalWhisperConfigured(r.configured))
+        .catch(() => setLocalWhisperConfigured(false))
+    }
+  }, [settings.stt.provider])
 
   const saveLocalWhisperConfig = async () => {
     if (!localWhisperUrl.trim()) return
@@ -37,10 +46,21 @@ export default function VoiceSettingsPage() {
       toast.success("Local Whisper server saved")
       setLocalWhisperUrl("")
       setLocalWhisperKey("")
+      setLocalWhisperConfigured(true)
     } catch {
       toast.error("Failed to save Local Whisper configuration")
     } finally {
       setSavingLocalWhisper(false)
+    }
+  }
+
+  const clearLocalWhisperConfig = async () => {
+    try {
+      await opendora.auth.remove("local-whisper")
+      setLocalWhisperConfigured(false)
+      toast.success("Local Whisper configuration cleared")
+    } catch {
+      toast.error("Failed to clear Local Whisper configuration")
     }
   }
 
@@ -609,12 +629,35 @@ export default function VoiceSettingsPage() {
             {settings.stt.provider === "local-whisper" && (
               <Card className="border-green-500/50">
                 <CardHeader>
-                  <CardTitle className="text-base">Local Whisper Server</CardTitle>
-                  <CardDescription>
-                    Connect to a locally-running Whisper server with an OpenAI-compatible API (e.g. faster-whisper-server, whisper.cpp HTTP, LocalAI).
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base">Local Whisper Server</CardTitle>
+                      <CardDescription className="mt-1">
+                        Connect to a locally-running Whisper server with an OpenAI-compatible API (e.g. faster-whisper-server, whisper.cpp HTTP, LocalAI).
+                      </CardDescription>
+                    </div>
+                    {localWhisperConfigured === true && (
+                      <span className="text-xs font-medium text-green-600 dark:text-green-400 flex items-center gap-1 shrink-0">
+                        ✓ Configured
+                      </span>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {localWhisperConfigured === true && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearLocalWhisperConfig}
+                      >
+                        Clear
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        Enter a new URL below to reconfigure.
+                      </span>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Server URL</label>
                     <input

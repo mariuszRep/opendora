@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { DataTable } from "@/components/ui/data-table"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { opendora } from "@/lib/opendora"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
+import { opendora } from "@/lib/projectflows"
 import { createSessionColumns, type SessionRow } from "./columns"
 import { MessageSquareIcon, SearchIcon, Trash2Icon, Loader2Icon } from "lucide-react"
 

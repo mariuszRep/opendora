@@ -17,7 +17,7 @@
  * A child can never expand or promote (no new paths, no explore→edit).
  */
 
-import type { PathEntry, Agent, Session } from "./opendora"
+import type { PathEntry, Agent, Session } from "./projectflows"
 
 // ── Normalise ────────────────────────────────────────────────────────────────
 

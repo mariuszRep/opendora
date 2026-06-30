@@ -6,6 +6,8 @@
 
 Workflow owns reusable process definitions and workflow domain behavior. Workflows are the only executable unit that schedules may trigger.
 
+**Workflows are reusable definitions.** There is no separate `workflow_templates` concept or table. Workflows serve as the reusable definition; workflow executions and runs are represented by sessions as runtime containers. Sessions hold the runtime state and entry ledger for a workflow execution; the workflow definition itself is versioned and reusable across multiple session runs.
+
 Workflow canvas/node infrastructure may be reused by Agent Builder for agent definition composition. Agent Builder graph semantics are composition/compilation, not workflow execution, and do not change scheduled workflow execution ownership.
 
 Workflow execution may include an Agent Run node (or Prompt Agent node) that invokes an existing agent definition at runtime. This is distinct from Agent Builder's Agent node/definition graph: in workflow the node executes an agent, in Agent Builder the node defines/compiles an agent definition. Runtime owns the execution loop for both contexts.

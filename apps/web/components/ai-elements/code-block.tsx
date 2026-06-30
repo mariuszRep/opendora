@@ -155,8 +155,7 @@ const getHighlighter = (
     return cached;
   }
 
-  const safeLanguage: BundledLanguage =
-    language in bundledLanguages ? language : "text";
+  const safeLanguage = (language in bundledLanguages ? language : "text") as BundledLanguage;
 
   const cachedSafe = highlighterCache.get(safeLanguage);
   if (cachedSafe) {

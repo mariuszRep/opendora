@@ -2,7 +2,7 @@
 
 import { BrainIcon } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 import { MemoryBrowser } from "@/components/memory/memory-browser"
 
 export default function MemorySettingsPage() {

@@ -1,6 +1,6 @@
 "use client"
 
-import type { Session, ToolPart } from "@/lib/opendora"
+import type { Session, ToolPart } from "@/lib/projectflows"
 
 import { ArrowRightIcon, BotIcon, ExternalLinkIcon } from "lucide-react"
 

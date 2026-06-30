@@ -116,10 +116,13 @@ export function useVoiceRecorder() {
         mediaRecorder.stream.getTracks().forEach((track) => track.stop())
 
         try {
-          const { opendora } = await import("@/lib/opendora")
+          const { opendora } = await import("@/lib/projectflows")
           // Read from ref here too — ensures latest provider even mid-flight
           const currentProvider = settingsRef.current.stt.provider
-          const sttProvider = currentProvider === "google-gemini" ? "google-gemini" : "openai-whisper"
+          const sttProvider =
+            currentProvider === "google-gemini" ? "google-gemini"
+            : currentProvider === "local-whisper" ? "local-whisper"
+            : "openai-whisper"
           const result = await opendora.voice.stt(blob, { provider: sttProvider })
           setIsTranscribing(false)
           resolve(result.text || "")

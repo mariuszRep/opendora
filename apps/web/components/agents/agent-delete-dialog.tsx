@@ -12,7 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 
 type Props = {
   open: boolean

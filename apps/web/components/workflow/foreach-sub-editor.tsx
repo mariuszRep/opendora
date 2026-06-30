@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { WorkflowEditor } from './workflow-editor'
-import type { Workflow } from '@/lib/opendora'
+import type { Workflow } from '@/lib/projectflows'
 
 interface SubWorkflow {
   nodes: Workflow['nodes']

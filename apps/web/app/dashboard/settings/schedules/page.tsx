@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { PlusIcon, ClockPlusIcon, SearchIcon } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { SettingsCard } from "@/components/settings/settings-card"
-import { opendora, type Schedule } from "@/lib/opendora"
+import { opendora, type Schedule } from "@/lib/projectflows"
 import { ScheduleDialog } from "@/components/sessions/schedule-dialog"
 
 function displayPromptFor(schedule: Schedule): string {

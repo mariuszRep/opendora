@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { opendora } from "@/lib/opendora"
+import { opendora } from "@/lib/projectflows"
 
 export interface VoiceSettings {
   stt: {

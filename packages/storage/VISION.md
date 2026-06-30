@@ -48,8 +48,10 @@ Storage is the exclusive persistence abstraction layer for OpenDora packages.
 - Storage preserves persistence mechanics; domains preserve business meaning.
 - The run-state / checkpoint contract is persistence only: storage stores and retrieves run snapshots and journals but never decides when to checkpoint, resume, replay, or suspend. Runtime owns those decisions; session owns the run state shape.
 - Storage persists the session graph-backed ledger through stable persistence contracts whose shape is owned by session.
-- Physical backend for sessions, messages/session entries, and message edges may use ordinary relational tables. Storage does not assign product meaning to actors, entry types, or edge types — those semantics are owned by session.
-- SQLite is acceptable for the session graph model. Graph behavior should use normal storage contracts and indexed relational structures unless a validated backend-specific graph extension provides clear benefit without changing domain ownership.
+- Edges use a single physical edge table for all persisted cross-entity relationships (workflows, sessions, entries, tools, artifacts/resources). The edge table is a single canonical model with domain-owned edge semantics — session owns session/entry/edge semantics, workflow owns workflow definition semantics.
+- Physical backend for sessions, entries, and edges may use ordinary relational tables. Storage does not assign product meaning to actors, entry types, or edge types — those semantics are owned by session.
+- SQLite is acceptable for the graph model. Graph behavior should use normal storage contracts and indexed relational structures unless a validated backend-specific graph extension provides clear benefit without changing domain ownership.
+- Default timeline reads must be supported by indexed contains edges, e.g. index on `(from_type, from_id, type, seq_in_parent)` filtered to `type='contains'`. Deep graph traversal is explicit/debug, not default chat render.
 
 ## Canonical Operations
 

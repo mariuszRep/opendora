@@ -6,7 +6,8 @@ export type { StorageAdapter } from "./storage/adapter"
 export type { Actor, Message, MessageKind, MessagePart, Parent, PingOptions, PongOptions,
               StreamOptions, InputProvenance, SendPolicy,
               SessionType, SessionStatus, SessionMeta, SessionParent,
-              SessionFilter, CreateSessionOptions, RetentionPolicy } from "./types"
+              SessionFilter, CreateSessionOptions, RetentionPolicy,
+              EdgeType, EntryNodeType, Edge, EntryEdge, EntryType, Entry } from "./types"
 export type { MessageStream } from "./pingpong-session"
 export { DEFAULT_RETENTION, evaluateSendPolicy } from "./types"
 export { Bus } from "./bus"
@@ -30,8 +31,8 @@ export * from "./status"
 export * from "./session.sql"
 
 // Storage adapter
-export { OpenDoraStorageAdapter, openDoraStorageAdapter, rowToMeta } from "./opendora-storage-adapter"
-export type { CreateContext } from "./opendora-storage-adapter"
+export { OpenDoraStorageAdapter, openDoraStorageAdapter, rowToMeta } from "./projectflows-storage-adapter"
+export type { CreateContext } from "./projectflows-storage-adapter"
 
 // Bus bridge
 export { BusBridge } from "./bus-bridge"
@@ -51,3 +52,6 @@ export type { Purpose as TokenUsagePurpose, RecordInput as TokenUsageRecordInput
 export { ProviderUsageFile } from "./token-usage-file"
 export type { ProviderUsageState, ModelUsageState } from "./token-usage-file"
 export { addSkillTools, getSkillTools } from "./skill-tools"
+
+// Graph-backed ledger migration
+export { migrateSession, migrateAllSessions } from "./graph-migration"

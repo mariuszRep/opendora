@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import type { PermissionRequest, PermissionReply } from "@/lib/opendora"
+import type { PermissionRequest, PermissionReply } from "@/lib/projectflows"
 
 function getPermissionDescription(request: PermissionRequest) {
   const { resource, access, metadata = {}, patterns = [] } = request

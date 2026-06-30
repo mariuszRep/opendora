@@ -1,15 +1,20 @@
 # VISION.md — apps
 
 > Owner: human. Approved intent only.
+>
+> **Naming note:** Projectflows is the canonical product direction; OpenDora/opendora remains
+> the current repo/binary/package naming during transition. `apps/` contains both legacy and
+> new application surfaces.
 
 ## Intent
 
-`apps/` contains OpenDora user-facing applications.
+`apps/` contains all user-facing application surfaces for Projectflows / OpenDora.
 
 ## Owns
 
 - Web UI.
 - CLI (command-line and terminal UI).
+- Desktop application (Phase 2, Tauri v2 cross-platform shell).
 - Application-specific presentation, interaction, navigation, and user experience logic.
 
 ## Does Not Own
@@ -28,10 +33,12 @@
 
 ## Boundary Rules
 
-- Web and CLI live under `apps/`; CLI includes integrated terminal UI support.
+- Web, CLI, and desktop live under `apps/`; CLI includes integrated terminal UI support.
+- Desktop app (Phase 2) is a Tauri v2 shell wrapping the same statically-exported web UI. It uses SDK for backend communication; UI components are reused across embedded web and desktop where feasible.
 - Apps call SDK methods instead of hand-writing server calls or importing backend packages.
 - Apps must not duplicate package-owned domain behavior.
 - Apps must not bypass server auth, permission, validation, or runtime coordination.
+- Desktop app must not import backend/domain internals — it follows the same app rules as web and CLI.
 
 ## Visual Language
 

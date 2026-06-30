@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { ToolSchemaProperty } from '@/lib/opendora'
+import type { ToolSchemaProperty } from '@/lib/projectflows'
 import type { RefSuggestion } from '@/lib/workflow-refs'
 import { ExpressionInput } from './expression-input'
 import { PromptInput } from './prompt-input'

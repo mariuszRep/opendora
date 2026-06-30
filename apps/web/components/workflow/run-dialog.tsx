@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { opendora, type Workflow, type Agent } from "@/lib/opendora"
+import { opendora, type Workflow, type Agent } from "@/lib/projectflows"
 import { renderFieldInput, type WorkflowFieldDef } from "@/components/workflow/render-field-input"
 
 interface RunDialogProps {

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import type { PermissionRequest, PermissionReply } from "@/lib/opendora"
+import type { PermissionRequest, PermissionReply } from "@/lib/projectflows"
 
 function getPermissionInfo(request: PermissionRequest) {
   const { resource, access, metadata = {}, patterns = [] } = request

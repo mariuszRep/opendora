@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { opendora, type Session } from "@/lib/opendora"
+import { opendora, type Session } from "@/lib/projectflows"
 import { cn } from "@/lib/utils"
 import {
   ChevronRightIcon,

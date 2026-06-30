@@ -3,7 +3,7 @@ import { resolveService } from "../../daemon/service"
 
 export const StatusCommand = cmd({
   command: "status",
-  describe: "show opendora server status",
+  describe: "show projectflows server status",
   handler: async () => {
     const service = resolveService()
     const env = process.env as Record<string, string | undefined>
@@ -24,7 +24,7 @@ export const StatusCommand = cmd({
           console.log(`URL: http://localhost:4096`)
         }
       } else {
-        console.log("\nUse 'opendora start' to start the server")
+        console.log("\nUse 'projectflows start' to start the server")
       }
     } catch (error) {
       console.error("Failed to check status:", error instanceof Error ? error.message : error)

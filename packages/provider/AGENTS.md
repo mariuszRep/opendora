@@ -12,5 +12,5 @@ Rules for agents working in `packages/provider`.
 
 - Keep provider-specific conditionals inside this package unless the caller is only displaying provider data.
 - Do not move session orchestration, tool execution, permissions, or agent storage into this package.
-- If a model-selection policy changes, update `MIGRATION.md`.
+- If a model-selection policy changes that has migration implications, create or update a GOAL.md in `.projectflows/goals/` rather than maintaining a standalone migration document.
 - Preserve existing provider behavior unless the task explicitly changes it.

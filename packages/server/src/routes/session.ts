@@ -857,6 +857,54 @@ export const SessionRoutes = lazy(() =>
         return c.json(message)
       },
     )
+    .get(
+      "/:sessionID/graph",
+      describeRoute({
+        summary: "Get session graph",
+        description: "Retrieve the typed-edge graph for a session: messages with their entry-edge topology for rail rendering.",
+        operationId: "session.graph",
+        responses: {
+          200: {
+            description: "Session graph",
+            content: {
+              "application/json": {
+                schema: resolver(
+                  z.object({
+                    messages: z.array(z.any()),
+                    edges: z.array(
+                      z.object({
+                        id: z.string(),
+                        from_type: z.string(),
+                        from_id: z.string(),
+                        to_type: z.string(),
+                        to_id: z.string(),
+                        type: z.string(),
+                        seq_in_parent: z.number().optional(),
+                        label: z.string().optional(),
+                        metadata: z.record(z.string(), z.unknown()).optional(),
+                        created_at: z.string(),
+                      }),
+                    ),
+                  }),
+                ),
+              },
+            },
+          },
+          ...errors(400, 404),
+        },
+      }),
+      validator(
+        "param",
+        z.object({
+          sessionID: z.string().meta({ description: "Session ID" }),
+        }),
+      ),
+      async (c) => {
+        const { sessionID } = c.req.valid("param")
+        const graph = await Session.getGraph(sessionID)
+        return c.json(graph)
+      },
+    )
     .delete(
       "/:sessionID/message/:messageID",
       describeRoute({

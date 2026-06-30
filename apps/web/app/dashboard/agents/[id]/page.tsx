@@ -47,8 +47,8 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
 } from "@/components/ai-elements/model-selector"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { opendora, type AgentConfig, type Skill, type Workflow } from "@/lib/opendora"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
+import { opendora, type AgentConfig, type Skill, type Workflow } from "@/lib/projectflows"
 import { SettingsCard } from "@/components/settings/settings-card"
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
 import {
@@ -229,12 +229,11 @@ export default function AgentSettingsPage() {
     }
     load()
     const unsub = opendora.events.subscribe((event) => {
-      if (
-        event.type === "permission.rules.updated" &&
-        event.properties.scope === "agent" &&
-        event.properties.scope_id === agentId
-      ) {
-        load()
+      if (event.type === "permission.rules.updated") {
+        const props = event.properties as { scope: string; scope_id: string }
+        if (props.scope === "agent" && props.scope_id === agentId) {
+          load()
+        }
       }
     })
     return () => { cancelled = true; unsub() }

@@ -15,7 +15,7 @@
     "./events":                 "./src/events.ts",
     "./from-row":               "./src/from-row.ts",
     "./bus-bridge":             "./src/bus-bridge.ts",
-    "./storage-adapter":        "./src/opendora-storage-adapter.ts",
+    "./storage-adapter":        "./src/projectflows-storage-adapter.ts",
     "./todo":                   "./src/todo.ts",
     "./status":                 "./src/status.ts",
     "./retry":                  "./src/retry.ts",

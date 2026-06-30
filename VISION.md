@@ -1,7 +1,12 @@
-# VISION.md — OpenDora
+# VISION.md — OpenDora / Projectflows
 
 > Owner: human. Approved intent only.
 > This document records durable product/system intent, not roadmap or implementation status.
+>
+> **Naming note:** Projectflows is the canonical product direction. OpenDora/opendora remains
+> the legacy repo, binary, and package naming during the transition. Documentation and code
+> reference both names; new delivery work uses Projectflows as the product name while
+> honoring existing opendora-based paths, binaries, and packages until a coordinated rename.
 
 ## Intent
 
@@ -11,6 +16,8 @@ OpenDora is intended to remain lightweight at its core while supporting an ecosy
 
 Conversations and workflows are one durable execution model. A run — whether a normal conversation or a workflow — is a single durable, resumable, event-sourced execution. A normal conversation is the simplest workflow (message → reply); a workflow is the same run with more structure; and any conversation can be transformed into a reusable workflow.
 
+**Architecture naming.** Workflows and workflow templates are the same product concept — use `workflows` as reusable definitions. Workflow executions and runs are represented by sessions (runtime containers). There is no separate `workflow_templates` concept or table. Entries are the immutable runtime ledger events; edges are the relationships, order, causality, containment, and forks between all graph entities (workflows, sessions, entries, tools, artifacts/resources). A single canonical edge table is used for all persisted cross-entity relationships.
+
 Agent Builder is the durable agent-definition authoring model. It reuses the workflow/canvas authoring experience to compose agent definitions rather than execute work. Agent Builder canvas nodes compose agent persona, configuration, tools, skills, and permissions; the builder/page save action compiles the connected graph into existing agent definition fields. Form-style section editing remains available as alternate projections or section views of the same node-defined agent definition — the graph is canonical, forms are views. Agent Builder graph semantics are composition and compilation, not workflow execution.
 
 OpenDora surfaces should use a consistent connected-node/line visual language when displaying linear or branching chains. Chat reply chains, agent definition sections (in graph view), workflow execution nodes, and branching workflow/graph histories should share a common visual idiom inspired by git graph representations: a dot or node per item, a line connecting the sequence, and branching lines for diverging paths. This principle applies across chat, workflow, and Agent Builder surfaces.
@@ -19,8 +26,8 @@ The graph-backed session ledger and its UI projection are one delivery — store
 
 ## Owns
 
-- Product-level architecture and boundaries for OpenDora.
-- User-facing applications: web UI and CLI (CLI includes integrated terminal UI mode).
+- Product-level architecture and boundaries for OpenDora / Projectflows.
+- User-facing applications: web UI, CLI (CLI includes integrated terminal UI mode), and desktop application (Phase 2, Tauri-based cross-platform shell).
 - A typed SDK gateway for application access.
 - A server/service boundary that exposes OpenDora behavior.
 - Runtime execution for live agentic work.
@@ -41,7 +48,7 @@ The graph-backed session ledger and its UI projection are one delivery — store
 ## Relationships
 
 ```text
-apps/web | apps/cli
+apps/web | apps/cli | apps/desktop
   -> sdk
     -> server
       -> auth
@@ -88,7 +95,7 @@ domain packages that persist data
 - Permission owns authorization and permission lifecycle; notification owns durable user-facing notification records and cross-links. Permission requests are retained as notification history after reply, marked resolved/rejected/allowed, and removed from action-required count.
 - Notification persists through storage contracts only.
 - Storage is the only persistence boundary. Packages that need durable data use storage contracts instead of choosing JSON, SQLite, Postgres, files, or another backend directly.
-- Session is the universal execution ledger and records run state/history; it is not the execution engine.
+- Session is the universal execution ledger and records run state/history through entries (immutable runtime events) connected by typed edges (relationships, order, causality, containment, forks); it is not the execution engine.
 - A run is one durable, resumable, event-sourced execution; conversations and workflows share this model, and any conversation may be transformed into a reusable workflow.
 - Durable run state — checkpoints, step journal, and suspend/resume tokens — is persisted only through storage contracts; runtime owns resume and replay; session records run state and history.
 - Plugins are installable OpenDora extension packages. A plugin may contribute any subset of agents, skills, tools, MCP integrations, workflows, schedules, configuration, permissions, and UI extension surfaces.
@@ -98,6 +105,7 @@ domain packages that persist data
 - Mini-apps must use OpenDora-approved context, permission, storage, and UI/design-system contracts instead of depending on app internals.
 - Extension UI must be built from OpenDora-approved primitives and design-system contracts so plugins and mini-apps remain visually consistent without copying app-owned implementation details.
 - Agent Builder reuses workflow/canvas authoring infrastructure but owns composition/compilation semantics distinct from workflow execution. It does not change scheduled workflow execution ownership.
+- Desktop application (Phase 2) is a Tauri v2 shell that wraps the same statically-exported web UI. It follows the same app rules: uses SDK, does not import backend internals, reuses shared UI components where feasible.
 
 ## Canonical Operations / Contracts
 

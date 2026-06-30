@@ -1,155 +1,69 @@
-# AGENTS.md — @pingpong/core
+# AGENTS.md — packages/session
 
-Rules and facts for AI agents working in this package.
-Read the root file set first, then this package's `SCOPE.md`, `STATE.md`, and `ROADMAP.md`.
-
----
+Rules and facts for AI agents working in `packages/session`.
+Read the root file set first, then this package's local file set.
 
 ## Package location
 
 ```
-packages/core/src/
-  index.ts              — public exports
-  types.ts              — all domain types
+packages/session/src/
+  session.ts            — Session class (create, fork, updateMessage, updatePart, stream, etc.)
+  session.sql.ts        — Drizzle schema: SessionTable, MessageTable, PartTable, EntryEdgeTable
+  types.ts              — domain types (Actor, EdgeType, EntryEdge, Message, MessagePart, SessionMeta, etc.)
+  prompt.ts             — SessionPrompt.loop (conversation loop)
+  message-v2.ts         — MessageV2 types (Info, Part, WithParts, stream, toModelMessages)
+  config.ts             — session configuration
+  processor.ts          — session processor
+  compaction.ts         — session compaction logic
+  graph-migration.ts    — backfill from parent_message_id to EntryEdgeTable
+  opendora-storage-adapter.ts — OpenDora storage adapter integration
+  skill-tools.ts        — skill-tool integration
   bus.ts                — Bus singleton
-  session.ts            — Session class
-  session-manager.ts    — SessionManager class
-  session-queue.ts      — SessionQueue class
-  daemon.ts             — RetentionDaemon
-  storage/
-    adapter.ts          — StorageAdapter interface
-    drizzle/schema.ts   — shared Drizzle schema (Sqlite + Postgres)
-    jsonl/index.ts      — JsonlAdapter
-    sqlite/index.ts     — SqliteAdapter
-    postgres/index.ts   — PostgresAdapter
 ```
 
 ## Key rules
 
-- **`core` has no I/O.** `src/index.ts`, `bus.ts`, `session.ts`, `session-manager.ts`,
-  `session-queue.ts`, and `daemon.ts` never read files or touch a database. Storage is injected.
+- **Session is the universal execution ledger.** It records run state and history through entries (immutable runtime events) connected by typed edges. It is not the execution engine — runtime holds that role.
+- **Storage is injected.** Session code never reads files or touches a database directly. All persistence goes through `StorageAdapter`.
 - **`Bus` is a process-level singleton.** Unsubscribe after every test. Never share handles across modules.
 - **All `StorageAdapter` methods return `Promise`.** Even SQLite — sync internally, async interface always.
 - **`from` is a SQL reserved word.** DB column is `sender`. Domain field is `from`. Mapping in adapters only.
-- **Adapters live inside core** as subpath exports (`@pingpong/core/jsonl`, `/sqlite`, `/postgres`).
-  `better-sqlite3` and `postgres` are optional peer deps — only install what you import.
 
 ## Core types
 
-```ts
-// Actor — who sent the message
-type Actor = { kind: "user" | "agent"; id: string }
+See `src/types.ts` for the canonical type definitions. Key types include:
 
-// Message — one turn in a session
-type Message = {
-  id: string
-  sessionId: string
-  kind: "ping" | "pong"       // ping = request, pong = reply
-  from: Actor
-  parts: MessagePart[]
-  parent: Parent | null
-  provenance?: "user" | "agent" | "service"
-  tokenCount?: number
-  timestamp: number
-}
+- `Actor` — who sent the message (`user | agent | workflow | system`)
+- `EdgeType` — typed edge relationships (`reply | tool_call | tool_result | delegation | workflow_step | retry | fork | fan_out | fan_in`)
+- `EntryEdge` — an edge between two entries (session-scoped)
+- `Message` — one turn in a session
+- `MessagePart` — part of a message (text, reasoning, tool-invocation, file, etc.)
+- `SessionMeta` — session metadata (id, type, status, parent, retention, etc.)
 
-// MessagePart
-type MessagePart =
-  | { type: "text";            text: string }
-  | { type: "reasoning";       text: string }
-  | { type: "tool-invocation"; toolName: string; input: unknown; output?: unknown }
-  | { type: "file";            mimeType: string; url: string }
+See `src/message-v2.ts` for the `MessageV2` type family used by the UI and stream paths:
+- `MessageV2.Info` — User or Assistant message info
+- `MessageV2.Part` — part variants (text, tool, reasoning, step-start, step-finish, etc.)
+- `MessageV2.WithParts` — Info with parts array
+- `MessageV2.stream()` — stream messages from a session
+- `MessageV2.toModelMessages()` — convert to AI SDK model messages
 
-// Parent
-type Parent = { messageId: string; sessionId?: string }
+## Storage adapter interface
 
-// SessionMeta
-type SessionMeta = {
-  id: string
-  type: "role" | "scope" | "worker" | "scratchpad"
-  status: "active" | "archived" | "closed"
-  label?: string
-  parent?: { sessionId: string; messageId?: string }
-  spawnDepth?: number
-  retention: RetentionPolicy
-  sendPolicy?: SendPolicy
-  share?: { url: string }
-  compactionCount?: number
-  compactingAt?: number
-  createdAt: number
-  updatedAt: number
-  archivedAt?: number
-}
-```
+The `StorageAdapter` interface at `packages/storage/src/adapter.ts` defines:
+- `createSession`, `getSession`, `updateSession`, `listSessions`, `deleteSession`
+- `appendMessage`, `getMessages`, `getMessage`
+- Adapter implementations: SQLite, Postgres, JSONL
 
-## Session types and defaults
-
-| Type | Use | Default retention |
-|---|---|---|
-| `role` | Long-lived agent | `onExpire: "archive"` |
-| `scope` | One project | `autoArchive: true`, `onExpire: "archive"` |
-| `worker` | Short job | `autoArchive: true`, `maxMessages: 500`, `onExpire: "close"` |
-| `scratchpad` | Throwaway | `autoDelete: true`, `ttlMs: 6h`, `maxMessages: 100`, `onExpire: "delete"` |
-
-### scratchpad — what is known and what is not
-
-**What the code does:**
-- Deleted entirely after 6h inactivity — no archive step
-- Capped at 100 messages; oldest evicted on append (JsonlAdapter only)
-- JsonlAdapter deletes the JSONL file immediately on session close
-
-**Not yet decided:**
-- Ownership model (user, agent, or system?)
-- Visibility to other sessions
-- Whether `autoDelete` applies on close vs TTL expiry only
-
-Do not rely on scratchpad semantics beyond what the retention defaults mechanically guarantee.
-
-`manager.create()` merges caller-supplied retention over type defaults. Calling
-`adapter.createSession()` directly (e.g. in tests) does NOT apply defaults.
-
-## StorageAdapter interface
-
-```ts
-interface StorageAdapter {
-  createSession(meta: SessionMeta): Promise<void>
-  getSession(id: string): Promise<SessionMeta | null>
-  updateSession(id: string, patch: Partial<SessionMeta>): Promise<void>
-  listSessions(filter?: SessionFilter): Promise<SessionMeta[]>
-  deleteSession(id: string): Promise<void>
-  appendMessage(msg: Message): Promise<void>
-  getMessages(sessionId: string): Promise<Message[]>
-  getMessage(id: string): Promise<Message | null>
-}
-```
-
-## Bus events
-
-| Event | Payload |
-|---|---|
-| `session.created` | `{ meta: SessionMeta }` |
-| `session.updated` | `{ id, patch: Partial<SessionMeta> }` |
-| `session.archived` | `{ id }` |
-| `session.closed` | `{ id }` |
-| `session.deleted` | `{ id }` |
-| `session.error` | `{ sessionId, error: unknown }` |
-| `message.appended` | `{ message: Message }` |
-| `message.part.delta` | `{ sessionId, messageId, part: MessagePart }` |
-| `retention.evicted` | `{ sessionId, evictedCount: 1 }` |
-
-## SessionManager lifecycle
+## Session lifecycle
 
 ```
 create()       →  active
-archive()      →  archived  (fires session.archived)
-close()        →  closed    (fires session.closed)
-reopen()       →  active    (fires session.updated)
-delete()       →  gone      (fires session.deleted)
-share(id, url) →  sets share.url   (fires session.updated)
-unshare(id)    →  clears share.url (fires session.updated)
+archive()      →  archived
+close()        →  closed
+reopen()       →  active
+delete()       →  gone
+fork()         →  new session (copies messages)
 ```
-
-`archive()` and `close()` remove the session from the in-memory map. `reopen()` re-mounts it.
 
 ## Streaming
 
@@ -161,34 +75,17 @@ const msg = await ms.end()                  // persists, fires message.appended
 
 Stream is NOT in history until `end()` is called. Partial streams that never call `end()` are lost.
 
-## Adapter internals
+## Edge model
 
-**JsonlAdapter**
-- `sessions.json` — index of all metadata (atomic rename writes, mtime-cached reads)
-- `<id>.jsonl` — one line per message, append-only
-- `archived/<id>.jsonl` — moved here on archive
-- `maxMessages`: after append, oldest evicted (file rewrite)
-- `getMessage()` is a linear scan — use SqliteAdapter for large-scale lookup
+The current `EntryEdgeTable` is session-scoped (FK via `session_id`), with edge types: `reply`, `tool_call`, `tool_result`, `delegation`, `workflow_step`, `retry`, `fork`, `fan_out`, `fan_in`. Edges are created by `Session.updateMessage` and backfilled by `graph-migration.ts`. The VISION target is a universal edges table spanning all entity types — see `.projectflows/goals/session-graph-ledger-and-chat-rail/GOAL.md`.
 
-**SqliteAdapter**
-- `better-sqlite3` + `drizzle-orm/better-sqlite3`; import from `@pingpong/core/sqlite`
-- WAL mode + foreign keys on open
-- Migration runs synchronously in constructor
-- Messages cascade-delete when session is deleted
-- All Drizzle methods are sync; wrapped in `async` to satisfy the interface
+## Cross-references
 
-**PostgresAdapter**
-- `postgres.js` + `drizzle-orm/postgres-js`; import from `@pingpong/core/postgres`
-- Migration is async; stored in `this.ready` — every method awaits it
-- Call `adapter.end()` on shutdown
-- Timestamps as `BIGINT` (ms); JSON columns as `JSONB`
-
-## Adding a new adapter
-
-1. Implement `StorageAdapter` from `@pingpong/core/storage/adapter`
-2. Import types from `@pingpong/core`
-3. Add tests in `packages/tests/src/<name>-adapter.test.ts`
-4. Do not modify any other file in core
+- Run state / checkpoint contract: `.projectflows/goals/unified-durable-run/GOAL.md`
+- Entries + universal edges migration: `.projectflows/goals/session-graph-ledger-and-chat-rail/GOAL.md`
+- Storage contracts: `packages/storage`
+- Workflow runner: `packages/workflow/src/runner.ts`
+- Workflow node types: `packages/workflow/src/node-types.ts`
 
 ## Common mistakes
 

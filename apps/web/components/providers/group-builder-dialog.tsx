@@ -32,7 +32,7 @@ import { Label } from "@/components/ui/label"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ModelSelectorLogo, ModelSelectorName } from "@/components/ai-elements/model-selector"
 import { cn } from "@/lib/utils"
-import type { GroupState, Provider } from "@/lib/opendora"
+import type { GroupState, Provider } from "@/lib/projectflows"
 
 export type ModelGroup = {
   id: string

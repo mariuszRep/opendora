@@ -1,6 +1,6 @@
 "use client"
 
-import type { ToolPart } from "@/lib/opendora"
+import type { ToolPart } from "@/lib/projectflows"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { CheckCircle2Icon, CircleDashedIcon } from "lucide-react"

@@ -74,7 +74,7 @@ Relevant technical/project constraints:
 
 - Read root `AGENTS.md`.
 - Read `packages/workflow/AGENTS.md`.
-- Read root `MIGRATION.md` and `packages/workflow/MIGRATION.md` before touching workflow runner state.
+- Read `.projectflows/goals/unified-durable-run/GOAL.md` before touching workflow runner state.
 - Preserve node type parity across:
   - `packages/workflow/src/node-types.ts`
   - `packages/workflow/src/node-registry.ts`

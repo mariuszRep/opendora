@@ -43,7 +43,8 @@ import type {
   QuestionAnswer,
   PermissionRequest,
   PermissionReply,
-} from "@/lib/opendora"
+  EntryEdge,
+} from "@/lib/projectflows"
 import { DelegateToolContent, isDelegateTool, getDelegateToolTitle } from "@/components/ai-elements/delegate-tool"
 import { TodoToolContent, isTodoTool, getTodoToolTitle } from "@/components/ai-elements/todo-tool"
 import { SessionTreeToolContent, isSessionTreeTool, getSessionTreeToolTitle } from "@/components/ai-elements/session-tree-tool"
@@ -119,7 +120,10 @@ export type MessageRowProps = {
   setWebPreviewUrl: (url: string) => void
   openFilePreview: (path: string, label: string) => void
   selectSession: (id: string, agentIdHint?: string) => void
+  incomingEdge?: EntryEdge
+  outgoingEdge?: EntryEdge
 }
+
 
 export const MessageRow = React.memo(function MessageRow({
   info,
@@ -171,6 +175,8 @@ export const MessageRow = React.memo(function MessageRow({
   setWebPreviewUrl,
   openFilePreview,
   selectSession,
+  incomingEdge,
+  outgoingEdge,
 }: MessageRowProps) {
   const rawContent = getMessageText(parts)
   // Strip the "user: NAME\n\n" attribution prefix added before sending so it doesn't leak into the bubble
@@ -262,6 +268,13 @@ export const MessageRow = React.memo(function MessageRow({
           {info.role === "user" ? (
             <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3">
               <div className="relative self-stretch">
+                {msgIndex > 0 && (
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 top-0 h-[10px] w-[2px]"
+                    style={{ backgroundColor: userRingColor, opacity: 0.55 }}
+                    aria-hidden="true"
+                  />
+                )}
                 <button
                   className="absolute left-1/2 top-[10px] size-4 -translate-x-1/2 rounded-full"
                   style={{ outline: "none" }}
@@ -269,14 +282,17 @@ export const MessageRow = React.memo(function MessageRow({
                   onClick={msgSchedule ? () => setOpenScheduleId(msgSchedule.id) : undefined}
                 >
                   <div
-                    className="absolute inset-0 rounded-full border-2"
-                    style={{ borderColor: userRingColor }}
-                  />
-                  <div
-                    className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    className="absolute left-1/2 top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
                     style={{ backgroundColor: userRingColor }}
                   />
                 </button>
+                {msgIndex < messagesLength - 1 && (
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 top-[26px] w-[2px]"
+                    style={{ backgroundColor: userRingColor, opacity: 0.55, bottom: '-2rem' }}
+                    aria-hidden="true"
+                  />
+                )}
               </div>
               <div className="flex flex-col gap-2">
                 <MessageContent className="!ml-0">
@@ -407,17 +423,33 @@ export const MessageRow = React.memo(function MessageRow({
                 {timelineSteps.map((step, stepIndex) => {
                   // Line only connects steps within this same reply — never crosses message boundaries
                   const stepConnectsToNext = stepIndex < timelineSteps.length - 1
+                  const isFirstStep = stepIndex === 0
+                  const isLastStep = stepIndex === timelineSteps.length - 1
                   const isActiveDot =
                     status === "streaming" &&
                     msgIndex === messagesLength - 1 &&
-                    stepIndex === timelineSteps.length - 1
+                    isLastStep
 
                   return (
                     <div key={step.key} className="contents">
-                      <div className={cn("relative self-stretch", stepConnectsToNext && "pb-3")}>
+                      <div className={cn("relative self-stretch", (stepConnectsToNext || (isLastStep && msgIndex < messagesLength - 1)) && "pb-3")}>
+                        {isFirstStep && msgIndex > 0 && (
+                          <div
+                            className="absolute left-1/2 -translate-x-1/2 top-0 h-[6px] w-[2px]"
+                            style={{ backgroundColor: assistantMessageColor, opacity: 0.55 }}
+                            aria-hidden="true"
+                          />
+                        )}
                         {stepConnectsToNext ? (
                           <div
-                            className="absolute left-1/2 top-[22px] bottom-0 w-px -translate-x-1/2 bg-border"
+                            className="absolute left-1/2 top-[22px] bottom-0 w-[2px] -translate-x-1/2"
+                            style={{ backgroundColor: assistantMessageColor, opacity: 0.55 }}
+                            aria-hidden="true"
+                          />
+                        ) : (isLastStep && msgIndex < messagesLength - 1) ? (
+                          <div
+                            className="absolute left-1/2 -translate-x-1/2 top-[22px] w-[2px]"
+                            style={{ backgroundColor: assistantMessageColor, opacity: 0.55, bottom: '-2rem' }}
                             aria-hidden="true"
                           />
                         ) : null}
@@ -430,12 +462,12 @@ export const MessageRow = React.memo(function MessageRow({
                             />
                           )}
                           <div
-                            className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                            className="absolute left-1/2 top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
                             style={{ backgroundColor: assistantMessageColor }}
                           />
                         </div>
                       </div>
-                      <div className={cn("min-w-0", stepConnectsToNext && "pb-3")}>
+                      <div className={cn("min-w-0", (stepConnectsToNext || (isLastStep && msgIndex < messagesLength - 1)) && "pb-3")}>
                         {step.kind === "reasoning" ? (
                           <Reasoning
                             duration={

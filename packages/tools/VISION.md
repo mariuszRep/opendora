@@ -2,7 +2,7 @@
 
 > **Owner: human** — updated only when the vision for this package changes.
 > Agents read this as the north star for tools. Never edit during migration work.
-> See `MIGRATION.md` (same directory) for current progress toward this vision.
+> Planned work toward this vision is tracked in `.projectflows/goals/` GOAL files.
 
 ---
 

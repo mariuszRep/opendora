@@ -4,13 +4,13 @@
 
 ## Intent
 
-Session owns the universal execution ledger and session state for conversations, threads, messages, attached context, and executable run history. Session is not the execution engine. The message/history ledger within a session is graph-backed with typed edges between entries; the session record itself remains the durable container — sessions are not graph nodes.
+Session owns the universal execution ledger and session state for conversations, threads, entries, attached context, and executable run history. Session is not the execution engine. The ledger within a session is graph-backed with typed edges connecting entries as immutable runtime events; sessions themselves are durable run containers that may participate in typed edges (instantiation, fork, containment) for provenance and display relationships.
 
 ## Owns
 
 - Session records and metadata.
-- Messages and event history.
-- A graph-backed message/history ledger for chat, workflow run, scheduled run, or hybrid execution, where entries are connected by typed edges preserving lineage, sequence, causality, tool results, retries, workflow fan-out, and workflow fan-in/merge.
+- Entries (immutable runtime ledger events) and event history.
+- A graph-backed entry ledger for chat, workflow run, scheduled run, or hybrid execution, where entries are connected by typed edges preserving lineage, sequence, causality, tool results, retries, workflow fan-out, and workflow fan-in/merge. Edges are stored in a single universal edge table covering all cross-entity relationships (workflows, sessions, entries, tools, artifacts/resources).
 - Entry actor definitions: user, assistant, workflow, system.
 - Entry type definitions: message, tool_call, tool_result, workflow_step, error, system_event.
 - Current attached context: active agent, loaded skills, effective tools derived from those skills, workflow context, schedule context, and provider/model metadata.
@@ -60,19 +60,41 @@ Session owns the universal execution ledger and session state for conversations,
 - Skill-to-tool definitions are owned by skills and tools domains; session records loaded skill references and resolved/effective tool availability without owning either definition domain.
 - Runtime resolves tool identities and executes tool calls; permission gates tool access; session records the attached capability context and tool-call history.
 - Storage decides where and how that state is persisted.
-- Session is the durable container for run history. Sessions are not graph nodes.
-- Session owns a graph-backed message/history ledger where entries are connected by typed edges preserving lineage, sequence, causality, tool results, retries, workflow fan-out, and workflow fan-in/merge behavior.
-- Messages are the primary stored session entries, but entries may represent more than text chat.
+- Session is the durable container for run history. Sessions are durable run containers and may participate in typed edges for parent/child, fork, membership, instantiation, and related provenance/display relationships.
+- Session owns a graph-backed entry ledger where entries are connected by typed edges preserving lineage, sequence, causality, tool results, retries, workflow fan-out, and workflow fan-in/merge behavior. Edges use a single universal edge table shared across all graph entities (workflows, sessions, entries, tools, artifacts/resources). Edge semantics are domain-owned: session owns session/entry/edge semantics, workflow owns workflow definition semantics, storage owns physical persistence.
+- Entries are the primary stored session events. A chat message is one entry type; entries may represent more than text chat.
 - Entry actor defines who/what produced the entry. The actor set is limited to: user, assistant, workflow, system.
-- Entry type defines what kind of entry it is. The type set is limited to: message, tool_call, tool_result, workflow_step, error, system_event.
+- Entry type defines what kind of entry it is. The type set is limited to: message, tool_call, tool_result, workflow_step, error, system_event. A message entry is one concrete type of entry — the canonical concept is entries, not messages.
+- Minimal entry fields are intrinsic event fields only:
+  ```
+  entries (id, type, actor, runner_type, content_text nullable, payload_json nullable, status, created_at)
+  ```
+  Do not put `tool_id` or `workflow_node_id` as canonical foreign key columns on entries when those are graph entities — link them through edges instead. `payload_json` stores runtime details such as toolCallId, inputs, outputs, render hints, snapshots, provider metadata, and errors.
+- Runner type (user | agent | workflow | system) remains useful for describing the execution mechanism.
+- **Ordering rule.** `session --contains(seq_in_parent=N)--> entry` — the `contains` edge with `seq_in_parent` is the canonical visible timeline/message order within a session. Entry-to-entry edges are causal/topological order. `created_at` is timestamp only and not canonical display order.
 - Delegation is not a separate entry type. Agent/sub-agent delegation is represented as tool_call with metadata.
 - Summary is not a separate entry type. User-visible summaries are message entries; workflow summaries are workflow_step entries; context compaction, injection, and internal summarization are system_event entries.
-- Approvals/permissions are not session entry types. Permission lifecycle is owned by the permission package and references relevant session objects, messages, tool calls, or workflow steps. Session may display permission state by resolving/joining references but does not own permission state.
+- Approvals/permissions are not session entry types. Permission lifecycle is owned by the permission package and references relevant session objects, entries, tool calls, or workflow steps. Session may display permission state by resolving/joining references but does not own permission state.
 - There are no branch_start or branch_end entry types. Branching is inferred by topology: one source with multiple outgoing edges = fan-out; multiple sources pointing to one target = fan-in/merge.
 - Normal chat renders as a continuous chronological timeline. Branch visualization appears only when workflow/agent execution creates multiple outgoing edges from one node.
 - The default session UI remains a familiar chat/timeline. The graph-backed model is projected into that view, not a replacement canvas. Each visible entry may show a compact Git-style side rail: continuous for normal chat, branching only for fan-out paths.
 - The model supports both graph lineage and timeline display order. Parallel branches may complete in any order; the chat timeline displays by event time or explicit display order while edges preserve causal structure.
 - Session exposes typed edges, entry actors, and display order as the graph topology data apps need for rail rendering. Rendering approach and library choice are app-layer concerns.
+- **Edges cover relationships between all persisted graph entities**, including:
+  ```
+  workflow --instantiated_as--> session
+  session  --contains(seq_in_parent)--> entry
+  session  --forked_from--> session
+  session  --forked_at--> entry
+  entry    --reply_to--> entry
+  entry    --caused--> entry
+  entry    --produced--> entry/artifact
+  entry    --used--> tool/artifact/resource
+  entry    --branch(label=...)--> entry
+  entry    --merge--> entry
+  ```
+- **Performance/product constraint.** Default timeline reads must be supported by indexed contains edges, e.g. index on `(from_type, from_id, type, seq_in_parent)` filtered to `type='contains'`. Deep graph traversal is explicit/debug, not default chat render.
+- Storage owns physical persistence; session owns session/entry/edge semantics; workflow owns workflow definition semantics.
 
 ## Canonical Operations
 

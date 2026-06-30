@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { opendora, type MemoryEntry } from "@/lib/opendora"
+import { opendora, type MemoryEntry } from "@/lib/projectflows"
 
 type Props = {
   open: boolean

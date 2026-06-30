@@ -56,7 +56,7 @@ import {
 } from "lucide-react"
 import { useBillingData, type TimeRange, type ModelRow, type ProviderSummaryRow } from "@/hooks/use-billing-data"
 import { ProviderUsagePanel } from "@/components/providers/provider-usage-panel"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

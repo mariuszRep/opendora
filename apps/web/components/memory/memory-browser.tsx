@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PlusIcon, BrainIcon, RefreshCwIcon } from "lucide-react"
-import { opendora, type MemoryEntry, type Agent } from "@/lib/opendora"
+import { opendora, type MemoryEntry, type Agent } from "@/lib/projectflows"
 import { MemoryEntryCard } from "./memory-entry-card"
 import { MemoryEntryEditor } from "./memory-entry-editor"
 

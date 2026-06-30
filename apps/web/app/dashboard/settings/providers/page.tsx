@@ -33,8 +33,8 @@ import { GroupBuilderDialog, type ModelGroup } from "@/components/providers/grou
 import { AllModelsView } from "@/components/providers/all-models-view"
 import { ProviderDetailDialog } from "@/components/providers/provider-detail-dialog"
 import { SettingsCard } from "@/components/settings/settings-card"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import { opendora, type AuthMethod, type GroupState, type Provider } from "@/lib/opendora"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
+import { opendora, type AuthMethod, type GroupState, type Provider } from "@/lib/projectflows"
 import { cn } from "@/lib/utils"
 
 type ProviderState = {

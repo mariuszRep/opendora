@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import type { QuestionAnswer, QuestionRequest } from "@/lib/opendora"
+import type { QuestionAnswer, QuestionRequest } from "@/lib/projectflows"
 import { cn } from "@/lib/utils"
 import { CheckIcon } from "lucide-react"
 

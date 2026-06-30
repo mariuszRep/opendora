@@ -1,6 +1,6 @@
 // Table exports for drizzle-kit migrations (separate from schema.sql.ts to avoid circular deps)
 export { ControlAccountTable } from "./control.sql"
-export { SessionTable, MessageTable, PartTable, TodoTable } from "@projectflows/session/sql"
+export { SessionTable, MessageTable, PartTable, TodoTable, EntryEdgeTable, EdgesTable, EntriesTable } from "@projectflows/session/sql"
 export { SessionShareTable } from "./share.sql"
 export { ProjectTable } from "./project.sql"
 export { ScheduleTable } from "@projectflows/schedule/sql"

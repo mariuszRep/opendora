@@ -44,9 +44,9 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
 } from "@/components/ai-elements/model-selector"
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
-import type { Session, SessionType, RetentionPolicy } from "@/lib/opendora"
-import { opendora } from "@/lib/opendora"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
+import type { Session, SessionType, RetentionPolicy } from "@/lib/projectflows"
+import { opendora } from "@/lib/projectflows"
 import { useModelList } from "@/hooks/use-model-list"
 import { FolderPickerDialog } from "./folder-picker-dialog"
 
@@ -263,8 +263,8 @@ export function SessionSettingsSheet({ session, open, onOpenChange }: SessionSet
                       return group?.name || "Unknown group"
                     }
                     if (selectedProviderID && selectedModelID) {
-                      const m = modelsByProvider[selectedProviderID]?.find((m) => m.modelID === selectedModelID)
-                      return m?.name || `${selectedProviderID}/${selectedModelID}`
+                      const m = modelsByProvider.get(selectedProviderID)?.find((m) => m.modelID === selectedModelID)
+                      return m?.modelName || `${selectedProviderID}/${selectedModelID}`
                     }
                     const agent = agents.find((a) => (a as any)._id === agentID || a.id === agentID)
                     if (agent?.model) {
@@ -272,8 +272,8 @@ export function SessionSettingsSheet({ session, open, onOpenChange }: SessionSet
                         const group = modelGroups.find((g) => g.id === agent.model?.modelID)
                         return `Default (${group?.name || agent.model.modelID})`
                       }
-                      const m = modelsByProvider[agent.model.providerID]?.find((m) => m.modelID === agent.model?.modelID)
-                      return `Default (${m?.name || `${agent.model.providerID}/${agent.model.modelID}`})`
+                      const m = modelsByProvider.get(agent.model.providerID)?.find((m) => m.modelID === agent.model?.modelID)
+                      return `Default (${m?.modelName || `${agent.model.providerID}/${agent.model.modelID}`})`
                     }
                     return "Default (system)"
                   })()}
@@ -303,7 +303,7 @@ export function SessionSettingsSheet({ session, open, onOpenChange }: SessionSet
                       )
                     })}
                     {/* Provider Models */}
-                    {Object.entries(modelsByProvider).map(([providerID, models]) => (
+                    {Array.from(modelsByProvider.entries()).map(([providerID, models]) => (
                       <ModelSelectorGroup key={providerID} heading={providerID}>
                         {models.map((m) => (
                           <ModelSelectorItem
@@ -318,7 +318,7 @@ export function SessionSettingsSheet({ session, open, onOpenChange }: SessionSet
                             value={`${m.providerID}:${m.modelID}`}
                           >
                             <ModelSelectorLogo provider={m.providerID} />
-                            <ModelSelectorName>{m.name}</ModelSelectorName>
+                            <ModelSelectorName>{m.modelName}</ModelSelectorName>
                           </ModelSelectorItem>
                         ))}
                       </ModelSelectorGroup>

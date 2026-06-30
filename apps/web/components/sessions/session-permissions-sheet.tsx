@@ -39,8 +39,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { Session, PermissionRule } from "@/lib/opendora"
-import { opendora } from "@/lib/opendora"
+import type { Session, PermissionRule } from "@/lib/projectflows"
+import { opendora } from "@/lib/projectflows"
 
 interface SessionPermissionsSheetProps {
   session: Session | null

@@ -1,6 +1,6 @@
 "use client"
 
-import { useOpendoraContext } from "@/app/dashboard/opendora-context"
+import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -40,7 +40,7 @@ import { useEffect, useRef, useState } from "react"
 import { SessionSettingsSheet } from "@/components/sessions/session-settings-sheet"
 import { SessionSchedulesSheet } from "@/components/sessions/session-schedules-sheet"
 import { SessionPermissionsSheet } from "@/components/sessions/session-permissions-sheet"
-import { opendora } from "@/lib/opendora"
+import { opendora } from "@/lib/projectflows"
 import { cn } from "@/lib/utils"
 
 function formatSessionTitle(session: { title?: string; time: { created: number } }): string {
