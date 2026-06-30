@@ -712,7 +712,13 @@ export namespace Session {
       if (containsEdges.length > 0) {
         const seqMap = new Map<string, number>()
         for (const edge of containsEdges) seqMap.set(edge.to_id, edge.seq_in_parent ?? 0)
-        result.sort((a, b) => (seqMap.get(a.info.id) ?? 0) - (seqMap.get(b.info.id) ?? 0))
+        const originalIndexMap = new Map(result.map((m, idx) => [m.info.id, idx]))
+        result.sort((a, b) => {
+          const seqA = seqMap.get(a.info.id)
+          const seqB = seqMap.get(b.info.id)
+          if (seqA !== undefined && seqB !== undefined) return seqA - seqB
+          return (originalIndexMap.get(a.info.id) ?? 0) - (originalIndexMap.get(b.info.id) ?? 0)
+        })
       }
 
       return result
@@ -1415,7 +1421,7 @@ export namespace Session {
         .run()
     } else if (part.type === "text" && typeof (part as any).text === "string") {
       db.update(EntriesTable)
-        .set({ content_text: sql`coalesce(${EntriesTable.content_text}, ${(part as any).text.slice(0, 1000)})` })
+        .set({ content_text: (part as any).text.slice(0, 1000) })
         .where(eq(EntriesTable.id, messageID))
         .run()
     }
