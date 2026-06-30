@@ -533,7 +533,7 @@ export class SessionBusyError extends Error {
 }
 
 async function req<T>(path: string, opts?: RequestInit): Promise<T> {
-  const res = await fetch(`${OPENDORA_URL}${path}`, {
+  const res = await fetch(`${PROJECTFLOWS_URL}${path}`, {
     ...opts,
     headers: {
       "Content-Type": "application/json",
