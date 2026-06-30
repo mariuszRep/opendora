@@ -67,125 +67,127 @@ export async function migrateSession(sessionId: string): Promise<number> {
 
   if (msgRows.length === 0) return 0
 
-  let created = 0
-
-  for (let i = 0; i < msgRows.length; i++) {
-    const row = msgRows[i]!
-    const createdAt = new Date(row.time_created).toISOString()
-
-    // Determine actor from message data
-    const data = row.data as Record<string, unknown>
-    const from = data?.from as Record<string, unknown> | undefined
-    const role = data?.role as string | undefined
-    let actor = "user"
-    if (from?.kind === "agent" || from?.kind === "assistant" || role === "assistant") {
-      actor = "assistant"
-    } else if (from?.kind === "workflow") {
-      actor = "workflow"
-    } else if (from?.kind === "system" || from?.kind === "scheduler") {
-      actor = "system"
-    }
-
-    // Extract first text content for content_text
-    const parts = (data?.parts as Array<Record<string, unknown>> | undefined) ?? []
-    const firstText = parts.find(p => p.type === "text")
-    const content_text = typeof firstText?.text === "string" ? firstText.text.slice(0, 1000) : undefined
-
-    // Migrate message → entry
-    db.insert(EntriesTable)
-      .values({
-        id: row.id,
-        type: "message",
-        actor,
-        runner_type: actor,
-        content_text: content_text ?? null,
-        payload_json: data as Record<string, unknown>,
-        status: "complete",
-        created_at: createdAt,
-      })
-      .onConflictDoNothing()
-      .run()
-    created++
-
-    // Create contains edge: session → entry with seq_in_parent = i
-    db.insert(EdgesTable)
-      .values({
-        id: Identifier.ascending("edge"),
-        from_type: "session",
-        from_id: sessionId,
-        to_type: "entry",
-        to_id: row.id,
-        type: "contains",
-        seq_in_parent: i,
-        label: null,
-        metadata: null,
-        created_at: createdAt,
-      })
-      .onConflictDoNothing()
-      .run()
-    created++
-
-    // Create reply_to edge from parent_message_id chain
-    if (row.parent_message_id) {
-      // Detect cross-session delegation by checking parent's session
-      const parentRow = db
-        .select({ session_id: MessageTable.session_id })
-        .from(MessageTable)
-        .where(eq(MessageTable.id, row.parent_message_id))
-        .get()
-      const isDelegation = parentRow && parentRow.session_id !== sessionId
-
-      db.insert(EdgesTable)
-        .values({
-          id: Identifier.ascending("edge"),
-          from_type: "entry",
-          from_id: row.parent_message_id,
-          to_type: "entry",
-          to_id: row.id,
-          type: "reply_to",
-          seq_in_parent: null,
-          label: null,
-          metadata: isDelegation ? { delegation: true } : null,
-          created_at: createdAt,
-        })
-        .onConflictDoNothing()
-        .run()
-      created++
-    }
-  }
-
-  // Migrate legacy entry_edge rows → universal edges
+  // Migrate legacy entry_edge rows — read before entering the transaction
   const legacyEdges = db
     .select()
     .from(EntryEdgeTable)
     .where(eq(EntryEdgeTable.session_id, sessionId))
     .all()
 
-  for (const le of legacyEdges) {
-    const newType = EDGE_TYPE_MAP[le.edge_type] ?? "reply_to"
-    const meta = le.metadata
-      ? { ...(le.metadata as Record<string, unknown>), _migrated_from: le.edge_type }
-      : { _migrated_from: le.edge_type }
+  return db.transaction((tx) => {
+    let created = 0
 
-    db.insert(EdgesTable)
-      .values({
-        id: Identifier.ascending("edge"),
-        from_type: "entry",
-        from_id: le.source_entry_id,
-        to_type: "entry",
-        to_id: le.target_entry_id,
-        type: newType,
-        seq_in_parent: le.display_order ?? null,
-        label: null,
-        metadata: meta,
-        created_at: new Date(le.time_created).toISOString(),
-      })
-      .onConflictDoNothing()
-      .run()
-    created++
-  }
+    for (let i = 0; i < msgRows.length; i++) {
+      const row = msgRows[i]!
+      const createdAt = new Date(row.time_created).toISOString()
 
-  return created
+      // Determine actor from message data
+      const data = row.data as Record<string, unknown>
+      const from = data?.from as Record<string, unknown> | undefined
+      const role = data?.role as string | undefined
+      let actor = "user"
+      if (from?.kind === "agent" || from?.kind === "assistant" || role === "assistant") {
+        actor = "assistant"
+      } else if (from?.kind === "workflow") {
+        actor = "workflow"
+      } else if (from?.kind === "system" || from?.kind === "scheduler") {
+        actor = "system"
+      }
+
+      // Extract first text content for content_text
+      const parts = (data?.parts as Array<Record<string, unknown>> | undefined) ?? []
+      const firstText = parts.find(p => p.type === "text")
+      const content_text = typeof firstText?.text === "string" ? firstText.text.slice(0, 1000) : undefined
+
+      // Migrate message → entry
+      tx.insert(EntriesTable)
+        .values({
+          id: row.id,
+          type: "message",
+          actor,
+          runner_type: actor,
+          content_text: content_text ?? null,
+          payload_json: data as Record<string, unknown>,
+          status: "complete",
+          created_at: createdAt,
+        })
+        .onConflictDoNothing()
+        .run()
+      created++
+
+      // Create contains edge: session → entry with seq_in_parent = i
+      tx.insert(EdgesTable)
+        .values({
+          id: Identifier.ascending("edge"),
+          from_type: "session",
+          from_id: sessionId,
+          to_type: "entry",
+          to_id: row.id,
+          type: "contains",
+          seq_in_parent: i,
+          label: null,
+          metadata: null,
+          created_at: createdAt,
+        })
+        .onConflictDoNothing()
+        .run()
+      created++
+
+      // Create reply_to edge from parent_message_id chain
+      if (row.parent_message_id) {
+        // Detect cross-session delegation by checking parent's session
+        const parentRow = db
+          .select({ session_id: MessageTable.session_id })
+          .from(MessageTable)
+          .where(eq(MessageTable.id, row.parent_message_id))
+          .get()
+        const isDelegation = parentRow && parentRow.session_id !== sessionId
+
+        tx.insert(EdgesTable)
+          .values({
+            id: Identifier.ascending("edge"),
+            from_type: "entry",
+            from_id: row.parent_message_id,
+            to_type: "entry",
+            to_id: row.id,
+            type: "reply_to",
+            seq_in_parent: null,
+            label: null,
+            metadata: isDelegation ? { delegation: true } : null,
+            created_at: createdAt,
+          })
+          .onConflictDoNothing()
+          .run()
+        created++
+      }
+    }
+
+    for (const le of legacyEdges) {
+      const newType = EDGE_TYPE_MAP[le.edge_type] ?? "reply_to"
+      const meta = le.metadata
+        ? { ...(le.metadata as Record<string, unknown>), _migrated_from: le.edge_type }
+        : { _migrated_from: le.edge_type }
+
+      tx.insert(EdgesTable)
+        .values({
+          id: Identifier.ascending("edge"),
+          from_type: "entry",
+          from_id: le.source_entry_id,
+          to_type: "entry",
+          to_id: le.target_entry_id,
+          type: newType,
+          seq_in_parent: le.display_order ?? null,
+          label: null,
+          metadata: meta,
+          created_at: new Date(le.time_created).toISOString(),
+        })
+        .onConflictDoNothing()
+        .run()
+      created++
+    }
+
+    return created
+  })
 }
 
 /**

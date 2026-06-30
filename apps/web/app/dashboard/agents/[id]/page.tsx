@@ -230,8 +230,8 @@ export default function AgentSettingsPage() {
     load()
     const unsub = opendora.events.subscribe((event) => {
       if (event.type === "permission.rules.updated") {
-        const props = event.properties as { scope: string; scope_id: string }
-        if (props.scope === "agent" && props.scope_id === agentId) {
+        const props = event.properties as { scope?: string; scope_id?: string } | undefined
+        if (props?.scope === "agent" && props?.scope_id === agentId) {
           load()
         }
       }

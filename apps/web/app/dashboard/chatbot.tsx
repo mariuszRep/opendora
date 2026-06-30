@@ -490,9 +490,11 @@ export const Chatbot = () => {
   const [sessionEdges, setSessionEdges] = useState<Edge[]>([])
   useEffect(() => {
     if (!selectedSession?.id) { setSessionEdges([]); return }
+    let active = true
     opendora.session.graph(selectedSession.id)
-      .then((g) => setSessionEdges(g?.edges ?? []))
-      .catch(() => setSessionEdges([]))
+      .then((g) => { if (active) setSessionEdges(g?.edges ?? []) })
+      .catch(() => { if (active) setSessionEdges([]) })
+    return () => { active = false }
   }, [selectedSession?.id])
 
   const scrollToMessageIdRef = useRef<string | null>(null)
