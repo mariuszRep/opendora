@@ -33,7 +33,7 @@ $Principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccou
 $Settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopOnIdleEnd -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 
 # Register the task
-Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger @($Trigger1, $Trigger2) -Principal $Principal -Settings $Settings -Description "Automatically update WSL port forwarding for OpenDora"
+Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger @($Trigger1, $Trigger2) -Principal $Principal -Settings $Settings -Description "Automatically update WSL port forwarding for Projectflows"
 
 Write-Host "Scheduled task created successfully!" -ForegroundColor Green
 Write-Host "The task will run:" -ForegroundColor Cyan

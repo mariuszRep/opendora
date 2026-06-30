@@ -236,7 +236,7 @@ await run("all tool IDs start with 'desktop_'", async () => {
 // Integration tests (requires OPENDORA_DESKTOP_E2E=1 and $DISPLAY)
 // ---------------------------------------------------------------------------
 
-const e2e = process.env.OPENDORA_DESKTOP_E2E === "1"
+const e2e = process.env.PROJECTFLOWS_DESKTOP_E2E === "1"
 const hasDisplay = process.platform !== "linux" || !!process.env.DISPLAY || !!process.env.WAYLAND_DISPLAY
 
 if (e2e && hasDisplay) {
@@ -264,7 +264,7 @@ if (e2e && hasDisplay) {
 } else if (e2e) {
   console.log("\n  (skipping integration: no display)")
 } else {
-  console.log("\n  (set OPENDORA_DESKTOP_E2E=1 to run integration tests)")
+  console.log("\n  (set PROJECTFLOWS_DESKTOP_E2E=1 to run integration tests)")
 }
 
 console.log(`\n${passed} passed, ${failed} failed`)

@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server"
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_OPENDORA_URL ?? "http://localhost:4097"
+const BACKEND_URL = process.env.NEXT_PUBLIC_PROJECTFLOWS_URL ?? "http://localhost:4097"
 
 /**
  * Explicit SSE proxy route.

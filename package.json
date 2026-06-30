@@ -97,7 +97,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/opendora.git"
+    "url": "git+https://github.com/yourusername/projectflows.git"
   },
   "license": "MIT",
   "prettier": {
@@ -120,7 +120,7 @@
   "keywords": [],
   "author": "",
   "bugs": {
-    "url": "https://github.com/yourusername/opendora/issues"
+    "url": "https://github.com/yourusername/projectflows/issues"
   },
-  "homepage": "https://github.com/yourusername/opendora#readme"
+  "homepage": "https://github.com/yourusername/projectflows#readme"
 }

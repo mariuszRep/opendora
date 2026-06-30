@@ -7,6 +7,10 @@ export namespace Tool {
   }
 
   export interface AgentInfo {
+    id?: string
+    name?: string
+    description?: string
+    mode?: string
     permission?: unknown
     config?: {
       toolConfig?: {
@@ -15,6 +19,7 @@ export namespace Tool {
       }
       defaultPaths?: string[]
       sandbox?: boolean
+      skills?: string[]
     }
     /** Resolved agent entries for the delegate tool's allowed list */
     delegateAgents?: Array<{ name: string; description?: string }>

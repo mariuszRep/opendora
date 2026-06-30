@@ -285,7 +285,7 @@ export namespace SystemPrompt {
       
       // Add read path if different from write paths
       if (pathBoundaries.readPath && !pathBoundaries.writePaths.includes(pathBoundaries.readPath)) {
-        if (!dirRows.some((row) => row.includes(pathBoundaries.readPath))) {
+        if (!dirRows.some((row) => row.includes(pathBoundaries.readPath!))) {
           dirRows.push(`| ${pathBoundaries.readPath} | read |`)
           hasDirInfo = true
         }

@@ -3,7 +3,7 @@
 export class ShareNext {
   static async create(id: string): Promise<{ url: string }> {
     // TODO: Implement share functionality
-    return { url: `https://share.opendora.ai/${id}` }
+    return { url: `https://share.projectflows.ai/${id}` }
   }
 
   static async remove(id: string): Promise<void> {

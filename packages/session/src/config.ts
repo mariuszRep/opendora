@@ -194,6 +194,8 @@ export interface SessionCoreConfig {
     update?(name: string): Promise<void>
     uninstall?(name: string): Promise<void>
     list?(): Promise<any[]>
+    save?(location: string, content: string): Promise<void>
+    saveConfig?(name: string, patch: { tools?: string[] }): Promise<void>
   }
   /** Workflow service */
   workflow?: {

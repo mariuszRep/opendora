@@ -2,10 +2,10 @@
 
 set -euo pipefail
 
-# Open Dora Live Stream Demo Setup Script
+# Projectflows Live Stream Demo Setup Script
 # This script helps set up the environment for the YouTube live stream
 
-echo "🎬 Open Dora Live Stream Setup"
+echo "🎬 Projectflows Live Stream Setup"
 echo "=============================="
 echo ""
 
@@ -14,14 +14,14 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Check if we're in the opendora directory
+# Check if we're in the projectflows directory
 if [[ ! -f "package.json" ]]; then
-    echo "❌ Error: Must run from opendora root directory"
+    echo "❌ Error: Must run from projectflows root directory"
     exit 1
 fi
 
 # Create demo directory
-DEMO_DIR="$HOME/opendora-demo"
+DEMO_DIR="$HOME/projectflows-demo"
 TASKFLOW_DIR="$DEMO_DIR/taskflow-landing"
 
 echo -e "${GREEN}Creating demo directory structure...${NC}"
@@ -157,7 +157,7 @@ echo "✓ Backup HTML file created: $BACKUP_HTML"
 # Create sample prompts file
 PROMPTS_FILE="$TASKFLOW_DIR/prompts.txt"
 cat > "$PROMPTS_FILE" << 'EOF'
-# Open Dora Live Stream Prompts
+# Projectflows Live Stream Prompts
 
 ## Prompt 1: Initial Build
 Create a modern landing page for TaskFlow, a project management tool. Include:
@@ -197,9 +197,9 @@ echo "✓ Sample prompts file created: $PROMPTS_FILE"
 # Create comparison notes file
 COMPARISON_FILE="$TASKFLOW_DIR/comparison-notes.md"
 cat > "$COMPARISON_FILE" << 'EOF'
-# Open Dora vs Competitors - Live Stream Notes
+# Projectflows vs Competitors - Live Stream Notes
 
-## Open Dora
+## Projectflows
 **Pros:**
 - Full code control and ownership
 - No vendor lock-in
@@ -343,7 +343,7 @@ echo ""
 echo "Next steps:"
 echo "1. cd $TASKFLOW_DIR"
 echo "2. Review the files created"
-echo "3. Start Open Dora: cd /home/mariu/projects/opendora && bun run dev"
+echo "3. Start Projectflows: cd /home/mariu/projects/opendora && bun run dev"
 echo "4. Open backup.html in browser as fallback"
 echo "5. Use prompts.txt for live stream prompts"
 echo ""

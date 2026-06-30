@@ -74,7 +74,7 @@ export async function migrateSession(sessionId: string): Promise<number> {
     .where(eq(EntryEdgeTable.session_id, sessionId))
     .all()
 
-  return db.transaction((tx) => {
+  return db.transaction((tx: any) => {
     let created = 0
 
     for (let i = 0; i < msgRows.length; i++) {

@@ -1,9 +1,9 @@
 // All API traffic goes through the Next.js dev proxy at /api so the browser
 // only ever contacts one port. This fixes WSL2 port-forwarding issues where
 // the Windows browser can reach port 3000 (Next.js) but not port 4097 directly.
-// Set NEXT_PUBLIC_OPENDORA_URL to override (e.g. a remote backend URL).
-const OPENDORA_URL = process.env.NEXT_PUBLIC_OPENDORA_URL
-  ? `${process.env.NEXT_PUBLIC_OPENDORA_URL}`
+// Set NEXT_PUBLIC_PROJECTFLOWS_URL to override (e.g. a remote backend URL).
+const PROJECTFLOWS_URL = process.env.NEXT_PUBLIC_PROJECTFLOWS_URL
+  ? `${process.env.NEXT_PUBLIC_PROJECTFLOWS_URL}`
   : "/api"
 
 export type SessionType = "role" | "scope" | "worker" | "scratchpad"
@@ -735,13 +735,13 @@ export const opendora = {
       const formData = new FormData()
       formData.append("audio", audioBlob)
       if (options?.provider) formData.append("provider", options.provider)
-      const res = await fetch(`${OPENDORA_URL}/voice/stt`, {
+      const res = await fetch(`${PROJECTFLOWS_URL}/voice/stt`, {
         method: "POST",
         body: formData,
       })
       if (!res.ok) {
         const text = await res.text().catch(() => res.statusText)
-        throw new Error(`opendora /voice/stt ${res.status}: ${text}`)
+        throw new Error(`projectflows /voice/stt ${res.status}: ${text}`)
       }
       return res.json()
     },
@@ -754,7 +754,7 @@ export const opendora = {
       geminiVoice?: string
       geminiModel?: string
     }): Promise<Blob> => {
-      const res = await fetch(`${OPENDORA_URL}/voice/tts`, {
+      const res = await fetch(`${PROJECTFLOWS_URL}/voice/tts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -763,7 +763,7 @@ export const opendora = {
       })
       if (!res.ok) {
         const text = await res.text().catch(() => res.statusText)
-        throw new Error(`opendora /voice/tts ${res.status}: ${text}`)
+        throw new Error(`projectflows /voice/tts ${res.status}: ${text}`)
       }
       return res.blob()
     },
@@ -870,7 +870,7 @@ export const opendora = {
   },
   events: {
     subscribe: (onEvent: (event: Event) => void, onReconnect?: () => void): () => void => {
-      const es = new EventSource(`${OPENDORA_URL}/event`)
+      const es = new EventSource(`${PROJECTFLOWS_URL}/event`)
       let connected = false
       es.onopen = () => {
         if (connected && onReconnect) {

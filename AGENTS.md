@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Repository-wide instructions for agents working in `opendora`.
+Repository-wide instructions for agents working in `projectflows`.
 
 ## Read order
 

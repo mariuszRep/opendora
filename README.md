@@ -1,9 +1,5 @@
-# Projectflows (OpenDora)
+# Projectflows
 
-> **Naming note:** Projectflows is the canonical product direction. OpenDora/opendora remains
-> the current repo, binary, and package naming during the transition. Both names appear in
-> documentation and code — see [delivery plan](/.projectflows/goals/cross-platform-delivery/GOAL.md) for the
-> standardization roadmap.
 
 Local-first agentic application platform. Run and extend agents, skills, tools, workflows,
 and schedules through consistent application surfaces.
@@ -22,8 +18,8 @@ curl -fsSL https://projectflows.dev/install.sh | bash
 powershell -c "irm https://projectflows.dev/install.ps1 | iex"
 ```
 
-These one-liners download the latest single-binary release, install it to `~/.opendora/bin`
-(legacy) or `%LOCALAPPDATA%\opendora\bin` (Windows), add the binary to your PATH, and start
+These one-liners download the latest single-binary release, install it to `~/.projectflows/bin`
+or `%LOCALAPPDATA%\projectflows\bin` (Windows), add the binary to your PATH, and start
 the background service.
 
 > **Status:** Install scripts are under development. See [INSTALL.md](/INSTALL.md) for
@@ -35,13 +31,9 @@ the background service.
 ```bash
 # Start the background service (daemon)
 projectflows start
-# or during transition:
-opendora start
 
 # Open the web UI in your default browser
 projectflows web
-# or:
-opendora web
 
 # Run CLI commands
 projectflows --help

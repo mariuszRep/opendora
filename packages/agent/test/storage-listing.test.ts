@@ -21,7 +21,7 @@ let tmpBase: string
 
 beforeAll(async () => {
   tmpBase = await fs.mkdtemp(path.join(os.tmpdir(), "agent-listing-test-"))
-  const agentsRoot = path.join(tmpBase, AgentStorage.OPENDORA_DIR, AgentStorage.AGENTS_SUBDIR)
+  const agentsRoot = path.join(tmpBase, AgentStorage.PROJECTFLOWS_DIR, AgentStorage.AGENTS_SUBDIR)
   await fs.mkdir(agentsRoot, { recursive: true })
 
   // 1. A valid agent — has agent.json

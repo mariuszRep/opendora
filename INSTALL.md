@@ -1,8 +1,5 @@
-# Install — Projectflows (OpenDora)
+# Install — Projectflows
 
-> **Naming note:** During the transition from OpenDora → Projectflows, the binary may be
-> distributed as `opendora` (current) or `projectflows` (canonical). Install paths, package
-> names, and documentation use `opendora` for backward compatibility during this period.
 
 ## Supported platforms
 
@@ -23,8 +20,8 @@ curl -fsSL https://projectflows.dev/install.sh | bash
 The script:
 1. Detects OS and architecture.
 2. Downloads the latest release tarball from the projectflows.dev release endpoint.
-3. Extracts the binary to `~/.opendora/bin/` (legacy path).
-4. Adds `~/.opendora/bin` to your `$PATH` via shell config marker (`.bashrc`, `.zshrc`, or
+3. Extracts the binary to `~/.projectflows/bin/`.
+4. Adds `~/.projectflows/bin` to your `$PATH` via shell config marker (`.bashrc`, `.zshrc`, or
    `.profile`).
 5. Optionally starts the background service.
 
@@ -37,7 +34,7 @@ powershell -c "irm https://projectflows.dev/install.ps1 | iex"
 The script:
 1. Detects architecture (x86_64).
 2. Downloads the latest release ZIP from the projectflows.dev release endpoint.
-3. Extracts the binary to `%LOCALAPPDATA%\opendora\bin\`.
+3. Extracts the binary to `%LOCALAPPDATA%\projectflows\bin\`.
 4. Adds that directory to the user `PATH` via environment variable registry.
 5. Optionally starts the background service.
 
@@ -48,9 +45,9 @@ The script:
 
 | Platform | Binary location | Data root |
 |---|---|---|
-| Linux | `~/.opendora/bin/` | `~/.projectflows/` |
-| macOS | `~/.opendora/bin/` | `~/.projectflows/` |
-| Windows | `%LOCALAPPDATA%\opendora\bin\` | `~/.projectflows/` |
+| Linux | `~/.projectflows/bin/` | `~/.projectflows/` |
+| macOS | `~/.projectflows/bin/` | `~/.projectflows/` |
+| Windows | `%LOCALAPPDATA%\projectflows\bin\` | `~/.projectflows/` |
 
 The data root (`~/.projectflows/`) is determined by `findRoot()` and is shared across all
 platforms. It contains configuration, session state, logs, and plugin data.
@@ -60,9 +57,9 @@ platforms. It contains configuration, session state, logs, and plugin data.
 - **Linux/macOS:** The install script appends a PATH marker to `~/.bashrc`, `~/.zshrc`, or
   `~/.profile`:
   ```bash
-  export PATH="$HOME/.opendora/bin:$PATH"
+  export PATH="$HOME/.projectflows/bin:$PATH"
   ```
-- **Windows:** The PowerShell script adds `%LOCALAPPDATA%\opendora\bin` to the user PATH via
+- **Windows:** The PowerShell script adds `%LOCALAPPDATA%\projectflows\bin` to the user PATH via
   `[Environment]::SetEnvironmentVariable`.
 
 ## Manual install
@@ -70,8 +67,7 @@ platforms. It contains configuration, session state, logs, and plugin data.
 1. Go to the [releases page](https://github.com/mariusz/projectflows/releases) (TBD).
 2. Download the archive for your platform.
 3. Extract the binary to a directory on your PATH.
-4. Run `projectflows start` or `opendora start` to initialize the data root and start the
-   service.
+4. Run `projectflows start` to initialize the data root and start the service.
 
 ## Upgrade
 
@@ -83,7 +79,7 @@ detects an existing install and replaces the binary in place.
 ### Manual
 
 1. Download the new release archive.
-2. Replace the existing binary at `~/.opendora/bin/opendora` (or `projectflows`).
+2. Replace the existing binary at `~/.projectflows/bin/projectflows`.
 3. Restart the service:
    ```bash
    projectflows restart
@@ -98,10 +94,10 @@ detects an existing install and replaces the binary in place.
 projectflows stop
 
 # Remove the binary
-rm -f ~/.opendora/bin/opendora ~/.opendora/bin/projectflows
+rm -f ~/.projectflows/bin/projectflows
 
 # Optionally remove the install directory (only if no other files remain)
-rmdir ~/.opendora/bin 2>/dev/null; rmdir ~/.opendora 2>/dev/null; true
+rmdir ~/.projectflows/bin 2>/dev/null; rmdir ~/.projectflows 2>/dev/null; true
 
 # Remove the shell PATH marker from ~/.bashrc, ~/.zshrc, or ~/.profile
 ```
@@ -113,8 +109,7 @@ rmdir ~/.opendora/bin 2>/dev/null; rmdir ~/.opendora 2>/dev/null; true
 projectflows stop
 
 # Remove the binary
-Remove-Item "$env:LOCALAPPDATA\opendora\bin\opendora.exe" -Force
-Remove-Item "$env:LOCALAPPDATA\opendora\bin\projectflows.exe" -Force
+Remove-Item "$env:LOCALAPPDATA\projectflows\bin\projectflows.exe" -Force
 
 # Remove the PATH entry (manual via System Properties > Environment Variables)
 ```
@@ -166,7 +161,7 @@ The install script registers a user-level launchd plist when available:
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| `command not found: projectflows` | Binary not on PATH | Re-run install script or manually add `~/.opendora/bin` to PATH |
+| `command not found: projectflows` | Binary not on PATH | Re-run install script or manually add `~/.projectflows/bin` to PATH |
 | `Connection refused` on :4096 | Service not running | Run `projectflows start` |
 | Port 4096/4097 in use | Another instance or service | Stop the other process or change ports via config |
 | `~/.projectflows` not created | First-run initialization failed | Run `projectflows start` or `projectflows web` to trigger init |

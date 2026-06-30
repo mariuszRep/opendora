@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_OPENDORA_URL ?? "http://localhost:4097"
+const BACKEND_URL = process.env.NEXT_PUBLIC_PROJECTFLOWS_URL ?? "http://localhost:4097"
 
 const nextConfig: NextConfig = {
 transpilePackages: ["@projectflows/workflow"],

@@ -4,12 +4,13 @@
  */
 import z from "zod"
 import fs from "fs/promises"
+import * as fsSync from "fs"
 import path from "path"
 import { AgentConfig } from "./templates/types"
 
 export namespace AgentStorage {
   // ── Constants ─────────────────────────────────────────────────────────────
-  export const OPENDORA_DIR = ".projectflows"
+  export const PROJECTFLOWS_DIR = ".projectflows"
   export const AGENTS_SUBDIR = "agents"
   export const INDEX_FILE = "index.json"
   const ALLOWED_FILES = new Set(["agent.json", "PERSONA.md", "INJECTION.md"])
@@ -41,7 +42,7 @@ export namespace AgentStorage {
   // ── Path Helpers ──────────────────────────────────────────────────────────
 
   function agentsRoot(baseDir: string): string {
-    return path.join(baseDir, OPENDORA_DIR, AGENTS_SUBDIR)
+    return path.join(baseDir, PROJECTFLOWS_DIR, AGENTS_SUBDIR)
   }
 
   function agentDir(baseDir: string, id: string): string {
@@ -141,7 +142,7 @@ export namespace AgentStorage {
     // Scan subdirectories — only entries backed by a valid agent.json are returned.
     // Files (LOG.md, INJECTION.md, PERSONA.md, …) and dirs without agent.json are
     // silently skipped, so they can never bleed into the agent panel.
-    const entries = await fs.readdir(root, { withFileTypes: true }).catch(() => [] as fs.Dirent[])
+    const entries = await fs.readdir(root, { withFileTypes: true }).catch(() => [] as fsSync.Dirent[])
     const results: Entry[] = []
     for (const entry of entries) {
       if (!entry.isDirectory()) continue

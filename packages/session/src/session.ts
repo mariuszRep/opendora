@@ -431,8 +431,8 @@ export namespace Session {
       share(id).catch(() => {})
 
     // Publish so ACP can register the session and not drop subsequent message events.
-    cfg.bus?.publish(Event.Created, { info: result })?.catch(() => {})
-    cfg.bus?.publish(Event.Updated, { info: result })?.catch(() => {})
+    void cfg.bus?.publish(Event.Created, { info: result })
+    void cfg.bus?.publish(Event.Updated, { info: result })
 
     return result
   }

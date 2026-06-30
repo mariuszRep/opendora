@@ -28,8 +28,8 @@ logs/
 *.bun-build
 tsconfig.tsbuildinfo
 
-# .opendora — all data migrated to ~/.projectflows, never commit this folder
-.opendora/
+# .projectflows — never commit this folder
+.projectflows/
 
 # ProjectFlows runtime data — never commit these
 .projectflows/providers/auth.json
@@ -52,18 +52,5 @@ tsconfig.tsbuildinfo
 *.db-shm
 *.db-wal
 
-# Legacy .opendora paths (kept for safety during migration)
-.opendora/providers/auth.json
-.opendora/providers/mcp-auth.json
-.opendora/providers/fallback-state.json
-.opendora/providers/usage/
-.opendora/log/
-.opendora/state/
-.opendora/storage/
-.opendora/cache/models.json
-.opendora/cache/bun.lock
-.opendora/bin/
-.opendora/bun.lock
-.opendora/package.json
 
 .playwright-mcp/

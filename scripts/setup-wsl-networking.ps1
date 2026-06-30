@@ -1,8 +1,8 @@
-# Setup WSL2 Port Forwarding for OpenDora
+# Setup WSL2 Port Forwarding for Projectflows
 # Run this script in PowerShell as Administrator on Windows
 
 # Configuration
-$Port = 3000  # OpenDora Web UI port
+$Port = 3000  # Projectflows Web UI port
 $WSLDistro = "Ubuntu"  # Change if using a different distro name
 
 # Check if running as Administrator
@@ -11,7 +11,7 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     exit 1
 }
 
-Write-Host "Setting up WSL2 port forwarding for OpenDora..." -ForegroundColor Green
+Write-Host "Setting up WSL2 port forwarding for Projectflows..." -ForegroundColor Green
 
 # Get WSL2 IP
 Write-Host "Getting WSL2 IP address..." -ForegroundColor Yellow
@@ -41,7 +41,7 @@ if ($LASTEXITCODE -eq 0) {
 
 # Add Windows Firewall rule
 Write-Host "Configuring Windows Firewall..." -ForegroundColor Yellow
-$FirewallRuleName = "OpenDora WSL"
+$FirewallRuleName = "Projectflows WSL"
 $ExistingRule = Get-NetFirewallRule -DisplayName $FirewallRuleName -ErrorAction SilentlyContinue
 
 if ($ExistingRule) {
@@ -55,7 +55,7 @@ New-NetFirewallRule -DisplayName $FirewallRuleName `
     -Protocol TCP `
     -Action Allow `
     -Profile Any `
-    -Description "Allow OpenDora from WSL2"
+    -Description "Allow Projectflows from WSL2"
 
 Write-Host "Firewall rule added successfully!" -ForegroundColor Green
 
@@ -66,5 +66,5 @@ netsh interface portproxy show v4tov4
 # Get Windows LAN IP
 $WindowsIP = Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike "*Loopback*" -and $_.InterfaceAlias -notlike "*vEthernet*" } | Select-Object -First 1 -ExpandProperty IPAddress
 Write-Host "`nSetup complete!" -ForegroundColor Green
-Write-Host "Access OpenDora from other devices on your network at:" -ForegroundColor Cyan
+Write-Host "Access Projectflows from other devices on your network at:" -ForegroundColor Cyan
 Write-Host "http://${WindowsIP}:${Port}" -ForegroundColor White

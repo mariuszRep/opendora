@@ -1,9 +1,9 @@
-# Update WSL2 Port Forwarding for OpenDora
+# Update WSL2 Port Forwarding for Projectflows
 # This script updates the port forwarding rule whenever WSL IP changes
 # Run this manually or set up as a scheduled task
 
-$Port = 3000  # OpenDora Web UI port
-$FirewallRuleName = "OpenDora WSL"
+$Port = 3000  # Projectflows Web UI port
+$FirewallRuleName = "Projectflows WSL"
 
 # Check if running as Administrator
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {

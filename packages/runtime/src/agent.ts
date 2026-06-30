@@ -312,7 +312,6 @@ export namespace Agent {
       workflows: entry.config.workflows,
       prompt: agentCfg?.prompt ?? (entry.persona || undefined),
       model: modelOverride ?? entry.config.model,
-      variant: agentCfg?.variant ?? entry.config.variant,
       permission,
       options: (agentCfg?.options ?? {}) as Record<string, any>,
       enableInjection: entry.config.enableInjection,
@@ -541,7 +540,7 @@ export namespace Agent {
           content: `Create an agent configuration based on this request: \"${input.description}\".\n\nIMPORTANT: The following identifiers already exist and must NOT be used: ${existing.map((i) => i.name).join(", ")}\n  Return ONLY the JSON object, no other text, do not wrap in backticks`,
         },
       ],
-      model: language,
+      model: language as any,
       schema: z.object({
         identifier: z.string(),
         whenToUse: z.string(),
