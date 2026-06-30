@@ -2,11 +2,9 @@
 
 import type { PromptInputMessage } from "@/components/ai-elements/prompt-input"
 
-import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from "@/components/ai-elements/conversation"
+import { ConversationCanvas } from "@/components/execution-graph/conversation-canvas"
+import { messagesToExecutionState } from "@/lib/execution-graph/messages-to-state"
+import { createInitialState } from "@/lib/execution-graph/engine"
 import {
   ModelSelector,
   ModelSelectorContent,
@@ -814,6 +812,23 @@ export const Chatbot = () => {
   const schedulesById = useMemo(() => new Map(schedules.map((s) => [s.id, s])), [schedules])
   const schedulesBySessionId = useMemo(() => new Map(schedules.filter((s) => s.session_id).map((s) => [s.session_id as string, s])), [schedules])
 
+  const executionState = useMemo(() => {
+    if (!selectedSession) return createInitialState()
+    return messagesToExecutionState(
+      messages,
+      selectedSession.id,
+      sessionsById,
+      agentsById,
+      userColor,
+    )
+  }, [messages, selectedSession, sessionsById, agentsById, userColor])
+
+  // Visible messages (same filter as messages-to-state) — children for ConversationCanvas
+  const visibleMessages = useMemo(
+    () => messages.filter((m) => !(m.info as { hidden?: boolean }).hidden),
+    [messages]
+  )
+
   return (
     <div className="relative flex size-full flex-col divide-y overflow-hidden">
       {error && (
@@ -846,110 +861,104 @@ export const Chatbot = () => {
             />
           ) : null
         })()}
-        <Conversation key={selectedSession.id}>
-          <ConversationContent className={cn(isChatCentered && "max-w-3xl mx-auto w-full")}>
-            {messages.map(({ info, parts }, msgIndex) => {
-              if ((info as UserMessage | AssistantMessage).hidden) return null
-              // Skip rendering an in-flight assistant row that has no visible content yet —
-              // the Thinking indicator below covers that waiting state and must hide only
-              // when the same condition becomes false (they share getTimelineSteps as the
-              // source of truth so the transition is atomic: Thinking gone ↔ row appears).
-              if (info.role === "assistant" && (status === "streaming" || status === "submitted")) {
-                const msgError = (info as AssistantMessage).error
-                if (getTimelineSteps(parts, msgError).length === 0) return null
+        <ConversationCanvas
+          state={executionState}
+          sessionKey={selectedSession.id}
+          footer={
+            (status === "submitted" || (status === "streaming" && (() => {
+              let lastAssistant: typeof messages[0] | undefined
+              for (let i = messages.length - 1; i >= 0; i--) {
+                if (messages[i].info.role === "assistant") { lastAssistant = messages[i]; break }
               }
-              const incomingEdge = sessionEdges.find(e => e.to_type === "entry" && e.to_id === info.id)
-              const outgoingEdge = sessionEdges.find(e => e.from_type === "entry" && e.from_id === info.id)
-              return (
-                <MessageRow
-                  key={info.id}
-                  info={info}
-                  parts={parts}
-                  msgIndex={msgIndex}
-                  messagesLength={messages.length}
-                  incomingEdge={incomingEdge}
-                  outgoingEdge={outgoingEdge}
-                  status={status}
-                  sessions={sessions}
-                  sessionsById={sessionsById}
-                  agentsById={agentsById}
-                  agentsByName={agentsByName}
-                  schedulesById={schedulesById}
-                  schedulesBySessionId={schedulesBySessionId}
-                  selectedSession={selectedSession}
-                  userDotColor={userDotColor}
-                  agentDotColor={agentDotColor}
-                  playingId={playingId}
-                  isTtsLoading={isTtsLoading}
-                  isTtsEnabled={isTtsEnabled}
-                  handleCopy={handleCopy}
-                  handleSpeak={handleSpeak}
-                  setOpenScheduleId={setOpenScheduleId}
-                  handleGoToMessage={handleGoToMessage}
-                  userName={userName}
-                  expandedContractParts={expandedContractParts}
-                  setExpandedContractParts={setExpandedContractParts}
-                  questionViewModes={questionViewModes}
-                  setQuestionViewModes={setQuestionViewModes}
-                  delegateViewModes={delegateViewModes}
-                  setDelegateViewModes={setDelegateViewModes}
-                  todoViewModes={todoViewModes}
-                  setTodoViewModes={setTodoViewModes}
-                  sessionTreeViewModes={sessionTreeViewModes}
-                  setSessionTreeViewModes={setSessionTreeViewModes}
-                  webfetchViewModes={webfetchViewModes}
-                  setWebfetchViewModes={setWebfetchViewModes}
-                  questionRequests={questionRequests}
-                  replyQuestion={replyQuestion}
-                  rejectQuestion={rejectQuestion}
-                  permissionRequests={permissionRequests}
-                  replyPermission={replyPermission}
-                  selectedAgent={selectedAgent}
-                  selectedModel={selectedModel}
-                  selectedGroupId={selectedGroupId}
-                  modelGroups={modelGroups}
-                  modelList={modelList}
-                  sessionRetryStatus={sessionRetryStatus}
-                  webPreviewOpen={webPreviewOpen}
-                  toggleWebPreview={toggleWebPreview}
-                  setWebPreviewUrl={setWebPreviewUrl}
-                  openFilePreview={openFilePreview}
-                  selectSession={selectSession}
-                />
-              )
-          })}
-          {(status === "submitted" || (status === "streaming" && (() => {
-            // Mirror the MessageRow skip condition exactly: Thinking hides the instant the
-            // row would show, and shows whenever the row is suppressed. Using getTimelineSteps
-            // as the shared gate means no gap/flicker between the indicator and the content.
-            let lastAssistant: typeof messages[0] | undefined
-            for (let i = messages.length - 1; i >= 0; i--) {
-              if (messages[i].info.role === "assistant") { lastAssistant = messages[i]; break }
+              if (!lastAssistant) return true
+              const msgError = (lastAssistant.info as AssistantMessage).error
+              return getTimelineSteps(lastAssistant.parts, msgError).length === 0
+            })())) ? (
+              <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3 w-full px-4 py-2">
+                <div className="relative size-4 mt-[3px]">
+                  <div
+                    className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
+                    style={{ borderTopColor: agentDotColor }}
+                    aria-hidden="true"
+                  />
+                  <div
+                    className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    style={{ backgroundColor: agentDotColor }}
+                  />
+                </div>
+                <div className="flex items-center h-5">
+                  <span className="text-xs text-muted-foreground">Thinking…</span>
+                </div>
+              </div>
+            ) : null
+          }
+        >
+          {visibleMessages.map(({ info, parts }, msgIndex) => {
+            if (info.role === "assistant" && (status === "streaming" || status === "submitted")) {
+              const msgError = (info as AssistantMessage).error
+              if (getTimelineSteps(parts, msgError).length === 0) return null
             }
-            if (!lastAssistant) return true
-            const msgError = (lastAssistant.info as AssistantMessage).error
-            return getTimelineSteps(lastAssistant.parts, msgError).length === 0
-          })())) && (
-            <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3 w-full">
-              <div className="relative size-4 mt-[3px]">
-                <div
-                  className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
-                  style={{ borderTopColor: agentDotColor }}
-                  aria-hidden="true"
-                />
-                <div
-                  className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                  style={{ backgroundColor: agentDotColor }}
-                />
-              </div>
-              <div className="flex items-center h-5">
-                <span className="text-xs text-muted-foreground">Thinking…</span>
-              </div>
-            </div>
-          )}
-          </ConversationContent>
-          <ConversationScrollButton />
-        </Conversation>
+            const incomingEdge = sessionEdges.find(e => e.to_type === "entry" && e.to_id === info.id)
+            const outgoingEdge = sessionEdges.find(e => e.from_type === "entry" && e.from_id === info.id)
+            return (
+              <MessageRow
+                key={info.id}
+                info={info}
+                parts={parts}
+                msgIndex={msgIndex}
+                messagesLength={visibleMessages.length}
+                incomingEdge={incomingEdge}
+                outgoingEdge={outgoingEdge}
+                status={status}
+                sessions={sessions}
+                sessionsById={sessionsById}
+                agentsById={agentsById}
+                agentsByName={agentsByName}
+                schedulesById={schedulesById}
+                schedulesBySessionId={schedulesBySessionId}
+                selectedSession={selectedSession}
+                userDotColor={userDotColor}
+                agentDotColor={agentDotColor}
+                playingId={playingId}
+                isTtsLoading={isTtsLoading}
+                isTtsEnabled={isTtsEnabled}
+                handleCopy={handleCopy}
+                handleSpeak={handleSpeak}
+                setOpenScheduleId={setOpenScheduleId}
+                handleGoToMessage={handleGoToMessage}
+                userName={userName}
+                expandedContractParts={expandedContractParts}
+                setExpandedContractParts={setExpandedContractParts}
+                questionViewModes={questionViewModes}
+                setQuestionViewModes={setQuestionViewModes}
+                delegateViewModes={delegateViewModes}
+                setDelegateViewModes={setDelegateViewModes}
+                todoViewModes={todoViewModes}
+                setTodoViewModes={setTodoViewModes}
+                sessionTreeViewModes={sessionTreeViewModes}
+                setSessionTreeViewModes={setSessionTreeViewModes}
+                webfetchViewModes={webfetchViewModes}
+                setWebfetchViewModes={setWebfetchViewModes}
+                questionRequests={questionRequests}
+                replyQuestion={replyQuestion}
+                rejectQuestion={rejectQuestion}
+                permissionRequests={permissionRequests}
+                replyPermission={replyPermission}
+                selectedAgent={selectedAgent}
+                selectedModel={selectedModel}
+                selectedGroupId={selectedGroupId}
+                modelGroups={modelGroups}
+                modelList={modelList}
+                sessionRetryStatus={sessionRetryStatus}
+                webPreviewOpen={webPreviewOpen}
+                toggleWebPreview={toggleWebPreview}
+                setWebPreviewUrl={setWebPreviewUrl}
+                openFilePreview={openFilePreview}
+                selectSession={selectSession}
+              />
+            )
+          })}
+        </ConversationCanvas>
         </>
       )}
 

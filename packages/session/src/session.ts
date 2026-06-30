@@ -1221,6 +1221,80 @@ export namespace Session {
       })
       .onConflictDoUpdate({ target: MessageTable.id, set: { data } })
       .run()
+
+    // Phase 1: contains edge — canonical timeline order via seq_in_parent.
+    // Only on first write; updates to message data don't change position.
+    const existingContains = db
+      .select({ id: EdgesTable.id })
+      .from(EdgesTable)
+      .where(
+        and(
+          eq(EdgesTable.from_type, "session"),
+          eq(EdgesTable.from_id, sessionID),
+          eq(EdgesTable.to_id, id),
+          eq(EdgesTable.type, "contains"),
+        ),
+      )
+      .limit(1)
+      .get()
+    if (!existingContains) {
+      const seqResult = db
+        .select({ n: sql<number>`count(*)` })
+        .from(EdgesTable)
+        .where(
+          and(
+            eq(EdgesTable.from_type, "session"),
+            eq(EdgesTable.from_id, sessionID),
+            eq(EdgesTable.type, "contains"),
+          ),
+        )
+        .get()
+      db.insert(EdgesTable)
+        .values({
+          id: Identifier.ascending("edge"),
+          from_type: "session",
+          from_id: sessionID,
+          to_type: "entry",
+          to_id: id,
+          type: "contains",
+          seq_in_parent: seqResult?.n ?? 0,
+          label: null,
+          metadata: null,
+          created_at: new Date().toISOString(),
+        })
+        .onConflictDoNothing()
+        .run()
+    }
+
+    // Phase 2: EntriesTable dual-write — keep entries in sync with MessageTable.
+    const actorKind = (msg as any).from?.kind as string | undefined
+    let entryActor: string
+    if (actorKind === "agent" || actorKind === "assistant" || (msg as any).role === "assistant") {
+      entryActor = "assistant"
+    } else if (actorKind === "workflow") {
+      entryActor = "workflow"
+    } else if (actorKind === "system" || actorKind === "scheduler") {
+      entryActor = "system"
+    } else {
+      entryActor = "user"
+    }
+    db.insert(EntriesTable)
+      .values({
+        id,
+        type: "message",
+        actor: entryActor,
+        runner_type: entryActor,
+        content_text: null,
+        payload_json: data as Record<string, unknown>,
+        status: "in_progress",
+        created_at: new Date(time_created).toISOString(),
+      })
+      .onConflictDoUpdate({
+        target: EntriesTable.id,
+        set: { payload_json: data as Record<string, unknown> },
+      })
+      .run()
+
     // Re-attach parentMessageID and parentSessionID for SSE consumers so the UI can show
     // delegation attribution and the "Back to source" link without a round-trip.
     let infoForBus: MessageV2.Info = msg
@@ -1332,6 +1406,20 @@ export namespace Session {
       })
       .onConflictDoUpdate({ target: PartTable.id, set: { data } })
       .run()
+
+    // Phase 2b: sync EntriesTable status and content_text from part events.
+    if (part.type === "step-finish") {
+      db.update(EntriesTable)
+        .set({ status: "complete" })
+        .where(eq(EntriesTable.id, messageID))
+        .run()
+    } else if (part.type === "text" && typeof (part as any).text === "string") {
+      db.update(EntriesTable)
+        .set({ content_text: sql`coalesce(${EntriesTable.content_text}, ${(part as any).text.slice(0, 1000)})` })
+        .where(eq(EntriesTable.id, messageID))
+        .run()
+    }
+
     cfg.bus?.publish(MessageV2.Event.PartUpdated, { part })
     return part
   })
