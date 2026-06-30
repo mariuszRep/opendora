@@ -1,6 +1,6 @@
-# AGENTS.md — @opendora/skills
+# AGENTS.md — @projectflows/skills
 
-Multi-hub skill management for OpenDora.
+Multi-hub skill management for Projectflows.
 
 ## Package location
 
@@ -94,7 +94,7 @@ type SkillFrontmatter = {
       "registry": "clawhub",
       "installedAt": 1744617600000,
       "computedHash": "abc123...",
-      "location": ".opendora/skill/filesystem"
+      "location": ".projectflows/skill/filesystem"
     }
   }
 }
@@ -149,7 +149,7 @@ interface SkillRegistry {
 ```ts
 const manager = new SkillManager({
   lockFilePath: "/path/to/skills-lock.json",
-  skillsDir: "/path/to/.opendora/skill"
+  skillsDir: "/path/to/.projectflows/skill"
 })
 
 // Search across registries
@@ -179,8 +179,8 @@ const meta = await manager.metadata("filesystem")
 ```ts
 const loader = new SkillLoader({
   skillDirs: [
-    "/workspace/.opendora/skill",      // highest priority
-    "/home/user/.opendora/skills",     // user-level
+    "/workspace/.projectflows/skill",      // highest priority
+    "/home/user/.projectflows/skills",     // user-level
     "/app/bundled/skills"              // bundled (lowest)
   ],
   lockFilePath: "/path/to/skills-lock.json"
@@ -200,9 +200,9 @@ await loader.reload()
 
 When same skill name exists in multiple locations:
 
-1. **Workspace** (`.opendora/skill/<name>`) — highest priority
-2. **User** (`~/.opendora/skills/<name>`)
-3. **Bundled** (shipped with OpenDora) — lowest priority
+1. **Workspace** (`.projectflows/skill/<name>`) — highest priority
+2. **User** (`~/.projectflows/skills/<name>`)
+3. **Bundled** (shipped with Projectflows) — lowest priority
 
 **First match wins.** Loader stops at first `SKILL.md` found.
 

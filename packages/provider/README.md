@@ -1,12 +1,12 @@
-# @opendora/provider
+# @projectflows/provider
 
-AI provider and model access for OpenDora runtime execution.
+AI provider and model access for Projectflows runtime execution.
 
 ## Provider Authentication
 
 ### Adding Provider Credentials
 
-From the OpenDora repository root:
+From the Projectflows repository root:
 
 ```bash
 bun run dev auth login
@@ -16,7 +16,7 @@ This will:
 1. Show a list of available providers
 2. Prompt you to select a provider
 3. Ask for your API key
-4. Store it securely in `.opendora/auth.json`
+4. Store it securely in `.projectflows/auth.json`
 
 ### Alternative Methods
 
@@ -28,7 +28,7 @@ export PROVIDER_API_KEY="your-api-key-here"
 
 #### Configuration File
 
-Add to `.opendora/opendora.json`:
+Add to `.projectflows/projectflows.json`:
 
 ```json
 {

@@ -1,6 +1,6 @@
-# @opendora/skills
+# @projectflows/skills
 
-Multi-hub skill management system for OpenDora. Install and manage agent skills from ClawHub, GitHub, Vercel, and Anthropic.
+Multi-hub skill management system for Projectflows. Install and manage agent skills from ClawHub, GitHub, Vercel, and Anthropic.
 
 ## Features
 
@@ -14,19 +14,19 @@ Multi-hub skill management system for OpenDora. Install and manage agent skills 
 ## Installation
 
 ```bash
-bun add @opendora/skills
+bun add @projectflows/skills
 ```
 
 ## Quick Start
 
 ```typescript
-import { SkillManager } from "@opendora/skills/manager"
-import { SkillLoader } from "@opendora/skills/loader"
+import { SkillManager } from "@projectflows/skills/manager"
+import { SkillLoader } from "@projectflows/skills/loader"
 
 // Initialize manager
 const manager = new SkillManager({
-  lockFilePath: ".opendora/skills-lock.json",
-  skillsDir: ".opendora/skill"
+  lockFilePath: ".projectflows/skills-lock.json",
+  skillsDir: ".projectflows/skill"
 })
 
 // Search for skills
@@ -41,10 +41,10 @@ await manager.install("openclaw/filesystem", {
 // Initialize loader
 const loader = new SkillLoader({
   skillDirs: [
-    ".opendora/skill",           // workspace
-    "~/.opendora/skills",        // user
+    ".projectflows/skill",           // workspace
+    "~/.projectflows/skills",        // user
   ],
-  lockFilePath: ".opendora/skills-lock.json"
+  lockFilePath: ".projectflows/skills-lock.json"
 })
 
 // Load all skills
@@ -162,7 +162,7 @@ The `skills-lock.json` file tracks installed skills:
       "registry": "clawhub",
       "installedAt": 1744617600000,
       "computedHash": "abc123...",
-      "location": ".opendora/skill/filesystem"
+      "location": ".projectflows/skill/filesystem"
     }
   }
 }
@@ -172,9 +172,9 @@ The `skills-lock.json` file tracks installed skills:
 
 When multiple skills with the same name exist:
 
-1. **Workspace** (`.opendora/skill/<name>`) - Highest priority
-2. **User** (`~/.opendora/skills/<name>`)
-3. **Bundled** (shipped with OpenDora) - Lowest priority
+1. **Workspace** (`.projectflows/skill/<name>`) - Highest priority
+2. **User** (`~/.projectflows/skills/<name>`)
+3. **Bundled** (shipped with Projectflows) - Lowest priority
 
 The first match wins.
 
@@ -230,7 +230,7 @@ const skill = await loader.get("filesystem")
 console.log(skill.content)
 ```
 
-## Integration with OpenDora
+## Integration with Projectflows
 
 Skills are automatically available through the tool system:
 

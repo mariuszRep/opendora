@@ -1,6 +1,6 @@
-# @opendora/agent
+# @projectflows/agent
 
-Template-based agent management system for OpenDora.
+Template-based agent management system for Projectflows.
 
 ## Overview
 
@@ -11,7 +11,7 @@ All agents are now **file-based** with no distinction between "native" and "cust
 ✅ **All agents are editable** - Including build, plan, explore, etc.
 ✅ **Tool restrictions work correctly** - Select exactly which tools each agent can use
 ✅ **Template reset** - Restore any agent to its default template
-✅ **Clean separation** - Agent logic is isolated from OpenCode core
+✅ **Clean separation** - Agent logic is isolated from Projectflows core
 ✅ **No global state** - All functions take a `baseDirectory` parameter
 
 ## Architecture
@@ -35,7 +35,7 @@ packages/agent/
 ### Basic Operations
 
 ```typescript
-import { Agent } from "@opendora/agent"
+import { Agent } from "@projectflows/agent"
 
 // List all agents (auto-seeds templates on first run)
 const agents = await Agent.list(baseDirectory)
@@ -75,10 +75,10 @@ This was the original bug - tools weren't being filtered properly. Now they are!
 
 ## Storage
 
-Agents are stored in `.opendora/agents/`:
+Agents are stored in `.projectflows/agents/`:
 
 ```
-.opendora/
+.projectflows/
 └── agents/
     ├── index.json          # Agent registry
     ├── build/

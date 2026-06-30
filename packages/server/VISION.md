@@ -4,7 +4,7 @@
 
 ## Intent
 
-The server is the API/service boundary that keeps OpenDora / Projectflows reachable and exposes backend behavior to the SDK. For single-binary distribution, the server also serves the embedded statically-exported web UI without shadowing API or event routes.
+The server is the API/service boundary that keeps Projectflows reachable and exposes backend behavior to the SDK. For single-binary distribution, the server also serves the embedded statically-exported web UI without shadowing API or event routes.
 
 ## Owns
 
@@ -38,7 +38,7 @@ The server is the API/service boundary that keeps OpenDora / Projectflows reacha
 ## Boundary Rules
 
 - Server is the only backend surface the SDK talks to.
-- Server keeps the OpenDora service/API reachable; runtime keeps executable work alive.
+- Server keeps the Projectflows service/API reachable; runtime keeps executable work alive.
 - Server starts, continues, streams, or cancels executable work by calling runtime-owned operations.
 - Server coordinates domains; it does not absorb their ownership.
 - Server routes must call package-owned canonical operations rather than reimplementing domain behavior.

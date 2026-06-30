@@ -4,7 +4,7 @@
 
 ## Intent
 
-Storage is the exclusive persistence abstraction layer for OpenDora packages.
+Storage is the exclusive persistence abstraction layer for Projectflows packages.
 
 ## Owns
 

@@ -4,7 +4,7 @@
 
 ## Intent
 
-Schedule owns time-based and recurring execution definitions for OpenDora. A schedule triggers workflow execution only; anything that needs to run on a schedule must be represented as a workflow first.
+Schedule owns time-based and recurring execution definitions for Projectflows. A schedule triggers workflow execution only; anything that needs to run on a schedule must be represented as a workflow first.
 
 ## Owns
 

@@ -4,7 +4,7 @@
 
 ## Intent
 
-Permission owns authorization policy across OpenDora domains. It creates, manages, persists, and evaluates permissions and policies; storage owns the physical persistence backend.
+Permission owns authorization policy across Projectflows domains. It creates, manages, persists, and evaluates permissions and policies; storage owns the physical persistence backend.
 
 ## Owns
 

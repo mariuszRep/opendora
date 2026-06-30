@@ -4,7 +4,7 @@
 
 ## Intent
 
-Provider owns AI provider and model access for OpenDora runtime execution.
+Provider owns AI provider and model access for Projectflows runtime execution.
 
 ## Owns
 

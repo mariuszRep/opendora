@@ -5,7 +5,7 @@
 
 ## Intent
 
-`packages/` contains the backend and client package boundaries for OpenDora.
+`packages/` contains the backend and client package boundaries for Projectflows.
 Each package owns one product/domain boundary and communicates through explicit public interfaces, not internal file imports.
 
 ## Target flow
@@ -42,7 +42,7 @@ notification -> storage
 
 - Apps use the SDK; apps do not depend on backend internals.
 - SDK talks to the server API only; SDK owns no backend business behavior and does not read storage directly.
-- Server is the API/service boundary: it keeps OpenDora reachable, validates requests, applies auth/permission, exposes SDK-facing routes/streams, and coordinates package-owned operations.
+- Server is the API/service boundary: it keeps Projectflows reachable, validates requests, applies auth/permission, exposes SDK-facing routes/streams, and coordinates package-owned operations.
 - Auth identifies the caller.
 - Permission decides what the caller may do across domains.
 - Runtime is the execution engine: it keeps executable work alive and orchestrates agent runs, skills, providers, tools, workflows, schedules, sessions, streaming, cancellation, retries, and run lifecycle.

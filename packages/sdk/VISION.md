@@ -4,7 +4,7 @@
 
 ## Intent
 
-The SDK is the typed client boundary used by apps and external consumers to communicate with the OpenDora server.
+The SDK is the typed client boundary used by apps and external consumers to communicate with the Projectflows server.
 
 ## Owns
 

@@ -1,4 +1,4 @@
-# Browser Tool for OpenDora
+# Browser Tool for Projectflows
 
 Complete browser control implementation migrated from OpenClaw.
 
@@ -18,19 +18,19 @@ Complete browser control implementation migrated from OpenClaw.
 
 ## Usage
 
-### As OpenDora Tool
+### As Projectflows Tool
 
 ```typescript
-import { BrowserTool } from "@opendora/tools/browser"
+import { BrowserTool } from "@projectflows/tools/browser"
 
-// The tool is ready to use with OpenDora's agent system
+// The tool is ready to use with Projectflows's agent system
 // It will automatically handle browser lifecycle and actions
 ```
 
 ### Starting the Browser Server
 
 ```typescript
-import { startBrowserControlServiceFromConfig } from "@opendora/tools/browser"
+import { startBrowserControlServiceFromConfig } from "@projectflows/tools/browser"
 
 // Start browser control server (default port 8338)
 await startBrowserControlServiceFromConfig({
@@ -66,7 +66,7 @@ await startBrowserControlServiceFromConfig({
 
 ## Architecture
 
-This is a complete copy of OpenClaw's browser extension with an adapter layer to make it compatible with OpenDora's `Tool.define` pattern.
+This is a complete copy of OpenClaw's browser extension with an adapter layer to make it compatible with Projectflows's `Tool.define` pattern.
 
 ### Directory Structure
 
@@ -74,7 +74,7 @@ This is a complete copy of OpenClaw's browser extension with an adapter layer to
 - `src/browser/routes/` - HTTP server routes
 - `src/gateway/` - Gateway integration
 - `src/cli/` - CLI commands
-- `adapter.ts` - OpenDora tool adapter
+- `adapter.ts` - Projectflows tool adapter
 - `index.ts` - Package exports
 
 ## Notes

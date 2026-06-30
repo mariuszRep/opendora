@@ -1,4 +1,4 @@
-# AGENTS.md - @opendora/provider
+# AGENTS.md - @projectflows/provider
 
 Rules for agents working in `packages/provider`.
 

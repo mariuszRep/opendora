@@ -4,7 +4,7 @@
 
 ## Intent
 
-Runtime is the execution engine and orchestration layer for OpenDora work. Runtime keeps executable runs alive; session records the ledger and current state of the work.
+Runtime is the execution engine and orchestration layer for Projectflows work. Runtime keeps executable runs alive; session records the ledger and current state of the work.
 
 ## Owns
 
@@ -27,7 +27,7 @@ Runtime is the execution engine and orchestration layer for OpenDora work. Runti
 ## Does Not Own
 
 - Public API routes.
-- Keeping the OpenDora API/service reachable; that belongs to server.
+- Keeping the Projectflows API/service reachable; that belongs to server.
 - Identity or permission policy definitions.
 - Permission lifecycle, policy evaluation rules, or authorization ownership.
 - Domain definitions themselves.

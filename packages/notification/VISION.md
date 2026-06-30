@@ -4,7 +4,7 @@
 
 ## Intent
 
-Notification owns durable, object-driven notification records for system events surfaced to users across OpenDora surfaces. It is a modular, persistent domain package that produces cross-linked records from system errors, tool errors, provider issues, tool access/permission requests, workflow/run blockers, memory/status events, and similar system events.
+Notification owns durable, object-driven notification records for system events surfaced to users across Projectflows surfaces. It is a modular, persistent domain package that produces cross-linked records from system errors, tool errors, provider issues, tool access/permission requests, workflow/run blockers, memory/status events, and similar system events.
 
 ## Owns
 

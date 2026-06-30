@@ -4,7 +4,7 @@
 
 ## Intent
 
-Agent owns OpenDora agent definitions and agent-facing metadata.
+Agent owns Projectflows agent definitions and agent-facing metadata.
 
 ## Owns
 
