@@ -19,9 +19,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OpenDora - AI-Powered Development Tool",
-  description: "OpenDora is an AI-powered development tool with TUI and API. Build faster with intelligent agents, flexible sessions, and a complete API for custom integrations.",
-  keywords: ["AI", "development", "tool", "TUI", "API", "OpenCode", "programming", "assistant"],
+  title: "OpenDora",
+  description: "AI-powered development tool",
 };
 
 export default function RootLayout({

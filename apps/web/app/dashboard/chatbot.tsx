@@ -74,6 +74,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { playNotificationSound } from "@/lib/notification-sound"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useModelList } from "@/hooks/use-model-list"
 
@@ -697,50 +698,14 @@ export const Chatbot = () => {
     [speak]
   )
 
-  // Handle push-to-talk stop with auto-voice
+  // Handle push-to-talk stop — draft-only, never auto-submits
   const handlePushToTalkStop = useCallback(async () => {
+    playNotificationSound()
     const transcription = await stopRecording()
     if (transcription) {
-      // Enable auto-voice for the next assistant response
-      setAutoVoiceNextMessage(true)
-      
-      // Clear any existing timeout
-      if (autoVoiceTimeoutRef.current) {
-        clearTimeout(autoVoiceTimeoutRef.current)
-      }
-      
-      // Set a timeout to disable auto-voice after 3 minutes (covers long tool-call chains)
-      autoVoiceTimeoutRef.current = setTimeout(() => {
-        setAutoVoiceNextMessage(false)
-        expectedAssistantMessageIdRef.current = null
-      }, 3 * 60 * 1000)
-      
-      // Get the current message count to find the next assistant message
-      const currentMessageCount = messages.length
-      
-      // Submit the transcribed message
-      const model = selectedGroupId
-        ? { providerID: "fallback", modelID: selectedGroupId }
-        : selectedModel
-          ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
-          : undefined
-      const fallbackGroupID = selectedGroupId ?? undefined
-
-      // We'll identify the next assistant message by its position
-      const attributed = userName ? `user: ${userName}\n\n${transcription}` : transcription
-      const doSend = () => {
-        sendMessage(attributed, { model, fallbackGroupID, agent: selectedAgent })
-        // The next assistant message will be at position currentMessageCount + 1
-        // We'll track this in the useEffect below
-      }
-
-      if (!selectedSession) {
-        createSession().then(() => doSend())
-      } else {
-        doSend()
-      }
+      setText((prev) => prev ? `${prev} ${transcription}` : transcription)
     }
-  }, [stopRecording, sendMessage, selectedModel, selectedGroupId, selectedAgent, selectedSession, createSession, messages.length, userName])
+  }, [stopRecording, setText])
 
   // Set up push-to-talk
   usePushToTalk({
@@ -874,7 +839,7 @@ export const Chatbot = () => {
               const msgError = (lastAssistant.info as AssistantMessage).error
               return getTimelineSteps(lastAssistant.parts, msgError).length === 0
             })())) ? (
-              <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3 w-full px-4 py-2">
+              <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3 w-full py-2">
                 <div className="relative size-4 mt-[3px]">
                   <div
                     className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"

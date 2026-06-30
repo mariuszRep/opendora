@@ -697,6 +697,8 @@ export const opendora = {
       req<boolean>(`/auth/${providerID}`, { method: "PUT", body: JSON.stringify(info) }),
     remove: (providerID: string) =>
       req<boolean>(`/auth/${providerID}`, { method: "DELETE" }),
+    status: (providerID: string) =>
+      req<{ configured: boolean }>(`/auth/${providerID}`),
   },
   schedule: {
     list: () => req<Schedule[]>("/schedule"),

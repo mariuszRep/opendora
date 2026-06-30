@@ -5,6 +5,7 @@ import type { ComponentProps } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { playNotificationSound } from "@/lib/notification-sound";
 import { MicIcon, SquareIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -147,6 +148,7 @@ export const SpeechInput = ({
     const handleEnd = () => {
       isRecognitionStartedRef.current = false;
       setIsListening(false);
+      playNotificationSound();
     };
 
     const handleResult = (event: Event) => {
@@ -277,6 +279,7 @@ export const SpeechInput = ({
   // Stop MediaRecorder recording
   const stopMediaRecorder = useCallback(() => {
     if (mediaRecorderRef.current?.state === "recording") {
+      playNotificationSound();
       mediaRecorderRef.current.stop();
     }
     setIsListening(false);
@@ -343,6 +346,7 @@ export const SpeechInput = ({
           className
         )}
         disabled={isDisabled}
+        type="button"
         onClick={toggleListening}
         {...props}
       >

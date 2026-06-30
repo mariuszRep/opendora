@@ -229,12 +229,11 @@ export default function AgentSettingsPage() {
     }
     load()
     const unsub = opendora.events.subscribe((event) => {
-      if (
-        event.type === "permission.rules.updated" &&
-        event.properties.scope === "agent" &&
-        event.properties.scope_id === agentId
-      ) {
-        load()
+      if (event.type === "permission.rules.updated") {
+        const props = event.properties as { scope: string; scope_id: string }
+        if (props.scope === "agent" && props.scope_id === agentId) {
+          load()
+        }
       }
     })
     return () => { cancelled = true; unsub() }

@@ -95,13 +95,16 @@ export function usePushToTalk({
   useEffect(() => {
     if (!enabled || !hotkey) return
 
-    window.addEventListener("keydown", handleKeyDown)
-    window.addEventListener("keyup", handleKeyUp)
+    // Use capture phase so the hotkey intercepts keydown before element handlers
+    // (e.g. before PromptInputTextarea's Enter=submit fires). stopPropagation in
+    // capture phase prevents the event from ever reaching the textarea.
+    window.addEventListener("keydown", handleKeyDown, true)
+    window.addEventListener("keyup", handleKeyUp, true)
     window.addEventListener("blur", handleBlur)
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown)
-      window.removeEventListener("keyup", handleKeyUp)
+      window.removeEventListener("keydown", handleKeyDown, true)
+      window.removeEventListener("keyup", handleKeyUp, true)
       window.removeEventListener("blur", handleBlur)
     }
   }, [enabled, hotkey, handleKeyDown, handleKeyUp, handleBlur])

@@ -225,6 +225,35 @@ export namespace Server {
             return c.json(true)
           },
         )
+        .get(
+          "/auth/:providerID",
+          describeRoute({
+            summary: "Get auth status",
+            description: "Check whether authentication credentials are configured for a provider",
+            operationId: "auth.status",
+            responses: {
+              200: {
+                description: "Auth status",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.object({ configured: z.boolean() })),
+                  },
+                },
+              },
+            },
+          }),
+          validator(
+            "param",
+            z.object({
+              providerID: z.string(),
+            }),
+          ),
+          async (c) => {
+            const { providerID } = c.req.valid("param")
+            const info = await Auth.get(providerID)
+            return c.json({ configured: info !== null })
+          },
+        )
         .use(async (c, next) => {
           if (c.req.path === "/log") return next()
           const raw = c.req.query("directory") || c.req.header("x-projectflows-directory") || process.env.PROJECTFLOWS_PROJECT_ROOT || process.cwd()

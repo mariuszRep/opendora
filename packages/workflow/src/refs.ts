@@ -3,7 +3,7 @@ import {
   resolveRefs,
   resolveTemplate,
   resolveDeep,
-} from "./schema.ts"
+} from "./schema"
 
 export { resolveRef, resolveRefs, resolveTemplate, resolveDeep }
 
