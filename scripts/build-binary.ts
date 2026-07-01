@@ -13,7 +13,7 @@
  */
 
 import { join, dirname } from "node:path"
-import { mkdirSync, cpSync, rmSync, existsSync } from "node:fs"
+import { mkdirSync, cpSync, rmSync, existsSync, statSync } from "node:fs"
 
 const ROOT = dirname(import.meta.dir)
 const DIST = join(ROOT, "dist")
@@ -83,17 +83,44 @@ const targets = allPlatforms
     ? [{ target: customTarget, suffix: customTarget.replace(/^bun-/, ""), ext: customTarget.includes("windows") ? ".exe" : undefined }]
     : [currentTarget()]
 
+// Load the OpenTUI Solid plugin for JSX/TSX transformation
+// (required by apps/cli/src/cli/cmd/tui/ for the terminal UI)
+const solidPluginPath = join(ROOT, "apps/cli/node_modules/@opentui/solid/scripts/solid-plugin.ts")
+let solidPlugin: any
+try {
+  solidPlugin = (await import(solidPluginPath)).default
+} catch {
+  console.warn("  Warning: @opentui/solid plugin not found; TSX files may not compile correctly.")
+  solidPlugin = undefined
+}
+
+const CLI_TSCONFIG = join(ROOT, "apps/cli/tsconfig.json")
+
 console.log(`\n[3/3] Compiling ${targets.length} binary target(s)...`)
 for (const { target, suffix, ext = "" } of targets) {
   const outfile = join(DIST, `projectflows-${suffix}${ext}`)
   console.log(`  → ${target}  =>  dist/projectflows-${suffix}${ext}`)
-  run("bun", [
-    "build",
-    "--compile",
-    `--target=${target}`,
-    `--outfile=${outfile}`,
-    CLI_ENTRY,
-  ])
+
+  const result = await Bun.build({
+    entrypoints: [CLI_ENTRY],
+    plugins: solidPlugin ? [solidPlugin] : [],
+    tsconfig: CLI_TSCONFIG,
+    external: ["electron"],
+    compile: {
+      target: target as any,
+      outfile,
+    },
+  })
+
+  if (!result.success) {
+    for (const log of result.logs) {
+      console.error(`  ${log}`)
+    }
+    process.exit(1)
+  }
+
+  const size = (statSync(outfile).size / 1024 / 1024).toFixed(1)
+  console.log(`    ✓ ${size} MB`)
 }
 
 console.log(`\nDone! Artifacts in dist/`)

@@ -28,7 +28,6 @@ import { FileRoutes } from "./routes/file"
 import { ConfigRoutes } from "./routes/config"
 import { ExperimentalRoutes } from "./routes/experimental"
 import { ProviderRoutes } from "./routes/provider"
-import { startBrowserControlServiceFromConfig, stopBrowserControlService } from "@projectflows/tools/browser"
 import { AgentRoutes } from "./routes/agent"
 import { ScheduleRoutes } from "./routes/schedule"
 import { WorkflowRoutes } from "@projectflows/workflow/routes"
@@ -1115,8 +1114,10 @@ export namespace Server {
     const cronManager = new CronScheduler(Database.Client(), cronDispatch, getGlobalTimezone)
     cronManager.start()
 
-    // Start Browser Control Server
-    startBrowserControlServiceFromConfig()
+    // Start Browser Control Server (computed string prevents bundler from tracing playwright-core into the CLI binary)
+    const browserModule = "@projectflows/tools/browser"
+    import(browserModule)
+      .then((mod: any) => mod.startBrowserControlServiceFromConfig())
       .then(() => log.info("Browser control server started"))
       .catch((error) => log.warn(`Failed to start browser control server: ${error}`))
 
