@@ -8,7 +8,7 @@ scope: apps/web, packages/server, apps/cli, apps/desktop, build/release pipeline
 attempt: 1
 max_attempts: 5
 last_result: Phase 1 implementation complete — verified working
-next_action: Create GitHub Release with binary + web.tar.gz artifacts, then begin Phase 2 (Tauri desktop wrappers).
+next_action: Host install.sh and install.ps1 at projectflows.ai, push first v* tag to trigger the release pipeline, then begin Phase 2 (Tauri desktop wrappers).
 success_criteria:
   - Phase 1: One-command install on Linux, macOS, and Windows. Single binary serves API + static UI. /health endpoint responds 200 OK. Sessions persist in ~/.projectflows/.
   - Phase 2: Native installers for all three OSes. Desktop app wraps same web UI. Sidecar lifecycle managed by Tauri. Auto-update on at least one platform.
@@ -66,7 +66,7 @@ Rationale:
 2. **Serve static UI from Hono** ✅ *done*
    - `/health` endpoint added to `packages/server/src/server.ts`.
    - `serveStatic` middleware serves `_webDir`; SPA fallback serves `index.html` for any unmatched GET.
-   - `webDir` resolution: `opts.webDir` → `PROJECTFLOWS_WEB_DIR` env → adjacent-to-binary `web/` → unset (falls back to `app.opencode.ai` proxy).
+   - `webDir` resolution: `opts.webDir` → `PROJECTFLOWS_WEB_DIR` env → adjacent-to-binary `web/` → unset (falls back to `app.projectflows.ai` proxy).
    - API routes registered before static middleware so they take priority.
    - `--web-dir` flag added to `serve` CLI command.
 
@@ -81,13 +81,21 @@ Rationale:
    - `apps/cli/src/cli/cmd/serve.ts`: prints `Projectflows is running at http://localhost:4096` and `Open your browser to get started.`
 
 5. **Install scripts** ✅ *done*
-   - `scripts/install.sh` (Linux/macOS): downloads binary + web assets tarball, installs to `~/.local/bin/`, sets up PATH.
-   - `scripts/install.ps1` (Windows): equivalent; adds to `$LOCALAPPDATA\projectflows\bin` and persists PATH.
-   - Hosting: GitHub Releases (manual release for Phase 1).
+   - `scripts/install.sh` (Linux/macOS): `curl -fsSL https://projectflows.ai/install.sh | bash`
+   - `scripts/install.ps1` (Windows): `irm https://projectflows.ai/install.ps1 | iex`
+   - Binaries hosted on GitHub Releases (`mariuszRep/opendora`); install scripts served from `projectflows.ai`.
+   - `latest` version resolution uses GitHub's `/releases/latest/download/` URL pattern.
 
-6. **Windows service support** — pending (Task Scheduler approach; low priority for Phase 1)
+6. **Release pipeline** ✅ *done*
+   - `.github/workflows/release.yml`: triggers on `v*` tags or manual dispatch; builds all 5 platform binaries + `web.tar.gz` on a single Ubuntu runner (Bun cross-compiles); publishes to GitHub Release automatically.
+   - To release: `git tag v1.0.0 && git push origin v1.0.0`
 
-7. **Release pipeline** — pending (manual GitHub Release for Phase 1; automation in later iteration)
+7. **Website** ✅ *done*
+   - Canonical domain: `projectflows.ai`
+   - All source URLs updated from `opencode.ai` / `projectflows.dev` → `projectflows.ai`
+   - `projectflows.ai/install.sh` and `projectflows.ai/install.ps1` need to be hosted (redirect or static serve from the domain)
+
+8. **Windows service support** — pending (Task Scheduler approach; low priority for Phase 1)
 
 ### Phase 1 exit criteria
 

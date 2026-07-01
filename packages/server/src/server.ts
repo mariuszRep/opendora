@@ -152,8 +152,8 @@ export namespace Server {
               )
                 return input
 
-              // *.opencode.ai (https only, adjust if needed)
-              if (/^https:\/\/([a-z0-9-]+\.)*opencode\.ai$/.test(input)) {
+              // *.projectflows.ai (https only, adjust if needed)
+              if (/^https:\/\/([a-z0-9-]+\.)*projectflows\.ai$/.test(input)) {
                 return input
               }
               if (_corsWhitelist.includes(input)) {
@@ -282,9 +282,9 @@ export namespace Server {
           openAPIRouteHandler(app, {
             documentation: {
               info: {
-                title: "opencode",
+                title: "projectflows",
                 version: "0.0.3",
-                description: "opencode api",
+                description: "projectflows api",
               },
               openapi: "3.1.1",
             },
@@ -751,11 +751,11 @@ export namespace Server {
         .all("/*", async (c) => {
           const path = c.req.path
 
-          const response = await proxy(`https://app.opencode.ai${path}`, {
+          const response = await proxy(`https://app.projectflows.ai${path}`, {
             ...c.req,
             headers: {
               ...c.req.raw.headers,
-              host: "app.opencode.ai",
+              host: "app.projectflows.ai",
             },
           })
           response.headers.set(
@@ -771,9 +771,9 @@ export namespace Server {
     const result = await generateSpecs(App() as Hono, {
       documentation: {
         info: {
-          title: "opencode",
+          title: "projectflows",
           version: "1.0.0",
-          description: "opencode api",
+          description: "projectflows api",
         },
         openapi: "3.1.1",
       },

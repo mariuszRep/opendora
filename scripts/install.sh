@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Projectflows installer for Linux and macOS
-# Usage: curl -fsSL https://raw.githubusercontent.com/mariuszRep/opendora/main/scripts/install.sh | bash
+# Usage: curl -fsSL https://projectflows.ai/install.sh | bash
 set -euo pipefail
 
 VERSION="${PROJECTFLOWS_VERSION:-latest}"

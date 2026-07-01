@@ -14,12 +14,12 @@
 ### Linux / macOS
 
 ```
-curl -fsSL https://projectflows.dev/install.sh | bash
+curl -fsSL https://projectflows.ai/install.sh | bash
 ```
 
 The script:
 1. Detects OS and architecture.
-2. Downloads the latest release tarball from the projectflows.dev release endpoint.
+2. Downloads the latest release tarball from the projectflows.ai release endpoint.
 3. Extracts the binary to `~/.projectflows/bin/`.
 4. Adds `~/.projectflows/bin` to your `$PATH` via shell config marker (`.bashrc`, `.zshrc`, or
    `.profile`).
@@ -28,12 +28,12 @@ The script:
 ### Windows
 
 ```powershell
-powershell -c "irm https://projectflows.dev/install.ps1 | iex"
+powershell -c "irm https://projectflows.ai/install.ps1 | iex"
 ```
 
 The script:
 1. Detects architecture (x86_64).
-2. Downloads the latest release ZIP from the projectflows.dev release endpoint.
+2. Downloads the latest release ZIP from the projectflows.ai release endpoint.
 3. Extracts the binary to `%LOCALAPPDATA%\projectflows\bin\`.
 4. Adds that directory to the user `PATH` via environment variable registry.
 5. Optionally starts the background service.
@@ -64,7 +64,7 @@ platforms. It contains configuration, session state, logs, and plugin data.
 
 ## Manual install
 
-1. Go to the [releases page](https://github.com/mariusz/projectflows/releases) (TBD).
+1. Go to the [releases page](https://github.com/mariuszRep/opendora/releases).
 2. Download the archive for your platform.
 3. Extract the binary to a directory on your PATH.
 4. Run `projectflows start` to initialize the data root and start the service.
@@ -173,8 +173,7 @@ The install script registers a user-level launchd plist when available:
 - **Windows service:** Should the Windows background process run as a Windows Service, a
   Task Scheduler task, a user-startup shortcut, or an nssm-managed service? Decision pending
   until Windows service requirements are validated.
-- **Install endpoint hosting:** Release binaries are currently served from the projectflows.dev
-  domain. The hosting service (GitHub Releases, CDN, or self-hosted) is TBD.
+- **Install endpoint hosting:** Install scripts are served from `projectflows.ai`; binaries are hosted on GitHub Releases (`github.com/mariuszRep/opendora/releases`).
 - **Code signing:** Windows Authenticode signing and macOS notarization require certificates
   and are planned for Phase 2 native desktop distribution.
 - **Bun binary embedding:** The single-binary distribution approach (embed vs. bundle archive)

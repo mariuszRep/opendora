@@ -9,13 +9,13 @@ and schedules through consistent application surfaces.
 ### Linux / macOS
 
 ```bash
-curl -fsSL https://projectflows.dev/install.sh | bash
+curl -fsSL https://projectflows.ai/install.sh | bash
 ```
 
 ### Windows
 
 ```powershell
-powershell -c "irm https://projectflows.dev/install.ps1 | iex"
+powershell -c "irm https://projectflows.ai/install.ps1 | iex"
 ```
 
 These one-liners download the latest single-binary release, install it to `~/.projectflows/bin`

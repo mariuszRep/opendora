@@ -1,5 +1,5 @@
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://projectflows.ai/config.json",
   "model_filters": {
     "fallback": "all",
     "kilo": "free",

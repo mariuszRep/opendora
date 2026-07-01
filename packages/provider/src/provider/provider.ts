@@ -382,7 +382,7 @@ export namespace Provider {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
+            "HTTP-Referer": "https://projectflows.ai/",
             "X-Title": "opencode",
           },
         },
@@ -393,7 +393,7 @@ export namespace Provider {
         autoload: false,
         options: {
           headers: {
-            "http-referer": "https://opencode.ai/",
+            "http-referer": "https://projectflows.ai/",
             "x-title": "opencode",
           },
         },
@@ -479,7 +479,7 @@ export namespace Provider {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
+            "HTTP-Referer": "https://projectflows.ai/",
             "X-Title": "opencode",
           },
         },
@@ -605,7 +605,7 @@ export namespace Provider {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
+            "HTTP-Referer": "https://projectflows.ai/",
             "X-Title": "opencode",
           },
         },

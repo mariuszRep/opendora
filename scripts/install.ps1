@@ -1,5 +1,5 @@
 # Projectflows installer for Windows (PowerShell)
-# Usage: irm https://raw.githubusercontent.com/mariuszRep/opendora/main/scripts/install.ps1 | iex
+# Usage: irm https://projectflows.ai/install.ps1 | iex
 param(
     [string]$Version = $env:PROJECTFLOWS_VERSION ?? "latest",
     [string]$InstallDir = $env:PROJECTFLOWS_INSTALL_DIR ?? "$env:LOCALAPPDATA\projectflows\bin",
