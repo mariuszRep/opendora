@@ -1,9 +1,9 @@
 # Projectflows installer for Windows (PowerShell)
 # Usage: irm https://projectflows.ai/install.ps1 | iex
 param(
-    [string]$Version = $env:PROJECTFLOWS_VERSION ?? "latest",
-    [string]$InstallDir = $env:PROJECTFLOWS_INSTALL_DIR ?? "$env:LOCALAPPDATA\projectflows\bin",
-    [string]$DataDir = $env:PROJECTFLOWS_DATA_DIR ?? "$env:LOCALAPPDATA\projectflows"
+    [string]$Version = $(if ($env:PROJECTFLOWS_VERSION) { $env:PROJECTFLOWS_VERSION } else { "latest" }),
+    [string]$InstallDir = $(if ($env:PROJECTFLOWS_INSTALL_DIR) { $env:PROJECTFLOWS_INSTALL_DIR } else { "$env:LOCALAPPDATA\projectflows\bin" }),
+    [string]$DataDir = $(if ($env:PROJECTFLOWS_DATA_DIR) { $env:PROJECTFLOWS_DATA_DIR } else { "$env:LOCALAPPDATA\projectflows" })
 )
 
 $ErrorActionPreference = "Stop"

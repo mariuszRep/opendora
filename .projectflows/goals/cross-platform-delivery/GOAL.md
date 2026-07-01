@@ -93,7 +93,8 @@ Rationale:
 7. **Website** ✅ *done*
    - Canonical domain: `projectflows.ai`
    - All source URLs updated from `opencode.ai` / `projectflows.dev` → `projectflows.ai`
-   - `projectflows.ai/install.sh` and `projectflows.ai/install.ps1` need to be hosted (redirect or static serve from the domain)
+   - `projectflows.ai/install.sh` and `projectflows.ai/install.ps1` are hosted from the website repo (`projectflows-website/public/`) and served at those paths.
+   - No binary artifacts in the website repo — only tiny text install scripts.
 
 8. **Windows service support** — pending (Task Scheduler approach; low priority for Phase 1)
 
@@ -138,7 +139,7 @@ Phase 2 is a native shell around the Phase 1 browser version — not a separate 
 
 6. **Packaging / release**
    - Produce native installers: `.dmg` (macOS), `.msi` or `.exe` (Windows), `.AppImage` or `.deb`/`.rpm` (Linux).
-   - Publish to projectflows.dev download page and/or GitHub Releases.
+   - Publish to projectflows.ai download page and/or GitHub Releases.
 
 ### Phase 2 exit criteria
 
