@@ -58,7 +58,7 @@ Rationale:
 
 1. **Static export the web app** ✅ *done*
    - `apps/web/next.config.ts`: gate `output: 'export'` + `trailingSlash: true` behind `PROJECTFLOWS_EMBEDDED=1`; rewrites kept for dev mode.
-   - Deleted `apps/web/app/api/event/route.ts` (SSE proxy — frontend calls `/event` directly on same-origin Hono server).
+   - Deleted `apps/web/app/api/event/route.ts` (SSE proxy — frontend calls `/event` directly on same-origin Hono server). ⚠️ This file was accidentally restored in a later commit and had to be deleted again (see Attempt 2).
    - `apps/web/lib/projectflows.ts`: default URL is `""` (same-origin relative); `NEXT_PUBLIC_PROJECTFLOWS_URL` still overrides.
    - Split `app/dashboard/agents/[id]/page.tsx` and `app/dashboard/settings/workflows/[id]/page.tsx` into server wrapper (exports `generateStaticParams`) + client component.
    - `build:export` script in `apps/web/package.json`; `NODE_OPTIONS=--max-old-space-size=4096` to prevent OOM kill.
@@ -237,11 +237,28 @@ Phase 1 must exit before Phase 2 begins (the desktop app consumes the Phase 1 st
 
 **Phase 2 is next:** Tauri desktop wrappers around the same local server.
 
+### Attempt 2 (2026-07-01) — Fix embedded static export release build
+
+**Result:** Fixed. GOAL.md/code drift resolved.
+
+**Problem:** `apps/web/app/api/event/route.ts` was deleted in Attempt 1 (commit `8399b86d`) but accidentally recreated in commit `6b50c902` (domain references update). The file contained `export const dynamic = "force-dynamic"` which is incompatible with `output: "export"` — when GH Actions ran `bun run build:export` for release tag `v0.1.0-alpha`, the static export failed.
+
+**What was done:**
+- Deleted `apps/web/app/api/event/route.ts` again (confirmed dead code — frontend calls `/event` directly on Hono backend in embedded mode)
+- Removed now-empty `apps/web/app/api/` directory tree
+- Verified `bun run build:export` passes cleanly (19 static pages generated)
+- Full `bun run build:binary` succeeds through step 1 (static export) — step 3 (binary compile) hits separate playwright-core dependency issue unrelated to this fix
+
+**Verification:** `bun run build:export` in `apps/web` under `PROJECTFLOWS_EMBEDDED=1` passes ✅
+
+**Root cause:** The file was correctly deleted in Phase 1 but unintentionally restored by an agent that treated it as a needed file during a domain-references bulk update.
+
 ## Do Not Repeat
 
 - Do not put `generateStaticParams` in a "use client" component — Next.js 16 rejects it. Split the page into a server wrapper (exports `generateStaticParams`) and a client component.
 - Returning `[]` from `generateStaticParams` with `output: 'export'` is treated as missing by Next.js — return at least one param (e.g. `[{ id: "new" }]`).
 - The TypeScript build worker gets OOM killed without `NODE_OPTIONS=--max-old-space-size=4096`.
+- Do not recreate `apps/web/app/api/event/route.ts` — this SSE proxy was intentionally deleted for embedded static export. The frontend calls `/event` directly on the Hono backend. Restoring this file breaks the release build with `"force-dynamic" cannot be used with output: "export"`. If dev-mode SSE streaming breaks in Turbopack, investigate the rewrite buffer issue separately — do not reintroduce this route.
 
 ## Verification Log
 
