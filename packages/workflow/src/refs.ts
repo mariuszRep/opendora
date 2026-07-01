@@ -52,7 +52,7 @@ export const REF_PATTERN = /(\$(?:(?:input|output|ctx)\.[a-zA-Z0-9_.]+|[a-z][a-z
 export function tokenStart(val: string, cur: number): number {
   for (let i = cur - 1; i >= 0; i--) {
     if (val[i] === "$") return i
-    if (/[\s,;)\}\]]/.test(val[i])) return -1
+    if (/[\s,;)\}\]]/.test(val.charAt(i))) return -1
   }
   return -1
 }

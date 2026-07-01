@@ -6,35 +6,16 @@ import { Identifier } from "@projectflows/util/id"
 import { Workflow, WorkflowEdge, WorkflowNode } from "./schema.ts"
 import { resolveRef, resolveRefs, resolveTemplate, resolveDeep, resolveSchemaDescriptions } from "./refs.ts"
 import { NodeTypeId } from "./node-types.ts"
+import { getToolExecutor } from "./executor.ts"
+import { CheckpointStore, registerActiveRun, deregisterActiveRun, type StepJournalEntry } from "./checkpoint-store.ts"
+export type { WorkflowToolContext } from "./executor.ts"
+export { registerToolExecutor } from "./executor.ts"
 
 // Tracks the chain of workflow IDs currently executing on this async call stack.
 // Propagates automatically through the tool executor → workflow_run → runWorkflow path,
 // so cycles are caught regardless of call depth.
 const _callStack = new AsyncLocalStorage<Set<string>>()
 
-export type WorkflowToolContext = {
-  sessionID: string
-  agent?: string
-  model?: { providerID: string; modelID: string }
-  abort?: AbortSignal
-  /** Pre-created message ID for the tool call — allows the executor to wire metadata updates */
-  messageID?: string
-  /** Pre-created part ID for the tool call — allows the executor to update state in real-time */
-  partID?: string
-}
-
-type ToolExecutor = (
-  toolId: string,
-  fixedArgs: Record<string, unknown>,
-  agentArgs: string[],
-  ctx: WorkflowToolContext,
-) => Promise<{ output: string; metadata?: Record<string, unknown> }>
-
-let _toolExecutor: ToolExecutor | null = null
-
-export function registerToolExecutor(executor: ToolExecutor) {
-  _toolExecutor = executor
-}
 
 type WorkflowMeta = {
   workflowID: string
@@ -313,6 +294,8 @@ async function runSubGraph({
   steps,
   directory,
   workflowMeta,
+  completedNodeIds,
+  checkpointWriter,
 }: {
   nodes: WorkflowNode[]
   edges: WorkflowEdge[]
@@ -322,6 +305,8 @@ async function runSubGraph({
   steps: GraphStep[]
   directory: string
   workflowMeta: WorkflowMeta
+  completedNodeIds?: Set<string>
+  checkpointWriter?: (nodeId: string, nodeType: string) => Promise<void>
 }): Promise<void> {
   const adjacency = buildAdjacency(edges)
   const allTargetIds = new Set(edges.map((e) => e.target))
@@ -340,6 +325,17 @@ async function runSubGraph({
     const currentId = queue.shift()!
     if (visited.has(currentId)) continue
     visited.add(currentId)
+
+    if (completedNodeIds?.has(currentId)) {
+      // Node completed in a previous run — restore successors from adjacency and skip re-execution
+      const nodeEdges = adjacency.get(currentId) ?? []
+      const next = nodeEdges[0]?.target
+      if (next) queue.push(next)
+      const skippedNode = nodes.find((n) => n.id === currentId)
+      const skippedLabel = (skippedNode?.data as Record<string, unknown> | undefined)?.nodeType as string ?? currentId
+      steps.push({ label: skippedLabel, passed: true })
+      continue
+    }
 
     const node = nodes.find((n) => n.id === currentId)
     if (!node) continue
@@ -464,7 +460,7 @@ async function runSubGraph({
       const actionId = (nd.action_id as string | undefined) ||
         (d.nodeType === NodeTypeId.RunWorkflow ? "workflow_run" : undefined)
       if (!actionId) { steps.push({ label: nodeLabel, passed: true }); continue }
-      if (!_toolExecutor) throw new Error("No tool executor registered — call registerToolExecutor() at startup")
+      const _toolExecutor = getToolExecutor()
 
       const args: Record<string, string> = {}
       for (const [k, v] of Object.entries(params)) {
@@ -872,6 +868,7 @@ async function runSubGraph({
     }
 
     steps.push({ label: nodeLabel, passed: true })
+    await checkpointWriter?.(currentId, String((node?.data as Record<string, unknown>)?.nodeType ?? "unknown"))
     } catch (err) {
       steps.push({ label: nodeLabel, passed: false })
       if (nodeToolHandle) {
@@ -920,21 +917,59 @@ async function _runWorkflow({
   input: Record<string, unknown>
   directory: string
 }): Promise<string> {
-  const ctx: Record<string, unknown> = {}
+  // Hydrate ctx and step journal from latest checkpoint if resuming
+  let ctx: Record<string, unknown> = {}
   const steps: GraphStep[] = []
+  let completedNodeIds: Set<string> | undefined
+
+  const existingCkp = await CheckpointStore.getLatest(sessionId)
+  if (existingCkp && existingCkp.workflow_id === workflow.id && existingCkp.status !== "done" && existingCkp.status !== "error") {
+    ctx = (existingCkp.ctx as Record<string, unknown>) ?? {}
+    const journal = (existingCkp.step_journal as StepJournalEntry[]) ?? []
+    completedNodeIds = new Set(journal.map((e) => e.nodeId))
+  }
+
   const workflowRunID = Identifier.ascending("workflow_run")
   const baseWorkflowMeta: WorkflowMeta = { workflowID: workflow.id, workflowRunID }
+
+  registerActiveRun(sessionId, { ctx, stepJournal: [] })
 
   await Session.setWorkflowRun({
     sessionID: sessionId,
     workflowRun: { workflowID: workflow.id, workflowRunID, startedAt: Date.now() },
   })
 
+  const journalEntries: StepJournalEntry[] = []
+
+  const checkpointWriter = async (nodeId: string, nodeType: string): Promise<void> => {
+    journalEntries.push({
+      stepId: Identifier.ascending("step"),
+      nodeId,
+      nodeType,
+      completedAt: Date.now(),
+    })
+    await CheckpointStore.append({
+      runId: sessionId,
+      workflowId: workflow.id,
+      nodeId,
+      nodeType,
+      ctx,
+      stepJournal: journalEntries,
+      status: "running",
+    })
+  }
+
   const finalize = async (error?: string) => {
+    deregisterActiveRun(sessionId)
     const workflowOutput = ctx["__workflow_output__"] as Record<string, unknown> | undefined
     const passed = steps.filter((s) => s.passed).length
     const failed = steps.filter((s) => !s.passed).length
     await Session.setWorkflowRun({ sessionID: sessionId, workflowRun: null })
+    if (error) {
+      await CheckpointStore.markError(sessionId, workflow.id, error)
+    } else {
+      await CheckpointStore.complete(sessionId, ctx, journalEntries)
+    }
     if (workflowOutput !== undefined) {
       const status = {
         workflow: workflow.name,
@@ -967,6 +1002,8 @@ async function _runWorkflow({
       steps,
       directory,
       workflowMeta: baseWorkflowMeta,
+      completedNodeIds,
+      checkpointWriter,
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)

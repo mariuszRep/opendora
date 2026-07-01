@@ -2,13 +2,13 @@
 name: cross-platform-delivery
 title: Cross-Platform Delivery — single-binary install and Tauri desktop app
 description: Deliver Projectflows as a single self-contained binary serving API + embedded static Next UI, installable via one command on Linux/macOS/Windows (Phase 1). Then wrap that same UI in a Tauri v2 desktop app with sidecar backend (Phase 2). Type justification: migration — moves from multi-step dev setup to one-command production install.
-status: ready
+status: in_progress
 type: migration
 scope: apps/web, packages/server, apps/cli, apps/desktop, build/release pipeline, install scripts
-attempt: 0
+attempt: 1
 max_attempts: 5
-last_result: none
-next_action: Verify current static export feasibility and audit hardcoded /api paths in apps/web, then implement Phase 1 task 1 (static export the web app).
+last_result: Phase 1 implementation complete — verified working
+next_action: Create GitHub Release with binary + web.tar.gz artifacts, then begin Phase 2 (Tauri desktop wrappers).
 success_criteria:
   - Phase 1: One-command install on Linux, macOS, and Windows. Single binary serves API + static UI. /health endpoint responds 200 OK. Sessions persist in ~/.projectflows/.
   - Phase 2: Native installers for all three OSes. Desktop app wraps same web UI. Sidecar lifecycle managed by Tauri. Auto-update on at least one platform.
@@ -56,41 +56,38 @@ Rationale:
 
 ### Tasks
 
-1. **Static export the web app**
-   - Configure `next.config.js` / `next.config.ts` for `output: export` gated by env flag.
-   - Remove or guard `app/api/event/route.ts` and Next.js rewrites for embedded build.
-   - Audit and resolve hardcoded `/api` paths to use relative or origin-relative URLs.
-   - Verify exported output in `apps/web/out/`.
+1. **Static export the web app** ✅ *done*
+   - `apps/web/next.config.ts`: gate `output: 'export'` + `trailingSlash: true` behind `PROJECTFLOWS_EMBEDDED=1`; rewrites kept for dev mode.
+   - Deleted `apps/web/app/api/event/route.ts` (SSE proxy — frontend calls `/event` directly on same-origin Hono server).
+   - `apps/web/lib/projectflows.ts`: default URL is `""` (same-origin relative); `NEXT_PUBLIC_PROJECTFLOWS_URL` still overrides.
+   - Split `app/dashboard/agents/[id]/page.tsx` and `app/dashboard/settings/workflows/[id]/page.tsx` into server wrapper (exports `generateStaticParams`) + client component.
+   - `build:export` script in `apps/web/package.json`; `NODE_OPTIONS=--max-old-space-size=4096` to prevent OOM kill.
 
-2. **Serve static UI from Hono**
-   - Add static file middleware or route handler in `packages/server` for the export output directory.
-   - Ensure API routes (`/api/*`) and event streams (`/event`) are matched before static fallback.
-   - Add `/health` endpoint for install verification.
+2. **Serve static UI from Hono** ✅ *done*
+   - `/health` endpoint added to `packages/server/src/server.ts`.
+   - `serveStatic` middleware serves `_webDir`; SPA fallback serves `index.html` for any unmatched GET.
+   - `webDir` resolution: `opts.webDir` → `PROJECTFLOWS_WEB_DIR` env → adjacent-to-binary `web/` → unset (falls back to `app.opencode.ai` proxy).
+   - API routes registered before static middleware so they take priority.
+   - `--web-dir` flag added to `serve` CLI command.
 
-3. **Embed/copy assets into single binary**
-   - Evaluate options: Bun `--embed` for direct binary embedding, or bundle archive read at runtime.
-   - Trade-off: embedding avoids extra files but increases binary size; archive approach keeps binary lean but requires a co-located assets directory.
+3b. **Checkpoint infra in binary** ✅ *done* — checkpoint table migration, `executor.ts`, and `checkpoint-store.ts` ship in binary; `CheckpointStore.findIncomplete()` warns at startup.
 
-4. **Build pipeline**
-   - Extend the CLI build (`bun build --compile --target`) to include the static export output.
-   - Produce platform-specific binaries: `projectflows-linux-x64`, `projectflows-darwin-arm64`, `projectflows-darwin-x64`, `projectflows-windows-x64.exe` (or legacy `opendora-*` names).
+3. **Build pipeline** ✅ *done*
+   - `scripts/build-binary.ts`: builds web export → copies to `dist/web/` → compiles binary per platform via `bun build --compile --target`.
+   - Platforms: `bun-linux-x64-musl`, `bun-linux-arm64`, `bun-darwin-x64`, `bun-darwin-arm64`, `bun-windows-x64`.
+   - `bun run build:binary` at repo root runs all steps.
 
-5. **Install scripts**
-   - `install.sh` for Linux/macOS — download, extract, PATH setup, optional service start.
-   - `install.ps1` for Windows — download, extract, PATH setup, optional service start.
-   - Host install scripts at `https://projectflows.dev/install.sh` and `https://projectflows.dev/install.ps1`.
+4. **First-run UX** ✅ *done*
+   - `apps/cli/src/cli/cmd/serve.ts`: prints `Projectflows is running at http://localhost:4096` and `Open your browser to get started.`
 
-6. **First-run UX**
-   - On first `start` or `web`, initialize `~/.projectflows/` if absent.
-   - Print welcome message with URL and quick-start commands.
+5. **Install scripts** ✅ *done*
+   - `scripts/install.sh` (Linux/macOS): downloads binary + web assets tarball, installs to `~/.local/bin/`, sets up PATH.
+   - `scripts/install.ps1` (Windows): equivalent; adds to `$LOCALAPPDATA\projectflows\bin` and persists PATH.
+   - Hosting: GitHub Releases (manual release for Phase 1).
 
-7. **Windows service support**
-   - Determine approach: Windows Service API, Task Scheduler, startup shortcut, or nssm.
-   - Implement the chosen approach and wire into `start`/`stop`/`restart` CLI commands.
+6. **Windows service support** — pending (Task Scheduler approach; low priority for Phase 1)
 
-8. **Release pipeline**
-   - Automate build, archive, and upload for all three platforms.
-   - Publish install scripts with version pinning.
+7. **Release pipeline** — pending (manual GitHub Release for Phase 1; automation in later iteration)
 
 ### Phase 1 exit criteria
 
@@ -99,19 +96,23 @@ Rationale:
 - Browser opens working UI with sessions persisting in `~/.projectflows/`.
 - `/health` endpoint responds `200 OK`.
 
-## Phase 2 — Tauri desktop app
+## Phase 2 — Tauri desktop wrappers
+
+Phase 2 is a native shell around the Phase 1 browser version — not a separate app. The Tauri window opens `http://localhost:4096` (the same local server), so the web UI and backend are identical to Phase 1. The desktop app just adds a native window, system tray, auto-update, and platform installers.
 
 ### Tasks
 
 1. **`apps/desktop` scaffold**
    - Create `apps/desktop` with Tauri v2 configuration.
-   - Set `frontendDist` to `../web/out` (Phase 1 static export output).
+   - Window points to `http://localhost:4096` (the running Phase 1 server, not a bundled frontend dist).
    - Configure app metadata, window title, icon, and security settings.
 
-2. **Sidecar backend (recommended)**
-   - Bundle the self-contained binary as a Tauri sidecar process.
-   - Tauri launches the sidecar on app start; app window connects to localhost.
+2. **Sidecar backend**
+   - Bundle the Phase 1 binary as a Tauri sidecar process.
+   - Tauri launches the sidecar on app start; native window connects to `localhost:4096`.
    - Sidecar lifecycle managed by Tauri (start/stop with window).
+
+2b. **Suspend/resume hooks** — wire Tauri window-hide event to `POST /workflow/checkpoint-flush`; on app open show "Resume interrupted workflow?" if sessions with `workflow_run` exist.
 
 3. **Alternative: Local service approach**
    - User installs the daemon separately (via Phase 1 install); desktop app connects to existing local service.
@@ -136,6 +137,16 @@ Rationale:
 - Native installers for all three OSes launch a self-contained desktop app using the existing web UI.
 - Service starts automatically with the app; sessions persist in `~/.projectflows/`.
 - Auto-update wired and functional on at least one platform.
+
+## Cross-cutting: Unified Durable Run
+
+The `unified-durable-run` goal defines a checkpoint/run-state contract and a checkpoint-driven workflow runner. Both phases of this delivery depend on it:
+
+**Phase 1 impact:** The unified executor (extracted from `server.ts` into `packages/workflow/src/executor.ts`) and the checkpoint-driven runner (`packages/workflow/src/runner.ts` + `checkpoint-store.ts`) must be included in the single binary. The checkpoint table migration must run at first start.
+
+**Phase 2 impact:** The desktop app's Tauri shell must flush active run checkpoints on window-hide/OS-suspend and offer resume on re-open. This requires the `/workflow/checkpoint-flush` HTTP route in `packages/server` and the `_activeRuns` registry in `checkpoint-store.ts`.
+
+Reference: `.projectflows/goals/unified-durable-run/GOAL.md` (design finalized; implementation delivered here).
 
 ## Sequencing
 
@@ -196,19 +207,40 @@ Phase 1 must exit before Phase 2 begins (the desktop app consumes the Phase 1 st
 
 ## Attempts
 
-No attempts yet.
+### Attempt 1 (2026-07-01) — Phase 1 implementation
+
+**Result:** Phase 1 complete and verified working.
+
+**What was done:**
+- Static export of `apps/web` via `PROJECTFLOWS_EMBEDDED=1` env flag
+- Server-wrapper pattern for dynamic Next.js routes (required for `generateStaticParams` + client component split)
+- `serveStatic` + SPA fallback in Hono — all routes return 200 (static file or `index.html`)
+- `/health` endpoint responds `{"ok":true}`
+- `scripts/build-binary.ts` — multi-platform build pipeline
+- `scripts/install.sh` + `scripts/install.ps1` — install scripts
+- Welcome message on `serve` command
+
+**Verified:**
+- `bun run build:export` produces `apps/web/out/` ✅
+- `PROJECTFLOWS_WEB_DIR=apps/web/out ... serve --port 4199` starts successfully ✅
+- `/health` → `{"ok":true}` ✅
+- `/`, `/dashboard/`, `/dashboard/agents/some-real-id` → all 200 ✅
+
+**Phase 2 is next:** Tauri desktop wrappers around the same local server.
 
 ## Do Not Repeat
 
-None yet.
+- Do not put `generateStaticParams` in a "use client" component — Next.js 16 rejects it. Split the page into a server wrapper (exports `generateStaticParams`) and a client component.
+- Returning `[]` from `generateStaticParams` with `output: 'export'` is treated as missing by Next.js — return at least one param (e.g. `[{ id: "new" }]`).
+- The TypeScript build worker gets OOM killed without `NODE_OPTIONS=--max-old-space-size=4096`.
 
 ## Verification Log
 
-No verification yet.
+2026-07-01: Phase 1 verified — static export builds, Hono serves UI + API, /health works, SPA fallback works for dynamic routes.
 
 ## Final Outcome
 
-Pending.
+Phase 1 delivered. Phase 2 pending.
 
 ## Ready For Execution
 

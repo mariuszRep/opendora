@@ -1037,6 +1037,13 @@ export const Chatbot = () => {
                         ? "media-recorder"
                         : undefined
                   }
+                  maxRecordingTime={
+                    settings.stt.provider === "local-whisper"
+                      ? 300 // 5 minutes for local Whisper (safe under 1-hour timeout)
+                      : settings.stt.provider === "openai-whisper" || settings.stt.provider === "google-gemini"
+                        ? 60 // 1 minute for cloud APIs (25MB limit)
+                        : undefined
+                  }
                   size="icon-sm"
                   variant="ghost"
                 />

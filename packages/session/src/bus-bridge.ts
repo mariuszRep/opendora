@@ -1,9 +1,9 @@
 /**
- * Bridges PingPong's Bus events to OpenDora's Bus.
+ * Bridges PingPong's Bus events to Projectflows's Bus.
  *
  * PingPong's SessionManager fires events on PingPong's Bus when sessions change.
- * This module subscribes to those events and re-publishes them on OpenDora's Bus
- * so the rest of OpenDora (SSE layer, UI, etc.) stays informed.
+ * This module subscribes to those events and re-publishes them on Projectflows's Bus
+ * so the rest of Projectflows (SSE layer, UI, etc.) stays informed.
  *
  * Call BusBridge.start() once at server startup, after the Database is ready.
  */

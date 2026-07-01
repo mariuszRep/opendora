@@ -14,6 +14,8 @@ export namespace Identifier {
     token_usage: "tku",
     workflow_run: "wfr",
     edge: "edg",
+    checkpoint: "ckp",
+    step: "stp",
   } as const
 
   export function schema(prefix: keyof typeof prefixes) {

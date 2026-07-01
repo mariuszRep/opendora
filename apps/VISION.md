@@ -2,13 +2,12 @@
 
 > Owner: human. Approved intent only.
 >
-> **Naming note:** Projectflows is the canonical product direction; OpenDora/opendora remains
-> the current repo/binary/package naming during transition. `apps/` contains both legacy and
-> new application surfaces.
+> **Naming note:** Projectflows is the canonical product direction. `apps/` contains all
+> current application surfaces.
 
 ## Intent
 
-`apps/` contains all user-facing application surfaces for Projectflows / OpenDora.
+`apps/` contains all user-facing application surfaces for Projectflows.
 
 ## Owns
 
@@ -27,7 +26,7 @@
 
 ## Relationships
 
-- Apps use `sdk` as their only OpenDora backend gateway.
+- Apps use `sdk` as their only Projectflows backend gateway.
 - Apps may contain UI-specific state and presentation logic.
 - Shared product behavior belongs behind SDK/server/package contracts.
 
@@ -42,7 +41,7 @@
 
 ## Visual Language
 
-OpenDora should use a consistent connected-node/line visual language across chat reply chains, agent definition sections, workflow nodes, and branching workflow/graph histories. Inspired by git graph representations, items appear as dots or nodes connected by lines in sequence, with branching lines for diverging paths. Apps own the presentation of this visual language; backend graph semantics and connectivity rules remain in packages.
+Projectflows should use a consistent connected-node/line visual language across chat reply chains, agent definition sections, workflow nodes, and branching workflow/graph histories. Inspired by git graph representations, items appear as dots or nodes connected by lines in sequence, with branching lines for diverging paths. Apps own the presentation of this visual language; backend graph semantics and connectivity rules remain in packages.
 
 ### Chat side rail projection
 

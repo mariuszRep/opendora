@@ -1,4 +1,4 @@
-// Minimal standalone browser server for OpenDora
+// Minimal standalone browser server for Projectflows
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright-core"
 
 let browser: Browser | null = null

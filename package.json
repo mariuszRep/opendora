@@ -15,6 +15,7 @@
     "status": "PROJECTFLOWS_PROJECT_ROOT=$PWD bun run apps/cli/src/index.ts status",
     "dev:ui": "bash ./scripts/dev-ui.sh",
     "typecheck": "bun turbo typecheck",
+    "build:binary": "bun scripts/build-binary.ts",
     "test": "echo 'do not run tests from root' && exit 1"
   },
   "workspaces": {

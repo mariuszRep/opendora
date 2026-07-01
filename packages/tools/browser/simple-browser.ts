@@ -77,14 +77,14 @@ The response includes \`targetId\`, \`url\`, \`title\`, and \`snapshot\` (cleane
       }
     }
 
-    // Helper to start browser server (would need to be wired into OpenDora startup)
+    // Helper to start browser server (would need to be wired into Projectflows startup)
     const startBrowserServer = async () => {
       // For now, we can't start the server from here
-      // The server needs to be started by OpenDora's core
+      // The server needs to be started by Projectflows's core
       throw new Error(
         `Browser server is not running at ${BROWSER_URL}.\n\n` +
         `The browser server needs to be started separately. ` +
-        `This will be integrated into OpenDora's startup in the future.`
+        `This will be integrated into Projectflows's startup in the future.`
       )
     }
 

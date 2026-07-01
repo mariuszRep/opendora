@@ -2,7 +2,7 @@
  * Smoke tests for session-tree tool.
  *
  * Run with:
- *   cd /home/mariu/projects/opendora
+ *   cd /home/mariu/projects/projectflows
  *   bun packages/tools/sessions/session-tree.test.ts
  */
 

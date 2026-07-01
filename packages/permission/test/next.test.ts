@@ -8,7 +8,7 @@ import { PermissionRuleTable } from "@projectflows/storage/permission-rule.sql"
 
 // Reset the singleton store + clean persisted DB rules before each test.
 // Without this, session/agent rules saved by one test pollute subsequent tests
-// both via the in-memory sessionCache and via the global opendora.db.
+// both via the in-memory sessionCache and via the global projectflows.db.
 beforeEach(() => {
   PermissionNext._resetForTesting()
   try {

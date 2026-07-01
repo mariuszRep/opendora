@@ -1,11 +1,11 @@
 /**
- * Implements PingPong's StorageAdapter interface backed by OpenDora's Drizzle/bun:sqlite.
+ * Implements PingPong's StorageAdapter interface backed by Projectflows's Drizzle/bun:sqlite.
  *
  * Session lifecycle (create/archive/close/reopen) is delegated to PingPong's SessionManager,
- * which calls through this adapter. OpenDora-specific fields (project_id, directory, slug,
+ * which calls through this adapter. Projectflows-specific fields (project_id, directory, slug,
  * version, permission) are supplied via setCreateContext() before each create call.
  *
- * Message methods translate between PingPong's flat Message format and OpenDora's MessageV2
+ * Message methods translate between PingPong's flat Message format and Projectflows's MessageV2
  * row format.
  */
 
@@ -17,7 +17,7 @@ import type { Permission } from "@projectflows/permission"
 import type { RetentionPolicy, SendPolicy, SessionType, SessionStatus } from "./types"
 import { getConfig } from "./config"
 
-// ─── OpenDora-specific context for session creation ───────────────────────────
+// ─── Projectflows-specific context for session creation ───────────────────────────
 // PingPong's SessionMeta doesn't carry project_id, directory, slug, or version.
 // We pre-register these before manager.create() so the adapter can use them.
 
@@ -95,11 +95,11 @@ function patchToColumns(patch: Partial<SessionMeta>): Partial<typeof SessionTabl
 
 // ─── Adapter ─────────────────────────────────────────────────────────────────
 
-export class OpenDoraStorageAdapter implements StorageAdapter {
+export class ProjectflowsStorageAdapter implements StorageAdapter {
   private pendingContext = new Map<string, CreateContext>()
 
   /**
-   * Register OpenDora-specific fields for the next createSession call with this id.
+   * Register Projectflows-specific fields for the next createSession call with this id.
    * Must be called before manager.create(id, ...) when the id is known upfront.
    */
   setCreateContext(id: string, ctx: CreateContext): void {
@@ -283,4 +283,4 @@ function mapPingPongPart(part: MessagePart): object {
 
 // ─── Singleton ────────────────────────────────────────────────────────────────
 
-export const openDoraStorageAdapter = new OpenDoraStorageAdapter()
+export const projectflowsStorageAdapter = new ProjectflowsStorageAdapter()

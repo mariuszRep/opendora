@@ -18,8 +18,8 @@ import * as schema from "@projectflows/session/sql"
 const sqlite = new Database(":memory:")
 sqlite.run("PRAGMA foreign_keys = ON")
 
-// Apply every opencode migration to the in-memory db.
-const migDir = path.resolve(import.meta.dir, "../../opencode/migration")
+// Apply every Projectflows migration to the in-memory db.
+const migDir = path.resolve(import.meta.dir, "../../storage/migration")
 for (const name of readdirSync(migDir).filter((n) => n.match(/^[0-9]/)).sort()) {
   const raw = readFileSync(path.join(migDir, name, "migration.sql"), "utf-8")
   for (const stmt of raw.split(/;\s*\n/)) {
@@ -75,7 +75,7 @@ const claudeFixture = [
   { type: "ai-title", title: "Reading a file" },
 ]
 
-const tmpDir = mkdtempSync(path.join(os.tmpdir(), "opendora-import-"))
+const tmpDir = mkdtempSync(path.join(os.tmpdir(), "projectflows-import-"))
 const claudePath = path.join(tmpDir, "claude.jsonl")
 writeFileSync(claudePath, claudeFixture.map((l) => JSON.stringify(l)).join("\n"))
 

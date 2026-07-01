@@ -33,6 +33,7 @@ import { AgentRoutes } from "./routes/agent"
 import { ScheduleRoutes } from "./routes/schedule"
 import { WorkflowRoutes } from "@projectflows/workflow/routes"
 import { registerToolExecutor } from "@projectflows/workflow/runner"
+import { CheckpointStore } from "@projectflows/workflow/checkpoint-store"
 import { addSkillTools, getSkillTools } from "@projectflows/session/skill-tools"
 import { CronScheduler, type ScheduleDispatchFn } from "@projectflows/schedule/cron-scheduler"
 import { Schedule } from "@projectflows/schedule/service"
@@ -43,7 +44,9 @@ import { lazy } from "@projectflows/util/lazy"
 import { InstanceBootstrap } from "@projectflows/runtime/bootstrap"
 import { NotFoundError } from "@projectflows/storage/db"
 import type { ContentfulStatusCode } from "hono/utils/http-status"
-import { websocket } from "hono/bun"
+import { websocket, serveStatic } from "hono/bun"
+import { join, dirname } from "node:path"
+import { existsSync } from "node:fs"
 import { HTTPException } from "hono/http-exception"
 import { errors } from "./error"
 import { QuestionRoutes } from "./routes/question"
@@ -59,7 +62,7 @@ import { MDNS } from "./mdns"
 import { BusBridge } from "@projectflows/session/bus-bridge"
 import { retentionDaemon, sessionManager } from "@projectflows/session/session"
 import { configureSessionCore } from "./configure-session-core"
-import { openDoraStorageAdapter } from "@projectflows/session/storage-adapter"
+import { projectflowsStorageAdapter } from "@projectflows/session/storage-adapter"
 import { Session } from "@projectflows/session/session"
 import { migrateAllSessions } from "@projectflows/session"
 import { SessionPrompt } from "@projectflows/session/prompt"
@@ -75,6 +78,7 @@ export namespace Server {
 
   let _url: URL | undefined
   let _corsWhitelist: string[] = []
+  let _webDir: string | undefined
   let _scheduleDispatch: ScheduleDispatchFn = async () => {}
 
   export function url(): URL {
@@ -254,6 +258,7 @@ export namespace Server {
             return c.json({ configured: info !== null })
           },
         )
+        .get("/health", (c) => c.json({ ok: true }))
         .use(async (c, next) => {
           if (c.req.path === "/log") return next()
           const raw = c.req.query("directory") || c.req.header("x-projectflows-directory") || process.env.PROJECTFLOWS_PROJECT_ROOT || process.cwd()
@@ -296,6 +301,10 @@ export namespace Server {
         .route("/provider", ProviderRoutes())
         .route("/schedule", ScheduleRoutes(_scheduleDispatch))
         .route("/workflow", WorkflowRoutes())
+        .post("/workflow/checkpoint-flush", async (c) => {
+          const flushed = await CheckpointStore.flushAll()
+          return c.json({ flushed })
+        })
         .route("/voice", VoiceRoutes())
         .route("/user", UserRoutes())
         .route("/general", GeneralRoutes())
@@ -731,6 +740,14 @@ export namespace Server {
             })
           },
         )
+        .use("/*", (c, next) => {
+          if (!_webDir) return next()
+          return serveStatic({ root: _webDir })(c, next)
+        })
+        .get("/*", (c, next) => {
+          if (!_webDir) return next()
+          return serveStatic({ root: _webDir, path: "/index.html" })(c, next)
+        })
         .all("/*", async (c) => {
           const path = c.req.path
 
@@ -770,7 +787,17 @@ export namespace Server {
     mdns?: boolean
     mdnsDomain?: string
     cors?: string[]
+    webDir?: string
   }) {
+    // Resolve web asset directory: explicit opt → env var → adjacent to binary → unset (use proxy)
+    _webDir = (() => {
+      if (opts.webDir) return opts.webDir
+      if (process.env.PROJECTFLOWS_WEB_DIR) return process.env.PROJECTFLOWS_WEB_DIR
+      const adjacent = join(dirname(process.execPath), "web")
+      if (existsSync(join(adjacent, "index.html"))) return adjacent
+      return undefined
+    })()
+
     configureSessionCore()
     registerToolExecutor(async (toolId, fixedArgs, agentArgs, ctx) => {
       const toolInfo = ToolRegistry.all().find((t) => t.id === toolId)
@@ -1071,7 +1098,7 @@ export namespace Server {
 
     // Start PingPong session infrastructure
     BusBridge.start()
-    retentionDaemon.start(sessionManager, openDoraStorageAdapter)
+    retentionDaemon.start(sessionManager, projectflowsStorageAdapter)
     
     // Cron fires outside any HTTP context so it needs its own Instance.provide wrapper.
     const cronDispatch: ScheduleDispatchFn = async (schedule) => {

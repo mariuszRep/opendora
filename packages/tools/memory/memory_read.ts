@@ -23,15 +23,15 @@ export const MemoryReadTool = Tool.define("memory_read", {
   async execute(params, ctx) {
     const toolDir = (() => { try { return directory(ctx) } catch { return undefined } })()
     const instanceDir = (() => { try { return Instance.directory } catch { return undefined } })()
-    const opendoraDir = await findProjectFlowsDirCandidates([toolDir, instanceDir])
+    const projectflowsDir = await findProjectFlowsDirCandidates([toolDir, instanceDir])
     const scope = params.scope ?? "both"
 
     const targets: Array<{ label: string; file: string }> = []
     if (scope === "global" || scope === "both") {
-      targets.push({ label: "global", file: resolveMemoryPath(opendoraDir, "global", ctx.agent) })
+      targets.push({ label: "global", file: resolveMemoryPath(projectflowsDir, "global", ctx.agent) })
     }
     if (scope === "local" || scope === "both") {
-      targets.push({ label: "local", file: resolveMemoryPath(opendoraDir, "local", ctx.agent) })
+      targets.push({ label: "local", file: resolveMemoryPath(projectflowsDir, "local", ctx.agent) })
     }
 
     const sections: string[] = []

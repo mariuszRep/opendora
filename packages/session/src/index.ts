@@ -16,7 +16,7 @@ export { RetentionDaemon } from "./daemon"
 export type { RetentionDaemonOptions } from "./daemon"
 export type { SyncAdapter } from "./sync-adapter"
 
-// ─── OpenDora session runtime ─────────────────────────────────────────────────
+// ─── Projectflows session runtime ─────────────────────────────────────────────────
 export { Session, sessionManager, retentionDaemon } from "./session"
 
 // Core session types and schemas
@@ -31,7 +31,7 @@ export * from "./status"
 export * from "./session.sql"
 
 // Storage adapter
-export { OpenDoraStorageAdapter, openDoraStorageAdapter, rowToMeta } from "./projectflows-storage-adapter"
+export { ProjectflowsStorageAdapter, projectflowsStorageAdapter, rowToMeta } from "./projectflows-storage-adapter"
 export type { CreateContext } from "./projectflows-storage-adapter"
 
 // Bus bridge

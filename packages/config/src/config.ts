@@ -73,8 +73,8 @@ export namespace Config {
   export const state = Instance.state(async () => {
     const auth = await Auth.all()
 
-    // Config loading order (low -> high precedence): https://opendora.ai/docs/config#precedence-order
-    // 1) Remote .well-known/opendora (org defaults)
+    // Config loading order (low -> high precedence): https://projectflows.ai/docs/config#precedence-order
+    // 1) Remote .well-known/projectflows (org defaults)
     // 2) Global config (~/.projectflows/projectflows.json{,c})
     // 3) Custom config (OPENCODE_CONFIG)
     // 4) Project config (projectflows.json{,c})

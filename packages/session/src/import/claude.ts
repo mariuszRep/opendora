@@ -2,7 +2,7 @@
  * Claude Code session importer.
  *
  * Reads a `.claude/projects/<slug>/<sessionId>.jsonl` rollout and materialises
- * it as an opendora session with MessageV2 messages and parts.
+ * it as a Projectflows session with MessageV2 messages and parts.
  *
  * Scope (v1):
  *   - user and assistant messages with text, thinking, tool_use, tool_result,

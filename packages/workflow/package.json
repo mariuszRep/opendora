@@ -12,12 +12,16 @@
     "./runner": "./src/runner.ts",
     "./routes": "./src/routes.ts",
     "./node-types": "./src/node-types.ts",
-    "./node-registry": "./src/node-registry.ts"
+    "./node-registry": "./src/node-registry.ts",
+    "./executor": "./src/executor.ts",
+    "./checkpoint-store": "./src/checkpoint-store.ts"
   },
   "dependencies": {
     "@projectflows/agent": "workspace:*",
     "@projectflows/session": "workspace:*",
+    "@projectflows/storage": "workspace:*",
     "@projectflows/util": "workspace:*",
+    "drizzle-orm": "catalog:",
     "ai": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"

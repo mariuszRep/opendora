@@ -16,7 +16,7 @@ packages/session/src/
   processor.ts          — session processor
   compaction.ts         — session compaction logic
   graph-migration.ts    — backfill from parent_message_id to EntryEdgeTable
-  opendora-storage-adapter.ts — OpenDora storage adapter integration
+  projectflows-storage-adapter.ts — Projectflows storage adapter integration
   skill-tools.ts        — skill-tool integration
   bus.ts                — Bus singleton
 ```

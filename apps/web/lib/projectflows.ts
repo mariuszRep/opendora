@@ -1,9 +1,9 @@
-// All API traffic goes through the Next.js dev proxy at /api so the browser
-// only ever contacts one port. This fixes WSL2 port-forwarding issues where
-// the Windows browser can reach port 3000 (Next.js) but not port 4097 directly.
+// In embedded/binary mode the frontend is served by the same Hono server as the
+// API, so all requests are same-origin (PROJECTFLOWS_URL = ""). In dev mode,
+// Next.js rewrites /api/* to the backend, so PROJECTFLOWS_URL defaults to "/api".
 // Set NEXT_PUBLIC_PROJECTFLOWS_URL to override (e.g. a remote backend URL).
-const PROJECTFLOWS_URL = process.env.NEXT_PUBLIC_PROJECTFLOWS_URL
-  ? `${process.env.NEXT_PUBLIC_PROJECTFLOWS_URL}`
+const PROJECTFLOWS_URL = process.env.NEXT_PUBLIC_PROJECTFLOWS_URL !== undefined
+  ? process.env.NEXT_PUBLIC_PROJECTFLOWS_URL
   : "/api"
 
 export type SessionType = "role" | "scope" | "worker" | "scratchpad"

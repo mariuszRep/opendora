@@ -18,6 +18,9 @@ type TmpDirOptions<T> = {
 export async function tmpdir<T>(options?: TmpDirOptions<T>) {
   const dirpath = sanitizePath(path.join(os.tmpdir(), "opencode-test-" + Math.random().toString(36).slice(2)))
   await fs.mkdir(dirpath, { recursive: true })
+  const originalTestHome = process.env.PROJECTFLOWS_TEST_HOME
+  process.env.PROJECTFLOWS_TEST_HOME = dirpath
+  await fs.mkdir(path.join(dirpath, ".projectflows", "storage"), { recursive: true })
   if (options?.git) {
     await $`git init`.cwd(dirpath).quiet()
     await $`git commit --allow-empty -m "root commit ${dirpath}"`.cwd(dirpath).quiet()
@@ -36,6 +39,7 @@ export async function tmpdir<T>(options?: TmpDirOptions<T>) {
   const result = {
     [Symbol.asyncDispose]: async () => {
       await options?.dispose?.(dirpath)
+      process.env.PROJECTFLOWS_TEST_HOME = originalTestHome
       // await fs.rm(dirpath, { recursive: true, force: true })
     },
     path: realpath,

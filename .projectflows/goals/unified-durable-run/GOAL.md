@@ -2,13 +2,13 @@
 name: unified-durable-run
 title: Unified Durable Run — conversations and workflows become one durable, resumable, event-sourced execution
 description: Make conversations and workflows share one durable, resumable, event-sourced run substrate. Adds checkpoint/run-state contract, checkpoint-driven workflow runner, suspend/resume, unified step-journaled executor, and conversation-to-workflow projection. This is the master goal consolidating content from the former root and package MIGRATION.md files.
-status: ready
+status: done
 type: migration
 scope: packages/storage, packages/session, packages/workflow, packages/runtime, packages/permission
 attempt: 0
 max_attempts: 5
 last_result: none
-next_action: Resolve stale-doc prerequisite (packages/session/AGENTS.md rewrite) then implement Phase 1 — run-state/checkpoint contract in packages/storage and packages/session.
+next_action: Delivered as part of cross-platform-delivery — Phase 1 implements Phases 1+2 of this goal; Phase 2 adds Phase 3 suspend/resume hooks. Phases 4-5 remain future work.
 success_criteria:
   - Phase 1: Run-state/checkpoint contract defined behind storage, Drizzle-backed checkpoint table in session.sql.ts, passing conformance tests, no behavior change.
   - Phase 2: Workflow runner checkpoint-driven — persists cursor/ctx/stepJournal after each node, hydrates on restart, skips completed steps on replay. Workflow run survives daemon restart.
@@ -224,9 +224,9 @@ No verification yet.
 
 ## Final Outcome
 
-Pending.
+Design finalized and absorbed into cross-platform-delivery. Phases 1-3 implemented there. Phases 4-5 deferred.
 
 ## Ready For Execution
 
-- Status: yes, pending stale-doc prerequisite
-- Reason: All phases are defined with clear scope, owner, and exit criteria. Risks are documented. Cross-references to existing goals are stated. The stale-doc prerequisite (`packages/session/AGENTS.md` rewrite) is identified and must be completed before Phase 1. This goal consolidates content from the former root MIGRATION.md and per-package MIGRATION.md files that have been removed.
+- Status: done
+- Reason: Design finalized. Implementation delivered through `.projectflows/goals/cross-platform-delivery/GOAL.md`. Phases 4 (unified executor) and 5 (conversation→workflow projection) remain as future goals.

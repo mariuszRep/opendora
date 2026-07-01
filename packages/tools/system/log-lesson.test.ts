@@ -2,7 +2,7 @@
  * Smoke test for the log tool.
  *
  * Run with:
- *   cd /home/mariu/projects/opendora
+ *   cd /home/mariu/projects/projectflows
  *   bun packages/tools/system/log-lesson.test.ts
  */
 

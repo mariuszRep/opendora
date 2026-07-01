@@ -52,6 +52,7 @@
     "@projectflows/storage": "workspace:*",
     "@projectflows/tools": "workspace:*",
     "@projectflows/util": "workspace:*",
+    "@projectflows/workflow": "workspace:*",
     "@solid-primitives/event-bus": "1.1.2",
     "@solid-primitives/scheduled": "1.5.2",
     "clipboardy": "2.3.0",

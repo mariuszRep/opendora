@@ -70,6 +70,18 @@ export const VoiceRoutes = lazy(() =>
             )
           }
 
+          // Set max size based on provider
+          const MAX_AUDIO_SIZE = provider === "local-whisper"
+            ? 50 * 1024 * 1024 // 50MB (local Whisper servers typically support 50MB-1GB)
+            : 25 * 1024 * 1024 // 25MB (OpenAI Whisper limit)
+          
+          if (audio.size > MAX_AUDIO_SIZE) {
+            return c.json(
+              { error: `Recording too large (${(audio.size / 1024 / 1024).toFixed(1)}MB). Maximum size is ${MAX_AUDIO_SIZE / 1024 / 1024}MB for ${provider}. Please record a shorter segment.` },
+              { status: 400 },
+            )
+          }
+
           if (provider === "local-whisper") {
             try {
               console.log("[whisper] step 1: reading auth config")
@@ -186,7 +198,8 @@ export const VoiceRoutes = lazy(() =>
           return c.json({ text: result.text })
         } catch (error) {
           console.error("STT route error:", error)
-          return c.json({ error: "Internal server error" }, { status: 500 })
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          return c.json({ error: `Internal server error: ${errorMessage}` }, { status: 500 })
         }
       },
     )

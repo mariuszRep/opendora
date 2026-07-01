@@ -80,7 +80,7 @@ export const SessionTable = sqliteTable(
     // Set when a workflow is running in this session; cleared on completion
     workflow_run: text({ mode: "json" }).$type<{ workflowID: string; workflowRunID: string; startedAt: number } | null>(),
     // Vendor import — origin of sessions that were brought in from other agents
-    // (Claude Code, Codex, Antigravity, Windsurf). NULL on opendora-native sessions.
+    // (Claude Code, Codex, Antigravity, Windsurf). NULL on Projectflows-native sessions.
     vendor: text().$type<"claude" | "codex" | "antigravity" | "windsurf">(),
     native_id: text(),
     vendor_raw_header: text({ mode: "json" }).$type<unknown>(),
@@ -181,6 +181,29 @@ export const TodoTable = sqliteTable(
   (table) => [
     primaryKey({ columns: [table.session_id, table.position] }),
     index("todo_session_idx").on(table.session_id),
+  ],
+)
+
+// ─── Workflow run checkpoint ──────────────────────────────────────────────────
+
+export const WorkflowRunCheckpointTable = sqliteTable(
+  "workflow_run_checkpoint",
+  {
+    run_id: text()
+      .notNull()
+      .references(() => SessionTable.id, { onDelete: "cascade" }),
+    checkpoint_id: text().notNull(),
+    workflow_id: text().notNull(),
+    status: text().notNull().$type<"running" | "suspended" | "done" | "error">().default("running"),
+    cursor: text({ mode: "json" }).$type<{ nodeId: string } | null>(),
+    ctx: text({ mode: "json" }).notNull().$type<Record<string, unknown>>().default({}),
+    step_journal: text({ mode: "json" }).notNull().$type<Array<{ stepId: string; nodeId: string; nodeType: string; completedAt: number }>>().default([]),
+    error: text(),
+    created_at: integer().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.run_id, table.checkpoint_id] }),
+    index("idx_wrc_run_status").on(table.run_id, table.status),
   ],
 )
 

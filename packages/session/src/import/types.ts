@@ -2,7 +2,7 @@
  * Shared types for vendor session importers.
  *
  * Importers read a source file from another agent (Claude Code, Codex,
- * Antigravity, Windsurf) and materialise it as an opendora session, its
+ * Antigravity, Windsurf) and materialise it as a Projectflows session, its
  * MessageV2 messages and their parts. The source vendor and native id are
  * preserved on every row, and the original records are preserved verbatim in
  * `vendor_raw` / `vendor_raw_header` columns for lossless round-trip.
@@ -12,7 +12,7 @@ export type Vendor = "claude" | "codex" | "antigravity" | "windsurf"
 
 export interface ImportOptions {
   /**
-   * Project id to attach the imported session to. Required because opendora's
+   * Project id to attach the imported session to. Required because Projectflows's
    * session table has a FK onto `project`. Callers typically maintain a
    * dedicated "imported" project or reuse the current project.
    */
@@ -23,7 +23,7 @@ export interface ImportOptions {
    */
   sourcePath: string
   /**
-   * Opendora session id to use. If omitted a new id is generated. If a session
+   * Projectflows session id to use. If omitted a new id is generated. If a session
    * with `(vendor, native_id)` already exists the caller should pass its id to
    * re-import into the same row, otherwise a duplicate session will be created.
    */
@@ -35,7 +35,7 @@ export interface ImportOptions {
   slug?: string
   directory?: string
   /**
-   * Opendora agent id to tag imported user and assistant messages with.
+   * Projectflows agent id to tag imported user and assistant messages with.
    * Defaults to the vendor name.
    */
   agent?: string

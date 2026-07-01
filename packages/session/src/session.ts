@@ -12,7 +12,7 @@ import { eq, and, gte, isNull, desc, like, inArray, lt, sql, asc } from "drizzle
 import { MessageV2 } from "./message-v2.ts"
 import { SessionEvents } from "./events.ts"
 import { fromRow } from "./from-row.ts"
-import { openDoraStorageAdapter } from "./projectflows-storage-adapter.ts"
+import { projectflowsStorageAdapter } from "./projectflows-storage-adapter.ts"
 import { SessionManager } from "./session-manager"
 import { RetentionDaemon } from "./daemon"
 import type { SessionType, RetentionPolicy, SendPolicy, CreateSessionOptions, PongOptions, EdgeType, Edge } from "./types"
@@ -27,7 +27,7 @@ const log = { info: console.log, error: console.error, warn: console.warn }
 
 // ─── PingPong SessionManager singleton ───────────────────────────────────────
 
-export const sessionManager = new SessionManager(openDoraStorageAdapter)
+export const sessionManager = new SessionManager(projectflowsStorageAdapter)
 export const retentionDaemon = new RetentionDaemon()
 
 export namespace Session {
@@ -382,8 +382,8 @@ export namespace Session {
     const sessionType: SessionType = input.sessionType ?? (input.parentSessionID ? "worker" : "scope")
     const title = input.title ?? createDefaultTitle(!!input.parentSessionID)
 
-    // Pre-register OpenDora-specific fields
-    openDoraStorageAdapter.setCreateContext(id, {
+    // Pre-register Projectflows-specific fields
+    projectflowsStorageAdapter.setCreateContext(id, {
       projectId: cfg.instance?.project?.id ?? "unknown",
       directory: input.directory,
       version: cfg.installationVersion ?? "local",

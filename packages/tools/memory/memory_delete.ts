@@ -23,8 +23,8 @@ export const MemoryDeleteTool = Tool.define("memory_delete", {
   async execute(params, ctx) {
     const toolDir = (() => { try { return directory(ctx) } catch { return undefined } })()
     const instanceDir = (() => { try { return Instance.directory } catch { return undefined } })()
-    const opendoraDir = await findProjectFlowsDirCandidates([toolDir, instanceDir])
-    const memoryPath = resolveMemoryPath(opendoraDir, params.scope, ctx.agent)
+    const projectflowsDir = await findProjectFlowsDirCandidates([toolDir, instanceDir])
+    const memoryPath = resolveMemoryPath(projectflowsDir, params.scope, ctx.agent)
 
     const entries = await readMemoryFile(memoryPath)
     const idx = entries.findIndex(e => e.name === params.name)

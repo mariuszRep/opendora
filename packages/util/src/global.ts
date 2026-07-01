@@ -8,19 +8,17 @@ import os from "os"
 //   1. PROJECTFLOWS_CONFIG_DIR env var (explicit override)
 //   2. PROJECTFLOWS_TEST_HOME (test isolation)
 //   3. ~/.projectflows (the user's home folder)
-const home = process.env.PROJECTFLOWS_TEST_HOME || os.homedir()
-
-async function findRoot(): Promise<string> {
+function findRoot(): string {
   if (process.env.PROJECTFLOWS_CONFIG_DIR) return process.env.PROJECTFLOWS_CONFIG_DIR
   if (process.env.PROJECTFLOWS_TEST_HOME) return path.join(process.env.PROJECTFLOWS_TEST_HOME, ".projectflows")
 
   // Always resolve to a single root in the user's home folder. We intentionally
   // do NOT walk up from process.cwd(), so the data/config directory never
   // changes based on where the process is launched.
-  return path.join(home, ".projectflows")
+  return path.join(os.homedir(), ".projectflows")
 }
 
-const root = await findRoot()
+const root = findRoot()
 
 export namespace Global {
   export const Path = {
@@ -29,19 +27,33 @@ export namespace Global {
       return process.env.PROJECTFLOWS_TEST_HOME || os.homedir()
     },
     // Primary data/storage directory (DB, sessions, snapshots, auth)
-    data: path.join(root, "storage"),
+    get data() {
+      return path.join(findRoot(), "storage")
+    },
     // Binaries (ripgrep, etc.)
-    bin: path.join(root, "bin"),
+    get bin() {
+      return path.join(findRoot(), "bin")
+    },
     // Logs
-    log: path.join(root, "log"),
+    get log() {
+      return path.join(findRoot(), "log")
+    },
     // Cache
-    cache: path.join(root, "cache"),
+    get cache() {
+      return path.join(findRoot(), "cache")
+    },
     // Config root — agents, skills, tools are subfolders here
-    config: root,
+    get config() {
+      return findRoot()
+    },
     // State
-    state: path.join(root, "state"),
+    get state() {
+      return path.join(findRoot(), "state")
+    },
     // Provider config — auth tokens, MCP auth, fallback state
-    providers: path.join(root, "providers"),
+    get providers() {
+      return path.join(findRoot(), "providers")
+    },
   }
 }
 

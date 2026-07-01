@@ -2,7 +2,7 @@ import { Tool } from "../tool"
 import { createBrowserTool } from "./src/browser-tool"
 
 /**
- * Adapter to convert OpenClaw's browser tool to OpenDora's Tool.define format
+ * Adapter to convert OpenClaw's browser tool to Projectflows's Tool.define format
  */
 export const BrowserTool = Tool.define("browser", async (initCtx) => {
   // Create OpenClaw's browser tool
@@ -22,7 +22,7 @@ export const BrowserTool = Tool.define("browser", async (initCtx) => {
         args
       )
 
-      // Convert OpenClaw's result format to OpenDora's format
+      // Convert OpenClaw's result format to Projectflows's format
       return {
         title: "Browser Action",
         output: JSON.stringify(result, null, 2),

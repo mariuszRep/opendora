@@ -2,8 +2,7 @@
 
 > Owner: human. Approved intent only.
 >
-> **Naming note:** Projectflows is the canonical product direction; OpenDora/opendora remains
-> the current repo, binary, and package naming during transition. This document uses
+> **Naming note:** Projectflows is the canonical product direction. This document uses
 > Projectflows as the product name.
 
 ## Intent

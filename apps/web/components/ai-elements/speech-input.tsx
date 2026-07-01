@@ -78,6 +78,11 @@ export type SpeechInputProps = ComponentProps<typeof Button> & {
    * Use "none" to disable.
    */
   forceMode?: SpeechInputMode;
+  /**
+   * Maximum recording duration in seconds. If set, recording will auto-stop after this time.
+   * Useful for respecting API limits (e.g., local Whisper servers).
+   */
+  maxRecordingTime?: number;
 };
 
 const detectSpeechInputMode = (): SpeechInputMode => {
@@ -102,10 +107,12 @@ export const SpeechInput = ({
   onAudioRecorded,
   lang = "en-US",
   forceMode,
+  maxRecordingTime,
   ...props
 }: SpeechInputProps) => {
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
   // Detect once on mount (avoids SSR window access on every render)
   const [detectedMode] = useState<SpeechInputMode>(detectSpeechInputMode);
   // Derive from prop so mode updates when forceMode changes after async settings load
@@ -121,6 +128,7 @@ export const SpeechInput = ({
   >(onTranscriptionChange);
   const onAudioRecordedRef =
     useRef<SpeechInputProps["onAudioRecorded"]>(onAudioRecorded);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Keep refs in sync
   onTranscriptionChangeRef.current = onTranscriptionChange;
@@ -224,6 +232,7 @@ export const SpeechInput = ({
       streamRef.current = stream;
       const mediaRecorder = new MediaRecorder(stream);
       audioChunksRef.current = [];
+      setRecordingTime(0);
 
       const handleDataAvailable = (event: BlobEvent) => {
         if (event.data.size > 0) {
@@ -232,6 +241,10 @@ export const SpeechInput = ({
       };
 
       const handleStop = async () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
         for (const track of stream.getTracks()) {
           track.stop();
         }
@@ -257,6 +270,10 @@ export const SpeechInput = ({
       };
 
       const handleError = () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
         setIsListening(false);
         for (const track of stream.getTracks()) {
           track.stop();
@@ -271,13 +288,34 @@ export const SpeechInput = ({
       mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start();
       setIsListening(true);
+
+      // Start timer if maxRecordingTime is set
+      if (maxRecordingTime && maxRecordingTime > 0) {
+        timerRef.current = setInterval(() => {
+          setRecordingTime((prev) => {
+            const newTime = prev + 1;
+            if (newTime >= maxRecordingTime) {
+              // Auto-stop when time limit reached
+              if (mediaRecorderRef.current?.state === "recording") {
+                mediaRecorderRef.current.stop();
+              }
+              return newTime;
+            }
+            return newTime;
+          });
+        }, 1000);
+      }
     } catch {
       setIsListening(false);
     }
-  }, []);
+  }, [maxRecordingTime]);
 
   // Stop MediaRecorder recording
   const stopMediaRecorder = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
     if (mediaRecorderRef.current?.state === "recording") {
       playNotificationSound();
       mediaRecorderRef.current.stop();
@@ -354,6 +392,13 @@ export const SpeechInput = ({
         {!isProcessing && isListening && <SquareIcon className="size-4" />}
         {!(isProcessing || isListening) && <MicIcon className="size-4" />}
       </Button>
+
+      {/* Recording timer */}
+      {isListening && maxRecordingTime && (
+        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-medium text-muted-foreground">
+          {recordingTime}s / {maxRecordingTime}s
+        </div>
+      )}
     </div>
   );
 };

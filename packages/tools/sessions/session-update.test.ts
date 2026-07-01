@@ -2,7 +2,7 @@
  * Smoke tests for session_update tool.
  *
  * Run with:
- *   cd /home/mariu/projects/opendora
+ *   cd /home/mariu/projects/projectflows
  *   bun packages/tools/sessions/session-update.test.ts
  */
 

@@ -1,8 +1,8 @@
 /**
  * Codex (ChatGPT CLI) session importer.
  *
- * Reads a Codex rollout JSONL file (under .codex/sessions/) and materialises it as an
- * opendora session with MessageV2 messages and parts.
+ * Reads a Codex rollout JSONL file (under .codex/sessions/) and materialises it as a
+ * Projectflows session with MessageV2 messages and parts.
  *
  * Codex lays out a session as a sequence of typed records:
  *   - `session_meta`          — header with id, cwd, git, model, instructions
@@ -15,7 +15,7 @@
  * Consecutive assistant-producing records (reasoning + function_call + message)
  * are merged into one Assistant message. Each user message is its own turn.
  * Function call outputs are matched to their preceding call by id and stored
- * as state transitions on the same ToolPart, matching opendora's tool model.
+ * as state transitions on the same ToolPart, matching Projectflows's tool model.
  */
 
 import type { ImportOptions, ImportResult } from "./types"

@@ -13,7 +13,7 @@ import type { AgentTemplate } from "./types"
 export { AgentConfig, type AgentTemplate } from "./types"
 
 /**
- * Default agent templates shipped with OpenDora.
+ * Default agent templates shipped with Projectflows.
  * These are used to seed .projectflows/agents/ on first run.
  */
 export const templates: Record<string, AgentTemplate> = {

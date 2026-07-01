@@ -31,8 +31,8 @@ export const MemoryWriteTool = Tool.define("memory_write", {
   async execute(params, ctx) {
     const toolDir = (() => { try { return directory(ctx) } catch { return undefined } })()
     const instanceDir = (() => { try { return Instance.directory } catch { return undefined } })()
-    const opendoraDir = await findProjectFlowsDirCandidates([toolDir, instanceDir])
-    const memoryPath = resolveMemoryPath(opendoraDir, params.scope, ctx.agent)
+    const projectflowsDir = await findProjectFlowsDirCandidates([toolDir, instanceDir])
+    const memoryPath = resolveMemoryPath(projectflowsDir, params.scope, ctx.agent)
 
     const entries = await readMemoryFile(memoryPath)
 
@@ -60,7 +60,7 @@ export const MemoryWriteTool = Tool.define("memory_write", {
       sessionID: ctx.sessionID,
       agentID: ctx.agent,
       callID: ctx.callID,
-      directory: opendoraDir,
+      directory: projectflowsDir,
       name: params.name,
       description: params.description,
       scope: params.scope,
@@ -69,7 +69,7 @@ export const MemoryWriteTool = Tool.define("memory_write", {
 
     return {
       title: `Memory ${action}: ${params.name}`,
-      metadata: { scope: params.scope, name: params.name, action, path: memoryPath, agentID: ctx.agent, directory: opendoraDir },
+      metadata: { scope: params.scope, name: params.name, action, path: memoryPath, agentID: ctx.agent, directory: projectflowsDir },
       output: `Memory entry "${params.name}" ${action} in ${params.scope} MEMORY.json (${memoryPath}).`,
     }
   },
