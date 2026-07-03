@@ -1,11 +1,21 @@
 "use client"
 
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Chatbot } from './chatbot'
 import { Header } from './header'
 import { useOpendoraContext } from './projectflows-context'
 import { PreviewPanel } from "@/components/ai-elements/preview-panel"
+import { opendora } from "@/lib/projectflows"
 
 export default function Page() {
+  const router = useRouter()
+  useEffect(() => {
+    opendora.plugin.getOnboardingStatus().then(({ needsOnboarding }) => {
+      if (needsOnboarding) router.replace("/onboarding")
+    }).catch(() => { /* server not ready yet — ignore */ })
+  }, [router])
+
   const {
     webPreviewOpen,
     webPreviewUrl,

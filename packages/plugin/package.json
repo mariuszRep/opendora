@@ -1,0 +1,33 @@
+{
+  "name": "@projectflows/plugin",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./manifest": "./src/manifest.ts",
+    "./storage": "./src/storage.ts",
+    "./lockfile": "./src/lockfile.ts",
+    "./scope": "./src/scope.ts",
+    "./conflict": "./src/conflict.ts",
+    "./source-group": "./src/source-group.ts",
+    "./config": "./src/config.ts",
+    "./uninstall": "./src/uninstall.ts",
+    "./onboarding": "./src/onboarding.ts",
+    "./catalog": "./src/catalog.ts"
+  },
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "test": "bun test --timeout 30000"
+  },
+  "dependencies": {
+    "@projectflows/util": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "catalog:",
+    "@types/bun": "catalog:",
+    "@types/node": "^20.14.10",
+    "typescript": "catalog:"
+  }
+}

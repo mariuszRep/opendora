@@ -18,6 +18,10 @@ import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
 import { DebugCommand } from "./cli/cmd/debug"
 import { StatsCommand } from "./cli/cmd/stats"
 import { McpCommand } from "./cli/cmd/mcp"
+import { PluginCommand } from "./cli/cmd/plugin"
+import { OnboardingCommand, runOnboarding } from "./cli/cmd/onboarding"
+import { Onboarding } from "@projectflows/plugin/onboarding"
+import { PluginInstaller } from "@projectflows/plugin"
 import { GithubCommand } from "./cli/cmd/github"
 import { ExportCommand } from "./cli/cmd/export"
 import { ImportCommand } from "./cli/cmd/import"
@@ -127,6 +131,21 @@ let cli = yargs(hideBin(process.argv))
       }
       process.stderr.write("Database migration complete." + EOL)
     }
+
+    if (!opts["skip-onboarding"] && process.stdout.isTTY) {
+      const alreadyDone = await Onboarding.isComplete()
+      if (!alreadyDone) {
+        const plugins = await PluginInstaller.list()
+        if (plugins.length === 0) {
+          await runOnboarding()
+        }
+      }
+    }
+  })
+  .option("skip-onboarding", {
+    describe: "skip capability pack selection on first run",
+    type: "boolean",
+    default: false,
   })
   .usage("\n" + UI.logo())
   .completion("completion", "generate shell completion script")
@@ -156,6 +175,8 @@ let cli = yargs(hideBin(process.argv))
   .command(StopCommand)
   .command(RestartCommand)
   .command(StatusCommand)
+  .command(PluginCommand)
+  .command(OnboardingCommand)
 
 if (Installation.isLocal()) {
   cli = cli.command(WorkspaceServeCommand)

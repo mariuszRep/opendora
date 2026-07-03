@@ -434,6 +434,7 @@ export type ToolSchema = {
   id: string
   description: string
   source: "internal" | "mcp"
+  sourceGroup: string
   mcpServer?: string
   inputSchema: {
     type?: string
@@ -900,6 +901,46 @@ export const opendora = {
     delete: (directory: string, name: string, scope: string, agentID?: string) =>
       req<void>(`/memory/${encodeURIComponent(name)}?directory=${encodeURIComponent(directory)}&scope=${scope}${agentID ? `&agentID=${encodeURIComponent(agentID)}` : ""}`, { method: "DELETE" }),
   },
+  plugin: {
+    list: () => req<PluginListItem[]>("/plugin/"),
+    info: (id: string) => req<PluginListItem>(`/plugin/${id}`),
+    install: (path: string, scope?: "global" | "project") =>
+      req<PluginListItem>("/plugin/install", { method: "POST", body: JSON.stringify({ path, scope: scope ?? "global" }) }),
+    remove: (id: string) => req<void>(`/plugin/${id}`, { method: "DELETE" }),
+    enable: (id: string) => req<void>(`/plugin/${id}/enable`, { method: "PATCH" }),
+    disable: (id: string) => req<void>(`/plugin/${id}/disable`, { method: "PATCH" }),
+    listCatalogPacks: () => req<PackDefinition[]>("/plugin/catalog/packs"),
+    installCatalogPack: (packId: string) =>
+      req<PluginListItem[]>(`/plugin/catalog/packs/${packId}/install`, { method: "POST" }),
+    skipOnboarding: () => req<{ ok: boolean }>("/plugin/catalog/skip", { method: "POST" }),
+    getOnboardingStatus: () =>
+      req<{ needsOnboarding: boolean; state: OnboardingRecord | null }>("/plugin/catalog/onboarding-status"),
+  },
+}
+
+export type PluginListItem = {
+  pluginId: string
+  version: string
+  scope: "global" | "project"
+  source: string
+  installedAt: string
+  enabled: boolean
+  capabilities: Array<{ type: string; name: string; sourceGroup: string }>
+  dependencies?: string[]
+}
+
+export type PackDefinition = {
+  id: string
+  name: string
+  description: string
+  plugins: string[]
+}
+
+export type OnboardingRecord = {
+  completedAt: string
+  skipped: boolean
+  selectedPacks: string[]
+  installedPlugins: string[]
 }
 
 export type MemoryEntry = {
