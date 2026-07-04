@@ -600,6 +600,26 @@ export namespace Server {
             return c.json(true)
           },
         )
+        .delete(
+          "/skill/:name",
+          describeRoute({
+            summary: "Delete skill",
+            description: "Remove a skill's directory from disk.",
+            operationId: "app.skill.delete",
+            responses: {
+              200: {
+                description: "Deleted",
+                content: { "application/json": { schema: resolver(z.boolean()) } },
+              },
+            },
+          }),
+          validator("param", z.object({ name: z.string() })),
+          async (c) => {
+            const { name } = c.req.valid("param")
+            await Skill.remove(name)
+            return c.json(true)
+          },
+        )
         .get(
           "/lsp",
           describeRoute({

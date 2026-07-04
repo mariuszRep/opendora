@@ -1,10 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { PlusIcon, SearchIcon, Loader2Icon } from "lucide-react"
-import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
-import { SettingsCard } from "@/components/settings/settings-card"
+import { PlusIcon, Loader2Icon, WorkflowIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -17,12 +15,12 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { opendora, type Workflow } from "@/lib/projectflows"
-import { RegistryEntitiesSection } from "@/components/settings/registry-entities-section"
+import { useEntityList } from "@/hooks/use-entity-list"
+import { EntityCatalogPage } from "@/components/settings/entity-catalog-page"
 
 export default function WorkflowsPage() {
   const router = useRouter()
-  const [workflows, setWorkflows] = useState<Workflow[]>([])
-  const [loading, setLoading] = useState(true)
+  const { items: workflows, loading, reload } = useEntityList(() => opendora.workflow.list())
   const [search, setSearch] = useState("")
   const [createOpen, setCreateOpen] = useState(false)
   const [newId, setNewId] = useState("")
@@ -30,22 +28,6 @@ export default function WorkflowsPage() {
   const [newDescription, setNewDescription] = useState("")
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
-
-  useEffect(() => {
-    setLoading(true)
-    opendora.workflow
-      .list()
-      .then(setWorkflows)
-      .catch(() => setWorkflows([]))
-      .finally(() => setLoading(false))
-  }, [])
-
-  const filtered = workflows.filter(
-    (w) =>
-      !search ||
-      w.name.toLowerCase().includes(search.toLowerCase()) ||
-      w.description?.toLowerCase().includes(search.toLowerCase()),
-  )
 
   async function handleCreate() {
     if (!newId.trim() || !newName.trim()) { setCreateError("ID and name are required"); return }
@@ -73,57 +55,30 @@ export default function WorkflowsPage() {
   }
 
   return (
-    <SettingsPageLayout
-      title="Workflows"
-      headerAction={
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <PlusIcon className="size-4" />
-          New Workflow
-        </Button>
-      }
-    >
-      <div className="space-y-4">
-        <div className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Search workflows…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        {loading ? (
-          <div className="flex items-center justify-center py-12 text-muted-foreground">
-            <Loader2Icon className="size-5 animate-spin" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-            <SearchIcon className="size-10 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">
-              {search ? "No workflows match your search." : "No workflows yet. Create one to get started."}
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {filtered.map((w) => (
-              <SettingsCard
-                key={w.id}
-                title={w.name}
-                description={w.description || "No description"}
-                onClick={() => router.push(`/dashboard/settings/workflows/${w.id}`)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="border-t pt-6">
-        <RegistryEntitiesSection
-          entityType="workflow"
-          onInstalled={() => opendora.workflow.list().then(setWorkflows).catch(() => {})}
-        />
-      </div>
+    <>
+      <EntityCatalogPage
+        icon={WorkflowIcon}
+        title="Workflows"
+        items={workflows}
+        loading={loading}
+        search={search}
+        onSearchChange={setSearch}
+        toEntityItem={(w) => ({
+          key: w.id,
+          name: w.name,
+          description: w.description || "No description",
+          onClick: () => router.push(`/dashboard/settings/workflows/${w.id}`),
+        })}
+        sortFn={(a, b) => a.name.localeCompare(b.name)}
+        headerAction={
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <PlusIcon className="size-4" />
+            New Workflow
+          </Button>
+        }
+        registryEntityType="workflow"
+        onInstalled={reload}
+      />
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-md">
@@ -156,6 +111,6 @@ export default function WorkflowsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </SettingsPageLayout>
+    </>
   )
 }

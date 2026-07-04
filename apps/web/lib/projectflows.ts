@@ -830,6 +830,8 @@ export const opendora = {
       req<boolean>("/skill", { method: "PUT", body: JSON.stringify({ location, content }) }),
     updateConfig: (name: string, patch: { tools?: string[] }) =>
       req<boolean>(`/skill/${encodeURIComponent(name)}/config`, { method: "PATCH", body: JSON.stringify(patch) }),
+    remove: (name: string) =>
+      req<boolean>(`/skill/${encodeURIComponent(name)}`, { method: "DELETE" }),
   },
   user: {
     get: () => req<{ name: string; color: string }>("/user"),
@@ -914,6 +916,8 @@ export const opendora = {
         method: "POST",
         body: JSON.stringify({ type, name }),
       }),
+    removeLocal: (type: string, name: string) =>
+      req<boolean>(`/entity/${encodeURIComponent(type)}/${encodeURIComponent(name)}`, { method: "DELETE" }),
   },
   plugin: {
     list: () => req<PluginListItem[]>("/plugin/"),

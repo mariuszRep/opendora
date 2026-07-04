@@ -149,6 +149,19 @@ export default function PluginsPage() {
   return (
     <SettingsPageLayout title="Plugins">
       <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+            <PackageIcon className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Plugins</h2>
+            <p className="text-sm text-muted-foreground">
+              {loading ? "Loading…" : `${remotePlugins.length} plugin${remotePlugins.length === 1 ? "" : "s"} available`}
+            </p>
+          </div>
+        </div>
+
         {/* Filter bar */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 p-1">

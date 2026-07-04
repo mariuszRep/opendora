@@ -122,5 +122,25 @@ export const EntityRoutes = lazy(() =>
           }
         }
       },
+    )
+    .delete(
+      "/:type/:name",
+      describeRoute({
+        summary: "Remove a locally installed entity",
+        operationId: "entity.removeLocal",
+        responses: {
+          200: { description: "Entity removed" },
+          400: { description: "Invalid entity type" },
+        },
+      }),
+      async (c) => {
+        const type = c.req.param("type")
+        const name = c.req.param("name")
+        const root = PluginStorage.globalRoot()
+        const p = entityDir(type, name, root)
+        if (!p) return c.json({ message: "Invalid entity type" }, 400)
+        await fs.rm(p, { recursive: true, force: true })
+        return c.json(true)
+      },
     ),
 )

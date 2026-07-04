@@ -1,8 +1,20 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { CheckCircle2Icon, CircleIcon, ChevronDownIcon, ChevronRightIcon, Loader2Icon, MonitorIcon, MousePointerIcon, SearchIcon, Trash2Icon, WrenchIcon } from "lucide-react"
+import {
+  CheckCircle2Icon,
+  CircleIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  Loader2Icon,
+  MonitorIcon,
+  MousePointerIcon,
+  WrenchIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
+import { EntityCatalogSection } from "@/components/settings/entity-catalog-section"
 import { RegistryPluginsSection } from "@/components/settings/registry-plugins-section"
 import { RegistryEntitiesSection } from "@/components/settings/registry-entities-section"
 import { Button } from "@/components/ui/button"
@@ -11,8 +23,15 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { opendora, type ToolSchema } from "@/lib/projectflows"
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
+import { groupToolsBySource, sortSourceGroups, sourceGroupLabel } from "@/lib/tool-groups"
 
 type GlobalConfig = {
   tool_config?: {
@@ -124,8 +143,52 @@ const PYAUTOGUI_TOOL_GROUPS = [
   },
 ]
 
-function ToolRegistryCard({ schemas, loading }: { schemas: ToolSchema[]; loading: boolean }) {
-  const [search, setSearch] = useState("")
+// ── ToolSchemaDialog ──────────────────────────────────────────────────────
+
+function ToolSchemaDialog({ tool, onClose }: { tool: ToolSchema | null; onClose: () => void }) {
+  if (!tool) return null
+  const json = JSON.stringify(
+    { name: tool.id, description: tool.description, inputSchema: tool.inputSchema },
+    null,
+    2
+  )
+  return (
+    <Dialog open={!!tool} onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col gap-0 p-0 overflow-hidden">
+        <DialogHeader className="flex-row items-center gap-3 border-b px-4 py-3 shrink-0">
+          <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
+            <WrenchIcon className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <DialogTitle className="text-sm font-mono font-semibold leading-none truncate">
+              {tool.id}
+            </DialogTitle>
+            {tool.description && (
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.description}</p>
+            )}
+          </div>
+          <Button size="icon-sm" variant="ghost" className="size-7 shrink-0" onClick={onClose}>
+            <XIcon className="size-4" />
+          </Button>
+        </DialogHeader>
+        <div className="flex-1 overflow-auto p-4">
+          <pre className="text-xs bg-muted rounded border p-3 overflow-auto font-mono leading-relaxed whitespace-pre-wrap">
+            {json}
+          </pre>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ── ToolGroupsView ────────────────────────────────────────────────────────
+
+function ToolGroupsView({ schemas, loading, search, onSearchChange }: {
+  schemas: ToolSchema[]
+  loading: boolean
+  search: string
+  onSearchChange: (s: string) => void
+}) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   const filtered = schemas.filter((s) => {
@@ -134,7 +197,10 @@ function ToolRegistryCard({ schemas, loading }: { schemas: ToolSchema[]; loading
     return s.id.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
   })
 
-  const toggle = (id: string) => {
+  const grouped = groupToolsBySource(filtered)
+  const sortedGroups = sortSourceGroups(Array.from(grouped.keys()))
+
+  function toggle(id: string) {
     setExpanded((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -144,82 +210,76 @@ function ToolRegistryCard({ schemas, loading }: { schemas: ToolSchema[]; loading
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <SearchIcon className="size-5 text-muted-foreground" />
-          <CardTitle className="text-lg">Tool Registry</CardTitle>
-        </div>
-        <CardDescription>
-          All available tools — internal and MCP — with their full JSON input schemas.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="relative">
-          <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Search tools…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
-          />
-        </div>
+    <div className="flex flex-col gap-4">
+      <div className="relative max-w-sm">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <Input
+          placeholder="Search tools…"
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-9"
+        />
+      </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">No tools found.</p>
-        ) : (
-          <div className="space-y-1">
-            {filtered.map((tool) => {
-              const isOpen = expanded.has(tool.id)
-              const json = JSON.stringify(
-                { name: tool.id, description: tool.description, inputSchema: tool.inputSchema },
-                null,
-                2
-              )
-              return (
-                <div key={tool.id} className="rounded-md border bg-muted/20 overflow-hidden">
-                  <button
-                    className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted/40 transition-colors"
-                    onClick={() => toggle(tool.id)}
-                  >
-                    {isOpen ? (
-                      <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
-                    ) : (
-                      <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
-                    )}
-                    <span className="font-mono text-sm font-medium flex-1 min-w-0 truncate">{tool.id}</span>
-                    {tool.sourceGroup && tool.sourceGroup !== "core" && (
-                      <Badge variant="secondary" className="text-xs shrink-0">
-                        {tool.sourceGroup.startsWith("mcp:") ? tool.sourceGroup.slice(4) : tool.sourceGroup.startsWith("plugin:") ? tool.sourceGroup.slice(7) : tool.sourceGroup}
-                      </Badge>
-                    )}
-                    {tool.source === "mcp" && !tool.sourceGroup && (
-                      <Badge variant="secondary" className="text-xs shrink-0">MCP</Badge>
-                    )}
-                  </button>
-                  {isOpen && (
-                    <div className="border-t px-3 py-3 space-y-2">
-                      {tool.description && (
-                        <p className="text-sm text-muted-foreground">{tool.description}</p>
-                      )}
-                      <pre className="text-xs bg-background rounded border p-3 overflow-auto font-mono leading-relaxed whitespace-pre-wrap max-h-64">
-                        {json}
-                      </pre>
-                    </div>
-                  )}
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-8">No tools found.</p>
+      ) : (
+        <div className="space-y-4">
+          {sortedGroups.map((sg) => {
+            const tools = grouped.get(sg) ?? []
+            const label = sourceGroupLabel(sg)
+            return (
+              <div key={sg}>
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{label}</div>
+                <div className="space-y-1">
+                  {tools.map((tool) => {
+                    const isOpen = expanded.has(tool.id)
+                    const json = JSON.stringify(
+                      { name: tool.id, description: tool.description, inputSchema: tool.inputSchema },
+                      null,
+                      2
+                    )
+                    return (
+                      <div key={tool.id} className="rounded-md border bg-muted/20 overflow-hidden">
+                        <button
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted/40 transition-colors"
+                          onClick={() => toggle(tool.id)}
+                        >
+                          {isOpen ? (
+                            <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
+                          ) : (
+                            <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
+                          )}
+                          <span className="font-mono text-sm font-medium flex-1 min-w-0 truncate">{tool.id}</span>
+                        </button>
+                        {isOpen && (
+                          <div className="border-t px-3 py-3 space-y-2">
+                            {tool.description && (
+                              <p className="text-sm text-muted-foreground">{tool.description}</p>
+                            )}
+                            <pre className="text-xs bg-background rounded border p-3 overflow-auto font-mono leading-relaxed whitespace-pre-wrap max-h-64">
+                              {json}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
-              )
-            })}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }
+
+// ── Page ──────────────────────────────────────────────────────────────────
 
 export default function ToolsPage() {
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig | null>(null)
@@ -229,6 +289,9 @@ export default function ToolsPage() {
   const [savingExaToggle, setSavingExaToggle] = useState(false)
   const [savingDesktop, setSavingDesktop] = useState(false)
   const { schemas: toolSchemas, loading: loadingSchemas } = useToolSchemas()
+  const [toolView, setToolView] = useState<"tools" | "groups">("tools")
+  const [search, setSearch] = useState("")
+  const [selectedTool, setSelectedTool] = useState<ToolSchema | null>(null)
 
   useEffect(() => {
     opendora.config.get().then(setGlobalConfig).catch(() => {})
@@ -244,9 +307,7 @@ export default function ToolsPage() {
     setSavingExaKey(true)
     setExaKeyError(null)
     try {
-      await opendora.config.update({
-        tool_config: { exa: { ...exa, apiKey: exaApiKey.trim() } },
-      })
+      await opendora.config.update({ tool_config: { exa: { ...exa, apiKey: exaApiKey.trim() } } })
       setExaApiKey("")
       opendora.config.get().then(setGlobalConfig).catch(() => {})
     } catch (err) {
@@ -258,9 +319,7 @@ export default function ToolsPage() {
 
   async function handleRemoveExaApiKey() {
     try {
-      await opendora.config.update({
-        tool_config: { exa: { useApiKey: false } },
-      })
+      await opendora.config.update({ tool_config: { exa: { useApiKey: false } } })
       opendora.config.get().then(setGlobalConfig).catch(() => {})
     } catch (err) {
       console.error("Failed to remove EXA API key:", err)
@@ -270,9 +329,7 @@ export default function ToolsPage() {
   async function handleToggleUseApiKey(value: boolean) {
     setSavingExaToggle(true)
     try {
-      await opendora.config.update({
-        tool_config: { exa: { ...exa, useApiKey: value } },
-      })
+      await opendora.config.update({ tool_config: { exa: { ...exa, useApiKey: value } } })
       opendora.config.get().then(setGlobalConfig).catch(() => {})
     } finally {
       setSavingExaToggle(false)
@@ -282,20 +339,71 @@ export default function ToolsPage() {
   async function handleToggleDesktop(value: boolean) {
     setSavingDesktop(true)
     try {
-      await opendora.config.update({
-        tool_config: { desktop: { enabled: value } },
-      })
+      await opendora.config.update({ tool_config: { desktop: { enabled: value } } })
       opendora.config.get().then(setGlobalConfig).catch(() => {})
     } finally {
       setSavingDesktop(false)
     }
   }
 
-  return (
-    <SettingsPageLayout title="Tools" narrow>
-      <div className="flex flex-col gap-6">
-        <ToolRegistryCard schemas={toolSchemas} loading={loadingSchemas} />
+  const toggleButtons: { label: string; value: "tools" | "groups" }[] = [
+    { label: "Tools", value: "tools" },
+    { label: "Groups", value: "groups" },
+  ]
 
+  return (
+    <SettingsPageLayout title="Tools">
+      <div className="flex flex-col gap-6">
+        {/* Tools / Groups toggle */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 p-1">
+            {toggleButtons.map((btn) => (
+              <button
+                key={btn.value}
+                onClick={() => { setToolView(btn.value); setSearch("") }}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  toolView === btn.value
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tool list — grid or grouped */}
+        {toolView === "tools" ? (
+          <EntityCatalogSection
+            icon={WrenchIcon}
+            title="Tools"
+            items={toolSchemas}
+            loading={loadingSchemas}
+            search={search}
+            onSearchChange={setSearch}
+            toEntityItem={(t) => ({
+              key: t.id,
+              name: t.id,
+              description: t.description,
+              action: t.sourceGroup ? (
+                <Badge variant="secondary" className="text-xs shrink-0">
+                  {sourceGroupLabel(t.sourceGroup)}
+                </Badge>
+              ) : undefined,
+              onClick: () => setSelectedTool(t),
+            })}
+          />
+        ) : (
+          <ToolGroupsView
+            schemas={toolSchemas}
+            loading={loadingSchemas}
+            search={search}
+            onSearchChange={setSearch}
+          />
+        )}
+
+        {/* Tool Configuration */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -362,17 +470,14 @@ export default function ToolsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {savingExaToggle && <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />}
-                  <Switch
-                    checked={useApiKey}
-                    onCheckedChange={handleToggleUseApiKey}
-                    disabled={savingExaToggle}
-                  />
+                  <Switch checked={useApiKey} onCheckedChange={handleToggleUseApiKey} disabled={savingExaToggle} />
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
 
+        {/* Desktop Automation */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -382,11 +487,7 @@ export default function ToolsPage() {
               </div>
               <div className="flex items-center gap-2">
                 {savingDesktop && <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />}
-                <Switch
-                  checked={desktopEnabled}
-                  onCheckedChange={handleToggleDesktop}
-                  disabled={savingDesktop}
-                />
+                <Switch checked={desktopEnabled} onCheckedChange={handleToggleDesktop} disabled={savingDesktop} />
               </div>
             </div>
             <CardDescription>
@@ -413,6 +514,7 @@ export default function ToolsPage() {
           )}
         </Card>
 
+        {/* PyAutoGUI */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -446,6 +548,8 @@ export default function ToolsPage() {
         <RegistryEntitiesSection entityType="tool" />
         <RegistryPluginsSection category="tools" />
       </div>
+
+      <ToolSchemaDialog tool={selectedTool} onClose={() => setSelectedTool(null)} />
     </SettingsPageLayout>
   )
 }

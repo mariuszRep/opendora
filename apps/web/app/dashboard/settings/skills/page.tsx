@@ -1,13 +1,11 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { BookOpenIcon, SearchIcon, MapPinIcon, XIcon, SaveIcon, CheckIcon, WrenchIcon, ChevronDownIcon } from "lucide-react"
-import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
+import { useRef, useState, useEffect } from "react"
+import { BookOpenIcon, SearchIcon, XIcon, SaveIcon, CheckIcon, WrenchIcon, ChevronDownIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { SettingsCard } from "@/components/settings/settings-card"
 import {
   Dialog,
   DialogContent,
@@ -20,7 +18,9 @@ import { CodeViewToggle } from "@/components/ui/code-view-toggle"
 import { opendora, type Skill } from "@/lib/projectflows"
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
 import { HIDDEN_TOOLS } from "@/lib/tool-groups"
-import { RegistryEntitiesSection } from "@/components/settings/registry-entities-section"
+import { useEntityCatalog } from "@/hooks/use-entity-catalog"
+import { EntityCatalogPage } from "@/components/settings/entity-catalog-page"
+import type { CatalogFilter } from "@/components/settings/entity-catalog-section"
 
 function originFromLocation(location: string): string {
   if (location.includes("anthropic")) return "anthropic"
@@ -41,12 +41,6 @@ const ORIGIN_COLORS: Record<string, string> = {
 }
 
 // ── CodeEditorTextarea ─────────────────────────────────────────────────────
-// Visually matches the existing CodeBlock component:
-//   p-4  |  w-8 line-num  |  mr-4 gap  |  code text
-// The line-number column is 48px (w-12 = 16px pl + 32px content, text-right).
-// The gap div is 16px (matching before:mr-4).
-// The textarea starts with no left padding — code text at the same x as CodeBlock.
-// Both use font-mono text-sm with line-height 1.25rem.
 
 function CodeEditorTextarea({
   value,
@@ -70,7 +64,6 @@ function CodeEditorTextarea({
 
   return (
     <div className="flex h-full font-mono text-sm dark:bg-[#0d1117] bg-white">
-      {/* Line numbers — w-12 (48px) with pl-4 leaves 32px (=w-8) for the number text */}
       <div
         ref={lineNumsRef}
         aria-hidden
@@ -83,11 +76,7 @@ function CodeEditorTextarea({
           </div>
         ))}
       </div>
-
-      {/* Gap — 16px matching before:mr-4 in the original CodeBlock */}
       <div className="w-4 shrink-0" />
-
-      {/* Editable textarea — fills remaining space, no extra left padding */}
       <textarea
         ref={innerRef}
         value={value}
@@ -122,7 +111,6 @@ function ToolsMultiSelect({
   const [search, setSearch] = useState("")
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return
     function handler(e: MouseEvent) {
@@ -145,7 +133,6 @@ function ToolsMultiSelect({
 
   return (
     <div ref={containerRef} className="relative flex-1 min-w-0">
-      {/* Trigger */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -170,7 +157,6 @@ function ToolsMultiSelect({
         <ChevronDownIcon className="ml-auto size-3.5 shrink-0 text-muted-foreground" />
       </button>
 
-      {/* Dropdown */}
       {open && (
         <div className="absolute left-0 top-full z-[200] mt-1 w-full min-w-[220px] rounded-lg border bg-popover shadow-md">
           <div className="p-2 pb-1">
@@ -245,7 +231,6 @@ function SkillPreviewDialog({
   const [toolsSavedFlash, setToolsSavedFlash] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Reset state whenever a different skill is opened
   useEffect(() => {
     if (skill) {
       setDraft(skill.content)
@@ -257,7 +242,6 @@ function SkillPreviewDialog({
     }
   }, [skill?.location])
 
-  // Focus textarea when entering code mode
   useEffect(() => {
     if (viewMode === "code") {
       setTimeout(() => textareaRef.current?.focus(), 0)
@@ -308,7 +292,6 @@ function SkillPreviewDialog({
         showCloseButton={false}
         className="flex flex-col gap-0 p-0 w-full sm:w-[90vw] sm:max-w-5xl max-h-[85vh] overflow-hidden"
       >
-        {/* Header */}
         <DialogHeader className="flex-row items-center gap-3 border-b px-4 py-3 shrink-0">
           <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
             <BookOpenIcon className="h-4 w-4" />
@@ -357,7 +340,6 @@ function SkillPreviewDialog({
           </Button>
         </DialogHeader>
 
-        {/* Tools bar */}
         <div className="shrink-0 border-b px-4 py-2 flex items-center gap-2">
           <WrenchIcon className="size-3.5 text-muted-foreground shrink-0" />
           <span className="text-xs text-muted-foreground shrink-0">Tools:</span>
@@ -387,7 +369,6 @@ function SkillPreviewDialog({
           </div>
         )}
 
-        {/* Body — overflow-hidden when editing so the textarea scrolls itself */}
         <div className={`min-h-0 flex-1 ${viewMode === "code" ? "overflow-hidden" : "overflow-auto"}`}>
           {viewMode === "code" ? (
             <CodeEditorTextarea
@@ -415,92 +396,56 @@ function SkillPreviewDialog({
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function SkillsPage() {
-  const [skills, setSkills] = useState<Skill[]>([])
   const { schemas: toolSchemas } = useToolSchemas()
   const availableTools = toolSchemas.map((t) => t.id).filter((id) => !HIDDEN_TOOLS.has(id))
-  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [filter, setFilter] = useState<CatalogFilter>("all")
   const [selected, setSelected] = useState<Skill | null>(null)
 
-  useEffect(() => {
-    opendora.skill.list()
-      .then(setSkills)
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+  const { items, loading, reload } = useEntityCatalog(
+    "skill",
+    () => opendora.skill.list(),
+    (s) => ({
+      id: s.name,
+      type: "skill" as const,
+      name: s.name,
+      description: s.description || "No description",
+      onManage: () => setSelected(s),
+      onDelete: async () => { await opendora.skill.remove(s.name); reload() },
+      onUninstall: async () => { await opendora.skill.remove(s.name); reload() },
+    }),
+  )
 
   function handleSaved(location: string, content: string) {
-    setSkills((prev) => prev.map((s) => (s.location === location ? { ...s, content } : s)))
+    reload()
     setSelected((prev) => (prev?.location === location ? { ...prev, content } : prev))
   }
 
   function handleToolsSaved(name: string, tools: string[]) {
-    setSkills((prev) => prev.map((s) => (s.name === name ? { ...s, tools } : s)))
+    reload()
     setSelected((prev) => (prev?.name === name ? { ...prev, tools } : prev))
   }
 
-  const filtered = (search
-    ? skills.filter((s) =>
-        s.name.toLowerCase().includes(search.toLowerCase()) ||
-        s.description.toLowerCase().includes(search.toLowerCase())
-      )
-    : skills
-  ).slice().sort((a, b) => a.name.localeCompare(b.name))
-
   return (
-    <SettingsPageLayout title="Skills">
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10 text-primary">
-            <BookOpenIcon className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold">Skills</h2>
-            <p className="text-sm text-muted-foreground">
-              {loading ? "Loading…" : `${skills.length} skill${skills.length === 1 ? "" : "s"} available`}
-            </p>
-          </div>
-        </div>
-
-        <div className="relative max-w-sm">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search skills…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-
-        {loading ? (
-          <div className="text-sm text-muted-foreground">Loading skills…</div>
-        ) : filtered.length === 0 ? (
-          <div className="text-sm text-muted-foreground">
-            {search ? "No skills match your search." : "No skills found."}
-          </div>
-        ) : (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {filtered.map((skill) => {
-              const origin = originFromLocation(skill.location)
-              const colorClass = ORIGIN_COLORS[origin] ?? ORIGIN_COLORS.local
-              return (
-                <SettingsCard
-                  key={skill.name}
-                  title={skill.name}
-                  description={skill.description || "No description"}
-                  onClick={() => setSelected(skill)}
-                />
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      <div className="border-t pt-6">
-        <RegistryEntitiesSection entityType="skill" onInstalled={() => opendora.skill.list().then(setSkills).catch(() => {})} />
-      </div>
-
-      <SkillPreviewDialog skill={selected} availableTools={availableTools} onClose={() => setSelected(null)} onSaved={handleSaved} onToolsSaved={handleToolsSaved} />
-    </SettingsPageLayout>
+    <>
+      <EntityCatalogPage
+        icon={BookOpenIcon}
+        title="Skills"
+        items={items}
+        loading={loading}
+        filter={filter}
+        onFilterChange={setFilter}
+        search={search}
+        onSearchChange={setSearch}
+        sortFn={(a, b) => a.name.localeCompare(b.name)}
+      />
+      <SkillPreviewDialog
+        skill={selected}
+        availableTools={availableTools}
+        onClose={() => setSelected(null)}
+        onSaved={handleSaved}
+        onToolsSaved={handleToolsSaved}
+      />
+    </>
   )
 }
