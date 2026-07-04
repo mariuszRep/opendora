@@ -32,7 +32,7 @@ import { TaskTool } from "@projectflows/tools/system/task"
 import { Shell } from "@projectflows/util/shell"
 import { Truncate } from "@projectflows/tools/truncation-impl"
 import { Skill } from "@projectflows/skills/skill"
-import { WorkflowStorage } from "@projectflows/workflow/storage"
+import { WorkflowStorage, configurePluginWorkflowDirs } from "@projectflows/workflow/storage"
 import { Ripgrep } from "@projectflows/tools/filesystem/lib/ripgrep"
 import { SessionPrompt } from "@projectflows/session/prompt"
 import { Session } from "@projectflows/session/session"
@@ -41,6 +41,7 @@ import { Schedule } from "@projectflows/schedule/service"
 import { addSkillTools, getSkillTools } from "@projectflows/session/skill-tools"
 import { register as registerConfig } from "@projectflows/util/config"
 import { register as registerPluginList } from "@projectflows/provider/plugin"
+import { CapabilityRegistry } from "@projectflows/plugin"
 
 async function enrichAgent(agent: any): Promise<any> {
   const allowedAgents: string[] | undefined = agent?.config?.toolConfig?.delegate?.allowedAgents
@@ -72,6 +73,19 @@ export function configureSessionCore() {
 
   registerConfig(() => Config.get())
   registerPluginList(() => Plugin.list())
+
+  Skill.configurePluginSkillDirs(async () => {
+    const projectDir = (() => { try { return Instance.directory } catch { return undefined } })()
+    return CapabilityRegistry.getInstalledDirs("skill", projectDir)
+  })
+
+  // Agents are installed to ~/.projectflows/agents/ and AgentCore.list() already scans there.
+  // No additional plugin dir registration needed — that would duplicate the same path.
+
+  configurePluginWorkflowDirs(async () => {
+    const projectDir = (() => { try { return Instance.directory } catch { return undefined } })()
+    return CapabilityRegistry.getInstalledDirs("workflow", projectDir)
+  })
 
   configure({
     // Wrap Database.Client() so it's resolved lazily at call time

@@ -99,3 +99,32 @@ export function getToolGroup(id: string): ToolGroupId {
   if (isPyAutoGUI(id)) return "pyautogui"
   return "others"
 }
+
+// ── Source-group utilities ─────────────────────────────────────────────────
+
+export function sourceGroupLabel(sg: string): string {
+  if (sg === "core") return "Core"
+  if (sg.startsWith("plugin:")) return sg.slice(7)
+  if (sg.startsWith("mcp:")) return sg.slice(4)
+  return sg
+}
+
+export function groupToolsBySource<T extends { sourceGroup?: string }>(tools: T[]): Map<string, T[]> {
+  const groups = new Map<string, T[]>()
+  for (const t of tools) {
+    const sg = t.sourceGroup ?? "core"
+    if (!groups.has(sg)) groups.set(sg, [])
+    groups.get(sg)!.push(t)
+  }
+  return groups
+}
+
+export function sortSourceGroups(groups: string[]): string[] {
+  return [...groups].sort((a, b) => {
+    if (a === "core") return -1
+    if (b === "core") return 1
+    if (a.startsWith("mcp:") && !b.startsWith("mcp:")) return -1
+    if (!a.startsWith("mcp:") && b.startsWith("mcp:")) return 1
+    return a.localeCompare(b)
+  })
+}

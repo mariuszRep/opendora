@@ -5,6 +5,8 @@ import { MCP } from "../mcp"
 import { Config } from "@projectflows/config/config"
 import { errors } from "../error"
 import { lazy } from "@projectflows/util/lazy"
+import { CapabilityRegistry } from "@projectflows/plugin"
+import { Instance } from "@projectflows/runtime/instance"
 
 export const McpRoutes = lazy(() =>
   new Hono()
@@ -174,6 +176,30 @@ export const McpRoutes = lazy(() =>
         const name = c.req.param("name")
         await MCP.removeAuth(name)
         return c.json({ success: true as const })
+      },
+    )
+    .get(
+      "/presets",
+      describeRoute({
+        summary: "List plugin MCP presets",
+        description: "List MCP server presets contributed by installed plugins. Presets are discoverable but not auto-enabled — use POST /mcp to add one.",
+        operationId: "mcp.presets",
+        responses: {
+          200: {
+            description: "Plugin MCP presets keyed by server name",
+            content: {
+              "application/json": {
+                schema: resolver(z.record(z.string(), z.unknown())),
+              },
+            },
+          },
+        },
+      }),
+      async (c) => {
+        const projectDir = (() => { try { return Instance.directory } catch { return undefined } })()
+        const dirs = await CapabilityRegistry.getInstalledDirs("mcp", projectDir)
+        const presets = await MCP.listPresets(dirs)
+        return c.json(presets)
       },
     )
     .post(

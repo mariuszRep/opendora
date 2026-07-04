@@ -36,7 +36,8 @@
       "packages/server",
       "packages/runtime",
       "packages/skills",
-      "packages/config"
+      "packages/config",
+      "packages/plugin"
     ],
     "catalog": {
       "@types/bun": "1.3.9",

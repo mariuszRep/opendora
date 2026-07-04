@@ -38,17 +38,18 @@ for (const pluginId of ["filesystem", "web-search"] as const) {
       expect(item.pluginId).toBe(pluginId)
       expect(item.enabled).toBe(true)
 
-      // 2. Capabilities appear with correct sourceGroup
+      // 2. Capabilities appear with correct sourceGroup and installedDir = global root
       const caps = await CapabilityRegistry.listCapabilities("tool")
       const mine = caps.filter((c) => c.pluginId === pluginId)
       expect(mine.length).toBeGreaterThan(0)
       for (const cap of mine) {
         expect(cap.sourceGroup).toBe(`plugin:${pluginId}`)
-        expect(cap.installedDir).toBe(PluginStorage.globalInstalledDir(pluginId))
+        // installedDir is the capability root (~/.projectflows/), not the plugin bundle dir
+        expect(cap.installedDir).toBe(PluginStorage.globalRoot())
       }
 
-      // 3. tools/*.js files exist in installedDir
-      const toolsDir = path.join(PluginStorage.globalInstalledDir(pluginId), "tools")
+      // 3. tools/*.js files exist in the global tools dir
+      const toolsDir = path.join(PluginStorage.globalRoot(), "tools")
       const files = await fs.readdir(toolsDir)
       const jsFiles = files.filter((f) => f.endsWith(".js"))
       expect(jsFiles.length).toBeGreaterThan(0)
@@ -73,11 +74,11 @@ for (const pluginId of ["filesystem", "web-search"] as const) {
       const afterEnable = await CapabilityRegistry.listCapabilities("tool")
       expect(afterEnable.find((c) => c.pluginId === pluginId)).toBeDefined()
 
-      // 7. Remove → files gone, capabilities cleared
+      // 7. Remove → plugin bundle dir gone, capabilities cleared
       await PluginInstaller.remove(pluginId, { scope: "global" })
       const afterRemove = await CapabilityRegistry.listCapabilities("tool")
       expect(afterRemove.find((c) => c.pluginId === pluginId)).toBeUndefined()
-      await expect(fs.access(PluginStorage.globalInstalledDir(pluginId))).rejects.toThrow()
+      await expect(fs.access(PluginStorage.globalPluginDir(pluginId))).rejects.toThrow()
     })
   })
 }

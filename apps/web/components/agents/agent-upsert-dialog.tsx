@@ -39,11 +39,9 @@ import { opendora, type Agent, type AgentConfig, type Provider, type Skill, type
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
 import {
   HIDDEN_TOOLS,
-  FILESYSTEM_TOOLS,
-  TOOL_GROUP_ORDER,
-  TOOL_GROUP_LABELS,
-  getToolGroup,
-  type ToolGroupId,
+  groupToolsBySource,
+  sortSourceGroups,
+  sourceGroupLabel,
 } from "@/lib/tool-groups"
 
 type Props = {
@@ -121,14 +119,14 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [fallbackModel, setFallbackModel] = useState<string>(NONE)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const { schemas: toolSchemas } = useToolSchemas()
-  const availableTools = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id) && t.source !== 'mcp').map((t) => t.id)
-  const availableMcpSchemas = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id) && t.source === 'mcp')
-  const mcpServers = Array.from(new Set(availableMcpSchemas.map((t) => t.mcpServer ?? 'MCP')))
+  const availableToolSchemas = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id))
+  const groupedBySource = groupToolsBySource(availableToolSchemas)
+  const allSourceGroups = sortSourceGroups([...groupedBySource.keys()])
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
   const [selectedWorkflows, setSelectedWorkflows] = useState<string[]>([])
   const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>([])
-  const [expandedGroup, setExpandedGroup] = useState<ToolGroupId | string | null>(null)
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
   const [expandedSkill, setExpandedSkill] = useState<string | null>(null)
   const [expandedWorkflow, setExpandedWorkflow] = useState<string | null>(null)
   const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
@@ -254,9 +252,9 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
         description: description.trim() || undefined,
         mode,
         color: color.trim() || undefined,
-        hidden: hidden || undefined,
-        temperature: !isNaN(temp) ? temp : undefined,
-        steps: !isNaN(stepsNum) && stepsNum > 0 ? stepsNum : undefined,
+        hidden: hidden,
+        temperature: !isNaN(temp) ? temp : null as any,
+        steps: !isNaN(stepsNum) && stepsNum > 0 ? stepsNum : null as any,
         model: valueToModel(model),
         fallback_model: valueToModel(fallbackModel),
         tools: selectedTools.length > 0 ? selectedTools : undefined,
@@ -565,19 +563,27 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                 Leave all unchecked to allow all tools. Select specific tools to restrict this agent.
               </p>
 
-              {TOOL_GROUP_ORDER.map((group) => {
-                const groupTools = availableTools.filter((id) => getToolGroup(id) === group)
-                const selectedCount = groupTools.filter((id) => selectedTools.includes(id)).length
-                const isExpanded = expandedGroup === group
+              {allSourceGroups.map((sg) => {
+                const groupTools = groupedBySource.get(sg)!
+                const toolIds = groupTools.map((t) => t.id)
+                const selectedCount = toolIds.filter((id) => selectedTools.includes(id)).length
+                const isExpanded = expandedGroup === sg
+                const isMcp = sg.startsWith("mcp:")
+                const label = sourceGroupLabel(sg)
 
                 return (
-                  <Card key={group} className="cursor-pointer">
+                  <Card key={sg} className="cursor-pointer">
                     <CardHeader
                       className="flex-row items-center justify-between"
-                      onClick={() => setExpandedGroup(isExpanded ? null : group)}
+                      onClick={() => setExpandedGroup(isExpanded ? null : sg)}
                     >
                       <div>
-                        <CardTitle>{TOOL_GROUP_LABELS[group]}</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                          {label}
+                          {isMcp && (
+                            <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">MCP</span>
+                          )}
+                        </CardTitle>
                         <CardDescription>{groupTools.length} tools</CardDescription>
                       </div>
                       {selectedCount > 0 && (
@@ -590,7 +596,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                     {isExpanded && (
                       <CardContent className="border-t pt-2">
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                          {groupTools.map((id) => (
+                          {toolIds.map((id) => (
                             <Label key={id} className="flex cursor-pointer items-center gap-2 font-normal">
                               <Checkbox
                                 checked={selectedTools.includes(id)}
@@ -608,14 +614,14 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                             className="mt-1 h-auto px-0 text-xs text-muted-foreground"
                             onClick={(e) => {
                               e.stopPropagation()
-                              setSelectedTools((prev) => prev.filter((id) => !groupTools.includes(id)))
+                              setSelectedTools((prev) => prev.filter((id) => !toolIds.includes(id)))
                             }}
                           >
                             Clear group
                           </Button>
                         )}
 
-                        {group === "filesystem" && isExpanded && (
+                        {sg === "core" && isExpanded && (
                           <div className="mt-3 border-t pt-3">
                             <p className="mb-0.5 text-xs font-medium">Default working directory</p>
                             <p className="mb-2 text-xs text-muted-foreground">
@@ -673,7 +679,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                           </div>
                         )}
 
-                        {group === "sessions" && selectedTools.includes("delegate") && (
+                        {sg === "core" && selectedTools.includes("delegate") && (
                           <div className="mt-3 border-t pt-3">
                             <p className="mb-0.5 text-xs font-medium">Allowed agents for delegate</p>
                             <p className="mb-2 text-xs text-muted-foreground">
@@ -709,7 +715,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                           </div>
                         )}
 
-                        {group === "sessions" && selectedTools.includes("reply") && (
+                        {sg === "core" && selectedTools.includes("reply") && (
                           <div className="mt-3 border-t pt-3">
                             <Label className="flex cursor-pointer items-center gap-2 font-normal">
                               <Checkbox
@@ -724,60 +730,6 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                               </div>
                             </Label>
                           </div>
-                        )}
-                      </CardContent>
-                    )}
-                  </Card>
-                )
-              })}
-
-              {mcpServers.map((server) => {
-                const serverTools = availableMcpSchemas.filter((t) => (t.mcpServer ?? 'MCP') === server)
-                const serverKey = `mcp:${server}`
-                const selectedCount = serverTools.filter((t) => selectedTools.includes(t.id)).length
-                const isExpanded = expandedGroup === serverKey
-                return (
-                  <Card key={serverKey} className="cursor-pointer">
-                    <CardHeader
-                      className="flex-row items-center justify-between"
-                      onClick={() => setExpandedGroup(isExpanded ? null : serverKey)}
-                    >
-                      <div>
-                        <CardTitle>{server}</CardTitle>
-                        <CardDescription>{serverTools.length} tools · MCP</CardDescription>
-                      </div>
-                      {selectedCount > 0 && (
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                          {selectedCount} selected
-                        </span>
-                      )}
-                    </CardHeader>
-                    {isExpanded && (
-                      <CardContent className="border-t pt-2">
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                          {serverTools.map((t) => (
-                            <Label key={t.id} className="flex cursor-pointer items-center gap-2 font-normal">
-                              <Checkbox
-                                checked={selectedTools.includes(t.id)}
-                                onCheckedChange={() => toggleTool(t.id)}
-                              />
-                              <span className="font-mono text-xs">{t.id}</span>
-                            </Label>
-                          ))}
-                        </div>
-                        {selectedCount > 0 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="mt-1 h-auto px-0 text-xs text-muted-foreground"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedTools((prev) => prev.filter((id) => !serverTools.find((t) => t.id === id)))
-                            }}
-                          >
-                            Clear group
-                          </Button>
                         )}
                       </CardContent>
                     )}

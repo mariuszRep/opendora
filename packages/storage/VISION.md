@@ -6,6 +6,10 @@
 
 Storage is the exclusive persistence abstraction layer for Projectflows packages.
 
+Storage persists installed plugin and catalog-managed entity metadata, including source catalog URL, plugin id, entity type, entity id, version, install scope, install path, and installed timestamp. Physical paths may evolve, but package/domain code must access installation metadata through storage contracts rather than hardcoded filesystem assumptions.
+
+In addition to domain persistence, storage owns the physical layout for plugin installation artifacts under `.projectflows`. Plugin manifest files, installed plugin metadata, lockfiles, and index records are persisted through storage contracts under `~/.projectflows/plugins/` (global) and `<project>/.projectflows/plugins/` (project-local). Storage does not own plugin lifecycle, resolution, or runtime loading — those belong to the plugin system owned by the core application.
+
 ## Owns
 
 - Stable persistence interfaces/contracts.

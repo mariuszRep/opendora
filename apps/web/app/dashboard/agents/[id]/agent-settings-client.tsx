@@ -53,15 +53,9 @@ import { SettingsCard } from "@/components/settings/settings-card"
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
 import {
   HIDDEN_TOOLS,
-  FILESYSTEM_TOOLS,
-  SHELL_TOOLS,
-  BROWSE_AND_WEB_TOOLS,
-  SESSION_TOOLS,
-  AGENT_TOOLS,
-  SKILL_TOOLS,
-  SCHEDULE_TOOLS,
-  DESKTOP_TOOLS,
-  isPyAutoGUI,
+  groupToolsBySource,
+  sortSourceGroups,
+  sourceGroupLabel,
 } from "@/lib/tool-groups"
 
 const MODE_OPTIONS: { value: AgentConfig["mode"]; label: string }[] = [
@@ -102,14 +96,10 @@ export default function AgentSettingsClient() {
   const [fallbackModelOpen, setFallbackModelOpen] = useState(false)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const { schemas: toolSchemas } = useToolSchemas()
-  const availableTools = toolSchemas.filter((t) => t.source === "internal" && !HIDDEN_TOOLS.has(t.id)).map((t) => t.id)
-  const mcpToolsByServer = toolSchemas
-    .filter((t) => t.source === "mcp")
-    .reduce<Record<string, string[]>>((acc, t) => {
-      const server = t.mcpServer || "unknown"
-      ;(acc[server] ??= []).push(t.id)
-      return acc
-    }, {})
+  const availableToolSchemas = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id))
+  const availableTools = availableToolSchemas.map((t) => t.id)
+  const groupedBySource = groupToolsBySource(availableToolSchemas)
+  const allSourceGroups = sortSourceGroups([...groupedBySource.keys()])
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   // Maps skill name -> agent-scoped permission rule id (source of truth for enabled skills)
   const [skillRuleIds, setSkillRuleIds] = useState<Record<string, string>>({})
@@ -345,9 +335,13 @@ export default function AgentSettingsClient() {
         description: description.trim() || undefined,
         mode,
         color,
-        hidden: hidden || undefined,
-        temperature: !isNaN(temp) ? temp : undefined,
-        steps: !isNaN(stepsNum) && stepsNum > 0 ? stepsNum : undefined,
+        // Send the actual boolean so JSON.stringify includes false — `hidden || undefined`
+        // drops false and the server merge would keep the existing hidden:true value.
+        hidden: hidden,
+        // null signals "clear this field" to AgentStorage.update (undefined would be
+        // stripped by JSON.stringify and the server would keep the existing value).
+        temperature: !isNaN(temp) ? temp : null as any,
+        steps: !isNaN(stepsNum) && stepsNum > 0 ? stepsNum : null as any,
         model,
         fallback_model: fallbackModel,
         tools: selectedTools.length > 0 ? selectedTools : undefined,
@@ -424,6 +418,8 @@ export default function AgentSettingsClient() {
                   <ModelSelectorLogo provider={selected.providerID} />
                   <ModelSelectorName>{selected.modelName}</ModelSelectorName>
                 </>
+              ) : value ? (
+                <span className="font-mono text-xs text-muted-foreground">{value.providerID}/{value.modelID}</span>
               ) : (
                 <span className="text-muted-foreground">{noneLabel}</span>
               )}
@@ -814,35 +810,27 @@ export default function AgentSettingsClient() {
               </Button>
             </div>
 
-            {(["filesystem", "shell", "browse-and-web", "sessions", "agents", "skills", "schedule", "desktop", "pyautogui", "others"] as const).map((group) => {
-              const groupTools = (() => {
-                if (group === "filesystem") return availableTools.filter((id) => FILESYSTEM_TOOLS.has(id))
-                if (group === "shell") return availableTools.filter((id) => SHELL_TOOLS.has(id))
-                if (group === "browse-and-web") return availableTools.filter((id) => BROWSE_AND_WEB_TOOLS.has(id))
-                if (group === "sessions") return availableTools.filter((id) => SESSION_TOOLS.has(id))
-                if (group === "agents") return availableTools.filter((id) => AGENT_TOOLS.has(id))
-                if (group === "skills") return availableTools.filter((id) => SKILL_TOOLS.has(id))
-                if (group === "schedule") return availableTools.filter((id) => SCHEDULE_TOOLS.has(id))
-                if (group === "desktop") return availableTools.filter((id) => DESKTOP_TOOLS.has(id))
-                if (group === "pyautogui") return availableTools.filter(isPyAutoGUI)
-                // others: everything not in any specific group
-                return availableTools.filter((id) =>
-                  !FILESYSTEM_TOOLS.has(id) && !SHELL_TOOLS.has(id) && !BROWSE_AND_WEB_TOOLS.has(id) &&
-                  !SESSION_TOOLS.has(id) && !AGENT_TOOLS.has(id) && !SKILL_TOOLS.has(id) && !SCHEDULE_TOOLS.has(id) &&
-                  !DESKTOP_TOOLS.has(id) && !isPyAutoGUI(id)
-                )
-              })()
-              const selectedCount = groupTools.filter((id) => selectedTools.includes(id)).length
-              const isExpanded = expandedGroup === group
+            {allSourceGroups.map((sg) => {
+              const groupTools = groupedBySource.get(sg)!
+              const toolIds = groupTools.map((t) => t.id)
+              const selectedCount = toolIds.filter((id) => selectedTools.includes(id)).length
+              const isExpanded = expandedGroup === sg
+              const isMcp = sg.startsWith("mcp:")
+              const label = sourceGroupLabel(sg)
 
               return (
-                <Card key={group} className="cursor-pointer">
+                <Card key={sg} className="cursor-pointer">
                   <CardHeader
                     className="flex-row items-center justify-between"
-                    onClick={() => setExpandedGroup(isExpanded ? null : group)}
+                    onClick={() => setExpandedGroup(isExpanded ? null : sg)}
                   >
                     <div>
-                      <CardTitle className="capitalize">{group}</CardTitle>
+                      <CardTitle className="flex items-center gap-2">
+                        {label}
+                        {isMcp && (
+                          <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">MCP</span>
+                        )}
+                      </CardTitle>
                       <CardDescription>{groupTools.length} tools</CardDescription>
                     </div>
                     {selectedCount > 0 && (
@@ -855,7 +843,7 @@ export default function AgentSettingsClient() {
                   {isExpanded && (
                     <CardContent className="border-t pt-2">
                       <div className="grid grid-cols-3 gap-x-4 gap-y-2.5">
-                        {groupTools.map((toolId) => (
+                        {toolIds.map((toolId) => (
                           <Label key={toolId} className="flex cursor-pointer items-center gap-2 font-normal">
                             <Checkbox
                               checked={selectedTools.includes(toolId)}
@@ -873,14 +861,14 @@ export default function AgentSettingsClient() {
                           className="mt-1 h-auto px-0 text-xs text-muted-foreground"
                           onClick={(e) => {
                             e.stopPropagation()
-                            setSelectedTools((prev) => prev.filter((id) => !groupTools.includes(id)))
+                            setSelectedTools((prev) => prev.filter((id) => !toolIds.includes(id)))
                           }}
                         >
                           Clear group
                         </Button>
                       )}
 
-                      {group === "sessions" && selectedTools.includes("delegate") && (
+                      {sg === "core" && selectedTools.includes("delegate") && (
                         <div className="mt-3 border-t pt-3">
                           <p className="mb-0.5 text-xs font-medium">Allowed agents for delegate</p>
                           <p className="mb-2 text-xs text-muted-foreground">
@@ -916,7 +904,7 @@ export default function AgentSettingsClient() {
                         </div>
                       )}
 
-                      {group === "sessions" && selectedTools.includes("reply") && (
+                      {sg === "core" && selectedTools.includes("reply") && (
                         <div className="mt-3 border-t pt-3">
                           <Label className="flex cursor-pointer items-center gap-2 font-normal">
                             <Checkbox
@@ -933,7 +921,7 @@ export default function AgentSettingsClient() {
                         </div>
                       )}
 
-                      {group === "filesystem" && (
+                      {sg === "core" && (
                         <div className="mt-3 border-t pt-3" onClick={(e) => e.stopPropagation()}>
                           <p className="mb-0.5 text-xs font-medium">Default working directory</p>
                           <p className="mb-2 text-xs text-muted-foreground">
@@ -986,64 +974,6 @@ export default function AgentSettingsClient() {
                             </Button>
                           </div>
                         </div>
-                      )}
-                    </CardContent>
-                  )}
-                </Card>
-              )
-            })}
-
-            {Object.entries(mcpToolsByServer).map(([serverName, serverTools]) => {
-              const groupKey = `mcp:${serverName}`
-              const selectedCount = serverTools.filter((id) => selectedTools.includes(id)).length
-              const isExpanded = expandedGroup === groupKey
-
-              return (
-                <Card key={groupKey} className="cursor-pointer">
-                  <CardHeader
-                    className="flex-row items-center justify-between"
-                    onClick={() => setExpandedGroup(isExpanded ? null : groupKey)}
-                  >
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        {serverName}
-                        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">MCP</span>
-                      </CardTitle>
-                      <CardDescription>{serverTools.length} tools</CardDescription>
-                    </div>
-                    {selectedCount > 0 && (
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                        {selectedCount} selected
-                      </span>
-                    )}
-                  </CardHeader>
-
-                  {isExpanded && (
-                    <CardContent className="border-t pt-2">
-                      <div className="grid grid-cols-3 gap-x-4 gap-y-2.5">
-                        {serverTools.map((toolId) => (
-                          <Label key={toolId} className="flex cursor-pointer items-center gap-2 font-normal">
-                            <Checkbox
-                              checked={selectedTools.includes(toolId)}
-                              onCheckedChange={() => toggleTool(toolId)}
-                            />
-                            <span className="font-mono text-xs">{toolId}</span>
-                          </Label>
-                        ))}
-                      </div>
-                      {selectedCount > 0 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="mt-1 h-auto px-0 text-xs text-muted-foreground"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedTools((prev) => prev.filter((id) => !serverTools.includes(id)))
-                          }}
-                        >
-                          Clear group
-                        </Button>
                       )}
                     </CardContent>
                   )}

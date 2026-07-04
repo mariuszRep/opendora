@@ -10,6 +10,18 @@ Projectflows is a local-first agentic application platform where users operate a
 
 Projectflows is intended to remain lightweight at its core while supporting an ecosystem of installable extensions that can attach new capabilities and integrated experiences without turning every capability into a core module.
 
+Projectflows manages five catalog-backed capability entity types: agents, skills, tools, workflows, and plugins. Plugins are the packaging and distribution unit; agents, skills, tools, and workflows are individually discoverable and manageable product entities whose source may be local, project-local, plugin-contributed, MCP-contributed, or catalog-available.
+
+The OpenDora Settings experience must present these five entity types through a unified card, search, filter, and install-state model. Installed, available, and local-only state must be computed consistently through a shared discovery/index contract rather than duplicated per page.
+
+The published projectflows.ai catalog is the canonical remote catalog/index for plugins and catalog-managed entities. The legacy `projectflows-plugins` repository is migration source material until all content has been validated and moved into the website catalog registry.
+
+**Bare-core principle.** The core binary is intentionally bare-metal: it includes only the essential application framework, plugin system, and any strictly necessary bootstrap capabilities. All optional capabilities — agents, skills, tools, workflows, MCP server presets, desktop/browser automation, and default capability packs — are contributed by installable plugins. The core binary must never bundle these optional capabilities.
+
+**First-party capability source.** First-party optional capabilities are maintained in the `projectflows-plugins` repository. This repo contains official agents, skills, tools, workflows, MCP presets, and tool/source group metadata and serves as migration source material for the published projectflows.ai catalog. The core binary must not import or bundle first-party optional capabilities directly.
+
+**Plugin storage model.** Installed plugins live under `.projectflows` directories: `~/.projectflows/plugins/installed/<plugin-id>/` for global/user-level installations and `<project>/.projectflows/plugins/installed/<plugin-id>/` for project-level installations. Plugins are never installed into the binary or application install directory. The plugin manifest schema, installer/resolver, runtime loading contracts, lockfile model, onboarding, and management APIs/UI are core-owned and must be implemented before removing any bundled optional capability.
+
 Conversations and workflows are one durable execution model. A run — whether a normal conversation or a workflow — is a single durable, resumable, event-sourced execution. A normal conversation is the simplest workflow (message → reply); a workflow is the same run with more structure; and any conversation can be transformed into a reusable workflow.
 
 **Architecture naming.** Workflows and workflow templates are the same product concept — use `workflows` as reusable definitions. Workflow executions and runs are represented by sessions (runtime containers). There is no separate `workflow_templates` concept or table. Entries are the immutable runtime ledger events; edges are the relationships, order, causality, containment, and forks between all graph entities (workflows, sessions, entries, tools, artifacts/resources). A single canonical edge table is used for all persisted cross-entity relationships.
@@ -95,7 +107,12 @@ domain packages that persist data
 - A run is one durable, resumable, event-sourced execution; conversations and workflows share this model, and any conversation may be transformed into a reusable workflow.
 - Durable run state — checkpoints, step journal, and suspend/resume tokens — is persisted only through storage contracts; runtime owns resume and replay; session records run state and history.
 - Plugins are installable Projectflows extension packages. A plugin may contribute any subset of agents, skills, tools, MCP integrations, workflows, schedules, configuration, permissions, and UI extension surfaces.
-- Users should install extension capabilities as plugins rather than through separate product concepts for installing agents, skills, workflows, schedules, or tools independently.
+- Users install extension capabilities as plugins, the packaging and distribution unit. Individual agents, skills, tools, and workflows contributed by plugins are discoverable and manageable as first-class entities through unified catalog surfaces.
+- Plugin capabilities are installed under `.projectflows/plugins/installed/<plugin-id>/`, never inside the binary or application install directory.
+- First-party optional capabilities are maintained as migration source material in the `projectflows-plugins` repository. The published projectflows.ai catalog is the canonical remote catalog after migration. The core binary must not bundle or import first-party optional capabilities.
+- Tool grouping follows a source-group-first model: `core` for built-in tools, `plugin:<plugin-id>` for plugin-contributed tools, `mcp:<server-id>` for MCP server tools. Semantic group labels (e.g., "communication", "filesystem") are optional future metadata, not required for v1. Shared configuration belongs to the source group in v1.
+- Plugin system implementation (manifest schema, installer/resolver, runtime loading contracts, lockfile model, onboarding, and management APIs/UI) must be completed before removing any bundled optional capability from the core binary.
+- Core may include only `core-required` hidden/system/bootstrap capabilities if strictly necessary for the plugin system or minimal application function.
 - Tools are a primary extension boundary because they may need execution behavior, schemas, permissions, configuration, and bespoke UI interaction/rendering surfaces.
 - Mini-apps are standalone application experiences integrated into Projectflows visually and contextually; they are distinct from core modules and from ordinary plugin capability contributions.
 - Mini-apps must use Projectflows-approved context, permission, storage, and UI/design-system contracts instead of depending on app internals.

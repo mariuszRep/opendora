@@ -901,6 +901,20 @@ export const opendora = {
     delete: (directory: string, name: string, scope: string, agentID?: string) =>
       req<void>(`/memory/${encodeURIComponent(name)}?directory=${encodeURIComponent(directory)}&scope=${scope}${agentID ? `&agentID=${encodeURIComponent(agentID)}` : ""}`, { method: "DELETE" }),
   },
+  entity: {
+    listAvailable: (opts?: { type?: string; q?: string }) => {
+      const params = new URLSearchParams()
+      if (opts?.type) params.set("type", opts.type)
+      if (opts?.q) params.set("q", opts.q)
+      const qs = params.toString()
+      return req<RemoteEntity[]>(`/entity/available${qs ? `?${qs}` : ""}`)
+    },
+    installRemote: (type: string, name: string) =>
+      req<{ type: string; name: string; installed: boolean }>("/entity/install-remote", {
+        method: "POST",
+        body: JSON.stringify({ type, name }),
+      }),
+  },
   plugin: {
     list: () => req<PluginListItem[]>("/plugin/"),
     info: (id: string) => req<PluginListItem>(`/plugin/${id}`),
@@ -909,6 +923,18 @@ export const opendora = {
     remove: (id: string) => req<void>(`/plugin/${id}`, { method: "DELETE" }),
     enable: (id: string) => req<void>(`/plugin/${id}/enable`, { method: "PATCH" }),
     disable: (id: string) => req<void>(`/plugin/${id}/disable`, { method: "PATCH" }),
+    listAvailable: (opts?: { category?: string; q?: string }) => {
+      const params = new URLSearchParams()
+      if (opts?.category) params.set("category", opts.category)
+      if (opts?.q) params.set("q", opts.q)
+      const qs = params.toString()
+      return req<RemotePlugin[]>(`/plugin/available${qs ? `?${qs}` : ""}`)
+    },
+    installRemote: (pluginId: string, scope?: "global" | "project") =>
+      req<PluginListItem>("/plugin/install-remote", {
+        method: "POST",
+        body: JSON.stringify({ pluginId, scope: scope ?? "global" }),
+      }),
     listCatalogPacks: () => req<PackDefinition[]>("/plugin/catalog/packs"),
     installCatalogPack: (packId: string) =>
       req<PluginListItem[]>(`/plugin/catalog/packs/${packId}/install`, { method: "POST" }),
@@ -927,6 +953,32 @@ export type PluginListItem = {
   enabled: boolean
   capabilities: Array<{ type: string; name: string; sourceGroup: string }>
   dependencies?: string[]
+}
+
+export type RemotePlugin = {
+  id: string
+  name: string
+  description: string
+  version: string
+  download: string
+  category: string
+  tags: string[]
+  status: string
+  capabilities: Array<{ type: string; name: string; sourceGroup?: string }>
+  installed: boolean
+}
+
+export type RemoteEntity = {
+  id: string
+  name: string
+  description: string
+  type: "agent" | "skill" | "tool" | "workflow"
+  pluginId: string
+  version: string
+  download: string
+  tags: string[]
+  dependencies: string[]
+  installed: boolean
 }
 
 export type PackDefinition = {

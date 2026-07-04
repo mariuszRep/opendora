@@ -462,11 +462,14 @@ async function runSubGraph({
       if (!actionId) { steps.push({ label: nodeLabel, passed: true }); continue }
       const _toolExecutor = getToolExecutor()
 
-      const args: Record<string, string> = {}
+      // Use resolveDeep to preserve arrays/objects and recursively resolve $ref
+      // strings inside nested structures. Avoids String(v) which converts arrays
+      // and objects to "[object Object]" before ref resolution.
+      const args: Record<string, unknown> = {}
       for (const [k, v] of Object.entries(params)) {
-        if (k !== "output") args[k] = String(v)
+        if (k !== "output") args[k] = v
       }
-      const resolvedArgs = resolveRefs(args, input, ctx)
+      const resolvedArgs = resolveDeep(args, input, ctx) as Record<string, unknown>
 
       // For RunWorkflow: params beyond the known workflow_run keys are individual
       // workflow input values. Assemble them into resolvedArgs.input and remove
@@ -481,7 +484,10 @@ async function runSubGraph({
         resolvedArgs.wait = true
       }
 
-      if (!resolvedArgs.workdir) resolvedArgs.workdir = currentDir
+      // Do NOT inject workdir unconditionally — let tools that declare a workdir
+      // parameter receive it from params/args (resolved above), and tools that
+      // don't declare workdir (e.g. question tool) avoid spurious Zod failures.
+      // The tool executor already provides sessionDirectory via ctx.extra.directory.
 
       nodeToolHandle = await startNodeToolPart(sessionId, actionId, resolvedArgs, currentDir, nodeMeta)
 
@@ -822,16 +828,16 @@ async function runSubGraph({
 
     } else if (d.nodeType === NodeTypeId.Output) {
       const rawFields = (params.fields ?? {}) as Record<string, unknown>
-      const fields: Record<string, string> = {}
-      for (const [k, v] of Object.entries(rawFields)) fields[k] = String(v)
 
       nodeToolHandle = await startNodeToolPart(
         sessionId, "workflow_output",
-        fields as Record<string, unknown>,
+        rawFields as Record<string, unknown>,
         currentDir, nodeMeta,
       )
 
-      const resolved = resolveRefs(fields, input, ctx)
+      // Use resolveDeep for type-preserving resolution (same pattern as tool nodes).
+      // Avoids String(v) which would flatten arrays/objects before ref resolution.
+      const resolved = resolveDeep(rawFields, input, ctx) as Record<string, unknown>
       ctx["__workflow_output__"] = resolved
       result = JSON.stringify(resolved, null, 2)
 

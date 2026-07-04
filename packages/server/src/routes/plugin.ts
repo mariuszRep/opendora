@@ -1,12 +1,17 @@
 import { Hono } from "hono"
 import { describeRoute, resolver } from "hono-openapi"
 import z from "zod"
+import fs from "fs/promises"
 import { NotFoundError } from "@projectflows/storage/db"
 import { PluginInstaller, PluginCoreRequiredError, PluginHasDependentsError } from "@projectflows/plugin"
+import { RemoteRegistrySource } from "@projectflows/plugin/source"
 import { Onboarding } from "@projectflows/plugin/onboarding"
 import { errors } from "../error"
 import { lazy } from "@projectflows/util/lazy"
 import { CatalogReader } from "../catalog"
+import { Config } from "@projectflows/config/config"
+
+const DEFAULT_REGISTRY_URL = "https://projectflows.ai"
 
 const PluginListItemSchema = z.object({
   pluginId: z.string(),
@@ -132,6 +137,73 @@ export const PluginRoutes = lazy(() =>
       async (c) => {
         await PluginInstaller.setEnabled(c.req.param("id"), false, { scope: "global" })
         return c.body(null, 204)
+      },
+    )
+    .get(
+      "/available",
+      describeRoute({
+        summary: "List plugins available in the remote registry, with installed status merged in",
+        operationId: "plugin.available",
+        responses: {
+          200: { description: "Available plugins with installed status" },
+        },
+      }),
+      async (c) => {
+        const cfg = await Config.get()
+        const registryUrl = cfg.registry?.url ?? DEFAULT_REGISTRY_URL
+        const { searchParams } = new URL(c.req.url)
+        const category = searchParams.get("category") ?? undefined
+        const q = searchParams.get("q") ?? undefined
+
+        const [remote, installed] = await Promise.all([
+          RemoteRegistrySource.list(registryUrl, { category, q }),
+          PluginInstaller.list(),
+        ])
+
+        const installedIds = new Set(installed.map((p) => p.pluginId))
+        const result = remote.map((p) => ({ ...p, installed: installedIds.has(p.id) }))
+        return c.json(result)
+      },
+    )
+    .post(
+      "/install-remote",
+      describeRoute({
+        summary: "Download and install a plugin from the remote registry",
+        operationId: "plugin.installRemote",
+        responses: {
+          201: { description: "Plugin installed" },
+          404: { description: "Plugin not found in registry" },
+          ...errors(400, 409),
+        },
+      }),
+      async (c) => {
+        const body = await c.req.json<{ pluginId: string; scope?: "global" | "project" }>()
+        if (!body.pluginId) return c.json({ message: "pluginId is required" }, 400)
+
+        const cfg = await Config.get()
+        const registryUrl = cfg.registry?.url ?? DEFAULT_REGISTRY_URL
+
+        const remote = await RemoteRegistrySource.get(registryUrl, body.pluginId)
+        if (!remote) return c.json({ message: `Plugin not found in registry: ${body.pluginId}` }, 404)
+
+        let extractDir: string | undefined
+        try {
+          extractDir = await RemoteRegistrySource.downloadAndExtract(registryUrl, body.pluginId)
+          const entry = await PluginInstaller.install({
+            sourcePath: extractDir,
+            scope: body.scope ?? "global",
+          })
+          return c.json(entry, 201)
+        } catch (err) {
+          if (err instanceof Error && err.name === "PluginConflictError") {
+            return c.json({ message: err.message }, 409)
+          }
+          throw err
+        } finally {
+          if (extractDir) {
+            await fs.rm(extractDir, { recursive: true, force: true }).catch(() => {})
+          }
+        }
       },
     )
     .get(

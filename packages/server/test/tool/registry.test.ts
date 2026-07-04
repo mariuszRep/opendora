@@ -74,6 +74,26 @@ describe("tool.registry", () => {
     })
   })
 
+  test("schemas returns sourceGroup for built-in tools", async () => {
+    await using tmp = await tmpdir({ init: async () => {} })
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const schemas = await ToolRegistry.schemas()
+        expect(schemas.length).toBeGreaterThan(0)
+        for (const schema of schemas) {
+          expect(schema).toHaveProperty("sourceGroup")
+          expect(typeof schema.sourceGroup).toBe("string")
+          expect(schema.sourceGroup.length).toBeGreaterThan(0)
+        }
+        const bashSchema = schemas.find((s) => s.id === "bash")
+        if (bashSchema) {
+          expect(bashSchema.sourceGroup).toBe("core")
+        }
+      },
+    })
+  })
+
   test("loads tools with external dependencies without crashing", async () => {
     await using tmp = await tmpdir({
       init: async (dir) => {

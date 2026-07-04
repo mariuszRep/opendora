@@ -27,6 +27,7 @@
     "./tool-registry": "./src/tool-registry.ts"
   },
   "dependencies": {
+    "@projectflows/plugin": "workspace:*",
     "@projectflows/agent": "workspace:*",
     "@projectflows/auth": "workspace:*",
     "@projectflows/config": "workspace:*",

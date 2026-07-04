@@ -9,6 +9,12 @@ import path from "path"
 import { Global } from "@projectflows/util/global"
 import { Workflow } from "./schema.ts"
 
+let _getPluginWorkflowDirs: (() => Promise<string[]>) | undefined
+
+export function configurePluginWorkflowDirs(fn: () => Promise<string[]>): void {
+  _getPluginWorkflowDirs = fn
+}
+
 export namespace WorkflowStorage {
   function resolveDir(): string {
     return path.join(Global.Path.config, "workflows")
@@ -35,6 +41,18 @@ export namespace WorkflowStorage {
         const parsed = Workflow.safeParse(raw)
         if (parsed.success) workflows.push(parsed.data)
       } catch {}
+    }
+    for (const pluginDir of await (_getPluginWorkflowDirs?.() ?? [])) {
+      const wDir = path.join(pluginDir, "workflows")
+      const pluginEntries = await fs.readdir(wDir).catch(() => [] as string[])
+      for (const entry of pluginEntries) {
+        if (!entry.endsWith(".json")) continue
+        try {
+          const raw = JSON.parse(await fs.readFile(path.join(wDir, entry), "utf8"))
+          const parsed = Workflow.safeParse(raw)
+          if (parsed.success) workflows.push(parsed.data)
+        } catch {}
+      }
     }
     return workflows
   }

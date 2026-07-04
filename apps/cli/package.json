@@ -40,6 +40,7 @@
     "@opentui/core": "0.1.81",
     "@opentui/solid": "0.1.81",
     "@parcel/watcher": "2.5.1",
+    "@projectflows/plugin": "workspace:*",
     "@projectflows/auth": "workspace:*",
     "@projectflows/config": "workspace:*",
     "@projectflows/permission": "workspace:*",

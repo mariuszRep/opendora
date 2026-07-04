@@ -77,6 +77,12 @@ export namespace Skill {
     return { valid: true, warnings }
   }
 
+  let _getPluginSkillDirs: (() => Promise<string[]>) | undefined
+
+  export function configurePluginSkillDirs(fn: () => Promise<string[]>): void {
+    _getPluginSkillDirs = fn
+  }
+
   // External skill directories to search for (project-level and global)
   // These follow the directory layout used by Claude Code and other agents.
   const EXTERNAL_DIRS = [".claude", ".agents"]
@@ -195,6 +201,19 @@ export namespace Skill {
         include: "file",
         symlink: true,
       })
+      for (const match of matches) {
+        await addSkill(match)
+      }
+    }
+
+    // Scan plugin skill dirs (injected via configurePluginSkillDirs)
+    for (const dir of await (_getPluginSkillDirs?.() ?? [])) {
+      const matches = await Glob.scan(PROJECTFLOWS_SKILL_PATTERN, {
+        cwd: dir,
+        absolute: true,
+        include: "file",
+        symlink: true,
+      }).catch(() => [] as string[])
       for (const match of matches) {
         await addSkill(match)
       }

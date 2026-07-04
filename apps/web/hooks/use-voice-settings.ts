@@ -142,8 +142,12 @@ export function formatHotkey(hotkey: HotkeyConfig | null): string {
 export function matchesHotkey(event: KeyboardEvent, hotkey: HotkeyConfig | null): boolean {
   if (!hotkey) return false
 
+  // Case-insensitive comparison for single-character keys to handle mouse/keyboard differences
+  const eventKey = hotkey.key.length === 1 ? event.key.toLowerCase() : event.key
+  const hotkeyKey = hotkey.key.length === 1 ? hotkey.key.toLowerCase() : hotkey.key
+
   return (
-    event.key === hotkey.key &&
+    eventKey === hotkeyKey &&
     event.ctrlKey === hotkey.ctrlKey &&
     event.shiftKey === hotkey.shiftKey &&
     event.altKey === hotkey.altKey &&

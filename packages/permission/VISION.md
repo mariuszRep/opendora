@@ -6,6 +6,10 @@
 
 Permission owns authorization policy across Projectflows domains. It creates, manages, persists, and evaluates permissions and policies; storage owns the physical persistence backend.
 
+Catalog-managed entities and plugins may declare permission metadata. Permission owns effective evaluation regardless of whether declarations originate from local definitions, plugins, MCP integrations, or remote catalog-installed entities.
+
+Plugins may declare required or default permissions as part of their manifest. These plugin-declared permission metadata follow the same model as agent- or skill-declared permissions: they supply default requirements, not authorization decisions. Permission owns effective evaluation regardless of whether the permission metadata comes from a plugin, an agent definition, or a skill definition.
+
 ## Owns
 
 - Permission models, policy definitions, and policy evaluation.

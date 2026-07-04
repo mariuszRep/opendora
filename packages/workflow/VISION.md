@@ -6,6 +6,10 @@
 
 Workflow owns reusable process definitions and workflow domain behavior. Workflows are the only executable unit that schedules may trigger.
 
+Workflows are one of the five catalog-managed entity types. Workflow definitions may be local-only, project-local, plugin-contributed, or catalog-available. Workflow discovery must participate in the shared entity/plugin index so UI surfaces can show installed, available, and local-only workflows consistently.
+
+Workflow definitions may originate from the core or from installed plugins. Optional workflow definitions are contributed by plugins from the `projectflows-plugins` monorepo and installed under `.projectflows/plugins/installed/<plugin-id>/`. Workflow definitions contributed by plugins follow the same schema, validation, and runtime behavior as core workflows.
+
 **Workflows are reusable definitions.** There is no separate `workflow_templates` concept or table. Workflows serve as the reusable definition; workflow executions and runs are represented by sessions as runtime containers. Sessions hold the runtime state and entry ledger for a workflow execution; the workflow definition itself is versioned and reusable across multiple session runs.
 
 Workflow canvas/node infrastructure may be reused by Agent Builder for agent definition composition. Agent Builder graph semantics are composition/compilation, not workflow execution, and do not change scheduled workflow execution ownership.
@@ -49,7 +53,8 @@ An agent reading a session history must be able to understand exactly what happe
    | `configure_session` | `workflow_configure_session` |
    | `output` | `workflow_output` |
    | `tool` | the action's own tool name (pass-through) |
-   | `variable` | `workflow_variable` |
+    | `variable` | `workflow_variable` |
+    | `script` | `workflow_script` |
 
 ### What this enables
 
@@ -278,6 +283,81 @@ The assembled output object `{ [entry.name]: resolvedValue, … }` is stored und
 ### Per-node documentation scope
 
 If workflow nodes do not yet have per-node scoped VISION docs, implementation planning should decide whether each node type should be isolated as its own documented entity/package/module within the workflow package and then treat the variable node consistently with whatever standard is chosen.
+
+## Pipeline / Data-Ingestion Workflows
+
+Workflows must be capable of modeling recurring data-ingestion and curation pipelines (e.g., the AI News ingestion and curation workflow). Such pipelines are first-class workflow definitions composed from existing node types — no new node types are required.
+
+### Capabilities
+
+- **Scheduled / feed-fetching steps** — triggered by schedule, fetching external RSS/Atom/JSON feed data.
+- **Variable / source-list shaping** — using the variable node to define source URLs, search terms, or topic lists with reference/template resolution from schedule or parameter inputs.
+- **Foreach fan-out** — using `for_each` to iterate over sources or items, running a common sub-pipeline per element.
+- **Structured normalization** — using structured nodes to parse and normalize heterogeneous feed data into a canonical article shape.
+- **Dedup / filter / score stages** — using tool and structured nodes to apply deduplication, filtering, and scoring logic to aggregated items.
+- **AI-assisted selection** — using prompt or structured nodes to select/rank items based on relevance criteria.
+- **Structured output / report emission** — using output nodes to emit curated results as structured JSON reports or digests.
+- **Optional best-effort external fallback** — tool nodes that perform agentic search or X/Twitter lookups as enrichment/discovery signals, with the workflow tolerating failures gracefully.
+
+### Key principles preserved
+
+- **Node-as-Tool**: every pipeline step is a standard tool call in the session history, making curation/aggregation fully agent-readable.
+- **Canonical JSON output**: every node emits structured JSON, so pipeline outputs (feed items, dedup results, scored/ranked articles, final reports) are always in canonical form.
+- **No special node types**: ingestion pipelines compose existing node types (`variable`, `for_each`, `structured`, `tool`, `prompt`, `output`) — no new node types are required.
+
+> This section captures durable intent. Implementation of any specific pipeline (including AI News) is not assumed to exist.
+
+---
+
+## Script Node (workflow_script)
+
+The `script` node type (`workflow_script`) is a first-class, global reusable Node-as-Tool for executing a selected script file during a workflow run. It fills the gap between ad hoc bash commands (which are fragile, non-reusable, and hard to session-trace) and full tool/prompt nodes (which require tool registration or agent interaction). A reusable script file is more appropriate than an ad hoc bash command for durable workflow business logic such as data transformation, file I/O, deduplication, git operations, and structured API calls.
+
+### Durable intent
+
+- **Global Node-as-Tool compliance.** The script node is a global, reusable workflow capability that follows the same Node-as-Tool contract as every other node type: a stable tool definition, session-visible lifecycle (running → completed/error), `workflowMeta` on every tool part, and the canonical JSON output envelope.
+- **Stable tool name:** `workflow_script`.
+- **Structured I/O.** Scripts receive parameters as JSON (stdin by default) and must emit JSON to stdout. Non-JSON stdout is an error unless `outputMode` is set to `text`. stderr and logging are captured separately and surfaced in the tool part output alongside the primary result.
+- **Runtime support.** At minimum Python and JavaScript/TypeScript/Node-family (Node.js, Bun) runtimes. Shell execution is supported only if explicitly permitted by workflow configuration or policy.
+- **Runtime/environment configuration.** The node supports: runtime command (optional override), working directory, environment path, Python virtual environment (`.venv`) path, environment variable allowlist, timeout, and failure behavior (fail vs. warn).
+- **Workflow context integration.** The node participates in workflow context/reference resolution so previous node outputs can become script inputs (`$ref` resolution) and script outputs can feed downstream nodes through the canonical JSON output envelope.
+- **Path safety.** By default, script selection is constrained to a deterministic workflow-local scripts folder. Explicit absolute or cross-project paths require clear permission or configuration.
+- **Workflow-local script convention.** Workflow scripts live near the workflow definition in a deterministic workflow-specific folder. For a JSON workflow file at `.projectflows/workflows/<id>.json`, the associated default script folder is `.projectflows/workflows/<id>/scripts/` (or another documented, deterministic convention chosen by implementation). The convention must be documented so workflow authors and tools can predict the path.
+- **Python isolation.** The node supports running Python through a workflow-local `.venv` virtual environment located in the workflow script folder or workflow folder.
+- **Canonical output envelope.** Script output follows the same `{ data, render? }` envelope as other node types, so format-switchable views and downstream reference resolution work uniformly.
+- **UI expectations.** The workflow builder should let the user select a script file, runtime, environment/venv, parameter mapping, timeout, and output mode. If UI scope is prohibitively broad, backend/schema support must be implemented first with a documented follow-up for UI.
+
+### Global scope
+
+The Script Node is a **global, app-level workflow node/capability**, not a workflow-specific feature. Any workflow definition may use a `script` node with the `workflow_script` tool. The node type, tool definition, runner integration, and session lifecycle are owned by the workflow platform (`packages/workflow/`, `packages/tools/workflows/`). Individual scripts that execute within this node are workflow-local, but the node itself is a first-class, cross-workflow reusable capability.
+
+### Non-goals
+
+- Arbitrary unrestricted shell execution is not the default.
+- Package manager or dependency installation is not handled by this node unless explicitly configured.
+- The script node is not a replacement for tool/prompt/structured nodes where those are more appropriate.
+- The script node is not a general-purpose subprocess runner.
+
+### Relationship to tool nodes
+
+Tool nodes (`tool` pass-through) execute existing registered tool implementations. The script node is distinct: it executes a workflow-local script file rather than invoking a pre-registered tool. Both emit tool parts with `workflowMeta`, but the script node's tool name is always `workflow_script` regardless of which script runs, whereas a tool node uses the action's own tool name.
+
+### Relationship to bash tool nodes
+
+Bash tool nodes have a fixed command string embedded in the workflow definition. They are appropriate for simple, one-off commands. The script node is preferred when:
+- The logic is longer than a simple command (multi-step data processing, complex error handling).
+- The script may be reused across workflow runs or across workflows.
+- Structured JSON I/O is needed instead of text output parsing.
+- Runtime isolation (virtual environment, working directory, environment control) matters.
+
+> This section captures durable intent. No implementation of the Script Node is assumed to exist.
+
+### Change Note
+
+- 2026-07-02 — Added Pipeline / Data-Ingestion Workflows section. Captured recurring ingestion and curation workflow patterns (AI News-style pipelines) as durable product intent, composed from existing node types.
+- 2026-07-02 — Added Script Node section (`workflow_script`). Captured durable intent for a global reusable script execution workflow node with structured I/O, runtime configuration, path safety, and workflow-local script conventions. Added `script` / `workflow_script` to the Node-as-Tool stable tool names table.
+
+---
 
 ## Canonical Operations
 

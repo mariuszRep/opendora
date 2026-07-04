@@ -1,3 +1,5 @@
+import fs from "fs/promises"
+import path from "path"
 import { dynamicTool, type Tool, jsonSchema, type JSONSchema7 } from "ai"
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
@@ -974,5 +976,22 @@ export namespace MCP {
     if (!hasTokens) return "not_authenticated"
     const expired = await McpAuth.isTokenExpired(mcpName)
     return expired ? "expired" : "authenticated"
+  }
+
+  export async function listPresets(installedDirs: string[]): Promise<Record<string, Config.Mcp>> {
+    const result: Record<string, Config.Mcp> = {}
+    for (const dir of installedDirs) {
+      const mcpDir = path.join(dir, "mcp")
+      const files = await fs.readdir(mcpDir).catch(() => [] as string[])
+      for (const file of files) {
+        if (!file.endsWith(".json")) continue
+        try {
+          const raw = JSON.parse(await fs.readFile(path.join(mcpDir, file), "utf-8"))
+          const name = file.replace(".json", "")
+          result[name] = raw as Config.Mcp
+        } catch {}
+      }
+    }
+    return result
   }
 }

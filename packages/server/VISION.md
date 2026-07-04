@@ -6,6 +6,10 @@
 
 The server is the API/service boundary that keeps Projectflows reachable and exposes backend behavior to the SDK. For single-binary distribution, the server also serves the embedded statically-exported web UI without shadowing API or event routes.
 
+Server exposes the unified discovery/index API for catalog-managed entities and plugins. Initial route implementations may adapt existing entity and plugin routes, but the durable contract is one coherent discovery surface for agents, skills, tools, workflows, and plugins with install state, source provenance, and catalog metadata.
+
+The server exposes plugin management APIs — plugin install, uninstall, list, update, and resolution — as part of its route surface. These routes wrap core-owned plugin operations. The server does not own plugin lifecycle internals.
+
 ## Owns
 
 - HTTP/WebSocket/API routes and streaming surfaces.

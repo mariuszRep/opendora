@@ -220,14 +220,11 @@ export namespace Agent {
     const sortedStored = [...(entry.config.skills ?? [])].sort()
     const sortedDerived = [...enabledSkills].sort()
     if (JSON.stringify(sortedStored) !== JSON.stringify(sortedDerived)) {
-      console.log(`[Agent] Updating skills for ${entry.id}:`, entry.config.skills, "->", enabledSkills)
       entry.config.skills = enabledSkills
       try {
         await AgentStorage.update(agentBaseDir(), entry.id, { skills: enabledSkills })
-        console.log(`[Agent] Successfully updated skills in storage for ${entry.id}`)
       } catch (err) {
         console.error(`[Agent] Failed to update skills in storage for ${entry.id}:`, err)
-        // If storage update fails, still use the in-memory value for this request
       }
     }
 
@@ -312,6 +309,7 @@ export namespace Agent {
       workflows: entry.config.workflows,
       prompt: agentCfg?.prompt ?? (entry.persona || undefined),
       model: modelOverride ?? entry.config.model,
+      variant: agentCfg?.variant,
       permission,
       options: (agentCfg?.options ?? {}) as Record<string, any>,
       enableInjection: entry.config.enableInjection,
@@ -322,6 +320,12 @@ export namespace Agent {
 
   function agentBaseDir() {
     return Flag.PROJECTFLOWS_CONFIG_DIR ? path.dirname(Flag.PROJECTFLOWS_CONFIG_DIR) : Instance.directory
+  }
+
+  let _getPluginAgentDirs: (() => Promise<string[]>) | undefined
+
+  export function configurePluginAgentDirs(fn: () => Promise<string[]>): void {
+    _getPluginAgentDirs = fn
   }
 
   // Agent definitions are file-based (one agent.json + PERSONA.md read per agent).
@@ -336,7 +340,15 @@ export namespace Agent {
     const baseDir = agentBaseDir()
     let cached = entriesCache.get(baseDir)
     if (!cached) {
-      cached = AgentCore.list(baseDir)
+      cached = (async () => {
+        const primary = await AgentCore.list(baseDir)
+        if (!_getPluginAgentDirs) return primary
+        const pluginDirs = await _getPluginAgentDirs()
+        const pluginResults = await Promise.all(
+          pluginDirs.map((d) => AgentStorage.loadFromRoot(path.join(d, "agents")).catch(() => [] as AgentCore.Entry[])),
+        )
+        return [...primary, ...pluginResults.flat()]
+      })()
       entriesCache.set(baseDir, cached)
     }
     return cached

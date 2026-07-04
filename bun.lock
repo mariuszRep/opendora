@@ -52,6 +52,7 @@
         "@projectflows/auth": "workspace:*",
         "@projectflows/config": "workspace:*",
         "@projectflows/permission": "workspace:*",
+        "@projectflows/plugin": "workspace:*",
         "@projectflows/provider": "workspace:*",
         "@projectflows/runtime": "workspace:*",
         "@projectflows/sdk": "workspace:*",
@@ -61,6 +62,7 @@
         "@projectflows/storage": "workspace:*",
         "@projectflows/tools": "workspace:*",
         "@projectflows/util": "workspace:*",
+        "@projectflows/workflow": "workspace:*",
         "@solid-primitives/event-bus": "1.1.2",
         "@solid-primitives/scheduled": "1.5.2",
         "clipboardy": "2.3.0",
@@ -206,6 +208,20 @@
         "typescript": "catalog:",
       },
     },
+    "packages/plugin": {
+      "name": "@projectflows/plugin",
+      "version": "0.1.0",
+      "dependencies": {
+        "@projectflows/util": "workspace:*",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "@types/node": "^20.14.10",
+        "@typescript/native-preview": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/provider": {
       "name": "@projectflows/provider",
       "version": "1.0.0",
@@ -314,6 +330,7 @@
         "@projectflows/auth": "workspace:*",
         "@projectflows/config": "workspace:*",
         "@projectflows/permission": "workspace:*",
+        "@projectflows/plugin": "workspace:*",
         "@projectflows/provider": "workspace:*",
         "@projectflows/runtime": "workspace:*",
         "@projectflows/schedule": "workspace:*",
@@ -478,8 +495,10 @@
       "dependencies": {
         "@projectflows/agent": "workspace:*",
         "@projectflows/session": "workspace:*",
+        "@projectflows/storage": "workspace:*",
         "@projectflows/util": "workspace:*",
         "ai": "catalog:",
+        "drizzle-orm": "catalog:",
         "hono": "catalog:",
         "zod": "catalog:",
       },
@@ -1269,6 +1288,8 @@
     "@projectflows/config": ["@projectflows/config@workspace:packages/config"],
 
     "@projectflows/permission": ["@projectflows/permission@workspace:packages/permission"],
+
+    "@projectflows/plugin": ["@projectflows/plugin@workspace:packages/plugin"],
 
     "@projectflows/provider": ["@projectflows/provider@workspace:packages/provider"],
 
@@ -4073,6 +4094,8 @@
     "@projectflows/config/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 
     "@projectflows/permission/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
+
+    "@projectflows/plugin/zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 
     "@projectflows/provider/ai": ["ai@5.0.124", "", { "dependencies": { "@ai-sdk/gateway": "2.0.30", "@ai-sdk/provider": "2.0.1", "@ai-sdk/provider-utils": "3.0.20", "@opentelemetry/api": "1.9.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-Li6Jw9F9qsvFJXZPBfxj38ddP2iURCnMs96f9Q3OeQzrDVcl1hvtwSEAuxA/qmfh6SDV2ERqFUOFzigvr0697g=="],
 

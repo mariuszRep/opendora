@@ -9,6 +9,8 @@
 
 `apps/` contains all user-facing application surfaces for Projectflows.
 
+Apps own the unified catalog-management presentation for agents, skills, tools, workflows, and plugins. These surfaces must use consistent cards, search, filters, install-state badges, and source/provenance metadata. Apps may project entity-specific management actions, but must not duplicate discovery or install-state logic that belongs behind SDK/server/package contracts.
+
 ## Owns
 
 - Web UI.

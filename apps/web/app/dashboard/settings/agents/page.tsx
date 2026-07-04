@@ -11,6 +11,7 @@ import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { SettingsCard } from "@/components/settings/settings-card"
 import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 import { SettingsIcon, PlusIcon, BotIcon, EyeOffIcon } from "lucide-react"
+import { RegistryPluginsSection } from "@/components/settings/registry-plugins-section"
 
 // AgentCard component for displaying individual agents
 function AgentCard({ agent, router }: {
@@ -26,6 +27,9 @@ function AgentCard({ agent, router }: {
             style={{ backgroundColor: agent.color || "#6366f1" }}
           />
           <span className="capitalize">{agent.name}</span>
+          {agent.hidden && (
+            <EyeOffIcon className="size-3 shrink-0 text-muted-foreground" />
+          )}
         </div>
       }
       description={agent.description}
@@ -209,6 +213,10 @@ export default function SettingsAgentsPage() {
               )}
             </div>
           )}
+
+          <div className="border-t pt-6">
+            <RegistryPluginsSection category="agents" onInstalled={() => router.refresh()} />
+          </div>
     </SettingsPageLayout>
   )
 }

@@ -25,8 +25,23 @@ export function usePushToTalk({
     (event: KeyboardEvent) => {
       if (!enabled || !hotkey) return
 
+      // Debug logging
+      console.log('[usePushToTalk] keydown event:', {
+        key: event.key,
+        code: event.code,
+        keyCode: event.keyCode,
+        ctrlKey: event.ctrlKey,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+        metaKey: event.metaKey,
+        isTrusted: event.isTrusted,
+        target: (event.target as HTMLElement).tagName,
+        matches: matchesHotkey(event, hotkey),
+        hotkey: hotkey
+      })
+
       // Always prevent default for Tab key combinations to avoid browser navigation
-      if (hotkey.key === "Tab" || hotkey.key === " " || 
+      if (hotkey.key === "Tab" || hotkey.key === " " ||
           (hotkey.ctrlKey && event.ctrlKey) ||
           (hotkey.altKey && event.altKey) ||
           (hotkey.shiftKey && event.shiftKey) ||
@@ -47,16 +62,17 @@ export function usePushToTalk({
 
       // Allow Space hotkey even in input fields if modifiers are used
       const hasModifiers = hotkey.ctrlKey || hotkey.altKey || hotkey.shiftKey || hotkey.metaKey
-      
+
       // For Tab key, always prevent default when matched to avoid browser navigation
       if (hotkey.key === "Tab" && matchesHotkey(event, hotkey)) {
         event.preventDefault()
         event.stopPropagation()
       }
-      
+
       if (isInputField && !hasModifiers && hotkey.key !== "Tab") return
 
       if (matchesHotkey(event, hotkey) && !isHoldingRef.current) {
+        console.log('[usePushToTalk] Hotkey matched, starting recording')
         event.preventDefault()
         event.stopPropagation()
         isHoldingRef.current = true

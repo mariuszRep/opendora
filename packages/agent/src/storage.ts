@@ -162,6 +162,21 @@ export namespace AgentStorage {
     return results
   }
 
+  export async function loadFromRoot(agentsRoot: string): Promise<Entry[]> {
+    const entries = await fs.readdir(agentsRoot, { withFileTypes: true }).catch(() => [] as fsSync.Dirent[])
+    const results: Entry[] = []
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      try {
+        const configRaw = await fs.readFile(path.join(agentsRoot, entry.name, "agent.json"), "utf-8")
+        const config = ConfigSchema.parse(JSON.parse(configRaw))
+        const persona = await fs.readFile(path.join(agentsRoot, entry.name, "PERSONA.md"), "utf-8").catch(() => "")
+        results.push({ id: entry.name, config, persona })
+      } catch {}
+    }
+    return results
+  }
+
   export async function load(baseDir: string, id: string): Promise<Entry> {
     const configRaw = await safeRead(baseDir, id, "agent.json")
     const config = ConfigSchema.parse(JSON.parse(configRaw))
@@ -198,10 +213,16 @@ export namespace AgentStorage {
   export async function update(baseDir: string, id: string, patch: Partial<Config>, persona?: string, injection?: string): Promise<Entry> {
     const existing = await load(baseDir, id)
 
-    // Explicit merge - patch values (including undefined) override existing
+    // Merge patch into existing config. A null value means "clear this field"
+    // (client sends null when the user removes an optional value like steps/temperature).
     const merged: Partial<Config> = { ...existing.config }
     for (const key of Object.keys(patch) as Array<keyof Config>) {
-      merged[key] = patch[key] as any
+      const val = (patch as any)[key]
+      if (val === null) {
+        delete (merged as any)[key]
+      } else {
+        merged[key] = val
+      }
     }
     const next = ConfigSchema.parse(merged)
     const nextPersona = persona ?? existing.persona

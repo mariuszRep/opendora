@@ -33,6 +33,8 @@ import type { Tool } from "./tool.ts"
 import path from "path"
 import { pathToFileURL } from "url"
 
+export type ToolDirEntry = string | { dir: string; sourceGroup: string }
+
 export interface RegistryConfig {
   clientType: string
   flags: {
@@ -42,9 +44,9 @@ export interface RegistryConfig {
     enablePlanMode?: boolean
     enableBatchTool?: boolean
   }
-  getToolDirs?(): Promise<string[]>
+  getToolDirs?(): Promise<ToolDirEntry[]>
   waitForDeps?(): Promise<void>
-  loadPlugin?(category: string): Promise<Array<{ id: string; def: unknown }>>
+  loadPlugin?(category: string): Promise<Array<{ id: string; def: unknown; sourceGroup?: string }>>
   triggerPlugin?(toolID: string, output: { description: string; parameters: unknown }): Promise<void>
   fromPlugin?(id: string, def: unknown): Tool.Info
   /** Returns a key that uniquely identifies the current instance; init() re-runs when the key changes. */
@@ -64,6 +66,7 @@ export const configureRegistry = configure
 
 export namespace ToolRegistry {
   let _custom: Tool.Info[] = []
+  let _sourceGroups = new Map<string, string>() // toolId → sourceGroup
   let _initialized = false
   let _instanceKey: string | undefined = undefined
 
@@ -73,11 +76,14 @@ export namespace ToolRegistry {
     _initialized = true
     _instanceKey = key
     _custom = []
+    _sourceGroups = new Map()
 
-    const dirs = (await _config.getToolDirs?.()) ?? []
-    if (dirs.length) await _config.waitForDeps?.()
+    const dirEntries = (await _config.getToolDirs?.()) ?? []
+    if (dirEntries.length) await _config.waitForDeps?.()
 
-    for (const dir of dirs) {
+    for (const entry of dirEntries) {
+      const dir = typeof entry === "string" ? entry : entry.dir
+      const sg = typeof entry === "string" ? "core" : (entry.sourceGroup ?? "core")
       const glob = new (globalThis as any).Bun.Glob("{tool,tools}/*.{js,ts}")
       const matches: string[] = [...glob.scanSync({ cwd: dir, dot: true, followSymlinks: true })].map((m: string) =>
         path.join(dir, m),
@@ -88,21 +94,25 @@ export namespace ToolRegistry {
         if (!mod) continue
         for (const [id, def] of Object.entries(mod)) {
           if (_config.fromPlugin) {
-            _custom.push(_config.fromPlugin(id === "default" ? namespace : `${namespace}_${id}`, def))
+            const toolId = id === "default" ? namespace : `${namespace}_${id}`
+            _custom.push(_config.fromPlugin(toolId, def))
+            _sourceGroups.set(toolId, sg)
           }
         }
       }
     }
 
     const pluginTools = (await _config.loadPlugin?.("all")) ?? []
-    for (const { id, def } of pluginTools) {
+    for (const { id, def, sourceGroup } of pluginTools) {
       if (_config.fromPlugin) _custom.push(_config.fromPlugin(id, def))
+      _sourceGroups.set(id, sourceGroup ?? "core")
     }
   }
 
   export function reset(): void {
     _initialized = false
     _custom = []
+    _sourceGroups = new Map()
   }
 
   export function register(tool: Tool.Info) {
@@ -210,12 +220,14 @@ export namespace ToolRegistry {
     id: string
     description: string
     source: "internal"
+    sourceGroup: string
     inputSchema: Record<string, unknown>
   }
 
   export async function schemas(model = { providerID: "anthropic", modelID: "claude-sonnet-4-6" }): Promise<ToolSchemaEntry[]> {
     return Promise.all(
       all().map(async (t) => {
+        const sg = _sourceGroups.get(t.id) ?? "core"
         try {
           const tool = await t.init({ model })
           const params = tool.parameters as any
@@ -224,9 +236,9 @@ export namespace ToolRegistry {
           const inputSchema = isZodSchema
             ? toJSONSchema(params)
             : (params ?? { type: "object", properties: {} })
-          return { id: t.id, description: tool.description, source: "internal" as const, inputSchema: inputSchema as Record<string, unknown> }
+          return { id: t.id, description: tool.description, source: "internal" as const, sourceGroup: sg, inputSchema: inputSchema as Record<string, unknown> }
         } catch {
-          return { id: t.id, description: "", source: "internal" as const, inputSchema: { type: "object", properties: {} } }
+          return { id: t.id, description: "", source: "internal" as const, sourceGroup: sg, inputSchema: { type: "object", properties: {} } }
         }
       }),
     )

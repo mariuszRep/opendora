@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { opendora, type Workflow } from "@/lib/projectflows"
+import { RegistryEntitiesSection } from "@/components/settings/registry-entities-section"
 
 export default function WorkflowsPage() {
   const router = useRouter()
@@ -115,6 +116,13 @@ export default function WorkflowsPage() {
             ))}
           </div>
         )}
+      </div>
+
+      <div className="border-t pt-6">
+        <RegistryEntitiesSection
+          entityType="workflow"
+          onInstalled={() => opendora.workflow.list().then(setWorkflows).catch(() => {})}
+        />
       </div>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

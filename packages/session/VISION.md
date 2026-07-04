@@ -4,7 +4,11 @@
 
 ## Intent
 
+Sessions are not catalog-managed entities. They are durable run containers and execution ledgers. Session may record which catalog-managed entities were attached, loaded, invoked, or produced during a run, including source provenance such as `local`, `plugin:<plugin-id>`, `mcp:<server-id>`, or catalog metadata.
+
 Session owns the universal execution ledger and session state for conversations, threads, entries, attached context, and executable run history. Session is not the execution engine. The ledger within a session is graph-backed with typed edges connecting entries as immutable runtime events; sessions themselves are durable run containers that may participate in typed edges (instantiation, fork, containment) for provenance and display relationships.
+
+Session records capabilities loaded during a run regardless of source — core or plugin. Plugin-contributed agents, skills, tools, and workflows are tracked in the session's attached context alongside core capabilities. Session records the source group identity (`core`, `plugin:<plugin-id>`, `mcp:<server-id>`) for tool availability and capability provenance.
 
 ## Owns
 

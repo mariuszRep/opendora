@@ -20,6 +20,7 @@ import { CodeViewToggle } from "@/components/ui/code-view-toggle"
 import { opendora, type Skill } from "@/lib/projectflows"
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
 import { HIDDEN_TOOLS } from "@/lib/tool-groups"
+import { RegistryEntitiesSection } from "@/components/settings/registry-entities-section"
 
 function originFromLocation(location: string): string {
   if (location.includes("anthropic")) return "anthropic"
@@ -493,6 +494,10 @@ export default function SkillsPage() {
             })}
           </div>
         )}
+      </div>
+
+      <div className="border-t pt-6">
+        <RegistryEntitiesSection entityType="skill" onInstalled={() => opendora.skill.list().then(setSkills).catch(() => {})} />
       </div>
 
       <SkillPreviewDialog skill={selected} availableTools={availableTools} onClose={() => setSelected(null)} onSaved={handleSaved} onToolsSaved={handleToolsSaved} />

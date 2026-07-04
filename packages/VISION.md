@@ -8,6 +8,10 @@
 `packages/` contains the backend and client package boundaries for Projectflows.
 Each package owns one product/domain boundary and communicates through explicit public interfaces, not internal file imports.
 
+The core packages in `packages/` are the bare-metal application. All optional capabilities — contributed by plugins from the `projectflows-plugins` monorepo — are installed under `.projectflows/plugins/installed/<plugin-id>/` and loaded at runtime. They are never bundled into `packages/`.
+
+Catalog-managed entities — agents, skills, tools, workflows, and plugins — must expose list/discovery metadata through a shared index contract so apps do not merge local and remote state independently per settings page.
+
 ## Target flow
 
 ```text

@@ -12,6 +12,7 @@ import { Plugin } from "./plugin"
 import { Instance } from "@projectflows/runtime/instance"
 import type { ToolDefinition, ToolContext as PluginToolContext } from "@opencode-ai/plugin"
 import { Truncate } from "@projectflows/tools/truncation-impl"
+import { CapabilityRegistry } from "@projectflows/plugin"
 import z from "zod"
 import type { Tool } from "@projectflows/tools/tool"
 
@@ -35,7 +36,18 @@ configureRegistry({
     enableBatchTool: false,
   },
   async getToolDirs() {
-    return Config.directories()
+    const configDirs = (await Config.directories()).map((d) => ({ dir: d, sourceGroup: "core" as const }))
+    const projectDir = (() => { try { return Instance.directory } catch { return undefined } })()
+    const pluginCaps = await CapabilityRegistry.listCapabilities("tool", projectDir)
+    const seen = new Set<string>()
+    const pluginDirs: Array<{ dir: string; sourceGroup: string }> = []
+    for (const cap of pluginCaps) {
+      if (!seen.has(cap.installedDir)) {
+        seen.add(cap.installedDir)
+        pluginDirs.push({ dir: cap.installedDir, sourceGroup: cap.sourceGroup })
+      }
+    }
+    return [...configDirs, ...pluginDirs]
   },
   async waitForDeps() {
     return Config.waitForDependencies()

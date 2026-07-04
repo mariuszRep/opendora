@@ -46,8 +46,8 @@ const AgentConfigPatch = z.object({
   model: z.object({ modelID: z.string(), providerID: z.string() }).optional(),
   fallback_model: z.object({ modelID: z.string(), providerID: z.string() }).optional(),
   models: z.array(z.object({ modelID: z.string(), providerID: z.string() })).optional(),
-  temperature: z.number().optional(),
-  steps: z.number().int().positive().optional(),
+  temperature: z.number().nullable().optional(),
+  steps: z.number().int().positive().nullable().optional(),
   color: z.string().optional(),
   hidden: z.boolean().optional(),
   tools: z.array(z.string()).optional(),
@@ -112,6 +112,7 @@ export const AgentRoutes = lazy(() =>
                       id: z.string(),
                       description: z.string(),
                       source: z.enum(["internal", "mcp"]),
+                      sourceGroup: z.string(),
                       mcpServer: z.string().optional(),
                       inputSchema: z.record(z.string(), z.unknown()),
                     })
@@ -129,7 +130,7 @@ export const AgentRoutes = lazy(() =>
         ])
         return c.json([
           ...internalTools,
-          ...mcpTools.map((t) => ({ ...t, source: "mcp" as const })),
+          ...mcpTools.map((t) => ({ ...t, source: "mcp" as const, sourceGroup: "mcp:" + t.mcpServer })),
         ])
       },
     )

@@ -1120,6 +1120,12 @@ export namespace Config {
           url: z.string().optional().describe("Enterprise URL"),
         })
         .optional(),
+      registry: z
+        .object({
+          url: z.string().url().default("https://projectflows.ai").describe("Plugin registry URL"),
+        })
+        .optional()
+        .describe("Plugin registry configuration"),
       compaction: z
         .object({
           auto: z.boolean().optional().describe("Enable automatic compaction when context is full (default: true)"),

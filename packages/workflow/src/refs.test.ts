@@ -60,6 +60,44 @@ describe("reference resolution", () => {
     })
   })
 
+  test("resolveDeep preserves arrays — does not flatten to [object Object]", () => {
+    const questions = [
+      { question: "What is your name?", options: ["Alice", "Bob"] },
+      { question: "Favorite color?", options: "$input.color" },
+    ]
+    const result = resolveDeep({ questions }, input, ctx) as { questions: Array<Record<string, unknown>> }
+    // Must stay an array of objects, not a stringified mess
+    expect(Array.isArray(result.questions)).toBe(true)
+    expect(result.questions).toHaveLength(2)
+    expect(result.questions[0]!).toEqual({ question: "What is your name?", options: ["Alice", "Bob"] })
+    // $ref inside nested object should resolve
+    expect(result.questions[1]!).toEqual({ question: "Favorite color?", options: "red" })
+  })
+
+  test("resolveDeep resolves refs inside nested arrays", () => {
+    const ctxWithOpts = { ...ctx, dedupe_payload: { question_options: ["Yes", "No", "Maybe"] } }
+    const params = {
+      title: "Confirm",
+      questions: [
+        { question: "Proceed?", options: "$dedupe_payload.question_options" },
+      ],
+    }
+    const result = resolveDeep(params, input, ctxWithOpts) as { questions: Array<Record<string, unknown>> }
+    expect(result.questions[0]!.options).toEqual(["Yes", "No", "Maybe"])
+  })
+
+  test("resolveDeep handles mixed flat + nested params (backward compat)", () => {
+    const params = {
+      prompt: "Color is $input.color",
+      count: 42,
+      items: ["$input.color", "$ctx.summary"],
+    }
+    const result = resolveDeep(params, input, ctx) as { prompt: string; count: number; items: string[] }
+    expect(result.prompt).toBe("Color is red")
+    expect(result.count).toBe(42)
+    expect(result.items).toEqual(["red", "hello world"])
+  })
+
   test("resolveSchemaDescriptions resolves only description/title strings", () => {
     const schema = {
       type: "object",

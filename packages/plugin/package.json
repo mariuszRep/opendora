@@ -14,7 +14,8 @@
     "./config": "./src/config.ts",
     "./uninstall": "./src/uninstall.ts",
     "./onboarding": "./src/onboarding.ts",
-    "./catalog": "./src/catalog.ts"
+    "./catalog": "./src/catalog.ts",
+    "./source": "./src/source.ts"
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",

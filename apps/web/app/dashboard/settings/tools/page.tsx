@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { CheckCircle2Icon, CircleIcon, ChevronDownIcon, ChevronRightIcon, Loader2Icon, MonitorIcon, MousePointerIcon, SearchIcon, Trash2Icon, WrenchIcon } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
+import { RegistryPluginsSection } from "@/components/settings/registry-plugins-section"
+import { RegistryEntitiesSection } from "@/components/settings/registry-entities-section"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -190,11 +192,13 @@ function ToolRegistryCard({ schemas, loading }: { schemas: ToolSchema[]; loading
                       <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
                     )}
                     <span className="font-mono text-sm font-medium flex-1 min-w-0 truncate">{tool.id}</span>
-                    {tool.source === "mcp" && (
-                      <Badge variant="secondary" className="text-xs shrink-0">MCP</Badge>
+                    {tool.sourceGroup && tool.sourceGroup !== "core" && (
+                      <Badge variant="secondary" className="text-xs shrink-0">
+                        {tool.sourceGroup.startsWith("mcp:") ? tool.sourceGroup.slice(4) : tool.sourceGroup.startsWith("plugin:") ? tool.sourceGroup.slice(7) : tool.sourceGroup}
+                      </Badge>
                     )}
-                    {tool.mcpServer && (
-                      <span className="text-xs text-muted-foreground shrink-0">{tool.mcpServer}</span>
+                    {tool.source === "mcp" && !tool.sourceGroup && (
+                      <Badge variant="secondary" className="text-xs shrink-0">MCP</Badge>
                     )}
                   </button>
                   {isOpen && (
@@ -436,6 +440,11 @@ export default function ToolsPage() {
             ))}
           </CardContent>
         </Card>
+      </div>
+
+      <div className="border-t pt-6 space-y-6">
+        <RegistryEntitiesSection entityType="tool" />
+        <RegistryPluginsSection category="tools" />
       </div>
     </SettingsPageLayout>
   )

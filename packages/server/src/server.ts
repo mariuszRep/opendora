@@ -38,6 +38,7 @@ import { CronScheduler, type ScheduleDispatchFn } from "@projectflows/schedule/c
 import { Schedule } from "@projectflows/schedule/service"
 import { Database } from "@projectflows/storage/db"
 import { Agent } from "@projectflows/runtime/agent"
+import { Question } from "@projectflows/runtime/question"
 import { ToolRegistry } from "@projectflows/server/tool-registry"
 import { lazy } from "@projectflows/util/lazy"
 import { InstanceBootstrap } from "@projectflows/runtime/bootstrap"
@@ -57,6 +58,8 @@ import { UserRoutes } from "./routes/user"
 import { GeneralRoutes, getGlobalTimezone } from "./routes/general"
 import { UsageRoutes } from "./routes/usage"
 import { MemoryRoutes } from "./routes/memory"
+import { PluginRoutes } from "./routes/plugin"
+import { EntityRoutes } from "./routes/entity"
 import { MDNS } from "./mdns"
 import { BusBridge } from "@projectflows/session/bus-bridge"
 import { retentionDaemon, sessionManager } from "@projectflows/session/session"
@@ -309,6 +312,8 @@ export namespace Server {
         .route("/general", GeneralRoutes())
         .route("/usage", UsageRoutes())
         .route("/memory", MemoryRoutes())
+        .route("/plugin", PluginRoutes())
+        .route("/entity", EntityRoutes())
         .route("/", FileRoutes())
         .route("/mcp", McpRoutes())
         .route("/tui", TuiRoutes())
@@ -842,6 +847,12 @@ export namespace Server {
             get: (sid: string) => getSkillTools(sid),
             add: (sid: string, toolIds: string[]) => addSkillTools(sid, toolIds),
           },
+          question: (params: { sessionID: string; questions: unknown[]; tool?: { messageID: string; callID: string } }) =>
+            Question.ask({
+              sessionID: params.sessionID,
+              questions: params.questions as Question.Info[],
+              tool: params.tool,
+            }),
           skills: {
             all: () => Skill.all(),
             get: (name: string) => Skill.get(name),

@@ -6,6 +6,10 @@
 
 Runtime is the execution engine and orchestration layer for Projectflows work. Runtime keeps executable runs alive; session records the ledger and current state of the work.
 
+Runtime consumes the unified capability discovery/index to resolve installed agents, skills, tools, workflows, and plugins into executable context. Runtime records source provenance in session context but does not own catalog indexing or install lifecycle.
+
+Runtime discovers and loads capabilities from both the core bundle and installed plugins. Plugin-contributed agents, skills, tools, and workflows are resolved from `.projectflows/plugins/installed/<plugin-id>/` at runtime. Runtime resolves tool availability by source group (`core`, `plugin:<plugin-id>`, `mcp:<server-id>`) and assembles the effective execution context from all available sources.
+
 ## Owns
 
 - Agent run orchestration.

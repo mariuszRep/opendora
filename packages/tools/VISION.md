@@ -10,6 +10,10 @@
 
 Every tool in this package is described by a `tool.json` file that is fully compatible with the MCP (Model Context Protocol) wire format. Each tool group is independently servable as an MCP server with no additional transformation.
 
+Tools are one of the five catalog-managed entity types. Tool definitions may originate from the core package, from installed plugins, or from MCP server integrations. The product UI supports both an individual Tools view and a source Groups view. Source groups remain canonical for provenance and shared configuration: `core`, `plugin:<plugin-id>`, and `mcp:<server-id>`.
+
+Optional tool groups are contributed by plugins from the `projectflows-plugins` monorepo and installed under `.projectflows/plugins/installed/<plugin-id>/`.
+
 ---
 
 ## Package Boundary
@@ -98,6 +102,22 @@ The MCP server for a group:
 | Schedule | `./schedule/` | schedule_create, schedule_get, schedule_list, schedule_update, schedule_run, schedule_delete |
 | System | `./system/` | invalid, log_lesson, todowrite, todoread, lsp |
 | Desktop | `./desktop/` | 13 desktop_* tools |
+
+---
+
+## Tool grouping model
+
+Tool grouping uses a **source-group-first** model. The default group identifier is the tool's origin:
+
+| Source | Group identifier | Description |
+|--------|------------------|-------------|
+| Core built-in | `core` | Tools bundled with the core binary (limited to essential tools) |
+| Plugin-contributed | `plugin:<plugin-id>` | Tools provided by an installed plugin |
+| MCP server integration | `mcp:<server-id>` | Tools exposed through an MCP server connection |
+
+Semantic group labels (e.g., `communication`, `filesystem`, `shell`) are **not required for v1**. They are optional future metadata that may be layered on top of the source-group identifier. In v1, shared configuration — permissions, settings, environment — belongs to the source group (`plugin:<plugin-id>` or `mcp:<server-id>` or `core`), not to semantic labels.
+
+The tool groups listed above in the "Tool groups" table are core built-in groups. Plugin-contributed tools are organized under their respective `plugin:<plugin-id>` source group and are not listed here — they live in the plugin's installed directory under `.projectflows/plugins/installed/<plugin-id>/`.
 
 ---
 
