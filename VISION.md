@@ -10,7 +10,7 @@ Projectflows is a local-first agentic application platform where users operate a
 
 Projectflows is intended to remain lightweight at its core while supporting an ecosystem of installable extensions that can attach new capabilities and integrated experiences without turning every capability into a core module.
 
-Projectflows manages five catalog-backed capability entity types: agents, skills, tools, workflows, and plugins. Plugins are the packaging and distribution unit; agents, skills, tools, and workflows are individually discoverable and manageable product entities whose source may be local, project-local, plugin-contributed, MCP-contributed, or catalog-available.
+Projectflows manages five catalog-backed capability entity types: agents, skills, tools, workflows, and plugins. The projectflows.ai catalog is entity-first: agents, skills, tools, workflows, and plugins each have independent registry presence and individual download/install semantics. Plugins are packaging/manifest records that reference catalog entities by identifier rather than being the sole physical owner of entity source files. Agents, skills, tools, and workflows are individually discoverable and manageable product entities whose source may be local, project-local, plugin-contributed, MCP-contributed, or catalog-available.
 
 The OpenDora Settings experience must present these five entity types through a unified card, search, filter, and install-state model. Installed, available, and local-only state must be computed consistently through a shared discovery/index contract rather than duplicated per page.
 
@@ -107,7 +107,7 @@ domain packages that persist data
 - A run is one durable, resumable, event-sourced execution; conversations and workflows share this model, and any conversation may be transformed into a reusable workflow.
 - Durable run state — checkpoints, step journal, and suspend/resume tokens — is persisted only through storage contracts; runtime owns resume and replay; session records run state and history.
 - Plugins are installable Projectflows extension packages. A plugin may contribute any subset of agents, skills, tools, MCP integrations, workflows, schedules, configuration, permissions, and UI extension surfaces.
-- Users install extension capabilities as plugins, the packaging and distribution unit. Individual agents, skills, tools, and workflows contributed by plugins are discoverable and manageable as first-class entities through unified catalog surfaces.
+- Users install extension capabilities as individual catalog entities or as plugin/pack bundles. Individual agents, skills, tools, and workflows contributed by plugins are discoverable and manageable as first-class entities through unified catalog surfaces.
 - Plugin capabilities are installed under `.projectflows/plugins/installed/<plugin-id>/`, never inside the binary or application install directory.
 - First-party optional capabilities are maintained as migration source material in the `projectflows-plugins` repository. The published projectflows.ai catalog is the canonical remote catalog after migration. The core binary must not bundle or import first-party optional capabilities.
 - Tool grouping follows a source-group-first model: `core` for built-in tools, `plugin:<plugin-id>` for plugin-contributed tools, `mcp:<server-id>` for MCP server tools. Semantic group labels (e.g., "communication", "filesystem") are optional future metadata, not required for v1. Shared configuration belongs to the source group in v1.

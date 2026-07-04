@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   CheckCircle2Icon,
   CircleIcon,
@@ -15,23 +15,23 @@ import {
 } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { EntityCatalogSection } from "@/components/settings/entity-catalog-section"
-import { RegistryPluginsSection } from "@/components/settings/registry-plugins-section"
-import { RegistryEntitiesSection } from "@/components/settings/registry-entities-section"
+import { mergeWithRemote } from "@/hooks/use-entity-catalog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { opendora, type ToolSchema } from "@/lib/projectflows"
+import { opendora, type ToolSchema, type RemoteEntity } from "@/lib/projectflows"
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
 import { groupToolsBySource, sortSourceGroups, sourceGroupLabel } from "@/lib/tool-groups"
+import type { CatalogFilter } from "@/components/settings/entity-catalog-section"
 
 type GlobalConfig = {
   tool_config?: {
@@ -289,12 +289,16 @@ export default function ToolsPage() {
   const [savingExaToggle, setSavingExaToggle] = useState(false)
   const [savingDesktop, setSavingDesktop] = useState(false)
   const { schemas: toolSchemas, loading: loadingSchemas } = useToolSchemas()
+  const [remoteTools, setRemoteTools] = useState<RemoteEntity[]>([])
+  const [installing, setInstalling] = useState<string | null>(null)
   const [toolView, setToolView] = useState<"tools" | "groups">("tools")
+  const [filter, setFilter] = useState<CatalogFilter>("all")
   const [search, setSearch] = useState("")
   const [selectedTool, setSelectedTool] = useState<ToolSchema | null>(null)
 
   useEffect(() => {
     opendora.config.get().then(setGlobalConfig).catch(() => {})
+    opendora.entity.listAvailable({ type: "tool" }).then(setRemoteTools).catch(() => {})
   }, [])
 
   const exa = globalConfig?.tool_config?.exa
@@ -346,53 +350,59 @@ export default function ToolsPage() {
     }
   }
 
-  const toggleButtons: { label: string; value: "tools" | "groups" }[] = [
-    { label: "Tools", value: "tools" },
-    { label: "Groups", value: "groups" },
-  ]
+  async function handleInstall(id: string) {
+    setInstalling(id)
+    try {
+      await opendora.entity.installRemote("tool", id)
+      opendora.entity.listAvailable({ type: "tool" }).then(setRemoteTools).catch(() => {})
+    } finally {
+      setInstalling(null)
+    }
+  }
+
+  const toolItems = useMemo(
+    () =>
+      mergeWithRemote(
+        toolSchemas,
+        remoteTools,
+        (t) => ({
+          id: t.id,
+          type: "tool" as const,
+          name: t.id,
+          description: t.description,
+          onManage: () => setSelectedTool(t),
+        }),
+        "tool",
+        handleInstall,
+        installing,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [toolSchemas, remoteTools, installing],
+  )
 
   return (
     <SettingsPageLayout title="Tools">
       <div className="flex flex-col gap-6">
         {/* Tools / Groups toggle */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 p-1">
-            {toggleButtons.map((btn) => (
-              <button
-                key={btn.value}
-                onClick={() => { setToolView(btn.value); setSearch("") }}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  toolView === btn.value
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {btn.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <Tabs value={toolView} onValueChange={(v) => { setToolView(v as "tools" | "groups"); setSearch("") }}>
+          <TabsList>
+            <TabsTrigger value="tools">Tools</TabsTrigger>
+            <TabsTrigger value="groups">Groups</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-        {/* Tool list — grid or grouped */}
+        {/* Tool list */}
         {toolView === "tools" ? (
           <EntityCatalogSection
             icon={WrenchIcon}
             title="Tools"
-            items={toolSchemas}
+            items={toolItems}
             loading={loadingSchemas}
+            filter={filter}
+            onFilterChange={setFilter}
             search={search}
             onSearchChange={setSearch}
-            toEntityItem={(t) => ({
-              key: t.id,
-              name: t.id,
-              description: t.description,
-              action: t.sourceGroup ? (
-                <Badge variant="secondary" className="text-xs shrink-0">
-                  {sourceGroupLabel(t.sourceGroup)}
-                </Badge>
-              ) : undefined,
-              onClick: () => setSelectedTool(t),
-            })}
+            sortFn={(a, b) => a.name.localeCompare(b.name)}
           />
         ) : (
           <ToolGroupsView
@@ -542,11 +552,6 @@ export default function ToolsPage() {
             ))}
           </CardContent>
         </Card>
-      </div>
-
-      <div className="border-t pt-6 space-y-6">
-        <RegistryEntitiesSection entityType="tool" />
-        <RegistryPluginsSection category="tools" />
       </div>
 
       <ToolSchemaDialog tool={selectedTool} onClose={() => setSelectedTool(null)} />

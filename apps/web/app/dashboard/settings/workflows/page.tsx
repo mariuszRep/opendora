@@ -15,12 +15,13 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { opendora, type Workflow } from "@/lib/projectflows"
-import { useEntityList } from "@/hooks/use-entity-list"
+import { useEntityCatalog } from "@/hooks/use-entity-catalog"
 import { EntityCatalogPage } from "@/components/settings/entity-catalog-page"
+import type { CatalogFilter } from "@/components/settings/entity-catalog-section"
 
 export default function WorkflowsPage() {
   const router = useRouter()
-  const { items: workflows, loading, reload } = useEntityList(() => opendora.workflow.list())
+  const [filter, setFilter] = useState<CatalogFilter>("all")
   const [search, setSearch] = useState("")
   const [createOpen, setCreateOpen] = useState(false)
   const [newId, setNewId] = useState("")
@@ -28,6 +29,20 @@ export default function WorkflowsPage() {
   const [newDescription, setNewDescription] = useState("")
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
+
+  const { items, loading, reload } = useEntityCatalog(
+    "workflow",
+    () => opendora.workflow.list(),
+    (w) => ({
+      id: w.id,
+      type: "workflow" as const,
+      name: w.name,
+      description: w.description || "No description",
+      onManage: () => router.push(`/dashboard/settings/workflows/${w.id}`),
+      onDelete: async () => { await opendora.workflow.remove(w.id); reload() },
+      onUninstall: async () => { await opendora.workflow.remove(w.id); reload() },
+    }),
+  )
 
   async function handleCreate() {
     if (!newId.trim() || !newName.trim()) { setCreateError("ID and name are required"); return }
@@ -59,16 +74,12 @@ export default function WorkflowsPage() {
       <EntityCatalogPage
         icon={WorkflowIcon}
         title="Workflows"
-        items={workflows}
+        items={items}
         loading={loading}
+        filter={filter}
+        onFilterChange={setFilter}
         search={search}
         onSearchChange={setSearch}
-        toEntityItem={(w) => ({
-          key: w.id,
-          name: w.name,
-          description: w.description || "No description",
-          onClick: () => router.push(`/dashboard/settings/workflows/${w.id}`),
-        })}
         sortFn={(a, b) => a.name.localeCompare(b.name)}
         headerAction={
           <Button size="sm" onClick={() => setCreateOpen(true)}>
@@ -76,8 +87,6 @@ export default function WorkflowsPage() {
             New Workflow
           </Button>
         }
-        registryEntityType="workflow"
-        onInstalled={reload}
       />
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

@@ -1,19 +1,65 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { BotIcon, EyeOffIcon, PlusIcon } from "lucide-react"
+import { BotIcon, PlusIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { EntityCatalogSection } from "@/components/settings/entity-catalog-section"
-import { RegistryPluginsSection } from "@/components/settings/registry-plugins-section"
+import { mergeWithRemote } from "@/hooks/use-entity-catalog"
 import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
-import type { Agent } from "@/lib/projectflows"
+import { opendora, type RemoteEntity } from "@/lib/projectflows"
+import type { CatalogFilter } from "@/components/settings/entity-catalog-section"
 
 export default function SettingsAgentsPage() {
   const router = useRouter()
   const { allAgents } = useOpendoraContext()
+  const [remoteAgents, setRemoteAgents] = useState<RemoteEntity[]>([])
+  const [installing, setInstalling] = useState<string | null>(null)
+  const [filter, setFilter] = useState<CatalogFilter>("all")
   const [search, setSearch] = useState("")
+
+  useEffect(() => {
+    opendora.entity.listAvailable({ type: "agent" }).then(setRemoteAgents).catch(() => {})
+  }, [])
+
+  async function handleInstall(id: string) {
+    setInstalling(id)
+    try {
+      await opendora.entity.installRemote("agent", id)
+      opendora.entity.listAvailable({ type: "agent" }).then(setRemoteAgents).catch(() => {})
+    } finally {
+      setInstalling(null)
+    }
+  }
+
+  const items = useMemo(
+    () =>
+      mergeWithRemote(
+        allAgents,
+        remoteAgents,
+        (a) => ({
+          id: a._id,
+          type: "agent" as const,
+          name: a.name,
+          description: a.description,
+          indicator: (
+            <div
+              className="w-2.5 h-2.5 rounded-full shrink-0"
+              style={{ backgroundColor: a.color || "#6366f1" }}
+            />
+          ),
+          onManage: () => router.push(`/dashboard/agents/${a._id}`),
+          onDelete: async () => { await opendora.agent.remove(a._id) },
+          onUninstall: async () => { await opendora.agent.remove(a._id) },
+        }),
+        "agent",
+        handleInstall,
+        installing,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allAgents, remoteAgents, installing],
+  )
 
   return (
     <SettingsPageLayout
@@ -25,41 +71,17 @@ export default function SettingsAgentsPage() {
         </Button>
       }
     >
-      <div className="flex flex-col gap-6">
-        <EntityCatalogSection
-          icon={BotIcon}
-          title="Agents"
-          items={allAgents}
-          loading={false}
-          search={search}
-          onSearchChange={setSearch}
-          toEntityItem={(a: Agent) => ({
-            key: a.name,
-            name: a.name,
-            description: a.description,
-            indicator: (
-              <div
-                className="w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: a.color || "#6366f1" }}
-              />
-            ),
-            action: a.hidden ? <EyeOffIcon className="size-3 text-muted-foreground" /> : undefined,
-            onClick: () => router.push(`/dashboard/agents/${(a as any)._id || a.name}`),
-          })}
-          filterFn={(a: Agent, q: string) => {
-            const lq = q.toLowerCase()
-            return (
-              a.name.toLowerCase().includes(lq) ||
-              (a.description?.toLowerCase().includes(lq) ?? false) ||
-              (a.mode?.toLowerCase().includes(lq) ?? false)
-            )
-          }}
-          sortFn={(a: Agent, b: Agent) => a.name.localeCompare(b.name)}
-        />
-        <div className="border-t pt-6">
-          <RegistryPluginsSection category="agents" onInstalled={() => router.refresh()} />
-        </div>
-      </div>
+      <EntityCatalogSection
+        icon={BotIcon}
+        title="Agents"
+        items={items}
+        loading={false}
+        filter={filter}
+        onFilterChange={setFilter}
+        search={search}
+        onSearchChange={setSearch}
+        sortFn={(a, b) => a.name.localeCompare(b.name)}
+      />
     </SettingsPageLayout>
   )
 }
