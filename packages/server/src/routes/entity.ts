@@ -3,7 +3,7 @@ import { describeRoute } from "hono-openapi"
 import fs from "fs/promises"
 import path from "path"
 import { RemoteEntitySource } from "@projectflows/plugin/source"
-import { PluginStorage } from "@projectflows/plugin/storage"
+import { PluginStorage, CapabilityRegistry } from "@projectflows/plugin"
 import { Config } from "@projectflows/config/config"
 import { lazy } from "@projectflows/util/lazy"
 
@@ -136,6 +136,16 @@ export const EntityRoutes = lazy(() =>
       async (c) => {
         const type = c.req.param("type")
         const name = c.req.param("name")
+
+        // Refuse if the entity is owned by an installed plugin
+        const cap = await CapabilityRegistry.getCapability(type as any, name)
+        if (cap) {
+          return c.json(
+            { message: `Entity "${name}" is managed by plugin "${cap.pluginId}" — uninstall the plugin instead` },
+            400,
+          )
+        }
+
         const root = PluginStorage.globalRoot()
         const p = entityDir(type, name, root)
         if (!p) return c.json({ message: "Invalid entity type" }, 400)

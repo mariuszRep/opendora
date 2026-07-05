@@ -35,6 +35,7 @@ export type RemotePlugin = {
   category: string
   tags: string[]
   status: string
+  provided?: "core" | "entity"
   capabilities: { type: string; name: string; sourceGroup?: string }[]
 }
 

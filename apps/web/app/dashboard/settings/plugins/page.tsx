@@ -110,19 +110,24 @@ export default function PluginsPage() {
 
   const items = useMemo<MergedEntityItem[]>(
     () =>
-      categoryFiltered.map((p) => ({
-        key: p.id,
-        id: p.id,
-        type: "plugin" as const,
-        name: p.name,
-        description: p.description,
-        version: p.version,
-        state: p.installed ? ("installed" as const) : ("available" as const),
-        onInstall: !p.installed ? () => handleInstallRemote(p.id) : undefined,
-        installing: actionInProgress === p.id && !p.installed,
-        onUninstall: p.installed ? () => handleRemove(p.id) : undefined,
-        uninstalling: actionInProgress === p.id && !!p.installed,
-      })),
+      categoryFiltered.map((p) => {
+        const isCore = p.provided === "core"
+        return {
+          key: p.id,
+          id: p.id,
+          type: "plugin" as const,
+          name: p.name,
+          description: isCore && !p.installed
+            ? `${p.description}${p.description ? " — " : ""}requires manual setup`
+            : p.description,
+          version: p.version,
+          state: p.installed ? ("installed" as const) : ("available" as const),
+          onInstall: !p.installed && !isCore ? () => handleInstallRemote(p.id) : undefined,
+          installing: actionInProgress === p.id && !p.installed,
+          onUninstall: p.installed ? () => handleRemove(p.id) : undefined,
+          uninstalling: actionInProgress === p.id && !!p.installed,
+        }
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [categoryFiltered, actionInProgress],
   )

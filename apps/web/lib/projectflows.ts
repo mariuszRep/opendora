@@ -919,6 +919,16 @@ export const opendora = {
     removeLocal: (type: string, name: string) =>
       req<boolean>(`/entity/${encodeURIComponent(type)}/${encodeURIComponent(name)}`, { method: "DELETE" }),
   },
+  catalog: {
+    list: (opts?: { type?: string; state?: string; q?: string }) => {
+      const params = new URLSearchParams()
+      if (opts?.type) params.set("type", opts.type)
+      if (opts?.state) params.set("state", opts.state)
+      if (opts?.q) params.set("q", opts.q)
+      const qs = params.toString()
+      return req<CatalogRecord[]>(`/catalog${qs ? `?${qs}` : ""}`)
+    },
+  },
   plugin: {
     list: () => req<PluginListItem[]>("/plugin/"),
     info: (id: string) => req<PluginListItem>(`/plugin/${id}`),
@@ -968,6 +978,7 @@ export type RemotePlugin = {
   category: string
   tags: string[]
   status: string
+  provided?: "core" | "entity"
   capabilities: Array<{ type: string; name: string; sourceGroup?: string }>
   installed: boolean
 }
@@ -983,6 +994,21 @@ export type RemoteEntity = {
   tags: string[]
   dependencies: string[]
   installed: boolean
+}
+
+export type CatalogState = "installed" | "available" | "local-only"
+
+export type CatalogRecord = {
+  id: string
+  type: "agent" | "skill" | "tool" | "workflow" | "plugin"
+  name: string
+  description: string
+  state: CatalogState
+  version?: string
+  pluginId?: string
+  sourceGroup?: string
+  scope?: "global" | "project"
+  provided?: "core" | "entity"
 }
 
 export type PackDefinition = {
