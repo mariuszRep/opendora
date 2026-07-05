@@ -87,7 +87,7 @@ export namespace Skill {
   // These follow the directory layout used by Claude Code and other agents.
   const EXTERNAL_DIRS = [".claude", ".agents"]
   const EXTERNAL_SKILL_PATTERN = "skills/**/SKILL.md"
-  const PROJECTFLOWS_SKILL_PATTERN = "{skill,skills}/**/SKILL.md"
+  const PROJECTFLOWS_SKILL_PATTERN = "skills/**/SKILL.md"
   const SKILL_PATTERN = "**/SKILL.md"
 
   async function stateInit() {
@@ -275,7 +275,7 @@ export namespace Skill {
     const dirs = await Config.directories()
     const candidates = await Promise.all(
       dirs.map(async (d) => {
-        const p = path.join(d, "skill")
+        const p = path.join(d, "skills")
         return await Filesystem.isDir(p) ? p : undefined
       }),
     )
@@ -664,7 +664,7 @@ export namespace Skill {
     return all()
   }
 
-/** Create a new local skill under the first .projectflows/skill/ directory */
+/** Create a new local skill under the first .projectflows/skills/ directory */
   export async function create(params: {
     name: string
     description: string
@@ -673,8 +673,8 @@ export namespace Skill {
   }): Promise<{ dir: string }> {
     const dirs = await Config.directories()
     const installBase = dirs.length > 0
-      ? path.join(dirs[0]!, "skill")
-      : path.join(Instance.directory, ".projectflows", "skill")
+      ? path.join(dirs[0]!, "skills")
+      : path.join(Instance.directory, ".projectflows", "skills")
 
     const skillDir = path.join(installBase, params.name)
     await fs.mkdir(skillDir, { recursive: true })
