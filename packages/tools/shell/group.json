@@ -1,0 +1,9 @@
+{
+  "id": "shell",
+  "name": "Shell",
+  "description": "Execute shell commands and scripts",
+  "icon": "Terminal",
+  "sourceGroup": "core",
+  "tools": ["bash", "batch"],
+  "mcp": {}
+}

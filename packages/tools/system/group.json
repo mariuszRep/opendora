@@ -1,0 +1,9 @@
+{
+  "id": "system",
+  "name": "System",
+  "description": "Internal system tools for task tracking, lessons, diagnostics, and the tool registry",
+  "icon": "Settings",
+  "sourceGroup": "core",
+  "tools": ["todo_write", "log_lesson", "lsp", "invalid"],
+  "mcp": {}
+}

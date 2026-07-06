@@ -1,0 +1,19 @@
+{
+  "id": "web",
+  "name": "Web & Search",
+  "description": "Fetch web pages, search the web, and query code search engines",
+  "icon": "Globe",
+  "sourceGroup": "core",
+  "config": {
+    "fields": [
+      {
+        "key": "exa.apiKey",
+        "label": "Exa API Key",
+        "type": "password",
+        "description": "API key for Exa neural search (enables websearch tool)"
+      }
+    ]
+  },
+  "tools": ["webfetch", "websearch", "codesearch"],
+  "mcp": {}
+}

@@ -1,0 +1,9 @@
+{
+  "id": "skills",
+  "name": "Skills",
+  "description": "Load, list, search, install, create, edit, and remove skills",
+  "icon": "Zap",
+  "sourceGroup": "core",
+  "tools": ["skill_load", "skill_list", "skill_search", "skill_install", "skill_create", "skill_edit", "skill_remove"],
+  "mcp": {}
+}

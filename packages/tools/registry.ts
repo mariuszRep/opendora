@@ -11,7 +11,7 @@ import { ApplyPatchTool } from "./filesystem/apply_patch.ts"
 import { SessionSearchTool, SessionGetTool, SessionAnalyzeTool, SessionTreeTool, SessionUpdateTool } from "./sessions/index.ts"
 import { DelegateTool, ReplyTool, QuestionTool, NotifyTool } from "./communication/index.ts"
 import { TodoWriteTool, TodoReadTool } from "./system/todo.ts"
-import { WebFetchTool, WebSearchTool, CodeSearchTool } from "./browse-and-web/index.ts"
+import { WebFetchTool, WebSearchTool, CodeSearchTool } from "./web/index.ts"
 import { InvalidTool } from "./system/invalid.ts"
 import { LspTool } from "./system/lsp.ts"
 import { SkillLoadTool, SkillListTool, SkillSearchTool, SkillInstallTool, SkillCreateTool, SkillEditTool, SkillRemoveTool } from "./skills/index.ts"
@@ -23,15 +23,16 @@ import { AgentListTool } from "./agents/agent-list.ts"
 import { AgentGetTool } from "./agents/agent-get.ts"
 import { ScheduleListTool, ScheduleCreateTool, ScheduleUpdateTool, ScheduleDeleteTool, ScheduleGetTool, ScheduleRunTool } from "./schedule/index.ts"
 import { DESKTOP_TOOLS } from "./desktop/index.ts"
-import { PYAUTOGUI_TOOLS } from "./pyautogui/index.ts"
+import { PYAUTOGUI_TOOLS } from "./automation/index.ts"
 import { PlaywrightModeTool } from "./browser/playwright-mode.ts"
 import { ToolListTool, ToolGetTool, ToolUpdateTool } from "./tool-registry/index.ts"
 import { WorkflowRunTool, WorkflowParametersTool, WorkflowCreateTool, WorkflowGetTool, WorkflowListTool, WorkflowUpdateTool, WorkflowDeleteTool, WorkflowNodeCatalogTool } from "./workflows/index.ts"
 import { MemoryWriteTool, MemoryReadTool, MemoryDeleteTool } from "./memory/index.ts"
 import { toJSONSchema } from "zod"
 import type { Tool } from "./tool.ts"
+import { loadGroupManifests, resolveToolGroup, type ToolGroupManifest } from "./group-manifest.ts"
 import path from "path"
-import { pathToFileURL } from "url"
+import { pathToFileURL, fileURLToPath } from "url"
 
 export type ToolDirEntry = string | { dir: string; sourceGroup: string }
 
@@ -67,8 +68,11 @@ export const configureRegistry = configure
 export namespace ToolRegistry {
   let _custom: Tool.Info[] = []
   let _sourceGroups = new Map<string, string>() // toolId → sourceGroup
+  let _groupManifests: ToolGroupManifest[] = []
   let _initialized = false
   let _instanceKey: string | undefined = undefined
+
+  const _toolsRootDir = path.dirname(fileURLToPath(import.meta.url))
 
   export async function init(): Promise<void> {
     const key = _config.getInstanceKey?.()
@@ -77,6 +81,7 @@ export namespace ToolRegistry {
     _instanceKey = key
     _custom = []
     _sourceGroups = new Map()
+    _groupManifests = await loadGroupManifests(_toolsRootDir).catch(() => [])
 
     const dirEntries = (await _config.getToolDirs?.()) ?? []
     if (dirEntries.length) await _config.waitForDeps?.()
@@ -113,6 +118,11 @@ export namespace ToolRegistry {
     _initialized = false
     _custom = []
     _sourceGroups = new Map()
+    _groupManifests = []
+  }
+
+  export function groupManifests(): ToolGroupManifest[] {
+    return _groupManifests
   }
 
   export function register(tool: Tool.Info) {
@@ -221,6 +231,7 @@ export namespace ToolRegistry {
     description: string
     source: "internal"
     sourceGroup: string
+    group: string
     inputSchema: Record<string, unknown>
   }
 
@@ -228,6 +239,7 @@ export namespace ToolRegistry {
     return Promise.all(
       all().map(async (t) => {
         const sg = _sourceGroups.get(t.id) ?? "core"
+        const group = resolveToolGroup(t.id, _groupManifests) ?? "others"
         try {
           const tool = await t.init({ model })
           const params = tool.parameters as any
@@ -236,9 +248,9 @@ export namespace ToolRegistry {
           const inputSchema = isZodSchema
             ? toJSONSchema(params)
             : (params ?? { type: "object", properties: {} })
-          return { id: t.id, description: tool.description, source: "internal" as const, sourceGroup: sg, inputSchema: inputSchema as Record<string, unknown> }
+          return { id: t.id, description: tool.description, source: "internal" as const, sourceGroup: sg, group, inputSchema: inputSchema as Record<string, unknown> }
         } catch {
-          return { id: t.id, description: "", source: "internal" as const, sourceGroup: sg, inputSchema: { type: "object", properties: {} } }
+          return { id: t.id, description: "", source: "internal" as const, sourceGroup: sg, group, inputSchema: { type: "object", properties: {} } }
         }
       }),
     )

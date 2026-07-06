@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../../.projectflows"
+		},
+		{
+			"path": "../projectflows-website"
 		}
 	]
 }

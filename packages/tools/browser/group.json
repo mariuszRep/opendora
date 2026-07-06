@@ -1,0 +1,9 @@
+{
+  "id": "browser",
+  "name": "Browser",
+  "description": "Automate web browsers with Playwright for testing and web scraping",
+  "icon": "Chrome",
+  "sourceGroup": "core",
+  "tools": ["playwright_browser_mode"],
+  "mcp": {}
+}

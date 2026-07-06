@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test"
 import path from "path"
 import { Instance } from "../../src/instance"
-import { WebFetchTool } from "@projectflows/tools/browse-and-web/webfetch"
+import { WebFetchTool } from "@projectflows/tools/web/webfetch"
 
 const projectRoot = path.join(__dirname, "../..")
 

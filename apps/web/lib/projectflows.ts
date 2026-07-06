@@ -435,6 +435,7 @@ export type ToolSchema = {
   description: string
   source: "internal" | "mcp"
   sourceGroup: string
+  group: string
   mcpServer?: string
   inputSchema: {
     type?: string

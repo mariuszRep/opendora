@@ -1,0 +1,9 @@
+{
+  "id": "schedule",
+  "name": "Schedule",
+  "description": "Create, manage, and run scheduled tasks and cron jobs",
+  "icon": "Clock",
+  "sourceGroup": "core",
+  "tools": ["schedule_list", "schedule_create", "schedule_update", "schedule_delete", "schedule_get", "schedule_run"],
+  "mcp": {}
+}

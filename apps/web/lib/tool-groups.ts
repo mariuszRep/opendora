@@ -1,77 +1,55 @@
 export const HIDDEN_TOOLS = new Set(["invalid", "plan_exit"])
 
-export const FILESYSTEM_TOOLS = new Set([
-  "read", "write", "edit", "list", "glob", "grep",
-  "apply_patch", "multiedit",
-])
-
-export const SHELL_TOOLS = new Set(["bash", "batch"])
-
-export const BROWSE_AND_WEB_TOOLS = new Set(["webfetch", "websearch", "browser", "codesearch", "playwright_browser_mode"])
-
-export const SESSION_TOOLS = new Set([
-  "delegate", "reply", "notify", "question",
-  "session_get", "session_search", "session_tree", "session_update",
-])
-
-export const AGENT_TOOLS = new Set([
-  "agent_create", "agent_delete", "agent_get", "agent_list", "agent_update",
-])
-
-export const SKILL_TOOLS = new Set([
-  "skill_list", "skill_load", "skill_search", "skill_install", "skill_create", "skill_edit", "skill_remove",
-])
-
-export const SCHEDULE_TOOLS = new Set([
-  "schedule_list", "schedule_create", "schedule_update", "schedule_delete", "schedule_get", "schedule_run",
-])
-
-export const WORKFLOW_TOOLS = new Set([
-  "workflow_run", "workflow_create", "workflow_get", "workflow_list", "workflow_update", "workflow_delete",
-])
-
-export const TOOL_REGISTRY_TOOLS = new Set([
-  "tool_list", "tool_get", "tool_update",
-])
-
-export const MEMORY_TOOLS = new Set([
-  "memory_read", "memory_write",
-])
-
-export const DESKTOP_TOOLS = new Set([
-  "desktop_mouse_move", "desktop_mouse_click", "desktop_mouse_drag", "desktop_mouse_scroll", "desktop_mouse_position",
-  "desktop_keyboard_type", "desktop_keyboard_press",
-  "desktop_screen_capture", "desktop_screen_find_image", "desktop_screen_wait_for_image", "desktop_screen_size", "desktop_screen_read_pixel",
-  "desktop_window_list", "desktop_window_active", "desktop_window_focus", "desktop_window_move", "desktop_window_resize",
-  "desktop_clipboard_read", "desktop_clipboard_write",
-])
-
-export const isPyAutoGUI = (id: string) => id.startsWith("pyautogui_")
-
+// Local type mirrors packages/tools/group-manifest.ts — web app cannot import packages directly.
 export type ToolGroupId =
   | "filesystem"
   | "shell"
-  | "browse-and-web"
+  | "web"
+  | "browser"
+  | "desktop"
+  | "automation"
   | "sessions"
+  | "memory"
   | "agents"
   | "skills"
-  | "schedule"
   | "workflows"
+  | "schedule"
+  | "communication"
+  | "system"
   | "tool-registry"
-  | "memory"
-  | "desktop"
-  | "pyautogui"
   | "others"
 
+export type ToolGroupConfigField = {
+  key: string
+  label: string
+  type: "text" | "password" | "boolean" | "path"
+  description?: string
+  placeholder?: string
+}
+
+export type ToolGroupManifest = {
+  id: string
+  name: string
+  description: string
+  icon: string
+  sourceGroup?: string
+  config?: { fields: ToolGroupConfigField[] }
+  runtime?: { env?: string[]; secrets?: string[] }
+  tools: string[]
+  mcp?: { serverName?: string }
+}
+
 export const TOOL_GROUP_ORDER: ToolGroupId[] = [
-  "filesystem", "shell", "browse-and-web", "sessions", "agents", "skills",
-  "schedule", "workflows", "tool-registry", "memory", "desktop", "pyautogui", "others",
+  "filesystem", "shell", "web", "browser", "sessions", "agents", "skills",
+  "schedule", "workflows", "tool-registry", "memory", "communication",
+  "desktop", "automation", "system", "others",
 ]
 
 export const TOOL_GROUP_LABELS: Record<ToolGroupId, string> = {
   "filesystem": "Filesystem",
   "shell": "Shell",
-  "browse-and-web": "Browse & Web",
+  "web": "Web & Search",
+  "browser": "Browser",
   "sessions": "Sessions",
   "agents": "Agents",
   "skills": "Skills",
@@ -79,28 +57,35 @@ export const TOOL_GROUP_LABELS: Record<ToolGroupId, string> = {
   "workflows": "Workflows",
   "tool-registry": "Tool Registry",
   "memory": "Memory",
+  "communication": "Communication",
   "desktop": "Desktop",
-  "pyautogui": "PyAutoGUI",
+  "automation": "Automation",
+  "system": "System",
   "others": "Others",
 }
 
+// Fallback group resolution for tools that may lack a group field in their schema response.
+// Canonical source of truth is the server-served group field from manifests.
 export function getToolGroup(id: string): ToolGroupId {
-  if (FILESYSTEM_TOOLS.has(id)) return "filesystem"
-  if (SHELL_TOOLS.has(id)) return "shell"
-  if (BROWSE_AND_WEB_TOOLS.has(id)) return "browse-and-web"
-  if (SESSION_TOOLS.has(id)) return "sessions"
-  if (AGENT_TOOLS.has(id)) return "agents"
-  if (SKILL_TOOLS.has(id)) return "skills"
-  if (SCHEDULE_TOOLS.has(id)) return "schedule"
-  if (WORKFLOW_TOOLS.has(id)) return "workflows"
-  if (TOOL_REGISTRY_TOOLS.has(id)) return "tool-registry"
-  if (MEMORY_TOOLS.has(id)) return "memory"
-  if (DESKTOP_TOOLS.has(id)) return "desktop"
-  if (isPyAutoGUI(id)) return "pyautogui"
+  if (["read", "write", "edit", "list", "glob", "grep", "apply_patch", "multiedit"].includes(id)) return "filesystem"
+  if (["bash", "batch"].includes(id)) return "shell"
+  if (["webfetch", "websearch", "codesearch"].includes(id)) return "web"
+  if (id === "playwright_browser_mode") return "browser"
+  if (id.startsWith("desktop_")) return "desktop"
+  if (id.startsWith("pyautogui_")) return "automation"
+  if (["session_search", "session_get", "session_analyze", "session_tree", "session_update"].includes(id)) return "sessions"
+  if (["delegate", "reply", "question", "notify"].includes(id)) return "communication"
+  if (["agent_create", "agent_update", "agent_delete", "agent_list", "agent_get"].includes(id)) return "agents"
+  if (["skill_load", "skill_list", "skill_search", "skill_install", "skill_create", "skill_edit", "skill_remove"].includes(id)) return "skills"
+  if (["schedule_list", "schedule_create", "schedule_update", "schedule_delete", "schedule_get", "schedule_run"].includes(id)) return "schedule"
+  if (["workflow_run", "workflow_parameters", "workflow_create", "workflow_get", "workflow_list", "workflow_update", "workflow_delete", "workflow_node_catalog"].includes(id)) return "workflows"
+  if (["tool_list", "tool_get", "tool_update"].includes(id)) return "tool-registry"
+  if (["memory_read", "memory_write", "memory_delete"].includes(id)) return "memory"
+  if (["todo_write", "log_lesson", "lsp", "invalid"].includes(id)) return "system"
   return "others"
 }
 
-// ── Source-group utilities ─────────────────────────────────────────────────
+// ── Source-group presentation utilities ───────────────────────────────────────
 
 export function sourceGroupLabel(sg: string): string {
   if (sg === "core") return "Core"

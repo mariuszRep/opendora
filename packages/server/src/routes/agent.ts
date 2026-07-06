@@ -113,6 +113,7 @@ export const AgentRoutes = lazy(() =>
                       description: z.string(),
                       source: z.enum(["internal", "mcp"]),
                       sourceGroup: z.string(),
+                      group: z.string(),
                       mcpServer: z.string().optional(),
                       inputSchema: z.record(z.string(), z.unknown()),
                     })
@@ -130,7 +131,7 @@ export const AgentRoutes = lazy(() =>
         ])
         return c.json([
           ...internalTools,
-          ...mcpTools.map((t) => ({ ...t, source: "mcp" as const, sourceGroup: "mcp:" + t.mcpServer })),
+          ...mcpTools.map((t) => ({ ...t, source: "mcp" as const, sourceGroup: "mcp:" + t.mcpServer, group: "others" })),
         ])
       },
     )

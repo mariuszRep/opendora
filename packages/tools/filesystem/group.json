@@ -1,0 +1,20 @@
+{
+  "id": "filesystem",
+  "name": "Filesystem",
+  "description": "Read, write, edit, and search files and directories on disk",
+  "icon": "FolderOpen",
+  "sourceGroup": "core",
+  "config": {
+    "fields": [
+      {
+        "key": "workingDir",
+        "label": "Working Directory",
+        "type": "path",
+        "description": "Default working directory for file operations",
+        "placeholder": "/home/user/projects"
+      }
+    ]
+  },
+  "tools": ["read", "write", "edit", "list", "glob", "grep", "apply_patch", "multiedit"],
+  "mcp": {}
+}

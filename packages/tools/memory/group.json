@@ -1,0 +1,9 @@
+{
+  "id": "memory",
+  "name": "Memory",
+  "description": "Persistent key-value memory store for reading, writing, and deleting notes across sessions",
+  "icon": "Brain",
+  "sourceGroup": "core",
+  "tools": ["memory_read", "memory_write", "memory_delete"],
+  "mcp": {}
+}
