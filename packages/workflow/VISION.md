@@ -8,7 +8,7 @@ Workflow owns reusable process definitions and workflow domain behavior. Workflo
 
 Workflows are one of the five catalog-managed entity types. Workflow definitions may be local-only, project-local, plugin-contributed, or catalog-available. Workflow discovery must participate in the shared entity/plugin index so UI surfaces can show installed, available, and local-only workflows consistently.
 
-Workflow definitions may originate from the core or from installed plugins. Optional workflow definitions are contributed by plugins from the `projectflows-plugins` monorepo and installed under `.projectflows/plugins/installed/<plugin-id>/`. Workflow definitions contributed by plugins follow the same schema, validation, and runtime behavior as core workflows.
+Workflow definitions may originate from the core or from installed plugins. Optional workflow definitions are contributed by plugins from the `projectflows-website/registry` catalog and installed under `.projectflows/plugins/installed/<plugin-id>/`. Workflow definitions contributed by plugins follow the same schema, validation, and runtime behavior as core workflows.
 
 **Workflows are reusable definitions.** There is no separate `workflow_templates` concept or table. Workflows serve as the reusable definition; workflow executions and runs are represented by sessions as runtime containers. Sessions hold the runtime state and entry ledger for a workflow execution; the workflow definition itself is versioned and reusable across multiple session runs.
 

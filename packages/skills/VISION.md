@@ -8,7 +8,7 @@ Skills owns reusable capability definitions that can be loaded into agent/runtim
 
 Skills are one of the five catalog-managed entity types. Skill definitions may be local-only, project-local, plugin-contributed, or catalog-available. Skill discovery must participate in the shared entity/plugin index so UI surfaces can show installed, available, and local-only skills consistently.
 
-Skill definitions may originate from the core or from installed plugins. Optional skills are contributed by plugins from the `projectflows-plugins` monorepo and installed under `.projectflows/plugins/installed/<plugin-id>/`. The core bundle includes only skills strictly required for the plugin system and minimal application function.
+Skill definitions may originate from the core or from installed plugins. Optional skills are contributed by plugins from the `projectflows-website/registry` catalog and installed under `.projectflows/plugins/installed/<plugin-id>/`. The core bundle includes only skills strictly required for the plugin system and minimal application function.
 
 ## Owns
 

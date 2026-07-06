@@ -30,7 +30,7 @@ Plugin owns installable extension package semantics for Projectflows. Plugins ar
 - Agents, skills, tools, workflows, and plugins must participate in one unified discovery/index model.
 - Installing or removing a plugin must preserve and update source provenance for contributed entities.
 - The projectflows.ai catalog is the canonical published catalog/index after migration.
-- The legacy `projectflows-plugins` repository is migration source material until parity is confirmed.
+- The `projectflows-website/registry` is the canonical first-party registry and catalog source for plugins and their contributed entities. No separate legacy plugins repository exists.
 
 ## Canonical Operations
 
