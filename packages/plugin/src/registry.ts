@@ -7,6 +7,7 @@ export interface CapabilityRecord {
   type: Plugin.CapabilityType
   name: string
   sourceGroup: string
+  group?: string
   scope: "global" | "project"
   installedDir: string
 }
@@ -34,6 +35,7 @@ export namespace CapabilityRegistry {
           type: cap.type as Plugin.CapabilityType,
           name: cap.name,
           sourceGroup: cap.sourceGroup || `plugin:${pluginId}`,
+          ...(cap.group ? { group: cap.group } : {}),
           scope: entry.scope,
           installedDir,
         })

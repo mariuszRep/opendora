@@ -8,6 +8,7 @@ export namespace Plugin {
     type: CapabilityType,
     name: z.string(),
     sourceGroup: z.string().optional(),
+    group: z.string().optional(),
   })
   export type Capability = z.infer<typeof Capability>
 

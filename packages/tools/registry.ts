@@ -89,7 +89,7 @@ export namespace ToolRegistry {
     for (const entry of dirEntries) {
       const dir = typeof entry === "string" ? entry : entry.dir
       const sg = typeof entry === "string" ? "core" : (entry.sourceGroup ?? "core")
-      const glob = new (globalThis as any).Bun.Glob("{tool,tools}/*.{js,ts}")
+      const glob = new (globalThis as any).Bun.Glob("tool-groups/*/tools/*.{js,ts}")
       const matches: string[] = [...glob.scanSync({ cwd: dir, dot: true, followSymlinks: true })].map((m: string) =>
         path.join(dir, m),
       )

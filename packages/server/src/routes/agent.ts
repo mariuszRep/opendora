@@ -136,6 +136,29 @@ export const AgentRoutes = lazy(() =>
       },
     )
 
+    // GET /agent/tool-groups — all loaded group manifests
+    .get(
+      "/tool-groups",
+      describeRoute({
+        summary: "List tool group manifests",
+        description: "Returns all loaded tool group manifests (from group.json files) for manifest-driven UI.",
+        operationId: "agent.toolGroups",
+        responses: {
+          200: {
+            description: "Tool group manifests",
+            content: {
+              "application/json": {
+                schema: resolver(z.array(z.record(z.string(), z.unknown()))),
+              },
+            },
+          },
+        },
+      }),
+      async (c) => {
+        return c.json(ToolRegistry.groupManifests())
+      },
+    )
+
     // GET /agent/:id — single agent info
     .get(
       "/:id",

@@ -7,7 +7,7 @@
   "config": {
     "fields": [
       {
-        "key": "workingDir",
+        "key": "filesystem.workingDir",
         "label": "Working Directory",
         "type": "path",
         "description": "Default working directory for file operations",

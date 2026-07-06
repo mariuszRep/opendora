@@ -2,155 +2,117 @@
 
 import { useEffect, useMemo, useState } from "react"
 import {
-  CheckCircle2Icon,
-  CircleIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
+  AppWindowIcon,
+  BotIcon,
+  BrainIcon,
+  ClockIcon,
+  FolderOpenIcon,
+  GitBranchIcon,
+  GlobeIcon,
+  HistoryIcon,
   Loader2Icon,
+  MessageSquareIcon,
   MonitorIcon,
-  MousePointerIcon,
+  Settings2Icon,
+  SettingsIcon,
+  TerminalIcon,
+  UsersIcon,
   WrenchIcon,
-  Trash2Icon,
   XIcon,
+  ZapIcon,
 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { EntityCatalogSection } from "@/components/settings/entity-catalog-section"
+import { SettingsCard } from "@/components/settings/settings-card"
 import { mergeWithRemote } from "@/hooks/use-entity-catalog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { opendora, type ToolSchema, type RemoteEntity } from "@/lib/projectflows"
+import {
+  opendora,
+  type ToolSchema,
+  type ToolGroupManifest,
+  type ToolGroupConfigField,
+  type RemoteEntity,
+} from "@/lib/projectflows"
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
-import { groupToolsBySource, sortSourceGroups, sourceGroupLabel } from "@/lib/tool-groups"
 import type { CatalogFilter } from "@/components/settings/entity-catalog-section"
 
-type GlobalConfig = {
-  tool_config?: {
-    exa?: { apiKey?: string; useApiKey?: boolean }
-    desktop?: { enabled?: boolean }
-  }
-  [k: string]: unknown
+// ── Icon lookup ───────────────────────────────────────────────────────────────
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  Terminal: TerminalIcon,
+  Brain: BrainIcon,
+  History: HistoryIcon,
+  Chrome: AppWindowIcon,
+  Bot: BotIcon,
+  Globe: GlobeIcon,
+  FolderOpen: FolderOpenIcon,
+  Monitor: MonitorIcon,
+  Clock: ClockIcon,
+  Wrench: WrenchIcon,
+  Zap: ZapIcon,
+  Users: UsersIcon,
+  Settings: SettingsIcon,
+  GitBranch: GitBranchIcon,
+  MessageSquare: MessageSquareIcon,
 }
 
-const DESKTOP_TOOLS = [
-  {
-    group: "Mouse",
-    tools: [
-      { id: "desktop_mouse_move", label: "Mouse Move", desc: "Move cursor to coordinates" },
-      { id: "desktop_mouse_click", label: "Mouse Click", desc: "Click at a position" },
-      { id: "desktop_mouse_drag", label: "Mouse Drag", desc: "Drag from one point to another" },
-      { id: "desktop_mouse_scroll", label: "Mouse Scroll", desc: "Scroll in a direction" },
-      { id: "desktop_mouse_position", label: "Mouse Position", desc: "Get current cursor position" },
-    ],
-  },
-  {
-    group: "Keyboard",
-    tools: [
-      { id: "desktop_keyboard_type", label: "Keyboard Type", desc: "Type text" },
-      { id: "desktop_keyboard_press", label: "Keyboard Press", desc: "Press key combinations" },
-    ],
-  },
-  {
-    group: "Screen",
-    tools: [
-      { id: "desktop_screen_capture", label: "Screen Capture", desc: "Take a screenshot" },
-      { id: "desktop_screen_find_image", label: "Find Image", desc: "Find image on screen" },
-      { id: "desktop_screen_wait_for_image", label: "Wait For Image", desc: "Wait until image appears" },
-      { id: "desktop_screen_size", label: "Screen Size", desc: "Get screen dimensions" },
-      { id: "desktop_screen_read_pixel", label: "Read Pixel", desc: "Read pixel color at coordinates" },
-    ],
-  },
-  {
-    group: "Window",
-    tools: [
-      { id: "desktop_window_list", label: "Window List", desc: "List open windows" },
-      { id: "desktop_window_active", label: "Active Window", desc: "Get the active window" },
-      { id: "desktop_window_focus", label: "Window Focus", desc: "Focus a window by title" },
-      { id: "desktop_window_move", label: "Window Move", desc: "Move a window" },
-      { id: "desktop_window_resize", label: "Window Resize", desc: "Resize a window" },
-    ],
-  },
-  {
-    group: "Clipboard",
-    tools: [
-      { id: "desktop_clipboard_read", label: "Clipboard Read", desc: "Read clipboard text" },
-      { id: "desktop_clipboard_write", label: "Clipboard Write", desc: "Write text to clipboard" },
-    ],
-  },
-]
+function groupIcon(iconName: string): LucideIcon {
+  return ICON_MAP[iconName] ?? WrenchIcon
+}
 
-const PYAUTOGUI_TOOL_GROUPS = [
-  {
-    group: "Mouse",
-    tools: [
-      { id: "pyautogui_mouse_click", label: "Click", desc: "Click at coordinates" },
-      { id: "pyautogui_mouse_move", label: "Move", desc: "Move cursor to coordinates" },
-      { id: "pyautogui_mouse_move_relative", label: "Move Relative", desc: "Move cursor by offset" },
-      { id: "pyautogui_mouse_press", label: "Press", desc: "Hold mouse button down" },
-      { id: "pyautogui_mouse_release", label: "Release", desc: "Release held mouse button" },
-      { id: "pyautogui_mouse_scroll", label: "Scroll", desc: "Scroll vertically" },
-      { id: "pyautogui_mouse_scroll_horizontal", label: "Scroll Horizontal", desc: "Scroll horizontally" },
-      { id: "pyautogui_mouse_drag", label: "Drag", desc: "Drag to coordinates" },
-      { id: "pyautogui_mouse_drag_relative", label: "Drag Relative", desc: "Drag by offset" },
-      { id: "pyautogui_mouse_position", label: "Position", desc: "Get current cursor position" },
-      { id: "pyautogui_multi_click", label: "Multi-Click", desc: "Click multiple points" },
-    ],
-  },
-  {
-    group: "Keyboard",
-    tools: [
-      { id: "pyautogui_keyboard_type", label: "Type", desc: "Type text" },
-      { id: "pyautogui_keyboard_press", label: "Press", desc: "Press key combinations" },
-      { id: "pyautogui_keyboard_down", label: "Key Down", desc: "Hold a key down" },
-      { id: "pyautogui_keyboard_up", label: "Key Up", desc: "Release a held key" },
-    ],
-  },
-  {
-    group: "Screen",
-    tools: [
-      { id: "pyautogui_screen_screenshot", label: "Screenshot", desc: "Full-screen screenshot" },
-      { id: "pyautogui_screen_screenshot_window", label: "Screenshot Window", desc: "Capture a specific window" },
-      { id: "pyautogui_screen_size", label: "Screen Size", desc: "Get screen dimensions" },
-      { id: "pyautogui_screen_pixel", label: "Pixel Color", desc: "Read pixel color at coordinates" },
-      { id: "pyautogui_screen_locate", label: "Locate Image", desc: "Find image on screen" },
-      { id: "pyautogui_screen_locate_all", label: "Locate All", desc: "Find all occurrences of image" },
-    ],
-  },
-  {
-    group: "Snapshot",
-    tools: [
-      { id: "pyautogui_snapshot", label: "Snapshot", desc: "Annotated desktop with window labels" },
-      { id: "pyautogui_snapshot_window", label: "Snapshot Window", desc: "Annotated window with element labels" },
-    ],
-  },
-  {
-    group: "App & System",
-    tools: [
-      { id: "pyautogui_app", label: "App", desc: "List, launch, focus, move, resize windows" },
-      { id: "pyautogui_clipboard", label: "Clipboard", desc: "Read and write clipboard" },
-      { id: "pyautogui_wait", label: "Wait", desc: "Sleep for a duration" },
-      { id: "pyautogui_notify", label: "Notify", desc: "Send a desktop notification" },
-    ],
-  },
-]
+// ── Config helpers ─────────────────────────────────────────────────────────────
 
-// ── ToolSchemaDialog ──────────────────────────────────────────────────────
+type GlobalConfig = { tool_config?: Record<string, unknown>; [k: string]: unknown }
+
+function getConfigValue(config: GlobalConfig | null, dottedKey: string): unknown {
+  if (!config?.tool_config) return undefined
+  const parts = dottedKey.split(".")
+  let cur: unknown = config.tool_config
+  for (const p of parts) {
+    if (cur == null || typeof cur !== "object") return undefined
+    cur = (cur as Record<string, unknown>)[p]
+  }
+  return cur
+}
+
+function buildNestedUpdate(dottedKey: string, value: unknown): Record<string, unknown> {
+  const parts = dottedKey.split(".")
+  const root: Record<string, unknown> = {}
+  let node = root
+  for (let i = 0; i < parts.length - 1; i++) {
+    node[parts[i]!] = {}
+    node = node[parts[i]!] as Record<string, unknown>
+  }
+  node[parts[parts.length - 1]!] = value
+  return root
+}
+
+// ── ToolSchemaDialog ──────────────────────────────────────────────────────────
 
 function ToolSchemaDialog({ tool, onClose }: { tool: ToolSchema | null; onClose: () => void }) {
   if (!tool) return null
   const json = JSON.stringify(
     { name: tool.id, description: tool.description, inputSchema: tool.inputSchema },
     null,
-    2
+    2,
   )
   return (
     <Dialog open={!!tool} onOpenChange={(open) => { if (!open) onClose() }}>
@@ -181,40 +143,206 @@ function ToolSchemaDialog({ tool, onClose }: { tool: ToolSchema | null; onClose:
   )
 }
 
-// ── ToolGroupsView ────────────────────────────────────────────────────────
+// ── ConfigFieldRow ─────────────────────────────────────────────────────────────
 
-function ToolGroupsView({ schemas, loading, search, onSearchChange }: {
+function ConfigFieldRow({
+  field,
+  config,
+  onSave,
+}: {
+  field: ToolGroupConfigField
+  config: GlobalConfig | null
+  onSave: (key: string, value: unknown) => Promise<void>
+}) {
+  const current = getConfigValue(config, field.key)
+  const [inputVal, setInputVal] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  async function handleSave() {
+    if (!inputVal.trim()) return
+    setSaving(true)
+    try {
+      await onSave(field.key, inputVal.trim())
+      setInputVal("")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (field.type === "boolean") {
+    return (
+      <div className="flex items-center justify-between px-4 py-3 border rounded-lg">
+        <div>
+          <div className="text-sm font-medium">{field.label}</div>
+          {field.description && (
+            <div className="text-xs text-muted-foreground">{field.description}</div>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {saving && <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />}
+          <Switch
+            checked={!!current}
+            disabled={saving}
+            onCheckedChange={async (v) => {
+              setSaving(true)
+              try { await onSave(field.key, v) } finally { setSaving(false) }
+            }}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  const hasValue = current != null && current !== ""
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label>{field.label}</Label>
+        {hasValue && (
+          <span className="text-xs text-green-600 dark:text-green-400">Configured</span>
+        )}
+      </div>
+      {field.description && (
+        <p className="text-xs text-muted-foreground">{field.description}</p>
+      )}
+      <div className="flex gap-2">
+        <Input
+          type={field.type === "password" ? "password" : "text"}
+          placeholder={field.placeholder ?? (hasValue ? "••••••••" : field.label)}
+          value={inputVal}
+          onChange={(e) => setInputVal(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") handleSave() }}
+          className={field.type === "password" ? "font-mono" : ""}
+        />
+        <Button onClick={handleSave} disabled={saving || !inputVal.trim()}>
+          {saving && <Loader2Icon className="mr-2 size-3.5 animate-spin" />}
+          Save
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ── GroupDetailSheet ──────────────────────────────────────────────────────────
+
+function GroupDetailSheet({
+  manifest,
+  schemas,
+  config,
+  onClose,
+  onConfigSave,
+  onToolClick,
+}: {
+  manifest: ToolGroupManifest | null
+  schemas: ToolSchema[]
+  config: GlobalConfig | null
+  onClose: () => void
+  onConfigSave: (key: string, value: unknown) => Promise<void>
+  onToolClick: (tool: ToolSchema) => void
+}) {
+  const Icon = manifest ? groupIcon(manifest.icon) : WrenchIcon
+  const groupTools = schemas.filter((s) => s.group === manifest?.id)
+
+  return (
+    <Sheet open={!!manifest} onOpenChange={(open) => { if (!open) onClose() }}>
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto flex flex-col gap-6 p-6">
+        {manifest && (
+          <>
+            <SheetHeader className="space-y-1">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 text-primary shrink-0">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <SheetTitle>{manifest.name}</SheetTitle>
+                  {manifest.description && (
+                    <p className="text-sm text-muted-foreground mt-0.5">{manifest.description}</p>
+                  )}
+                </div>
+              </div>
+            </SheetHeader>
+
+            {/* Tool cards */}
+            {groupTools.length > 0 && (
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                  Tools ({groupTools.length})
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {groupTools.map((tool) => (
+                    <SettingsCard
+                      key={tool.id}
+                      title={<span className="font-mono text-sm">{tool.id}</span>}
+                      description={tool.description}
+                      onClick={() => onToolClick(tool)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Config fields */}
+            {manifest.config && manifest.config.fields.length > 0 && (
+              <div className="space-y-4">
+                <div className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                  Configuration
+                </div>
+                {manifest.config.fields.map((field) => (
+                  <ConfigFieldRow
+                    key={field.key}
+                    field={field}
+                    config={config}
+                    onSave={onConfigSave}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+// ── ToolGroupsGridView ────────────────────────────────────────────────────────
+
+function ToolGroupsGridView({
+  manifests,
+  schemas,
+  loading,
+  search,
+  onSearchChange,
+  onGroupClick,
+}: {
+  manifests: ToolGroupManifest[]
   schemas: ToolSchema[]
   loading: boolean
   search: string
   onSearchChange: (s: string) => void
+  onGroupClick: (m: ToolGroupManifest) => void
 }) {
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const toolCountByGroup = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const s of schemas) {
+      map.set(s.group, (map.get(s.group) ?? 0) + 1)
+    }
+    return map
+  }, [schemas])
 
-  const filtered = schemas.filter((s) => {
-    if (!search) return true
+  const filtered = useMemo(() => {
+    if (!search) return manifests
     const q = search.toLowerCase()
-    return s.id.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
-  })
-
-  const grouped = groupToolsBySource(filtered)
-  const sortedGroups = sortSourceGroups(Array.from(grouped.keys()))
-
-  function toggle(id: string) {
-    setExpanded((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
+    return manifests.filter(
+      (m) => m.name.toLowerCase().includes(q) || m.description.toLowerCase().includes(q),
+    )
+  }, [manifests, search])
 
   return (
     <div className="flex flex-col gap-4">
       <div className="relative max-w-sm">
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <Input
-          placeholder="Search tools…"
+          placeholder="Search groups…"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-9"
@@ -226,51 +354,31 @@ function ToolGroupsView({ schemas, loading, search, onSearchChange }: {
           <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-8">No tools found.</p>
+        <p className="text-sm text-muted-foreground text-center py-8">No groups found.</p>
       ) : (
-        <div className="space-y-4">
-          {sortedGroups.map((sg) => {
-            const tools = grouped.get(sg) ?? []
-            const label = sourceGroupLabel(sg)
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {filtered.map((m) => {
+            const Icon = groupIcon(m.icon)
+            const count = toolCountByGroup.get(m.id) ?? 0
+            const hasConfig = (m.config?.fields.length ?? 0) > 0
             return (
-              <div key={sg}>
-                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{label}</div>
-                <div className="space-y-1">
-                  {tools.map((tool) => {
-                    const isOpen = expanded.has(tool.id)
-                    const json = JSON.stringify(
-                      { name: tool.id, description: tool.description, inputSchema: tool.inputSchema },
-                      null,
-                      2
-                    )
-                    return (
-                      <div key={tool.id} className="rounded-md border bg-muted/20 overflow-hidden">
-                        <button
-                          className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted/40 transition-colors"
-                          onClick={() => toggle(tool.id)}
-                        >
-                          {isOpen ? (
-                            <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
-                          ) : (
-                            <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
-                          )}
-                          <span className="font-mono text-sm font-medium flex-1 min-w-0 truncate">{tool.id}</span>
-                        </button>
-                        {isOpen && (
-                          <div className="border-t px-3 py-3 space-y-2">
-                            {tool.description && (
-                              <p className="text-sm text-muted-foreground">{tool.description}</p>
-                            )}
-                            <pre className="text-xs bg-background rounded border p-3 overflow-auto font-mono leading-relaxed whitespace-pre-wrap max-h-64">
-                              {json}
-                            </pre>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
+              <SettingsCard
+                key={m.id}
+                icon={Icon}
+                title={m.name}
+                description={m.description}
+                onClick={() => onGroupClick(m)}
+                footer={
+                  <div className="flex items-center justify-between w-full">
+                    <Badge variant="secondary" className="text-xs">
+                      {count} {count === 1 ? "tool" : "tools"}
+                    </Badge>
+                    {hasConfig && (
+                      <Settings2Icon className="size-3.5 text-muted-foreground" />
+                    )}
+                  </div>
+                }
+              />
             )
           })}
         </div>
@@ -279,15 +387,11 @@ function ToolGroupsView({ schemas, loading, search, onSearchChange }: {
   )
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ToolsPage() {
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig | null>(null)
-  const [exaApiKey, setExaApiKey] = useState("")
-  const [savingExaKey, setSavingExaKey] = useState(false)
-  const [exaKeyError, setExaKeyError] = useState<string | null>(null)
-  const [savingExaToggle, setSavingExaToggle] = useState(false)
-  const [savingDesktop, setSavingDesktop] = useState(false)
+  const [groupManifests, setGroupManifests] = useState<ToolGroupManifest[]>([])
   const { schemas: toolSchemas, loading: loadingSchemas } = useToolSchemas()
   const [remoteTools, setRemoteTools] = useState<RemoteEntity[]>([])
   const [installing, setInstalling] = useState<string | null>(null)
@@ -295,60 +399,13 @@ export default function ToolsPage() {
   const [filter, setFilter] = useState<CatalogFilter>("all")
   const [search, setSearch] = useState("")
   const [selectedTool, setSelectedTool] = useState<ToolSchema | null>(null)
+  const [selectedGroup, setSelectedGroup] = useState<ToolGroupManifest | null>(null)
 
   useEffect(() => {
     opendora.config.get().then(setGlobalConfig).catch(() => {})
     opendora.entity.listAvailable({ type: "tool" }).then(setRemoteTools).catch(() => {})
+    opendora.agent.toolGroups().then(setGroupManifests).catch(() => {})
   }, [])
-
-  const exa = globalConfig?.tool_config?.exa
-  const hasKey = !!exa?.apiKey
-  const useApiKey = !!exa?.useApiKey
-  const desktopEnabled = !!globalConfig?.tool_config?.desktop?.enabled
-
-  async function handleSaveExaApiKey() {
-    if (!exaApiKey.trim()) return
-    setSavingExaKey(true)
-    setExaKeyError(null)
-    try {
-      await opendora.config.update({ tool_config: { exa: { ...exa, apiKey: exaApiKey.trim() } } })
-      setExaApiKey("")
-      opendora.config.get().then(setGlobalConfig).catch(() => {})
-    } catch (err) {
-      setExaKeyError(err instanceof Error ? err.message : "Failed to save")
-    } finally {
-      setSavingExaKey(false)
-    }
-  }
-
-  async function handleRemoveExaApiKey() {
-    try {
-      await opendora.config.update({ tool_config: { exa: { useApiKey: false } } })
-      opendora.config.get().then(setGlobalConfig).catch(() => {})
-    } catch (err) {
-      console.error("Failed to remove EXA API key:", err)
-    }
-  }
-
-  async function handleToggleUseApiKey(value: boolean) {
-    setSavingExaToggle(true)
-    try {
-      await opendora.config.update({ tool_config: { exa: { ...exa, useApiKey: value } } })
-      opendora.config.get().then(setGlobalConfig).catch(() => {})
-    } finally {
-      setSavingExaToggle(false)
-    }
-  }
-
-  async function handleToggleDesktop(value: boolean) {
-    setSavingDesktop(true)
-    try {
-      await opendora.config.update({ tool_config: { desktop: { enabled: value } } })
-      opendora.config.get().then(setGlobalConfig).catch(() => {})
-    } finally {
-      setSavingDesktop(false)
-    }
-  }
 
   async function handleInstall(id: string) {
     setInstalling(id)
@@ -358,6 +415,11 @@ export default function ToolsPage() {
     } finally {
       setInstalling(null)
     }
+  }
+
+  async function handleConfigSave(dottedKey: string, value: unknown) {
+    await opendora.config.update({ tool_config: buildNestedUpdate(dottedKey, value) })
+    opendora.config.get().then(setGlobalConfig).catch(() => {})
   }
 
   const toolItems = useMemo(
@@ -391,7 +453,6 @@ export default function ToolsPage() {
           </TabsList>
         </Tabs>
 
-        {/* Tool list */}
         {toolView === "tools" ? (
           <EntityCatalogSection
             icon={WrenchIcon}
@@ -405,154 +466,25 @@ export default function ToolsPage() {
             sortFn={(a, b) => a.name.localeCompare(b.name)}
           />
         ) : (
-          <ToolGroupsView
+          <ToolGroupsGridView
+            manifests={groupManifests}
             schemas={toolSchemas}
-            loading={loadingSchemas}
+            loading={loadingSchemas && groupManifests.length === 0}
             search={search}
             onSearchChange={setSearch}
+            onGroupClick={setSelectedGroup}
           />
         )}
-
-        {/* Tool Configuration */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <WrenchIcon className="size-5 text-muted-foreground" />
-              <CardTitle className="text-lg">Tool Configuration</CardTitle>
-            </div>
-            <CardDescription>
-              Configure API keys for tools. EXA AI API key is used for both web search and code search.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <div className="font-medium">EXA AI</div>
-                <div className="text-sm text-muted-foreground">Web search and code search</div>
-              </div>
-              <div className="flex items-center gap-2">
-                {hasKey ? (
-                  <>
-                    <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                      <CheckCircle2Icon className="size-3.5" />
-                      Configured
-                    </span>
-                    <Button size="sm" variant="ghost" onClick={handleRemoveExaApiKey}>
-                      <Trash2Icon className="size-3.5" />
-                    </Button>
-                  </>
-                ) : (
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <CircleIcon className="size-3.5" />
-                    Not configured
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {!hasKey && (
-              <div className="space-y-2">
-                <Label htmlFor="exa-api-key">EXA AI API Key</Label>
-                <Input
-                  id="exa-api-key"
-                  type="password"
-                  placeholder="exa-…"
-                  value={exaApiKey}
-                  onChange={(e) => setExaApiKey(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleSaveExaApiKey() }}
-                  className="font-mono"
-                />
-                {exaKeyError && <p className="text-xs text-destructive">{exaKeyError}</p>}
-                <div className="flex gap-2">
-                  <Button onClick={handleSaveExaApiKey} disabled={savingExaKey || !exaApiKey.trim()}>
-                    {savingExaKey && <Loader2Icon className="mr-2 size-3.5 animate-spin" />}
-                    Save
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {hasKey && (
-              <div className="flex items-center justify-between px-4 py-3 border rounded-lg">
-                <div>
-                  <div className="text-sm font-medium">Use API key</div>
-                  <div className="text-xs text-muted-foreground">Route requests through your API key</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {savingExaToggle && <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />}
-                  <Switch checked={useApiKey} onCheckedChange={handleToggleUseApiKey} disabled={savingExaToggle} />
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Desktop Automation */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MonitorIcon className="size-5 text-muted-foreground" />
-                <CardTitle className="text-lg">Desktop Automation</CardTitle>
-              </div>
-              <div className="flex items-center gap-2">
-                {savingDesktop && <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />}
-                <Switch checked={desktopEnabled} onCheckedChange={handleToggleDesktop} disabled={savingDesktop} />
-              </div>
-            </div>
-            <CardDescription>
-              Control the mouse, keyboard, screen, windows, and clipboard. Requires native prerequisites — see desktop/README.md. Disabled in sandbox mode.
-            </CardDescription>
-          </CardHeader>
-          {desktopEnabled && (
-            <CardContent className="space-y-4">
-              {DESKTOP_TOOLS.map(({ group, tools }) => (
-                <div key={group}>
-                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{group}</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {tools.map((tool) => (
-                      <div key={tool.id} className="flex flex-col gap-0.5 px-3 py-2 border rounded-md bg-muted/30">
-                        <span className="text-sm font-medium">{tool.label}</span>
-                        <span className="text-xs text-muted-foreground">{tool.desc}</span>
-                        <span className="text-xs font-mono text-muted-foreground/60">{tool.id}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          )}
-        </Card>
-
-        {/* PyAutoGUI */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <MousePointerIcon className="size-5 text-muted-foreground" />
-              <CardTitle className="text-lg">PyAutoGUI — Linux/WSLg Automation</CardTitle>
-            </div>
-            <CardDescription>
-              Mouse, keyboard, screen capture, and window control for Linux GUI apps via X11/WSLg. Requires Python + xdotool + scrot on the host.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {PYAUTOGUI_TOOL_GROUPS.map(({ group, tools }) => (
-              <div key={group}>
-                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{group}</div>
-                <div className="grid grid-cols-2 gap-2">
-                  {tools.map((tool) => (
-                    <div key={tool.id} className="flex flex-col gap-0.5 px-3 py-2 border rounded-md bg-muted/30">
-                      <span className="text-sm font-medium">{tool.label}</span>
-                      <span className="text-xs text-muted-foreground">{tool.desc}</span>
-                      <span className="text-xs font-mono text-muted-foreground/60">{tool.id}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
       </div>
+
+      <GroupDetailSheet
+        manifest={selectedGroup}
+        schemas={toolSchemas}
+        config={globalConfig}
+        onClose={() => setSelectedGroup(null)}
+        onConfigSave={handleConfigSave}
+        onToolClick={setSelectedTool}
+      />
 
       <ToolSchemaDialog tool={selectedTool} onClose={() => setSelectedTool(null)} />
     </SettingsPageLayout>

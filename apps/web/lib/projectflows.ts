@@ -444,6 +444,24 @@ export type ToolSchema = {
   }
 }
 
+export type ToolGroupConfigField = {
+  key: string
+  label: string
+  type: "text" | "password" | "boolean" | "path"
+  description?: string
+  placeholder?: string
+}
+
+export type ToolGroupManifest = {
+  id: string
+  name: string
+  description: string
+  icon: string
+  sourceGroup?: string
+  config?: { fields: ToolGroupConfigField[] }
+  tools: string[]
+}
+
 /** What the backend returns from create / update */
 export type AgentEntry = {
   id: string
@@ -731,6 +749,7 @@ export const opendora = {
     generate: (input: { description: string; model?: { providerID: string; modelID: string } }) =>
       req<GeneratedAgent>("/agent/generate", { method: "POST", body: JSON.stringify(input) }),
     toolSchemas: () => req<ToolSchema[]>("/agent/tools/schema"),
+    toolGroups: () => req<ToolGroupManifest[]>("/agent/tool-groups"),
   },
   voice: {
     stt: async (audioBlob: Blob, options?: { provider?: "openai-whisper" | "google-gemini" | "local-whisper" }): Promise<{ text: string }> => {

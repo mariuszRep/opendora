@@ -46,6 +46,23 @@ export namespace PluginStorage {
     return path.join(projectConfigRoot(projectDir), "plugins")
   }
 
+  // Tool-group layout helpers — ~/.projectflows/tool-groups/<groupId>/
+  export function toolGroupsDir(capRoot: string): string {
+    return path.join(capRoot, "tool-groups")
+  }
+
+  export function toolGroupDir(capRoot: string, groupId: string): string {
+    return path.join(capRoot, "tool-groups", groupId)
+  }
+
+  export function toolGroupManifestPath(capRoot: string, groupId: string): string {
+    return path.join(capRoot, "tool-groups", groupId, "group.json")
+  }
+
+  export function toolGroupToolsDir(capRoot: string, groupId: string): string {
+    return path.join(capRoot, "tool-groups", groupId, "tools")
+  }
+
   // Convenience: resolve the right install dir for a given scope
   export function installedDir(pluginId: string, scope: "global"): string
   export function installedDir(pluginId: string, scope: "project", projectDir: string): string

@@ -48,15 +48,23 @@ for (const pluginId of ["filesystem", "web-search"] as const) {
         expect(cap.installedDir).toBe(PluginStorage.globalRoot())
       }
 
-      // 3. tools/*.js files exist in the global tools dir
-      const toolsDir = path.join(PluginStorage.globalRoot(), "tools")
-      const files = await fs.readdir(toolsDir)
-      const jsFiles = files.filter((f) => f.endsWith(".js"))
-      expect(jsFiles.length).toBeGreaterThan(0)
+      // 3. tool-groups/<group>/tools/*.js files exist in the global tool-groups dir
+      const toolGroupsDir = path.join(PluginStorage.globalRoot(), "tool-groups")
+      const groupDirs = await fs.readdir(toolGroupsDir, { withFileTypes: true })
+      const allToolFiles: string[] = []
+      for (const gd of groupDirs) {
+        if (!gd.isDirectory()) continue
+        const groupToolsDir = path.join(toolGroupsDir, gd.name, "tools")
+        const files = await fs.readdir(groupToolsDir).catch(() => [] as string[])
+        for (const f of files) {
+          if (f.endsWith(".js")) allToolFiles.push(path.join(groupToolsDir, f))
+        }
+      }
+      expect(allToolFiles.length).toBeGreaterThan(0)
 
       // 4. Each .js tool file can be imported and has correct ToolDefinition shape
-      for (const file of jsFiles) {
-        const mod = await import(path.join(toolsDir, file))
+      for (const filePath of allToolFiles) {
+        const mod = await import(filePath)
         const def = mod.default ?? Object.values(mod)[0]
         expect(typeof def.description).toBe("string")
         expect(def.description.length).toBeGreaterThan(0)

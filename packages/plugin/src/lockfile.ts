@@ -5,6 +5,7 @@ export interface LockfileCapability {
   type: string
   name: string
   sourceGroup: string
+  group?: string
 }
 
 export interface LockfileEntry {
