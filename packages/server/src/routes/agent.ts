@@ -125,6 +125,7 @@ export const AgentRoutes = lazy(() =>
         },
       }),
       async (c) => {
+        await ToolRegistry.init()
         const [internalTools, mcpTools] = await Promise.all([
           ToolRegistry.schemas(),
           MCP.rawTools(),
@@ -155,6 +156,7 @@ export const AgentRoutes = lazy(() =>
         },
       }),
       async (c) => {
+        await ToolRegistry.init()
         return c.json(ToolRegistry.groupManifests())
       },
     )

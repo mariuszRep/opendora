@@ -16,7 +16,7 @@ beforeEach(async () => {
 function makeEntry(version: string, scope: "global" | "project"): LockfileEntry {
   return {
     version,
-    source: "projectflows-plugins",
+    source: "projectflows-registry",
     scope,
     installedAt: new Date().toISOString(),
     capabilities: [{ type: "tool", name: "my-tool", sourceGroup: "plugin:test-plugin" }],

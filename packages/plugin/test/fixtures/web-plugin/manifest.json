@@ -1,0 +1,15 @@
+{
+  "pluginId": "web-search",
+  "name": "Web & Search",
+  "version": "0.1.0",
+  "description": "Web fetch and search tools (test fixture).",
+  "author": "Projectflows",
+  "license": "MIT",
+  "category": "tools",
+  "tags": ["tools", "web"],
+  "status": "active",
+  "provided": "entity",
+  "capabilities": [
+    { "type": "tool", "name": "webfetch" }
+  ]
+}

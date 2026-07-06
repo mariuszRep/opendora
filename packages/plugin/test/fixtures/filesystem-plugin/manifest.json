@@ -1,0 +1,15 @@
+{
+  "pluginId": "filesystem",
+  "name": "Filesystem",
+  "version": "0.1.0",
+  "description": "Filesystem tools (test fixture).",
+  "author": "Projectflows",
+  "license": "MIT",
+  "category": "tools",
+  "tags": ["tools", "filesystem"],
+  "status": "active",
+  "provided": "entity",
+  "capabilities": [
+    { "type": "tool", "name": "read" }
+  ]
+}

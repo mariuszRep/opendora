@@ -1007,7 +1007,7 @@ export type RemoteEntity = {
   id: string
   name: string
   description: string
-  type: "agent" | "skill" | "tool" | "workflow"
+  type: "agent" | "skill" | "tool" | "workflow" | "tool-group"
   pluginId: string
   version: string
   download: string
@@ -1020,7 +1020,7 @@ export type CatalogState = "installed" | "available" | "local-only"
 
 export type CatalogRecord = {
   id: string
-  type: "agent" | "skill" | "tool" | "workflow" | "plugin"
+  type: "agent" | "skill" | "tool" | "workflow" | "plugin" | "tool-group"
   name: string
   description: string
   state: CatalogState

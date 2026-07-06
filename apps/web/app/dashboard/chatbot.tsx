@@ -929,8 +929,8 @@ export const Chatbot = () => {
         </>
       )}
 
-      <div className="grid shrink-0 gap-4 pt-4">
-        <div className={cn("relative w-full px-4 pb-4 transition-all duration-300", isChatCentered && "max-w-3xl mx-auto")}>
+      <div className="flex flex-col shrink-0 max-h-[80dvh] overflow-hidden pt-4">
+        <div className={cn("relative w-full flex flex-col min-h-0 flex-1 px-4 pb-4 transition-all duration-300", isChatCentered && "max-w-3xl mx-auto")}>
           {slashMenuOpen && (
             <div className="absolute bottom-full left-4 right-4 mb-1 z-50 rounded-lg border bg-popover shadow-lg overflow-hidden">
               <div className="px-3 py-1.5 text-[11px] font-medium text-muted-foreground border-b">Commands</div>
@@ -956,7 +956,7 @@ export const Chatbot = () => {
               </div>
             </div>
           )}
-          <PromptInput globalDrop multiple onSubmit={handleSubmit}>
+          <PromptInput globalDrop multiple onSubmit={handleSubmit} className={questionRequests.length > 0 ? "flex flex-col flex-1 min-h-0" : ""}>
             <PromptInputHeader>
               <AttachmentsDisplay />
             </PromptInputHeader>
@@ -965,29 +965,31 @@ export const Chatbot = () => {
               const question = request.questions[questionStep]
               const currentSels = questionSelections[questionStep] ?? []
               return (
-                <div className="px-4 pt-4 pb-2 border-b border-border">
-                  <QuestionStep
-                    question={question}
-                    value={currentSels}
-                    customValue=""
-                    hideCustomInput
-                    onToggle={(label) =>
-                      setQuestionSelections((prev) => {
-                        const updated = [...prev]
-                        const sel = updated[questionStep] ?? []
-                        updated[questionStep] = sel.includes(label) ? sel.filter((s) => s !== label) : [...sel, label]
-                        return updated
-                      })
-                    }
-                    onPickSingle={(label) =>
-                      setQuestionSelections((prev) => {
-                        const updated = [...prev]
-                        updated[questionStep] = [label]
-                        return updated
-                      })
-                    }
-                    onCustomChange={() => {}}
-                  />
+                <div className="overflow-y-auto min-h-0 flex-1">
+                  <div className="px-4 pt-4 pb-2 border-b border-border">
+                    <QuestionStep
+                      question={question}
+                      value={currentSels}
+                      customValue=""
+                      hideCustomInput
+                      onToggle={(label) =>
+                        setQuestionSelections((prev) => {
+                          const updated = [...prev]
+                          const sel = updated[questionStep] ?? []
+                          updated[questionStep] = sel.includes(label) ? sel.filter((s) => s !== label) : [...sel, label]
+                          return updated
+                        })
+                      }
+                      onPickSingle={(label) =>
+                        setQuestionSelections((prev) => {
+                          const updated = [...prev]
+                          updated[questionStep] = [label]
+                          return updated
+                        })
+                      }
+                      onCustomChange={() => {}}
+                    />
+                  </div>
                 </div>
               )
             })()}

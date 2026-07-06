@@ -62,11 +62,12 @@ export function mergeWithRemote<L>(
   return [...localMerged, ...availableMerged]
 }
 
-/** Hook for entity types with a simple async fetcher (skills, workflows). */
+/** Hook for entity types with a simple async fetcher (skills, workflows, tool-groups). */
 export function useEntityCatalog<L>(
-  entityType: "skill" | "workflow" | "agent" | "tool",
+  entityType: "skill" | "workflow" | "agent" | "tool" | "tool-group",
   localFetcher: () => Promise<L[]>,
   toBase: (item: L) => { id: string } & BaseFields,
+  afterChange?: () => void,
 ): {
   items: MergedEntityItem[]
   loading: boolean
@@ -109,6 +110,7 @@ export function useEntityCatalog<L>(
     setInstalling(id)
     try {
       await opendora.entity.installRemote(entityType, id)
+      afterChange?.()
       load()
     } finally {
       setInstalling(null)
@@ -119,6 +121,7 @@ export function useEntityCatalog<L>(
     setUninstalling(id)
     try {
       await opendora.entity.removeLocal(entityType, id)
+      afterChange?.()
       load()
     } finally {
       setUninstalling(null)
@@ -129,6 +132,7 @@ export function useEntityCatalog<L>(
     setDeleting(id)
     try {
       await opendora.entity.removeLocal(entityType, id)
+      afterChange?.()
       load()
     } finally {
       setDeleting(null)

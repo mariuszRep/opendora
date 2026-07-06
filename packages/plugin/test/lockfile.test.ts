@@ -18,7 +18,7 @@ function lockfilePath() {
 function makeEntry(overrides?: Partial<LockfileEntry>): LockfileEntry {
   return {
     version: "1.0.0",
-    source: "projectflows-plugins",
+    source: "projectflows-registry",
     scope: "global",
     installedAt: new Date().toISOString(),
     capabilities: [{ type: "tool", name: "my-tool", sourceGroup: "plugin:test-plugin" }],

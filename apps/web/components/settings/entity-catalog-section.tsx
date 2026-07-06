@@ -11,7 +11,7 @@ import { SettingsCard } from "@/components/settings/settings-card"
 
 // ── Shared types ──────────────────────────────────────────────────────────
 
-export type EntityType = "agent" | "skill" | "tool" | "workflow" | "plugin"
+export type EntityType = "agent" | "skill" | "tool" | "workflow" | "plugin" | "tool-group"
 export type EntityState = "installed" | "available" | "local-only"
 
 export interface MergedEntityItem {

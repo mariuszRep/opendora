@@ -6,6 +6,11 @@ import { opendora, type ToolSchema } from '@/lib/projectflows'
 let _cache: ToolSchema[] | null = null
 let _promise: Promise<ToolSchema[]> | null = null
 
+export function refreshSchemas(): void {
+  _cache = null
+  _promise = null
+}
+
 export function useToolSchemas() {
   const [schemas, setSchemas] = React.useState<ToolSchema[]>(_cache ?? [])
   const [loading, setLoading] = React.useState(_cache === null)

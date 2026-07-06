@@ -1,0 +1,7 @@
+{
+  "id": "filesystem",
+  "name": "Filesystem",
+  "description": "Read, write, and manage files (test fixture)",
+  "icon": "FolderOpen",
+  "tools": ["read"]
+}

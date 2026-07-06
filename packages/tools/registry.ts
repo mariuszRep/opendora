@@ -24,6 +24,7 @@ import { AgentGetTool } from "./agents/agent-get.ts"
 import { ScheduleListTool, ScheduleCreateTool, ScheduleUpdateTool, ScheduleDeleteTool, ScheduleGetTool, ScheduleRunTool } from "./schedule/index.ts"
 import { DESKTOP_TOOLS } from "./desktop/index.ts"
 import { PYAUTOGUI_TOOLS } from "./automation/index.ts"
+import { BrowserTool } from "./browser/simple-browser.ts"
 import { PlaywrightModeTool } from "./browser/playwright-mode.ts"
 import { ToolListTool, ToolGetTool, ToolUpdateTool } from "./tool-registry/index.ts"
 import { WorkflowRunTool, WorkflowParametersTool, WorkflowCreateTool, WorkflowGetTool, WorkflowListTool, WorkflowUpdateTool, WorkflowDeleteTool, WorkflowNodeCatalogTool } from "./workflows/index.ts"
@@ -95,13 +96,15 @@ export namespace ToolRegistry {
       )
       for (const match of matches) {
         const namespace = path.basename(match, path.extname(match))
+        const relPath = path.relative(dir, match)
+        const groupFolder = relPath.split(path.sep)[1] ?? sg
         const mod = await import(pathToFileURL(match).href).catch(() => null)
         if (!mod) continue
         for (const [id, def] of Object.entries(mod)) {
           if (_config.fromPlugin) {
             const toolId = id === "default" ? namespace : `${namespace}_${id}`
             _custom.push(_config.fromPlugin(toolId, def))
-            _sourceGroups.set(toolId, sg)
+            _sourceGroups.set(toolId, groupFolder)
           }
         }
       }
@@ -195,6 +198,7 @@ export namespace ToolRegistry {
       MemoryDeleteTool,
       ...(cfg.flags.enableLspTool ? [LspTool] : []),
       ...(cfg.flags.enableBatchTool ? [BatchTool] : []),
+      BrowserTool,
       PlaywrightModeTool,
       ...DESKTOP_TOOLS,
       ...PYAUTOGUI_TOOLS,
@@ -239,7 +243,8 @@ export namespace ToolRegistry {
     return Promise.all(
       all().map(async (t) => {
         const sg = _sourceGroups.get(t.id) ?? "core"
-        const group = resolveToolGroup(t.id, _groupManifests) ?? "others"
+        const group = resolveToolGroup(t.id, _groupManifests)
+          ?? (_groupManifests.some(m => m.id === sg) ? sg : "others")
         try {
           const tool = await t.init({ model })
           const params = tool.parameters as any

@@ -1,4 +1,5 @@
 import fs from "fs/promises"
+import type { Dirent } from "fs"
 import path from "path"
 import { attachSourceGroups } from "./source-group.js"
 import { PluginStorage } from "./storage.js"
@@ -106,7 +107,7 @@ async function extractCapabilities(
   for (const subdir of CAP_SUBDIRS) {
     const src = path.join(sourcePath, subdir)
     const dest = path.join(capRoot, subdir)
-    let entries: fs.Dirent[]
+    let entries: Dirent[]
     try {
       entries = await fs.readdir(src, { withFileTypes: true })
     } catch {

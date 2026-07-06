@@ -6,6 +6,7 @@ import { RemoteEntitySource } from "@projectflows/plugin/source"
 import { PluginStorage, CapabilityRegistry } from "@projectflows/plugin"
 import { Config } from "@projectflows/config/config"
 import { lazy } from "@projectflows/util/lazy"
+import { ToolRegistry } from "@projectflows/server/tool-registry"
 
 const DEFAULT_REGISTRY_URL = "https://projectflows.ai"
 
@@ -19,6 +20,8 @@ function entityDir(type: string, name: string, root: string): string | null {
       return path.join(root, "workflows", name + ".json")
     case "tool":
       return path.join(root, "tools", name + ".js")
+    case "tool-group":
+      return path.join(root, "tool-groups", name)
     default:
       return null
   }
@@ -55,6 +58,13 @@ async function installEntity(
     const src = path.join(extractDir, `${name}.json`)
     const dest = path.join(root, "workflows", `${name}.json`)
     await fs.copyFile(src, dest)
+  } else if (type === "tool-group") {
+    const destDir = path.join(root, "tool-groups", name)
+    await fs.mkdir(destDir, { recursive: true })
+    const entries = await fs.readdir(extractDir, { withFileTypes: true })
+    for (const entry of entries) {
+      await fs.cp(path.join(extractDir, entry.name), path.join(destDir, entry.name), { recursive: true })
+    }
   }
 }
 
@@ -115,6 +125,7 @@ export const EntityRoutes = lazy(() =>
         try {
           extractDir = await RemoteEntitySource.downloadAndExtract(registryUrl, body.type, body.name)
           await installEntity(body.type, body.name, extractDir)
+          if (body.type === "tool-group") ToolRegistry.reset()
           return c.json({ type: body.type, name: body.name, installed: true }, 201)
         } finally {
           if (extractDir) {
@@ -150,6 +161,7 @@ export const EntityRoutes = lazy(() =>
         const p = entityDir(type, name, root)
         if (!p) return c.json({ message: "Invalid entity type" }, 400)
         await fs.rm(p, { recursive: true, force: true })
+        if (type === "tool-group" || type === "tool") ToolRegistry.reset()
         return c.json(true)
       },
     ),

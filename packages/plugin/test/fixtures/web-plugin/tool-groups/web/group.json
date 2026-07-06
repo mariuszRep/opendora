@@ -1,0 +1,7 @@
+{
+  "id": "web",
+  "name": "Web & Search",
+  "description": "Fetch web pages and search the web (test fixture)",
+  "icon": "Globe",
+  "tools": ["webfetch"]
+}

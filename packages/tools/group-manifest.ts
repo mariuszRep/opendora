@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { readFile } from "fs/promises"
+import { readFile, readdir } from "fs/promises"
 import { join } from "path"
 
 export const ToolGroupConfigFieldSchema = z.object({
@@ -54,14 +54,14 @@ export async function loadGroupManifest(manifestPath: string): Promise<ToolGroup
 }
 
 export async function loadGroupManifests(toolsRootDir: string): Promise<ToolGroupManifest[]> {
-  const { glob } = await import("glob")
-  const paths = await glob("*/group.json", { cwd: toolsRootDir, absolute: true })
+  const entries = await readdir(toolsRootDir, { withFileTypes: true }).catch(() => [])
   const results: ToolGroupManifest[] = []
-  for (const p of paths) {
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue
     try {
-      results.push(await loadGroupManifest(p))
+      results.push(await loadGroupManifest(join(toolsRootDir, entry.name, "group.json")))
     } catch {
-      // skip invalid manifests
+      // skip dirs without group.json or invalid manifests
     }
   }
   return results

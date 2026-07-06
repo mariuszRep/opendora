@@ -1,22 +1,20 @@
 /**
- * Integration test: verifies that real tool plugins from projectflows-plugins
- * install, expose capabilities, contain bundled tool files, and remove cleanly.
+ * Integration test: verifies that tool plugins install, expose capabilities,
+ * contain bundled tool files, and remove cleanly.
  *
- * Requires the projectflows-plugins repo at ~/projects/projectflows-plugins
- * with `bun run build` already executed (tools/*.js present).
+ * Uses self-contained fixtures in test/fixtures/ — no external repo required.
  */
 import { test, expect } from "bun:test"
-import os from "os"
 import path from "path"
 import fs from "fs/promises"
 import { PluginInstaller } from "../src/installer"
 import { CapabilityRegistry } from "../src/registry"
 import { PluginStorage } from "../src/storage"
 
-const PLUGINS_REPO = path.join(os.homedir(), "projects", "projectflows-plugins", "plugins")
+const FIXTURES = path.join(import.meta.dir, "fixtures")
 
 async function withIsolatedHome(fn: () => Promise<void>) {
-  const tmpHome = path.join(os.tmpdir(), "pf-tool-test-" + Math.random().toString(36).slice(2))
+  const tmpHome = path.join(import.meta.dir, ".tmp-home-" + Math.random().toString(36).slice(2))
   await fs.mkdir(tmpHome, { recursive: true })
   const prev = process.env["PROJECTFLOWS_TEST_HOME"]
   process.env["PROJECTFLOWS_TEST_HOME"] = tmpHome
@@ -28,8 +26,8 @@ async function withIsolatedHome(fn: () => Promise<void>) {
   }
 }
 
-for (const pluginId of ["filesystem", "web-search"] as const) {
-  const sourcePath = path.join(PLUGINS_REPO, pluginId)
+for (const [pluginId, fixtureName] of [["filesystem", "filesystem-plugin"], ["web-search", "web-plugin"]] as const) {
+  const sourcePath = path.join(FIXTURES, fixtureName)
 
   test(`${pluginId}: install → capabilities → tools/*.js → remove`, async () => {
     await withIsolatedHome(async () => {

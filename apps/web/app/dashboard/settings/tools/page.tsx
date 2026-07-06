@@ -13,6 +13,7 @@ import {
   Loader2Icon,
   MessageSquareIcon,
   MonitorIcon,
+  LayersIcon,
   Settings2Icon,
   SettingsIcon,
   TerminalIcon,
@@ -25,12 +26,11 @@ import type { LucideIcon } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { EntityCatalogSection } from "@/components/settings/entity-catalog-section"
 import { SettingsCard } from "@/components/settings/settings-card"
-import { mergeWithRemote } from "@/hooks/use-entity-catalog"
+import { mergeWithRemote, useEntityCatalog } from "@/hooks/use-entity-catalog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Sheet,
@@ -51,7 +51,7 @@ import {
   type ToolGroupConfigField,
   type RemoteEntity,
 } from "@/lib/projectflows"
-import { useToolSchemas } from "@/hooks/use-tool-schemas"
+import { useToolSchemas, refreshSchemas } from "@/hooks/use-tool-schemas"
 import type { CatalogFilter } from "@/components/settings/entity-catalog-section"
 
 // ── Icon lookup ───────────────────────────────────────────────────────────────
@@ -304,97 +304,14 @@ function GroupDetailSheet({
   )
 }
 
-// ── ToolGroupsGridView ────────────────────────────────────────────────────────
-
-function ToolGroupsGridView({
-  manifests,
-  schemas,
-  loading,
-  search,
-  onSearchChange,
-  onGroupClick,
-}: {
-  manifests: ToolGroupManifest[]
-  schemas: ToolSchema[]
-  loading: boolean
-  search: string
-  onSearchChange: (s: string) => void
-  onGroupClick: (m: ToolGroupManifest) => void
-}) {
-  const toolCountByGroup = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const s of schemas) {
-      map.set(s.group, (map.get(s.group) ?? 0) + 1)
-    }
-    return map
-  }, [schemas])
-
-  const filtered = useMemo(() => {
-    if (!search) return manifests
-    const q = search.toLowerCase()
-    return manifests.filter(
-      (m) => m.name.toLowerCase().includes(q) || m.description.toLowerCase().includes(q),
-    )
-  }, [manifests, search])
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="relative max-w-sm">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <Input
-          placeholder="Search groups…"
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9"
-        />
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-8">No groups found.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {filtered.map((m) => {
-            const Icon = groupIcon(m.icon)
-            const count = toolCountByGroup.get(m.id) ?? 0
-            const hasConfig = (m.config?.fields.length ?? 0) > 0
-            return (
-              <SettingsCard
-                key={m.id}
-                icon={Icon}
-                title={m.name}
-                description={m.description}
-                onClick={() => onGroupClick(m)}
-                footer={
-                  <div className="flex items-center justify-between w-full">
-                    <Badge variant="secondary" className="text-xs">
-                      {count} {count === 1 ? "tool" : "tools"}
-                    </Badge>
-                    {hasConfig && (
-                      <Settings2Icon className="size-3.5 text-muted-foreground" />
-                    )}
-                  </div>
-                }
-              />
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ToolsPage() {
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig | null>(null)
-  const [groupManifests, setGroupManifests] = useState<ToolGroupManifest[]>([])
   const { schemas: toolSchemas, loading: loadingSchemas } = useToolSchemas()
   const [remoteTools, setRemoteTools] = useState<RemoteEntity[]>([])
   const [installing, setInstalling] = useState<string | null>(null)
+  const [uninstallingTool, setUninstallingTool] = useState<string | null>(null)
   const [toolView, setToolView] = useState<"tools" | "groups">("tools")
   const [filter, setFilter] = useState<CatalogFilter>("all")
   const [search, setSearch] = useState("")
@@ -404,7 +321,6 @@ export default function ToolsPage() {
   useEffect(() => {
     opendora.config.get().then(setGlobalConfig).catch(() => {})
     opendora.entity.listAvailable({ type: "tool" }).then(setRemoteTools).catch(() => {})
-    opendora.agent.toolGroups().then(setGroupManifests).catch(() => {})
   }, [])
 
   async function handleInstall(id: string) {
@@ -416,6 +332,30 @@ export default function ToolsPage() {
       setInstalling(null)
     }
   }
+
+  async function handleToolRemove(id: string) {
+    setUninstallingTool(id)
+    try {
+      await opendora.entity.removeLocal("tool", id)
+      refreshSchemas()
+      opendora.entity.listAvailable({ type: "tool" }).then(setRemoteTools).catch(() => {})
+    } finally {
+      setUninstallingTool(null)
+    }
+  }
+
+  const { items: groupItems, loading: loadingGroups } = useEntityCatalog(
+    "tool-group",
+    () => opendora.agent.toolGroups(),
+    (m: ToolGroupManifest) => ({
+      id: m.id,
+      type: "tool-group" as const,
+      name: m.name,
+      description: m.description,
+      onManage: () => setSelectedGroup(m),
+    }),
+    refreshSchemas,
+  )
 
   async function handleConfigSave(dottedKey: string, value: unknown) {
     await opendora.config.update({ tool_config: buildNestedUpdate(dottedKey, value) })
@@ -433,13 +373,19 @@ export default function ToolsPage() {
           name: t.id,
           description: t.description,
           onManage: () => setSelectedTool(t),
+          onUninstall: async () => handleToolRemove(t.id),
+          onDelete: async () => handleToolRemove(t.id),
         }),
         "tool",
         handleInstall,
         installing,
+        undefined,
+        uninstallingTool,
+        undefined,
+        uninstallingTool,
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [toolSchemas, remoteTools, installing],
+    [toolSchemas, remoteTools, installing, uninstallingTool],
   )
 
   return (
@@ -466,13 +412,16 @@ export default function ToolsPage() {
             sortFn={(a, b) => a.name.localeCompare(b.name)}
           />
         ) : (
-          <ToolGroupsGridView
-            manifests={groupManifests}
-            schemas={toolSchemas}
-            loading={loadingSchemas && groupManifests.length === 0}
+          <EntityCatalogSection
+            icon={LayersIcon}
+            title="Tool Groups"
+            items={groupItems}
+            loading={loadingGroups}
+            filter={filter}
+            onFilterChange={setFilter}
             search={search}
             onSearchChange={setSearch}
-            onGroupClick={setSelectedGroup}
+            sortFn={(a, b) => a.name.localeCompare(b.name)}
           />
         )}
       </div>
