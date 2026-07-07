@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import {
   AppWindowIcon,
   BotIcon,
@@ -26,12 +26,11 @@ import type { LucideIcon } from "lucide-react"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { EntityCatalogSection } from "@/components/settings/entity-catalog-section"
 import { SettingsCard } from "@/components/settings/settings-card"
-import { mergeWithRemote, useEntityCatalog } from "@/hooks/use-entity-catalog"
+import { useEntityCatalog } from "@/hooks/use-entity-catalog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Sheet,
   SheetContent,
@@ -49,7 +48,6 @@ import {
   type ToolSchema,
   type ToolGroupManifest,
   type ToolGroupConfigField,
-  type RemoteEntity,
 } from "@/lib/projectflows"
 import { useToolSchemas, refreshSchemas } from "@/hooks/use-tool-schemas"
 import type { CatalogFilter } from "@/components/settings/entity-catalog-section"
@@ -309,10 +307,6 @@ function GroupDetailSheet({
 export default function ToolsPage() {
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig | null>(null)
   const { schemas: toolSchemas, loading: loadingSchemas } = useToolSchemas()
-  const [remoteTools, setRemoteTools] = useState<RemoteEntity[]>([])
-  const [installing, setInstalling] = useState<string | null>(null)
-  const [uninstallingTool, setUninstallingTool] = useState<string | null>(null)
-  const [toolView, setToolView] = useState<"tools" | "groups">("tools")
   const [filter, setFilter] = useState<CatalogFilter>("all")
   const [search, setSearch] = useState("")
   const [selectedTool, setSelectedTool] = useState<ToolSchema | null>(null)
@@ -320,29 +314,7 @@ export default function ToolsPage() {
 
   useEffect(() => {
     opendora.config.get().then(setGlobalConfig).catch(() => {})
-    opendora.entity.listAvailable({ type: "tool" }).then(setRemoteTools).catch(() => {})
   }, [])
-
-  async function handleInstall(id: string) {
-    setInstalling(id)
-    try {
-      await opendora.entity.installRemote("tool", id)
-      opendora.entity.listAvailable({ type: "tool" }).then(setRemoteTools).catch(() => {})
-    } finally {
-      setInstalling(null)
-    }
-  }
-
-  async function handleToolRemove(id: string) {
-    setUninstallingTool(id)
-    try {
-      await opendora.entity.removeLocal("tool", id)
-      refreshSchemas()
-      opendora.entity.listAvailable({ type: "tool" }).then(setRemoteTools).catch(() => {})
-    } finally {
-      setUninstallingTool(null)
-    }
-  }
 
   const { items: groupItems, loading: loadingGroups } = useEntityCatalog(
     "tool-group",
@@ -362,68 +334,20 @@ export default function ToolsPage() {
     opendora.config.get().then(setGlobalConfig).catch(() => {})
   }
 
-  const toolItems = useMemo(
-    () =>
-      mergeWithRemote(
-        toolSchemas,
-        remoteTools,
-        (t) => ({
-          id: t.id,
-          type: "tool" as const,
-          name: t.id,
-          description: t.description,
-          onManage: () => setSelectedTool(t),
-          onUninstall: async () => handleToolRemove(t.id),
-          onDelete: async () => handleToolRemove(t.id),
-        }),
-        "tool",
-        handleInstall,
-        installing,
-        undefined,
-        uninstallingTool,
-        undefined,
-        uninstallingTool,
-      ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [toolSchemas, remoteTools, installing, uninstallingTool],
-  )
-
   return (
     <SettingsPageLayout title="Tools">
       <div className="flex flex-col gap-6">
-        {/* Tools / Groups toggle */}
-        <Tabs value={toolView} onValueChange={(v) => { setToolView(v as "tools" | "groups"); setSearch("") }}>
-          <TabsList>
-            <TabsTrigger value="tools">Tools</TabsTrigger>
-            <TabsTrigger value="groups">Groups</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {toolView === "tools" ? (
-          <EntityCatalogSection
-            icon={WrenchIcon}
-            title="Tools"
-            items={toolItems}
-            loading={loadingSchemas}
-            filter={filter}
-            onFilterChange={setFilter}
-            search={search}
-            onSearchChange={setSearch}
-            sortFn={(a, b) => a.name.localeCompare(b.name)}
-          />
-        ) : (
-          <EntityCatalogSection
-            icon={LayersIcon}
-            title="Tool Groups"
-            items={groupItems}
-            loading={loadingGroups}
-            filter={filter}
-            onFilterChange={setFilter}
-            search={search}
-            onSearchChange={setSearch}
-            sortFn={(a, b) => a.name.localeCompare(b.name)}
-          />
-        )}
+        <EntityCatalogSection
+          icon={LayersIcon}
+          title="Tool Groups"
+          items={groupItems}
+          loading={loadingGroups || loadingSchemas}
+          filter={filter}
+          onFilterChange={setFilter}
+          search={search}
+          onSearchChange={setSearch}
+          sortFn={(a, b) => a.name.localeCompare(b.name)}
+        />
       </div>
 
       <GroupDetailSheet
