@@ -20,6 +20,7 @@ import { WorkflowRunTool, WorkflowParametersTool, WorkflowCreateTool, WorkflowGe
 import { toJSONSchema } from "zod"
 import type { Tool } from "./tool.ts"
 import { loadGroupManifests, resolveToolGroup, type ToolGroupManifest } from "./group-manifest.ts"
+import fs from "fs"
 import path from "path"
 import { pathToFileURL, fileURLToPath } from "url"
 
@@ -90,9 +91,14 @@ export namespace ToolRegistry {
       }
     }
 
+    const seenDirs = new Set<string>()
     for (const entry of dirEntries) {
       const dir = typeof entry === "string" ? entry : entry.dir
       const sg = typeof entry === "string" ? "core" : (entry.sourceGroup ?? "core")
+      let realDir: string
+      try { realDir = fs.realpathSync(dir) } catch { realDir = dir }
+      if (seenDirs.has(realDir)) continue
+      seenDirs.add(realDir)
       const glob = new (globalThis as any).Bun.Glob("tools/*/tools/*.{js,ts}")
       const matches: string[] = [...glob.scanSync({ cwd: dir, dot: true, followSymlinks: true })].map((m: string) =>
         path.join(dir, m),
