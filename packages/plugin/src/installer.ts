@@ -37,12 +37,12 @@ async function extractTools(
 ): Promise<Array<{ name: string; group: string }>> {
   const results: Array<{ name: string; group: string }> = []
 
-  // Prefer new tool-groups/ bundle format
-  const toolGroupsSrc = path.join(sourcePath, "tool-groups")
+  // Prefer new tools/ bundle format
+  const toolGroupsSrc = path.join(sourcePath, "tools")
   const hasToolGroups = await fs.access(toolGroupsSrc).then(() => true).catch(() => false)
 
   if (hasToolGroups) {
-    // New format: plugin bundle contains tool-groups/<group>/group.json + tools/*.js
+    // New format: plugin bundle contains tools/<group>/group.json + tools/*.js
     const groupEntries = await fs.readdir(toolGroupsSrc, { withFileTypes: true })
     for (const groupEntry of groupEntries) {
       if (!groupEntry.isDirectory()) continue
@@ -228,7 +228,7 @@ export namespace PluginInstaller {
     capabilities: Plugin.Capability[],
   ): Promise<Map<string, string>> {
     const result = new Map<string, string>()
-    const toolGroupsSrc = path.join(sourcePath, "tool-groups")
+    const toolGroupsSrc = path.join(sourcePath, "tools")
     const hasToolGroups = await fs.access(toolGroupsSrc).then(() => true).catch(() => false)
 
     if (hasToolGroups) {

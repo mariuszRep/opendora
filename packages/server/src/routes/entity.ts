@@ -21,7 +21,7 @@ function entityDir(type: string, name: string, root: string): string | null {
     case "tool":
       return path.join(root, "tools", name + ".js")
     case "tool-group":
-      return path.join(root, "tool-groups", name)
+      return path.join(root, "tools", name)
     default:
       return null
   }
@@ -59,7 +59,7 @@ async function installEntity(
     const dest = path.join(root, "workflows", `${name}.json`)
     await fs.copyFile(src, dest)
   } else if (type === "tool-group") {
-    const destDir = path.join(root, "tool-groups", name)
+    const destDir = path.join(root, "tools", name)
     await fs.mkdir(destDir, { recursive: true })
     const entries = await fs.readdir(extractDir, { withFileTypes: true })
     for (const entry of entries) {

@@ -15,6 +15,7 @@
       }
     ]
   },
+  "core": true,
   "tools": ["read", "write", "edit", "list", "glob", "grep", "apply_patch", "multiedit"],
   "mcp": {}
 }

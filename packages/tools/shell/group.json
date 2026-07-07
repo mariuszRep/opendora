@@ -4,6 +4,7 @@
   "description": "Execute shell commands and scripts",
   "icon": "Terminal",
   "sourceGroup": "core",
+  "core": true,
   "tools": ["bash", "batch"],
   "mcp": {}
 }

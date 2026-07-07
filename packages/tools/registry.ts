@@ -79,7 +79,7 @@ export namespace ToolRegistry {
     const seenGroupDirs = new Set<string>()
     for (const entry of dirEntries) {
       const dir = typeof entry === "string" ? entry : entry.dir
-      const tgDir = path.join(dir, "tool-groups")
+      const tgDir = path.join(dir, "tools")
       if (seenGroupDirs.has(tgDir)) continue
       seenGroupDirs.add(tgDir)
       const external = await loadGroupManifests(tgDir).catch(() => [])
@@ -93,7 +93,7 @@ export namespace ToolRegistry {
     for (const entry of dirEntries) {
       const dir = typeof entry === "string" ? entry : entry.dir
       const sg = typeof entry === "string" ? "core" : (entry.sourceGroup ?? "core")
-      const glob = new (globalThis as any).Bun.Glob("tool-groups/*/tools/*.{js,ts}")
+      const glob = new (globalThis as any).Bun.Glob("tools/*/tools/*.{js,ts}")
       const matches: string[] = [...glob.scanSync({ cwd: dir, dot: true, followSymlinks: true })].map((m: string) =>
         path.join(dir, m),
       )

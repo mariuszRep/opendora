@@ -25,6 +25,7 @@ export const ToolGroupManifestSchema = z.object({
     .optional(),
   tools: z.array(z.string()),
   mcp: z.object({ serverName: z.string().optional() }).optional(),
+  core: z.boolean().optional(),
 })
 
 export type ToolGroupConfigField = z.infer<typeof ToolGroupConfigFieldSchema>

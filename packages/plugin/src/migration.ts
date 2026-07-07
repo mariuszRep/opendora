@@ -4,7 +4,7 @@ import { PluginStorage } from "./storage.js"
 
 /**
  * One-time migration from flat ~/.projectflows/tools/*.js layout to the
- * self-contained group folder layout ~/.projectflows/tool-groups/<group>/tools/*.js.
+ * self-contained group folder layout ~/.projectflows/tools/<group>/tools/*.js.
  *
  * Returns true if migration ran, false if already migrated or nothing to migrate.
  *

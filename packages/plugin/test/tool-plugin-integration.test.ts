@@ -46,8 +46,8 @@ for (const [pluginId, fixtureName] of [["filesystem", "filesystem-plugin"], ["we
         expect(cap.installedDir).toBe(PluginStorage.globalRoot())
       }
 
-      // 3. tool-groups/<group>/tools/*.js files exist in the global tool-groups dir
-      const toolGroupsDir = path.join(PluginStorage.globalRoot(), "tool-groups")
+      // 3. tools/<group>/tools/*.js files exist in the global tools dir
+      const toolGroupsDir = path.join(PluginStorage.globalRoot(), "tools")
       const groupDirs = await fs.readdir(toolGroupsDir, { withFileTypes: true })
       const allToolFiles: string[] = []
       for (const gd of groupDirs) {

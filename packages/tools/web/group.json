@@ -14,6 +14,7 @@
       }
     ]
   },
+  "core": true,
   "tools": ["webfetch", "websearch", "codesearch"],
   "mcp": {}
 }
