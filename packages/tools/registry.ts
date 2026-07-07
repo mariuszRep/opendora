@@ -1,22 +1,3 @@
-import { SessionSearchTool, SessionGetTool, SessionAnalyzeTool, SessionTreeTool, SessionUpdateTool } from "./sessions/index.ts"
-import { DelegateTool, ReplyTool, QuestionTool, NotifyTool } from "./communication/index.ts"
-import { TodoWriteTool, TodoReadTool } from "./system/todo.ts"
-import { InvalidTool } from "./system/invalid.ts"
-import { LspTool } from "./system/lsp.ts"
-import { SkillLoadTool, SkillListTool, SkillSearchTool, SkillInstallTool, SkillCreateTool, SkillEditTool, SkillRemoveTool } from "./skills/index.ts"
-import { LogLessonTool } from "./system/log-lesson.ts"
-import { AgentCreateTool } from "./agents/agent-create.ts"
-import { AgentUpdateTool } from "./agents/agent-update.ts"
-import { AgentDeleteTool } from "./agents/agent-delete.ts"
-import { AgentListTool } from "./agents/agent-list.ts"
-import { AgentGetTool } from "./agents/agent-get.ts"
-import { ScheduleListTool, ScheduleCreateTool, ScheduleUpdateTool, ScheduleDeleteTool, ScheduleGetTool, ScheduleRunTool } from "./schedule/index.ts"
-import { DESKTOP_TOOLS } from "./desktop/index.ts"
-import { PYAUTOGUI_TOOLS } from "./automation/index.ts"
-import { BrowserTool } from "./browser/simple-browser.ts"
-import { PlaywrightModeTool } from "./browser/playwright-mode.ts"
-import { ToolListTool, ToolGetTool, ToolUpdateTool } from "./tool-registry/index.ts"
-import { WorkflowRunTool, WorkflowParametersTool, WorkflowCreateTool, WorkflowGetTool, WorkflowListTool, WorkflowUpdateTool, WorkflowDeleteTool, WorkflowNodeCatalogTool } from "./workflows/index.ts"
 import { toJSONSchema } from "zod"
 import type { Tool } from "./tool.ts"
 import { loadGroupManifests, resolveToolGroup, type ToolGroupManifest } from "./group-manifest.ts"
@@ -110,10 +91,22 @@ export namespace ToolRegistry {
         const mod = await import(pathToFileURL(match).href).catch(() => null)
         if (!mod) continue
         for (const [id, def] of Object.entries(mod)) {
-          if (_config.fromPlugin) {
-            const toolId = id === "default" ? namespace : `${namespace}_${id}`
-            _custom.push(_config.fromPlugin(toolId, def))
-            _sourceGroups.set(toolId, groupFolder)
+          const items: unknown[] = Array.isArray(def) ? def : [def]
+          for (const item of items) {
+            const asInfo = item as Tool.Info
+            if (asInfo && typeof asInfo.init === "function" && typeof asInfo.id === "string") {
+              const existing = _custom.findIndex((t) => t.id === asInfo.id)
+              if (existing >= 0) _custom[existing] = asInfo
+              else _custom.push(asInfo)
+              _sourceGroups.set(asInfo.id, groupFolder)
+            } else if (_config.fromPlugin && !Array.isArray(def)) {
+              const toolId = id === "default" ? namespace : `${namespace}_${id}`
+              const existing = _custom.findIndex((t) => t.id === toolId)
+              const pluginTool = _config.fromPlugin(toolId, item)
+              if (existing >= 0) _custom[existing] = pluginTool
+              else _custom.push(pluginTool)
+              _sourceGroups.set(toolId, groupFolder)
+            }
           }
         }
       }
@@ -144,60 +137,7 @@ export namespace ToolRegistry {
   }
 
   export function all(): Tool.Info[] {
-    const cfg = _config
-    const question = ["app", "cli", "desktop"].includes(cfg.clientType) || cfg.flags.enableQuestion
-
-    return [
-      InvalidTool,
-      ...(question ? [QuestionTool] : []),
-      DelegateTool,
-      SessionSearchTool,
-      SessionGetTool,
-      SessionAnalyzeTool,
-      SessionTreeTool,
-      SessionUpdateTool,
-      ReplyTool,
-      NotifyTool,
-      TodoWriteTool,
-      // TodoReadTool,
-      SkillListTool,
-      SkillLoadTool,
-      SkillSearchTool,
-      SkillInstallTool,
-      SkillCreateTool,
-      SkillEditTool,
-      SkillRemoveTool,
-      LogLessonTool,
-      AgentCreateTool,
-      AgentUpdateTool,
-      AgentDeleteTool,
-      AgentListTool,
-      AgentGetTool,
-      ScheduleListTool,
-      ScheduleCreateTool,
-      ScheduleUpdateTool,
-      ScheduleDeleteTool,
-      ScheduleGetTool,
-      ScheduleRunTool,
-      ToolListTool,
-      ToolGetTool,
-      ToolUpdateTool,
-      WorkflowRunTool,
-      WorkflowParametersTool,
-      WorkflowCreateTool,
-      WorkflowGetTool,
-      WorkflowListTool,
-      WorkflowUpdateTool,
-      WorkflowDeleteTool,
-      WorkflowNodeCatalogTool,
-
-      ...(cfg.flags.enableLspTool ? [LspTool] : []),
-      BrowserTool,
-      PlaywrightModeTool,
-      ...DESKTOP_TOOLS,
-      ...PYAUTOGUI_TOOLS,
-      ..._custom,
-    ]
+    return [..._custom]
   }
 
   export async function ids(): Promise<string[]> {

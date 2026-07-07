@@ -1,14 +1,19 @@
-export * from "./registry.ts"
-export * from "./communication/index.ts"
-export * from "./sessions/index.ts"
-export * from "./filesystem/index.ts"
-export * from "./shell/index.ts"
-export * from "./web/index.ts"
-export * from "./skills/index.ts"
-export * from "./agents/index.ts"
-export * from "./schedule/index.ts"
-export * from "./system/index.ts"
-export * from "./desktop/index.ts"
-export * from "./automation/index.ts"
-export * from "./tool-registry/index.ts"
-export * from "./workflows/index.ts"
+export * from "./tool.ts"
+export * from "./host.ts"
+export * from "./group-manifest.ts"
+export * from "./truncation-impl.ts"
+
+// Registry — use named exports to avoid conflict with truncation.configure
+export {
+  configure,
+  configureRegistry,
+  ToolRegistry,
+  type ToolDirEntry,
+  type RegistryConfig,
+} from "./registry.ts"
+
+// Truncation — use named exports to avoid conflict with registry.configure
+export {
+  configure as configureTruncation,
+  type Truncator,
+} from "./truncation.ts"
