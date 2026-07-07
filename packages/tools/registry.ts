@@ -1,17 +1,6 @@
-import { BashTool } from "./shell/bash.ts"
-import { BatchTool } from "./shell/batch.ts"
-import { EditTool } from "./filesystem/edit.ts"
-import { WriteTool } from "./filesystem/write.ts"
-import { ReadTool } from "./filesystem/read.ts"
-import { ListTool } from "./filesystem/ls.ts"
-import { GlobTool } from "./filesystem/glob.ts"
-import { GrepTool } from "./filesystem/grep.ts"
-import { MultiEditTool } from "./filesystem/multiedit.ts"
-import { ApplyPatchTool } from "./filesystem/apply_patch.ts"
 import { SessionSearchTool, SessionGetTool, SessionAnalyzeTool, SessionTreeTool, SessionUpdateTool } from "./sessions/index.ts"
 import { DelegateTool, ReplyTool, QuestionTool, NotifyTool } from "./communication/index.ts"
 import { TodoWriteTool, TodoReadTool } from "./system/todo.ts"
-import { WebFetchTool, WebSearchTool, CodeSearchTool } from "./web/index.ts"
 import { InvalidTool } from "./system/invalid.ts"
 import { LspTool } from "./system/lsp.ts"
 import { SkillLoadTool, SkillListTool, SkillSearchTool, SkillInstallTool, SkillCreateTool, SkillEditTool, SkillRemoveTool } from "./skills/index.ts"
@@ -28,7 +17,6 @@ import { BrowserTool } from "./browser/simple-browser.ts"
 import { PlaywrightModeTool } from "./browser/playwright-mode.ts"
 import { ToolListTool, ToolGetTool, ToolUpdateTool } from "./tool-registry/index.ts"
 import { WorkflowRunTool, WorkflowParametersTool, WorkflowCreateTool, WorkflowGetTool, WorkflowListTool, WorkflowUpdateTool, WorkflowDeleteTool, WorkflowNodeCatalogTool } from "./workflows/index.ts"
-import { MemoryWriteTool, MemoryReadTool, MemoryDeleteTool } from "./memory/index.ts"
 import { toJSONSchema } from "zod"
 import type { Tool } from "./tool.ts"
 import { loadGroupManifests, resolveToolGroup, type ToolGroupManifest } from "./group-manifest.ts"
@@ -87,6 +75,21 @@ export namespace ToolRegistry {
     const dirEntries = (await _config.getToolDirs?.()) ?? []
     if (dirEntries.length) await _config.waitForDeps?.()
 
+    // Merge in group manifests from installed tool-groups dirs (external overrides built-in)
+    const seenGroupDirs = new Set<string>()
+    for (const entry of dirEntries) {
+      const dir = typeof entry === "string" ? entry : entry.dir
+      const tgDir = path.join(dir, "tool-groups")
+      if (seenGroupDirs.has(tgDir)) continue
+      seenGroupDirs.add(tgDir)
+      const external = await loadGroupManifests(tgDir).catch(() => [])
+      for (const manifest of external) {
+        const idx = _groupManifests.findIndex((m) => m.id === manifest.id)
+        if (idx >= 0) _groupManifests[idx] = manifest
+        else _groupManifests.push(manifest)
+      }
+    }
+
     for (const entry of dirEntries) {
       const dir = typeof entry === "string" ? entry : entry.dir
       const sg = typeof entry === "string" ? "core" : (entry.sourceGroup ?? "core")
@@ -141,14 +144,6 @@ export namespace ToolRegistry {
     return [
       InvalidTool,
       ...(question ? [QuestionTool] : []),
-      BashTool,
-      ReadTool,
-      ListTool,
-      GlobTool,
-      GrepTool,
-      EditTool,
-      MultiEditTool,
-      WriteTool,
       DelegateTool,
       SessionSearchTool,
       SessionGetTool,
@@ -157,11 +152,8 @@ export namespace ToolRegistry {
       SessionUpdateTool,
       ReplyTool,
       NotifyTool,
-      WebFetchTool,
       TodoWriteTool,
       // TodoReadTool,
-      WebSearchTool,
-      CodeSearchTool,
       SkillListTool,
       SkillLoadTool,
       SkillSearchTool,
@@ -170,7 +162,6 @@ export namespace ToolRegistry {
       SkillEditTool,
       SkillRemoveTool,
       LogLessonTool,
-      ApplyPatchTool,
       AgentCreateTool,
       AgentUpdateTool,
       AgentDeleteTool,
@@ -193,11 +184,8 @@ export namespace ToolRegistry {
       WorkflowUpdateTool,
       WorkflowDeleteTool,
       WorkflowNodeCatalogTool,
-      MemoryWriteTool,
-      MemoryReadTool,
-      MemoryDeleteTool,
+
       ...(cfg.flags.enableLspTool ? [LspTool] : []),
-      ...(cfg.flags.enableBatchTool ? [BatchTool] : []),
       BrowserTool,
       PlaywrightModeTool,
       ...DESKTOP_TOOLS,

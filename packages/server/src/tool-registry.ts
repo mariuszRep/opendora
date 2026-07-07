@@ -39,7 +39,7 @@ configureRegistry({
     const configDirs = (await Config.directories()).map((d) => ({ dir: d, sourceGroup: "core" as const }))
     const projectDir = (() => { try { return Instance.directory } catch { return undefined } })()
     const pluginCaps = await CapabilityRegistry.listCapabilities("tool", projectDir)
-    const seen = new Set<string>()
+    const seen = new Set<string>(configDirs.map((d) => d.dir))
     const pluginDirs: Array<{ dir: string; sourceGroup: string }> = []
     for (const cap of pluginCaps) {
       if (!seen.has(cap.installedDir)) {
