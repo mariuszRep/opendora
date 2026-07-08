@@ -1,9 +1,0 @@
-{
-  "id": "agents",
-  "name": "Agents",
-  "description": "Create, update, delete, and list agent configurations",
-  "icon": "Users",
-  "sourceGroup": "core",
-  "tools": ["agent_create", "agent_update", "agent_delete", "agent_list", "agent_get"],
-  "mcp": {}
-}

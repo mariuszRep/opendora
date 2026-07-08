@@ -1,9 +1,0 @@
-{
-  "id": "tool-registry",
-  "name": "Tool Registry",
-  "description": "List, inspect, and update tools in the tool registry",
-  "icon": "Wrench",
-  "sourceGroup": "core",
-  "tools": ["tool_list", "tool_get", "tool_update"],
-  "mcp": {}
-}

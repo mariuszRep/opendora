@@ -1,9 +1,0 @@
-{
-  "name": "pyautogui_screen_size",
-  "description": "Return the screen dimensions as {width, height} in pixels. Useful for calculating relative positions before moving or clicking.",
-  "inputSchema": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  }
-}

@@ -1,9 +1,0 @@
-{
-  "name": "pyautogui_snapshot",
-  "description": "Capture the current desktop state: a full-screen screenshot annotated with numbered labels for each visible window, plus a structured list of those windows with their titles and coordinates.\n\nUse the label numbers to click, focus, or resize specific windows without needing to know exact coordinates. Pass a label to `pyautogui_mouse_click` via the element's `abs_x`/`abs_y` center coordinates returned in `elements`.\n\nFor capturing a single app's buttons and controls, use `pyautogui_snapshot_window` instead.",
-  "inputSchema": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  }
-}

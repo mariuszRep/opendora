@@ -1,9 +1,0 @@
-{
-  "name": "invalid",
-  "description": "Do not use",
-  "inputSchema": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  }
-}

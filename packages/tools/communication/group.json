@@ -1,9 +1,0 @@
-{
-  "id": "communication",
-  "name": "Communication",
-  "description": "Delegate work to sub-agents, reply to callers, ask questions, and send notifications",
-  "icon": "MessageSquare",
-  "sourceGroup": "core",
-  "tools": ["delegate", "reply", "question", "notify"],
-  "mcp": {}
-}

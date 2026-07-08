@@ -12,30 +12,23 @@ import { Server } from "@projectflows/server/server"
 import { Provider } from "@projectflows/provider/provider"
 import { Agent } from "@projectflows/runtime/agent"
 import { PermissionNext } from "@projectflows/permission/next"
-import { Tool } from "@projectflows/tools/tool"
-import { GlobTool } from "@projectflows/tools/filesystem/glob"
-import { GrepTool } from "@projectflows/tools/filesystem/grep"
-import { ListTool } from "@projectflows/tools/filesystem/ls"
-import { ReadTool } from "@projectflows/tools/filesystem/read"
-import { EditTool } from "@projectflows/tools/filesystem/edit"
-import { WriteTool } from "@projectflows/tools/filesystem/write"
-import { WebFetchTool, CodeSearchTool, WebSearchTool } from "@projectflows/tools/web"
-import { TaskTool, TodoWriteTool } from "@projectflows/tools/system"
+import { TaskTool } from "@projectflows/tools/system/task"
 import { SkillTool } from "@projectflows/tools/skill-load-tool"
 import { BashTool, BatchTool } from "@projectflows/tools/shell"
+import { WebFetchTool, CodeSearchTool, WebSearchTool } from "@projectflows/tools/web"
 import { Locale } from "@projectflows/util/locale"
 
-type ToolProps<T extends Tool.Info> = {
-  input: Tool.InferParameters<T>
-  metadata: Tool.InferMetadata<T>
+type ToolCall = {
+  input: Record<string, any>
+  metadata: Record<string, any>
   part: ToolPart
 }
 
-function props<T extends Tool.Info>(part: ToolPart): ToolProps<T> {
+function props(part: ToolPart): ToolCall {
   const state = part.state
   return {
-    input: state.input as Tool.InferParameters<T>,
-    metadata: ("metadata" in state ? state.metadata : {}) as Tool.InferMetadata<T>,
+    input: state.input as Record<string, any>,
+    metadata: ("metadata" in state ? state.metadata : {}) as Record<string, any>,
     part,
   }
 }
@@ -71,7 +64,7 @@ function fallback(part: ToolPart) {
   })
 }
 
-function glob(info: ToolProps<typeof GlobTool>) {
+function glob(info: ToolCall) {
   const root = info.input.path ?? ""
   const title = `Glob "${info.input.pattern}"`
   const suffix = root ? `in ${normalizePath(root)}` : ""
@@ -85,7 +78,7 @@ function glob(info: ToolProps<typeof GlobTool>) {
   })
 }
 
-function grep(info: ToolProps<typeof GrepTool>) {
+function grep(info: ToolCall) {
   const root = info.input.path ?? ""
   const title = `Grep "${info.input.pattern}"`
   const suffix = root ? `in ${normalizePath(root)}` : ""
@@ -99,7 +92,7 @@ function grep(info: ToolProps<typeof GrepTool>) {
   })
 }
 
-function list(info: ToolProps<typeof ListTool>) {
+function list(info: ToolCall) {
   const dir = info.input.path ? normalizePath(info.input.path) : ""
   inline({
     icon: "→",
@@ -107,7 +100,7 @@ function list(info: ToolProps<typeof ListTool>) {
   })
 }
 
-function read(info: ToolProps<typeof ReadTool>) {
+function read(info: ToolCall) {
   const file = normalizePath(info.input.filePath)
   const pairs = Object.entries(info.input).filter(([key, value]) => {
     if (key === "filePath") return false
@@ -121,7 +114,7 @@ function read(info: ToolProps<typeof ReadTool>) {
   })
 }
 
-function write(info: ToolProps<typeof WriteTool>) {
+function write(info: ToolCall) {
   block(
     {
       icon: "←",
@@ -131,14 +124,14 @@ function write(info: ToolProps<typeof WriteTool>) {
   )
 }
 
-function webfetch(info: ToolProps<typeof WebFetchTool>) {
+function webfetch(info: ToolCall) {
   inline({
     icon: "%",
     title: `WebFetch ${info.input.url}`,
   })
 }
 
-function edit(info: ToolProps<typeof EditTool>) {
+function edit(info: ToolCall) {
   const title = normalizePath(info.input.filePath)
   const diff = info.metadata.diff
   block(
@@ -150,21 +143,21 @@ function edit(info: ToolProps<typeof EditTool>) {
   )
 }
 
-function codesearch(info: ToolProps<typeof CodeSearchTool>) {
+function codesearch(info: ToolCall) {
   inline({
     icon: "◇",
     title: `Exa Code Search "${info.input.query}"`,
   })
 }
 
-function websearch(info: ToolProps<typeof WebSearchTool>) {
+function websearch(info: ToolCall) {
   inline({
     icon: "◈",
     title: `Exa Web Search "${info.input.query}"`,
   })
 }
 
-function task(info: ToolProps<typeof TaskTool>) {
+function task(info: ToolCall) {
   const input = info.part.state.input
   const status = info.part.state.status
   const subagent =
@@ -181,14 +174,14 @@ function task(info: ToolProps<typeof TaskTool>) {
   })
 }
 
-function skill(info: ToolProps<typeof SkillTool>) {
+function skill(info: ToolCall) {
   inline({
     icon: "→",
     title: `Skill "${info.input.name}"`,
   })
 }
 
-function bash(info: ToolProps<typeof BashTool>) {
+function bash(info: ToolCall) {
   const input = info.input as Partial<{ command: string; timeout?: number; workdir?: string; description: string }>
   const output = info.part.state.status === "completed" ? info.part.state.output?.trim() : undefined
   block(
@@ -200,7 +193,7 @@ function bash(info: ToolProps<typeof BashTool>) {
   )
 }
 
-function batchTool(info: ToolProps<typeof BatchTool>) {
+function batchTool(info: ToolCall) {
   const total = info.metadata.totalCalls ?? 0
   const successful = info.metadata.successful ?? 0
   const failed = info.metadata.failed ?? 0
@@ -215,13 +208,15 @@ function batchTool(info: ToolProps<typeof BatchTool>) {
   )
 }
 
-function todo(info: ToolProps<typeof TodoWriteTool>) {
+function todo(info: ToolCall) {
   block(
     {
       icon: "#",
       title: "Todos",
     },
-    info.input.todos.map((item) => `${item.status === "completed" ? "[x]" : "[ ]"} ${item.content}`).join("\n"),
+    (info.input.todos as Array<{ status: string; content: string }>)
+      .map((item) => `${item.status === "completed" ? "[x]" : "[ ]"} ${item.content}`)
+      .join("\n"),
   )
 }
 
@@ -409,20 +404,20 @@ export const RunCommand = cmd({
     async function execute(sdk: OpencodeClient) {
       function tool(part: ToolPart) {
         try {
-          if (part.tool === "bash") return bash(props<typeof BashTool>(part))
-          if (part.tool === "batch") return batchTool(props<typeof BatchTool>(part))
-          if (part.tool === "glob") return glob(props<typeof GlobTool>(part))
-          if (part.tool === "grep") return grep(props<typeof GrepTool>(part))
-          if (part.tool === "list") return list(props<typeof ListTool>(part))
-          if (part.tool === "read") return read(props<typeof ReadTool>(part))
-          if (part.tool === "write") return write(props<typeof WriteTool>(part))
-          if (part.tool === "webfetch") return webfetch(props<typeof WebFetchTool>(part))
-          if (part.tool === "edit") return edit(props<typeof EditTool>(part))
-          if (part.tool === "codesearch") return codesearch(props<typeof CodeSearchTool>(part))
-          if (part.tool === "websearch") return websearch(props<typeof WebSearchTool>(part))
-          if (part.tool === "task") return task(props<typeof TaskTool>(part))
-          if (part.tool === "todowrite") return todo(props<typeof TodoWriteTool>(part))
-          if (part.tool === "skill") return skill(props<typeof SkillTool>(part))
+          if (part.tool === "bash") return bash(props(part))
+          if (part.tool === "batch") return batchTool(props(part))
+          if (part.tool === "glob") return glob(props(part))
+          if (part.tool === "grep") return grep(props(part))
+          if (part.tool === "list") return list(props(part))
+          if (part.tool === "read") return read(props(part))
+          if (part.tool === "write") return write(props(part))
+          if (part.tool === "webfetch") return webfetch(props(part))
+          if (part.tool === "edit") return edit(props(part))
+          if (part.tool === "codesearch") return codesearch(props(part))
+          if (part.tool === "websearch") return websearch(props(part))
+          if (part.tool === "task") return task(props(part))
+          if (part.tool === "todowrite") return todo(props(part))
+          if (part.tool === "skill") return skill(props(part))
           return fallback(part)
         } catch {
           return fallback(part)
@@ -480,7 +475,7 @@ export const RunCommand = cmd({
               args.format !== "json"
             ) {
               if (toggles.get(part.id) === true) continue
-              task(props<typeof TaskTool>(part))
+              task(props(part))
               toggles.set(part.id, true)
             }
 

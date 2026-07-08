@@ -4,11 +4,11 @@ import * as fs from "fs/promises"
 import * as path from "path"
 import { createInterface } from "readline"
 import { Tool } from "../tool.ts"
-import { FileTime } from "./lib/file-time.ts"
-import toolDef from "./read.json"
 import { host, directory, worktree } from "../host.ts"
 import { assertExternalDirectory } from "../system/external-directory.ts"
 import { Filesystem } from "./lib/primitives.ts"
+import { FileTime } from "./lib/file-time.ts"
+import toolDef from "./read.json"
 
 const DEFAULT_READ_LIMIT = 2000
 const MAX_LINE_LENGTH = 2000

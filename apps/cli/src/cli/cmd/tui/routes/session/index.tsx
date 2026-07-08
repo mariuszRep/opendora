@@ -32,18 +32,8 @@ import type { AssistantMessage, Part, ToolPart, UserMessage, TextPart, Reasoning
 import { useLocal } from "@tui/context/local"
 import { Locale } from "@projectflows/util/locale"
 import type { Tool } from "@projectflows/tools/tool"
-import type { ReadTool } from "@projectflows/tools/filesystem/read"
-import type { WriteTool } from "@projectflows/tools/filesystem/write"
-import type { GlobTool } from "@projectflows/tools/filesystem/glob"
-import type { GrepTool } from "@projectflows/tools/filesystem/grep"
-import type { ListTool } from "@projectflows/tools/filesystem/ls"
-import type { EditTool } from "@projectflows/tools/filesystem/edit"
-import type { ApplyPatchTool } from "@projectflows/tools/filesystem/apply_patch"
 import { BashTool, BatchTool } from "@projectflows/tools/shell"
-import { TodoWriteTool } from "@projectflows/tools/system"
-import type { WebFetchTool } from "@projectflows/tools/browse-and-web"
-import type { TaskTool } from "@projectflows/tools/system"
-import type { QuestionTool } from "@projectflows/tools/communication"
+import type { TaskTool } from "@projectflows/tools/system/task"
 import type { SkillTool } from "@projectflows/tools/skill-load-tool"
 import { useKeyboard, useRenderer, useTerminalDimensions, type JSX } from "@opentui/solid"
 import { useSDK } from "@tui/context/sdk"
@@ -1518,9 +1508,9 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
   )
 }
 
-type ToolProps<T extends Tool.Info> = {
-  input: Partial<Tool.InferParameters<T>>
-  metadata: Partial<Tool.InferMetadata<T>>
+type ToolProps<T extends Tool.Info = any> = {
+  input: Partial<Tool.InferParameters<T>> & Record<string, any>
+  metadata: Partial<Tool.InferMetadata<T>> & Record<string, any>
   permission: Record<string, any>
   tool: string
   output?: string
@@ -1796,7 +1786,7 @@ function Batch(props: ToolProps<typeof BatchTool>) {
   )
 }
 
-function Write(props: ToolProps<typeof WriteTool>) {
+function Write(props: ToolProps<any>) {
   const { theme, syntax } = useTheme()
   const code = createMemo(() => {
     if (!props.input.content) return ""
@@ -1828,7 +1818,7 @@ function Write(props: ToolProps<typeof WriteTool>) {
   )
 }
 
-function Glob(props: ToolProps<typeof GlobTool>) {
+function Glob(props: ToolProps<any>) {
   return (
     <InlineTool icon="✱" pending="Finding files..." complete={props.input.pattern} part={props.part}>
       Glob "{props.input.pattern}" <Show when={props.input.path}>in {normalizePath(props.input.path)} </Show>
@@ -1839,7 +1829,7 @@ function Glob(props: ToolProps<typeof GlobTool>) {
   )
 }
 
-function Read(props: ToolProps<typeof ReadTool>) {
+function Read(props: ToolProps<any>) {
   const { theme } = useTheme()
   const loaded = createMemo(() => {
     if (props.part.state.status !== "completed") return []
@@ -1866,7 +1856,7 @@ function Read(props: ToolProps<typeof ReadTool>) {
   )
 }
 
-function Grep(props: ToolProps<typeof GrepTool>) {
+function Grep(props: ToolProps<any>) {
   return (
     <InlineTool icon="✱" pending="Searching content..." complete={props.input.pattern} part={props.part}>
       Grep "{props.input.pattern}" <Show when={props.input.path}>in {normalizePath(props.input.path)} </Show>
@@ -1877,7 +1867,7 @@ function Grep(props: ToolProps<typeof GrepTool>) {
   )
 }
 
-function List(props: ToolProps<typeof ListTool>) {
+function List(props: ToolProps<any>) {
   const dir = createMemo(() => {
     if (props.input.path) {
       return normalizePath(props.input.path)
@@ -1891,7 +1881,7 @@ function List(props: ToolProps<typeof ListTool>) {
   )
 }
 
-function WebFetch(props: ToolProps<typeof WebFetchTool>) {
+function WebFetch(props: ToolProps<any>) {
   return (
     <InlineTool icon="%" pending="Fetching from the web..." complete={(props.input as any).url} part={props.part}>
       WebFetch {(props.input as any).url}
@@ -1985,7 +1975,7 @@ function Task(props: ToolProps<typeof TaskTool>) {
   )
 }
 
-function Edit(props: ToolProps<typeof EditTool>) {
+function Edit(props: ToolProps<any>) {
   const ctx = use()
   const { theme, syntax } = useTheme()
 
@@ -2037,7 +2027,7 @@ function Edit(props: ToolProps<typeof EditTool>) {
   )
 }
 
-function ApplyPatch(props: ToolProps<typeof ApplyPatchTool>) {
+function ApplyPatch(props: ToolProps<any>) {
   const ctx = use()
   const { theme, syntax } = useTheme()
 
@@ -2112,7 +2102,7 @@ function ApplyPatch(props: ToolProps<typeof ApplyPatchTool>) {
   )
 }
 
-function TodoWrite(props: ToolProps<typeof TodoWriteTool>) {
+function TodoWrite(props: ToolProps<any>) {
   return (
     <Switch>
       <Match when={props.metadata.todos?.length}>
@@ -2133,7 +2123,7 @@ function TodoWrite(props: ToolProps<typeof TodoWriteTool>) {
   )
 }
 
-function Question(props: ToolProps<typeof QuestionTool>) {
+function Question(props: ToolProps<any>) {
   const { theme } = useTheme()
   const count = createMemo(() => props.input.questions?.length ?? 0)
 

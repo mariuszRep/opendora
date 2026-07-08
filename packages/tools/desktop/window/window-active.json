@@ -1,5 +1,0 @@
-{
-  "name": "desktop_window_active",
-  "description": "Return the title and screen region of the currently focused window.",
-  "inputSchema": { "type": "object", "properties": {}, "required": [] }
-}

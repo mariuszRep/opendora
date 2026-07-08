@@ -1,9 +1,0 @@
-{
-  "id": "sessions",
-  "name": "Sessions",
-  "description": "Search, inspect, and manage conversation sessions and their message history",
-  "icon": "History",
-  "sourceGroup": "core",
-  "tools": ["session_search", "session_get", "session_analyze", "session_tree", "session_update", "delegate", "reply", "notify", "question"],
-  "mcp": {}
-}
