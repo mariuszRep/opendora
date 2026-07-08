@@ -32,7 +32,6 @@ import type { AssistantMessage, Part, ToolPart, UserMessage, TextPart, Reasoning
 import { useLocal } from "@tui/context/local"
 import { Locale } from "@projectflows/util/locale"
 import type { Tool } from "@projectflows/tools/tool"
-import { BashTool, BatchTool } from "@projectflows/tools/shell"
 import type { TaskTool } from "@projectflows/tools/system/task"
 import type { SkillTool } from "@projectflows/tools/skill-load-tool"
 import { useKeyboard, useRenderer, useTerminalDimensions, type JSX } from "@opentui/solid"
@@ -1685,7 +1684,7 @@ function BlockTool(props: {
   )
 }
 
-function Bash(props: ToolProps<typeof BashTool>) {
+function Bash(props: ToolProps<any>) {
   const { theme } = useTheme()
   const sync = useSync()
   const isRunning = createMemo(() => props.part.state.status === "running")
@@ -1753,7 +1752,7 @@ function Bash(props: ToolProps<typeof BashTool>) {
   )
 }
 
-function Batch(props: ToolProps<typeof BatchTool>) {
+function Batch(props: ToolProps<any>) {
   const { theme } = useTheme()
   const summary = createMemo(() => {
     const md = props.metadata as {
