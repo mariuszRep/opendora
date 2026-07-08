@@ -363,6 +363,7 @@ export const SessionRoutes = lazy(() =>
           : []
 
         const dummyModel = { providerID: "anthropic", modelID: "claude-sonnet-4-6" }
+        await ToolRegistry.init()
         const allInternal = await Promise.all(
           ToolRegistry.all().map(async (t) => {
             try {

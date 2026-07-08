@@ -147,6 +147,7 @@ async function loadLocal(type: "agent" | "skill" | "tool" | "workflow"): Promise
       }))
     }
     case "tool": {
+      await ToolRegistry.init()
       const tools = ToolRegistry.all()
       return tools.map((t) => ({
         id: t.id,

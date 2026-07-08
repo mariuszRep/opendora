@@ -826,6 +826,7 @@ export namespace Server {
 
     configureSessionCore()
     registerToolExecutor(async (toolId, fixedArgs, agentArgs, ctx) => {
+      await ToolRegistry.init()
       const toolInfo = ToolRegistry.all().find((t) => t.id === toolId)
       if (!toolInfo) throw new Error(`Tool "${toolId}" not found in registry`)
 
@@ -1031,6 +1032,7 @@ export namespace Server {
       }
 
       // Get workflow_run tool from registry and build a synthetic execution context
+      await ToolRegistry.init()
       const toolInfo = ToolRegistry.all().find((t) => t.id === "workflow_run")
       if (!toolInfo) {
         log.warn("schedule: workflow_run tool not found in registry", { id: schedule.id })

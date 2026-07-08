@@ -146,7 +146,8 @@ export namespace ToolRegistry {
   }
 
   export async function tools(model: { providerID: string; modelID: string }, agent?: Tool.AgentInfo) {
-    const result = await Promise.all(
+    await init()
+    const result = (await Promise.all(
       all()
         .filter((t) => {
           const usePatch = model.modelID.includes("gpt-") && !model.modelID.includes("oss") && !model.modelID.includes("gpt-4")
@@ -155,12 +156,16 @@ export namespace ToolRegistry {
           return true
         })
         .map(async (t) => {
-          const tool = await t.init({ agent, model })
-          const output = { description: tool.description, parameters: tool.parameters }
-          await _config.triggerPlugin?.(t.id, output)
-          return { id: t.id, ...tool, description: output.description, parameters: output.parameters }
+          try {
+            const tool = await t.init({ agent, model })
+            const output = { description: tool.description, parameters: tool.parameters }
+            await _config.triggerPlugin?.(t.id, output)
+            return { id: t.id, ...tool, description: output.description, parameters: output.parameters }
+          } catch {
+            return null
+          }
         }),
-    )
+    )).filter((t): t is NonNullable<typeof t> => t !== null)
     return result
   }
 
@@ -174,6 +179,7 @@ export namespace ToolRegistry {
   }
 
   export async function schemas(model = { providerID: "anthropic", modelID: "claude-sonnet-4-6" }): Promise<ToolSchemaEntry[]> {
+    await init()
     return Promise.all(
       all().map(async (t) => {
         const sg = _sourceGroups.get(t.id) ?? "core"
