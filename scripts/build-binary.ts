@@ -69,6 +69,10 @@ console.log(`  Copied ${WEB_OUT} → ${DIST_WEB}`)
 console.log("\n[2.5] Creating dist/web.tar.gz...")
 run("tar", ["-czf", join(DIST, "web.tar.gz"), "-C", DIST, "web"])
 
+// 2.6. Package core capabilities into core.tar.gz
+console.log("\n[2.6] Creating dist/core.tar.gz...")
+run("bun", ["run", join(ROOT, "scripts/package-core.ts")])
+
 // 3. Compile binary(ies)
 const allPlatforms = process.argv.includes("--all-platforms")
 const customTarget = (() => {

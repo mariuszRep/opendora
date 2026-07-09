@@ -3,6 +3,7 @@ import { cmd } from "./cmd"
 import { withNetworkOptions, resolveNetworkOptions } from "../network"
 import { Flag } from "@projectflows/util/flag"
 import { CheckpointStore } from "@projectflows/workflow/checkpoint-store"
+import { runOnboarding } from "./onboarding"
 
 export const ServeCommand = cmd({
   command: "serve",
@@ -13,6 +14,7 @@ export const ServeCommand = cmd({
     }),
   describe: "starts a headless projectflows server",
   handler: async (args) => {
+    await runOnboarding()
     if (!Flag.PROJECTFLOWS_SERVER_PASSWORD) {
       console.log("Warning: PROJECTFLOWS_SERVER_PASSWORD is not set; server is unsecured.")
     }

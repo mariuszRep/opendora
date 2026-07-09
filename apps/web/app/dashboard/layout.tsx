@@ -3,6 +3,7 @@ import { AppSidebar } from '@/components/app-sidebar'
 import { OpendoraProvider } from './projectflows-context'
 import { DashboardShell } from './dashboard-shell'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { SetupCheck } from './setup-check'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </DashboardShell>
           </SidebarInset>
         </SidebarProvider>
+        <SetupCheck />
       </OpendoraProvider>
     </Suspense>
   )

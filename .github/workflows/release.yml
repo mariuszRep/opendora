@@ -11,10 +11,9 @@ on:
         required: true
 
 jobs:
-  release:
+  # ── Job 1: compile all platform binaries + tarballs ─────────────────────────
+  build-binaries:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -25,8 +24,79 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build all platform binaries + web assets
+      - name: Build all platform binaries + web + core
         run: bun scripts/build-binary.ts --all-platforms
+
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  # ── Job 2: Tauri Windows installer (.msi + NSIS .exe) ───────────────────────
+  build-windows-installer:
+    runs-on: windows-latest
+    needs: build-binaries
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Install desktop dependencies
+        run: bun install
+        working-directory: apps/desktop
+
+      - name: Prepare sidecar + resources and build Tauri
+        run: bun scripts/build-desktop.ts --skip-binary
+
+      - name: Upload Windows installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+            apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+          retention-days: 1
+
+  # ── Job 3: create GitHub Release with all artifacts ─────────────────────────
+  release:
+    runs-on: ubuntu-latest
+    needs: [build-binaries, build-windows-installer]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Download Windows installer artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-installer
+          path: windows-installer/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -40,3 +110,6 @@ jobs:
             dist/projectflows-darwin-arm64
             dist/projectflows-windows-x64.exe
             dist/web.tar.gz
+            dist/core.tar.gz
+            windows-installer/*.exe
+            windows-installer/*.msi

@@ -48,14 +48,26 @@ curl -fsSL "${BASE_URL}/web.tar.gz" -o "${TMP}/web.tar.gz"
 mkdir -p "${DATA_DIR}/web"
 tar -xzf "${TMP}/web.tar.gz" -C "${DATA_DIR}/web" --strip-components=1
 
+# Download and install core capabilities (~/.projectflows/ directory structure)
+PFLOW_HOME="${PROJECTFLOWS_HOME:-$HOME/.projectflows}"
+echo "  Downloading core capabilities..."
+if curl -fsSL "${BASE_URL}/core.tar.gz" -o "${TMP}/core.tar.gz" 2>/dev/null; then
+  mkdir -p "${PFLOW_HOME}"
+  tar -xzf "${TMP}/core.tar.gz" -C "${PFLOW_HOME}"
+  echo "  Core capabilities installed to ${PFLOW_HOME}"
+else
+  echo "  Note: core.tar.gz not available — run 'projectflows onboarding' after first launch."
+fi
+
 # Install binary
 mv "${TMP}/projectflows" "${INSTALL_DIR}/projectflows"
 
 echo ""
 echo "Projectflows installed successfully!"
 echo ""
-echo "  Binary: ${INSTALL_DIR}/projectflows"
-echo "  Web UI: ${DATA_DIR}/web/"
+echo "  Binary:       ${INSTALL_DIR}/projectflows"
+echo "  Web UI:       ${DATA_DIR}/web/"
+echo "  Capabilities: ${PFLOW_HOME}/"
 echo ""
 
 # Check PATH

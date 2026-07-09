@@ -4,9 +4,11 @@ import { UI } from "../ui"
 import { PluginInstaller } from "@projectflows/plugin"
 import { Onboarding } from "@projectflows/plugin/onboarding"
 import { CatalogReader } from "@projectflows/plugin/catalog"
+import { CoreSetup } from "@projectflows/server/core-setup"
 
 export async function runOnboarding(opts: { revisit?: boolean } = {}): Promise<void> {
-  if (!opts.revisit && (await Onboarding.isComplete())) return
+  // Skip if onboarding was already done AND core is actually installed on disk
+  if (!opts.revisit && (await Onboarding.isComplete()) && (await CoreSetup.isComplete())) return
 
   const packs = await CatalogReader.listPacks()
 

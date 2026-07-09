@@ -5,6 +5,7 @@ import { withNetworkOptions, resolveNetworkOptions } from "../network"
 import { Flag } from "@projectflows/util/flag"
 import open from "open"
 import { networkInterfaces } from "os"
+import { runOnboarding } from "./onboarding"
 
 function getNetworkIPs() {
   const nets = networkInterfaces()
@@ -33,6 +34,7 @@ export const WebCommand = cmd({
   builder: (yargs) => withNetworkOptions(yargs),
   describe: "start projectflows server and open web interface",
   handler: async (args) => {
+    await runOnboarding()
     if (!Flag.PROJECTFLOWS_SERVER_PASSWORD) {
       UI.println(UI.Style.TEXT_WARNING_BOLD + "!  " + "PROJECTFLOWS_SERVER_PASSWORD is not set; server is unsecured.")
     }

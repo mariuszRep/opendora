@@ -1,0 +1,53 @@
+{
+  "productName": "Projectflows",
+  "version": "0.1.0",
+  "identifier": "ai.projectflows.desktop",
+  "build": {
+    "frontendDist": "../index.html"
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "resources/*": "./"
+    },
+    "externalBin": ["binaries/projectflows"],
+    "windows": {
+      "nsis": {
+        "installMode": "perUser",
+        "displayLanguageSelector": false
+      },
+      "wix": {}
+    },
+    "publisher": "Projectflows",
+    "copyright": "© 2025 Projectflows"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Projectflows",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "visible": false,
+        "center": true
+      }
+    ],
+    "trayIcon": {
+      "iconPath": "icons/32x32.png",
+      "iconAsTemplate": true,
+      "menuOnLeftClick": false
+    },
+    "security": {
+      "csp": "default-src 'self' http://localhost:4097; connect-src 'self' http://localhost:4097; img-src 'self' data: http://localhost:4097; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+    }
+  }
+}
