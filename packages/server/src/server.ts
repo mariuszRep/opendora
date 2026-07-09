@@ -1115,15 +1115,21 @@ export namespace Server {
       fetch: App().fetch,
       websocket: websocket,
     } as const
+    let _serveError: unknown
     const tryServe = (port: number) => {
       try {
         return Bun.serve({ ...args, port })
-      } catch {
+      } catch (err) {
+        _serveError = err
+        log.error("failed to bind port", { port, err: String(err) })
         return undefined
       }
     }
     const server = opts.port === 0 ? (tryServe(4096) ?? tryServe(0)) : tryServe(opts.port)
-    if (!server) throw new Error(`Failed to start server on port ${opts.port}`)
+    if (!server) {
+      const reason = _serveError instanceof Error ? _serveError.message : String(_serveError ?? "unknown")
+      throw new Error(`Failed to start server on port ${opts.port}: ${reason}`)
+    }
 
     _url = server.url
 
