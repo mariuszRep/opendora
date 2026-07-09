@@ -59,15 +59,16 @@ async function extractTools(
         await fs.copyFile(manifestSrc, manifestDest).catch(() => {})
       }
 
-      // Copy tools/*.js
+      // Copy all files from tools/ (JS bundles + WASM/assets needed at runtime)
       const toolsSrc = path.join(groupSrc, "tools")
       const toolsDest = PluginStorage.toolGroupToolsDir(capRoot, groupId)
       await fs.mkdir(toolsDest, { recursive: true })
       const toolFiles = await fs.readdir(toolsSrc).catch(() => [] as string[])
       for (const toolFile of toolFiles) {
-        if (!toolFile.endsWith(".js") && !toolFile.endsWith(".ts")) continue
         await fs.copyFile(path.join(toolsSrc, toolFile), path.join(toolsDest, toolFile))
-        results.push({ name: path.basename(toolFile, path.extname(toolFile)), group: groupId })
+        if (toolFile.endsWith(".js") || toolFile.endsWith(".ts")) {
+          results.push({ name: path.basename(toolFile, path.extname(toolFile)), group: groupId })
+        }
       }
     }
   } else {
@@ -133,6 +134,8 @@ async function removeCapabilities(capabilities: LockfileEntry["capabilities"], c
       await fs.rm(path.join(capRoot, "agents", cap.name), { recursive: true, force: true })
     } else if (cap.type === "skill") {
       await fs.rm(path.join(capRoot, "skills", cap.name), { recursive: true, force: true })
+    } else if (cap.type === "tool-group") {
+      await fs.rm(PluginStorage.toolGroupDir(capRoot, cap.name), { recursive: true, force: true })
     } else if (cap.type === "tool") {
       if (cap.group) {
         // Fast path: group stored in lockfile

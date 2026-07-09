@@ -1,7 +1,7 @@
 import z from "zod"
 
 export namespace Plugin {
-  export const CapabilityType = z.enum(["agent", "skill", "tool", "workflow", "mcp", "automation", "ui"])
+  export const CapabilityType = z.enum(["agent", "skill", "tool", "workflow", "mcp", "automation", "ui", "tool-group"])
   export type CapabilityType = z.infer<typeof CapabilityType>
 
   export const Capability = z.object({

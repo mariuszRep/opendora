@@ -92,7 +92,7 @@ export type RemoteEntity = {
   id: string
   name: string
   description: string
-  type: "agent" | "skill" | "tool" | "workflow"
+  type: "agent" | "skill" | "tool" | "workflow" | "tool-group"
   pluginId: string
   version: string
   download: string
