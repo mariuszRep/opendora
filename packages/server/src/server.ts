@@ -31,7 +31,8 @@ import { ProviderRoutes } from "./routes/provider"
 import { AgentRoutes } from "./routes/agent"
 import { ScheduleRoutes } from "./routes/schedule"
 import { WorkflowRoutes } from "@projectflows/workflow/routes"
-import { registerToolExecutor } from "@projectflows/workflow/runner"
+import { registerToolExecutor, runWorkflow } from "@projectflows/workflow/runner"
+import { WorkflowStorage } from "@projectflows/workflow/storage"
 import { CheckpointStore } from "@projectflows/workflow/checkpoint-store"
 import { addSkillTools, getSkillTools } from "@projectflows/session/skill-tools"
 import { CronScheduler, type ScheduleDispatchFn } from "@projectflows/schedule/cron-scheduler"
@@ -1034,56 +1035,66 @@ export namespace Server {
       // Get workflow_run tool from registry and build a synthetic execution context
       await ToolRegistry.init()
       const toolInfo = ToolRegistry.all().find((t) => t.id === "workflow_run")
-      if (!toolInfo) {
-        log.warn("schedule: workflow_run tool not found in registry", { id: schedule.id })
-        return
-      }
-
-      const toolDef = await toolInfo.init({})
       const srcSession = sourceSessionID
         ? await Session.get(sourceSessionID).catch(() => undefined)
         : undefined
       const sessionDirectory = srcSession?.directory ?? Instance.directory
 
-      const execCtx = {
-        sessionID: sourceSessionID ?? `schedule-${schedule.id}`,
-        messageID: "schedule-workflow-runner",
-        agent: schedule.agent_id ?? "",
-        abort: new AbortController().signal,
-        messages: [],
-        metadata: (_input: any) => {},
-        ask: async (_input: any) => {},
-        extra: {
-          directory: sessionDirectory,
-          worktree: Instance.worktree,
-          agents: {
-            list: () => Agent.list(),
-            get: (id: string) => Agent.get(id),
-          },
-          session: {
-            list: (filter?: any) => Session.list(filter),
-            get: (id: string) => Session.get(id),
-            messages: (id: string) => Session.messages({ sessionID: id }),
-            setTitle: (id: string, title: string) => Session.setTitle({ sessionID: id, title }),
-          },
-        },
-      }
-
-      // Pass workflow_input as-is — workflow_run's Zod schema accepts a JSON string and auto-parses it
       const start = Date.now()
       let error: string | undefined
-      try {
-        await toolDef.execute(
-          {
-            workflowId: schedule.workflow_id,
-            input: schedule.workflow_input ?? undefined,
-            agentId: schedule.agent_id ?? undefined,
+
+      if (!toolInfo) {
+        error = "workflow_run tool is not installed — install the workflows tool group from the catalog"
+        log.warn("schedule: workflow_run tool not found in registry", { id: schedule.id })
+      } else {
+        const toolDef = await toolInfo.init({})
+        const execCtx = {
+          sessionID: sourceSessionID ?? `schedule-${schedule.id}`,
+          messageID: "schedule-workflow-runner",
+          agent: schedule.agent_id ?? "",
+          abort: new AbortController().signal,
+          messages: [],
+          metadata: (_input: any) => {},
+          ask: async (_input: any) => {},
+          extra: {
+            directory: sessionDirectory,
+            worktree: Instance.worktree,
+            agents: {
+              list: () => Agent.list(),
+              get: (id: string) => Agent.get(id),
+            },
+            session: {
+              list: (filter?: any) => Session.list(filter),
+              get: (id: string) => Session.get(id),
+              messages: (id: string) => Session.messages({ sessionID: id }),
+              setTitle: (id: string, title: string) => Session.setTitle({ sessionID: id, title }),
+              createNext: (input: any) => Session.createNext(input),
+              setCwd: (input: { sessionID: string; cwd: string }) => Session.setCwd(input),
+              ensureMainSession: (agentID: string) => Session.ensureMainSession(agentID),
+            },
+            workflow: {
+              get: (id: string) => WorkflowStorage.get(undefined, id),
+              availableIds: () => WorkflowStorage.availableIds(undefined),
+              run: (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) =>
+                runWorkflow({ workflow, sessionId, input, directory }),
+            },
           },
-          execCtx as any,
-        )
-      } catch (err: any) {
-        error = err?.message ?? String(err)
-        log.error("schedule workflow: execution failed", { id: schedule.id, error })
+        }
+
+        // Pass workflow_input as-is — workflow_run's Zod schema accepts a JSON string and auto-parses it
+        try {
+          await toolDef.execute(
+            {
+              workflowId: schedule.workflow_id,
+              input: schedule.workflow_input ?? undefined,
+              agentId: schedule.agent_id ?? undefined,
+            },
+            execCtx as any,
+          )
+        } catch (err: any) {
+          error = err?.message ?? String(err)
+          log.error("schedule workflow: execution failed", { id: schedule.id, error })
+        }
       }
 
       // Finalize the synthetic tool part
