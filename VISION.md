@@ -120,6 +120,43 @@ domain packages that persist data
 - Agent Builder reuses workflow/canvas authoring infrastructure but owns composition/compilation semantics distinct from workflow execution. It does not change scheduled workflow execution ownership.
 - Desktop application (Phase 2) is a Tauri v2 shell that wraps the same statically-exported web UI. It follows the same app rules: uses SDK, does not import backend internals, reuses shared UI components where feasible.
 
+## Directory Layout
+
+The three directories that make up the Projectflows ecosystem:
+
+```text
+/home/<user>/projects/opendora/          ← source repo (this repo)
+  packages/                              ← domain packages
+  apps/                                  ← CLI + web frontend
+  scripts/                               ← build/dev tooling (package-core.ts, build-binary.ts)
+  registry/ (absent — see below)
+
+/home/<user>/projects/projectflows-website/  ← first-party registry source
+  registry/
+    core.json                            ← list of core plugin IDs
+    plugins/<id>/manifest.json           ← plugin capability manifests
+    agents/<name>/                       ← agent definitions (agent.json + PERSONA.md)
+    skills/<name>/                       ← skill definitions
+    tools/<group>/group.json             ← tool-group manifest
+    tools/<group>/tools/*.js             ← compiled tool bundles + WASM assets
+    packs/*.json                         ← onboarding pack definitions
+
+~/.projectflows/                         ← global capability root (runtime source of truth)
+  agents/<name>/agent.json              ← installed agents (all agents load from here)
+  skills/<name>/SKILL.md                ← installed skills
+  tools/<group>/group.json              ← installed tool-group manifests
+  tools/<group>/tools/*.js              ← installed tool bundles
+  plugins.lock.json                     ← installed plugin lockfile
+  config/onboarding.json                ← onboarding completion marker
+```
+
+**Key rules:**
+- `~/.projectflows/` is the ONLY runtime source for agents, skills, and tools. Project-local `.projectflows/` directories are never scanned for agents.
+- `projectflows-website/registry/` is the first-party catalog. It is never imported directly at runtime — the server reads from `~/.projectflows/` only.
+- `opendora` (this repo) installs capabilities into `~/.projectflows/` via `bun dev:setup` (dev) or `install.sh` (production).
+- The env var `PROJECTFLOWS_REGISTRY_PATH` points the dev server at the local registry for plugin catalog queries (onboarding/entity listing), not at runtime capability loading.
+- `PROJECTFLOWS_PROJECT_ROOT` sets the current project directory for session context (file access, config lookup), but does NOT affect where agents or tools are loaded from.
+
 ## Canonical Operations / Contracts
 
 SDK methods, server routes, runtime flows, tools, plugins, mini-apps, UI extensions, and package integrations must converge on package-owned canonical operations rather than duplicating business behavior.

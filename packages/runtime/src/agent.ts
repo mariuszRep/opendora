@@ -319,7 +319,7 @@ export namespace Agent {
   }
 
   function agentBaseDir() {
-    return Flag.PROJECTFLOWS_CONFIG_DIR ? path.dirname(Flag.PROJECTFLOWS_CONFIG_DIR) : Instance.directory
+    return Flag.PROJECTFLOWS_CONFIG_DIR ? path.dirname(Flag.PROJECTFLOWS_CONFIG_DIR) : Global.Path.home
   }
 
   let _getPluginAgentDirs: (() => Promise<string[]>) | undefined

@@ -59,6 +59,28 @@ See the nearest `VISION.md` where present for target intent.
 - If you add or tighten workflow constraints for agents, update the relevant `AGENTS.md`.
 - Code is the source of truth for current implementation state — do not maintain parallel `STATE.md` or `ROADMAP.md` status documents.
 
+## Directory relationships
+
+There are three directories that make up the Projectflows development ecosystem. All three must be understood together:
+
+| Directory | Role |
+|---|---|
+| `~/projects/opendora/` | Source repo — packages, apps, build scripts |
+| `~/projects/projectflows-website/` | First-party registry — agent/skill/tool definitions, plugin manifests, capability packs |
+| `~/.projectflows/` | Global runtime root — installed agents, skills, tools, lockfile |
+
+**Critical rules for agents working in this repo:**
+
+1. **`~/.projectflows/` is the only runtime capability source.** The server loads agents from `~/.projectflows/agents/`, skills from `~/.projectflows/skills/`, tools from `~/.projectflows/tools/`. Project-local `.projectflows/` directories in the source repo are NOT scanned for capabilities.
+
+2. **`projectflows-website/registry/` is the catalog source.** This is where capability definitions live before being packaged and installed. The env var `PROJECTFLOWS_REGISTRY_PATH` points to it. It is never imported directly at runtime.
+
+3. **`bun dev:setup` bridges the two.** Running `bun dev:setup` (or `bun scripts/package-core.ts --install`) reads from `projectflows-website/registry/` and installs capabilities into `~/.projectflows/`. This is the dev equivalent of `install.sh` for production binaries.
+
+4. **Do not create or modify `<project>/.projectflows/agents/`.** Agent creation and modification goes to `~/.projectflows/agents/` via the server API or `bun dev:setup`. Any agent directories found under the source repo's `.projectflows/` are artifacts — ignore them.
+
+5. **`PROJECTFLOWS_PROJECT_ROOT` is session context only.** This env var tells the server what the current "project" directory is for file operations and config lookup. It does NOT affect where capabilities are loaded from.
+
 ## Folder documentation
 
 Each meaningful folder or subtree may contain local context files that describe or reference its own structure. Always look for and read them when working inside that folder; absence is not automatically debt.

@@ -211,6 +211,9 @@ async function main() {
   if (process.argv.includes("--install")) {
     const dest = join(os.homedir(), ".projectflows")
     mkdirSync(dest, { recursive: true })
+    // Clean the tools/ dir first so stale pre-migration tool groups don't linger
+    const toolsDest = join(dest, "tools")
+    if (existsSync(toolsDest)) rmSync(toolsDest, { recursive: true, force: true })
     cpSync(staging, dest, { recursive: true, force: true })
     rmSync(staging, { recursive: true, force: true })
     console.log(`\nCore capabilities installed to ${dest}`)
