@@ -5,6 +5,10 @@ export type WorkflowToolContext = {
   abort?: AbortSignal
   messageID?: string
   partID?: string
+  /** Node-level instructions telling the agent what to derive and why. */
+  instructions?: string
+  /** Serialized prior node outputs available as workflow context. */
+  workflowContext?: Record<string, unknown>
 }
 
 export type ToolExecutor = (

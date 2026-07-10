@@ -910,8 +910,17 @@ export namespace Server {
           .map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`)
           .join("\n")
         const agentDesc = agentArgs.join(", ")
+
+        const contextEntries = ctx.workflowContext ? Object.entries(ctx.workflowContext) : []
+        const contextDesc = contextEntries.length > 0
+          ? contextEntries
+              .map(([k, v]) => `  ${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`)
+              .join("\n")
+          : ""
+
         const prompt = [
-          `Call the tool \`${toolId}\` now.`,
+          ctx.instructions ? ctx.instructions : `Call the tool \`${toolId}\` now.`,
+          contextDesc ? `Workflow context from prior steps:\n${contextDesc}` : "",
           fixedArgs && Object.keys(fixedArgs).length > 0
             ? `The following parameters are already decided — use them exactly:\n${fixedDesc}`
             : "",

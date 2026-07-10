@@ -173,6 +173,8 @@ export interface WorkflowNodePayload {
   model?: WorkflowNodeModel
   instructions?: string
   agentArgs?: string[]
+  /** For Prompt nodes: force the model to call a tool ("required") or disable tool calls ("none"). Defaults to "auto". */
+  promptToolChoice?: "auto" | "required" | "none"
   workflowParameters?: unknown[]
   conditions?: unknown[]
   annotations?: Record<string, unknown>

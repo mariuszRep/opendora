@@ -347,6 +347,7 @@ async function runSubGraph({
     const storeAs = params.output ? String(params.output) : undefined
     const nodeKey = nd.key ? String(nd.key) : undefined
     const agentArgs = Array.isArray(d.agentArgs) ? (d.agentArgs as string[]) : []
+    const promptToolChoice = (d.promptToolChoice as "auto" | "required" | "none" | undefined)
     const nodeModel = (d.model as NodeModel | undefined) ?? carriedModel
     const nodeLabel = (nd.label as string | undefined) ?? d.nodeType as string ?? currentId
 
@@ -426,7 +427,7 @@ async function runSubGraph({
         { instructions: resolvedText, node: nodeLabel },
         currentDir, nodeMeta,
       )
-      result = await agentPrompt(sessionId, resolvedText, nodeModel)
+      result = await agentPrompt(sessionId, resolvedText, nodeModel, promptToolChoice)
       await nodeToolHandle.finish(result)
 
     } else if (d.nodeType === NodeTypeId.Structured) {
@@ -525,6 +526,8 @@ async function runSubGraph({
             abort: new AbortController().signal,
             messageID: nodeToolHandle.msgId,
             partID: nodeToolHandle.partId,
+            instructions: instructions ? resolveTemplate(instructions, input, ctx) : undefined,
+            workflowContext: Object.keys(ctx).length > 0 ? { ...ctx } : undefined,
           })
           toolOutput = output
           toolMeta = toolResultMetadata as Record<string, unknown> | undefined
