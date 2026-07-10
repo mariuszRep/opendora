@@ -32,29 +32,30 @@ export namespace WorkflowStorage {
 
   export async function list(_baseDir?: string): Promise<Workflow[]> {
     const dir = await ensureDir()
+    const seen = new Map<string, Workflow>()
     const entries = await fs.readdir(dir).catch(() => [] as string[])
-    const workflows: Workflow[] = []
     for (const entry of entries) {
       if (!entry.endsWith(".json")) continue
       try {
         const raw = JSON.parse(await fs.readFile(path.join(dir, entry), "utf8"))
         const parsed = Workflow.safeParse(raw)
-        if (parsed.success) workflows.push(parsed.data)
+        if (parsed.success) seen.set(parsed.data.id, parsed.data)
       } catch {}
     }
     for (const pluginDir of await (_getPluginWorkflowDirs?.() ?? [])) {
       const wDir = path.join(pluginDir, "workflows")
+      if (path.resolve(wDir) === path.resolve(dir)) continue
       const pluginEntries = await fs.readdir(wDir).catch(() => [] as string[])
       for (const entry of pluginEntries) {
         if (!entry.endsWith(".json")) continue
         try {
           const raw = JSON.parse(await fs.readFile(path.join(wDir, entry), "utf8"))
           const parsed = Workflow.safeParse(raw)
-          if (parsed.success) workflows.push(parsed.data)
+          if (parsed.success && !seen.has(parsed.data.id)) seen.set(parsed.data.id, parsed.data)
         } catch {}
       }
     }
-    return workflows
+    return Array.from(seen.values())
   }
 
   export async function get(_baseDir: string | undefined, id: string): Promise<Workflow | null> {
