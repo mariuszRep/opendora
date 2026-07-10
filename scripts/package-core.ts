@@ -18,6 +18,7 @@
 import { join, dirname, basename } from "node:path"
 import { mkdirSync, existsSync, cpSync, rmSync, readFileSync } from "node:fs"
 import { readdir, copyFile, mkdir, cp, access } from "node:fs/promises"
+import os from "node:os"
 
 const ROOT = dirname(import.meta.dir)
 const DIST = join(ROOT, "dist")
@@ -205,6 +206,16 @@ async function main() {
   const lockfilePath = join(staging, "plugins.lock.json")
   await Bun.write(lockfilePath, JSON.stringify(lockfile, null, 2))
   console.log(`  plugins.lock.json written (${core.plugins.length} plugins)`)
+
+  // --install mode: copy directly to ~/.projectflows/ (dev bootstrap)
+  if (process.argv.includes("--install")) {
+    const dest = join(os.homedir(), ".projectflows")
+    mkdirSync(dest, { recursive: true })
+    cpSync(staging, dest, { recursive: true, force: true })
+    rmSync(staging, { recursive: true, force: true })
+    console.log(`\nCore capabilities installed to ${dest}`)
+    return
+  }
 
   // Create the tarball
   mkdirSync(dirname(OUT), { recursive: true })

@@ -4,6 +4,7 @@ import { withNetworkOptions, resolveNetworkOptions } from "../network"
 import { Flag } from "@projectflows/util/flag"
 import { CheckpointStore } from "@projectflows/workflow/checkpoint-store"
 import { runOnboarding } from "./onboarding"
+import { CoreSetup } from "@projectflows/server/core-setup"
 
 export const ServeCommand = cmd({
   command: "serve",
@@ -14,7 +15,21 @@ export const ServeCommand = cmd({
     }),
   describe: "starts a headless projectflows server",
   handler: async (args) => {
-    await runOnboarding()
+    // Dev mode: if PROJECTFLOWS_REGISTRY_PATH points to a local registry and core
+    // isn't installed yet, auto-install from that registry without prompting.
+    if (process.env["PROJECTFLOWS_REGISTRY_PATH"] && !(await CoreSetup.isComplete())) {
+      console.log("Installing core capabilities from local registry…")
+      const result = Bun.spawnSync(
+        ["bun", "scripts/package-core.ts", "--install"],
+        { cwd: import.meta.dir + "/../../../../..", stdio: "inherit" },
+      )
+      if (result.exitCode !== 0) {
+        console.warn("Core auto-install failed — falling back to interactive setup.")
+        await runOnboarding()
+      }
+    } else {
+      await runOnboarding()
+    }
     if (!Flag.PROJECTFLOWS_SERVER_PASSWORD) {
       console.log("Warning: PROJECTFLOWS_SERVER_PASSWORD is not set; server is unsecured.")
     }

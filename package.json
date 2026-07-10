@@ -17,6 +17,7 @@
     "typecheck": "bun turbo typecheck",
     "build:binary": "bun scripts/build-binary.ts",
     "build:core": "bun scripts/package-core.ts",
+    "dev:setup": "bun scripts/package-core.ts --install",
     "build:desktop": "bun scripts/build-desktop.ts",
     "test": "echo 'do not run tests from root' && exit 1"
   },

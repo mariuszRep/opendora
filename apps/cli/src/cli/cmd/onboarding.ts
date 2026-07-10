@@ -7,8 +7,8 @@ import { CatalogReader } from "@projectflows/plugin/catalog"
 import { CoreSetup } from "@projectflows/server/core-setup"
 
 export async function runOnboarding(opts: { revisit?: boolean } = {}): Promise<void> {
-  // Skip if onboarding was already done AND core is actually installed on disk
-  if (!opts.revisit && (await Onboarding.isComplete()) && (await CoreSetup.isComplete())) return
+  // Skip if onboarding was already done OR core is already installed (e.g. via install.sh / dev:setup)
+  if (!opts.revisit && ((await Onboarding.isComplete()) || (await CoreSetup.isComplete()))) return
 
   const packs = await CatalogReader.listPacks()
 
@@ -59,14 +59,17 @@ export async function runOnboarding(opts: { revisit?: boolean } = {}): Promise<v
   for (const pluginId of pack.plugins) {
     const spinner = prompts.spinner()
     spinner.start(`Installing ${pluginId}…`)
+    let stagingDir: string | undefined
     try {
-      const sourcePath = CatalogReader.pluginSourcePath(pluginId)
-      await PluginInstaller.install({ sourcePath, scope: "global" })
+      stagingDir = await CatalogReader.buildPluginStaging(pluginId)
+      await PluginInstaller.install({ sourcePath: stagingDir, scope: "global" })
       installed.push(pluginId)
       spinner.stop(`${pluginId} installed`)
     } catch (err) {
       failed.push(pluginId)
       spinner.stop(`${pluginId} failed: ${err instanceof Error ? err.message : String(err)}`, 1)
+    } finally {
+      if (stagingDir) await import("fs/promises").then((f) => f.rm(stagingDir!, { recursive: true, force: true })).catch(() => {})
     }
   }
 
