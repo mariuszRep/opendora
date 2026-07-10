@@ -5,6 +5,26 @@ import { Flag } from "@projectflows/util/flag"
 import { CheckpointStore } from "@projectflows/workflow/checkpoint-store"
 import { runOnboarding } from "./onboarding"
 import { CoreSetup } from "@projectflows/server/core-setup"
+import { Global } from "@projectflows/util/global"
+import { join } from "node:path"
+import { existsSync } from "node:fs"
+import { EMBEDDED_WEB_TAR } from "../../embedded-assets"
+import { extractTarGz } from "../../util/extract"
+
+/**
+ * On first run of a compiled binary, extract the embedded web tarball into
+ * ~/.projectflows/ so the server can find it without needing files placed next
+ * to the executable.
+ *
+ * - web.tar.gz -> ~/.projectflows/web/   (detected by server.ts webDir resolution)
+ *
+ * Extraction is guarded by index.html so it only happens once.
+ */
+async function ensureEmbeddedWeb(): Promise<void> {
+  if (!existsSync(join(Global.Path.config, "web", "index.html"))) {
+    await extractTarGz(EMBEDDED_WEB_TAR, Global.Path.config)
+  }
+}
 
 export const ServeCommand = cmd({
   command: "serve",
@@ -15,13 +35,15 @@ export const ServeCommand = cmd({
     }),
   describe: "starts a headless projectflows server",
   handler: async (args) => {
+    await ensureEmbeddedWeb()
+
     // Dev mode: if PROJECTFLOWS_REGISTRY_PATH points to a local registry and core
     // isn't installed yet, auto-install from that registry without prompting.
     if (process.env["PROJECTFLOWS_REGISTRY_PATH"] && !(await CoreSetup.isComplete())) {
       console.log("Installing core capabilities from local registry…")
       const result = Bun.spawnSync(
         ["bun", "scripts/package-core.ts", "--install"],
-        { cwd: import.meta.dir + "/../../../../..", stdio: "inherit" },
+        { cwd: import.meta.dir + "/../../../../..", stdio: ["inherit", "inherit", "inherit"] },
       )
       if (result.exitCode !== 0) {
         console.warn("Core auto-install failed — falling back to interactive setup.")

@@ -816,12 +816,14 @@ export namespace Server {
     cors?: string[]
     webDir?: string
   }) {
-    // Resolve web asset directory: explicit opt → env var → adjacent to binary → unset (use proxy)
+    // Resolve web asset directory: explicit opt -> env var -> adjacent to binary -> extracted global web -> unset.
     _webDir = (() => {
       if (opts.webDir) return opts.webDir
       if (process.env.PROJECTFLOWS_WEB_DIR) return process.env.PROJECTFLOWS_WEB_DIR
       const adjacent = join(dirname(process.execPath), "web")
       if (existsSync(join(adjacent, "index.html"))) return adjacent
+      const globalWeb = join(Global.Path.config, "web")
+      if (existsSync(join(globalWeb, "index.html"))) return globalWeb
       return undefined
     })()
 
