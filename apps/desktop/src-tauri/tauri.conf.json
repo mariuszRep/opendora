@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "identifier": "ai.projectflows.desktop",
   "build": {
-    "frontendDist": "../index.html"
+    "frontendDist": "../loading"
   },
   "bundle": {
     "active": true,

@@ -4,7 +4,10 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Manager,
 };
-use tauri_plugin_shell::{process::CommandChild, ShellExt};
+use tauri_plugin_shell::{
+    process::{CommandChild, CommandEvent},
+    ShellExt,
+};
 
 pub struct ServerProcess(pub Mutex<Option<CommandChild>>);
 
@@ -25,7 +28,7 @@ pub fn run() {
             setup_tray(app)?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![navigate_to_app])
+        .invoke_handler(tauri::generate_handler![navigate_to_app, show_window])
         .on_window_event(|window, event| {
             // Keep running in tray when the user clicks the close button
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
@@ -58,11 +61,15 @@ fn setup_first_run(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // web.tar.gz → <app_data>/web/
-    let web_dir = app.path().app_data_dir()?.join("web");
+    // The archive itself contains a top-level "web/" entry (built via `tar -C dist web`
+    // in build-binary.ts, same as install.sh, which strips it with --strip-components=1) —
+    // extract into the parent app-data dir, not web_dir itself, or the result double-nests
+    // into <app_data>/web/web/.
+    let app_data_dir = app.path().app_data_dir()?;
     let web_tar = resources.join("web.tar.gz");
     if web_tar.exists() {
-        std::fs::create_dir_all(&web_dir)?;
-        extract_tar_gz(&web_tar, &web_dir)?;
+        std::fs::create_dir_all(&app_data_dir)?;
+        extract_tar_gz(&web_tar, &app_data_dir)?;
     }
 
     std::fs::create_dir_all(&home)?;
@@ -73,7 +80,7 @@ fn setup_first_run(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
 /// Spawn `projectflows serve` as a Tauri sidecar.
 fn start_server(app: &AppHandle) -> Result<CommandChild, Box<dyn std::error::Error>> {
     let web_dir = app.path().app_data_dir()?.join("web");
-    let (_, child) = app
+    let (mut rx, child) = app
         .shell()
         .sidecar("projectflows")?
         .args([
@@ -84,6 +91,30 @@ fn start_server(app: &AppHandle) -> Result<CommandChild, Box<dyn std::error::Err
             &web_dir.to_string_lossy(),
         ])
         .spawn()?;
+
+    tauri::async_runtime::spawn(async move {
+        while let Some(event) = rx.recv().await {
+            match event {
+                CommandEvent::Stdout(bytes) => {
+                    eprintln!("[server stdout] {}", String::from_utf8_lossy(&bytes));
+                }
+                CommandEvent::Stderr(bytes) => {
+                    eprintln!("[server stderr] {}", String::from_utf8_lossy(&bytes));
+                }
+                CommandEvent::Error(err) => {
+                    eprintln!("[server error] {err}");
+                }
+                CommandEvent::Terminated(payload) => {
+                    eprintln!(
+                        "[server terminated] code={:?} signal={:?}",
+                        payload.code, payload.signal
+                    );
+                }
+                _ => {}
+            }
+        }
+    });
+
     Ok(child)
 }
 
@@ -133,6 +164,18 @@ fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         })
         .build(app)?;
 
+    Ok(())
+}
+
+/// Called from the loading-screen JS if the server never responds in time, so the
+/// timeout/error message (otherwise unreachable, since the window starts hidden) is visible.
+#[tauri::command]
+fn show_window(app: AppHandle) -> Result<(), String> {
+    let win = app
+        .get_webview_window("main")
+        .ok_or_else(|| "main window not found".to_string())?;
+    win.show().map_err(|e| e.to_string())?;
+    win.set_focus().map_err(|e| e.to_string())?;
     Ok(())
 }
 

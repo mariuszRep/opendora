@@ -19,6 +19,7 @@
     "build:core": "bun scripts/package-core.ts",
     "dev:setup": "bun scripts/package-core.ts --install",
     "build:desktop": "bun scripts/build-desktop.ts",
+    "dev:desktop": "cd apps/desktop && bun run tauri dev",
     "test": "echo 'do not run tests from root' && exit 1"
   },
   "workspaces": {

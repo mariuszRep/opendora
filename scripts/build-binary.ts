@@ -13,13 +13,57 @@
  */
 
 import { join, dirname } from "node:path"
-import { mkdirSync, cpSync, rmSync, existsSync, statSync } from "node:fs"
+import { mkdirSync, cpSync, rmSync, existsSync, statSync, readdirSync, readFileSync } from "node:fs"
 
 const ROOT = dirname(import.meta.dir)
 const DIST = join(ROOT, "dist")
 const WEB_OUT = join(ROOT, "apps/web/out")
 const DIST_WEB = join(DIST, "web")
 const CLI_ENTRY = join(ROOT, "apps/cli/src/index.ts")
+const MIGRATION_DIR = join(ROOT, "packages/storage/migration")
+
+// Mirrors packages/storage/src/db.ts's `migrations()` fallback exactly — a compiled
+// binary has no real filesystem to scan (`import.meta.dirname` resolves to Bun's virtual
+// embedded-file path), so migrations must be baked in at compile time via `define`, or
+// `Database.Client` crashes on first use with an ENOENT scandir error.
+function loadMigrations(): { sql: string; timestamp: number }[] {
+  function timeOf(name: string): number {
+    const match = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/.exec(name)
+    if (!match) return 0
+    return Date.UTC(
+      Number(match[1]),
+      Number(match[2]) - 1,
+      Number(match[3]),
+      Number(match[4]),
+      Number(match[5]),
+      Number(match[6]),
+    )
+  }
+
+  const entries = readdirSync(MIGRATION_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .map((name) => {
+      const file = join(MIGRATION_DIR, name, "migration.sql")
+      if (!existsSync(file)) return undefined
+      const raw = readFileSync(file, "utf-8")
+      const statements = raw
+        .split(/;\s*\n/)
+        .map((s) =>
+          s
+            .split("\n")
+            .filter((line) => !line.trim().startsWith("--"))
+            .join("\n")
+            .trim(),
+        )
+        .filter((s) => s.length > 0)
+      if (statements.length === 0) return undefined
+      return { sql: statements.join(";\n--> statement-breakpoint\n") + ";", timestamp: timeOf(name) }
+    })
+    .filter((entry): entry is { sql: string; timestamp: number } => entry !== undefined)
+
+  return entries.sort((a, b) => a.timestamp - b.timestamp)
+}
 
 const ALL_TARGETS = [
   { target: "bun-linux-x64-musl", suffix: "linux-x64" },
@@ -100,6 +144,9 @@ try {
 
 const CLI_TSCONFIG = join(ROOT, "apps/cli/tsconfig.json")
 
+const migrations = loadMigrations()
+console.log(`\nLoaded ${migrations.length} migrations for compile-time embedding`)
+
 console.log(`\n[3/3] Compiling ${targets.length} binary target(s)...`)
 for (const { target, suffix, ext = "" } of targets) {
   const outfile = join(DIST, `projectflows-${suffix}${ext}`)
@@ -110,6 +157,9 @@ for (const { target, suffix, ext = "" } of targets) {
     plugins: solidPlugin ? [solidPlugin] : [],
     tsconfig: CLI_TSCONFIG,
     external: ["electron"],
+    define: {
+      OPENCODE_MIGRATIONS: JSON.stringify(migrations),
+    },
     compile: {
       target: target as any,
       outfile,
