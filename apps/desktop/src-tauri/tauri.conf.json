@@ -21,7 +21,7 @@
     "externalBin": ["binaries/projectflows"],
     "windows": {
       "nsis": {
-        "installMode": "perUser",
+        "installMode": "currentUser",
         "displayLanguageSelector": false
       },
       "wix": {}
