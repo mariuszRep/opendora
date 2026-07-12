@@ -77,7 +77,14 @@ There are three directories that make up the Projectflows development ecosystem.
 
 3. **`bun dev:setup` bridges the two.** Running `bun dev:setup` (or `bun scripts/package-core.ts --install`) reads from `projectflows-website/registry/` and installs capabilities into `~/.projectflows/`. This is the dev equivalent of `install.sh` for production binaries.
 
-4. **Do not create or modify `<project>/.projectflows/agents/`.** Agent creation and modification goes to `~/.projectflows/agents/` via the server API or `bun dev:setup`. Any agent directories found under the source repo's `.projectflows/` are artifacts — ignore them.
+4. **Never create agents, skills, workflows, tools, or plugins inside `<project>/.projectflows/`.** All runtime capabilities go exclusively to `~/.projectflows/`:
+   - Agents → `~/.projectflows/agents/<id>/`
+   - Skills → `~/.projectflows/skill/<name>/`
+   - Workflows → `~/.projectflows/workflows/<name>/`
+   - Tools → `~/.projectflows/tools/<name>/`
+   - Plugins → `~/.projectflows/plugins/<name>/`
+
+   The project repo's `.projectflows/` is for **development goals only** (`goals/<slug>/GOAL.md`). Any agent, skill, tool, workflow, or plugin directory found under `<project>/.projectflows/` is a misplaced artifact — do not read, modify, or create more of them.
 
 5. **`PROJECTFLOWS_PROJECT_ROOT` is session context only.** This env var tells the server what the current "project" directory is for file operations and config lookup. It does NOT affect where capabilities are loaded from.
 

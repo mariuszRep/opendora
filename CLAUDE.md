@@ -43,9 +43,11 @@ All entity settings pages (agents, skills, tools, workflows, plugins) follow the
 Agents and Tools use context/cached data sources rather than a fetcher, so they call `mergeWithRemote` directly in the page.
 
 ### Plugin system
-Plugins live in `.projectflows/plugins/` tracked by a lock file in `packages/plugin`. They provide capabilities: agents, skills, tools, MCP servers. Two registry APIs:
+Plugins live in `~/.projectflows/plugins/` tracked by a lock file in `packages/plugin`. They provide capabilities: agents, skills, tools, MCP servers. Two registry APIs:
 - `opendora.entity.listAvailable({ type })` — individual entities (skills, workflows, agents, tools)
 - `opendora.plugin.listAvailable()` — whole plugin packages (used by the Plugins page)
 
 ### Goal tracking
-`.projectflows/goals/` has status subdirs: `ready/`, `in_progress/`, `done/`, `blocked/`. Each contains a `GOAL.md` with YAML frontmatter. Move a goal folder when its status changes; update `status`, `last_result`, `attempt`, and `next_action` in the frontmatter.
+`<repo>/.projectflows/goals/` has status subdirs: `ready/`, `in_progress/`, `done/`, `blocked/`. Each contains a `GOAL.md` with YAML frontmatter. Move a goal folder when its status changes; update `status`, `last_result`, `attempt`, and `next_action` in the frontmatter.
+
+**`goals/` is the only thing that belongs in the project's `.projectflows/`.** Agents, skills, workflows, tools, and plugins go exclusively in `~/.projectflows/` — never inside the project repo.

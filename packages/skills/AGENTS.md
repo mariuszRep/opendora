@@ -94,7 +94,7 @@ type SkillFrontmatter = {
       "registry": "clawhub",
       "installedAt": 1744617600000,
       "computedHash": "abc123...",
-      "location": ".projectflows/skill/filesystem"
+      "location": "~/.projectflows/skill/filesystem"
     }
   }
 }
@@ -205,6 +205,8 @@ When same skill name exists in multiple locations:
 3. **Bundled** (shipped with Projectflows) — lowest priority
 
 **First match wins.** Loader stops at first `SKILL.md` found.
+
+> **Note for agents:** The precedence order above describes the *runtime scanning behavior* of `SkillLoader`. It does not mean you should create or manage skills at the workspace level. All skills managed by users or LLMs go to `~/.projectflows/skill/` — the project-local `.projectflows/skill/` location is for development context only and must not be modified directly.
 
 ## Registry auto-detection
 
