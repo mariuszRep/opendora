@@ -21,8 +21,9 @@ import { extractTarGz } from "../../util/extract"
  * Extraction is guarded by index.html so it only happens once.
  */
 async function ensureEmbeddedWeb(): Promise<void> {
-  if (!existsSync(join(Global.Path.config, "web", "index.html"))) {
-    await extractTarGz(EMBEDDED_WEB_TAR, Global.Path.config)
+  const shareDir = Global.Path.share
+  if (!existsSync(join(shareDir, "web", "index.html"))) {
+    await extractTarGz(EMBEDDED_WEB_TAR, shareDir)
   }
 }
 

@@ -2,7 +2,7 @@
 
 > Tauri v2 native desktop shell for Projectflows.
 
-**Status:** Phase 2 — not yet implemented. This directory contains docs/spec only.
+**Status:** Phase 2 scaffold. The Tauri shell, sidecar launch path, and local staging script exist.
 
 ## Overview
 
@@ -36,21 +36,37 @@ serves both the API and the static UI. The webview points at `localhost:4096`.
 The backend runs as a separately installed system service (per Phase 1 install). The desktop
 app connects to the existing `localhost:4096` service. Simpler but requires two install steps.
 
-## Getting started (when implementation begins)
+## Local Tauri Test
+
+From the repo root:
 
 ```bash
-# Prerequisites: Rust toolchain, Tauri CLI
-cargo install tauri-cli --version "^2"
+# Prepare the sidecar binary and bundled resources for this OS.
+bun run desktop:stage
 
-# Build the web UI static export first
-cd apps/web && bun run build:export && cd ../..
-
-# Run desktop app in dev mode
-cd apps/desktop && bunx tauri dev
-
-# Build for production
-cd apps/desktop && bunx tauri build
+# Launch the native Tauri app.
+bun run desktop:dev
 ```
+
+`desktop:dev` stages the sidecar/resources, starts Tauri dev mode, launches the bundled
+Projectflows sidecar on port `4097`, waits for it to respond, then navigates the native WebView
+to `http://localhost:4097`.
+
+To avoid rebuilding the sidecar while iterating on Rust/Tauri code:
+
+```bash
+bun scripts/build-desktop.ts --dev --skip-binary
+```
+
+## Production Bundle
+
+```bash
+bun run build:desktop
+```
+
+This builds the current platform's Projectflows sidecar, copies `web.tar.gz` and `core.tar.gz`
+into Tauri resources, then runs `tauri build`. On Windows this produces NSIS/MSI installers;
+on Linux/macOS it produces the native bundle formats supported by the local Tauri toolchain.
 
 ## Native concerns
 
