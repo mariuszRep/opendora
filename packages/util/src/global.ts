@@ -51,6 +51,17 @@ export namespace Global {
     get state() {
       return path.join(findRoot(), "state")
     },
+    // App-managed assets (web UI, etc.) — XDG data dir; separate from user config
+    get share() {
+      const home = process.env.PROJECTFLOWS_TEST_HOME || process.env.OPENCODE_TEST_HOME || os.homedir()
+      if (process.platform === "win32") {
+        return path.join(process.env.LOCALAPPDATA ?? path.join(home, "AppData", "Local"), "projectflows")
+      }
+      if (process.platform === "darwin") {
+        return path.join(home, "Library", "Application Support", "projectflows")
+      }
+      return path.join(home, ".local", "share", "projectflows")
+    },
     // Provider config — auth tokens, MCP auth, fallback state
     get providers() {
       return path.join(findRoot(), "providers")

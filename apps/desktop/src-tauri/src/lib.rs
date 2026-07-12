@@ -57,12 +57,12 @@ fn setup_first_run(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         extract_tar_gz(&core_tar, &home)?;
     }
 
-    // web.tar.gz → <app_data>/web/
-    let web_dir = app.path().app_data_dir()?.join("web");
+    // web.tar.gz contains a top-level web/ directory.
+    let app_data = app.path().app_data_dir()?;
     let web_tar = resources.join("web.tar.gz");
     if web_tar.exists() {
-        std::fs::create_dir_all(&web_dir)?;
-        extract_tar_gz(&web_tar, &web_dir)?;
+        std::fs::create_dir_all(&app_data)?;
+        extract_tar_gz(&web_tar, &app_data)?;
     }
 
     std::fs::create_dir_all(&home)?;

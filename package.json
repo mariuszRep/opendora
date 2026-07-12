@@ -18,6 +18,8 @@
     "build:binary": "bun scripts/build-binary.ts",
     "build:core": "bun scripts/package-core.ts",
     "dev:setup": "bun scripts/package-core.ts --install",
+    "desktop:stage": "bun scripts/build-desktop.ts --stage-only",
+    "desktop:dev": "bun scripts/build-desktop.ts --dev",
     "build:desktop": "bun scripts/build-desktop.ts",
     "test": "echo 'do not run tests from root' && exit 1"
   },

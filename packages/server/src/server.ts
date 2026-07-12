@@ -822,7 +822,7 @@ export namespace Server {
       if (process.env.PROJECTFLOWS_WEB_DIR) return process.env.PROJECTFLOWS_WEB_DIR
       const adjacent = join(dirname(process.execPath), "web")
       if (existsSync(join(adjacent, "index.html"))) return adjacent
-      const globalWeb = join(Global.Path.config, "web")
+      const globalWeb = join(Global.Path.share, "web")
       if (existsSync(join(globalWeb, "index.html"))) return globalWeb
       return undefined
     })()
