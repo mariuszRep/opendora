@@ -44,27 +44,31 @@ export async function runMigrationIfNeeded(capRoot: string, toolsSourceDir?: str
         }
       }
     } catch {
-      // toolsSourceDir not readable — fall back to getToolGroup()
+      // toolsSourceDir not readable — fall back to installed manifests.
     }
   }
 
-  // Lazy-load getToolGroup fallback
-  let getToolGroupFn: ((id: string) => string) | null = null
+  let installedManifestsLoaded = false
   async function resolveGroup(toolId: string): Promise<string> {
     // Check manifests first
     for (const m of manifests) {
       if (m.tools.includes(toolId)) return m.id
     }
-    // Fall back to runtime helper
-    if (!getToolGroupFn) {
+
+    // Fall back to already-installed group manifests.
+    if (!installedManifestsLoaded) {
+      installedManifestsLoaded = true
       try {
-        const mod = await import("@projectflows/tools/group-manifest")
-        getToolGroupFn = mod.getToolGroup as (id: string) => string
+        const { loadGroupManifests } = await import("@projectflows/tools/group-manifest")
+        manifests.push(...(await loadGroupManifests(PluginStorage.toolGroupsDir(capRoot))))
       } catch {
-        getToolGroupFn = () => "others"
+        // no installed manifests available
       }
     }
-    return getToolGroupFn(toolId)
+    for (const m of manifests) {
+      if (m.tools.includes(toolId)) return m.id
+    }
+    return "others"
   }
 
   // Migrate each flat tool file

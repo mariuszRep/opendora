@@ -524,6 +524,7 @@ function WorkflowEditorInner({
               ...n.data,
               nodeType: formData.nodeType ?? n.data.nodeType,
               ...(formData.instructions !== undefined ? { instructions: formData.instructions } : {}),
+              ...(formData.promptToolChoice !== undefined ? { promptToolChoice: formData.promptToolChoice } : {}),
               ...(formData.agentArgs !== undefined ? { agentArgs: formData.agentArgs } : {}),
               ...(formData.workflowParameters !== undefined ? { workflowParameters: formData.workflowParameters } : {}),
               ...(formData.outputSchema !== undefined ? { outputSchema: formData.outputSchema } : {}),

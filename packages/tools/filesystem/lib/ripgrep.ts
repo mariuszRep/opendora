@@ -138,7 +138,15 @@ export namespace Ripgrep {
       log.warn("bun.which returned invalid rg path", { filepath: system })
     }
     if (!binaryPath) {
-      throw new Error("Ripgrep binary path not set. Call Ripgrep.setBinaryPath() first.")
+      // Plugin tools are dynamically imported and get a fresh module instance,
+      // so setBinaryPath() may not have been called on this instance. Fall back
+      // to the env var set by the CLI entry point at startup.
+      const fromEnv = process.env.PROJECTFLOWS_BIN_PATH
+      if (fromEnv) {
+        binaryPath = fromEnv
+      } else {
+        throw new Error("Ripgrep binary path not set. Call Ripgrep.setBinaryPath() first.")
+      }
     }
     const filepath = path.join(binaryPath, "rg" + (process.platform === "win32" ? ".exe" : ""))
 

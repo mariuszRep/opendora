@@ -237,6 +237,7 @@ export type DrawerFormData = {
   agentArgs?: string[]
   inputs?: import('@/components/react-flow/unified-node').ParameterSchema[]
   instructions?: string
+  promptToolChoice?: 'auto' | 'required' | 'none'
   nodeType?: NodeType
   type?: string
   workflowParameters?: WorkflowParameter[]
@@ -405,6 +406,7 @@ export function WorkflowEditDrawer({
         agentArgs: editingNodeData.agentArgs ?? [],
         inputs: editingNodeData.data.inputs,
         instructions: editingNodeData.instructions as string | undefined,
+        promptToolChoice: (editingNodeData as any).promptToolChoice as 'auto' | 'required' | 'none' | undefined,
         nodeType: editingNodeData.nodeType,
         workflowParameters: editingNodeData.workflowParameters,
         outputSchema: editingNodeData._schemaProps !== undefined
@@ -810,6 +812,21 @@ export function WorkflowEditDrawer({
                     onChange={(updated) => setEditingNodeData({ ...editingNodeData, node: { ...editingNodeData.node, parameters: updated } })}
                     onAgentArgsChange={(updated) => setEditingNodeData({ ...editingNodeData, agentArgs: updated })}
                   />
+                )}
+                {hasSchema && (
+                  <div className="space-y-2 pt-1">
+                    <Label>Agent instructions <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                    <p className="text-xs text-muted-foreground">
+                      Tell the agent what to do and how to derive any agent-populated values. Type <code className="font-mono">$</code> to reference prior node outputs.
+                    </p>
+                    <PromptInput
+                      value={(editingNodeData.instructions as string) || ''}
+                      onChange={(v) => setEditingNodeData({ ...editingNodeData, instructions: v })}
+                      suggestions={availableRefs ?? []}
+                      placeholder={'e.g. "Ask the user which of the options produced in the previous step they want to proceed with."'}
+                      rows={4}
+                    />
+                  </div>
                 )}
               </div>
             )
@@ -1525,6 +1542,7 @@ export function WorkflowEditDrawer({
           }
 
           if (nodeType === NodeTypeId.Prompt) {
+            const ptc = ((editingNodeData as any).promptToolChoice as 'auto' | 'required' | 'none' | undefined) ?? 'auto'
             return (
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -1539,6 +1557,23 @@ export function WorkflowEditDrawer({
                     value={formData.model}
                     onChange={(m) => setFormData((prev) => ({ ...prev, model: m }))}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tool use</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Control whether the agent may call tools during this step.
+                  </p>
+                  <Select
+                    value={ptc}
+                    onValueChange={(v) => setEditingNodeData({ ...editingNodeData, promptToolChoice: v } as any)}
+                  >
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto" className="text-xs">Auto — agent decides</SelectItem>
+                      <SelectItem value="required" className="text-xs">Required — must call at least one tool</SelectItem>
+                      <SelectItem value="none" className="text-xs">None — no tool calls, text only</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )

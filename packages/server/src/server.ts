@@ -8,6 +8,7 @@ import { streamSSE } from "hono/streaming"
 import { proxy } from "hono/proxy"
 import { basicAuth } from "hono/basic-auth"
 import z, { toJSONSchema as zodToJSONSchema } from "zod"
+import zodToJsonSchemaV3 from "zod-to-json-schema"
 import { Provider } from "@projectflows/provider/provider"
 import { NamedError } from "@projectflows/util/error"
 import { LSP } from "./lsp"
@@ -931,8 +932,15 @@ export namespace Server {
         ].filter(Boolean).join("\n\n")
 
         const rawSchema = (toolDef as any).parameters
-        const isZodSchema = rawSchema?.def !== undefined || rawSchema?._def !== undefined
-        const toolSchema = jsonSchema(isZodSchema ? zodToJSONSchema(rawSchema) : (rawSchema ?? {}))
+        const toolSchemaJson =
+          rawSchema?._zod?.def !== undefined
+            ? zodToJSONSchema(rawSchema)
+            : rawSchema?.def !== undefined
+              ? zodToJSONSchema(rawSchema)
+              : rawSchema?._def !== undefined
+                ? zodToJsonSchemaV3(rawSchema as any)
+                : (rawSchema ?? {})
+        const toolSchema = jsonSchema(toolSchemaJson)
 
         let language: any
         if (ctx.model) {
@@ -950,18 +958,45 @@ export namespace Server {
         }
 
         if (language) {
+          const toolForModel = aiTool({
+            description: toolDef.description,
+            inputSchema: toolSchema,
+          })
           const result = await generateText({
             model: language,
             toolChoice: { type: "tool", toolName: toolId },
             tools: {
-              [toolId]: aiTool({
-                description: toolDef.description,
-                inputSchema: toolSchema,
-              }),
+              [toolId]: toolForModel,
             },
             prompt,
           })
-          const llmArgs = (result.toolCalls?.[0] as any)?.args ?? {}
+          let llmArgs = (result.toolCalls?.[0] as any)?.args ?? {}
+          const parseResult = typeof rawSchema?.safeParse === "function" ? rawSchema.safeParse(llmArgs) : undefined
+
+          if (parseResult && !parseResult.success) {
+            const retryResult = await generateText({
+              model: language,
+              toolChoice: { type: "tool", toolName: toolId },
+              tools: {
+                [toolId]: toolForModel,
+              },
+              prompt: [
+                prompt,
+                `Your previous tool call was rejected because its arguments did not match the required schema: ${parseResult.error.message}`,
+                `Try again and include every required field for \`${toolId}\`.`,
+              ].join("\n\n"),
+            })
+            llmArgs = (retryResult.toolCalls?.[0] as any)?.args ?? llmArgs
+
+            const retryParseResult =
+              typeof rawSchema?.safeParse === "function" ? rawSchema.safeParse(llmArgs) : undefined
+            if (retryParseResult && !retryParseResult.success) {
+              throw new Error(`Unable to fill valid arguments for \`${toolId}\`: ${retryParseResult.error.message}`, {
+                cause: retryParseResult.error,
+              })
+            }
+          }
+
           // Fixed args always override LLM-provided values
           finalArgs = { ...llmArgs, ...fixedArgs }
         }

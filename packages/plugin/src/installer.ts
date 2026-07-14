@@ -21,10 +21,14 @@ const CAP_SUBDIRS = ["agents", "skills"] as const
 
 // Fallback group resolution when a plugin capability lacks an explicit group field.
 // Import is lazy to avoid requiring @projectflows/tools at startup.
-async function inferGroup(toolName: string): Promise<string> {
+async function inferGroup(toolName: string, capRoot: string): Promise<string> {
   try {
-    const { getToolGroup } = await import("@projectflows/tools/group-manifest")
-    return (getToolGroup as (id: string) => string)(toolName)
+    const { loadGroupManifests, resolveToolGroup } = await import("@projectflows/tools/group-manifest")
+    const manifests = [
+      ...(await loadGroupManifests(PluginStorage.toolGroupsDir(capRoot)).catch(() => [])),
+      ...(await loadGroupManifests(PluginStorage.toolGroupsDir(PluginStorage.globalRoot())).catch(() => [])),
+    ]
+    return resolveToolGroup(toolName, manifests) ?? "others"
   } catch {
     return "others"
   }
@@ -80,7 +84,7 @@ async function extractTools(
       const toolName = path.basename(toolFile, path.extname(toolFile))
       // Prefer explicit group from manifest capability entry
       const capEntry = capabilities.find((c) => c.type === "tool" && c.name === toolName)
-      const groupId = capEntry?.group ?? (await inferGroup(toolName))
+      const groupId = capEntry?.group ?? (await inferGroup(toolName, capRoot))
       const toolsDest = PluginStorage.toolGroupToolsDir(capRoot, groupId)
       await fs.mkdir(toolsDest, { recursive: true })
       await fs.copyFile(path.join(toolsSrc, toolFile), path.join(toolsDest, toolFile))
@@ -198,7 +202,7 @@ export namespace PluginInstaller {
     await extractCapabilities(sourcePath, capRoot, capabilities)
 
     // Determine the resolved group for each tool capability (for lockfile storage)
-    const toolGroupResolved = await resolveToolGroups(sourcePath, capabilities)
+    const toolGroupResolved = await resolveToolGroups(sourcePath, capRoot, capabilities)
 
     const lockfilePath =
       scope === "project" && projectDir
@@ -228,6 +232,7 @@ export namespace PluginInstaller {
   // Determine the group for each tool in the plugin source, mirroring extractTools logic.
   async function resolveToolGroups(
     sourcePath: string,
+    capRoot: string,
     capabilities: Plugin.Capability[],
   ): Promise<Map<string, string>> {
     const result = new Map<string, string>()
@@ -251,7 +256,7 @@ export namespace PluginInstaller {
         if (!f.endsWith(".js") && !f.endsWith(".ts")) continue
         const toolName = path.basename(f, path.extname(f))
         const capEntry = capabilities.find((c) => c.type === "tool" && c.name === toolName)
-        result.set(toolName, capEntry?.group ?? (await inferGroup(toolName)))
+        result.set(toolName, capEntry?.group ?? (await inferGroup(toolName, capRoot)))
       }
     }
 

@@ -42,8 +42,12 @@ import { JsonMigration } from "@projectflows/storage/json-migration"
 import { Database } from "@projectflows/storage/db"
 import { Ripgrep } from "@projectflows/tools/filesystem/lib/ripgrep"
 
-// Initialize ripgrep with binary path BEFORE any filesystem tool invocations
+// Initialize ripgrep with binary path BEFORE any filesystem tool invocations.
+// Also set the env var so dynamically-imported plugin module instances (which
+// have their own copy of ripgrep.ts) can find the bin dir without a separate
+// setBinaryPath() call.
 Ripgrep.setBinaryPath(Global.Path.bin)
+process.env.PROJECTFLOWS_BIN_PATH = Global.Path.bin
 
 process.on("unhandledRejection", (e) => {
   Log.Default.error("rejection", {
