@@ -2,17 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { motion } from "motion/react"
-import { type Session } from "@/lib/projectflows"
+import { type Agent, type Session } from "@/lib/projectflows"
+import { getAgentColor } from "@/lib/agent-colors"
 import { cn } from "@/lib/utils"
 import { RefreshCwIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-
-const SESSION_TYPE_COLORS: Record<string, string> = {
-  scope:      "#3b82f6",
-  worker:     "#f59e0b",
-  role:       "#8b5cf6",
-  scratchpad: "#64748b",
-}
 
 const ROW_HEIGHT = 32
 const NODE_RADIUS = 5
@@ -47,6 +41,7 @@ function computeTreeLayout(
   visibleSessions: VisibleSession[],
   store: Store,
   selectedSessionId: string | undefined,
+  sessionColors: Map<string, string>,
 ): { dots: SessionDot[]; paths: SessionPath[]; svgWidth: number } {
   const rowMap = new Map<string, number>()
   visibleSessions.forEach(({ session }, i) => rowMap.set(session.id, i))
@@ -61,7 +56,7 @@ function computeTreeLayout(
       sessionId: session.id,
       x,
       y: getY(rowMap.get(session.id) ?? 0),
-      color: SESSION_TYPE_COLORS[session.sessionType ?? "scope"] ?? "#64748b",
+      color: sessionColors.get(session.id) ?? getAgentColor(undefined).hex,
       isCursor: session.id === selectedSessionId,
       hasChildren: (node?.children.length ?? 0) > 0 || Boolean(node?.hasChildren),
       spacerWidth: x + NODE_RADIUS + 5,
@@ -193,6 +188,7 @@ type SessionTreePanelProps = {
   selectedSessionId?: string
   activeSessions?: Set<string>
   sessions: Session[] // Accept sessions from parent to avoid duplicate fetch
+  agents?: Array<Agent & { _id?: string }>
 }
 
 export function SessionTreePanel({
@@ -201,6 +197,7 @@ export function SessionTreePanel({
   selectedSessionId,
   activeSessions = new Set(),
   sessions,
+  agents = [],
 }: SessionTreePanelProps) {
   const [store, setStore] = useState<Store>(emptyStore)
 
@@ -208,6 +205,23 @@ export function SessionTreePanel({
   const [loadError, setLoadError] = useState<string>()
   const [rootSessions, setRootSessions] = useState<Session[]>([])
   const sessionIndexes = useMemo(() => buildSessionIndexes(sessions), [sessions])
+  const sessionColors = useMemo(() => {
+    const agentsById = new Map<string, Agent & { _id?: string }>()
+    const agentsByName = new Map<string, Agent & { _id?: string }>()
+
+    for (const agent of agents) {
+      if (agent._id) agentsById.set(agent._id, agent)
+      if (agent.id) agentsById.set(agent.id, agent)
+      agentsByName.set(agent.name, agent)
+    }
+
+    return new Map(sessions.map((session) => {
+      const agent = session.agentID
+        ? agentsById.get(session.agentID) ?? agentsByName.get(session.agentID)
+        : undefined
+      return [session.id, getAgentColor(agent?.color).hex]
+    }))
+  }, [agents, sessions])
 
   const loadRoots = useCallback(() => {
     setRootLoading(true)
@@ -293,8 +307,8 @@ export function SessionTreePanel({
   )
 
   const { dots, paths, svgWidth } = useMemo(
-    () => computeTreeLayout(visibleSessions, store, selectedSessionId),
-    [visibleSessions, store, selectedSessionId],
+    () => computeTreeLayout(visibleSessions, store, selectedSessionId, sessionColors),
+    [visibleSessions, store, selectedSessionId, sessionColors],
   )
 
   const spacerMap = useMemo(
