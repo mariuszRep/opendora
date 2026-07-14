@@ -29,6 +29,24 @@ export type ChatStatus = "ready" | "submitted" | "streaming" | "error"
 
 const DEFAULT_AGENT_KEY = "opendora:default-agent"
 const LAST_SESSION_BY_AGENT_KEY = "opendora:last-session-by-agent"
+function createClientMessageID(): string {
+  const time = Date.now().toString(16).padStart(12, "0")
+  const random =
+    typeof crypto !== "undefined" && "getRandomValues" in crypto
+      ? Array.from(crypto.getRandomValues(new Uint8Array(8)), (byte) => byte.toString(16).padStart(2, "0")).join("")
+      : Math.random().toString(16).slice(2).padEnd(16, "0")
+  return `msg_${time}${random}`
+}
+
+function createClientPartID(): string {
+  const time = Date.now().toString(16).padStart(12, "0")
+  const random =
+    typeof crypto !== "undefined" && "getRandomValues" in crypto
+      ? Array.from(crypto.getRandomValues(new Uint8Array(8)), (byte) => byte.toString(16).padStart(2, "0")).join("")
+      : Math.random().toString(16).slice(2).padEnd(16, "0")
+  return `prt_${time}${random}`
+}
+
 function getStoredDefaultAgent(): string | null {
   try { return localStorage.getItem(DEFAULT_AGENT_KEY) } catch { return null }
 }
@@ -992,13 +1010,14 @@ export function useOpendora(opts?: {
     async (text: string, options?: { model?: { providerID: string; modelID: string }; fallbackGroupID?: string; agent?: string; files?: Array<{ type: "file"; mime: string; filename?: string; url: string }> }) => {
       const session = selectedSessionRef.current
       if (!session) return
-      if (statusRef.current !== "ready") return
-      setStatus("submitted")
+      const queued = statusRef.current !== "ready"
+      if (!queued) setStatus("submitted")
       setError(null)
 
       // Optimistically insert the user message so the chat updates instantly,
       // before the SSE event for the real message arrives.
-      const optimisticId = `_optimistic_${Date.now()}`
+      const optimisticId = createClientMessageID()
+      const optimisticCreatedAt = Date.now()
       setMessages((prev) => [
         ...prev,
         {
@@ -1006,18 +1025,19 @@ export function useOpendora(opts?: {
             id: optimisticId,
             sessionID: session.id,
             role: "user" as const,
-            time: { created: Date.now() },
+            time: { created: optimisticCreatedAt },
             agent: options?.agent ?? selectedAgent,
             model: options?.model ?? { providerID: "", modelID: "" },
+            ...(queued ? { queue: { status: "queued" as const, submittedAt: optimisticCreatedAt } } : {}),
           },
           parts: [
             {
-              id: `${optimisticId}_0`,
+              id: createClientPartID(),
               type: "text" as const,
               text,
               messageID: optimisticId,
               sessionID: session.id,
-              time: { created: Date.now() },
+              time: { created: optimisticCreatedAt },
             },
           ],
         },
@@ -1029,6 +1049,7 @@ export function useOpendora(opts?: {
           ...(options?.files ?? []),
         ]
         await opendora.session.promptAsync(session.id, {
+          messageID: optimisticId,
           parts,
           ...(options?.model ? { model: options.model } : {}),
           ...(options?.fallbackGroupID ? { fallbackGroupID: options.fallbackGroupID } : {}),

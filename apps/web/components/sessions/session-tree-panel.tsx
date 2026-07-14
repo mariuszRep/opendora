@@ -1,30 +1,127 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { opendora, type Session } from "@/lib/projectflows"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { motion } from "motion/react"
+import { type Session } from "@/lib/projectflows"
 import { cn } from "@/lib/utils"
-import {
-  ChevronRightIcon,
-  MessageSquareIcon,
-  RefreshCwIcon,
-  BotIcon,
-  FolderIcon,
-  FolderOpenIcon,
-  FileTextIcon,
-} from "lucide-react"
+import { RefreshCwIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { SESSION_TYPE_CONFIG } from "./session-create-dialog"
-import { type SessionTreeNode } from "./session-tree-view"
 
-function sessionToTreeNode(session: Session, children: SessionNode[]): SessionTreeNode {
-  return {
-    id: session.id,
-    title: session.title || null,
-    type: session.sessionType || null,
-    status: null,
-    agentId: session.agentID || null,
-    children: children.map(child => sessionToTreeNode(child.session, child.children))
+const SESSION_TYPE_COLORS: Record<string, string> = {
+  scope:      "#3b82f6",
+  worker:     "#f59e0b",
+  role:       "#8b5cf6",
+  scratchpad: "#64748b",
+}
+
+const ROW_HEIGHT = 32
+const NODE_RADIUS = 5
+const LEFT_PAD   = 12
+const DEPTH_INDENT = 14
+const LINE_WIDTH  = 2
+const DOT_EDGE_GAP = 2
+const DOT_LINE_GAP = NODE_RADIUS + DOT_EDGE_GAP
+
+interface VisibleSession {
+  session: Session
+  depth: number
+}
+
+interface SessionDot {
+  sessionId: string
+  x: number
+  y: number
+  color: string
+  isCursor: boolean
+  hasChildren: boolean
+  spacerWidth: number
+}
+
+interface SessionPath {
+  id: string
+  d: string
+  color: string
+}
+
+function computeTreeLayout(
+  visibleSessions: VisibleSession[],
+  store: Store,
+  selectedSessionId: string | undefined,
+): { dots: SessionDot[]; paths: SessionPath[]; svgWidth: number } {
+  const rowMap = new Map<string, number>()
+  visibleSessions.forEach(({ session }, i) => rowMap.set(session.id, i))
+
+  const getY = (row: number) => (row + 0.5) * ROW_HEIGHT
+  const maxDepth = visibleSessions.reduce((max, item) => Math.max(max, item.depth), 0)
+
+  const dots: SessionDot[] = visibleSessions.map(({ session, depth }) => {
+    const x = LEFT_PAD + depth * DEPTH_INDENT
+    const node = store.nodes[session.id]
+    return {
+      sessionId: session.id,
+      x,
+      y: getY(rowMap.get(session.id) ?? 0),
+      color: SESSION_TYPE_COLORS[session.sessionType ?? "scope"] ?? "#64748b",
+      isCursor: session.id === selectedSessionId,
+      hasChildren: (node?.children.length ?? 0) > 0 || Boolean(node?.hasChildren),
+      spacerWidth: x + NODE_RADIUS + 5,
+    }
+  })
+
+  const dotMap = new Map(dots.map(d => [d.sessionId, d]))
+  const paths: SessionPath[] = []
+
+  for (const { session } of visibleSessions) {
+    const node = store.nodes[session.id]
+    const visibleChildren = (node?.children ?? []).filter(c => rowMap.has(c.session.id))
+    if (visibleChildren.length === 0) continue
+
+    const parentDot = dotMap.get(session.id)
+    if (!parentDot) continue
+
+    const childDots = visibleChildren
+      .map(child => dotMap.get(child.session.id))
+      .filter((dot): dot is SessionDot => Boolean(dot))
+    const firstChildDot = childDots[0]
+    const lastChildDot = childDots[childDots.length - 1]
+    if (!firstChildDot || !lastChildDot) continue
+
+    const parentAnchorX = NODE_RADIUS * 0.8
+    const parentAnchorY = NODE_RADIUS * 0.25
+    const parentAnchorLength = Math.hypot(parentAnchorX, parentAnchorY) || 1
+    const parentGapScale = (NODE_RADIUS + DOT_EDGE_GAP) / parentAnchorLength
+    const armStartX = parentDot.x + parentAnchorX * parentGapScale
+    const armStartY = parentDot.y + parentAnchorY * parentGapScale
+    const railStartY = firstChildDot.y - DOT_LINE_GAP
+
+    paths.push({
+      id: `${session.id}-branch-arm`,
+      d: [
+        `M ${armStartX} ${armStartY}`,
+        `C ${armStartX + 8} ${armStartY + 4}, ${firstChildDot.x} ${railStartY - 14}, ${firstChildDot.x} ${railStartY}`,
+      ].join(" "),
+      color: parentDot.color,
+    })
+
+    const railSegments: string[] = []
+    for (let i = 0; i < childDots.length - 1; i++) {
+      const from = childDots[i]!
+      const to = childDots[i + 1]!
+      railSegments.push(`M ${from.x} ${from.y + DOT_LINE_GAP} L ${to.x} ${to.y - DOT_LINE_GAP}`)
+    }
+
+    if (railSegments.length > 0) {
+      paths.push({
+        id: `${session.id}-child-rail`,
+        d: railSegments.join(" "),
+        color: parentDot.color,
+      })
+    }
   }
+
+  const svgWidth = LEFT_PAD + maxDepth * DEPTH_INDENT + NODE_RADIUS + 12
+
+  return { dots, paths, svgWidth }
 }
 
 type SessionNode = {
@@ -57,9 +154,10 @@ function formatSessionTitle(session: Session): string {
 function buildSessionIndexes(sessions: Session[]) {
   const roots: Session[] = []
   const childrenMap = new Map<string, Session[]>()
+  const sessionIds = new Set(sessions.map((session) => session.id))
 
   for (const session of sessions) {
-    if (!session.parentSessionID) {
+    if (!session.parentSessionID || !sessionIds.has(session.parentSessionID)) {
       roots.push(session)
       continue
     }
@@ -77,134 +175,16 @@ function buildSessionIndexes(sessions: Session[]) {
   return { roots, childrenMap }
 }
 
-type TreeRowProps = {
-  sessionId: string
-  depth: number
-  store: Store
-  onToggle: (sessionId: string) => void
-  onSessionClick: (session: Session) => void
-  selectedSessionId?: string
-  activeSessions: Set<string>
-  isLast?: boolean
-  activeLines?: boolean[]
-}
-
-function TreeRow({
-  sessionId,
-  depth,
-  store,
-  onToggle,
-  onSessionClick,
-  selectedSessionId,
-  activeSessions,
-  isLast = false,
-  activeLines = []
-}: TreeRowProps) {
-  const node = store.nodes[sessionId]
-  if (!node) return null
-
-  const { session, children, expanded, loading, hasChildren } = node
-  const showChildren = hasChildren || children.length > 0
-  const isSelected = selectedSessionId === sessionId
-  const isActive = activeSessions.has(sessionId)
-
-  const sessionType = (session.sessionType || "scope") as keyof typeof SESSION_TYPE_CONFIG
-  const Icon = SESSION_TYPE_CONFIG[sessionType]?.icon || MessageSquareIcon
-
-  const childActiveLines = depth === 0 ? [] : [...activeLines, !isLast]
-
-  return (
-    <>
-      <div className="relative flex w-full flex-col gap-0">
-        <div
-          onClick={() => onSessionClick(session)}
-          style={{ paddingLeft: `calc(0.5rem + ${depth * 1.25}rem)` }}
-          className={cn(
-            "group relative flex w-full items-center gap-1.5 rounded-md pr-2 py-1 text-sm outline-none transition-colors cursor-pointer select-none",
-            "hover:bg-accent hover:text-accent-foreground",
-            isSelected && "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
-          )}
-        >
-          {/* Draw Ancestor vertical continuous lines */}
-          {activeLines.map((isActiveLine, i) => {
-            if (!isActiveLine) return null
-            return (
-              <div
-                key={i}
-                className="absolute top-0 bottom-0 w-[1px] bg-muted-foreground transition-colors pointer-events-none"
-                style={{ left: `calc(0.5rem + ${i * 1.25}rem + 0.625rem)` }}
-              />
-            )
-          })}
-
-          {/* Draw the L/T-connector for this specific node if it's not the root */}
-          {depth > 0 && (
-            <div className="absolute top-0 bottom-0 pointer-events-none" style={{ left: `calc(0.5rem + ${(depth - 1) * 1.25}rem + 0.625rem)` }}>
-              <div className="absolute top-0 w-[1px] bg-muted-foreground transition-colors" style={{ height: isLast ? '50%' : '100%' }} />
-              <div 
-                className="absolute top-1/2 h-[1px] bg-muted-foreground transition-colors" 
-                style={{ width: '1.25rem' }} 
-              />
-            </div>
-          )}
-
-          {/* Actual Node Interactive Content */}
-          <div className="relative z-10 flex flex-1 overflow-hidden items-center gap-1.5">
-            {showChildren ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onToggle(sessionId)
-                }}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm hover:bg-muted/80 text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <ChevronRightIcon
-                  className={cn(
-                    "h-4 w-4 transition-transform duration-200",
-                    expanded && "rotate-90",
-                  )}
-                />
-              </button>
-            ) : (
-              <div className="h-5 w-5 shrink-0" />
-            )}
-
-            <Icon className="h-4 w-4 shrink-0 text-muted-foreground/70" />
-
-            <span className="truncate flex-1">{formatSessionTitle(session)}</span>
-
-            {isActive && (
-              <div className="h-1.5 w-1.5 rounded-full bg-green-500 shrink-0 animate-pulse mx-1" title="Active" />
-            )}
-
-            {loading && (
-              <RefreshCwIcon className="ml-auto h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
-            )}
-          </div>
-        </div>
-
-        {showChildren && expanded && (
-          <div className="w-full flex flex-col gap-0">
-            {children.map((childNode, idx) => (
-              <TreeRow
-                key={childNode.session.id}
-                sessionId={childNode.session.id}
-                depth={depth + 1}
-                isLast={idx === children.length - 1}
-                activeLines={childActiveLines}
-                store={store}
-                onToggle={onToggle}
-                onSessionClick={onSessionClick}
-                selectedSessionId={selectedSessionId}
-                activeSessions={activeSessions}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </>
-  )
+function computeVisibleSessions(roots: Session[], store: Store): VisibleSession[] {
+  const result: VisibleSession[] = []
+  const visit = (session: Session, depth: number) => {
+    result.push({ session, depth })
+    const node = store.nodes[session.id]
+    if (!node?.expanded) return
+    for (const child of node?.children ?? []) visit(child.session, depth + 1)
+  }
+  for (const root of roots) visit(root, 0)
+  return result
 }
 
 type SessionTreePanelProps = {
@@ -222,19 +202,12 @@ export function SessionTreePanel({
   activeSessions = new Set(),
   sessions,
 }: SessionTreePanelProps) {
-  const [store, _setStore] = useState<Store>(emptyStore)
-  const storeRef = useRef<Store>(store)
+  const [store, setStore] = useState<Store>(emptyStore)
 
   const [rootLoading, setRootLoading] = useState(false)
   const [loadError, setLoadError] = useState<string>()
   const [rootSessions, setRootSessions] = useState<Session[]>([])
   const sessionIndexes = useMemo(() => buildSessionIndexes(sessions), [sessions])
-
-  const setStore = useCallback((update: (prev: Store) => Store) => {
-    const next = update(storeRef.current)
-    storeRef.current = next
-    _setStore(next)
-  }, [])
 
   const loadRoots = useCallback(() => {
     setRootLoading(true)
@@ -251,7 +224,7 @@ export function SessionTreePanel({
             session,
             children: [],
             expanded: previous?.expanded ?? false,
-            loaded: previous?.loaded ?? false,
+            loaded: true,
             loading: previous?.loading ?? false,
             hasChildren: childrenMap.has(session.id),
           }
@@ -259,7 +232,7 @@ export function SessionTreePanel({
 
         for (const session of sessions) {
           const node = nodes[session.id]
-          if (!node || !node.loaded) continue
+          if (!node) continue
 
           node.children = (childrenMap.get(session.id) ?? [])
             .map((child) => nodes[child.id])
@@ -268,181 +241,68 @@ export function SessionTreePanel({
 
         return { nodes }
       })
-      setRootSessions(roots)
+      const scopedRoot = rootSessionId ? sessions.find((session) => session.id === rootSessionId) : undefined
+      setRootSessions(scopedRoot ? [scopedRoot] : roots)
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : String(err))
     } finally {
       setRootLoading(false)
     }
-  }, [setStore, sessions, sessionIndexes])
+  }, [sessions, sessionIndexes, rootSessionId])
 
   useEffect(() => {
     loadRoots()
   }, [loadRoots])
 
-  const handleToggle = useCallback(
-    async (sessionId: string) => {
-      const current = storeRef.current.nodes[sessionId]
-      if (!current) return
-
-      if (current.expanded) {
-        // Collapse - recursively collapse all descendants
-        const collapseDescendants = (nodeId: string, nodes: Record<string, SessionNode>): Record<string, SessionNode> => {
-          const node = nodes[nodeId]
-          if (!node) return nodes
-          
-          const updatedNodes = {
-            ...nodes,
-            [nodeId]: { ...node, expanded: false }
-          }
-
-          for (const child of node.children) {
-            Object.assign(updatedNodes, collapseDescendants(child.session.id, updatedNodes))
-          }
-          
-          return updatedNodes
-        }
-
-        setStore((prev) => ({
-          nodes: collapseDescendants(sessionId, prev.nodes)
-        }))
-        return
-      }
-
-      // Expand
-      setStore((prev) => ({
-        nodes: {
-          ...prev.nodes,
-          [sessionId]: { ...prev.nodes[sessionId]!, expanded: true },
-        },
-      }))
-
-      // Already loaded
-      if (current.loaded || current.loading) return
-
-      const knownChildren = sessionIndexes.childrenMap.get(sessionId)
-      if (knownChildren) {
-        setStore((prev) => ({
-          nodes: (() => {
-            const childNodes = knownChildren
-              .map((child) => prev.nodes[child.id])
-              .filter((childNode): childNode is SessionNode => Boolean(childNode))
-
-            return {
-              ...prev.nodes,
-              [sessionId]: {
-                ...prev.nodes[sessionId]!,
-                loaded: true,
-                loading: false,
-                children: childNodes,
-              },
-            }
-          })(),
-        }))
-        return
-      }
-
-      // Mark loading
-      setStore((prev) => ({
-        nodes: {
-          ...prev.nodes,
-          [sessionId]: { ...prev.nodes[sessionId]!, loading: true },
-        },
-      }))
-
-      try {
-        const children = await opendora.session.children(sessionId)
-        
-        // Sort children by creation time
-        children.sort((a: Session, b: Session) => a.time.created - b.time.created)
-
-        // Check which children have their own children using the sessions prop (no extra API calls)
-        const childrenWithGrandchildren = children.map((child) => {
-          const hasChildren = sessionIndexes.childrenMap.has(child.id)
-          return { child, hasChildren }
-        })
-
-        setStore((prev) => {
-          const nodes = { ...prev.nodes }
-          const childNodes: SessionNode[] = []
-
-          for (const { child, hasChildren } of childrenWithGrandchildren) {
-            if (!nodes[child.id]) {
-              nodes[child.id] = {
-                session: child,
-                children: [],
-                expanded: false,
-                loaded: false,
-                loading: false,
-                hasChildren,
-              }
-            }
-            childNodes.push(nodes[child.id]!)
-          }
-
-          nodes[sessionId] = {
-            ...nodes[sessionId]!,
-            loaded: true,
-            loading: false,
-            children: childNodes,
-          }
-
-          return { nodes }
-        })
-      } catch (err) {
-        console.error("Failed to load session children:", err)
-        setStore((prev) => ({
-          nodes: {
-            ...prev.nodes,
-            [sessionId]: { ...prev.nodes[sessionId]!, expanded: false, loading: false },
-          },
-        }))
-      }
-    },
-    [setStore, sessionIndexes],
-  )
-
   const handleSessionClick = useCallback(
     (session: Session) => {
+      const node = store.nodes[session.id]
+      const hasChildren = (node?.children.length ?? 0) > 0 || node?.hasChildren
+
+      if (selectedSessionId === session.id && hasChildren) {
+        setStore((prev) => {
+          const current = prev.nodes[session.id]
+          if (!current) return prev
+          const expanded = !current.expanded
+          const nodes = {
+            ...prev.nodes,
+            [session.id]: { ...current, expanded },
+          }
+
+          if (expanded) {
+            for (const child of current.children) {
+              nodes[child.session.id] = { ...child, expanded: false }
+            }
+          }
+
+          return {
+            nodes,
+          }
+        })
+        return
+      }
+
       onSessionClick?.(session)
     },
-    [onSessionClick],
+    [onSessionClick, selectedSessionId, store.nodes],
   )
 
-  // Auto-expand path to selected session
-  useEffect(() => {
-    if (!selectedSessionId) return
+  const visibleSessions = useMemo(
+    () => computeVisibleSessions(rootSessions, store),
+    [rootSessions, store],
+  )
 
-    const expandPathToSession = (sessionId: string) => {
-      try {
-        const targetSession = sessions.find((s) => s.id === sessionId)
-        if (!targetSession) return
+  const { dots, paths, svgWidth } = useMemo(
+    () => computeTreeLayout(visibleSessions, store, selectedSessionId),
+    [visibleSessions, store, selectedSessionId],
+  )
 
-        // Build path from root to target using sessions prop
-        const path: string[] = []
-        let current = targetSession
-        
-        while (current.parentSessionID) {
-          path.unshift(current.parentSessionID)
-          const parent = sessions.find((s) => s.id === current.parentSessionID)
-          if (!parent) break
-          current = parent
-        }
+  const spacerMap = useMemo(
+    () => new Map(dots.map(d => [d.sessionId, d.spacerWidth])),
+    [dots],
+  )
 
-        // Expand each node in the path in parallel (not sequential)
-        for (const nodeId of path) {
-          const node = storeRef.current.nodes[nodeId]
-          if (node && !node.expanded) {
-            handleToggle(nodeId)
-          }
-        }
-      } catch (err) {
-        console.error("Failed to expand path to session:", err)
-      }
-    }
-
-    expandPathToSession(selectedSessionId)
-  }, [selectedSessionId, sessions, handleToggle])
+  const svgHeight = visibleSessions.length * ROW_HEIGHT
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-sidebar text-sidebar-foreground">
@@ -462,7 +322,7 @@ export function SessionTreePanel({
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-1">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {rootLoading && rootSessions.length === 0 ? (
           <p className="px-2 py-4 text-center text-xs text-muted-foreground">Loading sessions…</p>
         ) : loadError ? (
@@ -472,20 +332,125 @@ export function SessionTreePanel({
         ) : rootSessions.length === 0 && !rootLoading ? (
           <p className="px-2 py-4 text-center text-xs text-muted-foreground">No sessions yet</p>
         ) : (
-          rootSessions.map((session, idx) => (
-            <TreeRow
-              key={session.id}
-              sessionId={session.id}
-              depth={0}
-              isLast={idx === rootSessions.length - 1}
-              activeLines={[]}
-              store={store}
-              onToggle={handleToggle}
-              onSessionClick={handleSessionClick}
-              selectedSessionId={selectedSessionId}
-              activeSessions={activeSessions}
-            />
-          ))
+          <div className="relative" style={{ minHeight: `${svgHeight}px` }}>
+            {/* SVG overlay: bezier connections + colored dots */}
+            <div
+              className="absolute left-0 top-0 pointer-events-none z-10"
+              style={{ width: svgWidth, height: svgHeight }}
+            >
+              <svg width={svgWidth} height={svgHeight} className="absolute inset-0">
+                <g>
+                  {paths.map((p) => (
+                    <path
+                      key={p.id}
+                      d={p.d}
+                      fill="none"
+                      stroke={p.color}
+                      strokeWidth={LINE_WIDTH}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      opacity={0.8}
+                    />
+                  ))}
+                </g>
+                <g>
+                  {dots.map((dot) => (
+                    <g key={`dot-${dot.sessionId}`}>
+                      {dot.isCursor && (
+                        <circle
+                          cx={dot.x}
+                          cy={dot.y}
+                          r={NODE_RADIUS + 5}
+                          fill="hsl(var(--sidebar-accent))"
+                        />
+                      )}
+                      {dot.isCursor && (
+                        <motion.circle
+                          cx={dot.x}
+                          cy={dot.y}
+                          r={NODE_RADIUS + 4}
+                          fill="none"
+                          stroke={dot.color}
+                          strokeWidth="1.5"
+                          animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0.1, 0.5] }}
+                          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                        />
+                      )}
+                      {dot.hasChildren ? (
+                        <>
+                          <circle
+                            cx={dot.x}
+                            cy={dot.y}
+                            r={NODE_RADIUS}
+                            fill={dot.isCursor ? "hsl(var(--sidebar-accent))" : "hsl(var(--sidebar))"}
+                            stroke={dot.color}
+                            strokeWidth="1.75"
+                          />
+                          <circle
+                            cx={dot.x}
+                            cy={dot.y}
+                            r={Math.max(NODE_RADIUS - 3, 1)}
+                            fill={dot.color}
+                          />
+                        </>
+                      ) : (
+                        <circle
+                          cx={dot.x}
+                          cy={dot.y}
+                          r={NODE_RADIUS}
+                          fill={dot.color}
+                        />
+                      )}
+                      {dot.isCursor && (
+                        <circle
+                          cx={dot.x}
+                          cy={dot.y}
+                          r={Math.max(NODE_RADIUS - 2, 1)}
+                          fill={dot.color}
+                        />
+                      )}
+                    </g>
+                  ))}
+                </g>
+              </svg>
+            </div>
+
+            {/* Row list */}
+            <div className="absolute inset-0 flex flex-col">
+              {visibleSessions.map(({ session }) => {
+                const node = store.nodes[session.id]
+                if (!node) return null
+                const { loading } = node
+                const isSelected = selectedSessionId === session.id
+                const isActive = activeSessions.has(session.id)
+
+                return (
+                  <div
+                    key={session.id}
+                    style={{ height: `${ROW_HEIGHT}px` }}
+                    onClick={() => handleSessionClick(session)}
+                    className={cn(
+                      "group flex w-full items-center gap-1.5 pr-2 text-sm cursor-pointer select-none transition-colors",
+                      "hover:bg-accent hover:text-accent-foreground",
+                      isSelected && "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                    )}
+                  >
+                    <div style={{ width: spacerMap.get(session.id) ?? (LEFT_PAD + NODE_RADIUS + 8) }} className="shrink-0" />
+
+                    <span className="truncate flex-1">{formatSessionTitle(session)}</span>
+
+                    {isActive && (
+                      <div className="h-1.5 w-1.5 rounded-full bg-green-500 shrink-0 animate-pulse mx-1" title="Active" />
+                    )}
+
+                    {loading && (
+                      <RefreshCwIcon className="ml-auto h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -426,6 +426,13 @@ export namespace MessageV2 {
     variant: z.string().optional(),
     schedule_id: z.string().optional(),
     hidden: z.boolean().optional(),
+    queue: z
+      .object({
+        status: z.enum(["queued", "processing"]),
+        submittedAt: z.number(),
+        activatedAt: z.number().optional(),
+      })
+      .optional(),
   }).meta({
     ref: "UserMessage",
   })

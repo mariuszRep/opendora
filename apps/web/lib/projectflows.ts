@@ -128,6 +128,11 @@ export type UserMessage = {
   schedule_id?: string
   /** When true, this message is hidden from the canvas (used for internal workflow LLM calls) */
   hidden?: boolean
+  queue?: {
+    status: "queued" | "processing"
+    submittedAt: number
+    activatedAt?: number
+  }
 }
 
 export type AssistantMessage = {
@@ -632,13 +637,14 @@ export const opendora = {
     promptAsync: (
       sessionID: string,
       input: {
+        messageID?: string
         parts: Array<{ type: "text"; text: string } | { type: string; [k: string]: unknown }>
         model?: { providerID: string; modelID: string }
         fallbackGroupID?: string
         agent?: string
       },
     ) =>
-      req<void>(`/session/${sessionID}/prompt_async`, {
+      req<void | { status: "queued"; messageID: string; queuePosition?: number }>(`/session/${sessionID}/prompt_async`, {
         method: "POST",
         body: JSON.stringify(input),
       }),

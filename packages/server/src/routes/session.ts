@@ -1044,7 +1044,7 @@ export const SessionRoutes = lazy(() =>
           sessionID: z.string().meta({ description: "Session ID" }),
         }),
       ),
-      validator("json", SessionPrompt.PromptInput.omit({ sessionID: true })),
+      validator("json", SessionPrompt.PromptInput.omit({ sessionID: true, queued: true })),
       async (c) => {
         c.status(200)
         c.header("Content-Type", "application/json")
@@ -1067,6 +1067,9 @@ export const SessionRoutes = lazy(() =>
           204: {
             description: "Prompt accepted",
           },
+          202: {
+            description: "Prompt queued because the session is busy",
+          },
           ...errors(400, 404, 409),
         },
       }),
@@ -1076,14 +1079,15 @@ export const SessionRoutes = lazy(() =>
           sessionID: z.string().meta({ description: "Session ID" }),
         }),
       ),
-      validator("json", SessionPrompt.PromptInput.omit({ sessionID: true })),
+      validator("json", SessionPrompt.PromptInput.omit({ sessionID: true, queued: true })),
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
+        const body = c.req.valid("json")
         const status = SessionStatus.get(sessionID)
         if (status.type === "busy") {
-          return c.json({ message: "Session is busy, please wait for the current response to finish." }, 409)
+          const message = await SessionPrompt.prompt({ ...body, sessionID, queued: true, noWait: true })
+          return c.json({ status: "queued", messageID: message.info.id }, 202)
         }
-        const body = c.req.valid("json")
         // noWait: creates the user message synchronously (fires SSE), then runs
         // the agent loop in the background. Returns as soon as the message is
         // persisted so the HTTP 204 reaches the browser immediately.

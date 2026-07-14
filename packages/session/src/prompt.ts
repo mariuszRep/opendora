@@ -113,6 +113,7 @@ export namespace SessionPrompt {
     noReply: z.boolean().optional(),
     noWait: z.boolean().optional(),
     hidden: z.boolean().optional(),
+    queued: z.boolean().optional(),
     format: MessageV2.Format.optional(),
     system: z.string().optional(),
     variant: z.string().optional(),
@@ -310,6 +311,53 @@ export namespace SessionPrompt {
     sessionID: Identifier.schema("session"),
     resume_existing: z.boolean().optional(),
   })
+
+  function isFinalAssistant(info: MessageV2.Info) {
+    return (
+      info.role === "assistant" &&
+      (!!info.error || !!info.time.completed || !!info.finish) &&
+      !["tool-calls", "unknown"].includes(info.finish ?? "")
+    )
+  }
+
+  function isQueuedUser(msg: MessageV2.WithParts) {
+    return msg.info.role === "user" && msg.info.queue?.status === "queued"
+  }
+
+  async function hasQueuedUser(sessionID: string) {
+    for await (const msg of MessageV2.stream(sessionID)) {
+      if (isQueuedUser(msg)) return true
+    }
+    return false
+  }
+
+  async function activateOldestQueuedUser(msgs: MessageV2.WithParts[]) {
+    const latestAssistant = [...msgs].reverse().find((msg) => msg.info.role === "assistant")?.info
+    if (!latestAssistant || !isFinalAssistant(latestAssistant)) return undefined
+
+    const queued = msgs.find(isQueuedUser)
+    if (!queued || queued.info.role !== "user" || !queued.info.queue) return undefined
+
+    const next: MessageV2.User = {
+      ...queued.info,
+      queue: {
+        ...queued.info.queue,
+        status: "processing",
+        activatedAt: Date.now(),
+      },
+    }
+    await Session.updateMessage(next)
+    queued.info = next
+    return next.id
+  }
+
+  function modelContextForQueuedTurn(msgs: MessageV2.WithParts[], activeQueuedUserID?: string) {
+    const active = activeQueuedUserID ? msgs.find((msg) => msg.info.id === activeQueuedUserID) : undefined
+    const withoutWaiting = msgs.filter((msg) => !isQueuedUser(msg) && msg.info.id !== activeQueuedUserID)
+    if (!active) return withoutWaiting
+    return [...withoutWaiting, active]
+  }
+
   export const loop = fn(LoopInput, async (input) => {
     const { sessionID, resume_existing } = input
     const cfg = getConfig()
@@ -345,6 +393,8 @@ export namespace SessionPrompt {
       log.info("loop", { step, sessionID })
       if (abort.aborted) break
       let msgs = await MessageV2.filterCompacted(MessageV2.stream(sessionID))
+      const activeQueuedUserID = await activateOldestQueuedUser(msgs)
+      msgs = modelContextForQueuedTurn(msgs, activeQueuedUserID)
 
       let lastUser: MessageV2.User | undefined
       let lastAssistant: MessageV2.Assistant | undefined
@@ -365,6 +415,7 @@ export namespace SessionPrompt {
 
       if (!lastUser) throw new Error("No user message found in stream. This should never happen.")
       if (
+        !activeQueuedUserID &&
         lastAssistant?.finish &&
         !["tool-calls", "unknown"].includes(lastAssistant.finish) &&
         lastUser.id < lastAssistant.id
@@ -842,7 +893,10 @@ export namespace SessionPrompt {
         }
       }
 
-      if (result === "stop") break
+      if (result === "stop") {
+        if (await hasQueuedUser(sessionID)) continue
+        break
+      }
       if (result === "compact") {
         if (lastFinished?.summary === true) {
           // The model overflowed immediately after a compaction — the compacted
@@ -1224,6 +1278,11 @@ export namespace SessionPrompt {
   }
 
   async function createUserMessage(input: PromptInput) {
+    if (input.messageID) {
+      const existing = await MessageV2.get({ sessionID: input.sessionID, messageID: input.messageID }).catch(() => undefined)
+      if (existing?.info.role === "user") return existing
+    }
+
     const cfg = getConfig()
     // Resolution order: explicit input.agent -> session.agentID -> defaultAgent
     let agentName = input.agent
@@ -1282,6 +1341,14 @@ export namespace SessionPrompt {
       variant,
       ...(input.schedule_id ? { schedule_id: input.schedule_id } : {}),
       ...(input.hidden ? { hidden: true } : {}),
+      ...(input.queued
+        ? {
+          queue: {
+            status: "queued" as const,
+            submittedAt: Date.now(),
+          },
+        }
+        : {}),
     }
     using _3 = defer(() => InstructionPrompt.clear(info.id))
 

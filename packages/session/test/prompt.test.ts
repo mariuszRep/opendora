@@ -150,6 +150,85 @@ describe("session.prompt special characters", () => {
   })
 })
 
+describe("session.prompt queued messages", () => {
+  test("persists queued state on user messages", async () => {
+    await using tmp = await tmpdir({
+      git: true,
+      config: {
+        agent: {
+          build: {
+            model: "openai/gpt-5.2",
+          },
+        },
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const session = await Session.create({})
+        const msg = await SessionPrompt.prompt({
+          sessionID: session.id,
+          agent: "build",
+          noReply: true,
+          queued: true,
+          parts: [{ type: "text", text: "queued hello" }],
+        })
+
+        expect(msg.info.role).toBe("user")
+        if (msg.info.role === "user") {
+          expect(msg.info.queue?.status).toBe("queued")
+          expect(typeof msg.info.queue?.submittedAt).toBe("number")
+        }
+
+        await Session.remove(session.id)
+      },
+    })
+  })
+
+  test("reuses an existing client message id without duplicating parts", async () => {
+    await using tmp = await tmpdir({
+      git: true,
+      config: {
+        agent: {
+          build: {
+            model: "openai/gpt-5.2",
+          },
+        },
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const session = await Session.create({})
+        const messageID = "msg_019b00000000queuedretry000000"
+        await SessionPrompt.prompt({
+          sessionID: session.id,
+          messageID,
+          agent: "build",
+          noReply: true,
+          queued: true,
+          parts: [{ type: "text", text: "queued once" }],
+        })
+        await SessionPrompt.prompt({
+          sessionID: session.id,
+          messageID,
+          agent: "build",
+          noReply: true,
+          queued: true,
+          parts: [{ type: "text", text: "queued once" }],
+        })
+
+        const stored = await MessageV2.get({ sessionID: session.id, messageID })
+        expect(stored.parts.length).toBe(1)
+
+        await Session.remove(session.id)
+      },
+    })
+  })
+})
+
 describe("session.prompt agent variant", () => {
   test("applies agent variant only when using agent model", async () => {
     const prev = process.env.OPENAI_API_KEY

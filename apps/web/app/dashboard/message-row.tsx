@@ -189,6 +189,7 @@ export const MessageRow = React.memo(function MessageRow({
   const hasCodeBlock = content.includes("```")
   const shouldUseFullWidth = hasTools || hasCodeBlock
   const msgError = info.role === "assistant" ? (info as AssistantMessage).error : undefined
+  const isQueuedUserMessage = info.role === "user" && (info as UserMessage).queue?.status === "queued"
   const hasTimeline = info.role === "assistant"
   const timelineSteps = hasTimeline ? getTimelineSteps(parts, msgError) : []
   const msgParentSessionID = info.role === "user"
@@ -341,6 +342,12 @@ export const MessageRow = React.memo(function MessageRow({
                     )
                   })()}
                 </MessageContent>
+                {isQueuedUserMessage && (
+                  <div className="flex items-center gap-1.5 pl-3 text-xs text-muted-foreground">
+                    <span className="size-1.5 rounded-full bg-current animate-pulse" aria-hidden="true" />
+                    <span>Queued</span>
+                  </div>
+                )}
                 <MessageActions
                   className="relative mt-1 w-full invisible opacity-0 group-hover/message:visible group-hover/message:opacity-100 transition-all"
                   data-message-actions

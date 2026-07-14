@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "../../../../home/mariusz/projects/.projectflows"
+		},
+		{
+			"path": "../mini-graph"
 		}
 	]
 }
