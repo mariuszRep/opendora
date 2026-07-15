@@ -3,7 +3,7 @@
 import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 import { NotificationBlade } from "@/components/notifications/notification-blade"
 import { SessionCreateDialog } from "@/components/sessions/session-create-dialog"
-import { SessionTreePanel } from "@/components/sessions/session-tree-panel"
+import { SessionTreePanel, type SessionTreePanelHandle } from "@/components/sessions/session-tree-panel"
 import { Button } from "@/components/ui/button"
 import {
   Sidebar,
@@ -18,13 +18,14 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import type { SessionType } from "@/lib/projectflows"
-import { BellIcon, BotIcon, FolderTreeIcon, PlusIcon, PlugIcon, Settings2Icon, NetworkIcon, GalleryHorizontalIcon, GlobeIcon } from "lucide-react"
+import { BellIcon, BotIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, FolderTreeIcon, PlusIcon, PlugIcon, Settings2Icon, NetworkIcon, GalleryHorizontalIcon, GlobeIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useRef, useState, useEffect } from "react"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter()
+  const sessionTreeRef = useRef<SessionTreePanelHandle>(null)
   const {
     selectedSession,
     selectSession,
@@ -103,6 +104,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   size="icon-sm"
                   variant="ghost"
                   className="size-5"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    sessionTreeRef.current?.expandAll()
+                  }}
+                  title="Expand all sessions"
+                >
+                  <ChevronsUpDownIcon className="size-3" />
+                </Button>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="size-5"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    sessionTreeRef.current?.collapseAll()
+                  }}
+                  title="Collapse all sessions"
+                >
+                  <ChevronsDownUpIcon className="size-3" />
+                </Button>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="size-5"
                   onClick={() => setSessionCreateOpen(true)}
                   title="New session for this agent"
                 >
@@ -112,6 +137,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarGroupLabel>
             <SidebarGroupContent className="group-data-[collapsible=icon]:hidden">
               <SessionTreePanel
+                ref={sessionTreeRef}
                 sessions={sessions}
                 agents={agents}
                 selectedSessionId={selectedSession?.id}

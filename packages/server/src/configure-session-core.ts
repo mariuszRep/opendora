@@ -33,6 +33,7 @@ import { Shell } from "@projectflows/util/shell"
 import { Truncate } from "@projectflows/tools/truncation-impl"
 import { Skill } from "@projectflows/skills/skill"
 import { WorkflowStorage, configurePluginWorkflowDirs } from "@projectflows/workflow/storage"
+import { runWorkflow } from "@projectflows/workflow/runner"
 import { Ripgrep } from "@projectflows/tools/filesystem/lib/ripgrep"
 import { SessionPrompt } from "@projectflows/session/prompt"
 import { Session } from "@projectflows/session/session"
@@ -463,6 +464,12 @@ export function configureSessionCore() {
       async get(id: string, directory?: string) {
         return WorkflowStorage.get(directory ?? Instance.directory, id)
       },
+      async availableIds(directory?: string) {
+        return WorkflowStorage.availableIds(directory ?? Instance.directory)
+      },
+      async run(workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) {
+        return runWorkflow({ workflow, sessionId, input, directory })
+      },
     },
     // Wire session methods so compaction.create can call them without circular dep.
     // Extra methods beyond the interface are used via dynamic access; IIFE bypasses
@@ -488,6 +495,12 @@ export function configureSessionCore() {
       },
       ensureMainSession(agentID: string) {
         return Session.ensureMainSession(agentID)
+      },
+      createNext(input: any) {
+        return Session.createNext(input)
+      },
+      setCwd(input: { sessionID: string; cwd: string }) {
+        return Session.setCwd(input)
       },
     }))(),
     question: {

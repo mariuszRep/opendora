@@ -1,12 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from "react"
 import { motion } from "motion/react"
 import { type Agent, type Session } from "@/lib/projectflows"
 import { getAgentColor } from "@/lib/agent-colors"
 import { cn } from "@/lib/utils"
 import { RefreshCwIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useSessionTreeSettings } from "@/hooks/use-session-tree-settings"
 
 const ROW_HEIGHT = 32
 const NODE_RADIUS = 5
@@ -207,6 +208,19 @@ function computeForcedExpandIds(sessions: Session[], activeSessions: Set<string>
   return result
 }
 
+// Ids of every ancestor of `session`, walking up via parentSessionID. These must
+// stay expanded so `session` remains visible when collapsing everything else
+// down to a single expanded path (see `handleSessionClick`'s exclusive-expand branch).
+function ancestorChainIds(session: Session, byId: Map<string, Session>): Set<string> {
+  const result = new Set<string>()
+  let current = session.parentSessionID ? byId.get(session.parentSessionID) : undefined
+  while (current) {
+    result.add(current.id)
+    current = current.parentSessionID ? byId.get(current.parentSessionID) : undefined
+  }
+  return result
+}
+
 function computeVisibleSessions(roots: Session[], store: Store): VisibleSession[] {
   const result: VisibleSession[] = []
   const visit = (session: Session, depth: number) => {
@@ -230,7 +244,12 @@ type SessionTreePanelProps = {
   showHeader?: boolean
 }
 
-export function SessionTreePanel({
+export type SessionTreePanelHandle = {
+  expandAll: () => void
+  collapseAll: () => void
+}
+
+export const SessionTreePanel = forwardRef<SessionTreePanelHandle, SessionTreePanelProps>(function SessionTreePanel({
   rootSessionId,
   onSessionClick,
   selectedSessionId,
@@ -238,13 +257,19 @@ export function SessionTreePanel({
   sessions,
   agents = [],
   showHeader = true,
-}: SessionTreePanelProps) {
+}, ref) {
   const [store, setStore] = useState<Store>(emptyStore)
 
   const [rootLoading, setRootLoading] = useState(false)
   const [loadError, setLoadError] = useState<string>()
   const [rootSessions, setRootSessions] = useState<Session[]>([])
+  const { settings: treeSettings } = useSessionTreeSettings()
   const sessionIndexes = useMemo(() => buildSessionIndexes(sessions, activeSessions), [sessions, activeSessions])
+  const sessionsById = useMemo(() => new Map(sessions.map((session) => [session.id, session])), [sessions])
+  const forcedExpandIds = useMemo(
+    () => treeSettings.autoExpandActiveSessions ? computeForcedExpandIds(sessions, activeSessions) : new Set<string>(),
+    [sessions, activeSessions, treeSettings.autoExpandActiveSessions],
+  )
   const sessionColors = useMemo(() => {
     const agentsById = new Map<string, Agent & { _id?: string }>()
     const agentsByName = new Map<string, Agent & { _id?: string }>()
@@ -268,7 +293,6 @@ export function SessionTreePanel({
     setLoadError(undefined)
     try {
       const { roots, childrenMap } = sessionIndexes
-      const forcedExpandIds = computeForcedExpandIds(sessions, activeSessions)
 
       setStore((prev) => {
         const nodes: Record<string, SessionNode> = {}
@@ -303,11 +327,33 @@ export function SessionTreePanel({
     } finally {
       setRootLoading(false)
     }
-  }, [sessions, sessionIndexes, rootSessionId, activeSessions])
+  }, [sessions, sessionIndexes, rootSessionId, forcedExpandIds])
 
   useEffect(() => {
     loadRoots()
   }, [loadRoots])
+
+  useImperativeHandle(ref, () => ({
+    expandAll: () => {
+      setStore((prev) => {
+        const nodes: Record<string, SessionNode> = {}
+        for (const [id, node] of Object.entries(prev.nodes)) {
+          const hasChildren = node.children.length > 0 || Boolean(node.hasChildren)
+          nodes[id] = hasChildren ? { ...node, expanded: true } : node
+        }
+        return { nodes }
+      })
+    },
+    collapseAll: () => {
+      setStore((prev) => {
+        const nodes: Record<string, SessionNode> = {}
+        for (const [id, node] of Object.entries(prev.nodes)) {
+          nodes[id] = node.expanded ? { ...node, expanded: false } : node
+        }
+        return { nodes }
+      })
+    },
+  }), [])
 
   const handleSessionClick = useCallback(
     (session: Session) => {
@@ -337,9 +383,27 @@ export function SessionTreePanel({
         return
       }
 
+      if (treeSettings.exclusiveExpand) {
+        setStore((prev) => {
+          const current = prev.nodes[session.id]
+          if (!current) return prev
+          const keepIds = ancestorChainIds(session, sessionsById)
+          keepIds.add(session.id)
+
+          const nodes = { ...prev.nodes }
+          for (const [id, n] of Object.entries(nodes)) {
+            if (keepIds.has(id) || forcedExpandIds.has(id)) continue
+            if (n.expanded) nodes[id] = { ...n, expanded: false }
+          }
+          if (hasChildren) nodes[session.id] = { ...current, expanded: true }
+
+          return { nodes }
+        })
+      }
+
       onSessionClick?.(session)
     },
-    [onSessionClick, selectedSessionId, store.nodes],
+    [onSessionClick, selectedSessionId, store.nodes, treeSettings.exclusiveExpand, sessionsById, forcedExpandIds],
   )
 
   const visibleSessions = useMemo(
@@ -521,4 +585,4 @@ export function SessionTreePanel({
       </div>
     </div>
   )
-}
+})

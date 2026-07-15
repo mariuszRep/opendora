@@ -92,7 +92,7 @@ function toReactFlowNodes(workflow: Workflow): Node<WorkflowNodeData>[] {
     .map((n) => ({
       id: n.id,
       type: 'workflow',
-      position: n.position,
+      position: n.position ?? { x: 0, y: 0 },
       data: normalizeNodeData(n.data),
     }))
 }

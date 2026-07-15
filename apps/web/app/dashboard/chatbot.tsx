@@ -69,7 +69,7 @@ import { usePushToTalk } from "@/hooks/use-push-to-talk"
 import { ParentSessionBanner } from "@/components/ai-elements/delegate-tool"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BellIcon, CheckIcon, ClockAlertIcon, ComponentIcon, FileIcon, KeyIcon, SquareSlash } from "lucide-react"
+import { BellIcon, CheckIcon, ClockAlertIcon, ComponentIcon, FileIcon, InboxIcon, KeyIcon, SendIcon, SquareSlash, XIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -77,6 +77,7 @@ import { cn } from "@/lib/utils"
 import { playNotificationSound } from "@/lib/notification-sound"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useModelList } from "@/hooks/use-model-list"
+import { useManualQueueMode } from "@/hooks/use-manual-queue-mode"
 
 const suggestions = [
   "What files are in this project?",
@@ -272,6 +273,7 @@ export const Chatbot = () => {
   } = useOpendoraContext()
 
   const { userName, userColor } = useUserProfile()
+  const { manualQueueMode, setManualQueueMode } = useManualQueueMode()
   const { settings } = useVoiceSettings()
   const { speak, playingId, isLoading: isTtsLoading, isEnabled: isTtsEnabled, error: ttsError } = useTextToSpeech()
   useEffect(() => {
@@ -284,6 +286,13 @@ export const Chatbot = () => {
   const expectedAssistantMessageIdRef = useRef<string | null>(null)
 
   const [text, setText] = useState("")
+  const [parkedDraft, setParkedDraft] = useState<{
+    content: string
+    files: Array<{ type: "file"; mime: string; filename?: string; url: string }>
+    model?: { providerID: string; modelID: string }
+    fallbackGroupID?: string
+    agent?: string
+  } | null>(null)
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false)
   const [openScheduleId, setOpenScheduleId] = useState<string | null>(null)
   const [selectedProviderID, setSelectedProviderID] = useState<string | null>(null)
@@ -617,6 +626,10 @@ export const Chatbot = () => {
         url: f.url,
       }))
       setText("")
+      if (manualQueueMode && status !== "ready" && selectedSession) {
+        setParkedDraft({ content, files, model, fallbackGroupID, agent: selectedAgent })
+        return
+      }
       const doSend = () => sendMessage(content, { model, fallbackGroupID, agent: selectedAgent, userName: userName || undefined, files: files.length > 0 ? files : undefined })
       if (!selectedSession) {
         createSession().then(doSend)
@@ -624,8 +637,19 @@ export const Chatbot = () => {
         doSend()
       }
     },
-    [sendMessage, selectedModel, selectedGroupId, selectedAgent, selectedSession, createSession, userName, questionRequests, handleQuestionAdvance],
+    [sendMessage, selectedModel, selectedGroupId, selectedAgent, selectedSession, createSession, userName, questionRequests, handleQuestionAdvance, manualQueueMode, status],
   )
+
+  const handleInjectParkedDraft = useCallback(() => {
+    if (!parkedDraft) return
+    const { content, files, model, fallbackGroupID, agent } = parkedDraft
+    setParkedDraft(null)
+    sendMessage(content, { model, fallbackGroupID, agent, userName: userName || undefined, files: files.length > 0 ? files : undefined })
+  }, [parkedDraft, sendMessage, userName])
+
+  const handleDiscardParkedDraft = useCallback(() => {
+    setParkedDraft(null)
+  }, [])
 
   useEffect(() => {
     setSlashCommandIdx(0)
@@ -959,6 +983,24 @@ export const Chatbot = () => {
           <PromptInput globalDrop multiple onSubmit={handleSubmit} className={questionRequests.length > 0 ? "flex flex-col flex-1 min-h-0" : ""}>
             <PromptInputHeader>
               <AttachmentsDisplay />
+              {parkedDraft && (
+                <div className="flex items-start gap-2 p-2 rounded-md border border-border bg-muted/50 text-sm">
+                  <div className="flex items-center gap-1.5 shrink-0 pt-0.5 text-xs text-muted-foreground">
+                    <span className="size-1.5 rounded-full bg-current animate-pulse" aria-hidden="true" />
+                    <span>Parked</span>
+                  </div>
+                  <span className="flex-1 min-w-0 truncate text-foreground">{parkedDraft.content}</span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button type="button" size="sm" variant="secondary" onClick={handleInjectParkedDraft}>
+                      <SendIcon className="size-3.5" />
+                      Inject
+                    </Button>
+                    <Button type="button" size="icon-sm" variant="ghost" aria-label="Discard parked message" onClick={handleDiscardParkedDraft}>
+                      <XIcon className="size-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </PromptInputHeader>
             {questionRequests.length > 0 && (() => {
               const request = questionRequests[0]
@@ -1026,6 +1068,13 @@ export const Chatbot = () => {
                   }}
                 >
                   <SquareSlash className="size-4" />
+                </PromptInputButton>
+                <PromptInputButton
+                  tooltip={manualQueueMode ? "Manual queue mode: on — messages sent while busy are parked until you click Inject" : "Manual queue mode: off — messages sent while busy are queued and sent automatically"}
+                  variant={manualQueueMode ? "secondary" : "ghost"}
+                  onClick={() => setManualQueueMode(!manualQueueMode)}
+                >
+                  <InboxIcon className="size-4" />
                 </PromptInputButton>
                 <SpeechInput
                   key={settings.stt.provider}

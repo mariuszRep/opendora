@@ -884,6 +884,11 @@ export const opendora = {
             hotkey: { key: string; ctrlKey: boolean; shiftKey: boolean; altKey: boolean; metaKey: boolean } | null
           }
         }
+        sessionTree?: {
+          exclusiveExpand: boolean
+          autoExpandActiveSessions: boolean
+        }
+        manualQueueMode?: boolean
       }>("/general"),
     update: (patch: {
       theme?: string
@@ -897,6 +902,11 @@ export const opendora = {
           hotkey?: { key: string; ctrlKey: boolean; shiftKey: boolean; altKey: boolean; metaKey: boolean } | null
         }
       }
+      sessionTree?: {
+        exclusiveExpand?: boolean
+        autoExpandActiveSessions?: boolean
+      }
+      manualQueueMode?: boolean
     }) => req<Record<string, unknown>>("/general", { method: "PATCH", body: JSON.stringify(patch) }),
   },
   events: {

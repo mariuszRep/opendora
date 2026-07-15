@@ -125,37 +125,78 @@ domain packages that persist data
 The three directories that make up the Projectflows ecosystem:
 
 ```text
-/home/<user>/projects/opendora/          ← source repo (this repo)
-  packages/                              ← domain packages
-  apps/                                  ← CLI + web frontend
-  scripts/                               ← build/dev tooling (package-core.ts, build-binary.ts)
-  registry/ (absent — see below)
+/home/<user>/projects/opendora/              ← source repo (this repo)
+  packages/                                  ← domain packages (core runtime)
+  apps/                                      ← CLI + web frontend
+  scripts/                                   ← build/dev tooling
+  registry/ (absent — see projectflows-website)
 
-/home/<user>/projects/projectflows-website/  ← first-party registry source
+/home/<user>/projects/projectflows-website/  ← first-party registry source (publish target)
   registry/
-    core.json                            ← list of core plugin IDs
-    plugins/<id>/manifest.json           ← plugin capability manifests
-    agents/<name>/                       ← agent definitions (agent.json + PERSONA.md)
-    skills/<name>/                       ← skill definitions
-    tools/<group>/group.json             ← tool-group manifest
-    tools/<group>/tools/*.js             ← compiled tool bundles + WASM assets
-    packs/*.json                         ← onboarding pack definitions
+    core.json                                ← list of core plugin IDs
+    plugins/<id>/manifest.json               ← plugin capability manifests
+    agents/<name>/                           ← agent definitions (agent.json + PERSONA.md)
+    skills/<name>/                           ← skill definitions
+    tools/<group>/group.json                 ← tool-group manifest
+    tools/<group>/src/*.ts                   ← tool source (compiled to tools/*.js)
+    tools/<group>/tools/*.js                 ← compiled tool bundles + WASM assets
+    workflows/<id>/                          ← workflow definitions
+    packs/*.json                             ← onboarding pack definitions
 
-~/.projectflows/                         ← global capability root (runtime source of truth)
-  agents/<name>/agent.json              ← installed agents (all agents load from here)
-  skills/<name>/SKILL.md                ← installed skills
-  tools/<group>/group.json              ← installed tool-group manifests
-  tools/<group>/tools/*.js              ← installed tool bundles
-  plugins.lock.json                     ← installed plugin lockfile
-  config/onboarding.json                ← onboarding completion marker
+~/.projectflows/                             ← global capability root (runtime source of truth)
+  agents/<name>/agent.json                  ← installed agents
+  skills/<name>/SKILL.md                    ← installed skills
+  tools/<group>/group.json                  ← installed tool-group manifests
+  tools/<group>/tools/*.js                  ← installed tool bundles
+  workflows/                                ← installed workflows
+  plugins.lock.json                         ← installed plugin lockfile
+  config/onboarding.json                    ← onboarding completion marker
 ```
 
-**Key rules:**
+### Artifact Publishing Flow
+
+**Development happens in `opendora`. Publishable artifacts go to `projectflows-website/registry`. Users install from the registry to `~/.projectflows/`.**
+
+```text
+1. DEVELOP        opendora/packages/             ← write code, test, iterate
+2. PUBLISH        projectflows-website/registry/ ← promote artifacts for distribution
+3. INSTALL        ~/.projectflows/               ← users pull from catalog/registry
+```
+
+**Rule: Any capability intended for other OpenDora users must end up in `projectflows-website/registry/`.**
+
+This includes:
+- **Tools** → `registry/tools/<group>/src/*.ts` (source) → compiled to `tools/<group>/tools/*.js`
+- **Agents** → `registry/agents/<name>/` (agent.json + PERSONA.md)
+- **Skills** → `registry/skills/<name>/` (SKILL.md + config)
+- **Workflows** → `registry/workflows/<id>/` (workflow definition)
+- **Plugins** → `registry/plugins/<id>/manifest.json` (capability manifest)
+- **Packs** → `registry/packs/*.json` (onboarding bundles)
+
+**Why this matters:** When OpenDora is installed, it pulls tools, agents, skills, workflows, and plugins from the `projectflows-website` registry. If you develop something in `opendora` but don't publish it to the registry, other users cannot access it.
+
+### Package-Level References
+
+Each domain package in `opendora/packages/` should reference the correct locations in its VISION.md:
+
+```text
+packages/tools/VISION.md      → references projectflows-website/registry/tools/
+packages/agent/VISION.md      → references projectflows-website/registry/agents/
+packages/skills/VISION.md     → references projectflows-website/registry/skills/
+packages/workflow/VISION.md   → references projectflows-website/registry/workflows/
+packages/plugin/VISION.md     → references projectflows-website/registry/plugins/
+```
+
+The core package (`opendora`) owns the **runtime behavior** (how tools execute, how agents run, how workflows advance). The registry (`projectflows-website`) owns the **distribution** (what gets published, what users install).
+
+### Key Rules
+
 - `~/.projectflows/` is the ONLY runtime source for agents, skills, and tools. Project-local `.projectflows/` directories are never scanned for agents.
 - `projectflows-website/registry/` is the first-party catalog. It is never imported directly at runtime — the server reads from `~/.projectflows/` only.
 - `opendora` (this repo) installs capabilities into `~/.projectflows/` via `bun dev:setup` (dev) or `install.sh` (production).
 - The env var `PROJECTFLOWS_REGISTRY_PATH` points the dev server at the local registry for plugin catalog queries (onboarding/entity listing), not at runtime capability loading.
 - `PROJECTFLOWS_PROJECT_ROOT` sets the current project directory for session context (file access, config lookup), but does NOT affect where agents or tools are loaded from.
+- **Development → Publish → Install**: Code lives in `opendora`, artifacts are promoted to `projectflows-website/registry`, users install to `~/.projectflows/`.
 
 ## Canonical Operations / Contracts
 

@@ -7,8 +7,7 @@ import { cors } from "hono/cors"
 import { streamSSE } from "hono/streaming"
 import { proxy } from "hono/proxy"
 import { basicAuth } from "hono/basic-auth"
-import z, { toJSONSchema as zodToJSONSchema } from "zod"
-import zodToJsonSchemaV3 from "zod-to-json-schema"
+import z from "zod"
 import { Provider } from "@projectflows/provider/provider"
 import { NamedError } from "@projectflows/util/error"
 import { LSP } from "./lsp"
@@ -35,12 +34,10 @@ import { WorkflowRoutes } from "@projectflows/workflow/routes"
 import { registerToolExecutor, runWorkflow } from "@projectflows/workflow/runner"
 import { WorkflowStorage } from "@projectflows/workflow/storage"
 import { CheckpointStore } from "@projectflows/workflow/checkpoint-store"
-import { addSkillTools, getSkillTools } from "@projectflows/session/skill-tools"
 import { CronScheduler, type ScheduleDispatchFn } from "@projectflows/schedule/cron-scheduler"
 import { Schedule } from "@projectflows/schedule/service"
 import { Database } from "@projectflows/storage/db"
 import { Agent } from "@projectflows/runtime/agent"
-import { Question } from "@projectflows/runtime/question"
 import { ToolRegistry } from "@projectflows/server/tool-registry"
 import { lazy } from "@projectflows/util/lazy"
 import { InstanceBootstrap } from "@projectflows/runtime/bootstrap"
@@ -70,10 +67,9 @@ import { configureSessionCore } from "./configure-session-core"
 import { projectflowsStorageAdapter } from "@projectflows/session/storage-adapter"
 import { Session } from "@projectflows/session/session"
 import { migrateAllSessions } from "@projectflows/session"
-import { SessionPrompt } from "@projectflows/session/prompt"
 import { Identifier } from "@projectflows/util/id"
-import { generateText, jsonSchema, tool as aiTool } from "ai"
 import { MessageV2 } from "@projectflows/session/message"
+import { createWorkflowToolExecutor } from "./workflow-tool-executor"
 
 // @ts-ignore This global is needed to prevent ai-sdk from logging warnings to stdout https://github.com/vercel/ai/blob/2dc67e0ef538307f21368db32d5a12345d98831b/packages/ai/src/logger/log-warnings.ts#L85
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -829,182 +825,7 @@ export namespace Server {
     })()
 
     configureSessionCore()
-    registerToolExecutor(async (toolId, fixedArgs, agentArgs, ctx) => {
-      await ToolRegistry.init()
-      const toolInfo = ToolRegistry.all().find((t) => t.id === toolId)
-      if (!toolInfo) throw new Error(`Tool "${toolId}" not found in registry`)
-
-      const initCtx = {
-        model: ctx.model ?? { providerID: "fallback", modelID: "fallback" },
-      }
-      const toolDef = await toolInfo.init(initCtx)
-
-      const session = await Session.get(ctx.sessionID).catch(() => undefined)
-      const sessionDirectory = session?.directory ?? Instance.directory
-
-      const execCtx = {
-        sessionID: ctx.sessionID,
-        messageID: ctx.messageID ?? Identifier.ascending("message"),
-        agent: ctx.agent ?? "",
-        abort: ctx.abort ?? new AbortController().signal,
-        messages: [],
-        metadata: async (input: { title?: string; metadata?: unknown }) => {
-          if (ctx.partID && ctx.messageID) {
-            await Session.updatePart({
-              id: ctx.partID,
-              sessionID: ctx.sessionID,
-              messageID: ctx.messageID,
-              type: "tool",
-              callID: ctx.partID,
-              tool: toolId,
-              state: {
-                status: "running",
-                input: finalArgs,
-                metadata: input.metadata as any,
-                time: { start: Date.now() },
-              },
-            } as any)
-          }
-        },
-        ask: async (_input: unknown) => {},
-        extra: {
-          directory: sessionDirectory,
-          worktree: Instance.worktree,
-          skillTools: {
-            get: (sid: string) => getSkillTools(sid),
-            add: (sid: string, toolIds: string[]) => addSkillTools(sid, toolIds),
-          },
-          question: (params: { sessionID: string; questions: unknown[]; tool?: { messageID: string; callID: string } }) =>
-            Question.ask({
-              sessionID: params.sessionID,
-              questions: params.questions as Question.Info[],
-              tool: params.tool,
-            }),
-          skills: {
-            all: () => Skill.all(),
-            get: (name: string) => Skill.get(name),
-            save: (location: string, content: string) => Skill.save(location, content),
-            saveConfig: (name: string, patch: { tools?: string[] }) => Skill.saveConfig(name, patch),
-          },
-          agents: {
-            list: () => Agent.list(),
-            get: (id: string) => Agent.get(id),
-          },
-          prompt: (opts: any) => SessionPrompt.prompt(opts),
-          resolvePromptParts: (template: string) => SessionPrompt.resolvePromptParts(template),
-          session: {
-            list: (filter?: any) => Session.list(filter),
-            get: (id: string) => Session.get(id),
-            messages: (id: string) => Session.messages({ sessionID: id }),
-            setTitle: (id: string, title: string) => Session.setTitle({ sessionID: id, title }),
-            create: (input: any) => Session.create(input),
-            ensureMainSession: (agentID: string) => Session.ensureMainSession(agentID),
-            setReplyToSessionID: (input: any) => Session.setReplyToSessionID(input),
-          },
-        },
-      }
-
-      let finalArgs = fixedArgs
-
-      if (agentArgs.length > 0) {
-        // Semi-deterministic: use one forced LLM call to fill agent-decided params.
-        // toolChoice forces the model to return exactly one tool call — no free text.
-        const fixedDesc = Object.entries(fixedArgs)
-          .map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`)
-          .join("\n")
-        const agentDesc = agentArgs.join(", ")
-
-        const contextEntries = ctx.workflowContext ? Object.entries(ctx.workflowContext) : []
-        const contextDesc = contextEntries.length > 0
-          ? contextEntries
-              .map(([k, v]) => `  ${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`)
-              .join("\n")
-          : ""
-
-        const prompt = [
-          ctx.instructions ? ctx.instructions : `Call the tool \`${toolId}\` now.`,
-          contextDesc ? `Workflow context from prior steps:\n${contextDesc}` : "",
-          fixedArgs && Object.keys(fixedArgs).length > 0
-            ? `The following parameters are already decided — use them exactly:\n${fixedDesc}`
-            : "",
-          `You must determine the value(s) for: ${agentDesc}`,
-          `Use the tool immediately.`,
-        ].filter(Boolean).join("\n\n")
-
-        const rawSchema = (toolDef as any).parameters
-        const toolSchemaJson =
-          rawSchema?._zod?.def !== undefined
-            ? zodToJSONSchema(rawSchema)
-            : rawSchema?.def !== undefined
-              ? zodToJSONSchema(rawSchema)
-              : rawSchema?._def !== undefined
-                ? zodToJsonSchemaV3(rawSchema as any)
-                : (rawSchema ?? {})
-        const toolSchema = jsonSchema(toolSchemaJson)
-
-        let language: any
-        if (ctx.model) {
-          const modelInfo = await Provider.getModel(ctx.model.providerID, ctx.model.modelID)
-          language = await Provider.getLanguage(modelInfo)
-        } else {
-          const session = await Session.get(ctx.sessionID)
-          if (session.agentID) {
-            const agentCfg = await Agent.get(session.agentID)
-            if (agentCfg?.model) {
-              const modelInfo = await Provider.getModel(agentCfg.model.providerID, agentCfg.model.modelID)
-              language = await Provider.getLanguage(modelInfo)
-            }
-          }
-        }
-
-        if (language) {
-          const toolForModel = aiTool({
-            description: toolDef.description,
-            inputSchema: toolSchema,
-          })
-          const result = await generateText({
-            model: language,
-            toolChoice: { type: "tool", toolName: toolId },
-            tools: {
-              [toolId]: toolForModel,
-            },
-            prompt,
-          })
-          let llmArgs = (result.toolCalls?.[0] as any)?.args ?? {}
-          const parseResult = typeof rawSchema?.safeParse === "function" ? rawSchema.safeParse(llmArgs) : undefined
-
-          if (parseResult && !parseResult.success) {
-            const retryResult = await generateText({
-              model: language,
-              toolChoice: { type: "tool", toolName: toolId },
-              tools: {
-                [toolId]: toolForModel,
-              },
-              prompt: [
-                prompt,
-                `Your previous tool call was rejected because its arguments did not match the required schema: ${parseResult.error.message}`,
-                `Try again and include every required field for \`${toolId}\`.`,
-              ].join("\n\n"),
-            })
-            llmArgs = (retryResult.toolCalls?.[0] as any)?.args ?? llmArgs
-
-            const retryParseResult =
-              typeof rawSchema?.safeParse === "function" ? rawSchema.safeParse(llmArgs) : undefined
-            if (retryParseResult && !retryParseResult.success) {
-              throw new Error(`Unable to fill valid arguments for \`${toolId}\`: ${retryParseResult.error.message}`, {
-                cause: retryParseResult.error,
-              })
-            }
-          }
-
-          // Fixed args always override LLM-provided values
-          finalArgs = { ...llmArgs, ...fixedArgs }
-        }
-      }
-
-      const result = await toolDef.execute(finalArgs, execCtx)
-      return { output: result.output, metadata: result.metadata }
-    })
+    registerToolExecutor(createWorkflowToolExecutor())
 
     // Clear out any tool parts left in pending/running state by a previous
     // process that was killed mid-stream — otherwise the UI shows them stuck

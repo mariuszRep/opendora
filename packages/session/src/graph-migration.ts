@@ -9,7 +9,7 @@
  */
 
 import { eq, asc, and, inArray } from "drizzle-orm"
-import { SessionTable, MessageTable, EntryEdgeTable, EdgesTable, EntriesTable } from "./session.sql.ts"
+import { SessionTable, MessageTable, EntryEdgeTable, EdgesTable, EntriesTable, GraphMigrationStateTable } from "./session.sql.ts"
 import { Identifier } from "@projectflows/util/id"
 import { getConfig } from "./config.ts"
 import type { EdgeType } from "./types.ts"
@@ -198,6 +198,15 @@ export async function migrateSession(sessionId: string): Promise<number> {
 export async function migrateAllSessions(): Promise<void> {
   const db = getConfig().db
 
+  // Check for a global completion marker — if present, skip the full scan.
+  // Individual migrateSession() calls still work per-session.
+  const marker = db
+    .select({ id: GraphMigrationStateTable.id })
+    .from(GraphMigrationStateTable)
+    .limit(1)
+    .get()
+  if (marker) return
+
   const sessions = db
     .select({ id: SessionTable.id })
     .from(SessionTable)
@@ -210,6 +219,15 @@ export async function migrateAllSessions(): Promise<void> {
     total += n
     if (n > 0) migrated++
   }
+
+  // Write a completion marker so subsequent calls skip the full scan.
+  db.insert(GraphMigrationStateTable)
+    .values({
+      id: "graph-migration-complete",
+      completed_at: new Date().toISOString(),
+      metadata: { total, migrated },
+    })
+    .run()
 
   if (total > 0) {
     log.info(

@@ -36,7 +36,7 @@
     "@ai-sdk/groq": "*",
     "@ai-sdk/mistral": "*",
     "@ai-sdk/openai": "*",
-    "@ai-sdk/openai-compatible": "*",
+    "@ai-sdk/openai-compatible": "1.0.33",
     "@ai-sdk/perplexity": "*",
     "@ai-sdk/provider": "*",
     "@ai-sdk/provider-utils": "^3.0.21",

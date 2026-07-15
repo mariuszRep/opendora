@@ -235,6 +235,10 @@ export function useOpendora(opts?: {
   const messageCacheRef = useRef<Map<string, MessageWithParts[]>>(new Map())
   const messageFetchRef = useRef<Map<string, Promise<MessageWithParts[]>>>(new Map())
   const deltaSeqRef = useRef(new Map<string, number>())
+  // Tracks user messages whose authoritative parts have already arrived via
+  // message.part.updated, so later message.updated events (e.g. queue status
+  // flipping from "queued" to "processing") don't wipe them out again.
+  const reconciledUserPartsRef = useRef(new Set<string>())
 
 
   const getAgentId = useCallback((agent: Agent & { id?: string }) => agent.id ?? agent.name, [])
@@ -607,7 +611,12 @@ export function useOpendora(opts?: {
             // so reset parts here — the authoritative part(s) arrive via the following
             // message.part.updated event(s). Without this, the optimistic text part lingers
             // alongside the server part and getMessageText() concatenates both.
-            return prev.map((m, i) => (i === idx ? { ...m, info, parts: info.role === "user" ? [] : m.parts } : m))
+            // Only do this on the *first* sync though — later message.updated events for
+            // the same message (e.g. a queued message flipping to "processing" once the
+            // agent picks it up) must not wipe parts that were already reconciled, or the
+            // message goes permanently blank with no follow-up part.updated to refill it.
+            const shouldResetParts = info.role === "user" && !reconciledUserPartsRef.current.has(info.id)
+            return prev.map((m, i) => (i === idx ? { ...m, info, parts: shouldResetParts ? [] : m.parts } : m))
           })
           if (isNewIncompleteAssistant) setStatus("streaming")
           break
@@ -680,6 +689,7 @@ export function useOpendora(opts?: {
           const { part } = (event as { type: string; properties: { part: Part } }).properties
           if (part.sessionID !== selectedSessionRef.current?.id) break
           deltaSeqRef.current.delete(`${part.id}:text`)
+          reconciledUserPartsRef.current.add(part.messageID)
           setMessages((prev) => {
             const msgIdx = prev.findIndex((m) => m.info.id === part.messageID)
             if (msgIdx === -1) return prev

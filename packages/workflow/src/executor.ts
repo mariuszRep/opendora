@@ -1,3 +1,12 @@
+export type WorkflowMeta = {
+  workflowID: string
+  workflowRunID: string
+  nodeID?: string
+  nodeType?: string
+  nodeLabel?: string
+  attempt?: number
+}
+
 export type WorkflowToolContext = {
   sessionID: string
   agent?: string
@@ -9,6 +18,8 @@ export type WorkflowToolContext = {
   instructions?: string
   /** Serialized prior node outputs available as workflow context. */
   workflowContext?: Record<string, unknown>
+  /** Node-as-Tool lifecycle tag, threaded through when the executor drives a real agent turn. */
+  workflowMeta?: WorkflowMeta
 }
 
 export type ToolExecutor = (
@@ -16,7 +27,7 @@ export type ToolExecutor = (
   fixedArgs: Record<string, unknown>,
   agentArgs: string[],
   ctx: WorkflowToolContext,
-) => Promise<{ output: string; metadata?: Record<string, unknown> }>
+) => Promise<{ output: string; metadata?: Record<string, unknown>; finalArgs: Record<string, unknown> }>
 
 let _toolExecutor: ToolExecutor | null = null
 

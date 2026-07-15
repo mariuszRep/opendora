@@ -197,21 +197,25 @@ export interface SessionCoreConfig {
     save?(location: string, content: string): Promise<void>
     saveConfig?(name: string, patch: { tools?: string[] }): Promise<void>
   }
-  /** Workflow service */
+  /** Workflow service — CRUD + execution for direct agent tool calls */
   workflow?: {
     list?(directory?: string): Promise<any[]>
     get?(id: string, directory?: string): Promise<any>
+    availableIds?(directory?: string): Promise<string[]>
+    run?(workflow: any, sessionId: string, input: Record<string, unknown>, directory: string): Promise<string>
   }
   /** Skill-tool registry — tools unlocked per session via skill_load */
   skillTools?: {
     get(sessionID: string): Set<string>
     add(sessionID: string, tools: string[]): void
   }
-  /** Session service (for compaction.create, injected to avoid circular dep) */
+  /** Session service (for compaction.create + workflow_run child-session lifecycle, injected to avoid circular dep) */
   session?: {
     updateMessage(msg: any): Promise<any>
     updatePart(part: any): Promise<any>
     messages(opts: { sessionID: string }): Promise<any[]>
+    createNext?(input: any): Promise<any>
+    setCwd?(input: { sessionID: string; cwd: string }): Promise<any>
   }
   /** Question service — presents questions to the user via the UI */
   question?: {

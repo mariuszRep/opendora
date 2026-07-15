@@ -34,7 +34,7 @@ type WorkflowMeta = {
 type NodeToolPartHandle = {
   readonly msgId: string
   readonly partId: string
-  finish(output: unknown, metadata?: Record<string, unknown>): Promise<void>
+  finish(output: unknown, metadata?: Record<string, unknown>, resolvedInput?: Record<string, unknown>): Promise<void>
   fail(error: string): Promise<void>
 }
 
@@ -83,7 +83,7 @@ async function startNodeToolPart(
   return {
     msgId,
     partId,
-    async finish(output: unknown, metadata?: Record<string, unknown>) {
+    async finish(output: unknown, metadata?: Record<string, unknown>, resolvedInput?: Record<string, unknown>) {
       const endTime = Date.now()
       await Session.updatePart({
         id: partId,
@@ -94,7 +94,7 @@ async function startNodeToolPart(
         tool: toolName,
         state: {
           status: "completed",
-          input,
+          input: resolvedInput ?? input,
           output: typeof output === "string" ? output : JSON.stringify(output, null, 2),
           title: toolName,
           metadata: (metadata ?? {}) as any,
@@ -490,7 +490,15 @@ async function runSubGraph({
       // don't declare workdir (e.g. question tool) avoid spurious Zod failures.
       // The tool executor already provides sessionDirectory via ctx.extra.directory.
 
-      nodeToolHandle = await startNodeToolPart(sessionId, actionId, resolvedArgs, currentDir, nodeMeta)
+      // Nodes with agentArgs are driven as a real, forced single-tool agent turn
+      // (see the server-side ToolExecutor). That turn's own message carries
+      // workflowMeta and is the canonical visible record, so we skip the
+      // synthetic wrapper here to avoid a duplicate tool-ish entry. Nodes with
+      // only fixed args are purely deterministic — keep the lightweight wrapper.
+      const nodeAgent = d.agent as string | undefined
+      if (agentArgs.length === 0) {
+        nodeToolHandle = await startNodeToolPart(sessionId, actionId, resolvedArgs, currentDir, nodeMeta)
+      }
 
       const retryConfig = nd.retry as { maxAttempts?: number; delaySeconds?: number } | undefined
       const maxAttempts = Math.max(1, retryConfig?.maxAttempts ?? 1)
@@ -499,10 +507,11 @@ async function runSubGraph({
       let lastError: unknown
       let toolOutput: string | undefined
       let toolMeta: Record<string, unknown> | undefined
+      let toolFinalArgs: Record<string, unknown> | undefined
 
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         // Show retry attempt counter on the tool card when retrying
-        if (attempt > 1) {
+        if (nodeToolHandle && attempt > 1) {
           await Session.updatePart({
             id: nodeToolHandle.partId,
             sessionID: sessionId,
@@ -520,17 +529,20 @@ async function runSubGraph({
         }
         try {
           const session = await Session.get(sessionId)
-          const { output, metadata: toolResultMetadata } = await _toolExecutor(actionId, resolvedArgs, agentArgs, {
+          const { output, metadata: toolResultMetadata, finalArgs } = await _toolExecutor(actionId, resolvedArgs, agentArgs, {
             sessionID: sessionId,
-            agent: session.agentID,
+            agent: nodeAgent ?? session.agentID,
+            model: nodeModel,
             abort: new AbortController().signal,
-            messageID: nodeToolHandle.msgId,
-            partID: nodeToolHandle.partId,
+            messageID: nodeToolHandle?.msgId,
+            partID: nodeToolHandle?.partId,
             instructions: instructions ? resolveTemplate(instructions, input, ctx) : undefined,
             workflowContext: Object.keys(ctx).length > 0 ? { ...ctx } : undefined,
+            workflowMeta: { ...nodeMeta, attempt },
           })
           toolOutput = output
           toolMeta = toolResultMetadata as Record<string, unknown> | undefined
+          toolFinalArgs = finalArgs
           lastError = undefined
           break
         } catch (err) {
@@ -544,7 +556,9 @@ async function runSubGraph({
       if (lastError !== undefined) throw lastError
       result = toolOutput!
 
-      await nodeToolHandle.finish(toolOutput!, toolMeta)
+      if (nodeToolHandle) {
+        await nodeToolHandle.finish(toolOutput!, toolMeta, toolFinalArgs)
+      }
 
     } else if (d.nodeType === NodeTypeId.Decide) {
       const mode = (params.mode as string) ?? "agent"
@@ -690,12 +704,12 @@ async function runSubGraph({
           }
         }
 
-        // Collect: use explicit collect key, or fall back to the item itself
-        if (collectKey && iterCtx[collectKey] !== undefined) {
-          iterResults.push(iterCtx[collectKey])
-        } else {
-          iterResults.push(item)
-        }
+        // Collect: resolve as a $ref (e.g. "$ctx.search_result") when prefixed,
+        // else treat as a legacy bare key — falls back to the item itself if unset.
+        const collected = collectKey
+          ? (collectKey.startsWith("$") ? resolveRef(collectKey, input, iterCtx) : iterCtx[collectKey])
+          : undefined
+        iterResults.push(collected !== undefined ? collected : item)
       }
 
       result = JSON.stringify(iterResults)

@@ -513,6 +513,7 @@ export namespace MessageV2 {
         nodeID: z.string().optional(),
         nodeType: z.string().optional(),
         nodeLabel: z.string().optional(),
+        attempt: z.number().optional(),
       })
       .optional(),
   }).meta({

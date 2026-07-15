@@ -222,6 +222,12 @@ export const EntriesTable = sqliteTable("entries", {
 
 // ─── Universal edges table ────────────────────────────────────────────────────
 
+export const GraphMigrationStateTable = sqliteTable("graph_migration_state", {
+  id: text().primaryKey(),
+  completed_at: text().notNull(),
+  metadata: text({ mode: "json" }).$type<Record<string, unknown>>(),
+})
+
 export const EdgesTable = sqliteTable(
   "edges",
   {

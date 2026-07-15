@@ -88,10 +88,21 @@ export namespace SessionPrompt {
     if (match) throw new Session.BusyError(sessionID)
   }
 
+  export type WorkflowMeta = {
+    workflowID: string
+    workflowRunID: string
+    nodeID?: string
+    nodeType?: string
+    nodeLabel?: string
+    attempt?: number
+  }
+
   // In-memory store for extra tools that cannot be serialized to the DB.
   // Keyed by sessionID — only one prompt is active per session at a time.
   // done=true once any extra tool has been called → stops re-injecting and exits the loop.
-  const _extraToolsState = new Map<string, { tools: Record<string, AITool>; done: boolean }>()
+  // workflowMeta (when set) tags the resulting assistant message so a forced
+  // extra-tool turn can serve as a durable, traceable workflow node record.
+  const _extraToolsState = new Map<string, { tools: Record<string, AITool>; done: boolean; workflowMeta?: WorkflowMeta }>()
 
   export function markExtraToolsDone(sessionID: string) {
     const entry = _extraToolsState.get(sessionID)
@@ -202,8 +213,9 @@ export namespace SessionPrompt {
   export async function promptWithExtraTools(
     input: z.infer<typeof PromptInput>,
     extraTools: Record<string, AITool>,
+    workflowMeta?: WorkflowMeta,
   ): Promise<MessageV2.WithParts> {
-    _extraToolsState.set(input.sessionID, { tools: extraTools, done: false })
+    _extraToolsState.set(input.sessionID, { tools: extraTools, done: false, workflowMeta })
     try {
       return await prompt(input)
     } finally {
@@ -754,6 +766,7 @@ export namespace SessionPrompt {
           },
           modelID: model.id,
           providerID: model.providerID,
+          ...(_extraToolsEntry?.workflowMeta ? { workflowMeta: _extraToolsEntry.workflowMeta } : {}),
           time: {
             created: Date.now(),
           },
@@ -1038,6 +1051,8 @@ export namespace SessionPrompt {
           setAgentID: (sessionId: string, agentId: string) => Session.setAgentID({ sessionID: sessionId, agentID: agentId }),
           setParentSessionID: (opts: { sessionID: string; parentSessionID: string }) => Session.setParentSessionID(opts),
           setSessionStatus: (sessionId: string, status: string) => Session.setSessionStatus({ sessionID: sessionId, status: status as any }),
+          createNext: (input: any) => Session.createNext(input),
+          setCwd: (input: { sessionID: string; cwd: string }) => Session.setCwd(input),
         },
         prompt: (opts: any) => SessionPrompt.prompt(opts),
         resolvePromptParts: (template: string) => resolvePromptParts(template),
@@ -1049,6 +1064,12 @@ export namespace SessionPrompt {
           create: (input: any) => cfg.schedule!.create(input),
           update: (id: string, patch: any) => cfg.schedule!.update(id, patch),
           remove: (id: string) => cfg.schedule!.remove(id),
+        } : undefined,
+        workflow: cfg.workflow ? {
+          get: (id: string) => cfg.workflow!.get?.(id),
+          availableIds: () => cfg.workflow!.availableIds?.() ?? Promise.resolve([]),
+          run: (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) =>
+            cfg.workflow!.run!(workflow, sessionId, input, directory),
         } : undefined,
         emit: (type: string, payload: unknown) => {
           cfg.bus?.publish({ type }, payload)

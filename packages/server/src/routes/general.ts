@@ -14,10 +14,17 @@ type VoiceSettings = {
   }
 }
 
+type SessionTreeSettings = {
+  exclusiveExpand: boolean
+  autoExpandActiveSessions: boolean
+}
+
 type GeneralSettings = {
   theme?: string
   timezone?: string
   voice?: VoiceSettings
+  sessionTree?: SessionTreeSettings
+  manualQueueMode?: boolean
 }
 
 const DEFAULT: GeneralSettings = {
@@ -31,6 +38,11 @@ const DEFAULT: GeneralSettings = {
       hotkey: { key: " ", ctrlKey: true, shiftKey: false, altKey: false, metaKey: false },
     },
   },
+  sessionTree: {
+    exclusiveExpand: true,
+    autoExpandActiveSessions: false,
+  },
+  manualQueueMode: false,
 }
 
 function generalDir() {

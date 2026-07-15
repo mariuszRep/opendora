@@ -585,7 +585,7 @@ export namespace Provider {
         autoload: true,
         async getModel(_sdk: any, modelID: string, _options?: Record<string, any>) {
           // Model IDs use Unified API format: provider/model (e.g., "anthropic/claude-sonnet-4-5")
-          return aigateway(unified(modelID))
+          return aigateway(unified(modelID) as any)
         },
         options: {},
       }

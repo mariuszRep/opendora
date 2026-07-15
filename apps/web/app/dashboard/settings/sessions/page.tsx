@@ -22,11 +22,64 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { DataTable } from "@/components/ui/data-table"
+import { Switch } from "@/components/ui/switch"
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout"
 import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 import { opendora } from "@/lib/projectflows"
 import { createSessionColumns, type SessionRow } from "./columns"
+import { useSessionTreeSettings } from "@/hooks/use-session-tree-settings"
 import { MessageSquareIcon, SearchIcon, Trash2Icon, Loader2Icon } from "lucide-react"
+
+function SessionTreeSettingsCard() {
+  const { settings, updateSettings } = useSessionTreeSettings()
+  const [savingKey, setSavingKey] = useState<"exclusiveExpand" | "autoExpandActiveSessions" | null>(null)
+
+  async function handleToggle(key: "exclusiveExpand" | "autoExpandActiveSessions", value: boolean) {
+    setSavingKey(key)
+    try {
+      updateSettings({ [key]: value })
+    } finally {
+      setSavingKey(null)
+    }
+  }
+
+  return (
+    <div className="mb-6 space-y-3">
+      <div className="flex items-center justify-between px-4 py-3 border rounded-lg">
+        <div>
+          <div className="text-sm font-medium">Exclusive expand</div>
+          <div className="text-xs text-muted-foreground">
+            Expanding a session collapses every other branch, so only one path from a top-level session down to your selection is open at a time.
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {savingKey === "exclusiveExpand" && <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />}
+          <Switch
+            checked={settings.exclusiveExpand}
+            disabled={savingKey === "exclusiveExpand"}
+            onCheckedChange={(v) => handleToggle("exclusiveExpand", v)}
+          />
+        </div>
+      </div>
+      <div className="flex items-center justify-between px-4 py-3 border rounded-lg">
+        <div>
+          <div className="text-sm font-medium">Auto-expand active sessions</div>
+          <div className="text-xs text-muted-foreground">
+            Automatically open the branch leading to a currently running session, even if you&apos;ve expanded a different one.
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {savingKey === "autoExpandActiveSessions" && <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />}
+          <Switch
+            checked={settings.autoExpandActiveSessions}
+            disabled={savingKey === "autoExpandActiveSessions"}
+            onCheckedChange={(v) => handleToggle("autoExpandActiveSessions", v)}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function formatSessionTitle(session: { title?: string; time: { created: number } }): string {
   if (session.title && !session.title.startsWith("New session")) return session.title
@@ -116,6 +169,8 @@ export default function SettingsSessionsPage() {
           View and manage all conversation sessions across agents
         </p>
       </div>
+
+      <SessionTreeSettingsCard />
 
       {deleteError && (
         <div className="mb-4 text-sm text-destructive">{deleteError}</div>
