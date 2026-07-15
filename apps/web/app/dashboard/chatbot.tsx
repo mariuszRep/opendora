@@ -609,7 +609,7 @@ export const Chatbot = () => {
           ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID }
           : undefined
       const fallbackGroupID = selectedGroupId ?? undefined
-      const content = userName ? `user: ${userName}\n\n${message.text}` : message.text
+      const content = message.text
       const files = (message.files ?? []).map((f) => ({
         type: "file" as const,
         mime: f.mediaType,
@@ -617,7 +617,7 @@ export const Chatbot = () => {
         url: f.url,
       }))
       setText("")
-      const doSend = () => sendMessage(content, { model, fallbackGroupID, agent: selectedAgent, files: files.length > 0 ? files : undefined })
+      const doSend = () => sendMessage(content, { model, fallbackGroupID, agent: selectedAgent, userName: userName || undefined, files: files.length > 0 ? files : undefined })
       if (!selectedSession) {
         createSession().then(doSend)
       } else {

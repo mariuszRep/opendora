@@ -96,6 +96,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
             selectedSessionId={selectedSession?.id}
             activeSessions={activeSessions}
             sessions={sessions}
+            agents={agents}
           />
         </div>
       )}

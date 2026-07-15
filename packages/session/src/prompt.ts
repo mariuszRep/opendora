@@ -110,6 +110,8 @@ export namespace SessionPrompt {
       })
       .optional(),
     agent: z.string().optional(),
+    /** Display name of the human sender, stored as structured attribution (never baked into part text) */
+    userName: z.string().optional(),
     noReply: z.boolean().optional(),
     noWait: z.boolean().optional(),
     hidden: z.boolean().optional(),
@@ -397,15 +399,26 @@ export namespace SessionPrompt {
       msgs = modelContextForQueuedTurn(msgs, activeQueuedUserID)
 
       let lastUser: MessageV2.User | undefined
+      let lastUserIndex = -1
       let lastAssistant: MessageV2.Assistant | undefined
+      let lastAssistantIndex = -1
       let lastFinished: MessageV2.Assistant | undefined
+      let lastFinishedIndex = -1
       let tasks: (MessageV2.CompactionPart | MessageV2.SubtaskPart)[] = []
       for (let i = msgs.length - 1; i >= 0; i--) {
         const msg = msgs[i]!
-        if (!lastUser && msg.info.role === "user") lastUser = msg.info as MessageV2.User
-        if (!lastAssistant && msg.info.role === "assistant") lastAssistant = msg.info as MessageV2.Assistant
-        if (!lastFinished && msg.info.role === "assistant" && msg.info.finish)
+        if (!lastUser && msg.info.role === "user") {
+          lastUser = msg.info as MessageV2.User
+          lastUserIndex = i
+        }
+        if (!lastAssistant && msg.info.role === "assistant") {
+          lastAssistant = msg.info as MessageV2.Assistant
+          lastAssistantIndex = i
+        }
+        if (!lastFinished && msg.info.role === "assistant" && msg.info.finish) {
           lastFinished = msg.info as MessageV2.Assistant
+          lastFinishedIndex = i
+        }
         if (lastUser && lastFinished) break
         const task = msg.parts.filter((part) => part.type === "compaction" || part.type === "subtask")
         if (task && !lastFinished) {
@@ -418,7 +431,7 @@ export namespace SessionPrompt {
         !activeQueuedUserID &&
         lastAssistant?.finish &&
         !["tool-calls", "unknown"].includes(lastAssistant.finish) &&
-        lastUser.id < lastAssistant.id
+        lastAssistantIndex > lastUserIndex
       ) {
         log.info("exiting loop", { sessionID })
         break
@@ -817,8 +830,9 @@ export namespace SessionPrompt {
 
       // Ephemerally wrap queued user messages with a reminder to stay on track
       if (step > 1 && lastFinished) {
-        for (const msg of msgs) {
-          if (msg.info.role !== "user" || msg.info.id <= lastFinished.id) continue
+        for (let i = 0; i < msgs.length; i++) {
+          const msg = msgs[i]!
+          if (msg.info.role !== "user" || i <= lastFinishedIndex) continue
           for (const part of msg.parts) {
             if (part.type !== "text" || part.ignored || part.synthetic) continue
             if (!part.text.trim()) continue
@@ -1323,6 +1337,9 @@ export namespace SessionPrompt {
       if (parentMsg && parentMsg.role === "assistant" && parentMsg.from) {
         from = parentMsg.from
       }
+    }
+    if (!from && input.userName) {
+      from = { kind: "user", id: input.userName }
     }
 
     const info: MessageV2.Info = {

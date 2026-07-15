@@ -86,7 +86,7 @@ export type UseOpendoraResult = {
   allPermissionRequests: Record<string, PermissionRequest[]>
   replyPermission: (requestID: string, reply: PermissionReply) => Promise<void>
   status: ChatStatus
-  sendMessage: (text: string, options?: { model?: { providerID: string; modelID: string }; fallbackGroupID?: string; agent?: string; files?: Array<{ type: "file"; mime: string; filename?: string; url: string }> }) => Promise<void>
+  sendMessage: (text: string, options?: { model?: { providerID: string; modelID: string }; fallbackGroupID?: string; agent?: string; userName?: string; files?: Array<{ type: "file"; mime: string; filename?: string; url: string }> }) => Promise<void>
   abort: () => void
   abortSession: (sessionID: string) => void
   compact: (model: { providerID: string; modelID: string }) => Promise<void>
@@ -601,13 +601,13 @@ export function useOpendora(opts?: {
             !(info as { time: { completed?: number } }).time.completed &&
             !messagesRef.current.find((m) => m.info.id === info.id)
           setMessages((prev) => {
-            // Replace the optimistic placeholder with the real user message
-            const withoutOptimistic = info.role === "user"
-              ? prev.filter((m) => !m.info.id.startsWith("_optimistic_"))
-              : prev
-            const idx = withoutOptimistic.findIndex((m) => m.info.id === info.id)
-            if (idx === -1) return [...withoutOptimistic, { info, parts: [] }]
-            return withoutOptimistic.map((m, i) => (i === idx ? { ...m, info } : m))
+            const idx = prev.findIndex((m) => m.info.id === info.id)
+            if (idx === -1) return [...prev, { info, parts: [] }]
+            // For user messages, the real info shares the client's optimistic message ID,
+            // so reset parts here — the authoritative part(s) arrive via the following
+            // message.part.updated event(s). Without this, the optimistic text part lingers
+            // alongside the server part and getMessageText() concatenates both.
+            return prev.map((m, i) => (i === idx ? { ...m, info, parts: info.role === "user" ? [] : m.parts } : m))
           })
           if (isNewIncompleteAssistant) setStatus("streaming")
           break
@@ -1007,7 +1007,7 @@ export function useOpendora(opts?: {
   }, [selectedAgent, router])
 
   const sendMessage = useCallback(
-    async (text: string, options?: { model?: { providerID: string; modelID: string }; fallbackGroupID?: string; agent?: string; files?: Array<{ type: "file"; mime: string; filename?: string; url: string }> }) => {
+    async (text: string, options?: { model?: { providerID: string; modelID: string }; fallbackGroupID?: string; agent?: string; userName?: string; files?: Array<{ type: "file"; mime: string; filename?: string; url: string }> }) => {
       const session = selectedSessionRef.current
       if (!session) return
       const queued = statusRef.current !== "ready"
@@ -1028,6 +1028,7 @@ export function useOpendora(opts?: {
             time: { created: optimisticCreatedAt },
             agent: options?.agent ?? selectedAgent,
             model: options?.model ?? { providerID: "", modelID: "" },
+            ...(options?.userName ? { from: { kind: "user" as const, id: options.userName } } : {}),
             ...(queued ? { queue: { status: "queued" as const, submittedAt: optimisticCreatedAt } } : {}),
           },
           parts: [
@@ -1053,6 +1054,7 @@ export function useOpendora(opts?: {
           parts,
           ...(options?.model ? { model: options.model } : {}),
           ...(options?.fallbackGroupID ? { fallbackGroupID: options.fallbackGroupID } : {}),
+          ...(options?.userName ? { userName: options.userName } : {}),
           agent: options?.agent ?? selectedAgent,
         })
         // Status transitions to "ready" via SSE session.idle event

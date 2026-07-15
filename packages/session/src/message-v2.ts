@@ -581,7 +581,7 @@ export namespace MessageV2 {
     const toolNames = new Set<string>()
     const attributionPrefix = (info: MessageV2.Info) => {
       if (!info.from?.id) return ""
-      if (info.from.kind === "user") return ""
+      if (info.from.kind === "user") return `user: ${info.from.id}\n\n`
       if (info.role === "assistant" && info.from.kind === "agent" && info.from.id === info.agent) return ""
       return `[${info.from.kind}:${info.from.id}] `
     }

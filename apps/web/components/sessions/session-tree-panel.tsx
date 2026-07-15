@@ -10,11 +10,23 @@ import { Button } from "@/components/ui/button"
 
 const ROW_HEIGHT = 32
 const NODE_RADIUS = 5
-const LEFT_PAD   = 12
 const DEPTH_INDENT = 14
 const LINE_WIDTH  = 2
 const DOT_EDGE_GAP = 2
 const DOT_LINE_GAP = NODE_RADIUS + DOT_EDGE_GAP
+const SPINNER_RADIUS = NODE_RADIUS + 2
+const SPINNER_CIRCUMFERENCE = 2 * Math.PI * SPINNER_RADIUS
+const SPINNER_ARC = SPINNER_CIRCUMFERENCE * 0.28
+const SPINNER_GAP = SPINNER_CIRCUMFERENCE - SPINNER_ARC
+// Largest ring ever drawn around a dot (the cursor-selection background halo) —
+// used to keep the dot's clearance from the row edge and from the text label
+// constant across states instead of it shrinking/growing with which ring is active.
+const MAX_RING_RADIUS = NODE_RADIUS + 5
+const RING_GAP = 6 // matches the row's own flex `gap-1.5` (6px) between spacer and text
+const LEFT_PAD = MAX_RING_RADIUS + RING_GAP
+// Spacer only needs to clear the ring itself — the row's flex `gap-1.5` already
+// supplies the same RING_GAP before the text, so it isn't added again here.
+const TEXT_OFFSET = MAX_RING_RADIUS
 
 interface VisibleSession {
   session: Session
@@ -27,6 +39,7 @@ interface SessionDot {
   y: number
   color: string
   isCursor: boolean
+  isActive: boolean
   hasChildren: boolean
   spacerWidth: number
 }
@@ -42,6 +55,7 @@ function computeTreeLayout(
   store: Store,
   selectedSessionId: string | undefined,
   sessionColors: Map<string, string>,
+  activeSessions: Set<string>,
 ): { dots: SessionDot[]; paths: SessionPath[]; svgWidth: number } {
   const rowMap = new Map<string, number>()
   visibleSessions.forEach(({ session }, i) => rowMap.set(session.id, i))
@@ -58,8 +72,9 @@ function computeTreeLayout(
       y: getY(rowMap.get(session.id) ?? 0),
       color: sessionColors.get(session.id) ?? getAgentColor(undefined).hex,
       isCursor: session.id === selectedSessionId,
+      isActive: activeSessions.has(session.id),
       hasChildren: (node?.children.length ?? 0) > 0 || Boolean(node?.hasChildren),
-      spacerWidth: x + NODE_RADIUS + 5,
+      spacerWidth: x + TEXT_OFFSET,
     }
   })
 
@@ -146,7 +161,7 @@ function formatSessionTitle(session: Session): string {
   })
 }
 
-function buildSessionIndexes(sessions: Session[]) {
+function buildSessionIndexes(sessions: Session[], activeSessions: Set<string>) {
   const roots: Session[] = []
   const childrenMap = new Map<string, Session[]>()
   const sessionIds = new Set(sessions.map((session) => session.id))
@@ -162,12 +177,34 @@ function buildSessionIndexes(sessions: Session[]) {
     childrenMap.set(session.parentSessionID, existing)
   }
 
-  roots.sort((a, b) => b.time.updated - a.time.updated)
+  // Active sessions always float to the top of their sibling group.
+  const activeRank = (session: Session) => (activeSessions.has(session.id) ? 0 : 1)
+
+  roots.sort((a, b) => activeRank(a) - activeRank(b) || b.time.updated - a.time.updated)
   for (const children of childrenMap.values()) {
-    children.sort((a, b) => a.time.created - b.time.created)
+    children.sort((a, b) => activeRank(a) - activeRank(b) || a.time.created - b.time.created)
   }
 
   return { roots, childrenMap }
+}
+
+// Ancestor ids that must be force-expanded so an active session deeper in the
+// tree stays visible without the user manually expanding every branch.
+function computeForcedExpandIds(sessions: Session[], activeSessions: Set<string>): Set<string> {
+  const byId = new Map(sessions.map((session) => [session.id, session]))
+  const result = new Set<string>()
+
+  for (const activeId of activeSessions) {
+    let current = byId.get(activeId)
+    while (current?.parentSessionID) {
+      const parentId = current.parentSessionID
+      if (result.has(parentId)) break
+      result.add(parentId)
+      current = byId.get(parentId)
+    }
+  }
+
+  return result
 }
 
 function computeVisibleSessions(roots: Session[], store: Store): VisibleSession[] {
@@ -189,6 +226,8 @@ type SessionTreePanelProps = {
   activeSessions?: Set<string>
   sessions: Session[] // Accept sessions from parent to avoid duplicate fetch
   agents?: Array<Agent & { _id?: string }>
+  /** Hide the "Session Tree" title bar + refresh button, for embedding under an existing header. */
+  showHeader?: boolean
 }
 
 export function SessionTreePanel({
@@ -198,13 +237,14 @@ export function SessionTreePanel({
   activeSessions = new Set(),
   sessions,
   agents = [],
+  showHeader = true,
 }: SessionTreePanelProps) {
   const [store, setStore] = useState<Store>(emptyStore)
 
   const [rootLoading, setRootLoading] = useState(false)
   const [loadError, setLoadError] = useState<string>()
   const [rootSessions, setRootSessions] = useState<Session[]>([])
-  const sessionIndexes = useMemo(() => buildSessionIndexes(sessions), [sessions])
+  const sessionIndexes = useMemo(() => buildSessionIndexes(sessions, activeSessions), [sessions, activeSessions])
   const sessionColors = useMemo(() => {
     const agentsById = new Map<string, Agent & { _id?: string }>()
     const agentsByName = new Map<string, Agent & { _id?: string }>()
@@ -228,6 +268,7 @@ export function SessionTreePanel({
     setLoadError(undefined)
     try {
       const { roots, childrenMap } = sessionIndexes
+      const forcedExpandIds = computeForcedExpandIds(sessions, activeSessions)
 
       setStore((prev) => {
         const nodes: Record<string, SessionNode> = {}
@@ -237,7 +278,7 @@ export function SessionTreePanel({
           nodes[session.id] = {
             session,
             children: [],
-            expanded: previous?.expanded ?? false,
+            expanded: (previous?.expanded ?? false) || forcedExpandIds.has(session.id),
             loaded: true,
             loading: previous?.loading ?? false,
             hasChildren: childrenMap.has(session.id),
@@ -262,7 +303,7 @@ export function SessionTreePanel({
     } finally {
       setRootLoading(false)
     }
-  }, [sessions, sessionIndexes, rootSessionId])
+  }, [sessions, sessionIndexes, rootSessionId, activeSessions])
 
   useEffect(() => {
     loadRoots()
@@ -307,8 +348,8 @@ export function SessionTreePanel({
   )
 
   const { dots, paths, svgWidth } = useMemo(
-    () => computeTreeLayout(visibleSessions, store, selectedSessionId, sessionColors),
-    [visibleSessions, store, selectedSessionId, sessionColors],
+    () => computeTreeLayout(visibleSessions, store, selectedSessionId, sessionColors, activeSessions),
+    [visibleSessions, store, selectedSessionId, sessionColors, activeSessions],
   )
 
   const spacerMap = useMemo(
@@ -320,21 +361,23 @@ export function SessionTreePanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center justify-between border-b px-2 py-1.5">
-        <span className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Session Tree
-        </span>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          className="size-5 shrink-0"
-          onClick={loadRoots}
-          title="Refresh"
-          disabled={rootLoading}
-        >
-          <RefreshCwIcon className={cn("size-3", rootLoading && "animate-spin")} />
-        </Button>
-      </div>
+      {showHeader && (
+        <div className="flex items-center justify-between border-b px-2 py-1.5">
+          <span className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Session Tree
+          </span>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            className="size-5 shrink-0"
+            onClick={loadRoots}
+            title="Refresh"
+            disabled={rootLoading}
+          >
+            <RefreshCwIcon className={cn("size-3", rootLoading && "animate-spin")} />
+          </Button>
+        </div>
+      )}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {rootLoading && rootSessions.length === 0 ? (
@@ -375,7 +418,7 @@ export function SessionTreePanel({
                           cx={dot.x}
                           cy={dot.y}
                           r={NODE_RADIUS + 5}
-                          fill="hsl(var(--sidebar-accent))"
+                          fill="var(--sidebar-accent)"
                         />
                       )}
                       {dot.isCursor && (
@@ -390,13 +433,27 @@ export function SessionTreePanel({
                           transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
                         />
                       )}
+                      {dot.isActive && (
+                        <motion.circle
+                          cx={dot.x}
+                          cy={dot.y}
+                          r={SPINNER_RADIUS}
+                          fill="none"
+                          stroke={dot.color}
+                          strokeWidth="1.75"
+                          strokeLinecap="round"
+                          strokeDasharray={`${SPINNER_ARC} ${SPINNER_GAP}`}
+                          animate={{ rotate: 360 }}
+                          transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
+                        />
+                      )}
                       {dot.hasChildren ? (
                         <>
                           <circle
                             cx={dot.x}
                             cy={dot.y}
                             r={NODE_RADIUS}
-                            fill={dot.isCursor ? "hsl(var(--sidebar-accent))" : "hsl(var(--sidebar))"}
+                            fill={dot.isCursor ? "var(--sidebar-accent)" : "var(--sidebar)"}
                             stroke={dot.color}
                             strokeWidth="1.75"
                           />
@@ -436,7 +493,6 @@ export function SessionTreePanel({
                 if (!node) return null
                 const { loading } = node
                 const isSelected = selectedSessionId === session.id
-                const isActive = activeSessions.has(session.id)
 
                 return (
                   <div
@@ -444,18 +500,14 @@ export function SessionTreePanel({
                     style={{ height: `${ROW_HEIGHT}px` }}
                     onClick={() => handleSessionClick(session)}
                     className={cn(
-                      "group flex w-full items-center gap-1.5 pr-2 text-sm cursor-pointer select-none transition-colors",
+                      "group flex w-full items-center gap-1.5 rounded-md pr-2 text-sm cursor-pointer select-none transition-colors",
                       "hover:bg-accent hover:text-accent-foreground",
                       isSelected && "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
                     )}
                   >
-                    <div style={{ width: spacerMap.get(session.id) ?? (LEFT_PAD + NODE_RADIUS + 8) }} className="shrink-0" />
+                    <div style={{ width: spacerMap.get(session.id) ?? (LEFT_PAD + TEXT_OFFSET) }} className="shrink-0" />
 
                     <span className="truncate flex-1">{formatSessionTitle(session)}</span>
-
-                    {isActive && (
-                      <div className="h-1.5 w-1.5 rounded-full bg-green-500 shrink-0 animate-pulse mx-1" title="Active" />
-                    )}
 
                     {loading && (
                       <RefreshCwIcon className="ml-auto h-3 w-3 shrink-0 animate-spin text-muted-foreground" />

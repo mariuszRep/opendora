@@ -2,8 +2,8 @@
 
 import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 import { NotificationBlade } from "@/components/notifications/notification-blade"
-import { SessionEditSheet } from "@/components/sessions/session-edit-sheet"
-import { SessionCreateDialog, SESSION_TYPE_CONFIG } from "@/components/sessions/session-create-dialog"
+import { SessionCreateDialog } from "@/components/sessions/session-create-dialog"
+import { SessionTreePanel } from "@/components/sessions/session-tree-panel"
 import { Button } from "@/components/ui/button"
 import {
   Sidebar,
@@ -13,50 +13,26 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { cn } from "@/lib/utils"
-import type { Session, SessionType } from "@/lib/projectflows"
-import { getAgentColor } from "@/lib/agent-colors"
-import { BellIcon, BotIcon, FolderTreeIcon, MessageSquareIcon, PlusIcon, PlugIcon, Settings2Icon, StarIcon, SquareIcon, NetworkIcon, GalleryHorizontalIcon, GlobeIcon } from "lucide-react"
+import type { SessionType } from "@/lib/projectflows"
+import { BellIcon, BotIcon, FolderTreeIcon, PlusIcon, PlugIcon, Settings2Icon, NetworkIcon, GalleryHorizontalIcon, GlobeIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type React from "react"
 import { useState, useEffect } from "react"
 
-function formatSessionTitle(session: { title?: string; time: { created: number } }): string {
-  if (session.title && !session.title.startsWith("New session")) return session.title
-  return new Date(session.time.created).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
-
-function actionRight(slot: number): string {
-  return `${0.25 + slot * 1.75}rem`
-}
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter()
   const {
-    agentSessions,
     selectedSession,
     selectSession,
     createSession,
     agents,
     selectedAgent,
-    selectAgent,
-    defaultAgent,
-    setDefaultAgent,
     sessions,
     activeSessions,
-    abortSession,
-    setAgentMainSession,
-    allQuestionRequests,
     fileTreeOpen,
     toggleFileTree,
     sessionTreeOpen,
@@ -79,23 +55,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   const visibleAgents = agents.filter((a) => !a.hidden)
-  
-  // Track which agents are currently working based on active sessions
-  // Sessions waiting for user question input are excluded — they're paused, not working
-  const workingAgents = new Set<string>()
-  sessions.forEach((session) => {
-    if (session.agentID && activeSessions.has(session.id)) {
-      const sessionHasPendingQuestion = (allQuestionRequests[session.id]?.length ?? 0) > 0
-      if (!sessionHasPendingQuestion) {
-        workingAgents.add(session.agentID)
-      }
-    }
-  })
 
-  // Session edit sheet state
-  const [sessionEditOpen, setSessionEditOpen] = useState(false)
-  const [editingSession, setEditingSession] = useState<Session | null>(null)
-  
   // Session create dialog state
   const [sessionCreateOpen, setSessionCreateOpen] = useState(false)
 
@@ -103,162 +63,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <>
       <Sidebar collapsible="icon" {...props}>
         <SidebarContent>
-          {/* Agent section */}
-          <SidebarGroup>
-            <SidebarGroupLabel 
-              className="group/agents group-data-[collapsible=icon]:hidden flex items-center justify-between pr-1"
-              onMouseEnter={(e) => {
-                const settingsButton = e.currentTarget.querySelector('button[title="Agents settings"]') as HTMLButtonElement
-                if (settingsButton) {
-                  settingsButton.style.opacity = '1'
-                }
-              }}
-              onMouseLeave={(e) => {
-                const settingsButton = e.currentTarget.querySelector('button[title="Agents settings"]') as HTMLButtonElement
-                if (settingsButton) {
-                  settingsButton.style.opacity = '0'
-                }
-              }}
-            >
-              <span>Agents</span>
-              <div className="flex items-center">
-                <Button
-                  ref={(el) => {
-                    if (el) el.style.opacity = '0'
-                  }}
-                  size="icon-sm"
-                  variant="ghost"
-                  className="size-5 text-muted-foreground hover:text-foreground transition-opacity"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    router.push("/dashboard/settings/agents")
-                  }}
-                  title="Agents settings"
-                >
-                  <Settings2Icon className="size-3" />
-                </Button>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  className="size-5"
-                  onClick={() => router.push("/dashboard/agents/new")}
-                  title="New agent"
-                >
-                  <PlusIcon className="size-3" />
-                </Button>
-              </div>
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {visibleAgents.map((agent) => {
-                  const isActive = agent._id === selectedAgent
-                  const isDefault = agent._id === defaultAgent
-                  const isWorking = workingAgents.has(agent._id)
-                  return (
-                    <SidebarMenuItem
-                      key={agent._id}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.querySelectorAll('[data-hover-reveal="true"]').forEach((el) => {
-                          const element = el as HTMLElement
-                          element.style.opacity = '1'
-                          element.style.backgroundColor = 'hsl(var(--sidebar-accent))'
-                        })
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.querySelectorAll('[data-hover-reveal="true"]').forEach((el) => {
-                          const element = el as HTMLElement
-                          element.style.opacity = '0'
-                          element.style.backgroundColor = 'transparent'
-                        })
-                      }}
-                    >
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        onClick={() => selectAgent(agent._id)}
-                        tooltip={agent.description ?? agent.name}
-                        className={cn(
-                          "pr-2 group-has-data-[sidebar=menu-action]/menu-item:pr-2",
-                          isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
-                        )}
-                      >
-                        <div className="relative size-4 shrink-0 flex items-center justify-center">
-                          {isWorking && (
-                            <div
-                              className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
-                              style={{ borderTopColor: getAgentColor(agent.color).hex }}
-                              aria-hidden="true"
-                            />
-                          )}
-                          <div
-                            className="size-2 rounded-full"
-                            style={{ backgroundColor: getAgentColor(agent.color).hex }}
-                          />
-                        </div>
-                        <div className="relative min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-                          <span className="block capitalize truncate">
-                            {agent.name}
-                          </span>
-                          <div className={cn(
-                            "pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-sidebar-accent via-sidebar-accent/80 to-transparent transition-opacity",
-                            (isWorking || isDefault) ? "opacity-100" : "opacity-0 group-hover/menu-item:opacity-100",
-                          )} />
-                        </div>
-                      </SidebarMenuButton>
-
-                      {/* Stop — slot 0, only shown on hover when agent is working */}
-                      {isWorking && (
-                        <SidebarMenuAction
-                          data-hover-reveal="true"
-                          className="group-data-[collapsible=icon]:hidden transition-all"
-                          style={{ opacity: 0, right: actionRight(0) }}
-                          title="Stop agent"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            sessions
-                              .filter((s) => s.agentID === agent._id && activeSessions.has(s.id))
-                              .forEach((s) => abortSession(s.id))
-                          }}
-                        >
-                          <SquareIcon className="size-3.5 fill-current" />
-                          <span className="sr-only">Stop {agent.name}</span>
-                        </SidebarMenuAction>
-                      )}
-
-                      {/* Star — slot 1, always visible if default; revealed on hover if not */}
-                      <SidebarMenuAction
-                        data-hover-reveal={!isDefault ? "true" : undefined}
-                        className="group-data-[collapsible=icon]:hidden transition-all"
-                        style={{ 
-                          opacity: isDefault ? 1 : 0, 
-                          right: actionRight(1),
-                          backgroundColor: isDefault ? 'hsl(var(--sidebar-accent))' : 'transparent'
-                        }}
-                        title={isDefault ? "Default agent" : "Set as default"}
-                        onClick={isDefault ? undefined : () => setDefaultAgent(agent._id)}
-                      >
-                        <StarIcon className={cn("size-3.5", isDefault && "fill-current text-white")} />
-                        <span className="sr-only">{isDefault ? "Default agent" : "Set as default"}</span>
-                      </SidebarMenuAction>
-
-                      {/* Settings — slot 2, revealed on hover */}
-                      <SidebarMenuAction
-                        data-hover-reveal="true"
-                        className="group-data-[collapsible=icon]:hidden transition-all"
-                        style={{ opacity: 0, right: actionRight(2) }}
-                        title="Agent settings"
-                        onClick={() => router.push(`/dashboard/agents/${agent._id}`)}
-                      >
-                        <Settings2Icon className="size-3.5" />
-                        <span className="sr-only">Settings for {agent.name}</span>
-                      </SidebarMenuAction>
-                    </SidebarMenuItem>
-                  )
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          {/* Sessions — scoped to the selected agent */}
+          {/* Sessions — global tree across all agents */}
           <SidebarGroup>
             <SidebarGroupLabel 
               className="group/sessions group-data-[collapsible=icon]:hidden flex items-center justify-between pr-1"
@@ -305,141 +110,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </Button>
               </div>
             </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {agentSessions.length === 0 && (
-                  <p className="px-2 py-4 text-center text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-                    No sessions yet
-                  </p>
-                )}
-                {agentSessions.map((session) => {
-                  const isActive = session.id === selectedSession?.id
-                  // Only role sessions can be main, and only one should show star
-                  const isMain = session.sessionType === "role"
-                  const hasPendingQuestion = (allQuestionRequests[session.id]?.length ?? 0) > 0
-                  // isRunning: session has an active LLM loop (includes pending-question state)
-                  // isWorking: running but not paused on a question (drives spinner and tooltip)
-                  const isRunning = activeSessions.has(session.id)
-                  const isWorking = isRunning && !hasPendingQuestion
-                  return (
-                    <SidebarMenuItem
-                      key={session.id}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.querySelectorAll('[data-hover-reveal="true"]').forEach((el) => {
-                          const element = el as HTMLElement
-                          element.style.opacity = '1'
-                          element.style.backgroundColor = 'hsl(var(--sidebar-accent))'
-                        })
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.querySelectorAll('[data-hover-reveal="true"]').forEach((el) => {
-                          const element = el as HTMLElement
-                          element.style.opacity = '0'
-                          element.style.backgroundColor = 'transparent'
-                        })
-                      }}
-                    >
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        onClick={() => selectSession(session.id)}
-                        tooltip={`${formatSessionTitle(session)}${isMain ? " (main)" : ""}${isWorking ? " - active" : ""}`}
-                        className={cn(
-                          "pr-2 group-has-data-[sidebar=menu-action]/menu-item:pr-2",
-                          isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
-                        )}
-                      >
-                        <div className="relative size-4 shrink-0 flex items-center justify-center">
-                          {isWorking && (
-                            <div
-                              className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
-                              style={{ borderTopColor: 'hsl(var(--primary))' }}
-                              aria-hidden="true"
-                            />
-                          )}
-                          {(() => {
-                            const sessionType = session.sessionType || "scope"
-                            const Icon = SESSION_TYPE_CONFIG[sessionType]?.icon || MessageSquareIcon
-                            return <Icon className="size-4 shrink-0" />
-                          })()}
-                        </div>
-                        <div className="relative min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-                          <span className="block truncate text-xs leading-5">
-                            {formatSessionTitle(session)}
-                          </span>
-                          <div className={cn(
-                            "pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-sidebar-accent via-sidebar-accent/80 to-transparent transition-opacity",
-                            (isWorking || isMain) ? "opacity-100" : "opacity-0 group-hover/menu-item:opacity-100",
-                          )} />
-                        </div>
-                      </SidebarMenuButton>
-
-                      {/* Bell — slot 0, shown when session is waiting for user input */}
-                      <SidebarMenuAction
-                        className="group-data-[collapsible=icon]:hidden transition-opacity"
-                        style={{ opacity: hasPendingQuestion ? 1 : 0, right: actionRight(0), pointerEvents: 'none' }}
-                        title="Waiting for your answer"
-                      >
-                        <BellIcon className="size-3.5 text-amber-400" />
-                        <span className="sr-only">Waiting for answer in {formatSessionTitle(session)}</span>
-                      </SidebarMenuAction>
-
-                      {/* Stop — slot 0, shown on hover for any active session (including pending-question) */}
-                      {isRunning && (
-                        <SidebarMenuAction
-                          data-hover-reveal="true"
-                          className="group-data-[collapsible=icon]:hidden transition-all"
-                          style={{ opacity: 0, right: actionRight(0) }}
-                          title="Stop session"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            abortSession(session.id)
-                          }}
-                        >
-                          <SquareIcon className="size-3.5 fill-current" />
-                          <span className="sr-only">Stop {formatSessionTitle(session)}</span>
-                        </SidebarMenuAction>
-                      )}
-
-                      {/* Star - clickable to make this session the main session */}
-                      <SidebarMenuAction
-                        data-hover-reveal={!isMain ? "true" : undefined}
-                        className="group-data-[collapsible=icon]:hidden transition-all"
-                        style={{ 
-                          opacity: isMain ? 1 : 0, 
-                          right: actionRight(1),
-                          backgroundColor: isMain ? 'hsl(var(--sidebar-accent))' : 'transparent'
-                        }}
-                        title={isMain ? "Main session" : "Make main session"}
-                        onClick={async (e) => {
-                          e.stopPropagation()
-                          if (session.agentID && !isMain) {
-                            await setAgentMainSession(session.agentID, session.id)
-                          }
-                        }}
-                      >
-                        <StarIcon className={cn("size-3.5", isMain && "fill-current text-white")} />
-                        <span className="sr-only">{isMain ? "Main session" : "Make main session"}</span>
-                      </SidebarMenuAction>
-
-                      {/* Settings — slot 2, revealed on hover */}
-                      <SidebarMenuAction
-                        data-hover-reveal="true"
-                        className="group-data-[collapsible=icon]:hidden transition-all"
-                        style={{ opacity: 0, right: actionRight(2) }}
-                        title="Session settings"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setEditingSession(session)
-                          setSessionEditOpen(true)
-                        }}
-                      >
-                        <Settings2Icon className="size-3.5" />
-                        <span className="sr-only">Settings for {formatSessionTitle(session)}</span>
-                      </SidebarMenuAction>
-                    </SidebarMenuItem>
-                  )
-                })}
-              </SidebarMenu>
+            <SidebarGroupContent className="group-data-[collapsible=icon]:hidden">
+              <SessionTreePanel
+                sessions={sessions}
+                agents={agents}
+                selectedSessionId={selectedSession?.id}
+                activeSessions={activeSessions}
+                onSessionClick={(session) => selectSession(session.id)}
+                showHeader={false}
+              />
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
@@ -537,12 +216,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           return false
         }}
       />
-      <SessionEditSheet
-        session={editingSession}
-        open={sessionEditOpen}
-        onOpenChange={setSessionEditOpen}
-      />
-      
       <SessionCreateDialog
         open={sessionCreateOpen}
         onOpenChange={setSessionCreateOpen}

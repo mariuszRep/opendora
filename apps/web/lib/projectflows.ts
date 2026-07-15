@@ -117,6 +117,7 @@ export type UserMessage = {
   id: string
   sessionID: string
   role: "user"
+  from?: { kind: "user" | "agent" | "service" | "scheduler"; id: string }
   time: { created: number }
   agent: string
   model: { providerID: string; modelID: string }
@@ -642,6 +643,7 @@ export const opendora = {
         model?: { providerID: string; modelID: string }
         fallbackGroupID?: string
         agent?: string
+        userName?: string
       },
     ) =>
       req<void | { status: "queued"; messageID: string; queuePosition?: number }>(`/session/${sessionID}/prompt_async`, {

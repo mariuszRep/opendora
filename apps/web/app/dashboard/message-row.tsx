@@ -178,11 +178,7 @@ export const MessageRow = React.memo(function MessageRow({
   incomingEdge,
   outgoingEdge,
 }: MessageRowProps) {
-  const rawContent = getMessageText(parts)
-  // Strip the "user: NAME\n\n" attribution prefix added before sending so it doesn't leak into the bubble
-  const content = info.role === "user"
-    ? rawContent.replace(/^user: [^\n]+\n\n/, "")
-    : rawContent
+  const content = getMessageText(parts)
   const reasoning = getReasoningPart(parts)
   const tools = getToolParts(parts)
   const hasTools = tools.length > 0
