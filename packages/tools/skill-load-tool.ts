@@ -27,7 +27,7 @@ export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
     "Your available skills are listed in the system prompt under 'Available Skills'.",
     "When a task matches one of those skills, use this tool to activate it.",
     "",
-    "The tool output includes a `<skill_content name=\"...\">` block with the skill location and a `<skill_resources>` listing of bundled files. Use your file-read tool to load the SKILL.md at the listed location before following the instructions.",
+    "The tool output includes the complete SKILL.md in a `<skill_content name=\"...\">` block plus a `<skill_resources>` listing of bundled files.",
   ].join("\n")
 
   const parameters = z.object({
@@ -73,9 +73,10 @@ export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
         throw new Error(`Skill "${params.name}" is not enabled for this agent. Enabled skills: ${available || "none"}`)
       }
 
-      if (skill.tools?.length) {
-        addSkillTools(ctx.sessionID, skill.tools)
-      }
+      // Persist both the loaded-skill marker and its declared tools. The marker
+      // lets session reconstruction retain the loaded skill even when it has
+      // no tool requirements.
+      addSkillTools(ctx.sessionID, [`__skill__:${skill.name}`, ...(skill.tools ?? [])])
 
       const dir = path.dirname(skill.location)
       const allFiles = await listFiles(dir)
@@ -85,17 +86,22 @@ export const SkillLoadTool = Tool.define("skill_load", async (ctx) => {
         .map((f) => `<file>${f}</file>`)
         .join("\n")
       const xmlName = skill.name.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      const skillContent = await fs.readFile(skill.location, "utf8")
 
       return {
         title: `Loaded skill: ${skill.name}`,
         output: [
           `<skill_content name="${xmlName}">`,
-          `Skill "${skill.name}" is now active. Before following skill instructions, load the SKILL.md file at the location below.`,
+          `Skill "${skill.name}" is now active. Its complete SKILL.md content is included below.`,
           ``,
           `SKILL.md location: ${skill.location}`,
           `Skill directory (absolute path): ${dir}`,
           `Relative paths in this skill (e.g., scripts/, references/, assets/) are relative to this base directory.`,
           ``,
+          "<skill_instructions>",
+          skillContent,
+          "</skill_instructions>",
+          "",
           "<skill_resources>",
           files,
           "</skill_resources>",

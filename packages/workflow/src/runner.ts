@@ -129,104 +129,27 @@ async function startNodeToolPart(
 
 type NodeModel = { providerID: string; modelID: string }
 
-// Renders a JSON schema as an annotated template the model can use as a writing guide.
-// Field descriptions appear as // comments; types and enums are shown as placeholder values.
-function schemaToTemplate(schema: Record<string, unknown>, depth = 0): string {
-  const pad = "  ".repeat(depth)
-  const inner = "  ".repeat(depth + 1)
-  const type = (schema as any).type as string | undefined
-  const desc = (schema as any).description as string | undefined
-  const comment = desc ? `  // ${desc}` : ""
-
-  if (type === "object") {
-    const props = (schema as any).properties as Record<string, Record<string, unknown>> ?? {}
-    const required = new Set<string>((schema as any).required ?? [])
-    const entries = Object.entries(props)
-    if (entries.length === 0) return `{}`
-    const lines = entries.map(([key, val]) => {
-      const opt = required.has(key) ? "" : "?"
-      return `${inner}"${key}${opt}": ${schemaToTemplate(val, depth + 1)}`
-    })
-    return `{${comment}\n${lines.join(",\n")}\n${pad}}`
-  }
-
-  if (type === "array") {
-    const items = (schema as any).items as Record<string, unknown> | undefined
-    const itemStr = items ? schemaToTemplate(items, depth + 1) : "..."
-    return `[${comment}\n${inner}${itemStr}\n${pad}]`
-  }
-
-  if ((schema as any).enum) {
-    const vals = ((schema as any).enum as unknown[]).map((v) => JSON.stringify(v)).join(" | ")
-    return `${vals}${comment}`
-  }
-
-  const placeholder = type === "string" ? `"string"` : type === "number" || type === "integer" ? `0` : type === "boolean" ? `true` : `null`
-  return `${placeholder}${comment}`
-}
-
-function hasProperties(schema: Record<string, unknown>): boolean {
-  return Object.keys((schema as any).properties ?? {}).length > 0
-}
-
-function extractJsonFromText(text: string): unknown | null {
-  try { return JSON.parse(text.trim()) } catch {}
-  const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
-  if (fenceMatch?.[1]) { try { return JSON.parse(fenceMatch[1].trim()) } catch {} }
-  let start = text.indexOf("{")
-  while (start >= 0) {
-    let depth = 0
-    for (let i = start; i < text.length; i++) {
-      if (text[i] === "{") depth++
-      else if (text[i] === "}") {
-        depth--
-        if (depth === 0) { try { return JSON.parse(text.slice(start, i + 1)) } catch {} ; break }
-      }
-    }
-    start = text.indexOf("{", start + 1)
-  }
-  return null
-}
-
-// Run the structured node prompt and extract JSON from the model's text response.
-// toolChoice:"none" forces pure text output — no tool calls, no DSML, just text.
-// JSON is parsed deterministically by the node function, not by model behavior.
-async function agentStructuredJson(
+// Run the structured node prompt through the schema-enforced structured-output path:
+// the model is forced to call a single schema-validated tool (createStructuredOutputTool
+// in packages/session/src/prompt.ts), so the result is real Zod/JSON-Schema-validated
+// output rather than best-effort JSON parsed out of free text.
+export async function agentStructuredJson(
   sessionId: string,
   instructions: string,
   schema: Record<string, unknown>,
   model?: NodeModel,
 ): Promise<unknown> {
-  const schemaGuide = hasProperties(schema)
-    ? [
-        "",
-        "Respond with ONLY a valid JSON object matching this structure:",
-        "```json",
-        schemaToTemplate(schema),
-        "```",
-        "Output only the JSON — no prose, no explanation, no extra keys.",
-      ].join("\n")
-    : "\n\nRespond with ONLY a valid JSON object capturing the key structured information. Output only the JSON."
-
   const result = await SessionPrompt.prompt({
     sessionID: sessionId,
-    parts: [{ type: "text", text: instructions + schemaGuide }],
-    format: { type: "text", toolChoice: "none" },
+    parts: [{ type: "text", text: instructions }],
+    format: { type: "json_schema", schema, toolName: "workflow_structured", retryCount: 2 },
     ...(model ? { model } : {}),
   })
 
-  const text = ((result as any).parts ?? [])
-    .filter((p: any) => p.type === "text" && !p.synthetic)
-    .map((p: any) => p.text ?? "")
-    .join("")
-    .trim()
+  const info = (result as any).info as { structured?: unknown; error?: { name?: string; data?: { message?: string } } }
+  if (info?.structured !== undefined) return info.structured
 
-  if (text) {
-    const extracted = extractJsonFromText(text)
-    if (extracted !== null) return extracted
-  }
-
-  throw new Error(`Structured node: model did not produce extractable JSON`)
+  throw new Error(info?.error?.data?.message ?? "Structured node: model did not produce structured output")
 }
 
 async function agentPrompt(
@@ -472,6 +395,15 @@ async function runSubGraph({
       }
       const resolvedArgs = resolveDeep(args, input, ctx) as Record<string, unknown>
 
+
+      // If a `stdin` parameter is present, resolve it with resolveDeep (preserves
+      // arrays/objects as their actual types), serialize to JSON, and inject as a
+      // string so the tool receives proper structured data via stdin instead of
+      // fragile shell heredoc string interpolation.
+      if (params.stdin !== undefined) {
+        const resolvedStdin = resolveDeep(params.stdin, input, ctx)
+        resolvedArgs.stdin = JSON.stringify(resolvedStdin)
+      }
       // For RunWorkflow: params beyond the known workflow_run keys are individual
       // workflow input values. Assemble them into resolvedArgs.input and remove
       // the individual keys so the tool executor receives a clean call.
@@ -529,7 +461,7 @@ async function runSubGraph({
         }
         try {
           const session = await Session.get(sessionId)
-          const { output, metadata: toolResultMetadata, finalArgs } = await _toolExecutor(actionId, resolvedArgs, agentArgs, {
+          const { output, metadata: toolResultMetadata, finalArgs, outputObject } = await _toolExecutor(actionId, resolvedArgs, agentArgs, {
             sessionID: sessionId,
             agent: nodeAgent ?? session.agentID,
             model: nodeModel,
@@ -541,7 +473,12 @@ async function runSubGraph({
             workflowMeta: { ...nodeMeta, attempt },
           })
           toolOutput = output
-          toolMeta = toolResultMetadata as Record<string, unknown> | undefined
+          // Fold outputObject into the same metadata bag resultPath/finish() already consume —
+          // reuses the existing resolution path instead of adding a second one. Matches the
+          // convention the Structured node already uses (finish(structured, {outputObject, ...})).
+          toolMeta = outputObject !== undefined
+            ? { ...(toolResultMetadata as Record<string, unknown> | undefined ?? {}), outputObject }
+            : (toolResultMetadata as Record<string, unknown> | undefined)
           toolFinalArgs = finalArgs
           lastError = undefined
           break
@@ -555,6 +492,20 @@ async function runSubGraph({
 
       if (lastError !== undefined) throw lastError
       result = toolOutput!
+
+      // resultPath: extract a value from tool metadata instead of the raw string output.
+      // Allows question/multi-choice tools to store machine-readable answers array
+      // rather than the human display string.
+      const resultPath = params.resultPath as string | undefined
+      if (resultPath && toolMeta) {
+        const extracted = resolveRef(`$ctx.${resultPath}`, input, { ...ctx, metadata: toolMeta })
+        if (extracted !== undefined) {
+          const pathValue = extracted
+          if (storeAs !== undefined) ctx[storeAs] = pathValue
+          if (nodeKey !== undefined) ctx[nodeKey] = pathValue
+          result = typeof pathValue === "string" ? pathValue : JSON.stringify(pathValue)
+        }
+      }
 
       if (nodeToolHandle) {
         await nodeToolHandle.finish(toolOutput!, toolMeta, toolFinalArgs)

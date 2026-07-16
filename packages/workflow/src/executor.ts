@@ -27,7 +27,13 @@ export type ToolExecutor = (
   fixedArgs: Record<string, unknown>,
   agentArgs: string[],
   ctx: WorkflowToolContext,
-) => Promise<{ output: string; metadata?: Record<string, unknown>; finalArgs: Record<string, unknown> }>
+) => Promise<{
+  output: string
+  metadata?: Record<string, unknown>
+  finalArgs: Record<string, unknown>
+  /** Structured payload from the tool's execute(), when it provides one — see packages/tools/tool.ts Tool.Info. */
+  outputObject?: unknown
+}>
 
 let _toolExecutor: ToolExecutor | null = null
 

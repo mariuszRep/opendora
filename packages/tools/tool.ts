@@ -66,6 +66,8 @@ export namespace Tool {
         title: string
         metadata: M
         output: string
+        /** Optional structured payload alongside `output` — for downstream/programmatic consumption (e.g. workflow resultPath). `output` remains the MCP-compatible human-readable field. */
+        outputObject?: unknown
         attachments?: unknown[]
       }>
       formatValidationError?(error: z.ZodError): string

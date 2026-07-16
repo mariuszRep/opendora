@@ -204,7 +204,7 @@ export namespace SystemPrompt {
           sections.push({
             label: "Available Skills",
             content: [
-              "The following skills provide specialized instructions for specific tasks. When a task matches a skill's description, use your file-read tool to load the SKILL.md at the listed location before proceeding. When a skill references relative paths, resolve them against the skill's directory (the parent of SKILL.md).",
+              "The following skills provide specialized instructions for specific tasks. When a task matches a skill's description, call skill_load with its name; it injects the complete SKILL.md into the session. When a skill references relative paths, resolve them against the skill's directory (the parent of SKILL.md).",
               "",
               "<available_skills>",
               skillXml,

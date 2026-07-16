@@ -102,7 +102,7 @@ export function createWorkflowToolExecutor(): ToolExecutor {
     if (agentArgs.length === 0) {
       const execCtx = buildExecCtx(() => fixedArgs)
       const result = await toolDef.execute(fixedArgs, execCtx)
-      return { output: result.output, metadata: result.metadata, finalArgs: fixedArgs }
+      return { output: result.output, metadata: result.metadata, finalArgs: fixedArgs, outputObject: (result as any).outputObject }
     }
 
     // Build the fill prompt: tool identity/instructions, prior workflow output,
@@ -130,7 +130,7 @@ export function createWorkflowToolExecutor(): ToolExecutor {
     let terminalError: Error | undefined
     let lastInvalid: { message: string; error: z.ZodError } | undefined
     let capturedFinalArgs: Record<string, unknown> | undefined
-    let capturedResult: { title: string; output: string; metadata: unknown } | undefined
+    let capturedResult: { title: string; output: string; metadata: unknown; outputObject?: unknown } | undefined
 
     const toolForModel = aiTool({
       description: toolDef.description,
@@ -184,6 +184,7 @@ export function createWorkflowToolExecutor(): ToolExecutor {
       output: capturedResult.output,
       metadata: capturedResult.metadata as Record<string, unknown> | undefined,
       finalArgs: capturedFinalArgs,
+      outputObject: capturedResult.outputObject,
     }
   }
 }

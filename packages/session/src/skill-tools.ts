@@ -13,6 +13,10 @@ import { SessionTable } from "./session.sql"
 const cache = new Map<string, Set<string>>()
 const hydrated = new Set<string>()
 
+function isUnconfiguredSession(err: unknown): boolean {
+  return err instanceof Error && err.message.includes("@projectflows/session not configured")
+}
+
 function readPersisted(sessionID: string): string[] {
   try {
     const row = getConfig()
@@ -22,6 +26,7 @@ function readPersisted(sessionID: string): string[] {
       .get()
     return row?.unlocked_tools ?? []
   } catch (err) {
+    if (isUnconfiguredSession(err)) return []
     console.error("[session-skill-tools] failed to read unlocked_tools", { sessionID, err })
     return []
   }
@@ -35,6 +40,7 @@ function writePersisted(sessionID: string, tools: string[]): void {
       .where(eq(SessionTable.id, sessionID))
       .run()
   } catch (err) {
+    if (isUnconfiguredSession(err)) return
     console.error("[session-skill-tools] failed to persist unlocked_tools", { sessionID, err })
   }
 }
