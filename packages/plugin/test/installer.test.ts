@@ -53,6 +53,23 @@ test("install returns PluginListItem with pluginId and enabled=true", async () =
   expect(item.scope).toBe("global")
 })
 
+test("install extracts workflow capabilities into the global workflow directory", async () => {
+  const srcDir = await makePluginDir("workflow-plugin", {
+    capabilities: [{ type: "workflow", name: "catalog-workflow" }],
+  })
+  await fs.mkdir(path.join(srcDir, "workflows"), { recursive: true })
+  await fs.writeFile(
+    path.join(srcDir, "workflows", "catalog-workflow.json"),
+    JSON.stringify({ id: "catalog-workflow", name: "Catalog workflow", nodes: [], edges: [] }),
+    "utf-8",
+  )
+
+  await PluginInstaller.install({ sourcePath: srcDir, scope: "global" })
+
+  const installed = path.join(PluginStorage.globalRoot(), "workflows", "catalog-workflow.json")
+  expect(JSON.parse(await fs.readFile(installed, "utf-8"))).toMatchObject({ id: "catalog-workflow" })
+})
+
 test("install duplicate same source overwrites without conflict", async () => {
   const srcDir = await makePluginDir("dup-plugin")
   await PluginInstaller.install({ sourcePath: srcDir, scope: "global" })

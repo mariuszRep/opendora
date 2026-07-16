@@ -15,9 +15,9 @@ export interface PluginListItem extends LockfileEntry {
   enabled: boolean
 }
 
-// Subdirectories inside a plugin source that are extracted to the capability root (agents & skills only).
+// Subdirectories inside a plugin source that are extracted to the capability root.
 // Tools are handled separately via the tool-groups/ layout.
-const CAP_SUBDIRS = ["agents", "skills"] as const
+const CAP_SUBDIRS = ["agents", "skills", "workflows"] as const
 
 // Fallback group resolution when a plugin capability lacks an explicit group field.
 // Import is lazy to avoid requiring @projectflows/tools at startup.
@@ -138,6 +138,8 @@ async function removeCapabilities(capabilities: LockfileEntry["capabilities"], c
       await fs.rm(path.join(capRoot, "agents", cap.name), { recursive: true, force: true })
     } else if (cap.type === "skill") {
       await fs.rm(path.join(capRoot, "skills", cap.name), { recursive: true, force: true })
+    } else if (cap.type === "workflow") {
+      await fs.rm(path.join(capRoot, "workflows", `${cap.name}.json`), { force: true })
     } else if (cap.type === "tool-group") {
       await fs.rm(PluginStorage.toolGroupDir(capRoot, cap.name), { recursive: true, force: true })
     } else if (cap.type === "tool") {

@@ -78,6 +78,11 @@ export namespace CatalogReader {
         await copyDir(path.join(catalog, "agents", cap.name), path.join(staging, "agents", cap.name))
       } else if (cap.type === "skill") {
         await copyDir(path.join(catalog, "skills", cap.name), path.join(staging, "skills", cap.name))
+      } else if (cap.type === "workflow") {
+        const src = path.join(catalog, "workflows", cap.name, `${cap.name}.json`)
+        const dest = path.join(staging, "workflows", `${cap.name}.json`)
+        await fs.mkdir(path.dirname(dest), { recursive: true })
+        await fs.copyFile(src, dest)
       }
     }
 

@@ -5,18 +5,26 @@ import { tmpdir } from "../fixture/fixture"
 import { Instance } from "@projectflows/runtime/instance"
 import { ToolRegistry } from "@projectflows/server/tool-registry"
 
+// Tool discovery scans dirs from ConfigPaths.directories() for files matching
+// "tools/<group>/tools/*.{js,ts}" (packages/tools/registry.ts init()) — the
+// grouped layout from the completed grouped-tool-install-storage-migration
+// goal (.projectflows/goals/done/grouped-tool-install-storage-migration/GOAL.md:
+// "no legacy flat-tool support is required after migration"). These tests
+// previously wrote flat files (.opencode/tool/hello.ts, .opencode/tools/hello.ts)
+// that predate that migration and were never matched by the current glob —
+// confirmed via a standalone diagnostic script showing ConfigPaths.directories()
+// correctly finds the project's .opencode dir, but the glob still finds nothing
+// at the old flat paths. Updated to the grouped layout the scanner actually reads.
+
 describe("tool.registry", () => {
-  test("loads tools from .opencode/tool (singular)", async () => {
+  test("loads a custom tool from the grouped .opencode/tools/<group>/tools layout", async () => {
     await using tmp = await tmpdir({
       init: async (dir) => {
-        const opencodeDir = path.join(dir, ".opencode")
-        await fs.mkdir(opencodeDir, { recursive: true })
-
-        const toolDir = path.join(opencodeDir, "tool")
-        await fs.mkdir(toolDir, { recursive: true })
+        const groupToolsDir = path.join(dir, ".opencode", "tools", "custom", "tools")
+        await fs.mkdir(groupToolsDir, { recursive: true })
 
         await Bun.write(
-          path.join(toolDir, "hello.ts"),
+          path.join(groupToolsDir, "hello.ts"),
           [
             "export default {",
             "  description: 'hello tool',",
@@ -40,23 +48,33 @@ describe("tool.registry", () => {
     })
   })
 
-  test("loads tools from .opencode/tools (plural)", async () => {
+  test("loads multiple custom tools from the same grouped tools directory", async () => {
     await using tmp = await tmpdir({
       init: async (dir) => {
-        const opencodeDir = path.join(dir, ".opencode")
-        await fs.mkdir(opencodeDir, { recursive: true })
-
-        const toolsDir = path.join(opencodeDir, "tools")
-        await fs.mkdir(toolsDir, { recursive: true })
+        const groupToolsDir = path.join(dir, ".opencode", "tools", "custom", "tools")
+        await fs.mkdir(groupToolsDir, { recursive: true })
 
         await Bun.write(
-          path.join(toolsDir, "hello.ts"),
+          path.join(groupToolsDir, "hello.ts"),
           [
             "export default {",
             "  description: 'hello tool',",
             "  args: {},",
             "  execute: async () => {",
             "    return 'hello world'",
+            "  },",
+            "}",
+            "",
+          ].join("\n"),
+        )
+        await Bun.write(
+          path.join(groupToolsDir, "goodbye.ts"),
+          [
+            "export default {",
+            "  description: 'goodbye tool',",
+            "  args: {},",
+            "  execute: async () => {",
+            "    return 'goodbye world'",
             "  },",
             "}",
             "",
@@ -70,12 +88,31 @@ describe("tool.registry", () => {
       fn: async () => {
         const ids = await ToolRegistry.ids()
         expect(ids).toContain("hello")
+        expect(ids).toContain("goodbye")
       },
     })
   })
 
-  test("schemas returns sourceGroup for built-in tools", async () => {
-    await using tmp = await tmpdir({ init: async () => {} })
+  test("schemas returns sourceGroup for a discovered tool", async () => {
+    await using tmp = await tmpdir({
+      init: async (dir) => {
+        const groupToolsDir = path.join(dir, ".opencode", "tools", "mygroup", "tools")
+        await fs.mkdir(groupToolsDir, { recursive: true })
+        await Bun.write(
+          path.join(groupToolsDir, "hello.ts"),
+          [
+            "export default {",
+            "  description: 'hello tool',",
+            "  args: {},",
+            "  execute: async () => {",
+            "    return 'hello world'",
+            "  },",
+            "}",
+            "",
+          ].join("\n"),
+        )
+      },
+    })
     await Instance.provide({
       directory: tmp.path,
       fn: async () => {
@@ -86,10 +123,9 @@ describe("tool.registry", () => {
           expect(typeof schema.sourceGroup).toBe("string")
           expect(schema.sourceGroup.length).toBeGreaterThan(0)
         }
-        const bashSchema = schemas.find((s) => s.id === "bash")
-        if (bashSchema) {
-          expect(bashSchema.sourceGroup).toBe("core")
-        }
+        const helloSchema = schemas.find((s) => s.id === "hello")
+        expect(helloSchema).toBeDefined()
+        expect(helloSchema?.sourceGroup).toBe("mygroup")
       },
     })
   })
@@ -98,10 +134,8 @@ describe("tool.registry", () => {
     await using tmp = await tmpdir({
       init: async (dir) => {
         const opencodeDir = path.join(dir, ".opencode")
-        await fs.mkdir(opencodeDir, { recursive: true })
-
-        const toolsDir = path.join(opencodeDir, "tools")
-        await fs.mkdir(toolsDir, { recursive: true })
+        const groupToolsDir = path.join(opencodeDir, "tools", "custom", "tools")
+        await fs.mkdir(groupToolsDir, { recursive: true })
 
         await Bun.write(
           path.join(opencodeDir, "package.json"),
@@ -115,7 +149,7 @@ describe("tool.registry", () => {
         )
 
         await Bun.write(
-          path.join(toolsDir, "cowsay.ts"),
+          path.join(groupToolsDir, "cowsay.ts"),
           [
             "import { say } from 'cowsay'",
             "export default {",
