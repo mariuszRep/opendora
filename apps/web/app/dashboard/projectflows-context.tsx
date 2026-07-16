@@ -15,6 +15,7 @@ export type OpendoraContextValue = UseOpendoraResult & {
   markAllRead: () => void
   removeNotification: (id: string) => void
   removeByPermissionID: (permissionRequestID: string) => void
+  removeByQuestionID: (questionRequestID: string) => void
   clearAll: () => void
 }
 
@@ -30,9 +31,17 @@ export function OpendoraProvider({ children }: { children: ReactNode }) {
     removeNotification,
     removeByPermissionID,
     dismissPermissionToast,
+    removeByQuestionID,
+    dismissQuestionToast,
     clearAll,
   } = useNotify()
-  const opendoraValue = useOpendora({ notify, removeByPermissionID, dismissPermissionToast })
+  const opendoraValue = useOpendora({
+    notify,
+    removeByPermissionID,
+    dismissPermissionToast,
+    removeByQuestionID,
+    dismissQuestionToast,
+  })
   const value: OpendoraContextValue = {
     ...opendoraValue,
     notify,
@@ -42,6 +51,7 @@ export function OpendoraProvider({ children }: { children: ReactNode }) {
     markAllRead,
     removeNotification,
     removeByPermissionID,
+    removeByQuestionID,
     clearAll,
   }
   return <OpendoraContext.Provider value={value}>{children}</OpendoraContext.Provider>

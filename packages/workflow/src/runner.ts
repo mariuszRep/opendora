@@ -129,27 +129,89 @@ async function startNodeToolPart(
 
 type NodeModel = { providerID: string; modelID: string }
 
-// Run the structured node prompt through the schema-enforced structured-output path:
-// the model is forced to call a single schema-validated tool (createStructuredOutputTool
-// in packages/session/src/prompt.ts), so the result is real Zod/JSON-Schema-validated
-// output rather than best-effort JSON parsed out of free text.
+function schemaToTemplate(schema: Record<string, unknown>, depth = 0): string {
+  const pad = "  ".repeat(depth)
+  const inner = "  ".repeat(depth + 1)
+  const type = schema.type as string | undefined
+  const comment = typeof schema.description === "string" ? `  // ${schema.description}` : ""
+
+  if (type === "object") {
+    const properties = schema.properties as Record<string, Record<string, unknown>> | undefined
+    const required = new Set((schema.required as string[] | undefined) ?? [])
+    const entries = Object.entries(properties ?? {})
+    if (entries.length === 0) return "{}"
+    return `{${comment}\n${entries.map(([key, value]) => `${inner}"${key}${required.has(key) ? "" : "?"}": ${schemaToTemplate(value, depth + 1)}`).join(",\n")}\n${pad}}`
+  }
+  if (type === "array") return `[${comment}\n${inner}${schemaToTemplate((schema.items as Record<string, unknown> | undefined) ?? {}, depth + 1)}\n${pad}]`
+  if (Array.isArray(schema.enum)) return `${schema.enum.map((value) => JSON.stringify(value)).join(" | ")}${comment}`
+  if (type === "string") return `"string"${comment}`
+  if (type === "number" || type === "integer") return `0${comment}`
+  if (type === "boolean") return `true${comment}`
+  return `null${comment}`
+}
+
+function extractJsonFromText(text: string): unknown | undefined {
+  const candidates = [text.trim(), ...[...text.matchAll(/```(?:json)?\s*([\s\S]*?)\s*```/gi)].map((match) => match[1] ?? "")]
+  for (const candidate of candidates) {
+    try { return JSON.parse(candidate) } catch {}
+  }
+  return undefined
+}
+
+function schemaError(value: unknown, schema: Record<string, unknown>, path = "$output"): string | undefined {
+  if (Array.isArray(schema.enum) && !schema.enum.some((candidate) => Object.is(candidate, value))) return `${path} must be one of the configured enum values`
+  switch (schema.type) {
+    case "object": {
+      if (value === null || typeof value !== "object" || Array.isArray(value)) return `${path} must be an object`
+      const record = value as Record<string, unknown>
+      for (const key of (schema.required as string[] | undefined) ?? []) if (!(key in record)) return `${path}.${key} is required`
+      for (const [key, child] of Object.entries((schema.properties as Record<string, Record<string, unknown>> | undefined) ?? {})) {
+        if (key in record) {
+          const error = schemaError(record[key], child, `${path}.${key}`)
+          if (error) return error
+        }
+      }
+      return undefined
+    }
+    case "array":
+      if (!Array.isArray(value)) return `${path} must be an array`
+      return value.map((item, index) => schemaError(item, (schema.items as Record<string, unknown> | undefined) ?? {}, `${path}[${index}]`)).find(Boolean)
+    case "string": return typeof value === "string" ? undefined : `${path} must be a string`
+    case "number": return typeof value === "number" && Number.isFinite(value) ? undefined : `${path} must be a number`
+    case "integer": return typeof value === "number" && Number.isInteger(value) ? undefined : `${path} must be an integer`
+    case "boolean": return typeof value === "boolean" ? undefined : `${path} must be a boolean`
+    default: return undefined
+  }
+}
+
+// Some providers serialize a forced tool call as ordinary text. Structured workflow
+// nodes therefore request JSON text and validate the parsed value locally.
 export async function agentStructuredJson(
   sessionId: string,
   instructions: string,
   schema: Record<string, unknown>,
   model?: NodeModel,
 ): Promise<unknown> {
+  const schemaGuide = Object.keys((schema.properties as Record<string, unknown> | undefined) ?? {}).length > 0
+    ? ["", "Respond with ONLY a valid JSON value matching this schema:", "```json", schemaToTemplate(schema), "```"] .join("\n")
+    : "\n\nRespond with ONLY a valid JSON value."
   const result = await SessionPrompt.prompt({
     sessionID: sessionId,
-    parts: [{ type: "text", text: instructions }],
-    format: { type: "json_schema", schema, toolName: "workflow_structured", retryCount: 2 },
+    parts: [{ type: "text", text: instructions + schemaGuide }],
+    format: { type: "text", toolChoice: "none" },
+    // The workflow_structured node card is the user-visible execution record.
+    // Keep this internal model turn in the durable ledger for replay/debugging,
+    // but do not render duplicate user/assistant messages in the session timeline.
+    hidden: true,
     ...(model ? { model } : {}),
   })
 
-  const info = (result as any).info as { structured?: unknown; error?: { name?: string; data?: { message?: string } } }
-  if (info?.structured !== undefined) return info.structured
-
-  throw new Error(info?.error?.data?.message ?? "Structured node: model did not produce structured output")
+  const text = ((result as any).parts ?? []).filter((part: any) => part.type === "text" && !part.synthetic).map((part: any) => part.text ?? "").join("")
+  const output = extractJsonFromText(text)
+  if (output === undefined) throw new Error("Structured node: model did not produce valid JSON")
+  const error = schemaError(output, schema)
+  if (error) throw new Error(`Structured node: output does not match schema: ${error}`)
+  return output
 }
 
 async function agentPrompt(
@@ -463,6 +525,7 @@ async function runSubGraph({
           const session = await Session.get(sessionId)
           const { output, metadata: toolResultMetadata, finalArgs, outputObject } = await _toolExecutor(actionId, resolvedArgs, agentArgs, {
             sessionID: sessionId,
+            directory: currentDir,
             agent: nodeAgent ?? session.agentID,
             model: nodeModel,
             abort: new AbortController().signal,
@@ -665,6 +728,8 @@ async function runSubGraph({
 
       result = JSON.stringify(iterResults)
       await nodeToolHandle.finish(iterResults, { count: items.length })
+      if (storeAs !== undefined) ctx[storeAs] = iterResults
+      if (nodeKey !== undefined) ctx[nodeKey] = iterResults
 
     } else if (d.nodeType === NodeTypeId.ConfigureSession) {
       const cfg = params as {
@@ -739,9 +804,20 @@ async function runSubGraph({
       const summary = changedKeys.length > 0
         ? changedKeys.map((k) => `${k}=${JSON.stringify(applied[k])}`).join(", ")
         : "no changes"
+      const sessionState = await Session.get(sessionId)
+      const readback = {
+        title: sessionState.title,
+        cwd: sessionState.cwd,
+        agentID: sessionState.agentID,
+        path: sessionState.path,
+        readPath: sessionState.readPath,
+      }
 
-      await nodeToolHandle.finish(`Session configured: ${summary}`, applied)
-      result = JSON.stringify(applied)
+      await nodeToolHandle.finish(
+        `Session configured: ${summary}\nVerified session state: ${JSON.stringify(readback)}`,
+        { applied, readback },
+      )
+      result = JSON.stringify({ applied, readback })
 
     } else if (d.nodeType === NodeTypeId.Variable) {
       type VariableEntry = {
@@ -812,12 +888,12 @@ async function runSubGraph({
       await nodeToolHandle.finish(resolved)
     }
 
-    // Structured/Output/Decide/Variable nodes already wrote their parsed objects into ctx above; skip the string overwrite
-    if (d.nodeType !== NodeTypeId.Decide && d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && d.nodeType !== NodeTypeId.Variable && storeAs !== undefined && result !== undefined) ctx[storeAs] = result
+    // Structured/Output/ForEach/Decide/Variable nodes already wrote native values into ctx above; skip the string overwrite.
+    if (d.nodeType !== NodeTypeId.Decide && d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && d.nodeType !== NodeTypeId.ForEach && d.nodeType !== NodeTypeId.Variable && storeAs !== undefined && result !== undefined) ctx[storeAs] = result
 
     // Write under the stable node key so downstream nodes can use $nodeKey references.
-    // Structured/Output/Variable already wrote parsed objects above; all other types write the string result.
-    if (d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && d.nodeType !== NodeTypeId.Variable && nodeKey !== undefined && result !== undefined) {
+    // Structured/Output/ForEach/Variable already wrote parsed objects above; all other types write the string result.
+    if (d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && d.nodeType !== NodeTypeId.ForEach && d.nodeType !== NodeTypeId.Variable && nodeKey !== undefined && result !== undefined) {
       ctx[nodeKey] = result
     }
 

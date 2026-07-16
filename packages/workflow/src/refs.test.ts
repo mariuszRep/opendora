@@ -46,6 +46,18 @@ describe("reference resolution", () => {
     )
   })
 
+  test("does not consume sentence punctuation after legacy references", () => {
+    expect(resolveTemplate("Summary: $ctx.summary. Color: $input.color,", input, ctx)).toBe(
+      "Summary: hello world. Color: red,",
+    )
+  })
+
+  test("does not consume sentence punctuation after node references", () => {
+    expect(resolveTemplate("Parsed hue: $parsed.hue.", input, ctx)).toBe(
+      "Parsed hue: blue.",
+    )
+  })
+
   test("resolveRefs resolves a record of args", () => {
     expect(resolveRefs({ a: "$input.color", b: "$ctx.summary" }, input, ctx)).toEqual({
       a: "red",

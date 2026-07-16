@@ -94,6 +94,34 @@ describe("createWorkflowToolExecutor", () => {
     })
   })
 
+  test("uses the workflow's effective directory for direct tool execution", async () => {
+    let observedDirectory: string | undefined
+    let hasWorkflowService = false
+    let hasChildSessionService = false
+    fakeToolDef = makeFakeTool(z.object({}), async (_args: any, ctx?: any) => {
+      observedDirectory = ctx.extra.directory
+      hasWorkflowService = typeof ctx.extra.workflow?.run === "function"
+      hasChildSessionService = typeof ctx.extra.session?.createNext === "function"
+      return { title: "done", output: "ok", metadata: {} }
+    })
+
+    await using tmp = await tmpdir({ init: async () => {} })
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        await registerFakeTool()
+        const executor = createWorkflowToolExecutor()
+        await executor("fake-tool", {}, [], {
+          sessionID: Identifier.ascending("session"),
+          directory: "/home/mariusz/.projectflows",
+        })
+        expect(observedDirectory).toBe("/home/mariusz/.projectflows")
+        expect(hasWorkflowService).toBe(true)
+        expect(hasChildSessionService).toBe(true)
+      },
+    })
+  })
+
   test("agentArgs path: fixed args win over agent-generated values, and outputObject propagates", async () => {
     fakeToolDef = makeFakeTool(z.object({ name: z.string(), source: z.string() }), async (args: any) => ({
       title: "done",

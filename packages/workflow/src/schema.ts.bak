@@ -72,16 +72,14 @@ export function resolveRef(
   ctx: Record<string, unknown>,
 ): unknown {
   // Legacy: $input.x / $ctx.x / $output.x — kept for backward compatibility
-  // Path uses dot-separated identifiers (no trailing dot) so sentence punctuation
-  // like "$ctx.today_date." does not get consumed as part of the path.
-  const legacy = /^\$(input|output|ctx)\.([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)$/.exec(value)
+  const legacy = /^\$(input|output|ctx)\.([a-zA-Z0-9_.]+)$/.exec(value)
   if (legacy) {
     const [, ns, path] = legacy
     return getPath(ns === "input" ? input : ctx, path!)
   }
   // New: $nodeKey  or  $nodeKey.field.subfield
   // nodeKey must start with a letter and contain only lowercase letters, digits, underscores
-  const nodeRef = /^\$([a-z][a-z0-9_]*)(?:\.([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*))?$/.exec(value)
+  const nodeRef = /^\$([a-z][a-z0-9_]*)(?:\.([a-zA-Z0-9_.]+))?$/.exec(value)
   if (nodeRef) {
     const [, key, path] = nodeRef
     if (key === "input") return path ? getPath(input, path) : input
@@ -137,10 +135,8 @@ export function resolveTemplate(
   ctx: Record<string, unknown>,
 ): string {
   // Replace legacy $input.x / $ctx.x / $output.x AND new $nodeKey / $nodeKey.field
-  // Path uses dot-separated identifiers (no trailing dot) so sentence punctuation
-  // like "$ctx.today_date." does not get consumed as part of the path.
   return template.replace(
-    /\$(input|output|ctx)\.([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)|\$([a-z][a-z0-9_]*)(?:\.([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*))?/g,
+    /\$(input|output|ctx)\.([a-zA-Z0-9_.]+)|\$([a-z][a-z0-9_]*)(?:\.([a-zA-Z0-9_.]+))?/g,
     (match, legacyNs, legacyPath, nodeKey, nodePath) => {
       if (legacyNs) {
         const val = getPath(legacyNs === "input" ? input : ctx, legacyPath)

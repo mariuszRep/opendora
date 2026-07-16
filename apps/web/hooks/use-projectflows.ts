@@ -183,8 +183,10 @@ export function useOpendora(opts?: {
   notify?: (opts: NotifyOptions) => void
   removeByPermissionID?: (permissionRequestID: string) => void
   dismissPermissionToast?: (permissionRequestID: string) => void
+  removeByQuestionID?: (questionRequestID: string) => void
+  dismissQuestionToast?: (questionRequestID: string) => void
 }): UseOpendoraResult {
-  const { notify, removeByPermissionID, dismissPermissionToast } = opts ?? {}
+  const { notify, removeByPermissionID, dismissPermissionToast, removeByQuestionID, dismissQuestionToast } = opts ?? {}
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -284,6 +286,31 @@ export function useOpendora(opts?: {
     setSchedules(data)
   }, [])
 
+  // Pending question/permission requests are otherwise only ever updated by
+  // live SSE events — if one is missed (tab backgrounded, brief disconnect),
+  // the UI can get stuck showing a stale request. Reconcile against the
+  // server's current view whenever we regain focus.
+  const refreshPendingRequests = useCallback(async () => {
+    const [questionData, permissionData] = await Promise.all([
+      opendora.question.list(),
+      opendora.permission.listPending(),
+    ])
+    const nextQuestions = questionData.reduce<Record<string, QuestionRequest[]>>((acc, request) => {
+      acc[request.sessionID] ??= []
+      acc[request.sessionID].push(request)
+      return acc
+    }, {})
+    questionRequestsRef.current = nextQuestions
+    setQuestionRequests(nextQuestions)
+
+    const nextPermissions = permissionData.reduce<Record<string, PermissionRequest[]>>((acc, request) => {
+      acc[request.session_id] ??= []
+      acc[request.session_id].push(request)
+      return acc
+    }, {})
+    setPermissionRequests(nextPermissions)
+  }, [])
+
   const fetchSessionMessages = useCallback((sessionID: string) => {
     const existing = messageFetchRef.current.get(sessionID)
     if (existing) return existing
@@ -343,11 +370,12 @@ export function useOpendora(opts?: {
 
     async function init() {
       try {
-        const [providerData, agentData, sessionData, questionData, configData, scheduleData, sessionStatusData, timeoutData] = await Promise.all([
+        const [providerData, agentData, sessionData, questionData, permissionData, configData, scheduleData, sessionStatusData, timeoutData] = await Promise.all([
           opendora.provider.list(),
           opendora.agent.list(),
           opendora.session.list(),
           opendora.question.list(),
+          opendora.permission.listPending(),
           opendora.config.get(),
           opendora.schedule.list(),
           opendora.session.status().catch(() => ({} as Record<string, { type: string }>)),
@@ -429,6 +457,13 @@ export function useOpendora(opts?: {
         }, {})
         questionRequestsRef.current = initialRequests
         setQuestionRequests(initialRequests)
+
+        const initialPermissionRequests = permissionData.reduce<Record<string, PermissionRequest[]>>((acc, request) => {
+          acc[request.session_id] ??= []
+          acc[request.session_id].push(request)
+          return acc
+        }, {})
+        setPermissionRequests(initialPermissionRequests)
       } catch (err) {
         if (cancelled) return
         console.error("[init] bootstrap failed", err)
@@ -444,11 +479,12 @@ export function useOpendora(opts?: {
     function handleFocus() {
       refreshProviders().catch(() => { })
       refreshProviderTimeouts().catch(() => { })
+      refreshPendingRequests().catch(() => { })
     }
 
     window.addEventListener("focus", handleFocus)
     return () => window.removeEventListener("focus", handleFocus)
-  }, [refreshProviders])
+  }, [refreshProviders, refreshPendingRequests])
 
   // Load messages when session changes (stale-while-revalidate via cache)
   useEffect(() => {
@@ -784,15 +820,32 @@ export function useOpendora(opts?: {
         }
         case "question.asked": {
           const request = event.properties as QuestionRequest
+          let isNew = false
           setQuestionRequests((prev) => {
             const existing = prev[request.sessionID] ?? []
             const idx = existing.findIndex((item) => item.id === request.id)
+            isNew = idx === -1
             const next = idx === -1
               ? [...existing, request]
               : existing.map((item, index) => (index === idx ? request : item))
             questionRequestsRef.current = { ...prev, [request.sessionID]: next }
             return { ...prev, [request.sessionID]: next }
           })
+          if (isNew && notify) {
+            const firstQuestion = request.questions[0]
+            const targetSessionID = request.sessionID
+            notify({
+              type: "question_request",
+              title: firstQuestion?.header ?? "Question",
+              message: firstQuestion?.question ?? "The agent needs your input",
+              questionRequestID: request.id,
+              sessionID: targetSessionID,
+              action: {
+                label: "View",
+                href: `/dashboard?session=${targetSessionID}`,
+              },
+            })
+          }
           break
         }
         case "question.replied":
@@ -810,6 +863,8 @@ export function useOpendora(opts?: {
               [sessionID]: filtered,
             }
           })
+          removeByQuestionID?.(requestID)
+          dismissQuestionToast?.(requestID)
           break
         }
         case "permission.asked": {

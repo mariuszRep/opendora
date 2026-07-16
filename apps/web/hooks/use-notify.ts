@@ -13,6 +13,7 @@ export type NotifyOptions = {
   action?: { label: string; href?: string; onClick?: () => void }
   providerID?: string
   permissionRequestID?: string
+  questionRequestID?: string
   sessionID?: string
   duration?: number
   silent?: boolean
@@ -28,13 +29,14 @@ export function useNotify() {
     markAllRead,
     removeNotification,
     removeByPermissionID,
+    removeByQuestionID,
     clearAll,
   } = useNotifications()
   const router = useRouter()
 
   const notify = useCallback(
     (opts: NotifyOptions) => {
-      const { type, title, message, action, providerID, permissionRequestID, sessionID, duration, silent, memoryDelete } = opts
+      const { type, title, message, action, providerID, permissionRequestID, questionRequestID, sessionID, duration, silent, memoryDelete } = opts
 
       const notifAction = action
         ? {
@@ -43,10 +45,10 @@ export function useNotify() {
           }
         : undefined
 
-      addNotification({ type, title, message, action: notifAction, providerID, permissionRequestID, sessionID, memoryDelete })
+      addNotification({ type, title, message, action: notifAction, providerID, permissionRequestID, questionRequestID, sessionID, memoryDelete })
 
       if (!silent) {
-        playNotificationSound({ variant: type === "permission_request" || type === "error" ? "alert" : "default" })
+        playNotificationSound({ variant: type === "permission_request" || type === "question_request" || type === "error" ? "alert" : "default" })
       }
 
       const toastMessage = title
@@ -78,6 +80,16 @@ export function useNotify() {
             id: permissionRequestID ? `perm-${permissionRequestID}` : undefined,
           })
           break
+        case "question_request":
+          toast(toastMessage, {
+            description: toastDescription,
+            action: toastAction,
+            // Question requests are sticky — they should remain visible until
+            // the user responds (or the server signals `question.replied`/`question.rejected`).
+            duration: duration ?? Infinity,
+            id: questionRequestID ? `question-${questionRequestID}` : undefined,
+          })
+          break
         default:
           toast(toastMessage, { description: toastDescription, action: toastAction, duration: toastDuration })
       }
@@ -89,6 +101,10 @@ export function useNotify() {
     toast.dismiss(`perm-${permissionRequestID}`)
   }, [])
 
+  const dismissQuestionToast = useCallback((questionRequestID: string) => {
+    toast.dismiss(`question-${questionRequestID}`)
+  }, [])
+
   return {
     notify,
     notifications,
@@ -97,7 +113,9 @@ export function useNotify() {
     markAllRead,
     removeNotification,
     removeByPermissionID,
+    removeByQuestionID,
     dismissPermissionToast,
+    dismissQuestionToast,
     clearAll,
   }
 }

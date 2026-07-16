@@ -12,6 +12,7 @@ export type Notification = {
     | "warning"
     | "success"
     | "permission_request"
+    | "question_request"
   title: string
   message: string
   timestamp: number
@@ -20,6 +21,7 @@ export type Notification = {
   action?: { label: string; onClick: () => void }
   providerID?: string
   permissionRequestID?: string
+  questionRequestID?: string
   sessionID?: string
   memoryDelete?: { directory: string; name: string; scope: string; agentID?: string; callID?: string }
 }
@@ -32,10 +34,10 @@ function loadStored(): Notification[] {
     const raw = localStorage.getItem(STORAGE_KEY)
     const parsed: Notification[] = raw ? JSON.parse(raw) : []
     const now = Date.now()
-    // Permission requests are ephemeral — never restore them across reloads;
-    // the server will re-emit `permission.asked` if the request is still alive.
+    // Permission/question requests are ephemeral — never restore them across reloads;
+    // the server will re-emit `permission.asked`/`question.asked` if the request is still alive.
     return parsed.filter(
-      (n) => n.type !== "permission_request" && (!n.expiresAt || n.expiresAt > now),
+      (n) => n.type !== "permission_request" && n.type !== "question_request" && (!n.expiresAt || n.expiresAt > now),
     )
   } catch {
     return []
@@ -44,10 +46,10 @@ function loadStored(): Notification[] {
 
 function store(notifications: Notification[]): void {
   // actions can't be serialized — strip them before storing.
-  // permission_request entries are ephemeral and are excluded from storage.
+  // permission_request/question_request entries are ephemeral and are excluded from storage.
   try {
     const serializable = notifications
-      .filter((n) => n.type !== "permission_request")
+      .filter((n) => n.type !== "permission_request" && n.type !== "question_request")
       .map(({ action: _a, ...n }) => n)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable.slice(0, 100)))
   } catch {}
@@ -91,6 +93,10 @@ export function useNotifications() {
     setNotifications((prev) => prev.filter((n) => n.permissionRequestID !== permissionRequestID))
   }, [])
 
+  const removeByQuestionID = useCallback((questionRequestID: string) => {
+    setNotifications((prev) => prev.filter((n) => n.questionRequestID !== questionRequestID))
+  }, [])
+
   const removeByMemoryCallID = useCallback((callID: string) => {
     setNotifications((prev) => prev.filter((n) => n.memoryDelete?.callID !== callID))
   }, [])
@@ -109,6 +115,7 @@ export function useNotifications() {
     markAllRead,
     removeNotification,
     removeByPermissionID,
+    removeByQuestionID,
     removeByMemoryCallID,
     clearAll,
   }

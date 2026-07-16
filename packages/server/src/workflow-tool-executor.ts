@@ -10,6 +10,8 @@ import { Identifier } from "@projectflows/util/id"
 import { ToolRegistry } from "@projectflows/server/tool-registry"
 import { addSkillTools, getSkillTools } from "@projectflows/session/skill-tools"
 import type { ToolExecutor } from "@projectflows/workflow/executor"
+import { WorkflowStorage } from "@projectflows/workflow/storage"
+import { runWorkflow } from "@projectflows/workflow/runner"
 import { mergeArgs, formatValidationFeedback, toJsonSchema } from "./workflow-tool-fill"
 
 /**
@@ -33,8 +35,8 @@ export function createWorkflowToolExecutor(): ToolExecutor {
     }
     const toolDef = await toolInfo.init(initCtx)
 
-    const session = await Session.get(ctx.sessionID).catch(() => undefined)
-    const sessionDirectory = session?.directory ?? Instance.directory
+    const sessionDirectory = ctx.directory
+      ?? await Session.effectiveDefaultPath(ctx.sessionID).catch(() => Instance.directory)
 
     const buildExecCtx = (currentArgs: () => Record<string, unknown>, callID?: string) => ({
       sessionID: ctx.sessionID,
@@ -85,6 +87,12 @@ export function createWorkflowToolExecutor(): ToolExecutor {
           list: () => Agent.list(),
           get: (id: string) => Agent.get(id),
         },
+        workflow: {
+          get: (id: string) => WorkflowStorage.get(sessionDirectory, id),
+          availableIds: () => WorkflowStorage.availableIds(sessionDirectory),
+          run: (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) =>
+            runWorkflow({ workflow, sessionId, input, directory }),
+        },
         prompt: (opts: any) => SessionPrompt.prompt(opts),
         resolvePromptParts: (template: string) => SessionPrompt.resolvePromptParts(template),
         session: {
@@ -93,6 +101,8 @@ export function createWorkflowToolExecutor(): ToolExecutor {
           messages: (id: string) => Session.messages({ sessionID: id }),
           setTitle: (id: string, title: string) => Session.setTitle({ sessionID: id, title }),
           create: (input: any) => Session.create(input),
+          createNext: (input: any) => Session.createNext(input),
+          setCwd: (input: { sessionID: string; cwd: string }) => Session.setCwd(input),
           ensureMainSession: (agentID: string) => Session.ensureMainSession(agentID),
           setReplyToSessionID: (input: any) => Session.setReplyToSessionID(input),
         },

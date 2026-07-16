@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
-import { BellIcon, XIcon, CheckIcon, CheckCheckIcon, Volume2Icon, VolumeXIcon, ShieldAlertIcon } from "lucide-react"
+import { BellIcon, XIcon, CheckIcon, CheckCheckIcon, Volume2Icon, VolumeXIcon, ShieldAlertIcon, HelpCircleIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Notification } from "@/hooks/use-notifications"
 import { opendora, type PermissionReply } from "@/lib/projectflows"
@@ -31,6 +31,7 @@ const borderColor: Record<Notification["type"], string> = {
   provider_recovered: "border-l-green-500",
   info: "border-l-blue-500",
   permission_request: "border-l-amber-500",
+  question_request: "border-l-amber-500",
 }
 
 type Props = {
@@ -129,6 +130,9 @@ export function NotificationBlade({
                       <p className="flex items-center gap-1.5 text-sm font-medium leading-none text-foreground">
                         {n.type === "permission_request" && (
                           <ShieldAlertIcon className="size-3.5 shrink-0 text-amber-500" />
+                        )}
+                        {n.type === "question_request" && (
+                          <HelpCircleIcon className="size-3.5 shrink-0 text-amber-500" />
                         )}
                         {n.title}
                       </p>

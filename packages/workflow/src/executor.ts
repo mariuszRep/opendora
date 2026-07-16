@@ -9,6 +9,8 @@ export type WorkflowMeta = {
 
 export type WorkflowToolContext = {
   sessionID: string
+  /** Effective workflow directory at this node; updated by Set Working Directory. */
+  directory?: string
   agent?: string
   model?: { providerID: string; modelID: string }
   abort?: AbortSignal
