@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "PROJECTFLOWS_PROJECT_ROOT=$PWD bun run apps/cli/src/index.ts",
     "tui": "PROJECTFLOWS_PROJECT_ROOT=$PWD bun run apps/cli/src/index.ts attach http://localhost:4097",
-    "serve": "LD_PRELOAD=$PWD/packages/tools/desktop/x11_nocrash.so PROJECTFLOWS_PROJECT_ROOT=$PWD bun run apps/cli/src/index.ts serve --port 4097",
+    "serve": "PROJECTFLOWS_PROJECT_ROOT=$PWD bun run apps/cli/src/index.ts serve --port 4097",
     "start": "PROJECTFLOWS_PROJECT_ROOT=$PWD bun run apps/cli/src/index.ts start",
     "stop": "PROJECTFLOWS_PROJECT_ROOT=$PWD bun run apps/cli/src/index.ts stop",
     "restart": "PROJECTFLOWS_PROJECT_ROOT=$PWD bun run apps/cli/src/index.ts restart",
