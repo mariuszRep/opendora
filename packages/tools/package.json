@@ -13,6 +13,7 @@
   "exports": {
     "./system": "./system/index.ts",
     "./system/*": "./system/*.ts",
+    "./browser": "./browser/index.ts",
     "./filesystem": "./filesystem/index.ts",
     "./filesystem/*": "./filesystem/*.ts",
     "./filesystem/lib/*": "./filesystem/lib/*.ts",
