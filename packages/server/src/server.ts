@@ -59,7 +59,6 @@ import { UsageRoutes } from "./routes/usage"
 import { MemoryRoutes } from "./routes/memory"
 import { PluginRoutes } from "./routes/plugin"
 import { EntityRoutes } from "./routes/entity"
-import { CatalogRoutes } from "./routes/catalog"
 import { MDNS } from "./mdns"
 import { BusBridge } from "@projectflows/session/bus-bridge"
 import { retentionDaemon, sessionManager } from "@projectflows/session/session"
@@ -314,7 +313,6 @@ export namespace Server {
         .route("/memory", MemoryRoutes())
         .route("/plugin", PluginRoutes())
         .route("/entity", EntityRoutes())
-        .route("/catalog", CatalogRoutes())
         .route("/", FileRoutes())
         .route("/mcp", McpRoutes())
         .route("/tui", TuiRoutes())

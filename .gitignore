@@ -28,26 +28,8 @@ logs/
 *.bun-build
 tsconfig.tsbuildinfo
 
-# .projectflows — never commit this folder
+# .projectflows — never commit this folder (project-scoped; holds only goals/, see AGENTS.md)
 .projectflows/
-
-# ProjectFlows runtime data — never commit these
-.projectflows/providers/auth.json
-.projectflows/providers/mcp-auth.json
-.projectflows/providers/fallback-state.json
-.projectflows/providers/usage/
-.projectflows/log/
-.projectflows/state/
-.projectflows/storage/
-.projectflows/cache/models.json
-.projectflows/cache/bun.lock
-.projectflows/cache/package.json
-.projectflows/bin/
-.projectflows/bun.lock
-.projectflows/package.json
-.projectflows/agents/*/LOG.md
-.projectflows/agents/MEMORY.md
-.projectflows/agents/Minds/MEMORY.md
 *.db
 *.db-shm
 *.db-wal

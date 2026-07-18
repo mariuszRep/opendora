@@ -23,6 +23,10 @@ export namespace Plugin {
     homepage: z.string().optional(),
     configSchema: z.record(z.string(), z.unknown()).optional(),
     dependencies: z.array(z.string()).optional(),
+    category: z.string().optional(),
+    status: z.string().optional(),
+    provided: z.enum(["core", "entity"]).optional(),
+    tags: z.array(z.string()).optional(),
   })
   export type Manifest = z.infer<typeof Manifest>
 

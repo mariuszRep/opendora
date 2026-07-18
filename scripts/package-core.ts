@@ -13,6 +13,8 @@
  *   bun scripts/package-core.ts                        # writes dist/core.tar.gz
  *   bun scripts/package-core.ts --out /tmp/core.tar.gz
  *   bun scripts/package-core.ts --registry ../projectflows-website/registry
+ *   bun scripts/package-core.ts --install                     # install core.json plugins to ~/.projectflows
+ *   bun scripts/package-core.ts --plugin agent-core --install # install a single non-core (entity) plugin
  */
 
 import { join, dirname, basename } from "node:path"
@@ -54,10 +56,11 @@ interface CoreManifest {
 interface PluginManifest {
   pluginId: string
   version: string
+  provided?: "core" | "entity"
   capabilities: Array<{
     type: "agent" | "skill" | "workflow" | "tool" | "tool-group"
     name: string
-    toolGroup?: string
+    group?: string
   }>
 }
 
@@ -101,14 +104,22 @@ async function copyDir(src: string, dest: string): Promise<void> {
 }
 
 async function main() {
-  const coreManifestPath = join(REGISTRY, "core.json")
-  if (!existsSync(coreManifestPath)) {
-    console.error(`core.json not found at ${coreManifestPath}`)
-    process.exit(1)
-  }
+  const singlePlugin = arg("--plugin")
+  let pluginIds: string[]
 
-  const core = readJson<CoreManifest>(coreManifestPath)
-  console.log(`Packaging ${core.plugins.length} core plugin(s): ${core.plugins.join(", ")}`)
+  if (singlePlugin) {
+    pluginIds = [singlePlugin]
+    console.log(`Packaging 1 plugin: ${singlePlugin}`)
+  } else {
+    const coreManifestPath = join(REGISTRY, "core.json")
+    if (!existsSync(coreManifestPath)) {
+      console.error(`core.json not found at ${coreManifestPath}`)
+      process.exit(1)
+    }
+    const core = readJson<CoreManifest>(coreManifestPath)
+    pluginIds = core.plugins
+    console.log(`Packaging ${pluginIds.length} core plugin(s): ${pluginIds.join(", ")}`)
+  }
 
   // Staging directory: build the ~/.projectflows/ layout here
   const staging = join(DIST, ".core-staging")
@@ -118,7 +129,7 @@ async function main() {
   const lockfile: LockfileData = { version: 1, plugins: {} }
   const now = new Date().toISOString()
 
-  for (const pluginId of core.plugins) {
+  for (const pluginId of pluginIds) {
     const manifestPath = join(REGISTRY, "plugins", pluginId, "manifest.json")
     if (!existsSync(manifestPath)) {
       console.error(`  [skip] Plugin manifest not found: ${manifestPath}`)
@@ -152,14 +163,11 @@ async function main() {
           console.warn(`    [warn] skill/${cap.name} not found in registry, skipping`)
         }
       } else if (cap.type === "workflow") {
-        // Workflows live in registry/workflows/<name>/<name>.json
-        const workflowDir = join(REGISTRY, "workflows", cap.name)
-        const workflowFile = join(workflowDir, `${cap.name}.json`)
-        const destDir = join(staging, "workflows")
-        const destFile = join(destDir, `${cap.name}.json`)
-        if (await exists(workflowFile)) {
-          await mkdir(destDir, { recursive: true })
-          await copyFile(workflowFile, destFile)
+        // Workflows live in registry/workflows/<name>/workflow.json (per-folder layout)
+        const src = join(REGISTRY, "workflows", cap.name)
+        const dest = join(staging, "workflows", cap.name)
+        if (await exists(src)) {
+          await copyDir(src, dest)
           lockCaps.push({ type: "workflow", name: cap.name, sourceGroup: `plugin:${pluginId}` })
           console.log(`    workflow/${cap.name}`)
         } else {
@@ -187,33 +195,52 @@ async function main() {
         }
       } else if (cap.type === "tool") {
         // Individual tool — typically bundled within a tool-group; handled above
-        const group = cap.toolGroup ?? cap.name
+        const group = cap.group ?? cap.name
         lockCaps.push({ type: "tool", name: cap.name, sourceGroup: `plugin:${pluginId}`, group })
       }
     }
 
     lockfile.plugins[pluginId] = {
       version: manifest.version,
-      source: `core:${pluginId}`,
+      source: manifest.provided === "entity" ? `registry:${pluginId}` : `core:${pluginId}`,
       scope: "global",
       installedAt: now,
       capabilities: lockCaps,
       enabled: true,
     }
+
+    // Plugin dir holds only the manifest — reference record for reinstall/uninstall bookkeeping.
+    const pluginStagingDir = join(staging, "plugins", pluginId)
+    await mkdir(pluginStagingDir, { recursive: true })
+    await copyFile(manifestPath, join(pluginStagingDir, "manifest.json"))
   }
 
   // Write plugins.lock.json into staging
   const lockfilePath = join(staging, "plugins.lock.json")
   await Bun.write(lockfilePath, JSON.stringify(lockfile, null, 2))
-  console.log(`  plugins.lock.json written (${core.plugins.length} plugins)`)
+  console.log(`  plugins.lock.json written (${pluginIds.length} plugin(s))`)
 
   // --install mode: copy directly to ~/.projectflows/ (dev bootstrap)
   if (process.argv.includes("--install")) {
     const dest = join(os.homedir(), ".projectflows")
     mkdirSync(dest, { recursive: true })
-    // Clean the tools/ dir first so stale pre-migration tool groups don't linger
-    const toolsDest = join(dest, "tools")
-    if (existsSync(toolsDest)) rmSync(toolsDest, { recursive: true, force: true })
+    // Clean the tools/ dir first so stale pre-migration tool groups don't linger.
+    // Only for a full core rebuild — a single --plugin install is additive and must
+    // not wipe out tool groups belonging to other, already-installed plugins.
+    if (!singlePlugin) {
+      const toolsDest = join(dest, "tools")
+      if (existsSync(toolsDest)) rmSync(toolsDest, { recursive: true, force: true })
+    }
+
+    // Merge into the existing lockfile instead of clobbering non-core plugin entries
+    // (e.g. entity-provided plugins installed on demand, like ai-news-publisher).
+    const destLockfilePath = join(dest, "plugins.lock.json")
+    if (existsSync(destLockfilePath)) {
+      const existing = readJson<LockfileData>(destLockfilePath)
+      lockfile.plugins = { ...existing.plugins, ...lockfile.plugins }
+      await Bun.write(lockfilePath, JSON.stringify(lockfile, null, 2))
+    }
+
     cpSync(staging, dest, { recursive: true, force: true })
     rmSync(staging, { recursive: true, force: true })
     console.log(`\nCore capabilities installed to ${dest}`)

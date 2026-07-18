@@ -10,6 +10,22 @@ import { ToolRegistry } from "@projectflows/server/tool-registry"
 
 const DEFAULT_REGISTRY_URL = "https://projectflows.ai"
 
+// ToolRegistry only scans the grouped layout: tools/<group>/tools/<name>.{js,ts}
+// (see packages/tools/registry.ts). A tool's group isn't known up front, so it
+// must be resolved by scanning existing group dirs.
+async function findToolFile(root: string, name: string): Promise<string | null> {
+  const groupsDir = path.join(root, "tools")
+  const groups = await fs.readdir(groupsDir, { withFileTypes: true }).catch(() => [])
+  for (const g of groups) {
+    if (!g.isDirectory()) continue
+    for (const ext of [".js", ".ts"]) {
+      const p = path.join(groupsDir, g.name, "tools", `${name}${ext}`)
+      if (await fs.access(p).then(() => true).catch(() => false)) return p
+    }
+  }
+  return null
+}
+
 function entityDir(type: string, name: string, root: string): string | null {
   switch (type) {
     case "agent":
@@ -18,8 +34,6 @@ function entityDir(type: string, name: string, root: string): string | null {
       return path.join(root, "skills", name)
     case "workflow":
       return path.join(root, "workflows", name)
-    case "tool":
-      return path.join(root, "tools", name + ".js")
     case "tool-group":
       return path.join(root, "tools", name)
     default:
@@ -29,6 +43,7 @@ function entityDir(type: string, name: string, root: string): string | null {
 
 async function isInstalled(type: string, name: string): Promise<boolean> {
   const root = PluginStorage.globalRoot()
+  if (type === "tool") return (await findToolFile(root, name)) !== null
   const p = entityDir(type, name, root)
   if (!p) return false
   return fs.access(p).then(() => true).catch(() => false)
@@ -50,9 +65,18 @@ async function installEntity(
       await fs.cp(path.join(extractDir, entry.name), path.join(destDir, entry.name), { recursive: true })
     }
   } else if (type === "tool") {
-    await fs.mkdir(path.join(root, "tools"), { recursive: true })
+    // Standalone (groupless) tool download — bucket it into an "others" group so
+    // ToolRegistry's tools/<group>/tools/*.js scan actually picks it up.
+    const groupDir = path.join(root, "tools", "others")
+    const toolsDir = path.join(groupDir, "tools")
+    await fs.mkdir(toolsDir, { recursive: true })
+    const manifestPath = path.join(groupDir, "group.json")
+    if (!(await fs.access(manifestPath).then(() => true).catch(() => false))) {
+      const stub = { id: "others", name: "others", description: "", icon: "Wrench", tools: [], sourceGroup: "" }
+      await fs.writeFile(manifestPath, JSON.stringify(stub, null, 2), "utf-8")
+    }
     const src = path.join(extractDir, `${name}.js`)
-    const dest = path.join(root, "tools", `${name}.js`)
+    const dest = path.join(toolsDir, `${name}.js`)
     await fs.copyFile(src, dest)
   } else if (type === "tool-group") {
     const destDir = path.join(root, "tools", name)
@@ -154,7 +178,7 @@ export const EntityRoutes = lazy(() =>
         }
 
         const root = PluginStorage.globalRoot()
-        const p = entityDir(type, name, root)
+        const p = type === "tool" ? await findToolFile(root, name) : entityDir(type, name, root)
         if (!p) return c.json({ message: "Invalid entity type" }, 400)
         await fs.rm(p, { recursive: true, force: true })
         if (type === "tool-group" || type === "tool") ToolRegistry.reset()

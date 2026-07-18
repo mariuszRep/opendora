@@ -45,6 +45,27 @@ test("install from local path: creates installedDir and lockfile entry", async (
   expect(data.plugins["test-plugin"]!.version).toBe("1.0.0")
 })
 
+test("install writes only manifest.json into the plugin dir — no embedded asset bundle", async () => {
+  const srcDir = await makePluginDir("manifest-only-plugin", {
+    capabilities: [{ type: "agent", name: "some-agent" }],
+  })
+  await fs.mkdir(path.join(srcDir, "agents", "some-agent"), { recursive: true })
+  await fs.writeFile(path.join(srcDir, "agents", "some-agent", "agent.json"), "{}", "utf-8")
+
+  await PluginInstaller.install({ sourcePath: srcDir, scope: "global" })
+
+  const installedDir = PluginStorage.globalInstalledDir("manifest-only-plugin")
+  const entries = await fs.readdir(installedDir)
+  expect(entries).toEqual(["manifest.json"])
+
+  const manifest = JSON.parse(await fs.readFile(path.join(installedDir, "manifest.json"), "utf-8"))
+  expect(manifest.pluginId).toBe("manifest-only-plugin")
+
+  // The actual capability content lives only under the capability root, not the plugin dir
+  const capInstalled = path.join(PluginStorage.globalRoot(), "agents", "some-agent", "agent.json")
+  expect(await fs.readFile(capInstalled, "utf-8")).toBe("{}")
+})
+
 test("install returns PluginListItem with pluginId and enabled=true", async () => {
   const srcDir = await makePluginDir("my-plugin")
   const item = await PluginInstaller.install({ sourcePath: srcDir, scope: "global" })

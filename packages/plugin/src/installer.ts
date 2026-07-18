@@ -197,8 +197,10 @@ export namespace PluginInstaller {
         ? PluginStorage.projectConfigRoot(projectDir)
         : PluginStorage.globalRoot()
 
+    // Plugin dir holds only the manifest — a reference record for reinstall/uninstall
+    // bookkeeping. Actual capability content lives exclusively under the capability root.
     await fs.mkdir(pluginDir, { recursive: true })
-    await fs.cp(sourcePath, pluginDir, { recursive: true })
+    await fs.writeFile(path.join(pluginDir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n", "utf-8")
 
     // Extract agents, skills, and tools (grouped) into the capability root
     await extractCapabilities(sourcePath, capRoot, capabilities)
