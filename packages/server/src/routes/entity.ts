@@ -17,7 +17,7 @@ function entityDir(type: string, name: string, root: string): string | null {
     case "skill":
       return path.join(root, "skills", name)
     case "workflow":
-      return path.join(root, "workflows", name + ".json")
+      return path.join(root, "workflows", name)
     case "tool":
       return path.join(root, "tools", name + ".js")
     case "tool-group":
@@ -41,8 +41,9 @@ async function installEntity(
 ): Promise<void> {
   const root = PluginStorage.globalRoot()
 
-  if (type === "agent" || type === "skill") {
-    const destDir = path.join(root, type === "agent" ? "agents" : "skills", name)
+  if (type === "agent" || type === "skill" || type === "workflow") {
+    const subdir = type === "agent" ? "agents" : type === "skill" ? "skills" : "workflows"
+    const destDir = path.join(root, subdir, name)
     await fs.mkdir(destDir, { recursive: true })
     const entries = await fs.readdir(extractDir, { withFileTypes: true })
     for (const entry of entries) {
@@ -52,11 +53,6 @@ async function installEntity(
     await fs.mkdir(path.join(root, "tools"), { recursive: true })
     const src = path.join(extractDir, `${name}.js`)
     const dest = path.join(root, "tools", `${name}.js`)
-    await fs.copyFile(src, dest)
-  } else if (type === "workflow") {
-    await fs.mkdir(path.join(root, "workflows"), { recursive: true })
-    const src = path.join(extractDir, `${name}.json`)
-    const dest = path.join(root, "workflows", `${name}.json`)
     await fs.copyFile(src, dest)
   } else if (type === "tool-group") {
     const destDir = path.join(root, "tools", name)

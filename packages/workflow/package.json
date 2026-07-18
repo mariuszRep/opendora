@@ -9,6 +9,7 @@
     "./schema": "./src/schema.ts",
     "./refs": "./src/refs.ts",
     "./storage": "./src/storage.ts",
+    "./migration": "./src/migration.ts",
     "./runner": "./src/runner.ts",
     "./routes": "./src/routes.ts",
     "./node-types": "./src/node-types.ts",

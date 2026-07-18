@@ -67,6 +67,7 @@ import { configureSessionCore } from "./configure-session-core"
 import { projectflowsStorageAdapter } from "@projectflows/session/storage-adapter"
 import { Session } from "@projectflows/session/session"
 import { migrateAllSessions } from "@projectflows/session"
+import { runWorkflowMigrationIfNeeded } from "@projectflows/workflow/migration"
 import { Identifier } from "@projectflows/util/id"
 import { MessageV2 } from "@projectflows/session/message"
 import { createWorkflowToolExecutor } from "./workflow-tool-executor"
@@ -823,6 +824,9 @@ export namespace Server {
       if (existsSync(join(globalWeb, "index.html"))) return globalWeb
       return undefined
     })()
+
+    // Blocking by design — must complete before any request can reach WorkflowStorage.
+    runWorkflowMigrationIfNeeded(join(Global.Path.config, "workflows"))
 
     configureSessionCore()
     registerToolExecutor(createWorkflowToolExecutor())

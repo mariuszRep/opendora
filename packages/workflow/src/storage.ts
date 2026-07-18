@@ -15,13 +15,23 @@ export function configurePluginWorkflowDirs(fn: () => Promise<string[]>): void {
   _getPluginWorkflowDirs = fn
 }
 
+const ID_PATTERN = /^[a-zA-Z0-9_-]+$/
+
+function assertValidId(id: string): void {
+  if (!ID_PATTERN.test(id)) throw new Error(`Invalid workflow id: "${id}"`)
+}
+
 export namespace WorkflowStorage {
   function resolveDir(): string {
     return path.join(Global.Path.config, "workflows")
   }
 
+  function workflowDir(id: string): string {
+    return path.join(resolveDir(), id)
+  }
+
   function filePath(id: string): string {
-    return path.join(resolveDir(), `${id}.json`)
+    return path.join(workflowDir(id), "workflow.json")
   }
 
   async function ensureDir(): Promise<string> {
@@ -30,29 +40,33 @@ export namespace WorkflowStorage {
     return dir
   }
 
+  async function readWorkflowFolder(parentDir: string, id: string): Promise<Workflow | undefined> {
+    try {
+      const raw = JSON.parse(await fs.readFile(path.join(parentDir, id, "workflow.json"), "utf8"))
+      const parsed = Workflow.safeParse(raw)
+      return parsed.success ? parsed.data : undefined
+    } catch {
+      return undefined
+    }
+  }
+
   export async function list(_baseDir?: string): Promise<Workflow[]> {
     const dir = await ensureDir()
     const seen = new Map<string, Workflow>()
-    const entries = await fs.readdir(dir).catch(() => [] as string[])
+    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => [])
     for (const entry of entries) {
-      if (!entry.endsWith(".json")) continue
-      try {
-        const raw = JSON.parse(await fs.readFile(path.join(dir, entry), "utf8"))
-        const parsed = Workflow.safeParse(raw)
-        if (parsed.success) seen.set(parsed.data.id, parsed.data)
-      } catch {}
+      if (!entry.isDirectory()) continue
+      const workflow = await readWorkflowFolder(dir, entry.name)
+      if (workflow) seen.set(workflow.id, workflow)
     }
     for (const pluginDir of await (_getPluginWorkflowDirs?.() ?? [])) {
       const wDir = path.join(pluginDir, "workflows")
       if (path.resolve(wDir) === path.resolve(dir)) continue
-      const pluginEntries = await fs.readdir(wDir).catch(() => [] as string[])
+      const pluginEntries = await fs.readdir(wDir, { withFileTypes: true }).catch(() => [])
       for (const entry of pluginEntries) {
-        if (!entry.endsWith(".json")) continue
-        try {
-          const raw = JSON.parse(await fs.readFile(path.join(wDir, entry), "utf8"))
-          const parsed = Workflow.safeParse(raw)
-          if (parsed.success && !seen.has(parsed.data.id)) seen.set(parsed.data.id, parsed.data)
-        } catch {}
+        if (!entry.isDirectory()) continue
+        const workflow = await readWorkflowFolder(wDir, entry.name)
+        if (workflow && !seen.has(workflow.id)) seen.set(workflow.id, workflow)
       }
     }
     return Array.from(seen.values())
@@ -76,12 +90,14 @@ export namespace WorkflowStorage {
       throw new Error(`Invalid workflow: ${issues}`)
     }
     const workflow = parsed.data
-    const fp = filePath(workflow.id)
-    if (fsSync.existsSync(fp)) {
+    assertValidId(workflow.id)
+    const dir = workflowDir(workflow.id)
+    if (fsSync.existsSync(dir)) {
       throw new Error(`Workflow "${workflow.id}" already exists`)
     }
     await ensureDir()
-    await fs.writeFile(fp, JSON.stringify(workflow, null, 2), "utf8")
+    await fs.mkdir(dir, { recursive: true })
+    await fs.writeFile(filePath(workflow.id), JSON.stringify(workflow, null, 2), "utf8")
     return workflow
   }
 
@@ -93,26 +109,26 @@ export namespace WorkflowStorage {
     }
     const workflow = parsed.data
     if (workflow.id !== id) throw new Error(`Workflow id must match: got "${workflow.id}", expected "${id}"`)
-    const fp = filePath(id)
+    assertValidId(id)
     await ensureDir()
-    await fs.writeFile(fp, JSON.stringify(workflow, null, 2), "utf8")
+    await fs.mkdir(workflowDir(id), { recursive: true })
+    await fs.writeFile(filePath(id), JSON.stringify(workflow, null, 2), "utf8")
     return workflow
   }
 
   export async function remove(_baseDir: string | undefined, id: string): Promise<void> {
-    try {
-      await fs.unlink(filePath(id))
-    } catch {
-      throw new Error(`Workflow "${id}" not found`)
-    }
+    assertValidId(id)
+    const dir = workflowDir(id)
+    if (!fsSync.existsSync(dir)) throw new Error(`Workflow "${id}" not found`)
+    await fs.rm(dir, { recursive: true, force: true })
   }
 
   /** Lists available workflow IDs, for error messages. */
   export async function availableIds(_baseDir?: string): Promise<string[]> {
     try {
       const dir = resolveDir()
-      const entries = await fs.readdir(dir)
-      return entries.filter((f) => f.endsWith(".json")).map((f) => f.replace(".json", ""))
+      const entries = await fs.readdir(dir, { withFileTypes: true })
+      return entries.filter((e) => e.isDirectory()).map((e) => e.name)
     } catch {
       return []
     }

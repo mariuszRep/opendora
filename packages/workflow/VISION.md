@@ -322,7 +322,7 @@ The `script` node type (`workflow_script`) is a first-class, global reusable Nod
 - **Runtime/environment configuration.** The node supports: runtime command (optional override), working directory, environment path, Python virtual environment (`.venv`) path, environment variable allowlist, timeout, and failure behavior (fail vs. warn).
 - **Workflow context integration.** The node participates in workflow context/reference resolution so previous node outputs can become script inputs (`$ref` resolution) and script outputs can feed downstream nodes through the canonical JSON output envelope.
 - **Path safety.** By default, script selection is constrained to a deterministic workflow-local scripts folder. Explicit absolute or cross-project paths require clear permission or configuration.
-- **Workflow-local script convention.** Workflow scripts live near the workflow definition in a deterministic workflow-specific folder. For a JSON workflow file at `.projectflows/workflows/<id>.json`, the associated default script folder is `.projectflows/workflows/<id>/scripts/` (or another documented, deterministic convention chosen by implementation). The convention must be documented so workflow authors and tools can predict the path.
+- **Workflow-local script convention.** A workflow's definition lives at `.projectflows/workflows/<id>/workflow.json`; the associated default script folder is the sibling `.projectflows/workflows/<id>/scripts/` within that same folder — mirroring the `agents/<id>/` and `skills/<id>/` per-entity folder convention used elsewhere in the platform. Any other workflow-local file (fixtures, `VISION.md`, logs) colocates in the same folder.
 - **Python isolation.** The node supports running Python through a workflow-local `.venv` virtual environment located in the workflow script folder or workflow folder.
 - **Canonical output envelope.** Script output follows the same `{ data, render? }` envelope as other node types, so format-switchable views and downstream reference resolution work uniformly.
 - **UI expectations.** The workflow builder should let the user select a script file, runtime, environment/venv, parameter mapping, timeout, and output mode. If UI scope is prohibitively broad, backend/schema support must be implemented first with a documented follow-up for UI.
@@ -356,6 +356,7 @@ Bash tool nodes have a fixed command string embedded in the workflow definition.
 
 - 2026-07-02 — Added Pipeline / Data-Ingestion Workflows section. Captured recurring ingestion and curation workflow patterns (AI News-style pipelines) as durable product intent, composed from existing node types.
 - 2026-07-02 — Added Script Node section (`workflow_script`). Captured durable intent for a global reusable script execution workflow node with structured I/O, runtime configuration, path safety, and workflow-local script conventions. Added `script` / `workflow_script` to the Node-as-Tool stable tool names table.
+- 2026-07-17 — Workflow storage moved from flat `workflows/<id>.json` to per-workflow folder `workflows/<id>/workflow.json`, matching the `agents/<id>/` and `skills/<id>/` conventions. Scripts, `VISION.md`, logs, and other workflow-local assets now colocate in the same folder.
 
 ---
 

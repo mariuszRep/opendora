@@ -139,7 +139,7 @@ async function removeCapabilities(capabilities: LockfileEntry["capabilities"], c
     } else if (cap.type === "skill") {
       await fs.rm(path.join(capRoot, "skills", cap.name), { recursive: true, force: true })
     } else if (cap.type === "workflow") {
-      await fs.rm(path.join(capRoot, "workflows", `${cap.name}.json`), { force: true })
+      await fs.rm(path.join(capRoot, "workflows", cap.name), { recursive: true, force: true })
     } else if (cap.type === "tool-group") {
       await fs.rm(PluginStorage.toolGroupDir(capRoot, cap.name), { recursive: true, force: true })
     } else if (cap.type === "tool") {
