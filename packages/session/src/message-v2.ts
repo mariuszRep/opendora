@@ -431,6 +431,7 @@ export namespace MessageV2 {
         status: z.enum(["queued", "processing"]),
         submittedAt: z.number(),
         activatedAt: z.number().optional(),
+        activateRequested: z.boolean().optional(),
       })
       .optional(),
   }).meta({

@@ -14,6 +14,7 @@ import { InstructionPrompt } from "./instruction.ts"
 import MAX_STEPS from "./prompt/max-steps.txt"
 import { SessionSummary } from "./summary.ts"
 import { NamedError } from "@projectflows/util/error"
+import { NotFoundError } from "@projectflows/storage/db"
 import { SessionProcessor } from "./processor.ts"
 import { SessionStatus } from "./status.ts"
 import { LLM } from "./llm.ts"
@@ -345,12 +346,8 @@ export namespace SessionPrompt {
     return false
   }
 
-  async function activateOldestQueuedUser(msgs: MessageV2.WithParts[]) {
-    const latestAssistant = [...msgs].reverse().find((msg) => msg.info.role === "assistant")?.info
-    if (!latestAssistant || !isFinalAssistant(latestAssistant)) return undefined
-
-    const queued = msgs.find(isQueuedUser)
-    if (!queued || queued.info.role !== "user" || !queued.info.queue) return undefined
+  async function activateQueuedMessage(queued: MessageV2.WithParts) {
+    if (queued.info.role !== "user" || !queued.info.queue) return undefined
 
     const next: MessageV2.User = {
       ...queued.info,
@@ -363,6 +360,43 @@ export namespace SessionPrompt {
     await Session.updateMessage(next)
     queued.info = next
     return next.id
+  }
+
+  async function activateOldestQueuedUser(msgs: MessageV2.WithParts[]) {
+    // A force-requested queued message jumps the line and bypasses the
+    // isFinalAssistant gate below — see SessionPrompt.requestImmediateActivation.
+    const forced = msgs.find((msg) => isQueuedUser(msg) && msg.info.role === "user" && msg.info.queue?.activateRequested)
+    if (forced) return activateQueuedMessage(forced)
+
+    const latestAssistant = [...msgs].reverse().find((msg) => msg.info.role === "assistant")?.info
+    if (!latestAssistant || !isFinalAssistant(latestAssistant)) return undefined
+
+    const queued = msgs.find(isQueuedUser)
+    if (!queued) return undefined
+
+    return activateQueuedMessage(queued)
+  }
+
+  /**
+   * Force a specific queued user message to be picked up on the loop's next
+   * iteration instead of waiting for the current assistant turn to fully finish.
+   * Safe because every outer loop iteration already re-reads messages fresh and
+   * only starts once the prior iteration's own tool calls/results are resolved —
+   * this only changes *when* within that existing cadence the message is allowed in.
+   */
+  export async function requestImmediateActivation(input: { sessionID: string; messageID: string }) {
+    const message = await MessageV2.get({ sessionID: input.sessionID, messageID: input.messageID }).catch(() => undefined)
+    if (!message || message.info.role !== "user" || message.info.queue?.status !== "queued") {
+      throw new NotFoundError({ message: `Queued message not found: ${input.messageID}` })
+    }
+    const next: MessageV2.User = {
+      ...message.info,
+      queue: {
+        ...message.info.queue,
+        activateRequested: true,
+      },
+    }
+    await Session.updateMessage(next)
   }
 
   function modelContextForQueuedTurn(msgs: MessageV2.WithParts[], activeQueuedUserID?: string) {

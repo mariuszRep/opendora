@@ -227,6 +227,80 @@ describe("session.prompt queued messages", () => {
       },
     })
   })
+
+  test("requestImmediateActivation flags a queued message without changing its status", async () => {
+    await using tmp = await tmpdir({
+      git: true,
+      config: {
+        agent: {
+          build: {
+            model: "openai/gpt-5.2",
+          },
+        },
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const session = await Session.create({})
+        const msg = await SessionPrompt.prompt({
+          sessionID: session.id,
+          agent: "build",
+          noReply: true,
+          queued: true,
+          parts: [{ type: "text", text: "queued, please jump the line" }],
+        })
+
+        if (msg.info.role !== "user") throw new Error("expected user message")
+
+        await SessionPrompt.requestImmediateActivation({ sessionID: session.id, messageID: msg.info.id })
+
+        const stored = await MessageV2.get({ sessionID: session.id, messageID: msg.info.id })
+        expect(stored.info.role).toBe("user")
+        if (stored.info.role === "user") {
+          expect(stored.info.queue?.status).toBe("queued")
+          expect(stored.info.queue?.activateRequested).toBe(true)
+        }
+
+        await Session.remove(session.id)
+      },
+    })
+  })
+
+  test("requestImmediateActivation rejects a message that is not queued", async () => {
+    await using tmp = await tmpdir({
+      git: true,
+      config: {
+        agent: {
+          build: {
+            model: "openai/gpt-5.2",
+          },
+        },
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const session = await Session.create({})
+        const msg = await SessionPrompt.prompt({
+          sessionID: session.id,
+          agent: "build",
+          noReply: true,
+          parts: [{ type: "text", text: "not queued" }],
+        })
+
+        if (msg.info.role !== "user") throw new Error("expected user message")
+
+        await expect(
+          SessionPrompt.requestImmediateActivation({ sessionID: session.id, messageID: msg.info.id }),
+        ).rejects.toThrow()
+
+        await Session.remove(session.id)
+      },
+    })
+  })
 })
 
 describe("session.prompt agent variant", () => {

@@ -179,6 +179,43 @@ function describePermissionMessage(req: PermissionRequest): string {
   return `Use ${req.resource} (${req.access})`
 }
 
+// Merge a freshly-fetched message snapshot with whatever's already in state.
+// For each message, prefer the version with more parts (SSE may have added
+// streaming parts not yet in the DB). When part counts are equal, do a
+// part-level merge: for text parts keep the longer accumulated text (the
+// DB only writes at text-start "" and text-end, so the SSE-accumulated
+// version always has more text mid-stream than the stale DB snapshot).
+function mergeFetchedMessages(current: MessageWithParts[], fetched: MessageWithParts[]): MessageWithParts[] {
+  const currentById = new Map(current.map((m) => [m.info.id, m]))
+  const fetchedIds = new Set(fetched.map((m) => m.info.id))
+  const merged = fetched.map((fetchedMsg) => {
+    const currentMsg = currentById.get(fetchedMsg.info.id)
+    if (!currentMsg) return fetchedMsg
+    if (currentMsg.parts.length > fetchedMsg.parts.length) return currentMsg
+    if (fetchedMsg.parts.length > currentMsg.parts.length) return fetchedMsg
+    const currentPartsById = new Map(currentMsg.parts.map((p) => [p.id, p]))
+    const mergedParts = fetchedMsg.parts.map((fp) => {
+      const cp = currentPartsById.get(fp.id)
+      if (!cp) return fp
+      if (fp.type === "text" && cp.type === "text") {
+        const fText = typeof (fp as any).text === "string" ? (fp as any).text : ""
+        const cText = typeof (cp as any).text === "string" ? (cp as any).text : ""
+        return cText.length > fText.length ? cp : fp
+      }
+      return fp
+    })
+    return { ...fetchedMsg, parts: mergedParts }
+  })
+  // Append any SSE-only messages not yet in the fetch snapshot (e.g. a new
+  // assistant message that started streaming between fetch-start and fetch-end)
+  for (const m of current) {
+    if (!fetchedIds.has(m.info.id) && !m.info.id.startsWith("_optimistic_")) {
+      merged.push(m)
+    }
+  }
+  return merged
+}
+
 export function useOpendora(opts?: {
   notify?: (opts: NotifyOptions) => void
   removeByPermissionID?: (permissionRequestID: string) => void
@@ -237,10 +274,10 @@ export function useOpendora(opts?: {
   const messageCacheRef = useRef<Map<string, MessageWithParts[]>>(new Map())
   const messageFetchRef = useRef<Map<string, Promise<MessageWithParts[]>>>(new Map())
   const deltaSeqRef = useRef(new Map<string, number>())
-  // Tracks user messages whose authoritative parts have already arrived via
-  // message.part.updated, so later message.updated events (e.g. queue status
-  // flipping from "queued" to "processing") don't wipe them out again.
-  const reconciledUserPartsRef = useRef(new Set<string>())
+  // Tracks optimistic user messages until their first authoritative part
+  // arrives. SSE delivery can interleave message.updated and
+  // message.part.updated, so this must not depend on their arrival order.
+  const optimisticUserMessageIdsRef = useRef(new Set<string>())
 
 
   const getAgentId = useCallback((agent: Agent & { id?: string }) => agent.id ?? agent.name, [])
@@ -505,40 +542,7 @@ export function useOpendora(opts?: {
     fetchSessionMessages(fetchingForId).then((msgs) => {
       if (!cancelled) {
         setMessages((current) => {
-          // Merge fetched messages with any SSE updates that arrived during the fetch.
-          // For each message, prefer the version with more parts (SSE may have added
-          // streaming parts not yet in the DB).  When part counts are equal, do a
-          // part-level merge: for text parts keep the longer accumulated text (the
-          // DB only writes at text-start "" and text-end, so the SSE-accumulated
-          // version always has more text mid-stream than the stale DB snapshot).
-          const currentById = new Map(current.map((m) => [m.info.id, m]))
-          const fetchedIds = new Set(msgs.map((m) => m.info.id))
-          const merged = msgs.map((fetchedMsg) => {
-            const currentMsg = currentById.get(fetchedMsg.info.id)
-            if (!currentMsg) return fetchedMsg
-            if (currentMsg.parts.length > fetchedMsg.parts.length) return currentMsg
-            if (fetchedMsg.parts.length > currentMsg.parts.length) return fetchedMsg
-            // Same part count: merge part-by-part so we keep the most accumulated text.
-            const currentPartsById = new Map(currentMsg.parts.map((p) => [p.id, p]))
-            const mergedParts = fetchedMsg.parts.map((fp) => {
-              const cp = currentPartsById.get(fp.id)
-              if (!cp) return fp
-              if (fp.type === "text" && cp.type === "text") {
-                const fText = typeof (fp as any).text === "string" ? (fp as any).text : ""
-                const cText = typeof (cp as any).text === "string" ? (cp as any).text : ""
-                return cText.length > fText.length ? cp : fp
-              }
-              return fp
-            })
-            return { ...fetchedMsg, parts: mergedParts }
-          })
-          // Append any SSE-only messages not yet in the fetch snapshot (e.g. a new
-          // assistant message that started streaming between fetch-start and fetch-end)
-          for (const m of current) {
-            if (!fetchedIds.has(m.info.id) && !m.info.id.startsWith("_optimistic_")) {
-              merged.push(m)
-            }
-          }
+          const merged = mergeFetchedMessages(current, msgs)
           messageCacheRef.current.set(fetchingForId, merged)
           return merged
         })
@@ -643,15 +647,10 @@ export function useOpendora(opts?: {
           setMessages((prev) => {
             const idx = prev.findIndex((m) => m.info.id === info.id)
             if (idx === -1) return [...prev, { info, parts: [] }]
-            // For user messages, the real info shares the client's optimistic message ID,
-            // so reset parts here — the authoritative part(s) arrive via the following
-            // message.part.updated event(s). Without this, the optimistic text part lingers
-            // alongside the server part and getMessageText() concatenates both.
-            // Only do this on the *first* sync though — later message.updated events for
-            // the same message (e.g. a queued message flipping to "processing" once the
-            // agent picks it up) must not wipe parts that were already reconciled, or the
-            // message goes permanently blank with no follow-up part.updated to refill it.
-            const shouldResetParts = info.role === "user" && !reconciledUserPartsRef.current.has(info.id)
+            // The real info shares the client's optimistic message ID. Keep clearing only
+            // an optimistic message's parts until its first authoritative part arrives.
+            // This remains correct whether the info event or part event reaches us first.
+            const shouldResetParts = info.role === "user" && optimisticUserMessageIdsRef.current.has(info.id)
             return prev.map((m, i) => (i === idx ? { ...m, info, parts: shouldResetParts ? [] : m.parts } : m))
           })
           if (isNewIncompleteAssistant) setStatus("streaming")
@@ -725,13 +724,21 @@ export function useOpendora(opts?: {
           const { part } = (event as { type: string; properties: { part: Part } }).properties
           if (part.sessionID !== selectedSessionRef.current?.id) break
           deltaSeqRef.current.delete(`${part.id}:text`)
-          reconciledUserPartsRef.current.add(part.messageID)
           setMessages((prev) => {
             const msgIdx = prev.findIndex((m) => m.info.id === part.messageID)
             if (msgIdx === -1) return prev
             const m = prev[msgIdx]
+            // Replace, rather than append to, the client-created text part. This handles
+            // the valid case where a part event is received before its message.updated
+            // event; otherwise the same user text is rendered twice.
+            const replacesOptimisticParts =
+              m.info.role === "user" && optimisticUserMessageIdsRef.current.delete(part.messageID)
             const idx = m.parts.findIndex((p) => p.id === part.id)
-            const newParts = idx === -1 ? [...m.parts, part] : m.parts.map((p, i) => (i === idx ? part : p))
+            const newParts = replacesOptimisticParts
+              ? [part]
+              : idx === -1
+                ? [...m.parts, part]
+                : m.parts.map((p, i) => (i === idx ? part : p))
             const next = prev.slice()
             next[msgIdx] = { ...m, parts: newParts }
             return next
@@ -942,7 +949,11 @@ export function useOpendora(opts?: {
         }
       }
     }, () => {
-      // SSE reconnected — reload active sessions so spinners reflect true server state.
+      // SSE reconnected — reload active sessions so spinners reflect true server state,
+      // and re-fetch the current session's messages: anything that streamed to
+      // completion while the connection was down (e.g. a backend restart mid-reply)
+      // never reached us as SSE deltas and would otherwise stay stale until a full
+      // page reload.
       opendora.session.status().then((statuses) => {
         const activeIds = new Set(
           Object.entries(statuses)
@@ -951,10 +962,29 @@ export function useOpendora(opts?: {
         )
         setActiveSessions(activeIds)
         activeSessionsRef.current = activeIds
+        const currentId = selectedSessionRef.current?.id
+        if (currentId) {
+          setStatus((prev) => {
+            if (prev !== "streaming" && prev !== "submitted") return prev
+            return activeIds.has(currentId) ? "streaming" : "ready"
+          })
+        }
       }).catch(() => {})
-      // Reset stuck status only; preserve the user's current session.
+      const resyncId = selectedSessionRef.current?.id
+      if (resyncId) {
+        fetchSessionMessages(resyncId).then((msgs) => {
+          if (selectedSessionRef.current?.id !== resyncId) {
+            if (msgs.length > 0) messageCacheRef.current.set(resyncId, msgs)
+            return
+          }
+          setMessages((current) => {
+            const merged = mergeFetchedMessages(current, msgs)
+            messageCacheRef.current.set(resyncId, merged)
+            return merged
+          })
+        }).catch(() => {})
+      }
       // Only navigate to the default agent if nothing is selected (cold start / first open).
-      setStatus((prev) => (prev === "streaming" || prev === "submitted" ? "ready" : prev))
       if (selectedSessionRef.current) return
       const defaultId = getStoredDefaultAgent()
       if (defaultId) {
@@ -1083,6 +1113,7 @@ export function useOpendora(opts?: {
       // before the SSE event for the real message arrives.
       const optimisticId = createClientMessageID()
       const optimisticCreatedAt = Date.now()
+      optimisticUserMessageIdsRef.current.add(optimisticId)
       setMessages((prev) => [
         ...prev,
         {
@@ -1125,6 +1156,7 @@ export function useOpendora(opts?: {
         // Status transitions to "ready" via SSE session.idle event
       } catch (err) {
         // Remove the optimistic message on failure so the user can retry
+        optimisticUserMessageIdsRef.current.delete(optimisticId)
         setMessages((prev) => prev.filter((m) => m.info.id !== optimisticId))
         if (err instanceof SessionBusyError) {
           setStatus("ready")

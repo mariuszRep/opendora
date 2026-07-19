@@ -24,7 +24,6 @@ type GeneralSettings = {
   timezone?: string
   voice?: VoiceSettings
   sessionTree?: SessionTreeSettings
-  manualQueueMode?: boolean
 }
 
 const DEFAULT: GeneralSettings = {
@@ -42,7 +41,6 @@ const DEFAULT: GeneralSettings = {
     exclusiveExpand: true,
     autoExpandActiveSessions: false,
   },
-  manualQueueMode: false,
 }
 
 function generalDir() {

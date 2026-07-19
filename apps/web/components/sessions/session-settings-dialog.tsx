@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ClockPlusIcon, ScrollTextIcon, Settings2Icon, ShieldIcon, SparklesIcon, WrenchIcon } from "lucide-react"
+import { ClockPlusIcon, ScrollTextIcon, Settings2Icon, ShieldIcon, SparklesIcon, SyringeIcon, WrenchIcon } from "lucide-react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -30,16 +30,18 @@ import {
 import type { Session } from "@/lib/projectflows"
 import { SessionGeneralPanel } from "./session-general-panel"
 import { SessionSystemPromptPanel } from "./session-system-prompt-panel"
+import { SessionInjectionPanel } from "./session-injection-panel"
 import { SessionSkillsPanel } from "./session-skills-panel"
 import { SessionToolsPanel } from "./session-tools-panel"
 import { SessionPermissionsPanel } from "./session-permissions-panel"
 import { SessionSchedulesPanel } from "./session-schedules-panel"
 
-type SectionId = "general" | "prompt" | "skills" | "tools" | "permissions" | "schedules"
+type SectionId = "general" | "prompt" | "injection" | "skills" | "tools" | "permissions" | "schedules"
 
 const NAV_ITEMS: { id: SectionId; label: string; icon: typeof Settings2Icon }[] = [
   { id: "general", label: "General", icon: Settings2Icon },
   { id: "prompt", label: "System Prompt", icon: ScrollTextIcon },
+  { id: "injection", label: "Injection", icon: SyringeIcon },
   { id: "skills", label: "Skills", icon: SparklesIcon },
   { id: "tools", label: "Tools", icon: WrenchIcon },
   { id: "permissions", label: "Permissions", icon: ShieldIcon },
@@ -128,6 +130,9 @@ export function SessionSettingsDialog({
               )}
               {section === "prompt" && (
                 <SessionSystemPromptPanel sessionID={session?.id} active={open && section === "prompt"} />
+              )}
+              {section === "injection" && (
+                <SessionInjectionPanel sessionID={session?.id} active={open && section === "injection"} />
               )}
               {section === "skills" && (
                 <SessionSkillsPanel sessionID={session?.id} active={open && section === "skills"} />

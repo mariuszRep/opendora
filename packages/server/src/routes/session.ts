@@ -1096,6 +1096,33 @@ export const SessionRoutes = lazy(() =>
       },
     )
     .post(
+      "/:sessionID/message/:messageID/activate",
+      describeRoute({
+        summary: "Force-activate a queued message",
+        description:
+          "Request that a queued user message be picked up on the agent loop's next iteration, instead of waiting for the current assistant turn to fully finish.",
+        operationId: "session.activateQueuedMessage",
+        responses: {
+          204: {
+            description: "Activation requested",
+          },
+          ...errors(400, 404),
+        },
+      }),
+      validator(
+        "param",
+        z.object({
+          sessionID: z.string().meta({ description: "Session ID" }),
+          messageID: z.string().meta({ description: "Message ID" }),
+        }),
+      ),
+      async (c) => {
+        const params = c.req.valid("param")
+        await SessionPrompt.requestImmediateActivation(params)
+        return c.body(null, 204)
+      },
+    )
+    .post(
       "/:sessionID/command",
       describeRoute({
         summary: "Send command",

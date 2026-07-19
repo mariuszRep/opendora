@@ -650,6 +650,8 @@ export const opendora = {
         method: "POST",
         body: JSON.stringify(input),
       }),
+    activateQueuedMessage: (sessionID: string, messageID: string) =>
+      req<void>(`/session/${sessionID}/message/${messageID}/activate`, { method: "POST" }),
   },
   provider: {
     list: () =>
@@ -888,7 +890,6 @@ export const opendora = {
           exclusiveExpand: boolean
           autoExpandActiveSessions: boolean
         }
-        manualQueueMode?: boolean
       }>("/general"),
     update: (patch: {
       theme?: string
@@ -906,7 +907,6 @@ export const opendora = {
         exclusiveExpand?: boolean
         autoExpandActiveSessions?: boolean
       }
-      manualQueueMode?: boolean
     }) => req<Record<string, unknown>>("/general", { method: "PATCH", body: JSON.stringify(patch) }),
   },
   events: {
