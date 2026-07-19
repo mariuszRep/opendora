@@ -958,7 +958,7 @@ export const opendora = {
       req<boolean>(`/entity/${encodeURIComponent(type)}/${encodeURIComponent(name)}`, { method: "DELETE" }),
   },
   plugin: {
-    list: () => req<PluginListItem[]>("/plugin/"),
+    list: () => req<PluginListItem[]>("/plugin"),
     info: (id: string) => req<PluginListItem>(`/plugin/${id}`),
     install: (path: string, scope?: "global" | "project") =>
       req<PluginListItem>("/plugin/install", { method: "POST", body: JSON.stringify({ path, scope: scope ?? "global" }) }),

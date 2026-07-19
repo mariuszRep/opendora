@@ -17,13 +17,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -42,12 +35,8 @@ import {
 import type { Session, PermissionRule } from "@/lib/projectflows"
 import { opendora } from "@/lib/projectflows"
 
-interface SessionPermissionsSheetProps {
+interface SessionPermissionsPanelProps {
   session: Session | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  /** Call this to trigger a refresh from outside (e.g. on permission.rules.updated event). */
-  refreshRef?: React.MutableRefObject<(() => void) | null>
 }
 
 type ScopedRule = PermissionRule & { _scope: "session" | "agent" }
@@ -96,12 +85,7 @@ function actionBadge(action: PermissionRule["action"]) {
   return <Badge variant="secondary">Ask</Badge>
 }
 
-export function SessionPermissionsSheet({
-  session,
-  open,
-  onOpenChange,
-  refreshRef,
-}: SessionPermissionsSheetProps) {
+export function SessionPermissionsPanel({ session }: SessionPermissionsPanelProps) {
   const [rules, setRules] = useState<ScopedRule[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -134,19 +118,10 @@ export function SessionPermissionsSheet({
     }
   }, [session])
 
-  // Expose refresh to parent (for SSE-triggered refreshes)
   useEffect(() => {
-    if (refreshRef) refreshRef.current = refresh
-    return () => {
-      if (refreshRef) refreshRef.current = null
-    }
-  }, [refresh, refreshRef])
-
-  useEffect(() => {
-    if (!open) return
     setLoading(true)
     refresh().finally(() => setLoading(false))
-  }, [open, refresh])
+  }, [refresh])
 
   const handleRemove = async (rule: ScopedRule) => {
     try {
@@ -182,86 +157,73 @@ export function SessionPermissionsSheet({
   }
 
   return (
-    <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="flex flex-col sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>Permissions</SheetTitle>
-            <SheetDescription className="sr-only">
-              View and manage session and agent permissions
-            </SheetDescription>
-          </SheetHeader>
+    <div className="flex h-full flex-col">
+      {error && (
+        <div className="mx-4 mt-4 rounded-md bg-destructive/10 p-4 text-sm text-destructive shrink-0">
+          {error}
+        </div>
+      )}
 
-          <div className="flex flex-col flex-1 min-h-0">
-            {error && (
-              <div className="p-4 text-sm text-destructive bg-destructive/10 rounded-md mx-6 mt-4">
-                {error}
-              </div>
-            )}
+      <div className="shrink-0 px-4 pt-4 pb-3">
+        <Button size="sm" className="w-full" onClick={() => setAddDialogOpen(true)}>
+          <PlusIcon className="mr-1.5 size-3.5" />
+          Add Permission Rule
+        </Button>
+      </div>
 
-            <div className="px-6 pb-3 shrink-0">
-              <Button size="sm" className="w-full" onClick={() => setAddDialogOpen(true)}>
-                <PlusIcon className="mr-1.5 size-3.5" />
-                Add Permission Rule
-              </Button>
-            </div>
-
-            <div className="flex flex-col gap-2 px-6 flex-1 overflow-y-auto pb-4">
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : rules.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <ShieldIcon className="size-12 text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    No saved rules yet. Rules are created when you approve or deny a permission request.
-                  </p>
-                </div>
-              ) : (
-                rules.map((rule) => {
-                  const { icon: Icon, label } = resourceMeta(rule.resource)
-                  return (
-                    <div
-                      key={rule.id}
-                      className="flex items-start gap-3 p-3 border rounded-md bg-card hover:bg-accent transition-colors"
-                    >
-                      <div className="mt-0.5 text-muted-foreground">
-                        <Icon className="size-5" />
-                      </div>
-                      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-semibold">{label}</span>
-                          <Badge variant="secondary" className="text-[10px]">{rule.access}</Badge>
-                          {actionBadge(rule.action)}
-                          {scopeBadge(rule._scope)}
-                        </div>
-                        <span className="font-mono text-xs text-muted-foreground break-all">{rule.pattern}</span>
-                      </div>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="size-8 shrink-0"
-                        onClick={() => handleRemove(rule)}
-                        title="Remove"
-                      >
-                        <Trash2Icon className="size-3.5" />
-                      </Button>
-                    </div>
-                  )
-                })
-              )}
-            </div>
+      <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-4 pb-4">
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
           </div>
-
-          <div className="px-6 py-4 border-t shrink-0">
-            <p className="text-[11px] text-muted-foreground">
-              <strong>Session</strong> rules apply only to this session.{" "}
-              <strong>Agent</strong> rules apply to all sessions using this agent.
+        ) : rules.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <ShieldIcon className="size-12 text-muted-foreground mb-3" />
+            <p className="text-sm text-muted-foreground">
+              No saved rules yet. Rules are created when you approve or deny a permission request.
             </p>
           </div>
-        </SheetContent>
-      </Sheet>
+        ) : (
+          rules.map((rule) => {
+            const { icon: Icon, label } = resourceMeta(rule.resource)
+            return (
+              <div
+                key={rule.id}
+                className="flex items-start gap-3 p-3 border rounded-md bg-card hover:bg-accent transition-colors"
+              >
+                <div className="mt-0.5 text-muted-foreground">
+                  <Icon className="size-5" />
+                </div>
+                <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold">{label}</span>
+                    <Badge variant="secondary" className="text-[10px]">{rule.access}</Badge>
+                    {actionBadge(rule.action)}
+                    {scopeBadge(rule._scope)}
+                  </div>
+                  <span className="font-mono text-xs text-muted-foreground break-all">{rule.pattern}</span>
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-8 shrink-0"
+                  onClick={() => handleRemove(rule)}
+                  title="Remove"
+                >
+                  <Trash2Icon className="size-3.5" />
+                </Button>
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      <div className="shrink-0 border-t px-4 py-3">
+        <p className="text-[11px] text-muted-foreground">
+          <strong>Session</strong> rules apply only to this session.{" "}
+          <strong>Agent</strong> rules apply to all sessions using this agent.
+        </p>
+      </div>
 
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent>
@@ -353,6 +315,6 @@ export function SessionPermissionsSheet({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   )
 }

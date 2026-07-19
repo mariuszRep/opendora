@@ -44,25 +44,6 @@ export const PluginRoutes = lazy(() =>
         return c.json(plugins)
       },
     )
-    .get(
-      "/:id",
-      describeRoute({
-        summary: "Get plugin info",
-        operationId: "plugin.get",
-        responses: {
-          200: {
-            description: "Plugin info",
-            content: { "application/json": { schema: resolver(PluginListItemSchema) } },
-          },
-          ...errors(404),
-        },
-      }),
-      async (c) => {
-        const entry = await PluginInstaller.info(c.req.param("id"))
-        if (!entry) throw new NotFoundError({ message: `Plugin not found: ${c.req.param("id")}` })
-        return c.json(entry)
-      },
-    )
     .post(
       "/install",
       describeRoute({
@@ -90,53 +71,6 @@ export const PluginRoutes = lazy(() =>
           }
           throw err
         }
-      },
-    )
-    .delete(
-      "/:id",
-      describeRoute({
-        summary: "Remove an installed plugin",
-        operationId: "plugin.remove",
-        responses: {
-          204: { description: "Plugin removed" },
-          ...errors(400, 404),
-        },
-      }),
-      async (c) => {
-        const id = c.req.param("id")
-        try {
-          await PluginInstaller.remove(id, { scope: "global" })
-        } catch (err) {
-          if (err instanceof PluginCoreRequiredError || err instanceof PluginHasDependentsError) {
-            return c.json({ message: err.message }, 400)
-          }
-          throw err
-        }
-        return c.body(null, 204)
-      },
-    )
-    .patch(
-      "/:id/enable",
-      describeRoute({
-        summary: "Enable a plugin",
-        operationId: "plugin.enable",
-        responses: { 204: { description: "Plugin enabled" }, ...errors(404) },
-      }),
-      async (c) => {
-        await PluginInstaller.setEnabled(c.req.param("id"), true, { scope: "global" })
-        return c.body(null, 204)
-      },
-    )
-    .patch(
-      "/:id/disable",
-      describeRoute({
-        summary: "Disable a plugin",
-        operationId: "plugin.disable",
-        responses: { 204: { description: "Plugin disabled" }, ...errors(404) },
-      }),
-      async (c) => {
-        await PluginInstaller.setEnabled(c.req.param("id"), false, { scope: "global" })
-        return c.body(null, 204)
       },
     )
     .get(
@@ -278,6 +212,72 @@ export const PluginRoutes = lazy(() =>
           needsOnboarding: state === null && plugins.length === 0,
           state,
         })
+      },
+    )
+    .get(
+      "/:id",
+      describeRoute({
+        summary: "Get plugin info",
+        operationId: "plugin.get",
+        responses: {
+          200: {
+            description: "Plugin info",
+            content: { "application/json": { schema: resolver(PluginListItemSchema) } },
+          },
+          ...errors(404),
+        },
+      }),
+      async (c) => {
+        const entry = await PluginInstaller.info(c.req.param("id"))
+        if (!entry) throw new NotFoundError({ message: `Plugin not found: ${c.req.param("id")}` })
+        return c.json(entry)
+      },
+    )
+    .delete(
+      "/:id",
+      describeRoute({
+        summary: "Remove an installed plugin",
+        operationId: "plugin.remove",
+        responses: {
+          204: { description: "Plugin removed" },
+          ...errors(400, 404),
+        },
+      }),
+      async (c) => {
+        const id = c.req.param("id")
+        try {
+          await PluginInstaller.remove(id, { scope: "global" })
+        } catch (err) {
+          if (err instanceof PluginCoreRequiredError || err instanceof PluginHasDependentsError) {
+            return c.json({ message: err.message }, 400)
+          }
+          throw err
+        }
+        return c.body(null, 204)
+      },
+    )
+    .patch(
+      "/:id/enable",
+      describeRoute({
+        summary: "Enable a plugin",
+        operationId: "plugin.enable",
+        responses: { 204: { description: "Plugin enabled" }, ...errors(404) },
+      }),
+      async (c) => {
+        await PluginInstaller.setEnabled(c.req.param("id"), true, { scope: "global" })
+        return c.body(null, 204)
+      },
+    )
+    .patch(
+      "/:id/disable",
+      describeRoute({
+        summary: "Disable a plugin",
+        operationId: "plugin.disable",
+        responses: { 204: { description: "Plugin disabled" }, ...errors(404) },
+      }),
+      async (c) => {
+        await PluginInstaller.setEnabled(c.req.param("id"), false, { scope: "global" })
+        return c.body(null, 204)
       },
     ),
 )
