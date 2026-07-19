@@ -2288,14 +2288,9 @@ export namespace SessionPrompt {
       return
     }
 
-    const isFirst =
-      input.history.filter((m) => m.info.role === "user" && !m.parts.every((p) => "synthetic" in p && p.synthetic))
-        .length === 1
-    if (!isFirst) {
-      log.info("ensureTitle: not first message", { sessionID: input.session.id })
-      return
-    }
-
+    // A session can receive several user messages before its first loop turn
+    // (for example, while messages are queued). As long as it retains its
+    // generated default title, use the earliest real user message to name it.
     const contextMessages = input.history.slice(0, firstRealUserIdx + 1)
     const firstRealUser = contextMessages[firstRealUserIdx]!
 

@@ -13,80 +13,51 @@ import { mapValues } from "remeda"
 import { errors } from "../error"
 import { lazy } from "@projectflows/util/lazy"
 import { Log } from "@projectflows/util/log"
-import { Installation } from "@projectflows/util/installation"
+import { Bus } from "@projectflows/runtime/bus"
+import { BusEvent } from "@projectflows/util/bus-event"
+import { fetchCodexCatalog } from "../plugin/codex"
 
 const log = Log.create({ service: "provider.routes" })
 
-// Codex models fetched from the live API, refreshed on startup and hourly.
-// Kept at module level so the route handler never blocks on a network call.
-type CodexModel = Provider.Model
-let codexModelsCache: Record<string, CodexModel> | null = null
-
-async function refreshCodexModels() {
+/**
+ * models.dev is the catalog authority. Codex discovery is only a complete
+ * provider fallback when models.dev has no openai-codex entry; it never merges
+ * into or overwrites a models.dev catalog.
+ */
+async function ensureMissingCodexCatalog(allProviders: Record<string, unknown>) {
+  if (allProviders["openai-codex"]) return
   const auth = await Auth.get("openai-codex")
-  if (!auth || auth.type !== "oauth") {
-    codexModelsCache = null
-    return
-  }
-  const headers = new Headers({
-    authorization: `Bearer ${auth.access}`,
-    "User-Agent": Installation.USER_AGENT,
-  })
-  if (auth.accountId) headers.set("ChatGPT-Account-Id", auth.accountId)
-  const url = new URL("https://chatgpt.com/backend-api/codex/models")
-  const version = Installation.VERSION
-  url.searchParams.set("client_version", /^\d+\.\d+\.\d+/.test(version) ? version : "0.0.0")
+  if (!auth || auth.type !== "oauth") return
   try {
-    const response = await fetch(url, { headers, signal: AbortSignal.timeout(10_000) })
-    if (!response.ok) {
-      log.warn("codex models refresh failed", { status: response.status })
-      return
+    const models = await fetchCodexCatalog(auth.access, auth.accountId)
+    Provider.registerLiveCatalog({
+      id: "openai-codex",
+      name: "OpenAI Codex",
+      source: "api",
+      env: [],
+      options: {},
+      models,
+    })
+    const wasBlocked = Provider.getAvailability("openai-codex") === "reauthentication_required"
+    Provider.setAvailability("openai-codex", "available")
+    if (wasBlocked) {
+      await Bus.publish(BusEvent.ProviderRecovered, { providerID: "openai-codex", providerName: "OpenAI Codex" })
     }
-    const payload = await response.json() as {
-      models: Array<{ slug: string; display_name: string; context_window?: number; visibility?: string; supported_in_api?: boolean }>
-    }
-    const models: Record<string, CodexModel> = {}
-    for (const model of payload.models ?? []) {
-      if (model.visibility === "hide" || model.supported_in_api === false) continue
-      const ctx = model.context_window ?? 400_000
-      models[model.slug] = {
-        id: model.slug,
-        name: model.display_name || model.slug,
-        providerID: "openai-codex",
-        api: { id: model.slug, url: "https://chatgpt.com/backend-api/codex", npm: "@ai-sdk/openai" },
-        cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-        limit: {
-          context: ctx,
-          input: Math.floor(ctx * 0.68),
-          output: Math.min(128_000, Math.floor(ctx * 0.32)),
-        },
-        capabilities: {
-          temperature: false,
-          reasoning: true,
-          attachment: false,
-          toolcall: true,
-          input: { text: true, audio: false, image: false, video: false, pdf: false },
-          output: { text: true, audio: false, image: false, video: false, pdf: false },
-          interleaved: false,
-        },
-        status: "active",
-        options: {},
-        headers: {},
-        release_date: "",
-        variants: {},
-      }
-    }
-    codexModelsCache = models
-    Provider.injectLiveModels("openai-codex", models)
-    log.info("codex models refreshed", { count: Object.keys(models).length })
+    log.info("codex fallback catalog refreshed", { count: Object.keys(models).length })
   } catch (error) {
-    log.warn("codex models refresh failed", { error })
+    const authExpired = (error as { authExpired?: boolean }).authExpired
+    if (authExpired) {
+      const wasBlocked = Provider.getAvailability("openai-codex") === "reauthentication_required"
+      Provider.setAvailability("openai-codex", "reauthentication_required")
+      if (!wasBlocked) {
+        await Bus.publish(BusEvent.ProviderAuthExpired, { providerID: "openai-codex", providerName: "OpenAI Codex" })
+      }
+    } else if (Provider.getAvailability("openai-codex") === "available") {
+      Provider.setAvailability("openai-codex", "stale")
+    }
+    log.warn("codex fallback catalog refresh failed", { error })
   }
 }
-
-// Refresh once on startup and then every hour, same cadence as models.dev
-refreshCodexModels().catch(() => {})
-setInterval(() => refreshCodexModels().catch(() => {}), 60 * 60 * 1000).unref()
 
 export const ProviderRoutes = lazy(() =>
   new Hono()
@@ -114,13 +85,14 @@ export const ProviderRoutes = lazy(() =>
         },
       }),
       async (c) => {
-        const [config, allProviders, connected, authMethodMap, liveAuth] = await Promise.all([
+        const [config, allProviders, authMethodMap, liveAuth] = await Promise.all([
           Config.get(),
           ModelsDev.get(),
-          Provider.list(),
           ProviderAuth.methods(),
           Auth.all(),
         ])
+        await ensureMissingCodexCatalog(allProviders)
+        const connected = await Provider.list()
 
         ProviderFallback.setCustomGroups(
           (config.model_groups ?? []).map((g) => ({
@@ -145,6 +117,14 @@ export const ProviderRoutes = lazy(() =>
           connected,
         )
 
+        for (const [providerID, provider] of Object.entries(providers)) {
+          const availability = Provider.getAvailability(providerID)
+          Object.assign(provider as any, {
+            availability,
+            models: mapValues((provider as any).models, (model: any) => ({ ...model, availability })),
+          })
+        }
+
         if (providers["opencode"] && !providers["opencode-private"]) {
           providers["opencode-private"] = {
             ...providers["opencode"],
@@ -156,17 +136,6 @@ export const ProviderRoutes = lazy(() =>
               providerID: "opencode-private",
             })),
           } as any
-        }
-
-        // Merge Codex API cache with models.dev openai-codex models.
-        // Codex API models act as placeholders for models not yet in models.dev.
-        // models.dev metadata takes priority when both sources have the same model ID.
-        if (providers["openai-codex"] && codexModelsCache) {
-          const merged: Record<string, any> = { ...codexModelsCache }
-          for (const [id, model] of Object.entries(providers["openai-codex"].models)) {
-            merged[id] = model
-          }
-          providers["openai-codex"].models = merged
         }
 
         authMethodMap["opencode-private"] ??= [{ type: "api", label: "Enter OpenCode Zen API key" }]
@@ -248,19 +217,25 @@ export const ProviderRoutes = lazy(() =>
             content: {
               "application/json": {
                 schema: resolver(
-                  z.record(z.string(), z.object({
-                    timedOut: z.boolean(),
-                    until: z.number().nullable(),
-                    reason: z.string().nullable(),
-                    resetInSeconds: z.number().nullable(),
-                    failedModels: z.array(z.string()),
-                    modelCooldowns: z.record(z.string(), z.object({
-                      until: z.number(),
-                      resetInSeconds: z.number(),
-                      reason: z.string(),
-                      kind: z.string(),
-                    })),
-                  })),
+                  z.record(
+                    z.string(),
+                    z.object({
+                      timedOut: z.boolean(),
+                      until: z.number().nullable(),
+                      reason: z.string().nullable(),
+                      resetInSeconds: z.number().nullable(),
+                      failedModels: z.array(z.string()),
+                      modelCooldowns: z.record(
+                        z.string(),
+                        z.object({
+                          until: z.number(),
+                          resetInSeconds: z.number(),
+                          reason: z.string(),
+                          kind: z.string(),
+                        }),
+                      ),
+                    }),
+                  ),
                 ),
               },
             },
@@ -295,12 +270,14 @@ export const ProviderRoutes = lazy(() =>
                           modelID: z.string(),
                           active: z.boolean(),
                           cooled: z.boolean(),
-                          cooldown: z.object({
-                            until: z.number(),
-                            resetInSeconds: z.number(),
-                            reason: z.string(),
-                            kind: z.string(),
-                          }).nullable(),
+                          cooldown: z
+                            .object({
+                              until: z.number(),
+                              resetInSeconds: z.number(),
+                              reason: z.string(),
+                              kind: z.string(),
+                            })
+                            .nullable(),
                         }),
                       ),
                     }),
@@ -328,25 +305,29 @@ export const ProviderRoutes = lazy(() =>
             content: {
               "application/json": {
                 schema: resolver(
-                  z.object({
-                    groupID: z.string(),
-                    displayName: z.string(),
-                    activeSlot: z.object({ providerID: z.string(), modelID: z.string() }).nullable(),
-                    slots: z.array(
-                      z.object({
-                        providerID: z.string(),
-                        modelID: z.string(),
-                        active: z.boolean(),
-                        cooled: z.boolean(),
-                        cooldown: z.object({
-                          until: z.number(),
-                          resetInSeconds: z.number(),
-                          reason: z.string(),
-                          kind: z.string(),
-                        }).nullable(),
-                      }),
-                    ),
-                  }).nullable(),
+                  z
+                    .object({
+                      groupID: z.string(),
+                      displayName: z.string(),
+                      activeSlot: z.object({ providerID: z.string(), modelID: z.string() }).nullable(),
+                      slots: z.array(
+                        z.object({
+                          providerID: z.string(),
+                          modelID: z.string(),
+                          active: z.boolean(),
+                          cooled: z.boolean(),
+                          cooldown: z
+                            .object({
+                              until: z.number(),
+                              resetInSeconds: z.number(),
+                              reason: z.string(),
+                              kind: z.string(),
+                            })
+                            .nullable(),
+                        }),
+                      ),
+                    })
+                    .nullable(),
                 ),
               },
             },
@@ -400,7 +381,8 @@ export const ProviderRoutes = lazy(() =>
       "/group/:groupID/slot",
       describeRoute({
         summary: "Set active slot",
-        description: "Manually promote a specific slot to be the active one for the group, clearing its cooldown if any.",
+        description:
+          "Manually promote a specific slot to be the active one for the group, clearing its cooldown if any.",
         operationId: "provider.group.setActiveSlot",
         responses: {
           200: { description: "Slot set", content: { "application/json": { schema: resolver(z.boolean()) } } },
@@ -421,7 +403,8 @@ export const ProviderRoutes = lazy(() =>
       "/usage",
       describeRoute({
         summary: "Get provider rate-limit usage",
-        description: "Get the latest rate-limit window state for all providers, used by the UI to display quota progress bars.",
+        description:
+          "Get the latest rate-limit window state for all providers, used by the UI to display quota progress bars.",
         operationId: "provider.usage",
         responses: {
           200: {
@@ -628,5 +611,5 @@ export const ProviderRoutes = lazy(() =>
         await ProviderTimeout.clearTimeout(providerID)
         return c.json(true)
       },
-    )
+    ),
 )

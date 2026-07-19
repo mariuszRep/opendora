@@ -62,7 +62,10 @@ export namespace Provider {
 
   function googleVertexVars(options: Record<string, any>) {
     const project =
-      options["project"] ?? process.env["GOOGLE_CLOUD_PROJECT"] ?? process.env["GCP_PROJECT"] ?? process.env["GCLOUD_PROJECT"]
+      options["project"] ??
+      process.env["GOOGLE_CLOUD_PROJECT"] ??
+      process.env["GCP_PROJECT"] ??
+      process.env["GCLOUD_PROJECT"]
     const location =
       options["location"] ?? process.env["GOOGLE_CLOUD_LOCATION"] ?? process.env["VERTEX_LOCATION"] ?? "us-central1"
     const endpoint = location === "global" ? "aiplatform.googleapis.com" : `${location}-aiplatform.googleapis.com`
@@ -407,7 +410,10 @@ export namespace Provider {
         process.env["GCLOUD_PROJECT"]
 
       const location =
-        provider.options?.location ?? process.env["GOOGLE_CLOUD_LOCATION"] ?? process.env["VERTEX_LOCATION"] ?? "us-central1"
+        provider.options?.location ??
+        process.env["GOOGLE_CLOUD_LOCATION"] ??
+        process.env["VERTEX_LOCATION"] ??
+        "us-central1"
 
       const autoload = Boolean(project)
       if (!autoload) return { autoload: false }
@@ -682,6 +688,7 @@ export namespace Provider {
       headers: z.record(z.string(), z.string()),
       release_date: z.string(),
       variants: z.record(z.string(), z.record(z.string(), z.any())).optional(),
+      availability: z.enum(["available", "stale", "reauthentication_required"]).optional(),
     })
     .meta({
       ref: "Model",
@@ -697,11 +704,30 @@ export namespace Provider {
       key: z.string().optional(),
       options: z.record(z.string(), z.any()),
       models: z.record(z.string(), Model),
+      availability: z.enum(["available", "stale", "reauthentication_required"]).optional(),
     })
     .meta({
       ref: "Provider",
     })
   export type Info = z.infer<typeof Info>
+
+  export type Availability = "available" | "stale" | "reauthentication_required"
+  const availability = new Map<string, Availability>()
+  // Dynamic catalogs are deliberately complete provider catalogs. They are only
+  // registered when models.dev has no entry for that provider.
+  const liveCatalogProviders = new Map<string, Info>()
+
+  export function registerLiveCatalog(provider: Info) {
+    liveCatalogProviders.set(provider.id, provider)
+  }
+
+  export function setAvailability(providerID: string, value: Availability) {
+    availability.set(providerID, value)
+  }
+
+  export function getAvailability(providerID: string): Availability {
+    return availability.get(providerID) ?? "available"
+  }
 
   function fromModelsDevModel(provider: ModelsDev.Provider, model: ModelsDev.Model): Model {
     const m: Model = {
@@ -786,6 +812,9 @@ export namespace Provider {
     const config = await getConfig()
     const modelsDev = await ModelsDev.get()
     const database = mapValues(modelsDev, fromModelsDevProvider)
+    for (const [providerID, provider] of liveCatalogProviders) {
+      if (!database[providerID]) database[providerID] = provider
+    }
     if (!database["google-gemini-cli"]) {
       database["google-gemini-cli"] = {
         id: "google-gemini-cli",
@@ -794,20 +823,6 @@ export namespace Provider {
         env: [],
         options: {},
         models: {},
-      }
-    }
-
-    if (!database["openai-codex"] && database["openai"]) {
-      const openai = database["openai"]
-      database["openai-codex"] = {
-        ...openai,
-        id: "openai-codex",
-        name: "OpenAI Codex",
-        options: { ...openai.options },
-        models: mapValues(openai.models, (model) => ({
-          ...model,
-          providerID: "openai-codex",
-        })),
       }
     }
 
@@ -1002,8 +1017,8 @@ export namespace Provider {
       if (auth) {
         const options = await plugin.auth.loader(() => Auth.get(providerID) as any, database[plugin.auth.provider]!)
         const opts = options ?? {}
-        const patch: Partial<Info> = providers[providerID] 
-          ? { options: opts } 
+        const patch: Partial<Info> = providers[providerID]
+          ? { options: opts }
           : { source: "custom", options: opts, models: database[plugin.auth.provider]?.models ?? {} }
         mergeProvider(providerID, patch)
       }
@@ -1104,8 +1119,19 @@ export namespace Provider {
 
   export async function list() {
     const s = await state()
-    if (liveModelOverrides.size === 0) return s.providers
     const providers = { ...s.providers }
+    for (const [providerID, provider] of liveCatalogProviders) {
+      if (!providers[providerID]) providers[providerID] = provider
+    }
+    for (const [providerID, provider] of Object.entries(providers)) {
+      const state = getAvailability(providerID)
+      providers[providerID] = {
+        ...provider,
+        availability: state,
+        models: mapValues(provider.models, (model) => ({ ...model, availability: state })),
+      }
+    }
+    if (liveModelOverrides.size === 0) return providers
     for (const [providerID, overrideMap] of liveModelOverrides) {
       if (providers[providerID]) {
         providers[providerID] = {
@@ -1245,6 +1271,9 @@ export namespace Provider {
   }
 
   export async function getModel(providerID: string, modelID: string) {
+    if (getAvailability(providerID) === "reauthentication_required") {
+      throw new AuthenticationRequiredError({ providerID, modelID })
+    }
     // Check live overrides first — these are injected from provider APIs at runtime
     const liveOverride = liveModelOverrides.get(providerID)?.get(modelID)
     if (liveOverride) return liveOverride
@@ -1278,9 +1307,10 @@ export namespace Provider {
 
     try {
       const modelLoader = s.modelLoaders[model.providerID]
-      const language = typeof modelLoader === "function" && provider
-        ? await modelLoader(sdk, model.api.id, provider.options)
-        : sdk.languageModel(model.api.id)
+      const language =
+        typeof modelLoader === "function" && provider
+          ? await modelLoader(sdk, model.api.id, provider.options)
+          : sdk.languageModel(model.api.id)
       s.models.set(key, language)
       return language
     } catch (e) {
@@ -1436,5 +1466,10 @@ export namespace Provider {
     z.object({
       providerID: z.string(),
     }),
+  )
+
+  export const AuthenticationRequiredError = NamedError.create(
+    "ProviderAuthenticationRequiredError",
+    z.object({ providerID: z.string(), modelID: z.string() }),
   )
 }

@@ -58,7 +58,16 @@ import {
 import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 import { MessageRow } from "./message-row"
 import { QuestionStep } from "@/components/questions/question-tool"
-import type { AssistantMessage, UserMessage, Part, ReasoningPart, TextPart, ToolPart, FallbackSwitchPart, Edge } from "@/lib/projectflows"
+import type {
+  AssistantMessage,
+  UserMessage,
+  Part,
+  ReasoningPart,
+  TextPart,
+  ToolPart,
+  FallbackSwitchPart,
+  Edge,
+} from "@/lib/projectflows"
 import { opendora } from "@/lib/projectflows"
 import { useUserProfile } from "@/hooks/use-user-profile"
 import { ScheduleDialog } from "@/components/sessions/schedule-dialog"
@@ -69,7 +78,16 @@ import { usePushToTalk } from "@/hooks/use-push-to-talk"
 import { ParentSessionBanner } from "@/components/ai-elements/delegate-tool"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BellIcon, CheckIcon, ClockAlertIcon, ComponentIcon, FileIcon, KeyIcon, SendIcon, SquareSlash } from "lucide-react"
+import {
+  BellIcon,
+  CheckIcon,
+  ClockAlertIcon,
+  ComponentIcon,
+  FileIcon,
+  KeyIcon,
+  SendIcon,
+  SquareSlash,
+} from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -88,7 +106,6 @@ const suggestions = [
 function getTextParts(parts: Part[]): TextPart[] {
   return parts.filter((p): p is TextPart => p.type === "text" && !p.synthetic && !p.hidden)
 }
-
 
 export function getHiddenParts(parts: Part[]): TextPart[] {
   return parts.filter((p): p is TextPart => p.type === "text" && !!p.hidden)
@@ -115,13 +132,23 @@ function formatResetAt(resetAt: number): string {
   return `in ${m}m`
 }
 
-export type FilePart = { type: "file"; id: string; sessionID: string; messageID: string; url: string; mime?: string; filename?: string }
+export type FilePart = {
+  type: "file"
+  id: string
+  sessionID: string
+  messageID: string
+  url: string
+  mime?: string
+  filename?: string
+}
 export function getFileParts(parts: Part[]): FilePart[] {
   return parts.filter((p): p is FilePart => p.type === "file")
 }
 
 export function getMessageText(parts: Part[]): string {
-  return getTextParts(parts).map((p) => p.text).join("")
+  return getTextParts(parts)
+    .map((p) => p.text)
+    .join("")
 }
 
 export function formatToolPayload(value: unknown): string {
@@ -211,11 +238,7 @@ const AttachmentsDisplay = () => {
     <div className="p-2">
       <Attachments variant="inline">
         {attachments.files.map((f) => (
-          <Attachment
-            key={f.id}
-            data={f as any}
-            onRemove={() => attachments.remove(f.id)}
-          >
+          <Attachment key={f.id} data={f as any} onRemove={() => attachments.remove(f.id)}>
             <AttachmentPreview />
             <AttachmentInfo />
             <AttachmentRemove />
@@ -319,10 +342,7 @@ export const Chatbot = () => {
   }, [text, agents])
 
   const slashMenuOpen =
-    text.startsWith("/") &&
-    slashCommands.length > 0 &&
-    status !== "streaming" &&
-    status !== "submitted"
+    text.startsWith("/") && slashCommands.length > 0 && status !== "streaming" && status !== "submitted"
 
   // Use actual token usage from session (provider-accurate)
   const tokenUsage = useMemo(() => {
@@ -332,22 +352,23 @@ export const Chatbot = () => {
     // The session-level accumulated total is deliberately NOT used here: it grows
     // unboundedly (every API call adds the full context size again) and gives a
     // meaningless percentage once the session has more than a handful of turns.
-    const lastAssistant = [...messages]
-      .reverse()
-      .find((m) => {
-        if (m.info.role !== "assistant") return false
-        if ((m.info as any).summary) return false  // skip compaction summaries
-        const t = (m.info as any).tokens
-        if (!t) return false
-        return (t.total ?? 0) > 0 || t.input > 0 || t.output > 0
-      })
+    const lastAssistant = [...messages].reverse().find((m) => {
+      if (m.info.role !== "assistant") return false
+      if ((m.info as any).summary) return false // skip compaction summaries
+      const t = (m.info as any).tokens
+      if (!t) return false
+      return (t.total ?? 0) > 0 || t.input > 0 || t.output > 0
+    })
 
     if (lastAssistant) {
       const t = (lastAssistant.info as any).tokens as {
-        input: number; output: number; reasoning?: number
-        cache?: { read: number; write: number }; total?: number
+        input: number
+        output: number
+        reasoning?: number
+        cache?: { read: number; write: number }
+        total?: number
       }
-      const total = t.total ?? (t.input + t.output + (t.cache?.read ?? 0) + (t.cache?.write ?? 0))
+      const total = t.total ?? t.input + t.output + (t.cache?.read ?? 0) + (t.cache?.write ?? 0)
       return {
         inputTokens: t.input,
         outputTokens: t.output,
@@ -434,12 +455,15 @@ export const Chatbot = () => {
   }, [activeQuestionId, selectedSession?.id])
 
   // Update session's model when user changes it in chat interface
-  const updateSessionModel = useCallback(async (providerID: string, modelID: string) => {
-    if (!selectedSession) return
-    const modelString = `${providerID}:${modelID}`
-    if (selectedSession.model === modelString) return
-    await setSessionModel(selectedSession.id, modelString)
-  }, [selectedSession, setSessionModel])
+  const updateSessionModel = useCallback(
+    async (providerID: string, modelID: string) => {
+      if (!selectedSession) return
+      const modelString = `${providerID}:${modelID}`
+      if (selectedSession.model === modelString) return
+      await setSessionModel(selectedSession.id, modelString)
+    },
+    [selectedSession, setSessionModel],
+  )
 
   const { modelList, modelsByProvider } = useModelList()
 
@@ -489,30 +513,46 @@ export const Chatbot = () => {
   // ─── Session graph edges for the chat side rail ──────────────────────────
   const [sessionEdges, setSessionEdges] = useState<Edge[]>([])
   useEffect(() => {
-    if (!selectedSession?.id) { setSessionEdges([]); return }
+    if (!selectedSession?.id) {
+      setSessionEdges([])
+      return
+    }
     let active = true
-    opendora.session.graph(selectedSession.id)
-      .then((g) => { if (active) setSessionEdges(g?.edges ?? []) })
-      .catch(() => { if (active) setSessionEdges([]) })
-    return () => { active = false }
+    opendora.session
+      .graph(selectedSession.id)
+      .then((g) => {
+        if (active) setSessionEdges(g?.edges ?? [])
+      })
+      .catch(() => {
+        if (active) setSessionEdges([])
+      })
+    return () => {
+      active = false
+    }
   }, [selectedSession?.id])
 
   const scrollToMessageIdRef = useRef<string | null>(null)
 
-  const buildDashboardUrl = useCallback((sessionId: string, messageId?: string | null) => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set("session", sessionId)
-    if (messageId) params.set("message", messageId)
-    else params.delete("message")
-    const query = params.toString()
-    return query ? `${pathname}?${query}` : pathname
-  }, [pathname, searchParams])
+  const buildDashboardUrl = useCallback(
+    (sessionId: string, messageId?: string | null) => {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set("session", sessionId)
+      if (messageId) params.set("message", messageId)
+      else params.delete("message")
+      const query = params.toString()
+      return query ? `${pathname}?${query}` : pathname
+    },
+    [pathname, searchParams],
+  )
 
-  const handleGoToMessage = useCallback((sessionId: string, messageId: string) => {
-    router.push(buildDashboardUrl(sessionId, messageId), { scroll: false })
-    selectSession(sessionId)
-    scrollToMessageIdRef.current = messageId
-  }, [router, buildDashboardUrl, selectSession])
+  const handleGoToMessage = useCallback(
+    (sessionId: string, messageId: string) => {
+      router.push(buildDashboardUrl(sessionId, messageId), { scroll: false })
+      selectSession(sessionId)
+      scrollToMessageIdRef.current = messageId
+    },
+    [router, buildDashboardUrl, selectSession],
+  )
 
   useEffect(() => {
     const messageId = searchParams.get("message")
@@ -528,7 +568,7 @@ export const Chatbot = () => {
   useEffect(() => {
     const targetId = scrollToMessageIdRef.current
     if (!targetId || !messages.length) return
-    
+
     // Try to find and scroll to the target message
     const attemptScroll = () => {
       const el = document.getElementById(`msg-${targetId}`)
@@ -536,32 +576,32 @@ export const Chatbot = () => {
         console.log(`[Scroll] Element msg-${targetId} not found yet`)
         return false
       }
-      
+
       console.log(`[Scroll] Found element msg-${targetId}, scrolling...`)
       // Use instant scroll to override StickToBottom's smooth scroll
       el.scrollIntoView({ behavior: "instant", block: "center" })
       console.log(`[Scroll] Scrolled to msg-${targetId}`)
-      
+
       // Clean up URL after a delay
       setTimeout(() => {
         if (selectedSession?.id) {
           router.replace(buildDashboardUrl(selectedSession.id, null), { scroll: false })
         }
       }, 500)
-      
+
       scrollToMessageIdRef.current = null
       return true
     }
-    
+
     // Wait longer to let StickToBottom finish its scroll first, then override it
     const initialDelay = 300
     let attempts = 0
     const maxAttempts = 8
     const retryDelay = 250
-    
+
     const tryScroll = () => {
       if (attemptScroll()) return
-      
+
       attempts++
       if (attempts < maxAttempts) {
         setTimeout(tryScroll, retryDelay)
@@ -570,31 +610,34 @@ export const Chatbot = () => {
         scrollToMessageIdRef.current = null
       }
     }
-    
+
     // Start trying after initial delay to let StickToBottom settle
     setTimeout(tryScroll, initialDelay)
   }, [messages, router, buildDashboardUrl, selectedSession?.id])
 
-  const handleQuestionAdvance = useCallback((trimmedText: string) => {
-    const request = questionRequests[0]
-    if (!request) return
-    const currentSels = questionSelections[questionStep] ?? []
-    const answer = trimmedText ? [...currentSels, trimmedText] : currentSels
-    if (answer.length === 0) return
-    const total = request.questions.length
-    const allAnswers = Array.from({ length: total }, (_, i) =>
-      i === questionStep ? answer : (questionSelections[i] ?? [])
-    )
-    setText("")
-    if (questionStep < total - 1) {
-      setQuestionSelections(allAnswers)
-      setQuestionStep((prev) => prev + 1)
-    } else {
-      void replyQuestion(request.id, allAnswers)
-      setQuestionStep(0)
-      setQuestionSelections([])
-    }
-  }, [questionRequests, questionStep, questionSelections, replyQuestion])
+  const handleQuestionAdvance = useCallback(
+    (trimmedText: string) => {
+      const request = questionRequests[0]
+      if (!request) return
+      const currentSels = questionSelections[questionStep] ?? []
+      const answer = trimmedText ? [...currentSels, trimmedText] : currentSels
+      if (answer.length === 0) return
+      const total = request.questions.length
+      const allAnswers = Array.from({ length: total }, (_, i) =>
+        i === questionStep ? answer : (questionSelections[i] ?? []),
+      )
+      setText("")
+      if (questionStep < total - 1) {
+        setQuestionSelections(allAnswers)
+        setQuestionStep((prev) => prev + 1)
+      } else {
+        void replyQuestion(request.id, allAnswers)
+        setQuestionStep(0)
+        setQuestionSelections([])
+      }
+    },
+    [questionRequests, questionStep, questionSelections, replyQuestion],
+  )
 
   const queuedMessages = useMemo(
     () =>
@@ -626,14 +669,31 @@ export const Chatbot = () => {
         url: f.url,
       }))
       setText("")
-      const doSend = () => sendMessage(content, { model, fallbackGroupID, agent: selectedAgent, userName: userName || undefined, files: files.length > 0 ? files : undefined })
+      const doSend = () =>
+        sendMessage(content, {
+          model,
+          fallbackGroupID,
+          agent: selectedAgent,
+          userName: userName || undefined,
+          files: files.length > 0 ? files : undefined,
+        })
       if (!selectedSession) {
         createSession().then(doSend)
       } else {
         doSend()
       }
     },
-    [sendMessage, selectedModel, selectedGroupId, selectedAgent, selectedSession, createSession, userName, questionRequests, handleQuestionAdvance],
+    [
+      sendMessage,
+      selectedModel,
+      selectedGroupId,
+      selectedAgent,
+      selectedSession,
+      createSession,
+      userName,
+      questionRequests,
+      handleQuestionAdvance,
+    ],
   )
 
   const handleActivateQueuedMessage = useCallback(
@@ -720,7 +780,7 @@ export const Chatbot = () => {
     (text: string, messageId: string) => {
       speak(text, messageId)
     },
-    [speak]
+    [speak],
   )
 
   // Handle push-to-talk stop — draft-only, never auto-submits
@@ -728,7 +788,7 @@ export const Chatbot = () => {
     playNotificationSound()
     const transcription = await stopRecording()
     if (transcription) {
-      setText((prev) => prev ? `${prev} ${transcription}` : transcription)
+      setText((prev) => (prev ? `${prev} ${transcription}` : transcription))
     }
   }, [stopRecording, setText])
 
@@ -745,16 +805,16 @@ export const Chatbot = () => {
   useEffect(() => {
     // Only trigger when auto-voice is enabled and we're not streaming
     if (!autoVoiceNextMessage || !isTtsEnabled || status === "streaming") return
-    
+
     // Small delay to ensure the message is fully rendered
     const timer = setTimeout(() => {
       // Find the last assistant message
-      const assistantMessages = messages.filter(m => m.info.role === "assistant")
+      const assistantMessages = messages.filter((m) => m.info.role === "assistant")
       if (assistantMessages.length === 0) return
-      
+
       const lastAssistantMessage = assistantMessages[assistantMessages.length - 1]
       const content = getMessageText(lastAssistantMessage.parts)
-      
+
       // Only speak if we have content and it's not already playing
       if (content && playingId !== lastAssistantMessage.info.id) {
         speak(content, lastAssistantMessage.info.id)
@@ -765,52 +825,56 @@ export const Chatbot = () => {
         }
       }
     }, 100)
-    
+
     return () => clearTimeout(timer)
   }, [status, messages, autoVoiceNextMessage, isTtsEnabled, playingId, speak])
 
-  const handleAudioRecorded = useCallback(async (audioBlob: Blob) => {
-    try {
-      const { opendora } = await import("@/lib/projectflows")
-      const provider =
-        settings.stt.provider === "google-gemini" ? "google-gemini"
-        : settings.stt.provider === "local-whisper" ? "local-whisper"
-        : "openai-whisper"
-      const result = await opendora.voice.stt(audioBlob, { provider })
-      return result.text || ""
-    } catch (error) {
-      console.error("STT error:", error)
-      const errorMessage = error instanceof Error ? error.message : "Transcription error"
-      if (errorMessage.includes("not configured")) {
-        if (settings.stt.provider === "local-whisper") {
-          toast.error("Local Whisper server not configured. Go to Settings → Voice → Speech-to-Text and enter your server URL.")
-        } else if (settings.stt.provider === "google-gemini") {
-          toast.error("Google API key not configured. Please connect Google in Settings → Providers.")
+  const handleAudioRecorded = useCallback(
+    async (audioBlob: Blob) => {
+      try {
+        const { opendora } = await import("@/lib/projectflows")
+        const provider =
+          settings.stt.provider === "google-gemini"
+            ? "google-gemini"
+            : settings.stt.provider === "local-whisper"
+              ? "local-whisper"
+              : "openai-whisper"
+        const result = await opendora.voice.stt(audioBlob, { provider })
+        return result.text || ""
+      } catch (error) {
+        console.error("STT error:", error)
+        const errorMessage = error instanceof Error ? error.message : "Transcription error"
+        if (errorMessage.includes("not configured")) {
+          if (settings.stt.provider === "local-whisper") {
+            toast.error(
+              "Local Whisper server not configured. Go to Settings → Voice → Speech-to-Text and enter your server URL.",
+            )
+          } else if (settings.stt.provider === "google-gemini") {
+            toast.error("Google API key not configured. Please connect Google in Settings → Providers.")
+          } else {
+            toast.error("OpenAI not configured. Please connect OpenAI in Settings → Providers.")
+          }
         } else {
-          toast.error("OpenAI not configured. Please connect OpenAI in Settings → Providers.")
+          toast.error("Transcription failed")
         }
-      } else {
-        toast.error("Transcription failed")
+        return ""
       }
-      return ""
-    }
-  }, [settings.stt.provider])
+    },
+    [settings.stt.provider],
+  )
 
   const sessionsById = useMemo(() => new Map(sessions.map((s) => [s.id, s])), [sessions])
   const agentsById = useMemo(() => new Map(agents.map((a) => [(a as any)._id, a])), [agents])
   const agentsByName = useMemo(() => new Map(agents.map((a) => [a.name, a])), [agents])
   const schedulesById = useMemo(() => new Map(schedules.map((s) => [s.id, s])), [schedules])
-  const schedulesBySessionId = useMemo(() => new Map(schedules.filter((s) => s.session_id).map((s) => [s.session_id as string, s])), [schedules])
+  const schedulesBySessionId = useMemo(
+    () => new Map(schedules.filter((s) => s.session_id).map((s) => [s.session_id as string, s])),
+    [schedules],
+  )
 
   const executionState = useMemo(() => {
     if (!selectedSession) return createInitialState()
-    return messagesToExecutionState(
-      messages,
-      selectedSession.id,
-      sessionsById,
-      agentsById,
-      userColor,
-    )
+    return messagesToExecutionState(messages, selectedSession.id, sessionsById, agentsById, userColor)
   }, [messages, selectedSession, sessionsById, agentsById, userColor])
 
   // Visible messages (same filter as messages-to-state) — children for ConversationCanvas.
@@ -823,16 +887,12 @@ export const Chatbot = () => {
           !(m.info as { hidden?: boolean }).hidden &&
           !(m.info.role === "user" && (m.info as UserMessage).queue?.status === "queued"),
       ),
-    [messages]
+    [messages],
   )
 
   return (
     <div className="relative flex size-full flex-col divide-y overflow-hidden">
-      {error && (
-        <div className="bg-destructive/10 text-destructive px-4 py-2 text-sm shrink-0">
-          {error}
-        </div>
-      )}
+      {error && <div className="bg-destructive/10 text-destructive px-4 py-2 text-sm shrink-0">{error}</div>}
 
       {!selectedSession ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
@@ -847,120 +907,127 @@ export const Chatbot = () => {
         </div>
       ) : (
         <>
-        {(() => {
-          const chatParentSession = selectedSession.parentSessionID
-            ? sessionsById.get(selectedSession.parentSessionID)
-            : undefined
-          return chatParentSession ? (
-            <ParentSessionBanner
-              parentSession={chatParentSession}
-              onSelectSession={selectSession}
-            />
-          ) : null
-        })()}
-        <ConversationCanvas
-          state={executionState}
-          sessionKey={selectedSession.id}
-          footer={
-            (status === "submitted" || (status === "streaming" && (() => {
-              let lastAssistant: typeof messages[0] | undefined
-              for (let i = messages.length - 1; i >= 0; i--) {
-                if (messages[i].info.role === "assistant") { lastAssistant = messages[i]; break }
-              }
-              if (!lastAssistant) return true
-              const msgError = (lastAssistant.info as AssistantMessage).error
-              return getTimelineSteps(lastAssistant.parts, msgError).length === 0
-            })())) ? (
-              <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3 w-full py-2">
-                <div className="relative size-4 mt-[3px]">
-                  <div
-                    className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
-                    style={{ borderTopColor: agentDotColor }}
-                    aria-hidden="true"
-                  />
-                  <div
-                    className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                    style={{ backgroundColor: agentDotColor }}
-                  />
-                </div>
-                <div className="flex items-center h-5">
-                  <span className="text-xs text-muted-foreground">Thinking…</span>
-                </div>
-              </div>
+          {(() => {
+            const chatParentSession = selectedSession.parentSessionID
+              ? sessionsById.get(selectedSession.parentSessionID)
+              : undefined
+            return chatParentSession ? (
+              <ParentSessionBanner parentSession={chatParentSession} onSelectSession={selectSession} />
             ) : null
-          }
-        >
-          {visibleMessages.map(({ info, parts }, msgIndex) => {
-            if (info.role === "assistant" && (status === "streaming" || status === "submitted")) {
-              const msgError = (info as AssistantMessage).error
-              if (getTimelineSteps(parts, msgError).length === 0) return null
+          })()}
+          <ConversationCanvas
+            state={executionState}
+            sessionKey={selectedSession.id}
+            footer={
+              status === "submitted" ||
+              (status === "streaming" &&
+                (() => {
+                  let lastAssistant: (typeof messages)[0] | undefined
+                  for (let i = messages.length - 1; i >= 0; i--) {
+                    if (messages[i].info.role === "assistant") {
+                      lastAssistant = messages[i]
+                      break
+                    }
+                  }
+                  if (!lastAssistant) return true
+                  const msgError = (lastAssistant.info as AssistantMessage).error
+                  return getTimelineSteps(lastAssistant.parts, msgError).length === 0
+                })()) ? (
+                <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3 w-full py-2">
+                  <div className="relative size-4 mt-[3px]">
+                    <div
+                      className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
+                      style={{ borderTopColor: agentDotColor }}
+                      aria-hidden="true"
+                    />
+                    <div
+                      className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                      style={{ backgroundColor: agentDotColor }}
+                    />
+                  </div>
+                  <div className="flex items-center h-5">
+                    <span className="text-xs text-muted-foreground">Thinking…</span>
+                  </div>
+                </div>
+              ) : null
             }
-            const incomingEdge = sessionEdges.find(e => e.to_type === "entry" && e.to_id === info.id)
-            const outgoingEdge = sessionEdges.find(e => e.from_type === "entry" && e.from_id === info.id)
-            return (
-              <MessageRow
-                key={info.id}
-                info={info}
-                parts={parts}
-                msgIndex={msgIndex}
-                messagesLength={visibleMessages.length}
-                incomingEdge={incomingEdge}
-                outgoingEdge={outgoingEdge}
-                status={status}
-                sessions={sessions}
-                sessionsById={sessionsById}
-                agentsById={agentsById}
-                agentsByName={agentsByName}
-                schedulesById={schedulesById}
-                schedulesBySessionId={schedulesBySessionId}
-                selectedSession={selectedSession}
-                userDotColor={userDotColor}
-                agentDotColor={agentDotColor}
-                playingId={playingId}
-                isTtsLoading={isTtsLoading}
-                isTtsEnabled={isTtsEnabled}
-                handleCopy={handleCopy}
-                handleSpeak={handleSpeak}
-                setOpenScheduleId={setOpenScheduleId}
-                handleGoToMessage={handleGoToMessage}
-                userName={userName}
-                expandedContractParts={expandedContractParts}
-                setExpandedContractParts={setExpandedContractParts}
-                questionViewModes={questionViewModes}
-                setQuestionViewModes={setQuestionViewModes}
-                delegateViewModes={delegateViewModes}
-                setDelegateViewModes={setDelegateViewModes}
-                todoViewModes={todoViewModes}
-                setTodoViewModes={setTodoViewModes}
-                sessionTreeViewModes={sessionTreeViewModes}
-                setSessionTreeViewModes={setSessionTreeViewModes}
-                webfetchViewModes={webfetchViewModes}
-                setWebfetchViewModes={setWebfetchViewModes}
-                questionRequests={questionRequests}
-                replyQuestion={replyQuestion}
-                rejectQuestion={rejectQuestion}
-                permissionRequests={permissionRequests}
-                replyPermission={replyPermission}
-                selectedAgent={selectedAgent}
-                selectedModel={selectedModel}
-                selectedGroupId={selectedGroupId}
-                modelGroups={modelGroups}
-                modelList={modelList}
-                sessionRetryStatus={sessionRetryStatus}
-                webPreviewOpen={webPreviewOpen}
-                toggleWebPreview={toggleWebPreview}
-                setWebPreviewUrl={setWebPreviewUrl}
-                openFilePreview={openFilePreview}
-                selectSession={selectSession}
-              />
-            )
-          })}
-        </ConversationCanvas>
+          >
+            {visibleMessages.map(({ info, parts }, msgIndex) => {
+              if (info.role === "assistant" && (status === "streaming" || status === "submitted")) {
+                const msgError = (info as AssistantMessage).error
+                if (getTimelineSteps(parts, msgError).length === 0) return null
+              }
+              const incomingEdge = sessionEdges.find((e) => e.to_type === "entry" && e.to_id === info.id)
+              const outgoingEdge = sessionEdges.find((e) => e.from_type === "entry" && e.from_id === info.id)
+              return (
+                <MessageRow
+                  key={info.id}
+                  info={info}
+                  parts={parts}
+                  msgIndex={msgIndex}
+                  messagesLength={visibleMessages.length}
+                  incomingEdge={incomingEdge}
+                  outgoingEdge={outgoingEdge}
+                  status={status}
+                  sessions={sessions}
+                  sessionsById={sessionsById}
+                  agentsById={agentsById}
+                  agentsByName={agentsByName}
+                  schedulesById={schedulesById}
+                  schedulesBySessionId={schedulesBySessionId}
+                  selectedSession={selectedSession}
+                  userDotColor={userDotColor}
+                  agentDotColor={agentDotColor}
+                  playingId={playingId}
+                  isTtsLoading={isTtsLoading}
+                  isTtsEnabled={isTtsEnabled}
+                  handleCopy={handleCopy}
+                  handleSpeak={handleSpeak}
+                  setOpenScheduleId={setOpenScheduleId}
+                  handleGoToMessage={handleGoToMessage}
+                  userName={userName}
+                  expandedContractParts={expandedContractParts}
+                  setExpandedContractParts={setExpandedContractParts}
+                  questionViewModes={questionViewModes}
+                  setQuestionViewModes={setQuestionViewModes}
+                  delegateViewModes={delegateViewModes}
+                  setDelegateViewModes={setDelegateViewModes}
+                  todoViewModes={todoViewModes}
+                  setTodoViewModes={setTodoViewModes}
+                  sessionTreeViewModes={sessionTreeViewModes}
+                  setSessionTreeViewModes={setSessionTreeViewModes}
+                  webfetchViewModes={webfetchViewModes}
+                  setWebfetchViewModes={setWebfetchViewModes}
+                  questionRequests={questionRequests}
+                  replyQuestion={replyQuestion}
+                  rejectQuestion={rejectQuestion}
+                  permissionRequests={permissionRequests}
+                  replyPermission={replyPermission}
+                  selectedAgent={selectedAgent}
+                  selectedModel={selectedModel}
+                  selectedGroupId={selectedGroupId}
+                  modelGroups={modelGroups}
+                  modelList={modelList}
+                  sessionRetryStatus={sessionRetryStatus}
+                  webPreviewOpen={webPreviewOpen}
+                  toggleWebPreview={toggleWebPreview}
+                  setWebPreviewUrl={setWebPreviewUrl}
+                  openFilePreview={openFilePreview}
+                  selectSession={selectSession}
+                />
+              )
+            })}
+          </ConversationCanvas>
         </>
       )}
 
       <div className="flex flex-col shrink-0 max-h-[80dvh] overflow-hidden pt-4">
-        <div className={cn("relative w-full flex flex-col min-h-0 flex-1 px-4 pb-4 transition-all duration-300", isChatCentered && "max-w-3xl mx-auto")}>
+        <div
+          className={cn(
+            "relative w-full flex flex-col min-h-0 flex-1 px-4 pb-4 transition-all duration-300",
+            isChatCentered && "max-w-3xl mx-auto",
+          )}
+        >
           {slashMenuOpen && (
             <div className="absolute bottom-full left-4 right-4 mb-1 z-50 rounded-lg border bg-popover shadow-lg overflow-hidden">
               <div className="px-3 py-1.5 text-[11px] font-medium text-muted-foreground border-b">Commands</div>
@@ -971,7 +1038,7 @@ export const Chatbot = () => {
                     type="button"
                     className={cn(
                       "flex w-full items-center gap-3 px-3 py-2 text-sm text-left",
-                      idx === slashCommandIdx ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
+                      idx === slashCommandIdx ? "bg-accent text-accent-foreground" : "hover:bg-accent/50",
                     )}
                     onMouseDown={(e) => {
                       e.preventDefault()
@@ -986,7 +1053,12 @@ export const Chatbot = () => {
               </div>
             </div>
           )}
-          <PromptInput globalDrop multiple onSubmit={handleSubmit} className={questionRequests.length > 0 ? "flex flex-col flex-1 min-h-0" : ""}>
+          <PromptInput
+            globalDrop
+            multiple
+            onSubmit={handleSubmit}
+            className={questionRequests.length > 0 ? "flex flex-col flex-1 min-h-0" : ""}
+          >
             <PromptInputHeader>
               <AttachmentsDisplay />
               {queuedMessages.length > 0 && (
@@ -996,7 +1068,10 @@ export const Chatbot = () => {
                       key={m.info.id}
                       className="flex items-start gap-2 p-2 rounded-md border border-border bg-muted/50 text-sm"
                     >
-                      <span className="size-1.5 mt-2 rounded-full bg-current animate-pulse shrink-0 text-muted-foreground" aria-hidden="true" />
+                      <span
+                        className="size-1.5 mt-2 rounded-full bg-current animate-pulse shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                      />
                       <span className="flex-1 min-w-0 whitespace-pre-wrap break-words text-foreground">
                         {getMessageText(m.parts)}
                       </span>
@@ -1015,43 +1090,48 @@ export const Chatbot = () => {
                 </div>
               )}
             </PromptInputHeader>
-            {questionRequests.length > 0 && (() => {
-              const request = questionRequests[0]
-              const question = request.questions[questionStep]
-              const currentSels = questionSelections[questionStep] ?? []
-              return (
-                <div className="overflow-y-auto min-h-0 flex-1">
-                  <div className="px-4 pt-4 pb-2 border-b border-border">
-                    <QuestionStep
-                      question={question}
-                      value={currentSels}
-                      customValue=""
-                      hideCustomInput
-                      onToggle={(label) =>
-                        setQuestionSelections((prev) => {
-                          const updated = [...prev]
-                          const sel = updated[questionStep] ?? []
-                          updated[questionStep] = sel.includes(label) ? sel.filter((s) => s !== label) : [...sel, label]
-                          return updated
-                        })
-                      }
-                      onPickSingle={(label) =>
-                        setQuestionSelections((prev) => {
-                          const updated = [...prev]
-                          updated[questionStep] = [label]
-                          return updated
-                        })
-                      }
-                      onCustomChange={() => {}}
-                    />
+            {questionRequests.length > 0 &&
+              (() => {
+                const request = questionRequests[0]
+                const question = request.questions[questionStep]
+                const currentSels = questionSelections[questionStep] ?? []
+                return (
+                  <div className="overflow-y-auto min-h-0 flex-1">
+                    <div className="px-4 pt-4 pb-2 border-b border-border">
+                      <QuestionStep
+                        question={question}
+                        value={currentSels}
+                        customValue=""
+                        hideCustomInput
+                        onToggle={(label) =>
+                          setQuestionSelections((prev) => {
+                            const updated = [...prev]
+                            const sel = updated[questionStep] ?? []
+                            updated[questionStep] = sel.includes(label)
+                              ? sel.filter((s) => s !== label)
+                              : [...sel, label]
+                            return updated
+                          })
+                        }
+                        onPickSingle={(label) =>
+                          setQuestionSelections((prev) => {
+                            const updated = [...prev]
+                            updated[questionStep] = [label]
+                            return updated
+                          })
+                        }
+                        onCustomChange={() => {}}
+                      />
+                    </div>
                   </div>
-                </div>
-              )
-            })()}
+                )
+              })()}
             {(questionRequests.length > 0 || permissionRequests.length > 0) && (
               <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-amber-400 border-b border-border">
                 <BellIcon className="size-3 shrink-0" />
-                {questionRequests.length > 0 ? "Answer the question above to continue" : "Approve or reject the permission request above to continue"}
+                {questionRequests.length > 0
+                  ? "Answer the question above to continue"
+                  : "Approve or reject the permission request above to continue"}
               </div>
             )}
             <PromptInputBody>
@@ -1060,7 +1140,15 @@ export const Chatbot = () => {
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={handleTextareaKeyDown}
                 value={text}
-                placeholder={selectedSession ? (isRecording ? "Listening..." : isTranscribing ? "Transcribing..." : "Type a message… (/ for commands)") : "Create or select a session to chat"}
+                placeholder={
+                  selectedSession
+                    ? isRecording
+                      ? "Listening..."
+                      : isTranscribing
+                        ? "Transcribing..."
+                        : "Type a message… (/ for commands)"
+                    : "Create or select a session to chat"
+                }
                 disabled={isRecording}
               />
             </PromptInputBody>
@@ -1090,7 +1178,9 @@ export const Chatbot = () => {
                   forceMode={
                     settings.stt.provider === "disabled"
                       ? "none"
-                      : settings.stt.provider === "openai-whisper" || settings.stt.provider === "google-gemini" || settings.stt.provider === "local-whisper"
+                      : settings.stt.provider === "openai-whisper" ||
+                          settings.stt.provider === "google-gemini" ||
+                          settings.stt.provider === "local-whisper"
                         ? "media-recorder"
                         : undefined
                   }
@@ -1125,35 +1215,42 @@ export const Chatbot = () => {
                             <ComponentIcon className="size-3 shrink-0" />
                             <ModelSelectorName>{selectedGroup.name}</ModelSelectorName>
                           </>
-                        ) : selectedModel?.isFallback
-                          ? (() => {
-                              const activeSlot = fallbackActiveSlots[selectedModel.modelID]
-                              const iconProvider = activeSlot?.providerID ?? "opencode"
-                              return <ModelSelectorLogo provider={iconProvider} />
-                            })()
-                          : selectedModel?.providerID && <ModelSelectorLogo provider={selectedModel.providerID} />
-                        }
-                        {!selectedGroup && selectedModel?.modelName && <ModelSelectorName>{selectedModel.modelName}</ModelSelectorName>}
-                        {selectedModel?.providerID && (() => {
-                          const pt = providerTimeouts[selectedModel.providerID]
-                          const mcd = pt?.modelCooldowns?.[selectedModel.modelID]
-                          const cd = pt?.timedOut ? pt : mcd ? { reason: mcd.reason, resetInSeconds: mcd.resetInSeconds } : null
-                          if (!cd) return null
-                          return (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <ClockAlertIcon className="size-3.5 text-red-500 shrink-0" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {cd.reason}
-                                  {cd.resetInSeconds != null &&
-                                    ` (resets in ${Math.ceil(cd.resetInSeconds / 60)}m)`}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )
-                        })()}
+                        ) : selectedModel?.isFallback ? (
+                          (() => {
+                            const activeSlot = fallbackActiveSlots[selectedModel.modelID]
+                            const iconProvider = activeSlot?.providerID ?? "opencode"
+                            return <ModelSelectorLogo provider={iconProvider} />
+                          })()
+                        ) : (
+                          selectedModel?.providerID && <ModelSelectorLogo provider={selectedModel.providerID} />
+                        )}
+                        {!selectedGroup && selectedModel?.modelName && (
+                          <ModelSelectorName>{selectedModel.modelName}</ModelSelectorName>
+                        )}
+                        {selectedModel?.providerID &&
+                          (() => {
+                            const pt = providerTimeouts[selectedModel.providerID]
+                            const mcd = pt?.modelCooldowns?.[selectedModel.modelID]
+                            const cd = pt?.timedOut
+                              ? pt
+                              : mcd
+                                ? { reason: mcd.reason, resetInSeconds: mcd.resetInSeconds }
+                                : null
+                            if (!cd) return null
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <ClockAlertIcon className="size-3.5 text-red-500 shrink-0" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {cd.reason}
+                                    {cd.resetInSeconds != null && ` (resets in ${Math.ceil(cd.resetInSeconds / 60)}m)`}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )
+                          })()}
                       </PromptInputButton>
                     </ModelSelectorTrigger>
                     <ModelSelectorContent>
@@ -1211,6 +1308,7 @@ export const Chatbot = () => {
                               return (
                                 <ModelSelectorItem
                                   key={`${m.providerID}:${m.modelID}`}
+                                  disabled={m.availability === "reauthentication_required"}
                                   onSelect={() => {
                                     setSelectedProviderID(m.providerID)
                                     setSelectedModelID(m.modelID)
@@ -1227,12 +1325,19 @@ export const Chatbot = () => {
                                         : m.providerID
                                     }
                                   />
-                                  <ModelSelectorName>{m.modelName}</ModelSelectorName>
+                                  <ModelSelectorName>
+                                    {m.modelName}
+                                    {m.availability === "stale" ? " (stale)" : ""}
+                                  </ModelSelectorName>
                                   {(() => {
                                     const pt = providerTimeouts[m.providerID]
                                     const mcd = pt?.modelCooldowns?.[m.modelID]
                                     const isCooled = pt?.timedOut || !!mcd
-                                    if (authExpiredProviders[m.providerID]) return <KeyIcon className="size-3 shrink-0 text-amber-500" />
+                                    if (
+                                      m.availability === "reauthentication_required" ||
+                                      authExpiredProviders[m.providerID]
+                                    )
+                                      return <KeyIcon className="size-3 shrink-0 text-amber-500" />
                                     if (isCooled) {
                                       const resetSecs = pt?.timedOut ? pt.resetInSeconds : (mcd?.resetInSeconds ?? null)
                                       return (
@@ -1244,7 +1349,11 @@ export const Chatbot = () => {
                                     }
                                     return null
                                   })()}
-                                  {active ? <CheckIcon className="ml-auto size-4" /> : <div className="ml-auto size-4" />}
+                                  {active ? (
+                                    <CheckIcon className="ml-auto size-4" />
+                                  ) : (
+                                    <div className="ml-auto size-4" />
+                                  )}
                                 </ModelSelectorItem>
                               )
                             })}
@@ -1254,31 +1363,28 @@ export const Chatbot = () => {
                     </ModelSelectorContent>
                   </ModelSelector>
                 )}
-
               </PromptInputTools>
               <div className="flex items-center gap-1">
                 {selectedModel && selectedSession && (
                   <Context
                     usedTokens={tokenUsage.totalTokens}
                     maxTokens={modelContextLimit}
-                    usage={
-                      {
-                        cachedInputTokens: tokenUsage.cachedTokens,
-                        inputTokens: tokenUsage.inputTokens,
-                        outputTokens: tokenUsage.outputTokens,
+                    usage={{
+                      cachedInputTokens: tokenUsage.cachedTokens,
+                      inputTokens: tokenUsage.inputTokens,
+                      outputTokens: tokenUsage.outputTokens,
+                      reasoningTokens: tokenUsage.reasoningTokens,
+                      totalTokens: tokenUsage.totalTokens,
+                      inputTokenDetails: {
+                        noCacheTokens: tokenUsage.inputTokens - tokenUsage.cachedTokens,
+                        cacheReadTokens: tokenUsage.cachedTokens,
+                        cacheWriteTokens: 0,
+                      },
+                      outputTokenDetails: {
+                        textTokens: tokenUsage.outputTokens,
                         reasoningTokens: tokenUsage.reasoningTokens,
-                        totalTokens: tokenUsage.totalTokens,
-                        inputTokenDetails: {
-                          noCacheTokens: tokenUsage.inputTokens - tokenUsage.cachedTokens,
-                          cacheReadTokens: tokenUsage.cachedTokens,
-                          cacheWriteTokens: 0,
-                        },
-                        outputTokenDetails: {
-                          textTokens: tokenUsage.outputTokens,
-                          reasoningTokens: tokenUsage.reasoningTokens,
-                        },
-                      }
-                    }
+                      },
+                    }}
                     modelId={selectedModel.modelID}
                     providerID={selectedModel.providerID}
                   >
@@ -1317,9 +1423,11 @@ export const Chatbot = () => {
       </div>
 
       <ScheduleDialog
-        open={!!openScheduleId && schedules.some(s => s.id === openScheduleId)}
-        onOpenChange={(open) => { if (!open) setOpenScheduleId(null) }}
-        schedule={schedules.find(s => s.id === openScheduleId)}
+        open={!!openScheduleId && schedules.some((s) => s.id === openScheduleId)}
+        onOpenChange={(open) => {
+          if (!open) setOpenScheduleId(null)
+        }}
+        schedule={schedules.find((s) => s.id === openScheduleId)}
       />
     </div>
   )

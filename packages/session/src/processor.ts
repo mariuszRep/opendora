@@ -41,7 +41,7 @@ const OVERFLOW_PATTERNS: RegExp[] = [
 ]
 
 function isOverflowMessage(msg: string): boolean {
-  if (OVERFLOW_PATTERNS.some(p => p.test(msg))) return true
+  if (OVERFLOW_PATTERNS.some((p) => p.test(msg))) return true
   return /^4(00|13)\s*(status code)?\s*\(no body\)/i.test(msg)
 }
 
@@ -53,12 +53,22 @@ function isOverflowMessage(msg: string): boolean {
 function classifyErrorKind(statusCode: number | undefined, message?: string): string {
   if (message && isOverflowMessage(message)) return "overflow"
   switch (statusCode) {
-    case 401: case 403: return "auth"
-    case 404: return "not_found"
-    case 400: case 413: return "invalid"
-    case 429: return "quota"
-    case 500: return "server"
-    case 502: case 503: case 529: return "unavailable"
+    case 401:
+    case 403:
+      return "auth"
+    case 404:
+      return "not_found"
+    case 400:
+    case 413:
+      return "invalid"
+    case 429:
+      return "quota"
+    case 500:
+      return "server"
+    case 502:
+    case 503:
+    case 529:
+      return "unavailable"
   }
   return "server"
 }
@@ -69,7 +79,9 @@ function classifyErrorKind(statusCode: number | undefined, message?: string): st
  * same model is definitively pointless.
  */
 function shouldSwitchImmediately(kind: string): boolean {
-  return kind === "quota" || kind === "unavailable" || kind === "not_found" || kind === "auth"
+  // Authentication is user-actionable. Never conceal it by switching the run
+  // to a different provider/model selected in a fallback group.
+  return kind === "quota" || kind === "unavailable" || kind === "not_found"
 }
 
 // Inline SessionEvents.Error reference — matches events.ts
@@ -113,7 +125,10 @@ export namespace SessionProcessor {
         const cfg = getConfig()
         const configSvc = cfg.config
         const shouldBreak = configSvc
-          ? !(await configSvc.get().then((c: any) => c.experimental?.continue_loop_on_deny === true).catch(() => false))
+          ? !(await configSvc
+              .get()
+              .then((c: any) => c.experimental?.continue_loop_on_deny === true)
+              .catch(() => false))
           : true
 
         while (true) {
@@ -339,16 +354,17 @@ export namespace SessionProcessor {
                     metadata: value.providerMetadata,
                   })
                   const rawFinishReason = value.finishReason as any
-                  const finishReason: string = (typeof rawFinishReason === "object" && rawFinishReason !== null
-                    ? rawFinishReason.unified
-                    : rawFinishReason) ?? "unknown"
+                  const finishReason: string =
+                    (typeof rawFinishReason === "object" && rawFinishReason !== null
+                      ? rawFinishReason.unified
+                      : rawFinishReason) ?? "unknown"
                   input.assistantMessage.finish = finishReason
                   input.assistantMessage.cost += usage.cost
                   input.assistantMessage.tokens = usage.tokens
-                  capturedTokens.input     += usage.tokens.input
-                  capturedTokens.output    += usage.tokens.output
+                  capturedTokens.input += usage.tokens.input
+                  capturedTokens.output += usage.tokens.output
                   capturedTokens.cacheRead += usage.tokens.cache.read
-                  capturedTokens.cacheWrite+= usage.tokens.cache.write
+                  capturedTokens.cacheWrite += usage.tokens.cache.write
                   capturedTokens.reasoning += usage.tokens.reasoning
 
                   const snapshotSvc = getConfig().snapshot
@@ -388,7 +404,7 @@ export namespace SessionProcessor {
                     })
                   }
 
-                  if (input.isOverflow && await input.isOverflow({ tokens: usage.tokens, model: input.model })) {
+                  if (input.isOverflow && (await input.isOverflow({ tokens: usage.tokens, model: input.model }))) {
                     needsCompaction = true
                   }
                   break
@@ -460,17 +476,19 @@ export namespace SessionProcessor {
             try {
               const responseHeaders = (await stream.response.catch(() => null))?.headers
               await TokenUsage.record({
-                sessionID:  input.sessionID,
-                agentID:    (input.assistantMessage as any).agent ?? undefined,
-                projectID:  getConfig().instance?.project?.id,
+                sessionID: input.sessionID,
+                agentID: (input.assistantMessage as any).agent ?? undefined,
+                projectID: getConfig().instance?.project?.id,
                 providerID: streamInput.model.providerID,
-                modelID:    streamInput.model.id,
-                purpose:    "chat",
-                tokens:     capturedTokens,
-                model:      streamInput.model,
-                headers:    responseHeaders ?? undefined,
+                modelID: streamInput.model.id,
+                purpose: "chat",
+                tokens: capturedTokens,
+                model: streamInput.model,
+                headers: responseHeaders ?? undefined,
               })
-            } catch { /* never let token tracking break the main flow */ }
+            } catch {
+              /* never let token tracking break the main flow */
+            }
           } catch (e: any) {
             // Suppress AbortError — user-initiated cancellation is not an error
             if (e instanceof DOMException && e.name === "AbortError") {
@@ -485,7 +503,8 @@ export namespace SessionProcessor {
             const statusCode = (error as any)?.data?.statusCode as number | undefined
             const apiError = error.name === "APIError" ? (error as any) : null
             const errorMessage = (error as any)?.data?.message ?? String(error)
-            const errorKind = classifyErrorKind(statusCode, errorMessage)
+            const errorKind =
+              error.name === "ProviderAuthenticationRequiredError" ? "auth" : classifyErrorKind(statusCode, errorMessage)
 
             if (errorKind === "overflow") {
               // Context overflow: trigger compaction instead of treating as a hard error.
@@ -499,15 +518,15 @@ export namespace SessionProcessor {
               // For quota errors, record token usage (partial usage counts toward the cap)
               if (errorKind === "quota") {
                 TokenUsage.record({
-                  sessionID:  input.sessionID,
-                  agentID:    (input.assistantMessage as any).agent ?? undefined,
-                  projectID:  getConfig().instance?.project?.id,
+                  sessionID: input.sessionID,
+                  agentID: (input.assistantMessage as any).agent ?? undefined,
+                  projectID: getConfig().instance?.project?.id,
                   providerID: streamInput.model.providerID,
-                  modelID:    streamInput.model.id,
-                  purpose:    "chat",
-                  tokens:     capturedTokens,
-                  model:      streamInput.model,
-                  headers:    apiError?.data?.responseHeaders ?? undefined,
+                  modelID: streamInput.model.id,
+                  purpose: "chat",
+                  tokens: capturedTokens,
+                  model: streamInput.model,
+                  headers: apiError?.data?.responseHeaders ?? undefined,
                 }).catch(() => {})
               }
 
@@ -529,28 +548,32 @@ export namespace SessionProcessor {
 
               // Report quota errors to the provider-level timeout tracker regardless of fallback
               if (errorKind === "quota") {
-                await getConfig().provider?.reportProviderTimeout?.(
-                  streamInput.model.providerID,
-                  streamInput.model.id,
-                  errorMessage,
-                  apiError?.data?.responseHeaders,
-                  apiError?.data?.responseBody,
-                  errorKind,
-                ).catch(() => {})
+                await getConfig()
+                  .provider?.reportProviderTimeout?.(
+                    streamInput.model.providerID,
+                    streamInput.model.id,
+                    errorMessage,
+                    apiError?.data?.responseHeaders,
+                    apiError?.data?.responseBody,
+                    errorKind,
+                  )
+                  .catch(() => {})
               }
 
               // Fallback group: try next slot before hard-failing.
-              if (input.fallbackGroupID) {
+              if (input.fallbackGroupID && errorKind !== "auth") {
                 const currentSlot = { providerID: streamInput.model.providerID, modelID: streamInput.model.id }
-                const result = await getConfig().provider?.reportFallbackError?.(
-                  input.fallbackGroupID,
-                  currentSlot,
-                  statusCode,
-                  errorMessage,
-                  apiError?.data?.responseHeaders,
-                  apiError?.data?.responseBody,
-                  errorKind,
-                ).catch(() => undefined)
+                const result = await getConfig()
+                  .provider?.reportFallbackError?.(
+                    input.fallbackGroupID,
+                    currentSlot,
+                    statusCode,
+                    errorMessage,
+                    apiError?.data?.responseHeaders,
+                    apiError?.data?.responseBody,
+                    errorKind,
+                  )
+                  .catch(() => undefined)
 
                 const nextSlot = result?.nextSlot ?? (result && "providerID" in result ? result : null)
                 if (nextSlot && "providerID" in nextSlot) {

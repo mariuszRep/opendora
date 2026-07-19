@@ -48,10 +48,16 @@ function createClientPartID(): string {
 }
 
 function getStoredDefaultAgent(): string | null {
-  try { return localStorage.getItem(DEFAULT_AGENT_KEY) } catch { return null }
+  try {
+    return localStorage.getItem(DEFAULT_AGENT_KEY)
+  } catch {
+    return null
+  }
 }
 function storeDefaultAgent(id: string): void {
-  try { localStorage.setItem(DEFAULT_AGENT_KEY, id) } catch { }
+  try {
+    localStorage.setItem(DEFAULT_AGENT_KEY, id)
+  } catch {}
 }
 function getStoredLastSessionByAgent(): Record<string, string> {
   try {
@@ -62,7 +68,9 @@ function getStoredLastSessionByAgent(): Record<string, string> {
   }
 }
 function storeLastSessionByAgent(map: Record<string, string>): void {
-  try { localStorage.setItem(LAST_SESSION_BY_AGENT_KEY, JSON.stringify(map)) } catch { }
+  try {
+    localStorage.setItem(LAST_SESSION_BY_AGENT_KEY, JSON.stringify(map))
+  } catch {}
 }
 
 export type UseOpendoraResult = {
@@ -86,7 +94,16 @@ export type UseOpendoraResult = {
   allPermissionRequests: Record<string, PermissionRequest[]>
   replyPermission: (requestID: string, reply: PermissionReply) => Promise<void>
   status: ChatStatus
-  sendMessage: (text: string, options?: { model?: { providerID: string; modelID: string }; fallbackGroupID?: string; agent?: string; userName?: string; files?: Array<{ type: "file"; mime: string; filename?: string; url: string }> }) => Promise<void>
+  sendMessage: (
+    text: string,
+    options?: {
+      model?: { providerID: string; modelID: string }
+      fallbackGroupID?: string
+      agent?: string
+      userName?: string
+      files?: Array<{ type: "file"; mime: string; filename?: string; url: string }>
+    },
+  ) => Promise<void>
   abort: () => void
   abortSession: (sessionID: string) => void
   compact: (model: { providerID: string; modelID: string }) => Promise<void>
@@ -238,10 +255,16 @@ export function useOpendora(opts?: {
   const [connectedProviders, setConnectedProviders] = useState<string[]>([])
   const [defaultModels, setDefaultModels] = useState<Record<string, string>>({})
   const [agents, setAgents] = useState<(Agent & { _id: string })[]>([])
-  const [fallbackActiveSlots, setFallbackActiveSlots] = useState<Record<string, { providerID: string; modelID: string }>>({})
+  const [fallbackActiveSlots, setFallbackActiveSlots] = useState<
+    Record<string, { providerID: string; modelID: string }>
+  >({})
   const [modelFilters, setModelFilters] = useState<Record<string, "all" | "free" | "none">>({})
-  const [modelGroups, setModelGroups] = useState<{ id: string; name: string; models: { providerID: string; modelID: string }[] }[]>([])
-  const [providerTimeouts, setProviderTimeouts] = useState<Record<string, import("@/lib/projectflows").ProviderTimeoutInfo>>({})
+  const [modelGroups, setModelGroups] = useState<
+    { id: string; name: string; models: { providerID: string; modelID: string }[] }[]
+  >([])
+  const [providerTimeouts, setProviderTimeouts] = useState<
+    Record<string, import("@/lib/projectflows").ProviderTimeoutInfo>
+  >({})
   const [authExpiredProviders, setAuthExpiredProviders] = useState<Record<string, boolean>>({})
   const [allAgents, setAllAgents] = useState<(Agent & { _id: string })[]>([])
   const [selectedAgent, setSelectedAgent] = useState<string>("")
@@ -256,8 +279,12 @@ export function useOpendora(opts?: {
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [activeSessions, setActiveSessions] = useState<Set<string>>(new Set())
   const [defaultAgentId, setDefaultAgentId] = useState<string | null>(() => getStoredDefaultAgent())
-  const [lastSessionByAgent, setLastSessionByAgent] = useState<Record<string, string>>(() => getStoredLastSessionByAgent())
-  const [sessionRetryStatus, setSessionRetryStatus] = useState<Record<string, { attempt: number; message: string; next: number }>>({})
+  const [lastSessionByAgent, setLastSessionByAgent] = useState<Record<string, string>>(() =>
+    getStoredLastSessionByAgent(),
+  )
+  const [sessionRetryStatus, setSessionRetryStatus] = useState<
+    Record<string, { attempt: number; message: string; next: number }>
+  >({})
 
   const selectedSessionRef = useRef<Session | null>(null)
   const pendingSessionIdRef = useRef<string | null>(null)
@@ -279,7 +306,6 @@ export function useOpendora(opts?: {
   // message.part.updated, so this must not depend on their arrival order.
   const optimisticUserMessageIdsRef = useRef(new Set<string>())
 
-
   const getAgentId = useCallback((agent: Agent & { id?: string }) => agent.id ?? agent.name, [])
 
   const refreshAgentsState = useCallback(async () => {
@@ -292,7 +318,6 @@ export function useOpendora(opts?: {
     setAgents(agentsWithId.filter((a) => !a.hidden))
     return agentsWithId
   }, [getAgentId])
-
 
   const selectedSession = sessions.find((s) => s.id === selectedSessionId) ?? null
   const sortSessionsForAgent = useCallback((agentId: string, source: Session[]) => {
@@ -352,12 +377,11 @@ export function useOpendora(opts?: {
     const existing = messageFetchRef.current.get(sessionID)
     if (existing) return existing
 
-    const request = opendora.session.messages(sessionID)
-      .finally(() => {
-        if (messageFetchRef.current.get(sessionID) === request) {
-          messageFetchRef.current.delete(sessionID)
-        }
-      })
+    const request = opendora.session.messages(sessionID).finally(() => {
+      if (messageFetchRef.current.get(sessionID) === request) {
+        messageFetchRef.current.delete(sessionID)
+      }
+    })
     messageFetchRef.current.set(sessionID, request)
     return request
   }, [])
@@ -374,9 +398,15 @@ export function useOpendora(opts?: {
     lastSessionByAgentRef.current = lastSessionByAgent
   }, [lastSessionByAgent])
 
-  useEffect(() => { sessionsRef.current = sessions }, [sessions])
-  useEffect(() => { activeSessionsRef.current = activeSessions }, [activeSessions])
-  useEffect(() => { messagesRef.current = messages }, [messages])
+  useEffect(() => {
+    sessionsRef.current = sessions
+  }, [sessions])
+  useEffect(() => {
+    activeSessionsRef.current = activeSessions
+  }, [activeSessions])
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
 
   const rememberSessionForAgent = useCallback((session: Session | null | undefined) => {
     if (!session?.agentID) return
@@ -394,10 +424,13 @@ export function useOpendora(opts?: {
 
   // Periodically refresh providers every hour to get fresh model lists
   useEffect(() => {
-    const interval = setInterval(() => {
-      refreshProviders().catch(() => {})
-      refreshProviderTimeouts().catch(() => {})
-    }, 60 * 60 * 1000) // 1 hour
+    const interval = setInterval(
+      () => {
+        refreshProviders().catch(() => {})
+        refreshProviderTimeouts().catch(() => {})
+      },
+      60 * 60 * 1000,
+    ) // 1 hour
     return () => clearInterval(interval)
   }, [refreshProviders])
 
@@ -407,7 +440,17 @@ export function useOpendora(opts?: {
 
     async function init() {
       try {
-        const [providerData, agentData, sessionData, questionData, permissionData, configData, scheduleData, sessionStatusData, timeoutData] = await Promise.all([
+        const [
+          providerData,
+          agentData,
+          sessionData,
+          questionData,
+          permissionData,
+          configData,
+          scheduleData,
+          sessionStatusData,
+          timeoutData,
+        ] = await Promise.all([
           opendora.provider.list(),
           opendora.agent.list(),
           opendora.session.list(),
@@ -415,7 +458,7 @@ export function useOpendora(opts?: {
           opendora.permission.listPending(),
           opendora.config.get(),
           opendora.schedule.list(),
-          opendora.session.status().catch(() => ({} as Record<string, { type: string }>)),
+          opendora.session.status().catch(() => ({}) as Record<string, { type: string }>),
           opendora.provider.timeout().catch(() => ({})),
         ])
         if (cancelled) return
@@ -430,7 +473,13 @@ export function useOpendora(opts?: {
           setModelFilters(configData.model_filters)
         }
         if (configData.model_groups) {
-          setModelGroups(configData.model_groups as { id: string; name: string; models: { providerID: string; modelID: string }[] }[])
+          setModelGroups(
+            configData.model_groups as {
+              id: string
+              name: string
+              models: { providerID: string; modelID: string }[]
+            }[],
+          )
         }
 
         setSchedules(scheduleData)
@@ -459,26 +508,22 @@ export function useOpendora(opts?: {
         activeSessionsRef.current = initialActive
 
         const requestedSessionID = initialRequestedSessionIdRef.current
-        const requestedSession = requestedSessionID
-          ? sorted.find((s) => s.id === requestedSessionID) ?? null
-          : null
+        const requestedSession = requestedSessionID ? (sorted.find((s) => s.id === requestedSessionID) ?? null) : null
 
         // Navigate to the requested session first; otherwise fall back to the default agent's main session.
         const storedDefault = getStoredDefaultAgent()
-        const targetAgentId = requestedSession?.agentID
-          ?? ((storedDefault && visibleAgents.some((a) => a._id === storedDefault))
+        const targetAgentId =
+          requestedSession?.agentID ??
+          (storedDefault && visibleAgents.some((a) => a._id === storedDefault)
             ? storedDefault
-            : visibleAgents[0]?._id ?? null)
+            : (visibleAgents[0]?._id ?? null))
         if (targetAgentId) {
           setSelectedAgent(targetAgentId)
           const sortedForAgent = sortSessionsForAgent(targetAgentId, sorted)
           const remembered = lastSessionByAgentRef.current[targetAgentId]
-            ? sortedForAgent.find((s) => s.id === lastSessionByAgentRef.current[targetAgentId]) ?? null
+            ? (sortedForAgent.find((s) => s.id === lastSessionByAgentRef.current[targetAgentId]) ?? null)
             : null
-          const mainSess = requestedSession
-            ?? remembered
-            ?? sortedForAgent[0]
-            ?? null
+          const mainSess = requestedSession ?? remembered ?? sortedForAgent[0] ?? null
           if (mainSess) {
             setSelectedSessionId(mainSess.id)
             selectedSessionRef.current = mainSess
@@ -509,14 +554,16 @@ export function useOpendora(opts?: {
     }
 
     init()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [getAgentId, rememberSessionForAgent, sortSessionsForAgent])
 
   useEffect(() => {
     function handleFocus() {
-      refreshProviders().catch(() => { })
-      refreshProviderTimeouts().catch(() => { })
-      refreshPendingRequests().catch(() => { })
+      refreshProviders().catch(() => {})
+      refreshProviderTimeouts().catch(() => {})
+      refreshPendingRequests().catch(() => {})
     }
 
     window.addEventListener("focus", handleFocus)
@@ -539,23 +586,29 @@ export function useOpendora(opts?: {
     // Capture id in closure so the cache write is always for the right session
     // even after the effect cleanup fires (user switched away mid-fetch).
     const fetchingForId = selectedSessionId
-    fetchSessionMessages(fetchingForId).then((msgs) => {
-      if (!cancelled) {
-        setMessages((current) => {
-          const merged = mergeFetchedMessages(current, msgs)
-          messageCacheRef.current.set(fetchingForId, merged)
-          return merged
-        })
-      } else {
-        // Effect was cancelled because the user switched sessions before the API
-        // returned.  Still populate the cache so that returning to this session
-        // is instant (no second round-trip needed).
-        if (msgs.length > 0) {
-          messageCacheRef.current.set(fetchingForId, msgs)
+    fetchSessionMessages(fetchingForId)
+      .then((msgs) => {
+        if (!cancelled) {
+          setMessages((current) => {
+            const merged = mergeFetchedMessages(current, msgs)
+            messageCacheRef.current.set(fetchingForId, merged)
+            return merged
+          })
+        } else {
+          // Effect was cancelled because the user switched sessions before the API
+          // returned.  Still populate the cache so that returning to this session
+          // is instant (no second round-trip needed).
+          if (msgs.length > 0) {
+            messageCacheRef.current.set(fetchingForId, msgs)
+          }
         }
-      }
-    }).catch((err) => { console.error("[messages] fetch failed", fetchingForId, err) })
-    return () => { cancelled = true }
+      })
+      .catch((err) => {
+        console.error("[messages] fetch failed", fetchingForId, err)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [selectedSessionId, fetchSessionMessages])
 
   useEffect(() => {
@@ -577,7 +630,7 @@ export function useOpendora(opts?: {
     if (targetSession.agentID) {
       setSelectedAgent(targetSession.agentID)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
   useEffect(() => {
@@ -594,420 +647,515 @@ export function useOpendora(opts?: {
 
   // SSE events
   useEffect(() => {
-    return opendora.events.subscribe((event: Event) => {
-      switch (event.type) {
-        case "session.created": {
-          const info = (event as { type: string; properties: { info: Session } }).properties.info
-          setSessions((prev) => {
-            if (prev.find((s) => s.id === info.id)) return prev
-            return [info, ...prev]
-          })
-          // Complete a pending selectSession call that arrived before this session was in the list
-          if (pendingSessionIdRef.current === info.id) {
-            pendingSessionIdRef.current = null
-            selectedSessionRef.current = info
-            setSelectedSessionId(info.id)
-            setStatus(activeSessionsRef.current.has(info.id) ? "streaming" : "ready")
-            setError(null)
-            if (info.agentID) setSelectedAgent(info.agentID)
-          }
-          break
-        }
-        case "session.updated": {
-          const info = (event as { type: string; properties: { info: Session } }).properties.info
-          setSessions((prev) => prev.map((s) => (s.id === info.id ? info : s)))
-          break
-        }
-        case "session.deleted": {
-          const { sessionID } = (event as { type: string; properties: { sessionID: string } }).properties
-          setSessions((prev) => prev.filter((s) => s.id !== sessionID))
-          if (selectedSessionRef.current?.id === sessionID) {
-            setSelectedSessionId(null)
-            setMessages([])
-          }
-          break
-        }
-        case "message.updated": {
-          const { info } = (event as { type: string; properties: { info: Message } }).properties
-
-          // NOTE: activeSessions is driven exclusively by `session.status` events.
-          // Message timestamps are not authoritative for loop activity — between
-          // iterations (e.g. tool calls) the assistant message completes while the
-          // loop is still running, which previously caused the side panel spinner
-          // to flicker off.
-
-          if (info.sessionID !== selectedSessionRef.current?.id) break
-          // Check before the state update so we can call setStatus outside the updater.
-          // Calling setState inside a setState updater is a React anti-pattern that can
-          // behave unreliably in Concurrent Mode.
-          const isNewIncompleteAssistant =
-            info.role === "assistant" &&
-            !(info as { time: { completed?: number } }).time.completed &&
-            !messagesRef.current.find((m) => m.info.id === info.id)
-          setMessages((prev) => {
-            const idx = prev.findIndex((m) => m.info.id === info.id)
-            if (idx === -1) return [...prev, { info, parts: [] }]
-            // The real info shares the client's optimistic message ID. Keep clearing only
-            // an optimistic message's parts until its first authoritative part arrives.
-            // This remains correct whether the info event or part event reaches us first.
-            const shouldResetParts = info.role === "user" && optimisticUserMessageIdsRef.current.has(info.id)
-            return prev.map((m, i) => (i === idx ? { ...m, info, parts: shouldResetParts ? [] : m.parts } : m))
-          })
-          if (isNewIncompleteAssistant) setStatus("streaming")
-          break
-        }
-        case "session.idle": {
-          // Deprecated: superseded by `session.status` { type: "idle" }.
-          // Kept as a no-op for older servers; the status handler below is authoritative.
-          break
-        }
-        case "session.status": {
-          const { sessionID, status } = (event as { type: string; properties: { sessionID: string; status: { type: "idle" | "busy" | "retry"; attempt?: number; message?: string; next?: number } } }).properties
-          if (status.type === "idle") {
-            setActiveSessions((prev) => {
-              if (!prev.has(sessionID)) return prev
-              const next = new Set(prev)
-              next.delete(sessionID)
-              return next
+    return opendora.events.subscribe(
+      (event: Event) => {
+        switch (event.type) {
+          case "session.created": {
+            const info = (event as { type: string; properties: { info: Session } }).properties.info
+            setSessions((prev) => {
+              if (prev.find((s) => s.id === info.id)) return prev
+              return [info, ...prev]
             })
-            questionRequestsRef.current[sessionID] = []
-            setQuestionRequests((prev) => ({ ...prev, [sessionID]: [] }))
-            setSessionRetryStatus((prev) => {
-              if (!(sessionID in prev)) return prev
-              const next = { ...prev }
-              delete next[sessionID]
-              return next
-            })
+            // Complete a pending selectSession call that arrived before this session was in the list
+            if (pendingSessionIdRef.current === info.id) {
+              pendingSessionIdRef.current = null
+              selectedSessionRef.current = info
+              setSelectedSessionId(info.id)
+              setStatus(activeSessionsRef.current.has(info.id) ? "streaming" : "ready")
+              setError(null)
+              if (info.agentID) setSelectedAgent(info.agentID)
+            }
+            break
+          }
+          case "session.updated": {
+            const info = (event as { type: string; properties: { info: Session } }).properties.info
+            setSessions((prev) => prev.map((s) => (s.id === info.id ? info : s)))
+            break
+          }
+          case "session.deleted": {
+            const { sessionID } = (event as { type: string; properties: { sessionID: string } }).properties
+            setSessions((prev) => prev.filter((s) => s.id !== sessionID))
             if (selectedSessionRef.current?.id === sessionID) {
-              setStatus("ready")
+              setSelectedSessionId(null)
+              setMessages([])
             }
-          } else if (status.type === "retry") {
-            setActiveSessions((prev) => prev.has(sessionID) ? prev : new Set(prev).add(sessionID))
-            if (selectedSessionRef.current?.id === sessionID) {
-              const retryMsg = status.message ?? "Retrying..."
-              setSessionRetryStatus((prev) => ({
-                ...prev,
-                [sessionID]: {
-                  attempt: status.attempt ?? 0,
-                  message: retryMsg,
-                  next: status.next ?? 0,
-                },
-              }))
-            }
-          } else {
-            // busy
-            setActiveSessions((prev) => prev.has(sessionID) ? prev : new Set(prev).add(sessionID))
-            // Clear any retry banner now that we're back to a normal busy loop.
-            setSessionRetryStatus((prev) => {
-              if (!(sessionID in prev)) return prev
-              const next = { ...prev }
-              delete next[sessionID]
-              return next
+            break
+          }
+          case "message.updated": {
+            const { info } = (event as { type: string; properties: { info: Message } }).properties
+
+            // NOTE: activeSessions is driven exclusively by `session.status` events.
+            // Message timestamps are not authoritative for loop activity — between
+            // iterations (e.g. tool calls) the assistant message completes while the
+            // loop is still running, which previously caused the side panel spinner
+            // to flicker off.
+
+            if (info.sessionID !== selectedSessionRef.current?.id) break
+            // Check before the state update so we can call setStatus outside the updater.
+            // Calling setState inside a setState updater is a React anti-pattern that can
+            // behave unreliably in Concurrent Mode.
+            const isNewIncompleteAssistant =
+              info.role === "assistant" &&
+              !(info as { time: { completed?: number } }).time.completed &&
+              !messagesRef.current.find((m) => m.info.id === info.id)
+            setMessages((prev) => {
+              const idx = prev.findIndex((m) => m.info.id === info.id)
+              if (idx === -1) return [...prev, { info, parts: [] }]
+              // The real info shares the client's optimistic message ID. Keep clearing only
+              // an optimistic message's parts until its first authoritative part arrives.
+              // This remains correct whether the info event or part event reaches us first.
+              const shouldResetParts = info.role === "user" && optimisticUserMessageIdsRef.current.has(info.id)
+              return prev.map((m, i) => (i === idx ? { ...m, info, parts: shouldResetParts ? [] : m.parts } : m))
             })
-            if (selectedSessionRef.current?.id === sessionID && statusRef.current !== "streaming") {
-              setStatus("streaming")
-            }
+            if (isNewIncompleteAssistant) setStatus("streaming")
+            break
           }
-          break
-        }
-        case "session.error": {
-          const { sessionID, error } = (event as { type: string; properties: { sessionID?: string; error?: { name: string; message: string; data?: Record<string, unknown> } } }).properties
-          if (sessionID && selectedSessionRef.current?.id === sessionID && error) {
-            const msg = (error.data as { message?: string })?.message ?? error.message
-            notify?.({ type: "error", title: "Session error", message: msg }) ?? toast.error(msg, { id: `error-${sessionID}`, duration: 8000 })
-            setStatus("error")
-            setError(msg)
+          case "session.idle": {
+            // Deprecated: superseded by `session.status` { type: "idle" }.
+            // Kept as a no-op for older servers; the status handler below is authoritative.
+            break
           }
-          break
-        }
-        case "message.part.updated": {
-          const { part } = (event as { type: string; properties: { part: Part } }).properties
-          if (part.sessionID !== selectedSessionRef.current?.id) break
-          deltaSeqRef.current.delete(`${part.id}:text`)
-          setMessages((prev) => {
-            const msgIdx = prev.findIndex((m) => m.info.id === part.messageID)
-            if (msgIdx === -1) return prev
-            const m = prev[msgIdx]
-            // Replace, rather than append to, the client-created text part. This handles
-            // the valid case where a part event is received before its message.updated
-            // event; otherwise the same user text is rendered twice.
-            const replacesOptimisticParts =
-              m.info.role === "user" && optimisticUserMessageIdsRef.current.delete(part.messageID)
-            const idx = m.parts.findIndex((p) => p.id === part.id)
-            const newParts = replacesOptimisticParts
-              ? [part]
-              : idx === -1
-                ? [...m.parts, part]
-                : m.parts.map((p, i) => (i === idx ? part : p))
-            const next = prev.slice()
-            next[msgIdx] = { ...m, parts: newParts }
-            return next
-          })
-          break
-        }
-        case "message.part.delta": {
-          const { sessionID, messageID, partID, field, delta, seq } = (event as {
-            type: string
-            properties: { sessionID: string; messageID: string; partID: string; field: string; delta: string; seq?: number }
-          }).properties
-          if (sessionID !== selectedSessionRef.current?.id) break
-          if (seq !== undefined) {
-            const seqKey = `${partID}:${field}`
-            const last = deltaSeqRef.current.get(seqKey) ?? 0
-            if (seq <= last) break
-            deltaSeqRef.current.set(seqKey, seq)
-          }
-          setMessages((prev) => {
-            const msgIdx = prev.findIndex((m) => m.info.id === messageID)
-            if (msgIdx === -1) return prev
-            const m = prev[msgIdx]
-            const idx = m.parts.findIndex((p) => p.id === partID)
-            if (idx === -1) return prev
-            const part = m.parts[idx] as Part & Record<string, unknown>
-            const existing = typeof part[field] === "string" ? (part[field] as string) : ""
-            const newPart = { ...part, [field]: existing + delta }
-            const newParts = m.parts.map((p, i) => (i === idx ? newPart : p))
-            const next = prev.slice()
-            next[msgIdx] = { ...m, parts: newParts }
-            return next
-          })
-          break
-        }
-        case "session.fallback.switched": {
-          const { groupID, newSlot, previousSlot } = (event as { type: string; properties: { groupID: string; previousSlot: { providerID: string; modelID: string }; newSlot: { providerID: string; modelID: string } } }).properties
-          setFallbackActiveSlots((prev) => ({ ...prev, [groupID]: newSlot }))
-          notify
-            ? notify({ type: "warning", title: `${previousSlot.providerID} failed`, message: `Switched to ${newSlot.providerID}` })
-            : toast.warning(`${previousSlot.providerID} failed — switched to ${newSlot.providerID}`, { duration: 5000 })
-          break
-        }
-        case "provider.timeout": {
-          const { providerID, reason, resetInSeconds } = (event as { type: string; properties: { providerID: string; reason: string; resetInSeconds: number; failedModels: string[] } }).properties
-          const failedModels: string[] = (event as any).properties.failedModels ?? []
-          const until = Date.now() + resetInSeconds * 1000
-          setProviderTimeouts((prev) => ({
-            ...prev,
-            [providerID]: {
-              timedOut: true,
-              until,
-              reason,
-              resetInSeconds,
-              failedModels,
-              // Per-model details will be populated on next REST poll;
-              // seed with provider-wide until time for all failed models
-              modelCooldowns: Object.fromEntries(
-                failedModels.map((mid) => [
-                  mid,
-                  { until, resetInSeconds, reason, kind: "quota" },
-                ]),
-              ),
-            },
-          }))
-          notify
-            ? notify({ type: "provider_timeout", title: `${providerID} timed out`, message: reason, providerID })
-            : toast.warning(`${providerID} timed out: ${reason}`, { duration: 8000 })
-          break
-        }
-        case "provider.recovered": {
-          const { providerID } = (event as { type: string; properties: { providerID: string } }).properties
-          setProviderTimeouts((prev) => {
-            const next = { ...prev }
-            delete next[providerID]
-            return next
-          })
-          setAuthExpiredProviders((prev) => {
-            const next = { ...prev }
-            delete next[providerID]
-            return next
-          })
-          notify
-            ? notify({ type: "provider_recovered", title: `${providerID} recovered`, message: "Provider is now available", providerID })
-            : toast.success(`${providerID} recovered`, { duration: 4000 })
-          break
-        }
-        case "question.asked": {
-          const request = event.properties as QuestionRequest
-          let isNew = false
-          setQuestionRequests((prev) => {
-            const existing = prev[request.sessionID] ?? []
-            const idx = existing.findIndex((item) => item.id === request.id)
-            isNew = idx === -1
-            const next = idx === -1
-              ? [...existing, request]
-              : existing.map((item, index) => (index === idx ? request : item))
-            questionRequestsRef.current = { ...prev, [request.sessionID]: next }
-            return { ...prev, [request.sessionID]: next }
-          })
-          if (isNew && notify) {
-            const firstQuestion = request.questions[0]
-            const targetSessionID = request.sessionID
-            notify({
-              type: "question_request",
-              title: firstQuestion?.header ?? "Question",
-              message: firstQuestion?.question ?? "The agent needs your input",
-              questionRequestID: request.id,
-              sessionID: targetSessionID,
-              action: {
-                label: "View",
-                href: `/dashboard?session=${targetSessionID}`,
-              },
-            })
-          }
-          break
-        }
-        case "question.replied":
-        case "question.rejected": {
-          const { sessionID, requestID } = event.properties as { sessionID: string; requestID: string }
-          setQuestionRequests((prev) => {
-            const existing = prev[sessionID] ?? []
-            const filtered = existing.filter((item) => item.id !== requestID)
-            questionRequestsRef.current = {
-              ...prev,
-              [sessionID]: filtered,
-            }
-            return {
-              ...prev,
-              [sessionID]: filtered,
-            }
-          })
-          removeByQuestionID?.(requestID)
-          dismissQuestionToast?.(requestID)
-          break
-        }
-        case "permission.asked": {
-          const request = event.properties as PermissionRequest
-          let isNew = false
-          setPermissionRequests((prev) => {
-            const existing = prev[request.session_id] ?? []
-            const idx = existing.findIndex((item) => item.id === request.id)
-            isNew = idx === -1
-            const next = idx === -1
-              ? [...existing, request]
-              : existing.map((item, index) => (index === idx ? request : item))
-            return { ...prev, [request.session_id]: next }
-          })
-          if (isNew && notify) {
-            const title = describePermissionTitle(request)
-            const message = describePermissionMessage(request)
-            const targetSessionID = request.session_id
-            notify({
-              type: "permission_request",
-              title,
-              message,
-              permissionRequestID: request.id,
-              sessionID: targetSessionID,
-              action: {
-                label: "View",
-                href: `/dashboard?session=${targetSessionID}`,
-              },
-            })
-          }
-          break
-        }
-        case "permission.replied": {
-          const { session_id, request_id } = event.properties as { session_id: string; request_id: string }
-          setPermissionRequests((prev) => {
-            const existing = prev[session_id] ?? []
-            return {
-              ...prev,
-              [session_id]: existing.filter((item) => item.id !== request_id),
-            }
-          })
-          removeByPermissionID?.(request_id)
-          dismissPermissionToast?.(request_id)
-          break
-        }
-        case "permission.rules.updated": {
-          // Trigger blade refresh if it is currently open — handled via refreshRef in the sheet.
-          // No state update needed here; the sheet itself listens to this event via its refreshRef.
-          break
-        }
-        case "provider.auth.expired": {
-          const { providerID, providerName } = (event as { type: string; properties: { providerID: string; providerName: string } }).properties
-          setAuthExpiredProviders((prev) => ({ ...prev, [providerID]: true }))
-          notify
-            ? notify({ type: "error", title: `${providerName} authentication expired`, message: "Go to Settings → Providers to re-authenticate.", action: { label: "Settings", href: "/dashboard/settings/providers" } })
-            : toast.error(`${providerName} authentication expired`, {
-                description: "Go to Settings → Providers to re-authenticate.",
-                duration: 10000,
-                action: { label: "Settings", onClick: () => router.push("/dashboard/settings/providers") },
+          case "session.status": {
+            const { sessionID, status } = (
+              event as {
+                type: string
+                properties: {
+                  sessionID: string
+                  status: { type: "idle" | "busy" | "retry"; attempt?: number; message?: string; next?: number }
+                }
+              }
+            ).properties
+            if (status.type === "idle") {
+              setActiveSessions((prev) => {
+                if (!prev.has(sessionID)) return prev
+                const next = new Set(prev)
+                next.delete(sessionID)
+                return next
               })
-          break
-        }
-        case "memory.write": {
-          const p = (event as { type: string; properties: { sessionID: string; agentID: string; callID?: string; directory?: string; name: string; description: string; scope: string; action: string } }).properties
-          if (p.directory) {
-            notify?.({
-              type: "info",
-              title: `Memory ${p.action}: ${p.name}`,
-              message: p.description,
-              duration: 8000,
-              memoryDelete: { directory: p.directory, name: p.name, scope: p.scope, agentID: p.agentID, callID: p.callID },
+              questionRequestsRef.current[sessionID] = []
+              setQuestionRequests((prev) => ({ ...prev, [sessionID]: [] }))
+              setSessionRetryStatus((prev) => {
+                if (!(sessionID in prev)) return prev
+                const next = { ...prev }
+                delete next[sessionID]
+                return next
+              })
+              if (selectedSessionRef.current?.id === sessionID) {
+                setStatus("ready")
+              }
+            } else if (status.type === "retry") {
+              setActiveSessions((prev) => (prev.has(sessionID) ? prev : new Set(prev).add(sessionID)))
+              if (selectedSessionRef.current?.id === sessionID) {
+                const retryMsg = status.message ?? "Retrying..."
+                setSessionRetryStatus((prev) => ({
+                  ...prev,
+                  [sessionID]: {
+                    attempt: status.attempt ?? 0,
+                    message: retryMsg,
+                    next: status.next ?? 0,
+                  },
+                }))
+              }
+            } else {
+              // busy
+              setActiveSessions((prev) => (prev.has(sessionID) ? prev : new Set(prev).add(sessionID)))
+              // Clear any retry banner now that we're back to a normal busy loop.
+              setSessionRetryStatus((prev) => {
+                if (!(sessionID in prev)) return prev
+                const next = { ...prev }
+                delete next[sessionID]
+                return next
+              })
+              if (selectedSessionRef.current?.id === sessionID && statusRef.current !== "streaming") {
+                setStatus("streaming")
+              }
+            }
+            break
+          }
+          case "session.error": {
+            const { sessionID, error } = (
+              event as {
+                type: string
+                properties: {
+                  sessionID?: string
+                  error?: { name: string; message: string; data?: Record<string, unknown> }
+                }
+              }
+            ).properties
+            if (sessionID && selectedSessionRef.current?.id === sessionID && error) {
+              const msg = (error.data as { message?: string })?.message ?? error.message
+              notify?.({ type: "error", title: "Session error", message: msg }) ??
+                toast.error(msg, { id: `error-${sessionID}`, duration: 8000 })
+              setStatus("error")
+              setError(msg)
+            }
+            break
+          }
+          case "message.part.updated": {
+            const { part } = (event as { type: string; properties: { part: Part } }).properties
+            if (part.sessionID !== selectedSessionRef.current?.id) break
+            deltaSeqRef.current.delete(`${part.id}:text`)
+            setMessages((prev) => {
+              const msgIdx = prev.findIndex((m) => m.info.id === part.messageID)
+              if (msgIdx === -1) return prev
+              const m = prev[msgIdx]
+              // Replace, rather than append to, the client-created text part. This handles
+              // the valid case where a part event is received before its message.updated
+              // event; otherwise the same user text is rendered twice.
+              const replacesOptimisticParts =
+                m.info.role === "user" && optimisticUserMessageIdsRef.current.delete(part.messageID)
+              const idx = m.parts.findIndex((p) => p.id === part.id)
+              const newParts = replacesOptimisticParts
+                ? [part]
+                : idx === -1
+                  ? [...m.parts, part]
+                  : m.parts.map((p, i) => (i === idx ? part : p))
+              const next = prev.slice()
+              next[msgIdx] = { ...m, parts: newParts }
+              return next
             })
+            break
           }
-          break
+          case "message.part.delta": {
+            const { sessionID, messageID, partID, field, delta, seq } = (
+              event as {
+                type: string
+                properties: {
+                  sessionID: string
+                  messageID: string
+                  partID: string
+                  field: string
+                  delta: string
+                  seq?: number
+                }
+              }
+            ).properties
+            if (sessionID !== selectedSessionRef.current?.id) break
+            if (seq !== undefined) {
+              const seqKey = `${partID}:${field}`
+              const last = deltaSeqRef.current.get(seqKey) ?? 0
+              if (seq <= last) break
+              deltaSeqRef.current.set(seqKey, seq)
+            }
+            setMessages((prev) => {
+              const msgIdx = prev.findIndex((m) => m.info.id === messageID)
+              if (msgIdx === -1) return prev
+              const m = prev[msgIdx]
+              const idx = m.parts.findIndex((p) => p.id === partID)
+              if (idx === -1) return prev
+              const part = m.parts[idx] as Part & Record<string, unknown>
+              const existing = typeof part[field] === "string" ? (part[field] as string) : ""
+              const newPart = { ...part, [field]: existing + delta }
+              const newParts = m.parts.map((p, i) => (i === idx ? newPart : p))
+              const next = prev.slice()
+              next[msgIdx] = { ...m, parts: newParts }
+              return next
+            })
+            break
+          }
+          case "session.fallback.switched": {
+            const { groupID, newSlot, previousSlot } = (
+              event as {
+                type: string
+                properties: {
+                  groupID: string
+                  previousSlot: { providerID: string; modelID: string }
+                  newSlot: { providerID: string; modelID: string }
+                }
+              }
+            ).properties
+            setFallbackActiveSlots((prev) => ({ ...prev, [groupID]: newSlot }))
+            notify
+              ? notify({
+                  type: "warning",
+                  title: `${previousSlot.providerID} failed`,
+                  message: `Switched to ${newSlot.providerID}`,
+                })
+              : toast.warning(`${previousSlot.providerID} failed — switched to ${newSlot.providerID}`, {
+                  duration: 5000,
+                })
+            break
+          }
+          case "provider.timeout": {
+            const { providerID, reason, resetInSeconds } = (
+              event as {
+                type: string
+                properties: { providerID: string; reason: string; resetInSeconds: number; failedModels: string[] }
+              }
+            ).properties
+            const failedModels: string[] = (event as any).properties.failedModels ?? []
+            const until = Date.now() + resetInSeconds * 1000
+            setProviderTimeouts((prev) => ({
+              ...prev,
+              [providerID]: {
+                timedOut: true,
+                until,
+                reason,
+                resetInSeconds,
+                failedModels,
+                // Per-model details will be populated on next REST poll;
+                // seed with provider-wide until time for all failed models
+                modelCooldowns: Object.fromEntries(
+                  failedModels.map((mid) => [mid, { until, resetInSeconds, reason, kind: "quota" }]),
+                ),
+              },
+            }))
+            notify
+              ? notify({ type: "provider_timeout", title: `${providerID} timed out`, message: reason, providerID })
+              : toast.warning(`${providerID} timed out: ${reason}`, { duration: 8000 })
+            break
+          }
+          case "provider.recovered": {
+            const { providerID } = (event as { type: string; properties: { providerID: string } }).properties
+            setProviderTimeouts((prev) => {
+              const next = { ...prev }
+              delete next[providerID]
+              return next
+            })
+            setAuthExpiredProviders((prev) => {
+              const next = { ...prev }
+              delete next[providerID]
+              return next
+            })
+            notify
+              ? notify({
+                  type: "provider_recovered",
+                  title: `${providerID} recovered`,
+                  message: "Provider is now available",
+                  providerID,
+                })
+              : toast.success(`${providerID} recovered`, { duration: 4000 })
+            break
+          }
+          case "question.asked": {
+            const request = event.properties as QuestionRequest
+            let isNew = false
+            setQuestionRequests((prev) => {
+              const existing = prev[request.sessionID] ?? []
+              const idx = existing.findIndex((item) => item.id === request.id)
+              isNew = idx === -1
+              const next =
+                idx === -1 ? [...existing, request] : existing.map((item, index) => (index === idx ? request : item))
+              questionRequestsRef.current = { ...prev, [request.sessionID]: next }
+              return { ...prev, [request.sessionID]: next }
+            })
+            if (isNew && notify) {
+              const firstQuestion = request.questions[0]
+              const targetSessionID = request.sessionID
+              notify({
+                type: "question_request",
+                title: firstQuestion?.header ?? "Question",
+                message: firstQuestion?.question ?? "The agent needs your input",
+                questionRequestID: request.id,
+                sessionID: targetSessionID,
+                action: {
+                  label: "View",
+                  href: `/dashboard?session=${targetSessionID}`,
+                },
+              })
+            }
+            break
+          }
+          case "question.replied":
+          case "question.rejected": {
+            const { sessionID, requestID } = event.properties as { sessionID: string; requestID: string }
+            setQuestionRequests((prev) => {
+              const existing = prev[sessionID] ?? []
+              const filtered = existing.filter((item) => item.id !== requestID)
+              questionRequestsRef.current = {
+                ...prev,
+                [sessionID]: filtered,
+              }
+              return {
+                ...prev,
+                [sessionID]: filtered,
+              }
+            })
+            removeByQuestionID?.(requestID)
+            dismissQuestionToast?.(requestID)
+            break
+          }
+          case "permission.asked": {
+            const request = event.properties as PermissionRequest
+            let isNew = false
+            setPermissionRequests((prev) => {
+              const existing = prev[request.session_id] ?? []
+              const idx = existing.findIndex((item) => item.id === request.id)
+              isNew = idx === -1
+              const next =
+                idx === -1 ? [...existing, request] : existing.map((item, index) => (index === idx ? request : item))
+              return { ...prev, [request.session_id]: next }
+            })
+            if (isNew && notify) {
+              const title = describePermissionTitle(request)
+              const message = describePermissionMessage(request)
+              const targetSessionID = request.session_id
+              notify({
+                type: "permission_request",
+                title,
+                message,
+                permissionRequestID: request.id,
+                sessionID: targetSessionID,
+                action: {
+                  label: "View",
+                  href: `/dashboard?session=${targetSessionID}`,
+                },
+              })
+            }
+            break
+          }
+          case "permission.replied": {
+            const { session_id, request_id } = event.properties as { session_id: string; request_id: string }
+            setPermissionRequests((prev) => {
+              const existing = prev[session_id] ?? []
+              return {
+                ...prev,
+                [session_id]: existing.filter((item) => item.id !== request_id),
+              }
+            })
+            removeByPermissionID?.(request_id)
+            dismissPermissionToast?.(request_id)
+            break
+          }
+          case "permission.rules.updated": {
+            // Trigger blade refresh if it is currently open — handled via refreshRef in the sheet.
+            // No state update needed here; the sheet itself listens to this event via its refreshRef.
+            break
+          }
+          case "provider.auth.expired": {
+            const { providerID, providerName } = (
+              event as { type: string; properties: { providerID: string; providerName: string } }
+            ).properties
+            setAuthExpiredProviders((prev) => ({ ...prev, [providerID]: true }))
+            notify
+              ? notify({
+                  type: "error",
+                  title: `${providerName} authentication expired`,
+                  message: "Go to Settings → Providers to re-authenticate.",
+                  action: { label: "Settings", href: "/dashboard/settings/providers" },
+                })
+              : toast.error(`${providerName} authentication expired`, {
+                  description: "Go to Settings → Providers to re-authenticate.",
+                  duration: 10000,
+                  action: { label: "Settings", onClick: () => router.push("/dashboard/settings/providers") },
+                })
+            break
+          }
+          case "provider.recovered": {
+            const { providerID } = (event as { type: string; properties: { providerID: string } }).properties
+            setAuthExpiredProviders((prev) => {
+              const next = { ...prev }
+              delete next[providerID]
+              return next
+            })
+            refreshProviders().catch(() => {})
+            break
+          }
+          case "memory.write": {
+            const p = (
+              event as {
+                type: string
+                properties: {
+                  sessionID: string
+                  agentID: string
+                  callID?: string
+                  directory?: string
+                  name: string
+                  description: string
+                  scope: string
+                  action: string
+                }
+              }
+            ).properties
+            if (p.directory) {
+              notify?.({
+                type: "info",
+                title: `Memory ${p.action}: ${p.name}`,
+                message: p.description,
+                duration: 8000,
+                memoryDelete: {
+                  directory: p.directory,
+                  name: p.name,
+                  scope: p.scope,
+                  agentID: p.agentID,
+                  callID: p.callID,
+                },
+              })
+            }
+            break
+          }
         }
-      }
-    }, () => {
-      // SSE reconnected — reload active sessions so spinners reflect true server state,
-      // and re-fetch the current session's messages: anything that streamed to
-      // completion while the connection was down (e.g. a backend restart mid-reply)
-      // never reached us as SSE deltas and would otherwise stay stale until a full
-      // page reload.
-      opendora.session.status().then((statuses) => {
-        const activeIds = new Set(
-          Object.entries(statuses)
-            .filter(([, s]) => s.type !== "idle")
-            .map(([id]) => id),
-        )
-        setActiveSessions(activeIds)
-        activeSessionsRef.current = activeIds
-        const currentId = selectedSessionRef.current?.id
-        if (currentId) {
-          setStatus((prev) => {
-            if (prev !== "streaming" && prev !== "submitted") return prev
-            return activeIds.has(currentId) ? "streaming" : "ready"
+      },
+      () => {
+        // SSE reconnected — reload active sessions so spinners reflect true server state,
+        // and re-fetch the current session's messages: anything that streamed to
+        // completion while the connection was down (e.g. a backend restart mid-reply)
+        // never reached us as SSE deltas and would otherwise stay stale until a full
+        // page reload.
+        opendora.session
+          .status()
+          .then((statuses) => {
+            const activeIds = new Set(
+              Object.entries(statuses)
+                .filter(([, s]) => s.type !== "idle")
+                .map(([id]) => id),
+            )
+            setActiveSessions(activeIds)
+            activeSessionsRef.current = activeIds
+            const currentId = selectedSessionRef.current?.id
+            if (currentId) {
+              setStatus((prev) => {
+                if (prev !== "streaming" && prev !== "submitted") return prev
+                return activeIds.has(currentId) ? "streaming" : "ready"
+              })
+            }
           })
+          .catch(() => {})
+        const resyncId = selectedSessionRef.current?.id
+        if (resyncId) {
+          fetchSessionMessages(resyncId)
+            .then((msgs) => {
+              if (selectedSessionRef.current?.id !== resyncId) {
+                if (msgs.length > 0) messageCacheRef.current.set(resyncId, msgs)
+                return
+              }
+              setMessages((current) => {
+                const merged = mergeFetchedMessages(current, msgs)
+                messageCacheRef.current.set(resyncId, merged)
+                return merged
+              })
+            })
+            .catch(() => {})
         }
-      }).catch(() => {})
-      const resyncId = selectedSessionRef.current?.id
-      if (resyncId) {
-        fetchSessionMessages(resyncId).then((msgs) => {
-          if (selectedSessionRef.current?.id !== resyncId) {
-            if (msgs.length > 0) messageCacheRef.current.set(resyncId, msgs)
-            return
-          }
-          setMessages((current) => {
-            const merged = mergeFetchedMessages(current, msgs)
-            messageCacheRef.current.set(resyncId, merged)
-            return merged
-          })
-        }).catch(() => {})
-      }
-      // Only navigate to the default agent if nothing is selected (cold start / first open).
-      if (selectedSessionRef.current) return
-      const defaultId = getStoredDefaultAgent()
-      if (defaultId) {
-        setSelectedAgent(defaultId)
-        opendora.agent.mainSession(defaultId).then((session) => {
-          if (session?.id && !selectedSessionRef.current) {
-            setMessages([])
-            setSelectedSessionId(session.id)
-            selectedSessionRef.current = session
-          }
-        }).catch(() => {
-          if (selectedSessionRef.current) return
-          setSessions((prev) => {
-            const fallback = prev.find((s) => s.agentID === defaultId && s.sessionType === "role")
-              ?? prev.find((s) => s.agentID === defaultId)
-              ?? null
-            setSelectedSessionId(fallback?.id ?? null)
-            selectedSessionRef.current = fallback
-            return prev
-          })
-        })
-      }
-    })
+        // Only navigate to the default agent if nothing is selected (cold start / first open).
+        if (selectedSessionRef.current) return
+        const defaultId = getStoredDefaultAgent()
+        if (defaultId) {
+          setSelectedAgent(defaultId)
+          opendora.agent
+            .mainSession(defaultId)
+            .then((session) => {
+              if (session?.id && !selectedSessionRef.current) {
+                setMessages([])
+                setSelectedSessionId(session.id)
+                selectedSessionRef.current = session
+              }
+            })
+            .catch(() => {
+              if (selectedSessionRef.current) return
+              setSessions((prev) => {
+                const fallback =
+                  prev.find((s) => s.agentID === defaultId && s.sessionType === "role") ??
+                  prev.find((s) => s.agentID === defaultId) ??
+                  null
+                setSelectedSessionId(fallback?.id ?? null)
+                selectedSessionRef.current = fallback
+                return prev
+              })
+            })
+        }
+      },
+    )
   }, [])
 
   const replyQuestion = useCallback(async (requestID: string, answers: QuestionAnswer[]) => {
@@ -1018,91 +1166,108 @@ export function useOpendora(opts?: {
     await opendora.question.reject(requestID)
   }, [])
 
-  const selectSession = useCallback((id: string, agentIdHint?: string) => {
-    // Guard: re-clicking the currently selected session should not clear messages.
-    if (selectedSessionRef.current?.id === id) {
-      // If messages somehow ended up empty (e.g. after a failed fetch), restore
-      // from cache or re-fetch so the user never sees a permanently blank chat.
-      if (messagesRef.current.length === 0) {
-        const cached = messageCacheRef.current.get(id)
-        if (cached && cached.length > 0) {
-          setMessages(cached)
-        } else {
-          fetchSessionMessages(id).then((msgs) => {
-            if (msgs.length > 0) setMessages(msgs)
-          }).catch(() => {})
+  const selectSession = useCallback(
+    (id: string, agentIdHint?: string) => {
+      // Guard: re-clicking the currently selected session should not clear messages.
+      if (selectedSessionRef.current?.id === id) {
+        // If messages somehow ended up empty (e.g. after a failed fetch), restore
+        // from cache or re-fetch so the user never sees a permanently blank chat.
+        if (messagesRef.current.length === 0) {
+          const cached = messageCacheRef.current.get(id)
+          if (cached && cached.length > 0) {
+            setMessages(cached)
+          } else {
+            fetchSessionMessages(id)
+              .then((msgs) => {
+                if (msgs.length > 0) setMessages(msgs)
+              })
+              .catch(() => {})
+          }
         }
+        return
       }
-      return
-    }
 
-    // Save current session messages to cache — only when non-empty to avoid
-    // overwriting a valid cache with the blank state from a still-pending fetch.
-    if (selectedSessionRef.current?.id && messagesRef.current.length > 0) {
-      messageCacheRef.current.set(selectedSessionRef.current.id, messagesRef.current)
-    }
+      // Save current session messages to cache — only when non-empty to avoid
+      // overwriting a valid cache with the blank state from a still-pending fetch.
+      if (selectedSessionRef.current?.id && messagesRef.current.length > 0) {
+        messageCacheRef.current.set(selectedSessionRef.current.id, messagesRef.current)
+      }
 
-    // Update ref immediately so the URL sync effect doesn't fire an extra router.replace
-    const session = sessionsRef.current.find((s) => s.id === id) ?? null
-    if (!session) {
-      // Session not yet in the list (SSE hasn't arrived). Set a stub with just
-      // the id so the URL→state sync guard (selectedSessionRef.current?.id) still
-      // matches and doesn't revert back to the previously selected session.
-      // The session.created SSE handler upgrades this to the real object.
-      selectedSessionRef.current = (agentIdHint ? { id, agentID: agentIdHint } : { id }) as Session
-      pendingSessionIdRef.current = id
-    } else {
-      selectedSessionRef.current = session
-      pendingSessionIdRef.current = null
-    }
+      // Update ref immediately so the URL sync effect doesn't fire an extra router.replace
+      const session = sessionsRef.current.find((s) => s.id === id) ?? null
+      if (!session) {
+        // Session not yet in the list (SSE hasn't arrived). Set a stub with just
+        // the id so the URL→state sync guard (selectedSessionRef.current?.id) still
+        // matches and doesn't revert back to the previously selected session.
+        // The session.created SSE handler upgrades this to the real object.
+        selectedSessionRef.current = (agentIdHint ? { id, agentID: agentIdHint } : { id }) as Session
+        pendingSessionIdRef.current = id
+      } else {
+        selectedSessionRef.current = session
+        pendingSessionIdRef.current = null
+      }
 
-    // Show cached messages immediately (stale-while-revalidate) so the chat
-    // area never flashes blank when switching between previously visited sessions.
-    const cachedMessages = messageCacheRef.current.get(id)
-    setMessages(cachedMessages ?? [])
-    setSelectedSessionId(id)
-    setStatus(activeSessionsRef.current.has(id) ? "streaming" : "ready")
-    setError(null)
-    // Use the resolved session's agent if known, otherwise honor the hint so the
-    // agent tab updates eagerly even before the new session arrives via SSE.
-    const agentForSession = session?.agentID ?? agentIdHint
-    if (agentForSession) setSelectedAgent(agentForSession)
-    rememberSessionForAgent(session)
-    // Only navigate to /dashboard when not already there; the URL sync effect
-    // handles updating the ?session= param when already on /dashboard.
-    if (pathname !== "/dashboard") {
-      router.push(`/dashboard?session=${id}`, { scroll: false })
-    }
-  }, [rememberSessionForAgent, router, pathname, fetchSessionMessages])
-
-  const createSession = useCallback(async (sessionType?: SessionType, agentID?: string): Promise<string> => {
-    const effectiveAgentID = agentID !== undefined ? agentID : selectedAgent
-    try {
-      const session = await opendora.session.create({
-        sessionType: sessionType ?? "scope",
-        ...(effectiveAgentID ? { agentID: effectiveAgentID } : {}),
-      })
-      setSessions((prev) => {
-        if (prev.find((s) => s.id === session.id)) return prev
-        return [session, ...prev]
-      })
-      if (effectiveAgentID) setSelectedAgent(effectiveAgentID)
-      setSelectedSessionId(session.id)
-      router.push(`/dashboard?session=${session.id}`, { scroll: false })
-      // Update ref immediately to avoid race condition
-      selectedSessionRef.current = session
-      setMessages([])
-      setStatus("ready")
+      // Show cached messages immediately (stale-while-revalidate) so the chat
+      // area never flashes blank when switching between previously visited sessions.
+      const cachedMessages = messageCacheRef.current.get(id)
+      setMessages(cachedMessages ?? [])
+      setSelectedSessionId(id)
+      setStatus(activeSessionsRef.current.has(id) ? "streaming" : "ready")
       setError(null)
-      return session.id
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-      throw err
-    }
-  }, [selectedAgent, router])
+      // Use the resolved session's agent if known, otherwise honor the hint so the
+      // agent tab updates eagerly even before the new session arrives via SSE.
+      const agentForSession = session?.agentID ?? agentIdHint
+      if (agentForSession) setSelectedAgent(agentForSession)
+      rememberSessionForAgent(session)
+      // Only navigate to /dashboard when not already there; the URL sync effect
+      // handles updating the ?session= param when already on /dashboard.
+      if (pathname !== "/dashboard") {
+        router.push(`/dashboard?session=${id}`, { scroll: false })
+      }
+    },
+    [rememberSessionForAgent, router, pathname, fetchSessionMessages],
+  )
+
+  const createSession = useCallback(
+    async (sessionType?: SessionType, agentID?: string): Promise<string> => {
+      const effectiveAgentID = agentID !== undefined ? agentID : selectedAgent
+      try {
+        const session = await opendora.session.create({
+          sessionType: sessionType ?? "scope",
+          ...(effectiveAgentID ? { agentID: effectiveAgentID } : {}),
+        })
+        setSessions((prev) => {
+          if (prev.find((s) => s.id === session.id)) return prev
+          return [session, ...prev]
+        })
+        if (effectiveAgentID) setSelectedAgent(effectiveAgentID)
+        setSelectedSessionId(session.id)
+        router.push(`/dashboard?session=${session.id}`, { scroll: false })
+        // Update ref immediately to avoid race condition
+        selectedSessionRef.current = session
+        setMessages([])
+        setStatus("ready")
+        setError(null)
+        return session.id
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err))
+        throw err
+      }
+    },
+    [selectedAgent, router],
+  )
 
   const sendMessage = useCallback(
-    async (text: string, options?: { model?: { providerID: string; modelID: string }; fallbackGroupID?: string; agent?: string; userName?: string; files?: Array<{ type: "file"; mime: string; filename?: string; url: string }> }) => {
+    async (
+      text: string,
+      options?: {
+        model?: { providerID: string; modelID: string }
+        fallbackGroupID?: string
+        agent?: string
+        userName?: string
+        files?: Array<{ type: "file"; mime: string; filename?: string; url: string }>
+      },
+    ) => {
       const session = selectedSessionRef.current
       if (!session) return
       const queued = statusRef.current !== "ready"
@@ -1141,10 +1306,9 @@ export function useOpendora(opts?: {
       ])
 
       try {
-        const parts: Array<{ type: "text"; text: string } | { type: "file"; mime: string; filename?: string; url: string }> = [
-          { type: "text", text },
-          ...(options?.files ?? []),
-        ]
+        const parts: Array<
+          { type: "text"; text: string } | { type: "file"; mime: string; filename?: string; url: string }
+        > = [{ type: "text", text }, ...(options?.files ?? [])]
         await opendora.session.promptAsync(session.id, {
           messageID: optimisticId,
           parts,
@@ -1172,12 +1336,12 @@ export function useOpendora(opts?: {
 
   const abort = useCallback(() => {
     const session = selectedSessionRef.current
-    if (session) opendora.session.abort(session.id).catch(() => { })
+    if (session) opendora.session.abort(session.id).catch(() => {})
     setStatus("ready")
   }, [])
 
   const abortSession = useCallback((sessionID: string) => {
-    opendora.session.abort(sessionID).catch(() => { })
+    opendora.session.abort(sessionID).catch(() => {})
   }, [])
 
   const compact = useCallback(async (model: { providerID: string; modelID: string }) => {
@@ -1188,17 +1352,23 @@ export function useOpendora(opts?: {
 
   // ── Agent CRUD ────────────────────────────────────────────────────────────
 
-  const createAgent = useCallback(async (config: AgentConfig, persona?: string, injection?: string) => {
-    const entry = await opendora.agent.create({ config, persona, injection })
-    await refreshAgentsState()
-    return entry
-  }, [refreshAgentsState])
+  const createAgent = useCallback(
+    async (config: AgentConfig, persona?: string, injection?: string) => {
+      const entry = await opendora.agent.create({ config, persona, injection })
+      await refreshAgentsState()
+      return entry
+    },
+    [refreshAgentsState],
+  )
 
-  const updateAgent = useCallback(async (id: string, config: Partial<AgentConfig>, persona?: string, injection?: string) => {
-    const entry = await opendora.agent.update(id, { config, persona, injection })
-    await refreshAgentsState()
-    return entry
-  }, [refreshAgentsState])
+  const updateAgent = useCallback(
+    async (id: string, config: Partial<AgentConfig>, persona?: string, injection?: string) => {
+      const entry = await opendora.agent.update(id, { config, persona, injection })
+      await refreshAgentsState()
+      return entry
+    },
+    [refreshAgentsState],
+  )
 
   const deleteAgent = useCallback(async (id: string): Promise<void> => {
     await opendora.agent.remove(id)
@@ -1207,7 +1377,7 @@ export function useOpendora(opts?: {
     setAgents((prev) => {
       const remaining = prev.filter((a) => a._id !== id)
       // If the deleted agent was selected, fall back to the first remaining visible agent
-      setSelectedAgent((current) => current === id ? (remaining[0]?._id ?? "") : current)
+      setSelectedAgent((current) => (current === id ? (remaining[0]?._id ?? "") : current))
       return remaining
     })
   }, [])
@@ -1248,67 +1418,75 @@ export function useOpendora(opts?: {
     }
   }, [])
 
-  const setAgentMainSession = useCallback(async (agentID: string, sessionID: string): Promise<void> => {
-    const updated = await opendora.agent.setMainSession(agentID, sessionID)
-    setSessions((prev) => prev.map((s) => {
-      if (s.id === sessionID) return updated
-      // Demote the old main (role) session for this agent to scope in local state
-      if (s.agentID === agentID && s.sessionType === "role") return { ...s, sessionType: "scope" as const }
-      return s
-    }))
-    // Only navigate to the new main session if the user is currently on that agent's old main session
-    // or if no session is currently selected
-    setSelectedAgent((prev) => {
-      if (prev === agentID) {
-        const currentSession = selectedSessionRef.current
-        const shouldNavigate = !currentSession || 
-          (currentSession.agentID === agentID && currentSession.sessionType === "role")
-        if (shouldNavigate) {
-          setSelectedSessionId(sessionID)
-          // Defer router navigation to prevent setState during render
-          setTimeout(() => {
-            router.push(`/dashboard?session=${sessionID}`, { scroll: false })
-          }, 0)
+  const setAgentMainSession = useCallback(
+    async (agentID: string, sessionID: string): Promise<void> => {
+      const updated = await opendora.agent.setMainSession(agentID, sessionID)
+      setSessions((prev) =>
+        prev.map((s) => {
+          if (s.id === sessionID) return updated
+          // Demote the old main (role) session for this agent to scope in local state
+          if (s.agentID === agentID && s.sessionType === "role") return { ...s, sessionType: "scope" as const }
+          return s
+        }),
+      )
+      // Only navigate to the new main session if the user is currently on that agent's old main session
+      // or if no session is currently selected
+      setSelectedAgent((prev) => {
+        if (prev === agentID) {
+          const currentSession = selectedSessionRef.current
+          const shouldNavigate =
+            !currentSession || (currentSession.agentID === agentID && currentSession.sessionType === "role")
+          if (shouldNavigate) {
+            setSelectedSessionId(sessionID)
+            // Defer router navigation to prevent setState during render
+            setTimeout(() => {
+              router.push(`/dashboard?session=${sessionID}`, { scroll: false })
+            }, 0)
+          }
         }
+        return prev
+      })
+    },
+    [router],
+  )
+
+  const selectAgent = useCallback(
+    (agentId: string) => {
+      // Save current session to cache — only when non-empty to avoid overwriting
+      // a valid cache entry with the blank state from a still-pending fetch.
+      if (selectedSessionRef.current?.id && messagesRef.current.length > 0) {
+        messageCacheRef.current.set(selectedSessionRef.current.id, messagesRef.current)
       }
-      return prev
-    })
-  }, [router])
 
-  const selectAgent = useCallback((agentId: string) => {
-    // Save current session to cache — only when non-empty to avoid overwriting
-    // a valid cache entry with the blank state from a still-pending fetch.
-    if (selectedSessionRef.current?.id && messagesRef.current.length > 0) {
-      messageCacheRef.current.set(selectedSessionRef.current.id, messagesRef.current)
-    }
+      setSelectedAgent(agentId)
+      setStatus("ready")
+      setError(null)
 
-    setSelectedAgent(agentId)
-    setStatus("ready")
-    setError(null)
+      // Use stable refs — no async API call needed.
+      // sortSessionsForAgent already puts the "role" (main) session first.
+      const sorted = sortSessionsForAgent(agentId, sessionsRef.current)
+      const active = sorted.filter((s) => activeSessionsRef.current.has(s.id))
+      const remembered = lastSessionByAgentRef.current[agentId]
+        ? (sorted.find((s) => s.id === lastSessionByAgentRef.current[agentId]) ?? null)
+        : null
+      const session = active[0] ?? remembered ?? sorted[0] ?? null
 
-    // Use stable refs — no async API call needed.
-    // sortSessionsForAgent already puts the "role" (main) session first.
-    const sorted = sortSessionsForAgent(agentId, sessionsRef.current)
-    const active = sorted.filter((s) => activeSessionsRef.current.has(s.id))
-    const remembered = lastSessionByAgentRef.current[agentId]
-      ? sorted.find((s) => s.id === lastSessionByAgentRef.current[agentId]) ?? null
-      : null
-    const session = active[0] ?? remembered ?? sorted[0] ?? null
-
-    if (session?.id) {
-      setSelectedSessionId(session.id)
-      // Do NOT call router.replace here — the URL sync effect handles it after
-      // React commits the final batched state. An eager replace here races with
-      // any immediately-following selectSession call (e.g. after a workflow run)
-      // and triggers the URL→state effect with the wrong session id, reverting
-      // the selection before the workflow session even appears in the list.
-      selectedSessionRef.current = session
-      rememberSessionForAgent(session)
-    } else {
-      setSelectedSessionId(null)
-      selectedSessionRef.current = null
-    }
-  }, [rememberSessionForAgent, sortSessionsForAgent])
+      if (session?.id) {
+        setSelectedSessionId(session.id)
+        // Do NOT call router.replace here — the URL sync effect handles it after
+        // React commits the final batched state. An eager replace here races with
+        // any immediately-following selectSession call (e.g. after a workflow run)
+        // and triggers the URL→state effect with the wrong session id, reverting
+        // the selection before the workflow session even appears in the list.
+        selectedSessionRef.current = session
+        rememberSessionForAgent(session)
+      } else {
+        setSelectedSessionId(null)
+        selectedSessionRef.current = null
+      }
+    },
+    [rememberSessionForAgent, sortSessionsForAgent],
+  )
 
   const setDefaultAgent = useCallback((agentId: string) => {
     storeDefaultAgent(agentId)
@@ -1355,7 +1533,9 @@ export function useOpendora(opts?: {
   const refreshModelGroups = useCallback(async () => {
     const configData = await opendora.config.get()
     if (configData.model_groups) {
-      setModelGroups(configData.model_groups as { id: string; name: string; models: { providerID: string; modelID: string }[] }[])
+      setModelGroups(
+        configData.model_groups as { id: string; name: string; models: { providerID: string; modelID: string }[] }[],
+      )
     } else {
       setModelGroups([])
     }

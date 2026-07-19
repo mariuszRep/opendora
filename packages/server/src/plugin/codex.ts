@@ -18,6 +18,27 @@ const CODEX_MODELS_ENDPOINT = "https://chatgpt.com/backend-api/codex/models"
 const CODEX_CLIENT_VERSION_FALLBACK = "0.98.0"
 const OAUTH_PORT = 1455
 const OAUTH_POLLING_SAFETY_MARGIN_MS = 3000
+let codexAuthExpired = false
+
+function markCodexAuthExpired() {
+  Provider.setAvailability("openai-codex", "reauthentication_required")
+  if (codexAuthExpired) return
+  codexAuthExpired = true
+  Bus.publish(BusEvent.ProviderAuthExpired, {
+    providerID: "openai-codex",
+    providerName: "OpenAI Codex",
+  }).catch(() => {})
+}
+
+function markCodexAvailable() {
+  if (!codexAuthExpired) return
+  codexAuthExpired = false
+  Provider.setAvailability("openai-codex", "available")
+  Bus.publish(BusEvent.ProviderRecovered, {
+    providerID: "openai-codex",
+    providerName: "OpenAI Codex",
+  }).catch(() => {})
+}
 
 interface CodexRemoteModel {
   slug: string
@@ -120,7 +141,10 @@ export function codexCatalogToProviderModels(models: CodexRemoteModel[]): Record
   )
 }
 
-async function fetchCodexCatalog(accessToken: string, accountId?: string): Promise<Record<string, Provider.Model>> {
+export async function fetchCodexCatalog(
+  accessToken: string,
+  accountId?: string,
+): Promise<Record<string, Provider.Model>> {
   const headers = new Headers({
     authorization: `Bearer ${accessToken}`,
     "User-Agent": Installation.USER_AGENT,
@@ -131,10 +155,7 @@ async function fetchCodexCatalog(accessToken: string, accountId?: string): Promi
 
   const url = new URL(CODEX_MODELS_ENDPOINT)
   const version = Installation.VERSION
-  url.searchParams.set(
-    "client_version",
-    /^\d+\.\d+\.\d+/.test(version) ? version : CODEX_CLIENT_VERSION_FALLBACK,
-  )
+  url.searchParams.set("client_version", /^\d+\.\d+\.\d+/.test(version) ? version : CODEX_CLIENT_VERSION_FALLBACK)
 
   const response = await fetch(url, {
     headers,
@@ -558,7 +579,10 @@ const REFRESH_MARGIN_MS = 5 * 60 * 1000 // refresh 5 min before expiry
 
 /** Schedule a background token refresh so the token is never stale when switching models.
  *  Only one loop runs at a time across all invocations. */
-function scheduleTokenRefresh(getAuth: () => Promise<{ type: string; refresh?: string; expires?: number }>, setAuth: (tokens: TokenResponse, accountId?: string) => Promise<void>) {
+function scheduleTokenRefresh(
+  getAuth: () => Promise<{ type: string; refresh?: string; expires?: number }>,
+  setAuth: (tokens: TokenResponse, accountId?: string) => Promise<void>,
+) {
   if (backgroundRefreshActive) return
   backgroundRefreshActive = true
 
@@ -582,10 +606,7 @@ function scheduleTokenRefresh(getAuth: () => Promise<{ type: string; refresh?: s
       }
     } catch (error: any) {
       if (error?.authExpired) {
-        Bus.publish(BusEvent.ProviderAuthExpired, {
-          providerID: "openai-codex",
-          providerName: "OpenAI Codex",
-        }).catch(() => {})
+        markCodexAuthExpired()
       }
       log.warn("token refresh failed, will retry on next access", { error })
       backgroundRefreshActive = false
@@ -599,40 +620,9 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
   return {
     auth: {
       provider: "openai-codex",
-      async loader(getAuth: () => Promise<any>, provider: any) {
+      async loader(getAuth: () => Promise<any>, _provider: any) {
         const auth = await getAuth()
         if (auth.type !== "oauth") return {}
-
-        // Rename provider so the UI shows "OpenAI Codex" instead of "OpenAI"
-        provider.name = "OpenAI Codex"
-        const authWithAccount = auth as typeof auth & { accountId?: string }
-        try {
-          const models = await fetchCodexCatalog(auth.access, authWithAccount.accountId)
-          if (Object.keys(models).length > 0) {
-            provider.models = models
-          } else {
-            log.warn("codex models endpoint returned no visible codex models")
-          }
-        } catch (error: any) {
-          log.warn("failed to refresh codex models; falling back to bundled models", { error })
-          if (error?.authExpired) {
-            Bus.publish(BusEvent.ProviderAuthExpired, {
-              providerID: "openai-codex",
-              providerName: "OpenAI Codex",
-            }).catch(() => {})
-          }
-          for (const modelId of Object.keys(provider.models)) {
-            if (!modelId.includes("codex")) delete provider.models[modelId]
-          }
-        }
-
-        for (const model of Object.values(provider.models) as any[]) {
-          model.cost = {
-            input: 0,
-            output: 0,
-            cache: { read: 0, write: 0 },
-          }
-        }
 
         const setAuth = async (tokens: TokenResponse, accountId?: string) => {
           await input.client.auth.set({
@@ -683,9 +673,11 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
             if (!currentAuth.access || currentAuth.expires < Date.now()) {
               if (!tokenRefreshInFlight) {
                 log.info("refreshing codex access token")
-                tokenRefreshInFlight = refreshAccessToken(currentAuth.refresh, init?.signal ?? undefined).finally(() => {
-                  tokenRefreshInFlight = undefined
-                })
+                tokenRefreshInFlight = refreshAccessToken(currentAuth.refresh, init?.signal ?? undefined).finally(
+                  () => {
+                    tokenRefreshInFlight = undefined
+                  },
+                )
               } else {
                 log.info("waiting for in-flight codex token refresh")
               }
@@ -754,9 +746,11 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
                 log.info("codex connection refused — access token may be fully expired, attempting refresh")
                 try {
                   if (!tokenRefreshInFlight) {
-                    tokenRefreshInFlight = refreshAccessToken(currentAuth.refresh, init?.signal ?? undefined).finally(() => {
-                      tokenRefreshInFlight = undefined
-                    })
+                    tokenRefreshInFlight = refreshAccessToken(currentAuth.refresh, init?.signal ?? undefined).finally(
+                      () => {
+                        tokenRefreshInFlight = undefined
+                      },
+                    )
                   }
                   const tokens = await tokenRefreshInFlight
                   const newAccountId = extractAccountId(tokens) || authWithAccount.accountId
@@ -776,21 +770,25 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
                   if (newAccountId) retryHeaders.set("ChatGPT-Account-Id", newAccountId)
                   return fetch(url, { ...init, headers: retryHeaders })
                 } catch {
-                  Bus.publish(BusEvent.ProviderAuthExpired, {
-                    providerID: "openai-codex",
-                    providerName: "OpenAI Codex",
-                  }).catch(() => {})
+                  markCodexAuthExpired()
                 }
               } else if (err?.code === "ConnectionRefused") {
-                Bus.publish(BusEvent.ProviderAuthExpired, {
-                  providerID: "openai-codex",
-                  providerName: "OpenAI Codex",
-                }).catch(() => {})
+                markCodexAuthExpired()
               }
               throw err
             }
-            const refreshed = await maybeRefreshCodexTokenOnUnauthorized(response, currentAuth, authWithAccount, init, input)
-            if (!refreshed) return response
+            const refreshed = await maybeRefreshCodexTokenOnUnauthorized(
+              response,
+              currentAuth,
+              authWithAccount,
+              init,
+              input,
+            )
+            if (!refreshed) {
+              if (response.status === 401 || response.status === 403) markCodexAuthExpired()
+              if (response.ok) markCodexAvailable()
+              return response
+            }
 
             const retryHeaders = new Headers(headers)
             retryHeaders.set("authorization", `Bearer ${refreshed.access}`)
@@ -805,12 +803,13 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
         }
       },
       methods: [
-        ({
+        {
           label: "ChatGPT Pro/Plus (browser)",
           type: "oauth",
           refresh: async (refreshToken: string, _accessToken?: string) => {
             try {
               const tokens = await refreshAccessToken(refreshToken)
+              markCodexAvailable()
               return {
                 type: "success" as const,
                 refresh: tokens.refresh_token,
@@ -838,6 +837,7 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
                 const tokens = await callbackPromise
                 stopOAuthServer()
                 const accountId = extractAccountId(tokens)
+                markCodexAvailable()
                 return {
                   type: "success" as const,
                   refresh: tokens.refresh_token,
@@ -848,13 +848,14 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
               },
             }
           },
-        }) as any,
-        ({
+        } as any,
+        {
           label: "ChatGPT Pro/Plus (headless)",
           type: "oauth",
           refresh: async (refreshToken: string, _accessToken?: string) => {
             try {
               const tokens = await refreshAccessToken(refreshToken)
+              markCodexAvailable()
               return {
                 type: "success" as const,
                 refresh: tokens.refresh_token,
@@ -925,7 +926,8 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
                       throw new Error(`Token exchange failed: ${tokenResponse.status}`)
                     }
 
-                    const tokens = await tokenResponse.json() as TokenResponse
+                    const tokens = (await tokenResponse.json()) as TokenResponse
+                    markCodexAvailable()
 
                     return {
                       type: "success" as const,
@@ -945,14 +947,17 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
               },
             }
           },
-        }) as any,
+        } as any,
         {
           label: "Manually enter API Key",
           type: "api",
         },
       ],
     },
-    "chat.headers": async (input: { model: { providerID: string }; sessionID: string }, output: { headers: Record<string, string> }) => {
+    "chat.headers": async (
+      input: { model: { providerID: string }; sessionID: string },
+      output: { headers: Record<string, string> },
+    ) => {
       if (input.model.providerID !== "openai-codex") return
       output.headers.originator = "opencode"
       output.headers["User-Agent"] = `opencode/${Installation.VERSION} (${os.platform()} ${os.release()}; ${os.arch()})`

@@ -85,9 +85,18 @@ export default function ProvidersPage() {
   const [groupStates, setGroupStates] = useState<GroupState[]>([])
 
   useEffect(() => {
-    opendora.provider.authMethods().then(setAuthMethods).catch(() => {})
-    opendora.config.get().then(setGlobalConfig).catch(() => {})
-    opendora.provider.group.list().then(setGroupStates).catch(() => {})
+    opendora.provider
+      .authMethods()
+      .then(setAuthMethods)
+      .catch(() => {})
+    opendora.config
+      .get()
+      .then(setGlobalConfig)
+      .catch(() => {})
+    opendora.provider.group
+      .list()
+      .then(setGroupStates)
+      .catch(() => {})
   }, [])
 
   async function refreshGroupStates() {
@@ -263,23 +272,17 @@ export default function ProvidersPage() {
     if (!searchQuery.trim()) return providerStates
     const q = searchQuery.toLowerCase()
     return providerStates.filter(
-      ({ provider }) =>
-        provider.name.toLowerCase().includes(q) || provider.id.toLowerCase().includes(q),
+      ({ provider }) => provider.name.toLowerCase().includes(q) || provider.id.toLowerCase().includes(q),
     )
   }, [providerStates, searchQuery])
 
   const connectedStates = useMemo(
-    () =>
-      [...filteredStates.filter((s) => s.connected)].sort((a, b) =>
-        a.provider.name.localeCompare(b.provider.name),
-      ),
+    () => [...filteredStates.filter((s) => s.connected)].sort((a, b) => a.provider.name.localeCompare(b.provider.name)),
     [filteredStates],
   )
   const unconnectedStates = useMemo(
     () =>
-      [...filteredStates.filter((s) => !s.connected)].sort((a, b) =>
-        a.provider.name.localeCompare(b.provider.name),
-      ),
+      [...filteredStates.filter((s) => !s.connected)].sort((a, b) => a.provider.name.localeCompare(b.provider.name)),
     [filteredStates],
   )
 
@@ -292,7 +295,7 @@ export default function ProvidersPage() {
   }
 
   const selectedState = selectedProviderID
-    ? providerStates.find((ps) => ps.provider.id === selectedProviderID) ?? null
+    ? (providerStates.find((ps) => ps.provider.id === selectedProviderID) ?? null)
     : null
 
   return (
@@ -320,14 +323,8 @@ export default function ProvidersPage() {
                   }
                 : undefined
             }
-            onResetCooldowns={
-              editingGroup ? async () => handleResetCooldown(editingGroup.id) : undefined
-            }
-            onSetActiveSlot={
-              editingGroup
-                ? async (slot) => handleSetActiveSlot(editingGroup.id, slot)
-                : undefined
-            }
+            onResetCooldowns={editingGroup ? async () => handleResetCooldown(editingGroup.id) : undefined}
+            onSetActiveSlot={editingGroup ? async (slot) => handleSetActiveSlot(editingGroup.id, slot) : undefined}
           />
           <ModelSelector
             open={defaultModelOpen}
@@ -390,17 +387,23 @@ export default function ProvidersPage() {
                 {[...modelsByProvider.entries()].map(([providerName, models]) => (
                   <ModelSelectorGroup heading={providerName} key={providerName}>
                     {models.map((m) => {
-                      const active =
-                        defaultModel?.providerID === m.providerID &&
-                        defaultModel?.modelID === m.modelID
+                      const active = defaultModel?.providerID === m.providerID && defaultModel?.modelID === m.modelID
                       return (
                         <ModelSelectorItem
                           key={`${m.providerID}:${m.modelID}`}
                           value={`${m.providerID}:${m.modelID}`}
+                          disabled={m.availability === "reauthentication_required"}
                           onSelect={() => handleSelectDefault(`${m.providerID}/${m.modelID}`)}
                         >
                           <ModelSelectorLogo provider={m.providerID} />
-                          <ModelSelectorName>{m.modelName}</ModelSelectorName>
+                          <ModelSelectorName>
+                            {m.modelName}
+                            {m.availability === "reauthentication_required"
+                              ? " (reauthenticate)"
+                              : m.availability === "stale"
+                                ? " (stale)"
+                                : ""}
+                          </ModelSelectorName>
                           {(() => {
                             const pt = providerTimeouts[m.providerID]
                             const mcd = pt?.modelCooldowns?.[m.modelID]
@@ -549,9 +552,7 @@ export default function ProvidersPage() {
               />
             </div>
 
-            {filteredStates.length === 0 && (
-              <p className="text-sm text-muted-foreground">No providers found.</p>
-            )}
+            {filteredStates.length === 0 && <p className="text-sm text-muted-foreground">No providers found.</p>}
 
             {/* Connected providers */}
             {connectedStates.length > 0 && (
@@ -599,7 +600,6 @@ export default function ProvidersPage() {
                 ))}
               </div>
             )}
-
           </div>
         </TabsContent>
       </Tabs>
@@ -608,7 +608,9 @@ export default function ProvidersPage() {
       <ProviderDetailDialog
         provider={selectedState?.provider ?? null}
         open={!!selectedProviderID}
-        onOpenChange={(open) => { if (!open) setSelectedProviderID(null) }}
+        onOpenChange={(open) => {
+          if (!open) setSelectedProviderID(null)
+        }}
         connected={selectedState?.connected ?? false}
         timedOut={selectedProviderID ? !!providerTimeouts[selectedProviderID]?.timedOut : false}
         methods={selectedState?.methods ?? []}
@@ -619,7 +621,7 @@ export default function ProvidersPage() {
         groupNames={selectedProviderID ? (providerGroupMembership.get(selectedProviderID) ?? []) : []}
         onRemove={() => selectedProviderID && handleRemove(selectedProviderID)}
         onOAuth={(idx) => selectedProviderID && handleOAuth(selectedProviderID, idx)}
-        onApiKey={(key) => selectedProviderID ? handleApiKey(selectedProviderID, key) : Promise.resolve()}
+        onApiKey={(key) => (selectedProviderID ? handleApiKey(selectedProviderID, key) : Promise.resolve())}
         onResetTimeout={() => selectedProviderID && handleResetTimeout(selectedProviderID)}
       />
     </SettingsPageLayout>
@@ -684,20 +686,17 @@ function ProviderCard({
     </div>
   ) : null
 
-  const groupRow = groupNames && groupNames.length > 0 ? (
-    <div className="flex items-center gap-1 min-w-0 w-full overflow-hidden">
-      <LayersIcon className="size-3 shrink-0 text-muted-foreground" />
-      <span className="text-[10px] text-muted-foreground truncate">
-        {groupNames.length === 1 ? groupNames[0] : `${groupNames.length} groups`}
-      </span>
-    </div>
-  ) : null
+  const groupRow =
+    groupNames && groupNames.length > 0 ? (
+      <div className="flex items-center gap-1 min-w-0 w-full overflow-hidden">
+        <LayersIcon className="size-3 shrink-0 text-muted-foreground" />
+        <span className="text-[10px] text-muted-foreground truncate">
+          {groupNames.length === 1 ? groupNames[0] : `${groupNames.length} groups`}
+        </span>
+      </div>
+    ) : null
 
-  const footer = filterRow ? (
-    <div className="flex flex-col w-full">
-      {filterRow}
-    </div>
-  ) : undefined
+  const footer = filterRow ? <div className="flex flex-col w-full">{filterRow}</div> : undefined
 
   return (
     <SettingsCard
@@ -716,11 +715,7 @@ function ProviderCard({
           {provider.name}
         </span>
       }
-      description={
-        connected
-          ? `${modelCount} model${modelCount !== 1 ? "s" : ""} available`
-          : "Not connected"
-      }
+      description={connected ? `${modelCount} model${modelCount !== 1 ? "s" : ""} available` : "Not connected"}
       action={statusAction}
       footer={footer}
       onClick={onClick}

@@ -9,6 +9,7 @@ export interface ModelEntry {
   modelID: string
   modelName: string
   isFallback: boolean
+  availability: "available" | "stale" | "reauthentication_required"
 }
 
 /**
@@ -37,6 +38,7 @@ export function useModelList() {
           modelID: m.id,
           modelName: m.name ?? m.id,
           isFallback: false,
+          availability: (m as any).availability ?? (p as any).availability ?? "available",
         }))
       })
 
@@ -48,6 +50,7 @@ export function useModelList() {
           modelID: m.id,
           modelName: m.name ?? m.id,
           isFallback: true,
+          availability: "available",
         }))
       : []
 
