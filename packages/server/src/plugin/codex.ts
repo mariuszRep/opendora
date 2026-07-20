@@ -15,7 +15,10 @@ const ISSUER = "https://auth.openai.com"
 const CODEX_API_BASE = "https://chatgpt.com/backend-api/codex"
 const CODEX_API_ENDPOINT = "https://chatgpt.com/backend-api/codex/responses"
 const CODEX_MODELS_ENDPOINT = "https://chatgpt.com/backend-api/codex/models"
-const CODEX_CLIENT_VERSION_FALLBACK = "0.98.0"
+// The Codex backend scopes its catalog by client version. Development builds
+// report a non-semver Projectflows version ("local"), so use a current Codex
+// CLI-compatible version instead of the obsolete 0.98 fallback.
+const CODEX_CLIENT_VERSION_FALLBACK = "0.145.0"
 const OAUTH_PORT = 1455
 const OAUTH_POLLING_SAFETY_MARGIN_MS = 3000
 let codexAuthExpired = false

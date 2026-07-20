@@ -776,7 +776,6 @@ export namespace SessionPrompt {
 
       // Resolve extra tools early so we can use the entry in processor creation below.
       const _extraToolsEntry = _extraToolsState.get(sessionID)
-      const _hasNamedStructuredTool = lastUser.format?.type === "json_schema" && lastUser.format.toolName != null
 
       const processor = SessionProcessor.create({
         assistantMessage: (await Session.updateMessage({
@@ -805,9 +804,10 @@ export namespace SessionPrompt {
             created: Date.now(),
           },
           sessionID,
-          // When extra tools are present or json_schema uses a custom toolName, the model's
-          // tool call should be visible even if the triggering user message is hidden.
-          ...((lastUser.hidden && !_extraToolsEntry && !_hasNamedStructuredTool) ? { hidden: true } : {}),
+          // When extra tools are present, the model's tool call should be visible even if
+          // the triggering user message is hidden — that turn's own message is the canonical
+          // visible record (see runner.ts's agentArgs handling for the workflow-side rationale).
+          ...((lastUser.hidden && !_extraToolsEntry) ? { hidden: true } : {}),
         })) as MessageV2.Assistant,
         sessionID: sessionID,
         model,

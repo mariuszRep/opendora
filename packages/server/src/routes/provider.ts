@@ -25,7 +25,10 @@ const log = Log.create({ service: "provider.routes" })
  * into or overwrites a models.dev catalog.
  */
 async function ensureMissingCodexCatalog(allProviders: Record<string, unknown>) {
-  if (allProviders["openai-codex"]) return
+  const modelsDevCodex = allProviders["openai-codex"] as { models?: Record<string, unknown> } | undefined
+  // models.dev can expose a provider shell before its model records arrive. An
+  // empty shell is not a catalog and must not suppress authenticated discovery.
+  if (modelsDevCodex && Object.keys(modelsDevCodex.models ?? {}).length > 0) return
   const auth = await Auth.get("openai-codex")
   if (!auth || auth.type !== "oauth") return
   try {

@@ -1650,7 +1650,8 @@ export function WorkflowEditDrawer({
           }
 
           if (nodeType === NodeTypeId.Variable) {
-            type VarEntry = { name: string; type: string; value: string; items: string[]; updateMode: string }
+            type VarField = { key: string; value: string }
+            type VarEntry = { name: string; type: string; value: string; items: string[]; fields: VarField[]; updateMode: string }
             const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
             const variables = (Array.isArray(params.variables) ? params.variables : []) as VarEntry[]
 
@@ -1665,7 +1666,7 @@ export function WorkflowEditDrawer({
               setVariables(next)
             }
 
-            const VAR_TYPES = ["string", "number", "boolean", "array"] as const
+            const VAR_TYPES = ["string", "number", "boolean", "array", "object"] as const
 
             return (
               <div className="space-y-3">
@@ -1746,6 +1747,56 @@ export function WorkflowEditDrawer({
                           </div>
                         ))}
                       </div>
+                    ) : entry.type === "object" ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Fields</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs px-2"
+                            onClick={() => updateEntry(i, { fields: [...(entry.fields ?? []), { key: "", value: "" }] })}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Add field
+                          </Button>
+                        </div>
+                        {(entry.fields ?? []).length === 0 && (
+                          <p className="text-xs text-muted-foreground text-center py-1">No fields yet.</p>
+                        )}
+                        {(entry.fields ?? []).map((field, j) => (
+                          <div key={j} className="flex items-center gap-1.5">
+                            <Input
+                              value={field.key}
+                              onChange={(e) => {
+                                const next = [...(entry.fields ?? [])]
+                                next[j] = { ...next[j], key: e.target.value }
+                                updateEntry(i, { fields: next })
+                              }}
+                              placeholder="key"
+                              className="font-mono text-xs w-28 shrink-0"
+                            />
+                            <ExpressionInput
+                              value={field.value}
+                              onChange={(v) => {
+                                const next = [...(entry.fields ?? [])]
+                                next[j] = { ...next[j], value: v }
+                                updateEntry(i, { fields: next })
+                              }}
+                              suggestions={availableRefs}
+                              placeholder="value or $nodeKey.field"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                              onClick={() => updateEntry(i, { fields: (entry.fields ?? []).filter((_, k) => k !== j) })}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     ) : (
                       <div className="space-y-1">
                         <span className="text-xs text-muted-foreground">Value</span>
@@ -1773,7 +1824,7 @@ export function WorkflowEditDrawer({
                             Replace
                           </SelectItem>
                           <SelectItem value="append" className="text-xs">
-                            Append (arrays)
+                            Append (arrays/objects)
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -1788,7 +1839,7 @@ export function WorkflowEditDrawer({
                   onClick={() =>
                     setVariables([
                       ...variables,
-                      { name: "", type: "string", value: "", items: [], updateMode: "replace" },
+                      { name: "", type: "string", value: "", items: [], fields: [], updateMode: "replace" },
                     ])
                   }
                 >

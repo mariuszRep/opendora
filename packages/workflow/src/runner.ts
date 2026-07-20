@@ -184,34 +184,57 @@ function schemaError(value: unknown, schema: Record<string, unknown>, path = "$o
   }
 }
 
-// Some providers serialize a forced tool call as ordinary text. Structured workflow
-// nodes therefore request JSON text and validate the parsed value locally.
+// Run the structured node prompt through the schema-enforced structured-output path:
+// the model is forced to call a single schema-validated tool (createStructuredOutputTool
+// in packages/session/src/prompt.ts), so the result is real Zod/JSON-Schema-validated
+// output rather than best-effort JSON parsed out of free text. This is the preferred
+// path and is tried first.
+//
+// Fallback: some providers (confirmed: kilo, openai-codex as of this writing) do not
+// reliably honor forced tool_choice for the injected structured-output tool — the model
+// may respond with plain text, or even a hallucinated fake tool-call written as text,
+// instead of making a real tool call. packages/session/test/structured-output-integration.test.ts
+// (the suite this mechanism's "already tested" claim rests on) only ever exercises Anthropic
+// models (gated on ANTHROPIC_API_KEY), so this gap was never caught there. Rather than fail
+// the whole node when the strict path doesn't land, retry once with the older prose+regex
+// approach before giving up — this keeps strict validation as the default while still working
+// on providers that don't support forced tool-choice well.
 export async function agentStructuredJson(
   sessionId: string,
   instructions: string,
   schema: Record<string, unknown>,
   model?: NodeModel,
 ): Promise<unknown> {
-  const schemaGuide = Object.keys((schema.properties as Record<string, unknown> | undefined) ?? {}).length > 0
-    ? ["", "Respond with ONLY a valid JSON value matching this schema:", "```json", schemaToTemplate(schema), "```"] .join("\n")
-    : "\n\nRespond with ONLY a valid JSON value."
+  // hidden: true — the workflow_structured node card (built via startNodeToolPart/finish()
+  // in the NodeTypeId.Structured case below) is the sole user-visible execution record for
+  // this node. Both the strict and fallback prompt turns below are internal implementation
+  // detail and must not appear as separate messages in the session timeline.
   const result = await SessionPrompt.prompt({
     sessionID: sessionId,
-    parts: [{ type: "text", text: instructions + schemaGuide }],
-    format: { type: "text", toolChoice: "none" },
-    // The workflow_structured node card is the user-visible execution record.
-    // Keep this internal model turn in the durable ledger for replay/debugging,
-    // but do not render duplicate user/assistant messages in the session timeline.
+    parts: [{ type: "text", text: instructions }],
+    format: { type: "json_schema", schema, toolName: "workflow_structured", retryCount: 2 },
     hidden: true,
     ...(model ? { model } : {}),
   })
 
-  const text = ((result as any).parts ?? []).filter((part: any) => part.type === "text" && !part.synthetic).map((part: any) => part.text ?? "").join("")
-  const output = extractJsonFromText(text)
-  if (output === undefined) throw new Error("Structured node: model did not produce valid JSON")
-  const error = schemaError(output, schema)
-  if (error) throw new Error(`Structured node: output does not match schema: ${error}`)
-  return output
+  const info = (result as any).info as { structured?: unknown; error?: { name?: string; data?: { message?: string } } }
+  if (info?.structured !== undefined) return info.structured
+
+  const schemaGuide = Object.keys((schema.properties as Record<string, unknown> | undefined) ?? {}).length > 0
+    ? ["", "Respond with ONLY a valid JSON value matching this schema:", "```json", schemaToTemplate(schema), "```"].join("\n")
+    : "\n\nRespond with ONLY a valid JSON value."
+  const fallbackResult = await SessionPrompt.prompt({
+    sessionID: sessionId,
+    parts: [{ type: "text", text: instructions + schemaGuide }],
+    format: { type: "text", toolChoice: "none" },
+    hidden: true,
+    ...(model ? { model } : {}),
+  })
+  const text = ((fallbackResult as any).parts ?? []).filter((part: any) => part.type === "text" && !part.synthetic).map((part: any) => part.text ?? "").join("")
+  const fallbackOutput = extractJsonFromText(text)
+  if (fallbackOutput !== undefined && !schemaError(fallbackOutput, schema)) return fallbackOutput
+
+  throw new Error(info?.error?.data?.message ?? "Structured node: model did not produce structured output")
 }
 
 async function agentPrompt(
@@ -820,11 +843,13 @@ async function runSubGraph({
       result = JSON.stringify({ applied, readback })
 
     } else if (d.nodeType === NodeTypeId.Variable) {
+      type VariableFieldEntry = { key: string; value: string }
       type VariableEntry = {
         name: string
-        type: "string" | "number" | "boolean" | "array"
+        type: "string" | "number" | "boolean" | "array" | "object"
         value: string
         items: string[]
+        fields: VariableFieldEntry[]
         updateMode: "replace" | "append"
       }
       const entries = Array.isArray(params.variables) ? (params.variables as VariableEntry[]) : []
@@ -853,6 +878,16 @@ async function runSubGraph({
           } else {
             resolved = resolvedItems
           }
+        } else if (entry.type === "object") {
+          const resolvedFields: Record<string, unknown> = {}
+          for (const field of entry.fields ?? []) {
+            if (!field.key) continue
+            resolvedFields[field.key] = resolveRef(field.value ?? "", input, ctx)
+          }
+          const existing = outputValues[entry.name]
+          resolved = entryUpdateMode === "append" && existing !== null && typeof existing === "object" && !Array.isArray(existing)
+            ? { ...(existing as Record<string, unknown>), ...resolvedFields }
+            : resolvedFields
         } else {
           const raw = resolveRef(entry.value ?? "", input, ctx)
           if (entry.type === "number") resolved = Number(raw)
@@ -863,7 +898,7 @@ async function runSubGraph({
         outputValues[entry.name] = resolved
       }
 
-      await nodeToolHandle.finish(outputValues)
+      await nodeToolHandle.finish(outputValues, { outputObject: outputValues })
       result = JSON.stringify(outputValues)
 
       // Store the object directly — skip the string overwrite in the general ctx write below
@@ -885,7 +920,7 @@ async function runSubGraph({
       ctx["__workflow_output__"] = resolved
       result = JSON.stringify(resolved, null, 2)
 
-      await nodeToolHandle.finish(resolved)
+      await nodeToolHandle.finish(resolved, { outputObject: resolved })
     }
 
     // Structured/Output/ForEach/Decide/Variable nodes already wrote native values into ctx above; skip the string overwrite.

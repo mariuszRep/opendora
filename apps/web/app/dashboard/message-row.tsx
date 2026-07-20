@@ -51,7 +51,7 @@ import { SessionTreeToolContent, isSessionTreeTool, getSessionTreeToolTitle } fr
 import { WebFetchToolContent, isWebFetchTool, getWebFetchToolTitle, getWebFetchUrl } from "@/components/ai-elements/webfetch-tool"
 import { isSkillLoadTool, getSkillLoadToolTitle, getSkillLoadDefinition } from "@/components/ai-elements/skill-load-tool"
 import { MemoryWriteToolContent, isMemoryWriteTool, getMemoryWriteToolTitle } from "@/components/ai-elements/memory-write-tool"
-import { FormatSwitcher } from "@/components/ai-elements/format-switcher"
+import { ToolCardSections, buildToolCardSections } from "@/components/ai-elements/format-switcher"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAgentColor } from "@/lib/agent-colors"
 import { BellIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, Link2Icon, PanelRightIcon, Volume2Icon, VolumeXIcon, WorkflowIcon } from "lucide-react"
@@ -648,13 +648,16 @@ export const MessageRow = React.memo(function MessageRow({
                                   )
                                 ) : isMemoryWriteToolCall ? (
                                   <MemoryWriteToolContent tool={tool} />
-                                ) : (
-                                  toolInput
-                                )}
+                                ) : null}
                                 {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !isMemoryWriteToolCall && !questionRequest && (
-                                  hasOutputObject
-                                    ? <FormatSwitcher data={outputObject} displayProps={displayProps} renderLayout={renderLayout} />
-                                    : (output || error) ? <ToolOutput errorText={error} output={output} /> : null
+                                  <>
+                                    <ToolCardSections
+                                      sections={buildToolCardSections(input, hasOutputObject ? outputObject : output)}
+                                      displayProps={displayProps}
+                                      renderLayout={renderLayout}
+                                    />
+                                    {error && <ToolOutput errorText={error} output={undefined} />}
+                                  </>
                                 )}
                               </ToolContent>
                             </Tool>
@@ -882,13 +885,16 @@ export const MessageRow = React.memo(function MessageRow({
                               )
                             ) : isMemoryWriteToolCall ? (
                               <MemoryWriteToolContent tool={tool} />
-                            ) : (
-                              toolInput
-                            )}
+                            ) : null}
                             {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !isMemoryWriteToolCall && !questionRequest && !isPermissionTool && (
-                              hasOutputObject
-                                ? <FormatSwitcher data={outputObject} displayProps={displayProps} renderLayout={renderLayout} />
-                                : (output || error) ? <ToolOutput errorText={error} output={output} /> : null
+                              <>
+                                <ToolCardSections
+                                  sections={buildToolCardSections(input, hasOutputObject ? outputObject : output)}
+                                  displayProps={displayProps}
+                                  renderLayout={renderLayout}
+                                />
+                                {error && <ToolOutput errorText={error} output={undefined} />}
+                              </>
                             )}
                           </ToolContent>
                         </Tool>
