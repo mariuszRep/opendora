@@ -11,10 +11,6 @@ export interface PackDefinition {
 
 function catalogPath(): string {
   if (process.env["PROJECTFLOWS_REGISTRY_PATH"]) return process.env["PROJECTFLOWS_REGISTRY_PATH"]
-  if (process.env["PROJECTFLOWS_PLUGINS_CATALOG"]) {
-    console.warn("[deprecation] PROJECTFLOWS_PLUGINS_CATALOG is deprecated — use PROJECTFLOWS_REGISTRY_PATH instead")
-    return process.env["PROJECTFLOWS_PLUGINS_CATALOG"]
-  }
   return path.join(os.homedir(), "projects", "projectflows-website", "registry")
 }
 

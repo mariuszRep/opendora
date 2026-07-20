@@ -67,8 +67,8 @@ export default function OnboardingPage() {
           <Card>
             <CardContent className="py-6 text-center text-sm text-muted-foreground">
               No capability packs found. Set{" "}
-              <code className="font-mono text-xs bg-muted px-1 rounded">PROJECTFLOWS_PLUGINS_CATALOG</code> to your
-              local plugins repo path.
+              <code className="font-mono text-xs bg-muted px-1 rounded">PROJECTFLOWS_REGISTRY_PATH</code> to your
+              local registry path.
             </CardContent>
           </Card>
         ) : (

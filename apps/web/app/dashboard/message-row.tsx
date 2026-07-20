@@ -12,13 +12,6 @@ import {
   MessageResponse,
 } from "@/components/ai-elements/message"
 import {
-  Tool,
-  ToolContent,
-  ToolHeader,
-  ToolInput,
-  ToolOutput,
-} from "@/components/ai-elements/tool"
-import {
   Attachments,
   Attachment,
   AttachmentPreview,
@@ -29,8 +22,6 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from "@/components/ai-elements/reasoning"
-import { QuestionTool } from "@/components/questions/question-tool"
-import { PermissionTool } from "@/components/permissions/permission-tool"
 import { ModelSwitchCard } from "@/components/ai-elements/model-switch-card"
 import type {
   AssistantMessage,
@@ -45,16 +36,9 @@ import type {
   PermissionReply,
   EntryEdge,
 } from "@/lib/projectflows"
-import { DelegateToolContent, isDelegateTool, getDelegateToolTitle } from "@/components/ai-elements/delegate-tool"
-import { TodoToolContent, isTodoTool, getTodoToolTitle } from "@/components/ai-elements/todo-tool"
-import { SessionTreeToolContent, isSessionTreeTool, getSessionTreeToolTitle } from "@/components/ai-elements/session-tree-tool"
-import { WebFetchToolContent, isWebFetchTool, getWebFetchToolTitle, getWebFetchUrl } from "@/components/ai-elements/webfetch-tool"
-import { isSkillLoadTool, getSkillLoadToolTitle, getSkillLoadDefinition } from "@/components/ai-elements/skill-load-tool"
-import { MemoryWriteToolContent, isMemoryWriteTool, getMemoryWriteToolTitle } from "@/components/ai-elements/memory-write-tool"
-import { ToolCardSections, buildToolCardSections } from "@/components/ai-elements/format-switcher"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { ToolCallCard } from "@/components/ai-elements/tool-call-card"
 import { getAgentColor } from "@/lib/agent-colors"
-import { BellIcon, CopyIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, Link2Icon, PanelRightIcon, Volume2Icon, VolumeXIcon, WorkflowIcon } from "lucide-react"
+import { BellIcon, CopyIcon, EyeIcon, EyeOffIcon, Link2Icon, Volume2Icon, VolumeXIcon } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
 import type { ModelEntry } from "@/hooks/use-model-list"
@@ -65,8 +49,6 @@ import {
   getFileParts,
   getHiddenParts,
   getTimelineSteps,
-  toToolState,
-  formatToolPayload,
 } from "./chatbot"
 
 export type MessageRowProps = {
@@ -492,177 +474,34 @@ export const MessageRow = React.memo(function MessageRow({
                             />
                           )
                         })() : null}
-                        {step.kind === "tool" ? (() => {
-                          const tool = step.content
-                          // Guard: legacy sessions stored state as a string ("result"/"call"); normalize to object
-                          const toolState = typeof tool.state === "object" && tool.state !== null ? tool.state : {} as typeof tool.state
-                          const input = "input" in toolState ? toolState.input : undefined
-                          const output = "output" in toolState ? formatToolPayload((toolState as any).output) : undefined
-                          const error = "error" in toolState ? formatToolPayload((toolState as any).error) : undefined
-                          const outputObject = "metadata" in toolState ? (toolState as any).metadata?.outputObject : undefined
-                          const hasOutputObject = outputObject !== undefined && outputObject !== null
-                          const renderLayout = "metadata" in toolState ? (toolState as any).metadata?.renderLayout : undefined
-                          const displayProps = "metadata" in toolState ? (toolState as any).metadata?.displayProps : undefined
-                          const answered =
-                            "metadata" in toolState && Array.isArray((toolState as any).metadata?.answers)
-                              ? ((toolState as any).metadata.answers as string[][])
-                              : undefined
-                          const questionRequest = tool.tool === "question"
-                            ? questionRequests.find((request) => request.tool?.callID === tool.callID) ?? (
-                                Array.isArray(input?.questions)
-                                  ? {
-                                      id: tool.callID,
-                                      sessionID: tool.sessionID,
-                                      questions: input.questions,
-                                      tool: {
-                                        messageID: tool.messageID,
-                                        callID: tool.callID,
-                                      },
-                                    }
-                                  : undefined
-                              )
-                            : undefined
-
-                          const permissionRequest = permissionRequests.find((request) => request.tool?.call_id === tool.callID)
-                          const hasPermissionRequest = !!permissionRequest
-                          const isPermissionTool = hasPermissionRequest
-                          const permissionResponded = toolState.status === "completed" || toolState.status === "error"
-                          // Question tools waiting for user input should show "Awaiting Approval" not "Running"
-                          const isQuestionWaiting = !!questionRequest && toolState.status === "running"
-                          const state = toToolState(toolState.status, hasPermissionRequest || isQuestionWaiting)
-                          const retryAttemptNum = toolState.status === "running" && "metadata" in toolState ? (toolState.metadata as any)?.attempt as number | undefined : undefined
-                          const retryBadge = retryAttemptNum !== undefined && retryAttemptNum > 1
-                            ? <span className="rounded-full bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-medium text-yellow-600 dark:text-yellow-400">↻{retryAttemptNum}</span>
-                            : undefined
-                          const toolInput = <ToolInput input={input ?? {}} />
-                          const currentViewMode = questionViewModes[tool.id] ?? "view"
-                          const handleViewModeChange = (mode: "code" | "view") => {
-                            setQuestionViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                          }
-                          const isDelegateToolCall = isDelegateTool(tool.tool)
-                          const currentDelegateViewMode = delegateViewModes[tool.id] ?? "view"
-                          const handleDelegateViewModeChange = (mode: "code" | "view") => {
-                            setDelegateViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                          }
-                          const isTodoToolCall = isTodoTool(tool.tool)
-                          const currentTodoViewMode = todoViewModes[tool.id] ?? "view"
-                          const handleTodoViewModeChange = (mode: "code" | "view") => {
-                            setTodoViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                          }
-                          const isSessionTreeToolCall = isSessionTreeTool(tool.tool)
-                          const currentSessionTreeViewMode = sessionTreeViewModes[tool.id] ?? "view"
-                          const handleSessionTreeViewModeChange = (mode: "code" | "view") => {
-                            setSessionTreeViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                          }
-                          const isWebFetchToolCall = isWebFetchTool(tool.tool)
-                          const currentWebFetchViewMode = webfetchViewModes[tool.id] ?? "code"
-                          const handleWebFetchViewModeChange = (mode: "code" | "view") => {
-                            setWebfetchViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                          }
-                          const webFetchToolUrl = isWebFetchToolCall ? getWebFetchUrl(tool) : undefined
-                          const isSkillLoadToolCall = isSkillLoadTool(tool.tool)
-                          const skillLoadDefinitionPath = isSkillLoadToolCall ? getSkillLoadDefinition(tool) : undefined
-                          const isMemoryWriteToolCall = isMemoryWriteTool(tool.tool)
-                          const webFetchActions = isWebFetchToolCall ? (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); if (webFetchToolUrl) { if (!webPreviewOpen) setWebPreviewUrl(webFetchToolUrl); toggleWebPreview() } }}>
-                                    <PanelRightIcon className="size-4 text-muted-foreground" />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>Open in Panel</TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); if (webFetchToolUrl) window.open(webFetchToolUrl, "_blank") }}>
-                                    <ExternalLinkIcon className="size-4 text-muted-foreground" />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>Open</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ) : isSkillLoadToolCall && skillLoadDefinitionPath ? (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); openFilePreview(skillLoadDefinitionPath, skillLoadDefinitionPath) }}>
-                                    <PanelRightIcon className="size-4 text-muted-foreground" />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>Open in Panel</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ) : undefined
-
-                          return (
-                            <Tool defaultOpen={isMemoryWriteToolCall}>
-                              <ToolHeader
-                                state={state}
-                                title={isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : isSkillLoadToolCall ? getSkillLoadToolTitle(tool) : isMemoryWriteToolCall ? getMemoryWriteToolTitle(tool) : tool.tool}
-                                toolName={tool.tool}
-                                type="dynamic-tool"
-                                viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : isWebFetchToolCall ? currentWebFetchViewMode : undefined}
-                                onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : isSessionTreeToolCall ? handleSessionTreeViewModeChange : isWebFetchToolCall ? handleWebFetchViewModeChange : undefined}
-                                hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}
-                                actions={retryBadge || webFetchActions ? <>{retryBadge}{webFetchActions}</> : undefined}
-                                icon={isWorkflowMessage ? WorkflowIcon : undefined}
-                              />
-                              <ToolContent>
-                                {questionRequest ? (
-                                  <QuestionTool
-                                    answered={answered}
-                                    json={toolInput}
-                                    onReject={rejectQuestion}
-                                    onReply={replyQuestion}
-                                    request={questionRequest}
-                                    viewMode={currentViewMode}
-                                    onViewModeChange={handleViewModeChange}
-                                  />
-                                ) : isPermissionTool && permissionRequest ? (
-                                  <PermissionTool
-                                    request={permissionRequest}
-                                    onReply={replyPermission}
-                                    responded={permissionResponded}
-                                  />
-                                ) : isDelegateToolCall ? (
-                                  currentDelegateViewMode === "code" ? toolInput : (
-                                    <DelegateToolContent
-                                      tool={tool}
-                                      sessions={sessions}
-                                      onSelectSession={selectSession}
-                                      onGoToMessage={handleGoToMessage}
-                                    />
-                                  )
-                                ) : isTodoToolCall ? (
-                                  currentTodoViewMode === "code" ? toolInput : (
-                                    <TodoToolContent tool={tool} />
-                                  )
-                                ) : isSessionTreeToolCall ? (
-                                  currentSessionTreeViewMode === "code" ? toolInput : (
-                                    <SessionTreeToolContent tool={tool} />
-                                  )
-                                ) : isWebFetchToolCall ? (
-                                  currentWebFetchViewMode === "code" ? toolInput : (
-                                    <WebFetchToolContent tool={tool} />
-                                  )
-                                ) : isMemoryWriteToolCall ? (
-                                  <MemoryWriteToolContent tool={tool} />
-                                ) : null}
-                                {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !isMemoryWriteToolCall && !questionRequest && (
-                                  <>
-                                    <ToolCardSections
-                                      sections={buildToolCardSections(input, hasOutputObject ? outputObject : output)}
-                                      displayProps={displayProps}
-                                      renderLayout={renderLayout}
-                                    />
-                                    {error && <ToolOutput errorText={error} output={undefined} />}
-                                  </>
-                                )}
-                              </ToolContent>
-                            </Tool>
-                          )
-                        })() : null}
+                        {step.kind === "tool" ? (
+                          <ToolCallCard
+                            tool={step.content}
+                            isWorkflowMessage={isWorkflowMessage}
+                            questionRequests={questionRequests}
+                            replyQuestion={replyQuestion}
+                            rejectQuestion={rejectQuestion}
+                            questionViewModes={questionViewModes}
+                            setQuestionViewModes={setQuestionViewModes}
+                            permissionRequests={permissionRequests}
+                            replyPermission={replyPermission}
+                            sessions={sessions}
+                            selectSession={selectSession}
+                            handleGoToMessage={handleGoToMessage}
+                            delegateViewModes={delegateViewModes}
+                            setDelegateViewModes={setDelegateViewModes}
+                            todoViewModes={todoViewModes}
+                            setTodoViewModes={setTodoViewModes}
+                            sessionTreeViewModes={sessionTreeViewModes}
+                            setSessionTreeViewModes={setSessionTreeViewModes}
+                            webfetchViewModes={webfetchViewModes}
+                            setWebfetchViewModes={setWebfetchViewModes}
+                            webPreviewOpen={webPreviewOpen}
+                            toggleWebPreview={toggleWebPreview}
+                            setWebPreviewUrl={setWebPreviewUrl}
+                            openFilePreview={openFilePreview}
+                          />
+                        ) : null}
                         {step.kind === "reply" ? (
                           <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
                             {step.error ? (
@@ -732,174 +571,35 @@ export const MessageRow = React.memo(function MessageRow({
                   </MessageContent>
                 ) : (
                   <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
-                    {tools.map((tool) => {
-                      const toolState = typeof tool.state === "object" && tool.state !== null ? tool.state : {} as typeof tool.state
-                      const input = "input" in toolState ? toolState.input : undefined
-                      const output = "output" in toolState ? formatToolPayload((toolState as any).output) : undefined
-                      const error = "error" in toolState ? formatToolPayload((toolState as any).error) : undefined
-                      const outputObject = "metadata" in toolState ? (toolState as any).metadata?.outputObject : undefined
-                      const hasOutputObject = outputObject !== undefined && outputObject !== null
-                      const renderLayout = "metadata" in toolState ? (toolState as any).metadata?.renderLayout : undefined
-                      const displayProps = "metadata" in toolState ? (toolState as any).metadata?.displayProps : undefined
-                      const answered =
-                        "metadata" in toolState && Array.isArray((toolState as any).metadata?.answers)
-                          ? ((toolState as any).metadata.answers as string[][])
-                          : undefined
-                      const questionRequest = tool.tool === "question"
-                        ? questionRequests.find((request) => request.tool?.callID === tool.callID) ?? (
-                            Array.isArray(input?.questions)
-                              ? {
-                                  id: tool.callID,
-                                  sessionID: tool.sessionID,
-                                  questions: input.questions,
-                                  tool: {
-                                    messageID: tool.messageID,
-                                    callID: tool.callID,
-                                  },
-                                }
-                              : undefined
-                          )
-                        : undefined
-
-                      const permissionRequest = permissionRequests.find((request) => request.tool?.call_id === tool.callID)
-                      const hasPermissionRequest = !!permissionRequest
-                      const isPermissionTool = hasPermissionRequest
-                      const permissionResponded = toolState.status === "completed" || toolState.status === "error"
-                      const state = toToolState(toolState.status, hasPermissionRequest)
-                      const retryAttemptNum = toolState.status === "running" && "metadata" in toolState ? (toolState.metadata as any)?.attempt as number | undefined : undefined
-                      const retryBadge = retryAttemptNum !== undefined && retryAttemptNum > 1
-                        ? <span className="rounded-full bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-medium text-yellow-600 dark:text-yellow-400">↻{retryAttemptNum}</span>
-                        : undefined
-                      const toolInput = <ToolInput input={input ?? {}} />
-                      const currentViewMode = questionViewModes[tool.id] ?? "view"
-                      const handleViewModeChange = (mode: "code" | "view") => {
-                        setQuestionViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                      }
-                      const isDelegateToolCall = isDelegateTool(tool.tool)
-                      const currentDelegateViewMode = delegateViewModes[tool.id] ?? "view"
-                      const handleDelegateViewModeChange = (mode: "code" | "view") => {
-                        setDelegateViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                      }
-                      const isTodoToolCall = isTodoTool(tool.tool)
-                      const currentTodoViewMode = todoViewModes[tool.id] ?? "view"
-                      const handleTodoViewModeChange = (mode: "code" | "view") => {
-                        setTodoViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                      }
-                      const isSessionTreeToolCall = isSessionTreeTool(tool.tool)
-                      const currentSessionTreeViewMode = sessionTreeViewModes[tool.id] ?? "view"
-                      const handleSessionTreeViewModeChange = (mode: "code" | "view") => {
-                        setSessionTreeViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                      }
-                      const isWebFetchToolCall = isWebFetchTool(tool.tool)
-                      const currentWebFetchViewMode = webfetchViewModes[tool.id] ?? "code"
-                      const handleWebFetchViewModeChange = (mode: "code" | "view") => {
-                        setWebfetchViewModes(prev => ({ ...prev, [tool.id]: mode }))
-                      }
-                      const webFetchToolUrl = isWebFetchToolCall ? getWebFetchUrl(tool) : undefined
-                      const isSkillLoadToolCall = isSkillLoadTool(tool.tool)
-                      const skillLoadDefinitionPath = isSkillLoadToolCall ? getSkillLoadDefinition(tool) : undefined
-                      const isMemoryWriteToolCall = isMemoryWriteTool(tool.tool)
-                      const webFetchActions = isWebFetchToolCall ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); if (webFetchToolUrl) { if (!webPreviewOpen) setWebPreviewUrl(webFetchToolUrl); toggleWebPreview() } }}>
-                                <PanelRightIcon className="size-4 text-muted-foreground" />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>Open in Panel</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); if (webFetchToolUrl) window.open(webFetchToolUrl, "_blank") }}>
-                                <ExternalLinkIcon className="size-4 text-muted-foreground" />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>Open</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : isSkillLoadToolCall && skillLoadDefinitionPath ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div role="button" tabIndex={0} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-background/60" onClick={(e) => { e.stopPropagation(); openFilePreview(skillLoadDefinitionPath, skillLoadDefinitionPath) }}>
-                                <PanelRightIcon className="size-4 text-muted-foreground" />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>Open in Panel</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : undefined
-                      return (
-                        <Tool
-                          defaultOpen={isMemoryWriteToolCall}
-                          key={tool.id}
-                        >
-                          <ToolHeader
-                            state={state}
-                            title={isDelegateToolCall ? getDelegateToolTitle(tool) : isTodoToolCall ? getTodoToolTitle(tool) : isSessionTreeToolCall ? getSessionTreeToolTitle(tool) : isWebFetchToolCall ? getWebFetchToolTitle(tool) : isSkillLoadToolCall ? getSkillLoadToolTitle(tool) : isMemoryWriteToolCall ? getMemoryWriteToolTitle(tool) : tool.tool}
-                            toolName={tool.tool}
-                            type="dynamic-tool"
-                            viewMode={questionRequest ? currentViewMode : isDelegateToolCall ? currentDelegateViewMode : isTodoToolCall ? currentTodoViewMode : isSessionTreeToolCall ? currentSessionTreeViewMode : isWebFetchToolCall ? currentWebFetchViewMode : undefined}
-                            onViewChange={questionRequest ? handleViewModeChange : isDelegateToolCall ? handleDelegateViewModeChange : isTodoToolCall ? handleTodoViewModeChange : isSessionTreeToolCall ? handleSessionTreeViewModeChange : isWebFetchToolCall ? handleWebFetchViewModeChange : undefined}
-                            hasView={!!questionRequest || isDelegateToolCall || isTodoToolCall || isSessionTreeToolCall || isWebFetchToolCall}
-                            actions={retryBadge || webFetchActions ? <>{retryBadge}{webFetchActions}</> : undefined}
-                          />
-                          <ToolContent>
-                            {questionRequest ? (
-                              <QuestionTool
-                                answered={answered}
-                                json={toolInput}
-                                onReject={rejectQuestion}
-                                onReply={replyQuestion}
-                                request={questionRequest}
-                                viewMode={currentViewMode}
-                                onViewModeChange={handleViewModeChange}
-                              />
-                            ) : isPermissionTool && permissionRequest ? (
-                              <PermissionTool
-                                request={permissionRequest}
-                                onReply={replyPermission}
-                                responded={permissionResponded}
-                              />
-                            ) : isDelegateToolCall ? (
-                              currentDelegateViewMode === "code" ? toolInput : (
-                                <DelegateToolContent
-                                  tool={tool}
-                                  sessions={sessions}
-                                  onSelectSession={selectSession}
-                                  onGoToMessage={handleGoToMessage}
-                                />
-                              )
-                            ) : isTodoToolCall ? (
-                              currentTodoViewMode === "code" ? toolInput : (
-                                <TodoToolContent tool={tool} />
-                              )
-                            ) : isSessionTreeToolCall ? (
-                              currentSessionTreeViewMode === "code" ? toolInput : (
-                                <SessionTreeToolContent tool={tool} />
-                              )
-                            ) : isWebFetchToolCall ? (
-                              currentWebFetchViewMode === "code" ? toolInput : (
-                                <WebFetchToolContent tool={tool} />
-                              )
-                            ) : isMemoryWriteToolCall ? (
-                              <MemoryWriteToolContent tool={tool} />
-                            ) : null}
-                            {!isDelegateToolCall && !isTodoToolCall && !isSessionTreeToolCall && !isWebFetchToolCall && !isMemoryWriteToolCall && !questionRequest && !isPermissionTool && (
-                              <>
-                                <ToolCardSections
-                                  sections={buildToolCardSections(input, hasOutputObject ? outputObject : output)}
-                                  displayProps={displayProps}
-                                  renderLayout={renderLayout}
-                                />
-                                {error && <ToolOutput errorText={error} output={undefined} />}
-                              </>
-                            )}
-                          </ToolContent>
-                        </Tool>
-                      )
-                    })}
+                    {tools.map((tool) => (
+                      <ToolCallCard
+                        key={tool.id}
+                        tool={tool}
+                        isWorkflowMessage={isWorkflowMessage}
+                        questionRequests={questionRequests}
+                        replyQuestion={replyQuestion}
+                        rejectQuestion={rejectQuestion}
+                        questionViewModes={questionViewModes}
+                        setQuestionViewModes={setQuestionViewModes}
+                        permissionRequests={permissionRequests}
+                        replyPermission={replyPermission}
+                        sessions={sessions}
+                        selectSession={selectSession}
+                        handleGoToMessage={handleGoToMessage}
+                        delegateViewModes={delegateViewModes}
+                        setDelegateViewModes={setDelegateViewModes}
+                        todoViewModes={todoViewModes}
+                        setTodoViewModes={setTodoViewModes}
+                        sessionTreeViewModes={sessionTreeViewModes}
+                        setSessionTreeViewModes={setSessionTreeViewModes}
+                        webfetchViewModes={webfetchViewModes}
+                        setWebfetchViewModes={setWebfetchViewModes}
+                        webPreviewOpen={webPreviewOpen}
+                        toggleWebPreview={toggleWebPreview}
+                        setWebPreviewUrl={setWebPreviewUrl}
+                        openFilePreview={openFilePreview}
+                      />
+                    ))}
                     {content ? <MessageResponse>{content}</MessageResponse> : null}
                   </MessageContent>
                 )}

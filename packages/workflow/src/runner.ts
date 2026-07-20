@@ -425,7 +425,7 @@ async function runSubGraph({
         if (parts.length > 0) lines.push(`    ${parts.join(" ")}`)
       }
 
-      await nodeToolHandle.finish(lines.join("\n"))
+      await nodeToolHandle.finish(lines.join("\n"), { outputObject: received })
       result = JSON.stringify(received)
 
     } else if (d.nodeType === NodeTypeId.Prompt) {
@@ -643,7 +643,7 @@ async function runSubGraph({
         throw new Error(`Decide node "${currentId}": agent returned "${String(result)}" which matched no case label and no default is defined`)
       }
 
-      await nodeToolHandle.finish(result)
+      await nodeToolHandle.finish(result, { outputObject: result })
 
       const autoKey = (nd.label as string | undefined)
         ?.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") || "decide"
@@ -750,7 +750,7 @@ async function runSubGraph({
       }
 
       result = JSON.stringify(iterResults)
-      await nodeToolHandle.finish(iterResults, { count: items.length })
+      await nodeToolHandle.finish(iterResults, { outputObject: iterResults, count: items.length })
       if (storeAs !== undefined) ctx[storeAs] = iterResults
       if (nodeKey !== undefined) ctx[nodeKey] = iterResults
 
@@ -838,7 +838,7 @@ async function runSubGraph({
 
       await nodeToolHandle.finish(
         `Session configured: ${summary}\nVerified session state: ${JSON.stringify(readback)}`,
-        { applied, readback },
+        { outputObject: { applied, readback }, applied, readback },
       )
       result = JSON.stringify({ applied, readback })
 

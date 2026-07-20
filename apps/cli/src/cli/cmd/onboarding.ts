@@ -17,7 +17,7 @@ export async function runOnboarding(opts: { revisit?: boolean } = {}): Promise<v
 
   if (packs.length === 0) {
     prompts.log.warn(
-      "No capability packs found. Set PROJECTFLOWS_PLUGINS_CATALOG to your local plugins repo path, then re-run.",
+      "No capability packs found. Set PROJECTFLOWS_REGISTRY_PATH to your local registry path, then re-run.",
     )
     prompts.outro("Skipped — no packs available.")
     await Onboarding.write({
