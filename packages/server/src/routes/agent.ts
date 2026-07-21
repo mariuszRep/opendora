@@ -39,6 +39,14 @@ const AgentConfigCreate = z.object({
   sandbox: z.boolean().optional(),
 })
 
+// The settings form uses null for an empty optional numeric input. Accept that
+// representation on creation as well as updates, then omit it before passing
+// the config to storage (where absent is the canonical persisted form).
+const AgentConfigCreateRequest = AgentConfigCreate.extend({
+  temperature: z.number().nullable().optional(),
+  steps: z.number().int().positive().nullable().optional(),
+})
+
 const AgentConfigPatch = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
@@ -219,7 +227,7 @@ export const AgentRoutes = lazy(() =>
         "json",
         z.object({
           id: z.string().optional().meta({ description: "Agent id slug. Derived from name when omitted." }),
-          config: AgentConfigCreate,
+          config: AgentConfigCreateRequest,
           persona: z.string().optional().default(""),
           injection: z.string().optional().default(""),
         }),
@@ -227,7 +235,17 @@ export const AgentRoutes = lazy(() =>
       async (c) => {
         const body = c.req.valid("json")
         const id = body.id ? AgentStorage.toId(body.id) : AgentStorage.toId(body.config.name)
-        const entry = await Agent.create(id, body.config, body.persona, body.injection)
+        const { temperature, steps, ...config } = body.config
+        const entry = await Agent.create(
+          id,
+          {
+            ...config,
+            ...(temperature !== null && temperature !== undefined ? { temperature } : {}),
+            ...(steps !== null && steps !== undefined ? { steps } : {}),
+          },
+          body.persona,
+          body.injection,
+        )
         return c.json(entry, 201)
       },
     )
