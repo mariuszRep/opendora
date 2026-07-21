@@ -1013,8 +1013,17 @@ export namespace Server {
 
     _url = server.url
 
-    // Eagerly seed agents on startup so PERSONA.md files exist before first UI load
-    Agent.list().catch(() => {})
+    // Eagerly load agents on startup so PERSONA.md files exist before first UI load.
+    // Agent content comes entirely from plugin install now (no hardcoded core
+    // fallback) — an empty result here means core plugins haven't been installed
+    // yet, which should be visible, not silently swallowed.
+    Agent.list()
+      .then((agents) => {
+        if (agents.length === 0) {
+          log.warn("No agents found on startup — core plugins may not be installed yet")
+        }
+      })
+      .catch((error) => log.warn(`Failed to load agents on startup: ${error}`))
 
     // Start PingPong session infrastructure
     BusBridge.start()
@@ -1034,13 +1043,6 @@ export namespace Server {
     // Start Cron Scheduler Loop
     const cronManager = new CronScheduler(Database.Client(), cronDispatch, getGlobalTimezone)
     cronManager.start()
-
-    // Start Browser Control Server (computed string prevents bundler from tracing playwright-core into the CLI binary)
-    const browserModule = "@projectflows/tools/browser"
-    import(browserModule)
-      .then((mod: any) => mod.startBrowserControlServiceFromConfig())
-      .then(() => log.info("Browser control server started"))
-      .catch((error) => log.warn(`Failed to start browser control server: ${error}`))
 
     const shouldPublishMDNS =
       opts.mdns &&

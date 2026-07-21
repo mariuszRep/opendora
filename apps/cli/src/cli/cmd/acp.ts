@@ -6,6 +6,7 @@ import { ACP } from "@projectflows/server/acp/agent"
 import { Server } from "@projectflows/server/server"
 import { createOpencodeClient } from "@projectflows/sdk/v2"
 import { withNetworkOptions, resolveNetworkOptions } from "../network"
+import { runOnboarding } from "./onboarding"
 
 const log = Log.create({ service: "acp-command" })
 
@@ -21,6 +22,7 @@ export const AcpCommand = cmd({
   },
   handler: async (args) => {
     process.env.PROJECTFLOWS_CLIENT = "acp"
+    await runOnboarding()
     await bootstrap(process.cwd(), async () => {
       const opts = await resolveNetworkOptions(args)
       const server = Server.listen(opts)

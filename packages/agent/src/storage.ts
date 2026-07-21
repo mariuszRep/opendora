@@ -6,7 +6,43 @@ import z from "zod"
 import fs from "fs/promises"
 import * as fsSync from "fs"
 import path from "path"
-import { AgentConfig } from "./templates/types"
+
+const ModelRef = z.object({ modelID: z.string(), providerID: z.string() })
+
+const AgentConfig = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  mode: z.enum(["subagent", "primary", "all", "worker", "system"]).default("all"),
+  model: ModelRef.optional(),
+  fallback_model: ModelRef.optional(),
+  models: z.array(ModelRef).optional(),
+  temperature: z.number().optional(),
+  steps: z.number().int().positive().optional(),
+  color: z.string().optional(),
+  hidden: z.boolean().optional(),
+  tools: z.array(z.string()).optional(),
+  skills: z.array(z.string()).optional(),
+  workflows: z.array(z.string()).optional(),
+  toolConfig: z
+    .object({
+      delegate: z
+        .object({
+          allowedAgents: z.array(z.string()).optional(),
+        })
+        .optional(),
+      reply: z
+        .object({
+          stopAfterReply: z.boolean().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+  enableInjection: z.boolean().optional(),
+  injectInstructions: z.boolean().optional(),
+  defaultPaths: z.array(z.string()).optional(),
+  sandbox: z.boolean().optional(),
+  permission: z.record(z.string(), z.union([z.string(), z.record(z.string(), z.string())])).optional(),
+})
 
 export namespace AgentStorage {
   // ── Constants ─────────────────────────────────────────────────────────────
@@ -117,13 +153,6 @@ export namespace AgentStorage {
     const root = agentsRoot(baseDir)
     await fs.mkdir(root, { recursive: true })
     return root
-  }
-
-  export async function isFirstRun(baseDir: string): Promise<boolean> {
-    return fs
-      .access(indexPath(baseDir))
-      .then(() => false)
-      .catch(() => true)
   }
 
   export function toId(name: string): string {

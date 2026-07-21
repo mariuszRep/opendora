@@ -1,9 +1,19 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test, beforeAll } from "bun:test"
 import { ACP } from "@projectflows/server/acp/agent"
 import type { AgentSideConnection } from "@agentclientprotocol/sdk"
 import type { Event, EventMessagePartUpdated, ToolStatePending, ToolStateRunning } from "@projectflows/sdk/v2"
 import { Instance } from "@projectflows/runtime/instance"
 import { tmpdir } from "../fixture/fixture"
+import { Agent as AgentCore } from "@projectflows/agent"
+import { Global } from "@projectflows/util/global"
+
+// Session init (loadSession) resolves a default agent when none is specified.
+// Agent content comes entirely from plugin install now, not hardcoded core
+// source — seed a minimal primary agent into the isolated test home so
+// defaultAgent() has something to pick.
+beforeAll(async () => {
+  await AgentCore.create(Global.Path.home, "build", { name: "build", mode: "primary" })
+})
 
 type SessionUpdateParams = Parameters<AgentSideConnection["sessionUpdate"]>[0]
 type RequestPermissionParams = Parameters<AgentSideConnection["requestPermission"]>[0]

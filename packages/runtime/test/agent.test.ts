@@ -1,15 +1,70 @@
-import { test, expect } from "bun:test"
+import { test, expect, beforeAll } from "bun:test"
 import path from "path"
 import { tmpdir } from "./fixture/fixture"
 import { Instance } from "../src/instance"
 import { Agent } from "../src/agent"
 import { PermissionNext } from "@projectflows/permission/next"
+import { Agent as AgentCore } from "@projectflows/agent"
+import { Global } from "@projectflows/util/global"
 
 // Helper to evaluate permission for a tool with wildcard pattern
 function evalPerm(agent: Agent.Info | undefined, permission: string): PermissionNext.Action | undefined {
   if (!agent) return undefined
   return PermissionNext.evaluate(permission, "*", agent.permission).action
 }
+
+// Agent content now comes entirely from plugin install (agents-default/agent-core
+// in the registry), not hardcoded opendora source. Seed the same set of default
+// agents these tests depend on directly into the isolated test home, mirroring
+// what a real plugin install produces — config properties only match what's
+// actually asserted below, not full production parity (personas are irrelevant
+// to these tests).
+beforeAll(async () => {
+  const baseDir = Global.Path.home
+  await AgentCore.create(baseDir, "build", {
+    name: "build",
+    mode: "primary",
+    tools: ["bash", "read", "glob", "grep", "edit", "write", "task", "webfetch", "todowrite", "websearch", "codesearch", "apply_patch", "question", "memory_read", "memory_write", "memory_delete"],
+  })
+  await AgentCore.create(baseDir, "plan", {
+    name: "plan",
+    mode: "primary",
+    tools: ["bash", "read", "glob", "grep", "task", "webfetch", "websearch", "codesearch", "question"],
+    permission: { edit: { "*": "deny", ".opencode/plans/*": "allow" } },
+  })
+  await AgentCore.create(baseDir, "explore", {
+    name: "explore",
+    mode: "worker",
+    tools: ["grep", "glob", "read", "bash", "webfetch", "websearch", "codesearch"],
+  })
+  await AgentCore.create(baseDir, "general", {
+    name: "general",
+    mode: "worker",
+    tools: ["bash", "read", "glob", "grep", "edit", "write", "task", "webfetch", "websearch", "codesearch", "apply_patch", "memory_read", "memory_write", "memory_delete"],
+  })
+  // mode "system" matches the actual registry content (fixed from a stale "primary"
+  // during remove-hardcoded-agent-templates — see configure-session-core.ts's and
+  // workflow/routes.ts's mode !== "system" filters, which this value is meant to satisfy).
+  await AgentCore.create(baseDir, "compaction", {
+    name: "compaction",
+    mode: "system",
+    hidden: true,
+    tools: [],
+    permission: { "*": "deny" },
+  })
+  await AgentCore.create(baseDir, "title", {
+    name: "title",
+    mode: "system",
+    hidden: true,
+    tools: [],
+  })
+  await AgentCore.create(baseDir, "summary", {
+    name: "summary",
+    mode: "system",
+    hidden: true,
+    tools: [],
+  })
+})
 
 test("returns default native agents when no config", async () => {
   await using tmp = await tmpdir()
@@ -552,6 +607,9 @@ description: Permission skill.
   process.env.OPENCODE_TEST_HOME = tmp.path
 
   try {
+    // This test swaps OPENCODE_TEST_HOME to tmp.path, a fresh home with no agents
+    // seeded — unlike the shared home the top-level beforeAll seeds into.
+    await AgentCore.create(Global.Path.home, "build", { name: "build", mode: "primary" })
     await Instance.provide({
       directory: tmp.path,
       fn: async () => {
@@ -626,7 +684,7 @@ test("defaultAgent throws when default_agent points to subagent", async () => {
   })
 })
 
-test("defaultAgent throws when default_agent points to hidden agent", async () => {
+test("defaultAgent throws when default_agent points to a system-mode agent", async () => {
   await using tmp = await tmpdir({
     config: {
       default_agent: "compaction",
@@ -635,7 +693,9 @@ test("defaultAgent throws when default_agent points to hidden agent", async () =
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
-      await expect(Agent.defaultAgent()).rejects.toThrow('default agent "compaction" is hidden')
+      // compaction's mode is "system" (not "primary"), so isPrimaryMode() rejects
+      // it before the hidden check is ever reached.
+      await expect(Agent.defaultAgent()).rejects.toThrow('default agent "compaction" is not a primary agent')
     },
   })
 })

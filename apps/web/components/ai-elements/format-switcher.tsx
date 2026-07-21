@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import type { RenderLayoutConfig } from "@/lib/format-translator"
 import { translateAll } from "@/lib/format-translator"
+import type { SchemaProp } from "@/components/workflow/schema-builder"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CodeBlock } from "./code-block"
 import { DataView } from "./data-view"
@@ -94,7 +95,14 @@ export function ToolCardSections({
               const isResult = label === "Result"
               return renderSection(
                 label,
-                <CodeBlock code={translateAll(data, isResult ? renderLayout : undefined)[f.key]} language={f.lang} />,
+                <CodeBlock
+                  code={translateAll(
+                    data,
+                    isResult ? renderLayout : undefined,
+                    isResult ? (displayProps as SchemaProp[] | undefined) : undefined,
+                  )[f.key]}
+                  language={f.lang}
+                />,
               )
             })}
           </div>

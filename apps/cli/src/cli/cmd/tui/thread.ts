@@ -14,6 +14,7 @@ import type { EventSource } from "./context/sdk"
 import { win32DisableProcessedInput, win32InstallCtrlCGuard } from "./win32"
 import { TuiConfig } from "@projectflows/config/tui"
 import { Instance } from "@projectflows/runtime/instance"
+import { runOnboarding } from "../onboarding"
 
 declare global {
   const OPENCODE_WORKER_PATH: string
@@ -112,6 +113,11 @@ export const TuiThreadCommand = cmd({
         UI.error("Failed to change directory to " + cwd)
         return
       }
+
+      // Ensure core plugins are installed before the worker starts serving agent
+      // data — this is the default entry point ($0 [project]) and previously had
+      // no such guarantee (unlike serve/web, which already await this).
+      await runOnboarding()
 
       const worker = new Worker(workerPath, {
         env: Object.fromEntries(

@@ -18,6 +18,26 @@ import { Skill } from "@projectflows/skills/skill"
 import PROMPT_GENERATE from "./generate.txt"
 
 export namespace Agent {
+  // "native" hides the Delete action for these agents in the UI and marks them as
+  // built-in in the CLI/TUI. Identity-only — no persona/config content lives here
+  // (that's sourced entirely from plugin install, agents-default/agent-core in the
+  // registry). Deriving this from actual plugin provenance instead (CapabilityRegistry)
+  // isn't possible: packages/plugin depends on packages/tools depends on
+  // packages/runtime, so packages/runtime can't depend back on packages/plugin
+  // without a cycle. This ID list is the pragmatic alternative.
+  const DEFAULT_AGENT_IDS = new Set([
+    "build",
+    "plan",
+    "general",
+    "explore",
+    "product-owner",
+    "agent-owner",
+    "compaction",
+    "title",
+    "summary",
+    "pm",
+  ])
+
   const PRIMARY_AGENT_MODES = new Set(["primary", "all"] as const)
   const WORKER_AGENT_MODES = new Set(["worker", "subagent", "all"] as const)
 
@@ -292,13 +312,14 @@ export namespace Agent {
     }
 
     const modelOverride = typeof agentCfg?.model === "string" ? parseModelStr(agentCfg.model) : undefined
+    const mode = agentCfg?.mode ?? entry.config.mode ?? "all"
 
     return {
       id: entry.id,
       name: (agentCfg as any)?.name ?? entry.config.name,
       description: agentCfg?.description ?? entry.config.description,
-      mode: agentCfg?.mode ?? entry.config.mode ?? "all",
-      native: AgentCore.hasTemplate(entry.id),
+      mode,
+      native: DEFAULT_AGENT_IDS.has(entry.id),
       hidden: agentCfg?.hidden ?? entry.config.hidden,
       temperature: agentCfg?.temperature ?? entry.config.temperature,
       topP: agentCfg?.top_p,
@@ -333,7 +354,7 @@ export namespace Agent {
   // agent off disk — every chat message resolves the agent at least twice, so
   // this was paying that I/O multiple times per message. Cache the raw entries
   // per baseDir and invalidate on any write (create/update/remove/setPersona/
-  // setInjection/resetToTemplate are the only writers, all in this file).
+  // setInjection are the only writers, all in this file).
   const entriesCache = new Map<string, Promise<AgentCore.Entry[]>>()
 
   function getEntries(): Promise<AgentCore.Entry[]> {
@@ -513,12 +534,6 @@ export namespace Agent {
 
   export async function setInjection(id: string, text: string) {
     const result = await AgentCore.setInjection(agentBaseDir(), id, text)
-    invalidateEntries()
-    return result
-  }
-
-  export async function resetToTemplate(id: string) {
-    const result = await AgentCore.resetToTemplate(agentBaseDir(), id)
     invalidateEntries()
     return result
   }
