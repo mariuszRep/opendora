@@ -1,16 +1,16 @@
 # @projectflows/agent
 
-Template-based agent management system for Projectflows.
+File-based agent management system for Projectflows.
 
 ## Overview
 
-All agents are now **file-based** with no distinction between "native" and "custom" agents. Default agents are seeded from templates on first run, and can be freely edited, deleted, or reset to their template defaults.
+All agents are file-based. Default agent content is installed from registry plugins during onboarding/core setup; this package manages the installed files and does not bundle or seed persona content.
 
 ## Key Features
 
 ✅ **All agents are editable** - Including build, plan, explore, etc.
 ✅ **Tool restrictions work correctly** - Select exactly which tools each agent can use
-✅ **Template reset** - Restore any agent to its default template
+✅ **Plugin-installed defaults** - Default personas come from the registry
 ✅ **Clean separation** - Agent logic is isolated from Projectflows core
 ✅ **No global state** - All functions take a `baseDirectory` parameter
 
@@ -19,12 +19,6 @@ All agents are now **file-based** with no distinction between "native" and "cust
 ```
 packages/agent/
 ├── src/
-│   ├── templates/          # Built-in agent templates
-│   │   ├── build.ts        # Default build agent
-│   │   ├── plan.ts         # Plan-mode agent
-│   │   ├── explore.ts      # Codebase exploration agent
-│   │   ├── general.ts      # General-purpose agent
-│   │   └── ...
 │   ├── storage.ts          # File I/O operations
 │   └── index.ts            # Main API
 └── package.json
@@ -37,7 +31,7 @@ packages/agent/
 ```typescript
 import { Agent } from "@projectflows/agent"
 
-// List all agents (auto-seeds templates on first run)
+// List installed agents
 const agents = await Agent.list(baseDirectory)
 
 // Get a specific agent
@@ -55,9 +49,6 @@ await Agent.create(baseDirectory, "my-agent", {
 await Agent.update(baseDirectory, "explore", {
   tools: ["question"],  // Restrict to only question tool
 })
-
-// Reset to template
-await Agent.resetToTemplate(baseDirectory, "build")
 
 // Delete an agent
 await Agent.remove(baseDirectory, "my-agent")
@@ -90,34 +81,19 @@ Agents are stored in `.projectflows/agents/`:
     └── ...
 ```
 
-## Templates
+## Default Agents
 
-Default templates are defined in `src/templates/`:
-
-- **build** - Default development agent (all tools)
-- **plan** - Read-only planning agent
-- **explore** - Codebase exploration (read-only tools)
-- **general** - General-purpose sub-agent
-- **compaction**, **title**, **summary** - Internal agents
-
-Users can modify these agents freely, and reset them to templates anytime with:
-
-```typescript
-await Agent.resetToTemplate(baseDirectory, "build")
-```
+The registry's `agents-default` plugin installs the core default agents, including `compaction`, `title`, and `summary`. Reinstall or update that plugin to restore registry-provided content; this package deliberately has no embedded template fallback.
 
 ## Migration from Old System
 
-The old system had:
-- Hardcoded "native" agents in `agent.ts`
-- Separate "file-based" agents
-- Tool filtering didn't work properly
+The old system had hardcoded templates in core source and a first-run seed path.
 
 The new system:
 - All agents are file-based
-- Seeded from templates on first run
+- Installed from plugins during onboarding/core setup
 - Tool filtering works correctly
-- Agents are fully editable and deletable
+- Agents are editable and deletable
 
 ## Testing
 
@@ -128,8 +104,7 @@ bun test
 ```
 
 The tests verify:
-- ✅ Agent seeding from templates
+- ✅ File-based agent operations
 - ✅ Tool filtering (select specific tools)
 - ✅ Tool clearing (allow all tools)
-- ✅ Reset to template
 - ✅ Create/update/delete operations

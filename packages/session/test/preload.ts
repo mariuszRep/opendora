@@ -59,15 +59,22 @@ delete process.env["CEREBRAS_API_KEY"]
 delete process.env["SAMBANOVA_API_KEY"]
 
 const { Log } = await import("@projectflows/util/log")
+const { Global } = await import("@projectflows/util/global")
 process.env["OPENCODE_MODELS_PATH"] = path.join(import.meta.dir, "tool", "fixtures", "models-api.json")
 
 Log.init({ print: false, dev: true, level: "DEBUG" })
+
+// Agent personas are installed by plugins in production. Seed the minimal
+// primary agent required by session tests that resolve the default agent.
+const agentsDir = path.join(Global.Path.home, ".projectflows", "agents")
+await fs.mkdir(path.join(agentsDir, "build"), { recursive: true })
+await fs.writeFile(path.join(agentsDir, "build", "agent.json"), JSON.stringify({ name: "build", mode: "primary" }))
+await fs.writeFile(path.join(agentsDir, "build", "PERSONA.md"), "")
 
 // Configure session core with minimal dependencies for tests
 const { configure } = await import("@projectflows/session")
 const { Database } = await import("@projectflows/storage/db")
 const { Config } = await import("@projectflows/config/config")
-const { Global } = await import("@projectflows/util/global")
 configure({
   get db() {
     return Database.Client()
