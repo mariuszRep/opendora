@@ -136,13 +136,15 @@ function DataCard({
   const titleProp = itemProps?.find((p) => p.display?.role === "title")
   const descProp = itemProps?.find((p) => p.display?.role === "description")
   const statusProp = itemProps?.find((p) => p.display?.role === "status")
+  const footerProp = itemProps?.find((p) => p.display?.role === "footer")
   const usedNames = new Set(
-    [titleProp?.name, descProp?.name, statusProp?.name].filter(Boolean) as string[]
+    [titleProp?.name, descProp?.name, statusProp?.name, footerProp?.name].filter(Boolean) as string[]
   )
 
   const title = titleProp ? item[titleProp.name] : undefined
   const desc = descProp ? item[descProp.name] : undefined
   const status = statusProp ? item[statusProp.name] : undefined
+  const footer = footerProp ? item[footerProp.name] : undefined
 
   // Remaining fields not used as roles and not hidden
   const bodyEntries = Object.entries(item).filter(([k]) => {
@@ -173,6 +175,11 @@ function DataCard({
             )
           })}
         </CardContent>
+      )}
+      {footer !== undefined && (
+        <div className="px-6 pb-4">
+          <Badge variant="outline">{String(footer)}</Badge>
+        </div>
       )}
     </Card>
   )
@@ -228,13 +235,23 @@ function DataObjectCard({
   const titleProp = props?.find((p) => p.display?.role === "title")
   const descProp = props?.find((p) => p.display?.role === "description")
   const statusProp = props?.find((p) => p.display?.role === "status")
+  const footerProp = props?.find((p) => p.display?.role === "footer")
+
+  // A lone object with nothing tagged gets no benefit from a Card wrapper —
+  // render the same flat field list as DataObjectDetails instead of an
+  // empty-header Card.
+  if (!titleProp && !descProp && !statusProp && !footerProp) {
+    return <DataObjectDetails obj={obj} props={props} />
+  }
+
   const usedNames = new Set(
-    [titleProp?.name, descProp?.name, statusProp?.name].filter(Boolean) as string[]
+    [titleProp?.name, descProp?.name, statusProp?.name, footerProp?.name].filter(Boolean) as string[]
   )
 
   const title = titleProp ? obj[titleProp.name] : undefined
   const desc = descProp ? obj[descProp.name] : undefined
   const status = statusProp ? obj[statusProp.name] : undefined
+  const footer = footerProp ? obj[footerProp.name] : undefined
 
   const bodyEntries = Object.entries(obj).filter(([k]) => {
     if (usedNames.has(k)) return false
@@ -263,6 +280,11 @@ function DataObjectCard({
             )
           })}
         </CardContent>
+      )}
+      {footer !== undefined && (
+        <div className="px-6 pb-4">
+          <Badge variant="outline">{String(footer)}</Badge>
+        </div>
       )}
     </Card>
   )

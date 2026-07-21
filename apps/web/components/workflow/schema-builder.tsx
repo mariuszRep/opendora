@@ -302,6 +302,7 @@ function PropRow({ prop, depth, suggestions, onChange, onDelete, showRole }: Pro
                 <SelectItem value="title" className="text-xs">Title</SelectItem>
                 <SelectItem value="description" className="text-xs">Description</SelectItem>
                 <SelectItem value="status" className="text-xs">Status (badge)</SelectItem>
+                <SelectItem value="footer" className="text-xs">Footer</SelectItem>
                 <SelectItem value="image" className="text-xs">Image</SelectItem>
               </SelectContent>
             </Select>

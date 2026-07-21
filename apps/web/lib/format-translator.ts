@@ -1,4 +1,5 @@
 import { dump } from "js-yaml"
+import type { SchemaProp } from "@/components/workflow/schema-builder"
 
 export type RenderLayoutConfig = {
   arrayAs?: "auto" | "table" | "cards" | "list"
@@ -339,26 +340,173 @@ function valueToHtmlAuto(value: unknown, depth = 0): string {
   return escHtml(String(value))
 }
 
+// ── schemaProps-driven renderers ─────────────────────────────────────────────
+// Mirrors apps/web/components/ai-elements/data-view.tsx's component structure
+// (DataCard/DataObjectCard/DataTable/DataList/DataObjectDetails/SmartCell)
+// exactly, so HTML Code and Preview make the same layout decisions off the same
+// schemaProps data — this is the primary path now (schemaProps, set via the
+// SchemaBuilder UI's per-field Display/Role controls, always exist once a
+// Structured node's output schema has been edited). renderLayout is only
+// consulted as a legacy fallback when schemaProps is absent entirely.
+
+function propByName(props: SchemaProp[] | undefined, name: string): SchemaProp | undefined {
+  return props?.find((p) => p.name === name)
+}
+
+function isHidden(props: SchemaProp[] | undefined, name: string): boolean {
+  return propByName(props, name)?.display?.as === "hidden"
+}
+
+// Mirrors SmartCell: hidden → nothing, link/badge/image display hints, else plain value.
+function cellHtmlSP(value: unknown, prop?: SchemaProp): string {
+  const as = prop?.display?.as ?? "auto"
+  if (as === "hidden") return ""
+  if (value === null || value === undefined) return `<span style="color:var(--muted)">—</span>`
+  if (as === "link" || (as === "auto" && typeof value === "string" && /^https?:\/\//.test(value))) {
+    return `<a href="${escHtml(String(value))}" target="_blank" rel="noopener noreferrer">${escHtml(String(value))}</a>`
+  }
+  if (as === "badge") return `<span class="badge">${escHtml(String(value))}</span>`
+  if (as === "image" && typeof value === "string") return `<img class="card-img" src="${escHtml(value)}" alt="" style="max-height:40px;max-width:40px" />`
+  if (typeof value === "object") return `<code>${escHtml(JSON.stringify(value))}</code>`
+  return escHtml(String(value))
+}
+
+// Mirrors resolveColumns + DataTable.
+function renderTableSP(rows: Record<string, unknown>[], itemProps?: SchemaProp[]): string {
+  if (rows.length === 0) return "<em>No items</em>"
+  let cols = Object.keys(rows[0] ?? {})
+  if (itemProps?.length) {
+    const schemaNames = itemProps.filter((p) => p.display?.as !== "hidden").map((p) => p.name).filter(Boolean)
+    const ordered = schemaNames.filter((n) => cols.includes(n))
+    const rest = cols.filter((n) => !schemaNames.includes(n))
+    cols = [...ordered, ...rest]
+  }
+  const thead = cols.map((k) => `<th>${escHtml(k)}</th>`).join("")
+  const tbody = rows.map((row) => {
+    const cells = cols.map((k) => `<td>${cellHtmlSP(row[k], propByName(itemProps, k))}</td>`).join("")
+    return `<tr>${cells}</tr>`
+  }).join("")
+  return `<table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>`
+}
+
+// Mirrors DataCard/DataObjectCard (shared logic — used for both array items and a single tagged object).
+function renderCardSP(obj: Record<string, unknown>, props?: SchemaProp[]): string {
+  const titleProp = props?.find((p) => p.display?.role === "title")
+  const descProp = props?.find((p) => p.display?.role === "description")
+  const statusProp = props?.find((p) => p.display?.role === "status")
+  const footerProp = props?.find((p) => p.display?.role === "footer")
+  const usedNames = new Set([titleProp?.name, descProp?.name, statusProp?.name, footerProp?.name].filter(Boolean) as string[])
+
+  const title = titleProp ? obj[titleProp.name] : undefined
+  const desc = descProp ? obj[descProp.name] : undefined
+  const status = statusProp ? obj[statusProp.name] : undefined
+  const footer = footerProp ? obj[footerProp.name] : undefined
+
+  const bodyEntries = Object.entries(obj).filter(([k]) => !usedNames.has(k) && !isHidden(props, k))
+
+  const titleHtml = title !== undefined ? `<p class="card-title">${escHtml(String(title))}</p>` : ""
+  const descHtml = desc !== undefined ? `<p class="card-desc">${escHtml(String(desc))}</p>` : ""
+  const statusHtml = status !== undefined ? `<span class="badge">${escHtml(String(status))}</span>` : ""
+  const bodyHtml = bodyEntries.length > 0
+    ? `<div class="card-meta">${bodyEntries.map(([k, v]) => `<span><strong>${escHtml(k)}:</strong> ${cellHtmlSP(v, propByName(props, k))}</span>`).join("")}</div>`
+    : ""
+  const footerHtml = footer !== undefined ? `<div class="card-footer"><span class="badge">${escHtml(String(footer))}</span></div>` : ""
+
+  return `<div class="card">${titleHtml}${statusHtml}${descHtml}${bodyHtml}${footerHtml}</div>`
+}
+
+function renderCardsSP(items: unknown[], itemProps?: SchemaProp[]): string {
+  const html = items.map((item) => {
+    const obj = (item !== null && typeof item === "object" && !Array.isArray(item)) ? item as Record<string, unknown> : {}
+    return renderCardSP(obj, itemProps)
+  }).join("")
+  return `<div class="cards">${html}</div>`
+}
+
+// Mirrors DataList: title-tagged field only, falls back to the item's JSON/string form.
+function renderListSP(items: unknown[], itemProps?: SchemaProp[]): string {
+  const titleProp = itemProps?.find((p) => p.display?.role === "title")
+  const html = items.map((item) => {
+    const label = titleProp && typeof item === "object" && item !== null
+      ? String((item as Record<string, unknown>)[titleProp.name] ?? JSON.stringify(item))
+      : typeof item === "object" && item !== null ? JSON.stringify(item) : String(item)
+    return `<div class="list-item"><span class="list-title">${escHtml(label)}</span></div>`
+  }).join("")
+  return `<div>${html}</div>`
+}
+
+// Mirrors DataObjectDetails: flat, hidden-filtered field list — no title/description
+// promotion (that's what the tagged-card path below is for; Details is deliberately
+// the "just show me everything, plainly" mode).
+function renderFlatSP(obj: Record<string, unknown>, props?: SchemaProp[]): string {
+  const entries = Object.entries(obj).filter(([k]) => !isHidden(props, k))
+  const rows = entries.map(([k, v]) => `<dt>${escHtml(k)}</dt><dd>${cellHtmlSP(v, propByName(props, k))}</dd>`).join("")
+  return `<dl>${rows}</dl>`
+}
+
+// Mirrors DataView's object+schemaProps branch exactly: promote a primary array
+// field via its own Display setting; else a details-tagged nested object field;
+// else a single tagged object renders as a card, an untagged one renders flat
+// (a lone object gets no benefit from a card wrapper — see this goal's history).
+function renderObjectSP(obj: Record<string, unknown>, schemaProps: SchemaProp[]): string {
+  const arrayProp = schemaProps.find((p) => p.type === "array" && p.display?.as !== "hidden")
+  if (arrayProp && Array.isArray(obj[arrayProp.name])) {
+    const arrAs = arrayProp.display?.as ?? "auto"
+    const arrData = obj[arrayProp.name] as unknown[]
+    const itemProps = arrayProp.itemProperties
+    if (arrAs === "cards") return renderCardsSP(arrData, itemProps)
+    if (arrAs === "list") return renderListSP(arrData, itemProps)
+    if (arrAs === "table" || (arrAs === "auto" && itemProps?.length)) {
+      return renderTableSP(arrData as Record<string, unknown>[], itemProps)
+    }
+    return renderListSP(arrData, itemProps)
+  }
+
+  const objAs = schemaProps.find((p) => p.type === "object")?.display?.as
+  if (objAs === "details") return renderFlatSP(obj, schemaProps)
+
+  const hasAnyRole = schemaProps.some((p) => ["title", "description", "status", "footer"].includes(p.display?.role ?? ""))
+  return hasAnyRole ? renderCardSP(obj, schemaProps) : renderFlatSP(obj, schemaProps)
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export function dataToHtml(data: unknown, renderLayout?: RenderLayoutConfig): string {
+export function dataToHtml(data: unknown, renderLayout?: RenderLayoutConfig, schemaProps?: SchemaProp[]): string {
   let body: string
 
-  if (!renderLayout || ((!renderLayout.arrayAs || renderLayout.arrayAs === "auto") && (!renderLayout.objectAs || renderLayout.objectAs === "auto"))) {
-    body = valueToHtmlAuto(data)
+  if (typeof data === "object" && data !== null && !Array.isArray(data) && schemaProps?.length) {
+    body = renderObjectSP(data as Record<string, unknown>, schemaProps)
   } else if (Array.isArray(data)) {
-    switch (renderLayout.arrayAs) {
-      case "table": body = renderTable(data, renderLayout); break
-      case "cards": body = renderCards(data, renderLayout); break
-      case "list":  body = renderList(data, renderLayout); break
-      default:      body = valueToHtmlAuto(data)
-    }
-  } else if (data !== null && typeof data === "object") {
+    // Top-level array output — rare (SchemaBuilder only builds object-root schemas),
+    // reachable only via hand-authored workflow JSON. Legacy renderLayout-driven path.
+    const arrayAs = renderLayout?.arrayAs ?? "auto"
+    if (arrayAs === "table") body = renderTable(data, renderLayout ?? {})
+    else if (arrayAs === "cards") body = renderCards(data, renderLayout ?? {})
+    else if (arrayAs === "list") body = renderList(data, renderLayout ?? {})
+    else body = valueToHtmlAuto(data)
+  } else if (typeof data === "object" && data !== null) {
+    // Object with no schemaProps — legacy renderLayout fallback, mirrors DataView's
+    // own fallback branch (explicit details/card, or auto single-array-key unwrap).
     const obj = data as Record<string, unknown>
-    switch (renderLayout.objectAs) {
-      case "card":    body = renderObjectCard(obj, renderLayout); break
-      case "details": body = renderObjectDetails(obj, renderLayout); break
-      default:        body = valueToHtmlAuto(data)
+    const objectAs = renderLayout?.objectAs ?? "auto"
+    if (objectAs === "details") {
+      body = renderFlatSP(obj, undefined)
+    } else if (objectAs === "card") {
+      body = renderCardSP(obj, undefined)
+    } else {
+      const entries = Object.entries(obj)
+      if (entries.length === 1 && Array.isArray(entries[0][1])) {
+        body = dataToHtmlBody(entries[0][1], renderLayout, undefined)
+      } else {
+        const arrayEntries = entries.filter(([, v]) => Array.isArray(v))
+        if (arrayEntries.length > 0 && arrayEntries.length === entries.length) {
+          body = arrayEntries.map(([key, arr]) =>
+            `<div style="margin-bottom:16px"><p style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;margin:0 0 4px">${escHtml(key)}</p>${dataToHtmlBody(arr, renderLayout, undefined)}</div>`
+          ).join("")
+        } else {
+          body = renderFlatSP(obj, undefined)
+        }
+      }
     }
   } else {
     body = valueToHtmlAuto(data)
@@ -367,15 +515,23 @@ export function dataToHtml(data: unknown, renderLayout?: RenderLayoutConfig): st
   return wrapHtml(body)
 }
 
+// Body-only variant (no <html> wrapper) for recursive calls within dataToHtml's fallback branch.
+function dataToHtmlBody(data: unknown, renderLayout?: RenderLayoutConfig, schemaProps?: SchemaProp[]): string {
+  const full = dataToHtml(data, renderLayout, schemaProps)
+  const match = full.match(/<body>([\s\S]*)<\/body>/)
+  return match ? match[1] : full
+}
+
 export function translateAll(
   data: unknown,
   renderLayout?: RenderLayoutConfig,
+  schemaProps?: SchemaProp[],
 ): Record<"json" | "yaml" | "xml" | "markdown" | "html", string> {
   return {
     json: dataToJson(data),
     yaml: dataToYaml(data),
     xml: dataToXml(data),
     markdown: dataToMarkdown(data),
-    html: dataToHtml(data, renderLayout),
+    html: dataToHtml(data, renderLayout, schemaProps),
   }
 }
