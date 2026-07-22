@@ -6,6 +6,9 @@ import { UI } from "../ui"
 import { cmd } from "./cmd"
 import { JsonMigration } from "@projectflows/storage/json-migration"
 import { EOL } from "os"
+import { bootstrap } from "../bootstrap"
+import { configureSessionCore } from "@projectflows/server/configure-session-core"
+import { verifyMigration } from "@projectflows/session/graph-migration"
 
 const QueryCommand = cmd({
   command: "$0 [query]",
@@ -108,11 +111,41 @@ const MigrateCommand = cmd({
   },
 })
 
+const VerifyGraphCommand = cmd({
+  command: "verify-graph",
+  describe: "verify the entries+edges graph matches legacy message/part data for every session",
+  builder: (yargs: Argv) => {
+    return yargs.option("session", {
+      type: "string",
+      describe: "check a single session ID instead of every session",
+    })
+  },
+  handler: async (args: { session?: string }) => {
+    await bootstrap(process.cwd(), async () => {
+      configureSessionCore()
+      const report = verifyMigration(args.session)
+      UI.println(
+        `Checked ${report.sessionsChecked} session(s): ${report.sessionsClean} clean, ${report.mismatches.length} with mismatches`,
+      )
+      for (const mismatch of report.mismatches) {
+        UI.println(`  ${mismatch.sessionId}:`)
+        for (const issue of mismatch.issues) UI.println(`    - ${issue}`)
+      }
+      if (report.mismatches.length > 0) process.exit(1)
+    })
+  },
+})
+
 export const DbCommand = cmd({
   command: "db",
   describe: "database tools",
   builder: (yargs: Argv) => {
-    return yargs.command(QueryCommand).command(PathCommand).command(MigrateCommand).demandCommand()
+    return yargs
+      .command(QueryCommand)
+      .command(PathCommand)
+      .command(MigrateCommand)
+      .command(VerifyGraphCommand)
+      .demandCommand()
   },
   handler: () => {},
 })

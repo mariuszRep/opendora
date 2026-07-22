@@ -4,6 +4,8 @@ import { Global } from "@projectflows/util/global"
 import { Log } from "@projectflows/util/log"
 import { ProjectTable } from "./project.sql"
 import { SessionTable, MessageTable, PartTable, TodoTable } from "@projectflows/session/sql"
+import { configure as configureSessionDb } from "@projectflows/session/config"
+import { migrateSession } from "@projectflows/session/graph-migration"
 import { SessionShareTable } from "./share.sql"
 import path from "path"
 import { existsSync } from "fs"
@@ -370,6 +372,17 @@ export namespace JsonMigration {
     }
 
     sqlite.exec("COMMIT")
+
+    // Bypass writer — backfill entries/edges for every touched session synchronously.
+    // This runs before @projectflows/session's real config is set up (server startup
+    // configures it later), so point it at the same drizzle db this migration just
+    // wrote to, just long enough to call migrateSession() per session.
+    if (sessionIds.size > 0) {
+      configureSessionDb({ db, dataPath: Global.Path.data })
+      for (const id of sessionIds) {
+        await migrateSession(id)
+      }
+    }
 
     log.info("json migration complete", {
       projects: stats.projects,

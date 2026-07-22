@@ -11,6 +11,23 @@ import { CheckpointStore, registerActiveRun, deregisterActiveRun, type StepJourn
 export type { WorkflowToolContext } from "./executor.ts"
 export { registerToolExecutor } from "./executor.ts"
 
+/** An input/configuration error which must never be retried by a workflow loop. */
+export class WorkflowValidationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "WorkflowValidationError"
+  }
+}
+
+export function isWorkflowValidationError(error: unknown): error is WorkflowValidationError {
+  return error instanceof WorkflowValidationError || (error instanceof Error && error.name === "WorkflowValidationError")
+}
+
+export type WorkflowRunDetailedResult = {
+  display: string
+  outputObject: { status: Record<string, unknown>; result?: Record<string, unknown> }
+}
+
 // Tracks the chain of workflow IDs currently executing on this async call stack.
 // Propagates automatically through the tool executor → workflow_run → runWorkflow path,
 // so cycles are caught regardless of call depth.
@@ -394,7 +411,7 @@ async function runSubGraph({
       for (const p of defs) {
         const val = received[p.name]
         if (p.required !== false && (val === null || val === undefined || val === "")) {
-          throw new Error(
+          throw new WorkflowValidationError(
             `Workflow parameter "${p.name}" is required but was not provided.` +
             (p.description ? ` (${p.description})` : "")
           )
@@ -402,7 +419,7 @@ async function runSubGraph({
         if (p.enum && p.enum.length > 0 && val !== null && val !== undefined && val !== "") {
           const strVal = String(val)
           if (!p.enum.includes(strVal)) {
-            throw new Error(
+            throw new WorkflowValidationError(
               `Workflow parameter "${p.name}" value "${strVal}" is not allowed. ` +
               `Allowed values: ${p.enum.join(", ")}`
             )
@@ -489,16 +506,36 @@ async function runSubGraph({
         const resolvedStdin = resolveDeep(params.stdin, input, ctx)
         resolvedArgs.stdin = JSON.stringify(resolvedStdin)
       }
-      // For RunWorkflow: params beyond the known workflow_run keys are individual
-      // workflow input values. Assemble them into resolvedArgs.input and remove
-      // the individual keys so the tool executor receives a clean call.
+      // RunWorkflow accepts either an explicit object/JSON object or legacy
+      // individual fields. Keep control and runner bookkeeping keys out of child input.
       if (d.nodeType === NodeTypeId.RunWorkflow) {
-        const TOOL_KEYS = new Set(["workflowId", "wait", "agentId", "workdir"])
-        const wfInput: Record<string, unknown> = {}
-        for (const k of Object.keys(resolvedArgs)) {
-          if (!TOOL_KEYS.has(k)) { wfInput[k] = resolvedArgs[k]; delete resolvedArgs[k] }
+        const TOOL_KEYS = new Set(["workflowId", "wait", "agentId", "workdir", "input", "output", "resultPath"])
+        const explicit = resolvedArgs.input
+        let explicitInput: Record<string, unknown> = {}
+        if (explicit !== undefined) {
+          if (typeof explicit === "string") {
+            if (!explicit.trim()) throw new WorkflowValidationError(`RunWorkflow node "${nodeLabel}" input must be a non-empty JSON object.`)
+            try { explicitInput = JSON.parse(explicit) } catch {
+              throw new WorkflowValidationError(`RunWorkflow node "${nodeLabel}" input must be valid JSON object.`)
+            }
+          } else if (explicit !== null && typeof explicit === "object" && !Array.isArray(explicit)) {
+            explicitInput = explicit as Record<string, unknown>
+          } else {
+            throw new WorkflowValidationError(`RunWorkflow node "${nodeLabel}" input must be a non-null, non-array object.`)
+          }
+          if (explicitInput === null || typeof explicitInput !== "object" || Array.isArray(explicitInput)) {
+            throw new WorkflowValidationError(`RunWorkflow node "${nodeLabel}" input must resolve to a non-null, non-array object.`)
+          }
         }
-        if (Object.keys(wfInput).length > 0) resolvedArgs.input = wfInput
+        const individual: Record<string, unknown> = {}
+        for (const key of Object.keys(resolvedArgs)) if (!TOOL_KEYS.has(key)) individual[key] = resolvedArgs[key]
+        for (const key of Object.keys(individual)) {
+          if (Object.prototype.hasOwnProperty.call(explicitInput, key)) {
+            throw new WorkflowValidationError(`RunWorkflow node "${nodeLabel}" input key "${key}" is supplied by both explicit input and an individual field.`)
+          }
+        }
+        for (const key of Object.keys(resolvedArgs)) if (!TOOL_KEYS.has(key)) delete resolvedArgs[key]
+        if (explicit !== undefined || Object.keys(individual).length > 0) resolvedArgs.input = { ...explicitInput, ...individual }
         resolvedArgs.wait = true
       }
 
@@ -570,6 +607,7 @@ async function runSubGraph({
           break
         } catch (err) {
           lastError = err
+          if (isWorkflowValidationError(err)) break
           if (attempt < maxAttempts) {
             await new Promise<void>((r) => setTimeout(r, delayMs))
           }
@@ -578,6 +616,11 @@ async function runSubGraph({
 
       if (lastError !== undefined) throw lastError
       result = toolOutput!
+
+      if (d.nodeType === NodeTypeId.RunWorkflow && toolMeta?.outputObject !== undefined) {
+        if (storeAs !== undefined) ctx[storeAs] = toolMeta.outputObject
+        if (nodeKey !== undefined) ctx[nodeKey] = toolMeta.outputObject
+      }
 
       // resultPath: extract a value from tool metadata instead of the raw string output.
       // Allows question/multi-choice tools to store machine-readable answers array
@@ -727,6 +770,7 @@ async function runSubGraph({
               break
             } catch (err) {
               steps.push(...iterSteps.map((s) => ({ ...s, label: `[${i}] ${s.label}` })))
+              if (isWorkflowValidationError(err)) throw err
               if (attempt >= MAX_RETRIES) throw err
               const delay = RETRY_BASE_DELAY_MS * attempt
               const errMsg = err instanceof Error ? err.message : String(err)
@@ -924,11 +968,11 @@ async function runSubGraph({
     }
 
     // Structured/Output/ForEach/Decide/Variable nodes already wrote native values into ctx above; skip the string overwrite.
-    if (d.nodeType !== NodeTypeId.Decide && d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && d.nodeType !== NodeTypeId.ForEach && d.nodeType !== NodeTypeId.Variable && storeAs !== undefined && result !== undefined) ctx[storeAs] = result
+    if (d.nodeType !== NodeTypeId.Decide && d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && d.nodeType !== NodeTypeId.ForEach && d.nodeType !== NodeTypeId.Variable && d.nodeType !== NodeTypeId.RunWorkflow && storeAs !== undefined && result !== undefined) ctx[storeAs] = result
 
     // Write under the stable node key so downstream nodes can use $nodeKey references.
     // Structured/Output/ForEach/Variable already wrote parsed objects above; all other types write the string result.
-    if (d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && d.nodeType !== NodeTypeId.ForEach && d.nodeType !== NodeTypeId.Variable && nodeKey !== undefined && result !== undefined) {
+    if (d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && d.nodeType !== NodeTypeId.ForEach && d.nodeType !== NodeTypeId.Variable && d.nodeType !== NodeTypeId.RunWorkflow && nodeKey !== undefined && result !== undefined) {
       ctx[nodeKey] = result
     }
 
@@ -977,6 +1021,21 @@ export async function runWorkflow({
   input: Record<string, unknown>
   directory: string
 }): Promise<string> {
+  const result = await runWorkflowDetailed({ workflow, sessionId, input, directory })
+  return result.display
+}
+
+export async function runWorkflowDetailed({
+  workflow,
+  sessionId,
+  input,
+  directory,
+}: {
+  workflow: Workflow
+  sessionId: string
+  input: Record<string, unknown>
+  directory: string
+}): Promise<WorkflowRunDetailedResult> {
   if (workflow.nodes.length === 0) throw new Error("Workflow has no nodes")
 
   // Detect cycles before executing anything.
@@ -988,10 +1047,10 @@ export async function runWorkflow({
   const activeStack = new Set(parentStack ?? [])
   activeStack.add(workflow.id)
 
-  return _callStack.run(activeStack, () => _runWorkflow({ workflow, sessionId, input, directory }))
+  return _callStack.run(activeStack, () => _runWorkflowDetailed({ workflow, sessionId, input, directory }))
 }
 
-async function _runWorkflow({
+async function _runWorkflowDetailed({
   workflow,
   sessionId,
   input,
@@ -1001,7 +1060,7 @@ async function _runWorkflow({
   sessionId: string
   input: Record<string, unknown>
   directory: string
-}): Promise<string> {
+}): Promise<WorkflowRunDetailedResult> {
   // Hydrate ctx and step journal from latest checkpoint if resuming
   let ctx: Record<string, unknown> = {}
   const steps: GraphStep[] = []
@@ -1055,17 +1114,15 @@ async function _runWorkflow({
     } else {
       await CheckpointStore.complete(sessionId, ctx, journalEntries)
     }
-    if (workflowOutput !== undefined) {
-      const status = {
-        workflow: workflow.name,
-        completed: !error,
-        ...(error ? { error } : {}),
-        passed,
-        failed,
-        steps: steps.map((s) => ({ label: s.label, passed: s.passed })),
-      }
-      return JSON.stringify({ status, result: workflowOutput }, null, 2)
+    const status = {
+      workflow: workflow.name,
+      completed: !error,
+      ...(error ? { error } : {}),
+      passed,
+      failed,
+      steps: steps.map((s) => ({ label: s.label, passed: s.passed })),
     }
+    if (workflowOutput !== undefined) return { display: JSON.stringify({ status, result: workflowOutput }, null, 2), outputObject: { status, result: workflowOutput } }
     const lines = [
       error
         ? `Workflow "${workflow.name}" stopped — ${error}`
@@ -1074,7 +1131,7 @@ async function _runWorkflow({
       "",
       ...steps.map((s) => `${s.passed ? "✓" : "✗"} ${s.label}`),
     ]
-    return lines.join("\n")
+    return { display: lines.join("\n"), outputObject: { status } }
   }
 
   try {

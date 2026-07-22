@@ -16,6 +16,7 @@ import { getConfig } from "./config.ts"
 import { SessionSummary } from "./summary.ts"
 import { MessageTable, PartTable } from "./session.sql.ts"
 import { eq } from "drizzle-orm"
+import { deleteEntryGraph, deleteToolPartGraph } from "./graph-migration.ts"
 
 const SessionDiffEvent = { type: "session.diff" }
 const MessageRemovedEvent = { type: "message.removed" }
@@ -153,6 +154,7 @@ export namespace SessionRevert {
         })
       }
       db.delete(MessageTable).where(eq(MessageTable.id, msg.info.id)).run()
+      deleteEntryGraph(db, msg.info.id)
       bus?.publish(MessageRemovedEvent, { sessionID: sessionID, messageID: msg.info.id })
     }
 
@@ -165,6 +167,7 @@ export namespace SessionRevert {
         target.parts = preserveParts
         for (const part of removeParts) {
           db.delete(PartTable).where(eq(PartTable.id, part.id)).run()
+          deleteToolPartGraph(db, part.id)
           bus?.publish(PartRemovedEvent, {
             sessionID: sessionID,
             messageID: target.info.id,

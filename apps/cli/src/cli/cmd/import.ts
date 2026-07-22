@@ -5,6 +5,8 @@ import { cmd } from "./cmd"
 import { bootstrap } from "../bootstrap"
 import { Database, eq } from "@projectflows/storage/db"
 import { SessionTable, MessageTable, PartTable } from "@projectflows/session/sql"
+import { migrateSession } from "@projectflows/session/graph-migration"
+import { configureSessionCore } from "@projectflows/server/configure-session-core"
 import { Instance } from "@projectflows/runtime/instance"
 import { ShareNext } from "@projectflows/session/share-next"
 import { EOL } from "os"
@@ -493,6 +495,12 @@ export const ImportCommand = cmd({
           )
         }
       }
+
+      // Bypass writer — backfill entries/edges synchronously since migrateAllSessions()'s
+      // one-shot marker won't pick this session up after the first server-start scan.
+      // configureSessionCore() is idempotent — safe even if server startup already ran it.
+      configureSessionCore()
+      await migrateSession(exportData.info.id)
 
       process.stdout.write(`Imported session: ${exportData.info.id}${EOL}`)
       process.stdout.write(`Messages: ${insertedMessages} inserted, ${skippedMessages} skipped${EOL}`)

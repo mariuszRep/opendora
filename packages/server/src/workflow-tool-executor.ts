@@ -11,7 +11,7 @@ import { ToolRegistry } from "@projectflows/server/tool-registry"
 import { addSkillTools, getSkillTools } from "@projectflows/session/skill-tools"
 import type { ToolExecutor } from "@projectflows/workflow/executor"
 import { WorkflowStorage } from "@projectflows/workflow/storage"
-import { runWorkflow } from "@projectflows/workflow/runner"
+import { runWorkflowDetailed } from "@projectflows/workflow/runner"
 import { mergeArgs, formatValidationFeedback, toJsonSchema } from "./workflow-tool-fill"
 
 /**
@@ -90,8 +90,10 @@ export function createWorkflowToolExecutor(): ToolExecutor {
         workflow: {
           get: (id: string) => WorkflowStorage.get(sessionDirectory, id),
           availableIds: () => WorkflowStorage.availableIds(sessionDirectory),
-          run: (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) =>
-            runWorkflow({ workflow, sessionId, input, directory }),
+          runDetailed: (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) =>
+            runWorkflowDetailed({ workflow, sessionId, input, directory }),
+          run: async (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) =>
+            (await runWorkflowDetailed({ workflow, sessionId, input, directory })).display,
         },
         prompt: (opts: any) => SessionPrompt.prompt(opts),
         resolvePromptParts: (template: string) => SessionPrompt.resolvePromptParts(template),

@@ -17,6 +17,7 @@ import { SessionManager } from "./session-manager"
 import { RetentionDaemon } from "./daemon"
 import type { SessionType, RetentionPolicy, SendPolicy, CreateSessionOptions, PongOptions, EdgeType, Edge } from "./types"
 import { NotFoundError } from "@projectflows/storage/db"
+import { writeToolPartEntries, writeGenericPartEntry, deriveActor, deleteEntryGraph, deleteToolPartGraph } from "./graph-migration.ts"
 
 // Inline iife utility
 function iife<T>(fn: () => T): T {
@@ -934,6 +935,41 @@ export namespace Session {
         .returning()
         .get()
       if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
+
+      // Durable instantiated_as edge — survives workflow_run being nulled out on completion.
+      if (input.workflowRun) {
+        const existingEdge = db
+          .select({ id: EdgesTable.id })
+          .from(EdgesTable)
+          .where(
+            and(
+              eq(EdgesTable.from_type, "workflow"),
+              eq(EdgesTable.from_id, input.workflowRun.workflowID),
+              eq(EdgesTable.to_id, input.sessionID),
+              eq(EdgesTable.type, "instantiated_as"),
+            ),
+          )
+          .limit(1)
+          .get()
+        if (!existingEdge) {
+          db.insert(EdgesTable)
+            .values({
+              id: Identifier.ascending("edge"),
+              from_type: "workflow",
+              from_id: input.workflowRun.workflowID,
+              to_type: "session",
+              to_id: input.sessionID,
+              type: "instantiated_as",
+              seq_in_parent: null,
+              label: null,
+              metadata: null,
+              created_at: new Date().toISOString(),
+            })
+            .onConflictDoNothing()
+            .run()
+        }
+      }
+
       const info = fromRow(row)
       getConfig().bus?.publish(Event.Updated, { info })
       return info
@@ -1278,17 +1314,7 @@ export namespace Session {
     }
 
     // Phase 2: EntriesTable dual-write — keep entries in sync with MessageTable.
-    const actorKind = (msg as any).from?.kind as string | undefined
-    let entryActor: string
-    if (actorKind === "agent" || actorKind === "assistant" || (msg as any).role === "assistant") {
-      entryActor = "assistant"
-    } else if (actorKind === "workflow") {
-      entryActor = "workflow"
-    } else if (actorKind === "system" || actorKind === "scheduler") {
-      entryActor = "system"
-    } else {
-      entryActor = "user"
-    }
+    const entryActor = deriveActor(data as Record<string, unknown>)
     db.insert(EntriesTable)
       .values({
         id,
@@ -1371,6 +1397,7 @@ export namespace Session {
       db.delete(MessageTable)
         .where(and(eq(MessageTable.id, input.messageID), eq(MessageTable.session_id, input.sessionID)))
         .run()
+      deleteEntryGraph(db, input.messageID)
       cfg.bus?.publish(MessageV2.Event.Removed, {
         sessionID: input.sessionID,
         messageID: input.messageID,
@@ -1391,6 +1418,7 @@ export namespace Session {
       db.delete(PartTable)
         .where(and(eq(PartTable.id, input.partID), eq(PartTable.session_id, input.sessionID)))
         .run()
+      deleteToolPartGraph(db, input.partID)
       cfg.bus?.publish(MessageV2.Event.PartRemoved, {
         sessionID: input.sessionID,
         messageID: input.messageID,
@@ -1418,7 +1446,7 @@ export namespace Session {
       .onConflictDoUpdate({ target: PartTable.id, set: { data } })
       .run()
 
-    // Phase 2b: sync EntriesTable status and content_text from part events.
+    // Phase 2b: sync EntriesTable status/content_text on the parent message entry.
     if (part.type === "step-finish") {
       db.update(EntriesTable)
         .set({ status: "complete" })
@@ -1429,6 +1457,37 @@ export namespace Session {
         .set({ content_text: (part as any).text.slice(0, 1000) })
         .where(eq(EntriesTable.id, messageID))
         .run()
+    }
+
+    // Phase 6a: every part gets its own entry + a contains edge from its message entry.
+    const msgRow = db
+      .select({ data: MessageTable.data })
+      .from(MessageTable)
+      .where(eq(MessageTable.id, messageID))
+      .get()
+    const actor = deriveActor(msgRow?.data as Record<string, unknown> | undefined)
+    const createdAt = new Date(time).toISOString()
+
+    if (part.type === "tool") {
+      const toolPart = part as any
+      writeToolPartEntries(db, {
+        partID: id,
+        messageID,
+        tool: toolPart.tool,
+        state: toolPart.state,
+        payload: data as Record<string, unknown>,
+        actor,
+        createdAt,
+      })
+    } else {
+      writeGenericPartEntry(db, {
+        partID: id,
+        messageID,
+        partType: part.type,
+        payload: data as Record<string, unknown>,
+        actor,
+        createdAt,
+      })
     }
 
     cfg.bus?.publish(MessageV2.Event.PartUpdated, { part })

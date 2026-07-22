@@ -505,29 +505,21 @@ export const MessageRow = React.memo(function MessageRow({
                         {step.kind === "reply" ? (
                           <MessageContent className={shouldUseFullWidth ? "w-full" : undefined}>
                             {step.error ? (
-                              <>
-                                {((step.error.data as { message?: string })?.message?.toLowerCase().includes("provider") || (step.error.data as { message?: string })?.message?.toLowerCase().includes("rate limit")) ? (
-                                  <ModelSwitchCard
-                                    fallbackGroup={selectedGroupId && modelGroups.find(g => g.id === selectedGroupId) ? {
-                                      id: selectedGroupId,
-                                      name: modelGroups.find(g => g.id === selectedGroupId)!.name,
-                                      slots: modelGroups.find(g => g.id === selectedGroupId)!.models.map(m => ({ providerID: m.providerID, modelID: m.modelID, modelName: modelList.find(ml => ml.providerID === m.providerID && ml.modelID === m.modelID)?.modelName })),
-                                    } : undefined}
-                                    currentSlot={selectedModel ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID, modelName: selectedModel.modelName } : undefined}
-                                    failedSlots={selectedModel ? [{
-                                      providerID: selectedModel.providerID,
-                                      modelID: selectedModel.modelID,
-                                    }] : []}
-                                    errorMessage={(step.error.data as { message?: string })?.message ?? step.error.name}
-                                    retryAttempt={sessionRetryStatus[selectedSession?.id ?? ""]?.attempt}
-                                    retryDelay={sessionRetryStatus[selectedSession?.id ?? ""]?.next ? sessionRetryStatus[selectedSession?.id ?? ""]!.next - Date.now() : undefined}
-                                  />
-                                ) : (
-                                  <p className="text-destructive text-sm">
-                                    {String((step.error.data as { message?: string })?.message ?? step.error.name)}
-                                  </p>
-                                )}
-                              </>
+                              <ModelSwitchCard
+                                fallbackGroup={selectedGroupId && modelGroups.find(g => g.id === selectedGroupId) ? {
+                                  id: selectedGroupId,
+                                  name: modelGroups.find(g => g.id === selectedGroupId)!.name,
+                                  slots: modelGroups.find(g => g.id === selectedGroupId)!.models.map(m => ({ providerID: m.providerID, modelID: m.modelID, modelName: modelList.find(ml => ml.providerID === m.providerID && ml.modelID === m.modelID)?.modelName })),
+                                } : undefined}
+                                currentSlot={selectedModel ? { providerID: selectedModel.providerID, modelID: selectedModel.modelID, modelName: selectedModel.modelName } : undefined}
+                                failedSlots={selectedModel ? [{
+                                  providerID: selectedModel.providerID,
+                                  modelID: selectedModel.modelID,
+                                }] : []}
+                                errorMessage={(step.error.data as { message?: string })?.message ?? step.error.name}
+                                retryAttempt={sessionRetryStatus[selectedSession?.id ?? ""]?.attempt}
+                                retryDelay={sessionRetryStatus[selectedSession?.id ?? ""]?.next ? sessionRetryStatus[selectedSession?.id ?? ""]!.next - Date.now() : undefined}
+                              />
                             ) : null}
                             {step.content ? <MessageResponse>{step.content}</MessageResponse> : null}
                           </MessageContent>

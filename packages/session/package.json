@@ -34,7 +34,8 @@
     "./token-usage-sql":        "./src/token-usage.sql.ts",
     "./token-usage":            "./src/token-usage.ts",
     "./token-usage-file":       "./src/token-usage-file.ts",
-    "./share-next":             "./src/share-next.ts"
+    "./share-next":             "./src/share-next.ts",
+    "./graph-migration":        "./src/graph-migration.ts"
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",
