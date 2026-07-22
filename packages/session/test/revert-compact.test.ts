@@ -300,4 +300,90 @@ describe("revert + compact workflow", () => {
       },
     })
   })
+
+  test("cleanup still discards a queued message that falls in the revert range and logs a warning", async () => {
+    await using tmp = await tmpdir({ git: true })
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const session = await Session.create({})
+        const sessionID = session.id
+
+        const userMsg1 = await Session.updateMessage({
+          id: Identifier.ascending("message"),
+          role: "user",
+          sessionID,
+          agent: "default",
+          model: { providerID: "openai", modelID: "gpt-4" },
+          time: { created: Date.now() },
+        })
+        await Session.updatePart({
+          id: Identifier.ascending("part"),
+          messageID: userMsg1.id,
+          sessionID,
+          type: "text",
+          text: "first message",
+        })
+
+        // A message that's still queued (never activated) when the revert point lands before it.
+        const queuedMsg = await Session.updateMessage({
+          id: Identifier.ascending("message"),
+          role: "user",
+          sessionID,
+          agent: "default",
+          model: { providerID: "openai", modelID: "gpt-4" },
+          time: { created: Date.now() },
+          queue: { status: "queued", submittedAt: Date.now() },
+        })
+        await Session.updatePart({
+          id: Identifier.ascending("part"),
+          messageID: queuedMsg.id,
+          sessionID,
+          type: "text",
+          text: "still queued when reverted",
+        })
+
+        await SessionRevert.revert(
+          { sessionID, messageID: userMsg1.id },
+          {
+            assertNotBusy: () => {},
+            getMessages: async (sid) => Session.messages({ sessionID: sid }),
+            getSession: async (sid) => Session.get(sid),
+            setRevert: Session.setRevert,
+          },
+        )
+
+        const sessionInfo = await Session.get(sessionID)
+        // bun's spyOn(console, "warn") didn't reliably intercept calls made from a
+        // different module several `await`s deep in this test's environment — swap
+        // the property directly instead, which matches exactly what the source's
+        // live `console.warn(...)` call looks up at call time.
+        const originalWarn = console.warn
+        let warnCallCount = 0
+        console.warn = (...args: unknown[]) => {
+          warnCallCount++
+        }
+        try {
+          await SessionRevert.cleanup(sessionInfo, {
+            getMessages: async (sid) => {
+              const r = [] as MessageV2.WithParts[]
+              for await (const m of MessageV2.stream(sid)) r.push(m)
+              return r
+            },
+            clearRevert: Session.clearRevert,
+          })
+        } finally {
+          console.warn = originalWarn
+        }
+
+        // Deletion still happens — cleanup does not treat "queued" as protected.
+        const messages = await Session.messages({ sessionID })
+        expect(messages.map((m) => m.info.id)).not.toContain(queuedMsg.id)
+        // The discard was logged, not silent.
+        expect(warnCallCount).toBeGreaterThan(0)
+
+        await Session.remove(sessionID)
+      },
+    })
+  })
 })

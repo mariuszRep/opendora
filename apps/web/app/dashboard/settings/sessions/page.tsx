@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -142,10 +143,12 @@ export default function SettingsSessionsPage() {
     setDeleting(true)
     setDeleteError(null)
     const failed: string[] = []
+    let queuedMessagesDiscarded = 0
     await Promise.all(
       pendingDeleteIds.map(async (id) => {
         try {
-          await opendora.session.delete(id)
+          const result = await opendora.session.delete(id)
+          queuedMessagesDiscarded += result.queuedMessagesDiscarded
         } catch {
           failed.push(id)
         }
@@ -158,7 +161,14 @@ export default function SettingsSessionsPage() {
       return
     }
     setShowDeleteConfirm(false)
-    window.location.reload()
+    if (queuedMessagesDiscarded > 0) {
+      toast.warning(
+        `${queuedMessagesDiscarded} queued message${queuedMessagesDiscarded > 1 ? "s were" : " was"} not sent — the session(s) were deleted before they could be processed.`,
+      )
+      setTimeout(() => window.location.reload(), 1500)
+    } else {
+      window.location.reload()
+    }
   }
 
   return (

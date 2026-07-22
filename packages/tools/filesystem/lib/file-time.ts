@@ -6,23 +6,41 @@ export namespace FileTime {
   // All tools that overwrite existing files should run their
   // assert/read/write/update sequence inside withLock(filepath, ...)
   // so concurrent writes to the same file are serialized.
-  const read: {
-    [sessionID: string]: {
-      [path: string]: Date | undefined
+  //
+  // Anchored on globalThis to stay consistent with the projectflows-website
+  // tool-sdk copy of this module, where each filesystem tool is bundled
+  // independently and a plain module-scope variable would fragment per bundle.
+  interface State {
+    read: {
+      [sessionID: string]: {
+        [path: string]: Date | undefined
+      }
     }
-  } = {}
-  const locks = new Map<string, Promise<void>>()
+    locks: Map<string, Promise<void>>
+  }
+
+  const GLOBAL_KEY = "__projectflowsFileTime__"
+
+  function state(): State {
+    const g = globalThis as unknown as Record<string, State>
+    if (!g[GLOBAL_KEY]) {
+      g[GLOBAL_KEY] = { read: {}, locks: new Map() }
+    }
+    return g[GLOBAL_KEY]
+  }
 
   export function recordRead(sessionID: string, file: string) {
-    read[sessionID] = read[sessionID] || {}
-    read[sessionID][file] = new Date()
+    const s = state()
+    s.read[sessionID] = s.read[sessionID] || {}
+    s.read[sessionID][file] = new Date()
   }
 
   export function get(sessionID: string, file: string) {
-    return read[sessionID]?.[file]
+    return state().read[sessionID]?.[file]
   }
 
   export async function withLock<T>(filepath: string, fn: () => Promise<T>): Promise<T> {
+    const { locks } = state()
     const currentLock = locks.get(filepath) ?? Promise.resolve()
     let release: () => void = () => {}
     const nextLock = new Promise<void>((resolve) => {

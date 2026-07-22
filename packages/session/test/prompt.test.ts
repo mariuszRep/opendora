@@ -301,6 +301,104 @@ describe("session.prompt queued messages", () => {
       },
     })
   })
+
+  test("Session.remove reports queuedMessagesDiscarded when a queued message is deleted with the session", async () => {
+    await using tmp = await tmpdir({
+      git: true,
+      config: {
+        agent: {
+          build: {
+            model: "openai/gpt-5.2",
+          },
+        },
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const session = await Session.create({})
+        await SessionPrompt.prompt({
+          sessionID: session.id,
+          agent: "build",
+          noReply: true,
+          queued: true,
+          parts: [{ type: "text", text: "queued and never activated" }],
+        })
+
+        const result = await Session.remove(session.id)
+        expect(result.queuedMessagesDiscarded).toBe(1)
+      },
+    })
+  })
+
+  test("Session.remove reports zero when there are no queued messages", async () => {
+    await using tmp = await tmpdir({
+      git: true,
+      config: {
+        agent: {
+          build: {
+            model: "openai/gpt-5.2",
+          },
+        },
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const session = await Session.create({})
+        await SessionPrompt.prompt({
+          sessionID: session.id,
+          agent: "build",
+          noReply: true,
+          parts: [{ type: "text", text: "not queued" }],
+        })
+
+        const result = await Session.remove(session.id)
+        expect(result.queuedMessagesDiscarded).toBe(0)
+      },
+    })
+  })
+
+  test("a still-queued message can be identified for deletion without asserting session busy", async () => {
+    await using tmp = await tmpdir({
+      git: true,
+      config: {
+        agent: {
+          build: {
+            model: "openai/gpt-5.2",
+          },
+        },
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const session = await Session.create({})
+        const msg = await SessionPrompt.prompt({
+          sessionID: session.id,
+          agent: "build",
+          noReply: true,
+          queued: true,
+          parts: [{ type: "text", text: "queued, should be cancelable" }],
+        })
+
+        // Mirrors the conditional in the DELETE /:sessionID/message/:messageID route:
+        // a still-queued message is excluded from the model context, so it's safe to
+        // delete without going through SessionPrompt.assertNotBusy.
+        const stored = await MessageV2.get({ sessionID: session.id, messageID: msg.info.id })
+        const isQueued = stored.info.role === "user" && stored.info.queue?.status === "queued"
+        expect(isQueued).toBe(true)
+
+        await Session.removeMessage({ sessionID: session.id, messageID: msg.info.id })
+        await expect(MessageV2.get({ sessionID: session.id, messageID: msg.info.id })).rejects.toThrow()
+
+        await Session.remove(session.id)
+      },
+    })
+  })
 })
 
 describe("session.prompt agent variant", () => {

@@ -146,6 +146,12 @@ export namespace SessionRevert {
     const bus = getConfig().bus
 
     for (const msg of remove) {
+      if (msg.info.role === "user" && (msg.info as MessageV2.User).queue?.status === "queued") {
+        console.warn("[session] revert cleanup discarded a queued message", {
+          sessionID,
+          messageID: msg.info.id,
+        })
+      }
       db.delete(MessageTable).where(eq(MessageTable.id, msg.info.id)).run()
       bus?.publish(MessageRemovedEvent, { sessionID: sessionID, messageID: msg.info.id })
     }

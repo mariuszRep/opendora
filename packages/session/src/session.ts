@@ -859,18 +859,23 @@ export namespace Session {
     return rows.map(fromRow)
   })
 
-  export const remove = fn(Identifier.schema("session"), async (sessionID) => {
+  export const remove = fn(Identifier.schema("session"), async (sessionID): Promise<{ queuedMessagesDiscarded: number }> => {
     try {
       await get(sessionID)
+      let queuedMessagesDiscarded = (await messages({ sessionID })).filter(
+        (m) => m.info.role === "user" && (m.info as MessageV2.User).queue?.status === "queued",
+      ).length
       for (const child of (await children(sessionID)) as Info[]) {
-        await remove(child.id)
+        const childResult = await remove(child.id)
+        queuedMessagesDiscarded += childResult.queuedMessagesDiscarded
       }
       await unshare(sessionID).catch(() => {})
       await sessionManager.delete(sessionID)
+      return { queuedMessagesDiscarded }
     } catch (e) {
       if (NotFoundError.isInstance(e)) {
         // Session already deleted - treat as success (idempotent)
-        return
+        return { queuedMessagesDiscarded: 0 }
       }
       log.error("[session] remove error:", e)
       throw e

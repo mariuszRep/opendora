@@ -228,7 +228,7 @@ export const SessionRoutes = lazy(() =>
             description: "Successfully deleted session",
             content: {
               "application/json": {
-                schema: resolver(z.boolean()),
+                schema: resolver(z.object({ success: z.boolean(), queuedMessagesDiscarded: z.number() })),
               },
             },
           },
@@ -243,8 +243,8 @@ export const SessionRoutes = lazy(() =>
       ),
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
-        await Session.remove(sessionID)
-        return c.json(true)
+        const { queuedMessagesDiscarded } = await Session.remove(sessionID)
+        return c.json({ success: true, queuedMessagesDiscarded })
       },
     )
     .get(
@@ -934,7 +934,14 @@ export const SessionRoutes = lazy(() =>
       ),
       async (c) => {
         const params = c.req.valid("param")
-        SessionPrompt.assertNotBusy(params.sessionID)
+        const message = await MessageV2.get(params)
+        // A still-queued message hasn't been activated into the model's context yet
+        // (see modelContextForQueuedTurn in prompt.ts), so removing it can't corrupt
+        // an in-flight turn — safe to delete even while the session is busy.
+        const isQueued = message.info.role === "user" && message.info.queue?.status === "queued"
+        if (!isQueued) {
+          SessionPrompt.assertNotBusy(params.sessionID)
+        }
         await Session.removeMessage({
           sessionID: params.sessionID,
           messageID: params.messageID,

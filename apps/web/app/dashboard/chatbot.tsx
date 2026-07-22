@@ -87,6 +87,7 @@ import {
   KeyIcon,
   SendIcon,
   SquareSlash,
+  XIcon,
 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { toast } from "sonner"
@@ -710,6 +711,19 @@ export const Chatbot = () => {
     [selectedSession],
   )
 
+  const handleCancelQueuedMessage = useCallback(
+    (messageID: string) => {
+      if (!selectedSession) return
+      opendora.session.deleteMessage(selectedSession.id, messageID).catch((err) => {
+        // Same benign race as activation: the loop may have already drained this
+        // message between the click and the request landing.
+        if (err instanceof Error && err.message.includes(" 404:")) return
+        toast.error("Failed to cancel queued message")
+      })
+    },
+    [selectedSession],
+  )
+
   useEffect(() => {
     setSlashCommandIdx(0)
   }, [text])
@@ -1062,19 +1076,25 @@ export const Chatbot = () => {
             <PromptInputHeader>
               <AttachmentsDisplay />
               {queuedMessages.length > 0 && (
-                <div className="flex flex-col gap-1.5">
+                <div className="w-full rounded-md border border-border bg-muted/40 divide-y divide-border overflow-hidden">
                   {queuedMessages.map((m) => (
                     <div
                       key={m.info.id}
-                      className="flex items-start gap-2 p-2 rounded-md border border-border bg-muted/50 text-sm"
+                      className="flex w-full items-start gap-2 px-2.5 py-2 text-sm"
                     >
-                      <span
-                        className="size-1.5 mt-2 rounded-full bg-current animate-pulse shrink-0 text-muted-foreground"
-                        aria-hidden="true"
-                      />
                       <span className="flex-1 min-w-0 whitespace-pre-wrap break-words text-foreground">
                         {getMessageText(m.parts)}
                       </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="shrink-0"
+                        onClick={() => handleCancelQueuedMessage(m.info.id)}
+                      >
+                        <XIcon className="size-3.5" />
+                        Cancel
+                      </Button>
                       <Button
                         type="button"
                         size="sm"

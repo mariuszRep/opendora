@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { Loader2Icon, Trash2Icon, FolderOpenIcon, ComponentIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -166,10 +167,17 @@ export function SessionGeneralPanel({ session, onOpenChange }: SessionGeneralPan
     setDeleting(true)
     setError(null)
     try {
-      await opendora.session.delete(session.id)
+      const { queuedMessagesDiscarded } = await opendora.session.delete(session.id)
       setShowDeleteConfirm(false)
       onOpenChange(false)
-      window.location.reload()
+      if (queuedMessagesDiscarded > 0) {
+        toast.warning(
+          `${queuedMessagesDiscarded} queued message${queuedMessagesDiscarded > 1 ? "s were" : " was"} not sent — the session was deleted before they could be processed.`,
+        )
+        setTimeout(() => window.location.reload(), 1500)
+      } else {
+        window.location.reload()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete session")
       setShowDeleteConfirm(false)

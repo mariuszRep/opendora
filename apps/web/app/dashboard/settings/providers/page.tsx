@@ -233,6 +233,7 @@ export default function ProvidersPage() {
           providerName: p.name,
           modelID: m.id,
           modelName: (m as { name?: string }).name ?? m.id,
+          availability: (m as { availability?: string }).availability,
         }))
       })
   }, [providers, connectedProviders, modelFilters])

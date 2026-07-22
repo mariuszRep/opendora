@@ -620,7 +620,8 @@ export const opendora = {
         cwd?: string | null
       },
     ) => req<Session>(`/session/${sessionID}`, { method: "PATCH", body: JSON.stringify(updates) }),
-    delete: (sessionID: string) => req<boolean>(`/session/${sessionID}`, { method: "DELETE" }),
+    delete: (sessionID: string) =>
+      req<{ success: boolean; queuedMessagesDiscarded: number }>(`/session/${sessionID}`, { method: "DELETE" }),
     setAgent: (sessionID: string, agentID: string | null) =>
       req<Session>(`/session/${sessionID}`, { method: "PATCH", body: JSON.stringify({ agentID }) }),
     prompt: (
@@ -652,6 +653,8 @@ export const opendora = {
       }),
     activateQueuedMessage: (sessionID: string, messageID: string) =>
       req<void>(`/session/${sessionID}/message/${messageID}/activate`, { method: "POST" }),
+    deleteMessage: (sessionID: string, messageID: string) =>
+      req<boolean>(`/session/${sessionID}/message/${messageID}`, { method: "DELETE" }),
   },
   provider: {
     list: () =>
