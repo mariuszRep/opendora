@@ -2,8 +2,8 @@ import z from "zod"
 import { NamedError } from "@projectflows/util/error"
 import { APICallError, convertToModelMessages, LoadAPIKeyError, type ModelMessage, type UIMessage } from "ai"
 import { getConfig } from "./config"
-import { MessageTable, PartTable } from "./session.sql"
-import { eq, desc, inArray } from "drizzle-orm"
+import { EntriesTable, EdgesTable } from "./session.sql"
+import { eq, and, asc, desc, inArray } from "drizzle-orm"
 
 // TODO: type when BusEvent is migrated — use minimal inline definition
 function defineBusEvent<Type extends string>(type: Type, properties: z.ZodType<any>) {
@@ -763,106 +763,179 @@ export namespace MessageV2 {
     )
   }
 
+  /**
+   * Resolves reply_to parent linkage for a batch of message entries: parentMessageID
+   * always comes from the edge's from_id; parentSessionID is the current session for
+   * a same-session reply, or resolved by following the parent's own session->entry
+   * contains edge when the edge's metadata marks it a cross-session delegation.
+   */
+  async function resolveParents(
+    db: any,
+    messageIDs: string[],
+    sessionID: string,
+  ): Promise<Map<string, { parentMessageID: string; parentSessionID: string }>> {
+    const result = new Map<string, { parentMessageID: string; parentSessionID: string }>()
+    if (messageIDs.length === 0) return result
+
+    const replyEdges = db
+      .select({ from_id: EdgesTable.from_id, to_id: EdgesTable.to_id, metadata: EdgesTable.metadata })
+      .from(EdgesTable)
+      .where(and(inArray(EdgesTable.to_id, messageIDs), eq(EdgesTable.type, "reply_to")))
+      .all()
+    if (replyEdges.length === 0) return result
+
+    const delegatedParentIds = replyEdges
+      .filter((e: any) => (e.metadata as any)?.delegation)
+      .map((e: any) => e.from_id)
+    const parentSessionByParentId = new Map<string, string>()
+    if (delegatedParentIds.length > 0) {
+      const parentContainsEdges = db
+        .select({ from_id: EdgesTable.from_id, to_id: EdgesTable.to_id })
+        .from(EdgesTable)
+        .where(
+          and(
+            eq(EdgesTable.from_type, "session"),
+            inArray(EdgesTable.to_id, delegatedParentIds),
+            eq(EdgesTable.type, "contains"),
+          ),
+        )
+        .all()
+      for (const pc of parentContainsEdges) parentSessionByParentId.set(pc.to_id, pc.from_id)
+    }
+
+    for (const e of replyEdges) {
+      const isDelegation = !!(e.metadata as any)?.delegation
+      const parentSessionID = isDelegation ? parentSessionByParentId.get(e.from_id) : sessionID
+      if (parentSessionID) result.set(e.to_id, { parentMessageID: e.from_id, parentSessionID })
+    }
+    return result
+  }
+
+  /** Batch-fetches ordered part entries for a set of message-entry ids. */
+  async function partsByMessageBatch(db: any, messageIDs: string[]): Promise<Map<string, MessageV2.Part[]>> {
+    const result = new Map<string, MessageV2.Part[]>()
+    if (messageIDs.length === 0) return result
+
+    const partEdges = db
+      .select({ from_id: EdgesTable.from_id, to_id: EdgesTable.to_id })
+      .from(EdgesTable)
+      .where(
+        and(
+          eq(EdgesTable.from_type, "entry"),
+          inArray(EdgesTable.from_id, messageIDs),
+          eq(EdgesTable.type, "contains"),
+        ),
+      )
+      .orderBy(asc(EdgesTable.seq_in_parent))
+      .all()
+    if (partEdges.length === 0) return result
+
+    const partIds = partEdges.map((e: any) => e.to_id)
+    const entryRows = db.select().from(EntriesTable).where(inArray(EntriesTable.id, partIds)).all()
+    const entryById = new Map<string, any>(entryRows.map((r: any) => [r.id, r]))
+
+    for (const e of partEdges) {
+      const entry = entryById.get(e.to_id)
+      if (!entry) continue
+      const part = {
+        ...(entry.payload_json as Record<string, unknown>),
+        id: entry.id,
+        messageID: e.from_id,
+      } as MessageV2.Part
+      const list = result.get(e.from_id)
+      if (list) list.push(part)
+      else result.set(e.from_id, [part])
+    }
+    return result
+  }
+
   export async function* stream(sessionID: string): AsyncGenerator<WithParts> {
     const db = getConfig().db
     const size = 50
     let offset = 0
     while (true) {
-      const rows = db
-        .select()
-        .from(MessageTable)
-        .where(eq(MessageTable.session_id, sessionID))
-        .orderBy(desc(MessageTable.time_created))
+      const edgeRows = db
+        .select({ to_id: EdgesTable.to_id })
+        .from(EdgesTable)
+        .where(
+          and(
+            eq(EdgesTable.from_type, "session"),
+            eq(EdgesTable.from_id, sessionID),
+            eq(EdgesTable.type, "contains"),
+          ),
+        )
+        .orderBy(desc(EdgesTable.seq_in_parent))
         .limit(size)
         .offset(offset)
         .all()
-      if (rows.length === 0) break
+      if (edgeRows.length === 0) break
 
-      const ids = rows.map((row: any) => row.id)
-      const partsByMessage = new Map<string, MessageV2.Part[]>()
-      if (ids.length > 0) {
-        const partRows = db
-          .select()
-          .from(PartTable)
-          .where(inArray(PartTable.message_id, ids))
-          .orderBy(PartTable.message_id, PartTable.id)
-          .all()
-        for (const row of partRows) {
-          const part = {
-            ...row.data,
-            id: row.id,
-            sessionID: row.session_id,
-            messageID: row.message_id,
-          } as MessageV2.Part
-          const list = partsByMessage.get(row.message_id)
-          if (list) list.push(part)
-          else partsByMessage.set(row.message_id, [part])
-        }
-      }
+      const messageIDs = edgeRows.map((r: any) => r.to_id)
+      const entryRows = db.select().from(EntriesTable).where(inArray(EntriesTable.id, messageIDs)).all()
+      const entryById = new Map<string, any>(entryRows.map((r: any) => [r.id, r]))
+      const partsByMessage = await partsByMessageBatch(db, messageIDs)
+      const parentByMessage = await resolveParents(db, messageIDs, sessionID)
 
-      // Batch-resolve parentSessionID for messages that have a cross-session parent_message_id
-      const parentMsgIds = rows
-        .map((r: any) => r.parent_message_id)
-        .filter(Boolean) as string[]
-      const parentSessionByMsgId = new Map<string, string>()
-      if (parentMsgIds.length > 0) {
-        const parentRows = db
-          .select({ id: MessageTable.id, session_id: MessageTable.session_id })
-          .from(MessageTable)
-          .where(inArray(MessageTable.id, parentMsgIds))
-          .all()
-        for (const pr of parentRows) {
-          parentSessionByMsgId.set(pr.id, pr.session_id)
-        }
-      }
-
-      for (const row of rows) {
-        const info = { ...row.data, id: row.id, sessionID: row.session_id } as MessageV2.Info
-        const parentMsgId = (row as any).parent_message_id
-        if (parentMsgId) {
-          ;(info as any).parentMessageID = parentMsgId
-          const parentSessionID = parentSessionByMsgId.get(parentMsgId)
-          if (parentSessionID) (info as any).parentSessionID = parentSessionID
+      for (const messageID of messageIDs) {
+        const entry = entryById.get(messageID)
+        if (!entry) continue
+        const info = {
+          ...(entry.payload_json as Record<string, unknown>),
+          id: entry.id,
+          sessionID,
+        } as MessageV2.Info
+        const parent = parentByMessage.get(messageID)
+        if (parent) {
+          ;(info as any).parentMessageID = parent.parentMessageID
+          ;(info as any).parentSessionID = parent.parentSessionID
         }
         yield {
           info,
-          parts: partsByMessage.get(row.id) ?? [],
+          parts: (partsByMessage.get(messageID) ?? []).map((p) => ({ ...p, sessionID }) as MessageV2.Part),
         }
       }
 
-      offset += rows.length
-      if (rows.length < size) break
+      offset += edgeRows.length
+      if (edgeRows.length < size) break
     }
   }
 
   export async function parts(message_id: string): Promise<MessageV2.Part[]> {
     const db = getConfig().db
-    const rows = db
-      .select()
-      .from(PartTable)
-      .where(eq(PartTable.message_id, message_id))
-      .orderBy(PartTable.id)
-      .all()
-    return rows.map(
-      (row: any) => ({ ...row.data, id: row.id, sessionID: row.session_id, messageID: row.message_id }) as MessageV2.Part,
-    )
+    const sessionEdge = db
+      .select({ from_id: EdgesTable.from_id })
+      .from(EdgesTable)
+      .where(
+        and(
+          eq(EdgesTable.from_type, "session"),
+          eq(EdgesTable.to_id, message_id),
+          eq(EdgesTable.type, "contains"),
+        ),
+      )
+      .get()
+    const sessionID = sessionEdge?.from_id ?? ""
+
+    const byMessage = await partsByMessageBatch(db, [message_id])
+    return (byMessage.get(message_id) ?? []).map((p) => ({ ...p, sessionID }) as MessageV2.Part)
   }
 
   export async function get(input: { sessionID: string; messageID: string }): Promise<WithParts> {
     const db = getConfig().db
-    const row = db.select().from(MessageTable).where(eq(MessageTable.id, input.messageID)).get()
-    if (!row) throw new Error(`Message not found: ${input.messageID}`)
-    const info = { ...row.data, id: row.id, sessionID: row.session_id } as MessageV2.Info
-    const parentMsgId = (row as any).parent_message_id
-    if (parentMsgId) {
-      ;(info as any).parentMessageID = parentMsgId
-      const parentRow = db
-        .select({ session_id: MessageTable.session_id })
-        .from(MessageTable)
-        .where(eq(MessageTable.id, parentMsgId))
-        .get()
-      if (parentRow) (info as any).parentSessionID = parentRow.session_id
+    const entry = db.select().from(EntriesTable).where(eq(EntriesTable.id, input.messageID)).get()
+    if (!entry) throw new Error(`Message not found: ${input.messageID}`)
+    const info = {
+      ...(entry.payload_json as Record<string, unknown>),
+      id: entry.id,
+      sessionID: input.sessionID,
+    } as MessageV2.Info
+
+    const parentByMessage = await resolveParents(db, [input.messageID], input.sessionID)
+    const parent = parentByMessage.get(input.messageID)
+    if (parent) {
+      ;(info as any).parentMessageID = parent.parentMessageID
+      ;(info as any).parentSessionID = parent.parentSessionID
     }
+
     return {
       info,
       parts: await parts(input.messageID),

@@ -66,7 +66,6 @@ import type {
   TextPart,
   ToolPart,
   FallbackSwitchPart,
-  Edge,
 } from "@/lib/projectflows"
 import { opendora } from "@/lib/projectflows"
 import { useUserProfile } from "@/hooks/use-user-profile"
@@ -511,27 +510,6 @@ export const Chatbot = () => {
 
   const userDotColor = useMemo(() => getAgentColor(userColor).hex, [userColor])
 
-  // ─── Session graph edges for the chat side rail ──────────────────────────
-  const [sessionEdges, setSessionEdges] = useState<Edge[]>([])
-  useEffect(() => {
-    if (!selectedSession?.id) {
-      setSessionEdges([])
-      return
-    }
-    let active = true
-    opendora.session
-      .graph(selectedSession.id)
-      .then((g) => {
-        if (active) setSessionEdges(g?.edges ?? [])
-      })
-      .catch(() => {
-        if (active) setSessionEdges([])
-      })
-    return () => {
-      active = false
-    }
-  }, [selectedSession?.id])
-
   const scrollToMessageIdRef = useRef<string | null>(null)
 
   const buildDashboardUrl = useCallback(
@@ -971,8 +949,6 @@ export const Chatbot = () => {
                 const msgError = (info as AssistantMessage).error
                 if (getTimelineSteps(parts, msgError).length === 0) return null
               }
-              const incomingEdge = sessionEdges.find((e) => e.to_type === "entry" && e.to_id === info.id)
-              const outgoingEdge = sessionEdges.find((e) => e.from_type === "entry" && e.from_id === info.id)
               return (
                 <MessageRow
                   key={info.id}
@@ -980,8 +956,6 @@ export const Chatbot = () => {
                   parts={parts}
                   msgIndex={msgIndex}
                   messagesLength={visibleMessages.length}
-                  incomingEdge={incomingEdge}
-                  outgoingEdge={outgoingEdge}
                   status={status}
                   sessions={sessions}
                   sessionsById={sessionsById}

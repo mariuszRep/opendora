@@ -319,6 +319,87 @@ describe("session ledger write paths", () => {
     expect(edgeCount(db, { fromID: "part_live", toID: "part_live:result", type: "caused" })).toBe(1)
   })
 
+  test("every part type creates a matching entry and a contains edge from its message", async () => {
+    const { sqlite, db } = createDb()
+    insertSession(sqlite)
+    await Session.updateMessage({
+      id: "message_parts",
+      sessionID: "session_1",
+      role: "assistant",
+      time: { created: 100 },
+      modelID: "model",
+      providerID: "provider",
+      mode: "",
+      agent: "agent",
+      path: { cwd: "/tmp/project", root: "/tmp/project" },
+      cost: 0,
+      tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+    } as any)
+
+    const parts: Array<{ id: string; part: any; expectedType: import("../src/types").EntryType }> = [
+      { id: "part_text", expectedType: "message", part: { type: "text", text: "hello" } },
+      { id: "part_reasoning", expectedType: "message", part: { type: "reasoning", text: "thinking", time: { start: 1 } } },
+      { id: "part_file", expectedType: "message", part: { type: "file", mime: "text/plain", url: "file:///a.txt" } },
+      { id: "part_snapshot", expectedType: "message", part: { type: "snapshot", snapshot: "hash1" } },
+      { id: "part_patch", expectedType: "message", part: { type: "patch", hash: "hash2", files: ["a.txt"] } },
+      { id: "part_agent", expectedType: "message", part: { type: "agent", name: "build" } },
+      { id: "part_stepstart", expectedType: "workflow_step", part: { type: "step-start" } },
+      {
+        id: "part_stepfinish",
+        expectedType: "workflow_step",
+        part: {
+          type: "step-finish",
+          reason: "stop",
+          cost: 0,
+          tokens: { input: 1, output: 1, reasoning: 0, cache: { read: 0, write: 0 } },
+        },
+      },
+      { id: "part_compaction", expectedType: "workflow_step", part: { type: "compaction", auto: true } },
+      {
+        id: "part_subtask",
+        expectedType: "workflow_step",
+        part: { type: "subtask", prompt: "do it", description: "desc", agent: "worker" },
+      },
+      {
+        id: "part_retry",
+        expectedType: "system_event",
+        part: {
+          type: "retry",
+          attempt: 1,
+          error: { name: "APIError", data: { message: "boom", isRetryable: true } },
+          time: { created: 1 },
+        },
+      },
+      {
+        id: "part_fallback",
+        expectedType: "system_event",
+        part: {
+          type: "fallback-switch",
+          previousSlot: { providerID: "a", modelID: "m1" },
+          newSlot: { providerID: "b", modelID: "m2" },
+          groupID: "group1",
+          resetAt: null,
+          time: { created: 1 },
+        },
+      },
+    ]
+
+    for (const { id, part } of parts) {
+      await Session.updatePart({
+        id,
+        sessionID: "session_1",
+        messageID: "message_parts",
+        ...part,
+      } as any)
+    }
+
+    for (const { id, expectedType } of parts) {
+      const entry = db.select().from(EntriesTable).where(eq(EntriesTable.id, id)).get()
+      expect(entry?.type).toBe(expectedType)
+      expect(edgeCount(db, { fromID: "message_parts", toID: id, type: "contains" })).toBe(1)
+    }
+  })
+
   test("workflow runs create instantiated_as edges", async () => {
     const { sqlite, db } = createDb()
     insertSession(sqlite)

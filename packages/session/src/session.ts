@@ -687,41 +687,14 @@ export namespace Session {
       limit: z.number().optional(),
     }),
     async (input) => {
-      const db = getConfig().db
-
-      // Check for canonical seq_in_parent ordering via contains edges
-      const containsEdges = db
-        .select({ to_id: EdgesTable.to_id, seq_in_parent: EdgesTable.seq_in_parent })
-        .from(EdgesTable)
-        .where(
-          and(
-            eq(EdgesTable.from_type, "session"),
-            eq(EdgesTable.from_id, input.sessionID),
-            eq(EdgesTable.type, "contains"),
-          ),
-        )
-        .orderBy(asc(EdgesTable.seq_in_parent))
-        .all()
-
+      // MessageV2.stream() is edge-native (queries `contains` edges ordered by
+      // seq_in_parent desc) — no legacy-table fallback ordering needed anymore.
       const result = [] as MessageV2.WithParts[]
       for await (const msg of MessageV2.stream(input.sessionID)) {
         if (input.limit && result.length >= input.limit) break
         result.push(msg)
       }
       result.reverse()
-
-      if (containsEdges.length > 0) {
-        const seqMap = new Map<string, number>()
-        for (const edge of containsEdges) seqMap.set(edge.to_id, edge.seq_in_parent ?? 0)
-        const originalIndexMap = new Map(result.map((m, idx) => [m.info.id, idx]))
-        result.sort((a, b) => {
-          const seqA = seqMap.get(a.info.id)
-          const seqB = seqMap.get(b.info.id)
-          if (seqA !== undefined && seqB !== undefined) return seqA - seqB
-          return (originalIndexMap.get(a.info.id) ?? 0) - (originalIndexMap.get(b.info.id) ?? 0)
-        })
-      }
-
       return result
     },
   )

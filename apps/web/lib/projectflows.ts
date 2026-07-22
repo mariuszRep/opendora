@@ -35,9 +35,6 @@ export type Edge = {
   created_at: string
 }
 
-/** @deprecated Use Edge */
-export type EntryEdge = Edge
-
 export type RetentionPolicy = {
   autoArchive?: boolean
   autoDelete?: boolean

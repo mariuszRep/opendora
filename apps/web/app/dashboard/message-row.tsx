@@ -34,7 +34,6 @@ import type {
   QuestionAnswer,
   PermissionRequest,
   PermissionReply,
-  EntryEdge,
 } from "@/lib/projectflows"
 import { ToolCallCard } from "@/components/ai-elements/tool-call-card"
 import { getAgentColor } from "@/lib/agent-colors"
@@ -102,8 +101,6 @@ export type MessageRowProps = {
   setWebPreviewUrl: (url: string) => void
   openFilePreview: (path: string, label: string) => void
   selectSession: (id: string, agentIdHint?: string) => void
-  incomingEdge?: EntryEdge
-  outgoingEdge?: EntryEdge
 }
 
 
@@ -157,8 +154,6 @@ export const MessageRow = React.memo(function MessageRow({
   setWebPreviewUrl,
   openFilePreview,
   selectSession,
-  incomingEdge,
-  outgoingEdge,
 }: MessageRowProps) {
   const content = getMessageText(parts)
   const reasoning = getReasoningPart(parts)
