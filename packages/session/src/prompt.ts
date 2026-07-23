@@ -1294,10 +1294,12 @@ export namespace SessionPrompt {
       tools[key] = item
     }
 
-    // Filter by agent tools allowlist, expanded by any tools unlocked via skill_load
-    if (input.agent.tools) {
+    // Filter by agent tools allowlist, expanded by any tools unlocked via skill_load.
+    // A missing `tools` field is treated the same as an explicit `[]` (deny-all-by-default) —
+    // only a non-empty array grants anything beyond skill-unlocked tools.
+    {
       const skillUnlocked = cfg.skillTools?.get(input.session.id) ?? new Set<string>()
-      const base: string[] = input.agent.tools
+      const base: string[] = input.agent.tools ?? []
       if (base.length > 0 || skillUnlocked.size > 0) {
         const allowed = new Set([...base, ...skillUnlocked])
         for (const id of Object.keys(tools)) {
@@ -1306,7 +1308,7 @@ export namespace SessionPrompt {
           }
         }
       } else {
-        // Empty tools array and no skill tools means no tools (except "invalid")
+        // No declared tools and no skill tools means no tools (except "invalid")
         for (const id of Object.keys(tools)) {
           if (id !== "invalid" && id !== "StructuredOutput") {
             delete tools[id]

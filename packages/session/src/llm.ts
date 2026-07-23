@@ -294,23 +294,20 @@ export namespace LLM {
     const cfg = getConfig()
     const disabled = cfg.permissionNext?.disabled(Object.keys(tools), agent.permission) ?? new Set<string>()
 
-    // Apply agent's tools filter, expanded by any tools unlocked via skill_load
-    const allowedTools = new Set<string>([...(agent.tools || []), ...(skillUnlocked ?? [])])
+    // Apply agent's tools filter, expanded by any tools unlocked via skill_load.
+    // A missing `tools` field is treated the same as an explicit `[]` (deny-all-by-default) —
+    // only a non-empty array grants anything beyond skill-unlocked tools.
+    const declaredTools = agent.tools ?? []
+    const allowedTools = new Set<string>([...declaredTools, ...(skillUnlocked ?? [])])
 
     for (const t of Object.keys(tools)) {
       // Always keep "invalid" tool - it's used internally for tool-call repair
       if (t === "invalid") continue
 
       // Filter by agent's tools configuration (plus skill-unlocked tools)
-      if (agent.tools) {
-        if (allowedTools.size === 0) {
-          delete tools[t]
-          continue
-        }
-        if (!allowedTools.has(t)) {
-          delete tools[t]
-          continue
-        }
+      if (!allowedTools.has(t)) {
+        delete tools[t]
+        continue
       }
 
       // Apply user-level filtering
