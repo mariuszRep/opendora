@@ -10,9 +10,9 @@
  */
 
 import type { StorageAdapter } from "./storage/adapter"
-import type { SessionMeta, SessionFilter, Message, MessagePart } from "./types"
+import type { SessionMeta, SessionFilter, Message } from "./types"
 import { eq, and } from "drizzle-orm"
-import { SessionTable, MessageTable, PartTable } from "./session.sql"
+import { SessionTable } from "./session.sql"
 import type { Permission } from "@projectflows/permission"
 import type { RetentionPolicy, SendPolicy, SessionType, SessionStatus } from "./types"
 import { getConfig } from "./config"
@@ -186,99 +186,25 @@ export class ProjectflowsStorageAdapter implements StorageAdapter {
   }
 
   // ─── Messages ──────────────────────────────────────────────────────────────
+  //
+  // Unreachable in practice: nothing in the codebase calls Session.pong()/
+  // sessionManager.pong() (the only path that would invoke appendMessage), and
+  // nothing calls the adapter's getMessages()/getMessage() directly. Kept as
+  // explicit stubs — not deleted — because StorageAdapter requires them and
+  // this class's session-lifecycle methods above (createSession..deleteSession,
+  // the part of this subsystem that's actually load-bearing) must stay intact.
 
-  async appendMessage(msg: Message): Promise<void> {
-    const now = Date.now()
-    const role = msg.kind === "ping" ? "user" : "assistant"
-    const messageId = msg.id
-    const db = getConfig().db
-
-    db.insert(MessageTable)
-      .values({
-        id: messageId,
-        session_id: msg.sessionId,
-        time_created: msg.timestamp,
-        data: {
-          role,
-          from: msg.from,
-          parentID: msg.parent?.messageId,
-          time: { created: msg.timestamp },
-        } as any,
-      })
-      .onConflictDoNothing()
-      .run()
-
-    for (const part of msg.parts) {
-      const partId = `${messageId}-${msg.parts.indexOf(part)}`
-      db.insert(PartTable)
-        .values({
-          id: partId,
-          message_id: messageId,
-          session_id: msg.sessionId,
-          time_created: now,
-          data: mapPingPongPart(part) as any,
-        })
-        .onConflictDoNothing()
-        .run()
-    }
+  async appendMessage(_msg: Message): Promise<void> {
+    throw new Error("ProjectflowsStorageAdapter.appendMessage is not implemented (PingPong message persistence is unused)")
   }
 
-  async getMessages(sessionId: string): Promise<Message[]> {
-    const db = getConfig().db
-    const rows = db.select().from(MessageTable).where(eq(MessageTable.session_id, sessionId)).all()
-    return rows.map((row: any) => {
-      // For user (ping) messages, the cross-session parent lives in the SQL column.
-      // For assistant (pong) messages, the within-session parent is in JSON as parentID.
-      const isUser = (row.data as any).role === "user"
-      const parentMessageId = isUser
-        ? (row.parent_message_id ?? null)
-        : ((row.data as any).parentID ?? null)
-      return {
-        id: row.id,
-        sessionId,
-        parent: parentMessageId ? { messageId: parentMessageId } : null,
-        from: (row.data as any).from ?? { kind: isUser ? "user" : "agent", id: "opencode" },
-        kind: isUser ? "ping" : ("pong" as any),
-        parts: [],
-        timestamp: row.time_created,
-      }
-    })
+  async getMessages(_sessionId: string): Promise<Message[]> {
+    return []
   }
 
-  async getMessage(id: string): Promise<Message | null> {
-    const db = getConfig().db
-    const row = db.select().from(MessageTable).where(eq(MessageTable.id, id)).get()
-    if (!row) return null
-    const isUser = (row.data as any).role === "user"
-    const parentMessageId = isUser
-      ? ((row as any).parent_message_id ?? null)
-      : ((row.data as any).parentID ?? null)
-    return {
-      id: row.id,
-      sessionId: row.session_id,
-      parent: parentMessageId ? { messageId: parentMessageId } : null,
-      from: (row.data as any).from ?? { kind: isUser ? "user" : "agent", id: "opencode" },
-      kind: isUser ? "ping" : ("pong" as any),
-      parts: [],
-      timestamp: row.time_created,
-    }
+  async getMessage(_id: string): Promise<Message | null> {
+    return null
   }
-}
-
-function mapPingPongPart(part: MessagePart): object {
-  if (part.type === "text") return { type: "text", text: part.text }
-  if (part.type === "reasoning") return { type: "reasoning", text: part.text, summary: [] }
-  if (part.type === "tool-invocation")
-    return {
-      type: "tool",
-      toolCallId: `${part.toolName}-0`,
-      tool: part.toolName,
-      state: part.output !== undefined ? "result" : "call",
-      args: part.input as any,
-      output: part.output as any,
-    }
-  if (part.type === "file") return { type: "file", url: part.url, mime: part.mimeType }
-  return part as object
 }
 
 // ─── Singleton ────────────────────────────────────────────────────────────────

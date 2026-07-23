@@ -29,7 +29,6 @@ import {
   newMessageID,
   newPartID,
 } from "./util"
-import { migrateSession } from "../graph-migration.ts"
 
 // ─── Codex record shapes (loose) ─────────────────────────────────────────────
 
@@ -369,10 +368,6 @@ export async function importCodexSession(options: ImportOptions): Promise<Import
       `${toolPartByCallID.size} function_call(s) without matching output; persisted in running state`,
     )
   }
-
-  // Bypass writer — backfill entries/edges synchronously since migrateAllSessions()'s
-  // one-shot marker won't pick this session up after the first server-start scan.
-  await migrateSession(sessionID)
 
   return {
     vendor: "codex",

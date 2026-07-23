@@ -6,7 +6,7 @@
  *   config.snapshot — Snapshot.track/revert/diff/restore
  *   config.storage  — Storage.write
  *   config.bus      — Bus.publish for SessionEvents.Diff
- *   config.db       — for direct DB access (MessageTable, PartTable deletes)
+ *   config.db       — for direct DB access (entries/edges deletes)
  */
 
 import z from "zod"
@@ -14,9 +14,7 @@ import { Identifier } from "@projectflows/util/id"
 import { MessageV2 } from "./message-v2.ts"
 import { getConfig } from "./config.ts"
 import { SessionSummary } from "./summary.ts"
-import { MessageTable, PartTable } from "./session.sql.ts"
-import { eq } from "drizzle-orm"
-import { deleteEntryGraph, deleteToolPartGraph } from "./graph-migration.ts"
+import { deleteEntryGraph, deleteToolPartGraph } from "./graph-writes.ts"
 
 const SessionDiffEvent = { type: "session.diff" }
 const MessageRemovedEvent = { type: "message.removed" }
@@ -153,7 +151,6 @@ export namespace SessionRevert {
           messageID: msg.info.id,
         })
       }
-      db.delete(MessageTable).where(eq(MessageTable.id, msg.info.id)).run()
       deleteEntryGraph(db, msg.info.id)
       bus?.publish(MessageRemovedEvent, { sessionID: sessionID, messageID: msg.info.id })
     }
@@ -166,7 +163,6 @@ export namespace SessionRevert {
         const removeParts = target.parts.slice(removeStart)
         target.parts = preserveParts
         for (const part of removeParts) {
-          db.delete(PartTable).where(eq(PartTable.id, part.id)).run()
           deleteToolPartGraph(db, part.id)
           bus?.publish(PartRemovedEvent, {
             sessionID: sessionID,

@@ -3,10 +3,9 @@ import type { Session as SDKSession, Message, Part } from "@projectflows/sdk/v2"
 import { Session } from "@projectflows/session/session"
 import { cmd } from "./cmd"
 import { bootstrap } from "../bootstrap"
-import { Database, eq } from "@projectflows/storage/db"
-import { SessionTable, MessageTable, PartTable } from "@projectflows/session/sql"
-import { migrateSession } from "@projectflows/session/graph-migration"
-import { configureSessionCore } from "@projectflows/server/configure-session-core"
+import { Database, eq, and } from "@projectflows/storage/db"
+import { SessionTable, EntriesTable, EdgesTable } from "@projectflows/session/sql"
+import { deriveActor, writeContainsEdge, writeGenericPartEntry, writeToolPartEntries } from "@projectflows/session/graph-writes"
 import { Instance } from "@projectflows/runtime/instance"
 import { ShareNext } from "@projectflows/session/share-next"
 import { EOL } from "os"
@@ -403,12 +402,18 @@ export const ImportCommand = cmd({
           // Check for duplicate messages
           const existingMessageIds = Database.use((db) =>
             db
-              .select()
-              .from(MessageTable)
-              .where(eq(MessageTable.session_id, exportData!.info.id))
+              .select({ to_id: EdgesTable.to_id })
+              .from(EdgesTable)
+              .where(
+                and(
+                  eq(EdgesTable.from_type, "session"),
+                  eq(EdgesTable.from_id, exportData!.info.id),
+                  eq(EdgesTable.type, "contains"),
+                ),
+              )
               .all(),
           )
-          const existingMsgIds = new Set(existingMessageIds.map((m) => m.id))
+          const existingMsgIds = new Set(existingMessageIds.map((e) => e.to_id))
           const duplicateMessages = exportData.messages.filter((m) => existingMsgIds.has(m.info.id))
 
           if (duplicateMessages.length > 0) {
@@ -452,55 +457,67 @@ export const ImportCommand = cmd({
       let skippedMessages = 0
 
       for (const msg of exportData.messages) {
-        // Try to insert, skip if exists due to onConflictDoNothing
-        const beforeCount = Database.use((db) =>
-          db.select().from(MessageTable).where(eq(MessageTable.id, msg.info.id)).all().length,
+        const existed = Database.use(
+          (db) => db.select().from(EntriesTable).where(eq(EntriesTable.id, msg.info.id)).all().length > 0,
         )
 
-        Database.use((db) =>
-          db
-            .insert(MessageTable)
+        const timeCreated = msg.info.time?.created ?? Date.now()
+        const createdAt = new Date(timeCreated).toISOString()
+        const { id: msgID, ...msgData } = msg.info as any
+        const actor = deriveActor(msgData)
+
+        Database.use((db) => {
+          db.insert(EntriesTable)
             .values({
               id: msg.info.id,
-              session_id: exportData.info.id,
-              time_created: msg.info.time?.created ?? Date.now(),
-              data: msg.info,
+              type: "message",
+              actor,
+              runner_type: actor,
+              content_text: null,
+              payload_json: msgData,
+              status: "complete",
+              created_at: createdAt,
             })
             .onConflictDoNothing()
-            .run(),
-        )
+            .run()
+          writeContainsEdge(db, {
+            fromType: "session",
+            fromID: exportData.info.id,
+            toID: msg.info.id,
+            createdAt,
+          })
+        })
 
-        const afterCount = Database.use((db) =>
-          db.select().from(MessageTable).where(eq(MessageTable.id, msg.info.id)).all().length,
-        )
-
-        if (afterCount > beforeCount) {
-          insertedMessages++
-        } else {
-          skippedMessages++
-        }
+        if (existed) skippedMessages++
+        else insertedMessages++
 
         for (const part of msg.parts) {
-          Database.use((db) =>
-            db
-              .insert(PartTable)
-              .values({
-                id: part.id,
-                message_id: msg.info.id,
-                session_id: exportData.info.id,
-                data: part,
+          const { id: partID, ...partData } = part as any
+          const partPayload = partData as Record<string, unknown>
+          Database.use((db) => {
+            if (partData.type === "tool") {
+              writeToolPartEntries(db, {
+                partID,
+                messageID: msg.info.id,
+                tool: partData.tool,
+                state: partData.state,
+                payload: partPayload,
+                actor,
+                createdAt,
               })
-              .onConflictDoNothing()
-              .run(),
-          )
+            } else {
+              writeGenericPartEntry(db, {
+                partID,
+                messageID: msg.info.id,
+                partType: partData.type,
+                payload: partPayload,
+                actor,
+                createdAt,
+              })
+            }
+          })
         }
       }
-
-      // Bypass writer — backfill entries/edges synchronously since migrateAllSessions()'s
-      // one-shot marker won't pick this session up after the first server-start scan.
-      // configureSessionCore() is idempotent — safe even if server startup already ran it.
-      configureSessionCore()
-      await migrateSession(exportData.info.id)
 
       process.stdout.write(`Imported session: ${exportData.info.id}${EOL}`)
       process.stdout.write(`Messages: ${insertedMessages} inserted, ${skippedMessages} skipped${EOL}`)

@@ -1,17 +1,21 @@
 /**
  * Shared helpers for vendor importers: JSONL streaming, row construction,
- * and direct writes to the MessageV2 tables.
+ * and direct writes to the universal entries+edges model.
  *
  * Importers bypass `Session.updateMessage` / `Session.updatePart` on purpose
  * — they perform a bulk backfill of existing conversations and must not fire
- * runtime bus events or touch retention counters.
+ * runtime bus events or touch retention counters. They write EntriesTable/
+ * EdgesTable directly via the same helpers Session.updateMessage/updatePart
+ * use internally, which don't publish bus events themselves.
  */
 
 import fs from "fs"
 import readline from "readline"
 import { Identifier } from "@projectflows/util/id"
 import { getConfig } from "../config"
-import { SessionTable, MessageTable, PartTable } from "../session.sql"
+import { SessionTable, EdgesTable, EntriesTable } from "../session.sql"
+import { eq, and } from "drizzle-orm"
+import { deriveActor, writeContainsEdge, writeGenericPartEntry, writeToolPartEntries } from "../graph-writes"
 import type { MessageV2 } from "../message-v2"
 import type { Vendor } from "./types"
 
@@ -105,19 +109,75 @@ export function insertMessageRow(input: MessageRowInput): void {
   const db = getConfig().db
   const { id, sessionID: _omitSessionID, ...data } = input.info
   const timeCreated = input.info.time.created
-  db.insert(MessageTable)
+  const createdAt = new Date(timeCreated).toISOString()
+  const actor = deriveActor(data as Record<string, unknown>)
+  const payload = {
+    ...(data as Record<string, unknown>),
+    ...(input.nativeID ? { _native_id: input.nativeID } : {}),
+    ...(input.vendorRaw ? { _vendor_raw: input.vendorRaw } : {}),
+  }
+
+  db.insert(EntriesTable)
     .values({
       id,
-      session_id: input.sessionID,
-      time_created: timeCreated,
-      time_updated: timeCreated,
-      parent_message_id: input.parentMessageID ?? null,
-      data: data as any,
-      native_id: input.nativeID ?? null,
-      vendor_raw: (input.vendorRaw ?? null) as any,
+      type: "message",
+      actor,
+      runner_type: actor,
+      content_text: null,
+      payload_json: payload,
+      status: "complete",
+      created_at: createdAt,
     })
-    .onConflictDoNothing()
+    .onConflictDoUpdate({ target: EntriesTable.id, set: { payload_json: payload } })
     .run()
+
+  writeContainsEdge(db, { fromType: "session", fromID: input.sessionID, toID: id, createdAt })
+
+  if (input.parentMessageID) {
+    const parentSessionEdge = db
+      .select({ from_id: EdgesTable.from_id })
+      .from(EdgesTable)
+      .where(
+        and(
+          eq(EdgesTable.from_type, "session"),
+          eq(EdgesTable.to_id, input.parentMessageID),
+          eq(EdgesTable.type, "contains"),
+        ),
+      )
+      .get()
+    const parentSessionID = parentSessionEdge?.from_id
+    const isDelegation = !!parentSessionID && parentSessionID !== input.sessionID
+
+    const existingReply = db
+      .select({ id: EdgesTable.id })
+      .from(EdgesTable)
+      .where(
+        and(
+          eq(EdgesTable.from_id, input.parentMessageID),
+          eq(EdgesTable.to_id, id),
+          eq(EdgesTable.type, "reply_to"),
+        ),
+      )
+      .limit(1)
+      .get()
+    if (!existingReply) {
+      db.insert(EdgesTable)
+        .values({
+          id: Identifier.ascending("edge"),
+          from_type: "entry",
+          from_id: input.parentMessageID,
+          to_type: "entry",
+          to_id: id,
+          type: "reply_to",
+          seq_in_parent: null,
+          label: null,
+          metadata: isDelegation ? { delegation: true } : null,
+          created_at: createdAt,
+        })
+        .onConflictDoNothing()
+        .run()
+    }
+  }
 }
 
 export interface PartRowInput {
@@ -133,19 +193,41 @@ export function insertPartRow(input: PartRowInput): void {
   const db = getConfig().db
   const { id, messageID: _m, sessionID: _s, ...data } = input.part
   const timeCreated = input.timeCreated ?? Date.now()
-  db.insert(PartTable)
-    .values({
-      id,
-      message_id: input.messageID,
-      session_id: input.sessionID,
-      time_created: timeCreated,
-      time_updated: timeCreated,
-      data: data as any,
-      native_id: input.nativeID ?? null,
-      vendor_raw: (input.vendorRaw ?? null) as any,
+  const createdAt = new Date(timeCreated).toISOString()
+  const payload = {
+    ...(data as Record<string, unknown>),
+    ...(input.nativeID ? { _native_id: input.nativeID } : {}),
+    ...(input.vendorRaw ? { _vendor_raw: input.vendorRaw } : {}),
+  }
+
+  const msgEntry = db
+    .select({ payload_json: EntriesTable.payload_json })
+    .from(EntriesTable)
+    .where(eq(EntriesTable.id, input.messageID))
+    .get()
+  const actor = deriveActor(msgEntry?.payload_json as Record<string, unknown> | undefined)
+  const partType = (data as any).type as string
+
+  if (partType === "tool") {
+    writeToolPartEntries(db, {
+      partID: id,
+      messageID: input.messageID,
+      tool: (data as any).tool,
+      state: (data as any).state,
+      payload,
+      actor,
+      createdAt,
     })
-    .onConflictDoNothing()
-    .run()
+  } else {
+    writeGenericPartEntry(db, {
+      partID: id,
+      messageID: input.messageID,
+      partType,
+      payload,
+      actor,
+      createdAt,
+    })
+  }
 }
 
 // ─── Id helpers ──────────────────────────────────────────────────────────────

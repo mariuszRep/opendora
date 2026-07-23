@@ -3,8 +3,9 @@ export { Timestamps } from "./schema.sql"
 export {
   ControlAccountTable,
   SessionTable,
-  MessageTable,
-  PartTable,
+  EntriesTable,
+  EdgesTable,
+  WorkflowRunCheckpointTable,
   TodoTable,
   SessionShareTable,
   ProjectTable,

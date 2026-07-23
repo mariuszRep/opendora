@@ -52,6 +52,3 @@ export type { Purpose as TokenUsagePurpose, RecordInput as TokenUsageRecordInput
 export { ProviderUsageFile } from "./token-usage-file"
 export type { ProviderUsageState, ModelUsageState } from "./token-usage-file"
 export { addSkillTools, getSkillTools } from "./skill-tools"
-
-// Graph-backed ledger migration
-export { migrateSession, migrateAllSessions } from "./graph-migration"

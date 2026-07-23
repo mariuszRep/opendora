@@ -27,7 +27,6 @@ import {
   newMessageID,
   newPartID,
 } from "./util"
-import { migrateSession } from "../graph-migration.ts"
 
 // ─── Claude record shapes (loose) ────────────────────────────────────────────
 
@@ -365,10 +364,6 @@ export async function importClaudeSession(options: ImportOptions): Promise<Impor
     partsImported++
     warnings.push(`tool_use without matching tool_result: ${entry.part.callID}`)
   }
-
-  // Bypass writer — backfill entries/edges synchronously since migrateAllSessions()'s
-  // one-shot marker won't pick this session up after the first server-start scan.
-  await migrateSession(sessionID)
 
   return {
     vendor: "claude",

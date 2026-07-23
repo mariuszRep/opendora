@@ -7,7 +7,7 @@ import z from "zod"
 import { type ProviderMetadata } from "ai"
 import { getConfig } from "./config.ts"
 import type { SQL } from "drizzle-orm"
-import { SessionTable, MessageTable, PartTable, ProjectTable, EntryEdgeTable, EdgesTable, EntriesTable } from "./session.sql.ts"
+import { SessionTable, ProjectTable, EdgesTable, EntriesTable } from "./session.sql.ts"
 import { eq, and, gte, isNull, desc, like, inArray, lt, sql, asc } from "drizzle-orm"
 import { MessageV2 } from "./message-v2.ts"
 import { SessionEvents } from "./events.ts"
@@ -17,7 +17,7 @@ import { SessionManager } from "./session-manager"
 import { RetentionDaemon } from "./daemon"
 import type { SessionType, RetentionPolicy, SendPolicy, CreateSessionOptions, PongOptions, EdgeType, Edge } from "./types"
 import { NotFoundError } from "@projectflows/storage/db"
-import { writeToolPartEntries, writeGenericPartEntry, deriveActor, deleteEntryGraph, deleteToolPartGraph } from "./graph-migration.ts"
+import { writeToolPartEntries, writeGenericPartEntry, deriveActor, deleteEntryGraph, deleteToolPartGraph } from "./graph-writes.ts"
 
 // Inline iife utility
 function iife<T>(fn: () => T): T {
@@ -699,18 +699,29 @@ export namespace Session {
     },
   )
 
-  /** Look up a message by its ID alone — returns the message row including its session_id. */
+  /** Look up a message by its ID alone — returns a reconstructed MessageV2.Info, or null. */
   export const getMessage = fn(
     Identifier.schema("message"),
     async (messageID) => {
-      const cfg = getConfig()
-      const db = cfg.db
-      const row = db
-        .select()
-        .from(MessageTable)
-        .where(eq(MessageTable.id, messageID))
+      const db = getConfig().db
+      const entry = db.select().from(EntriesTable).where(eq(EntriesTable.id, messageID)).get()
+      if (!entry) return null
+      const sessionEdge = db
+        .select({ from_id: EdgesTable.from_id })
+        .from(EdgesTable)
+        .where(
+          and(
+            eq(EdgesTable.from_type, "session"),
+            eq(EdgesTable.to_id, messageID),
+            eq(EdgesTable.type, "contains"),
+          ),
+        )
         .get()
-      return row ?? null
+      return {
+        ...(entry.payload_json as Record<string, unknown>),
+        id: entry.id,
+        sessionID: sessionEdge?.from_id ?? "",
+      } as MessageV2.Info
     },
   )
 
@@ -1231,16 +1242,6 @@ export namespace Session {
     const { id, sessionID, ...data } = msg
     const time_created = msg.time.created
     const parent_message_id = parentMessageID ?? null
-    db.insert(MessageTable)
-      .values({
-        id,
-        session_id: sessionID,
-        time_created,
-        parent_message_id,
-        data,
-      })
-      .onConflictDoUpdate({ target: MessageTable.id, set: { data } })
-      .run()
 
     // Phase 1: contains edge — canonical timeline order via seq_in_parent.
     // Only on first write; updates to message data don't change position.
@@ -1286,7 +1287,6 @@ export namespace Session {
         .run()
     }
 
-    // Phase 2: EntriesTable dual-write — keep entries in sync with MessageTable.
     const entryActor = deriveActor(data as Record<string, unknown>)
     db.insert(EntriesTable)
       .values({
@@ -1309,21 +1309,28 @@ export namespace Session {
     // delegation attribution and the "Back to source" link without a round-trip.
     let infoForBus: MessageV2.Info = msg
     if (parent_message_id) {
-      const parentRow = db
-        .select({ session_id: MessageTable.session_id })
-        .from(MessageTable)
-        .where(eq(MessageTable.id, parent_message_id))
+      const parentSessionEdge = db
+        .select({ from_id: EdgesTable.from_id })
+        .from(EdgesTable)
+        .where(
+          and(
+            eq(EdgesTable.from_type, "session"),
+            eq(EdgesTable.to_id, parent_message_id),
+            eq(EdgesTable.type, "contains"),
+          ),
+        )
         .get()
+      const parentSessionID = parentSessionEdge?.from_id
       infoForBus = {
         ...msg,
         parentMessageID: parent_message_id,
-        ...(parentRow ? { parentSessionID: parentRow.session_id } : {}),
+        ...(parentSessionID ? { parentSessionID } : {}),
       } as unknown as MessageV2.Info
 
       // Record a typed edge in the universal edges table — only on first write.
       // Cross-session parent → reply_to with delegation metadata; same-session → reply_to.
       if (parentMessageID) {
-        const isDelegation = parentRow && parentRow.session_id !== msg.sessionID
+        const isDelegation = !!parentSessionID && parentSessionID !== msg.sessionID
         const existingEdge = db
           .select({ id: EdgesTable.id })
           .from(EdgesTable)
@@ -1367,9 +1374,6 @@ export namespace Session {
     async (input) => {
       const cfg = getConfig()
       const db = cfg.db
-      db.delete(MessageTable)
-        .where(and(eq(MessageTable.id, input.messageID), eq(MessageTable.session_id, input.sessionID)))
-        .run()
       deleteEntryGraph(db, input.messageID)
       cfg.bus?.publish(MessageV2.Event.Removed, {
         sessionID: input.sessionID,
@@ -1388,9 +1392,6 @@ export namespace Session {
     async (input) => {
       const cfg = getConfig()
       const db = cfg.db
-      db.delete(PartTable)
-        .where(and(eq(PartTable.id, input.partID), eq(PartTable.session_id, input.sessionID)))
-        .run()
       deleteToolPartGraph(db, input.partID)
       cfg.bus?.publish(MessageV2.Event.PartRemoved, {
         sessionID: input.sessionID,
@@ -1408,16 +1409,6 @@ export namespace Session {
     const db = cfg.db
     const { id, messageID, sessionID, ...data } = part
     const time = Date.now()
-    db.insert(PartTable)
-      .values({
-        id,
-        message_id: messageID,
-        session_id: sessionID,
-        time_created: time,
-        data,
-      })
-      .onConflictDoUpdate({ target: PartTable.id, set: { data } })
-      .run()
 
     // Phase 2b: sync EntriesTable status/content_text on the parent message entry.
     if (part.type === "step-finish") {
@@ -1433,12 +1424,12 @@ export namespace Session {
     }
 
     // Phase 6a: every part gets its own entry + a contains edge from its message entry.
-    const msgRow = db
-      .select({ data: MessageTable.data })
-      .from(MessageTable)
-      .where(eq(MessageTable.id, messageID))
+    const msgEntry = db
+      .select({ payload_json: EntriesTable.payload_json })
+      .from(EntriesTable)
+      .where(eq(EntriesTable.id, messageID))
       .get()
-    const actor = deriveActor(msgRow?.data as Record<string, unknown> | undefined)
+    const actor = deriveActor(msgEntry?.payload_json as Record<string, unknown> | undefined)
     const createdAt = new Date(time).toISOString()
 
     if (part.type === "tool") {
@@ -1483,17 +1474,13 @@ export namespace Session {
     const db = cfg.db
     if (!db) return 0
 
-    // json_extract is SQLite-native; Drizzle exposes it through sql``.
     const rows = db
       .select()
-      .from(PartTable)
+      .from(EntriesTable)
       .where(
         and(
-          sql`json_extract(${PartTable.data}, '$.type') = 'tool'`,
-          inArray(
-            sql`json_extract(${PartTable.data}, '$.state.status')`,
-            ["pending", "running"],
-          ),
+          eq(EntriesTable.type, "tool_call"),
+          inArray(EntriesTable.status, ["pending", "in_progress"]),
         ),
       )
       .all()
@@ -1503,8 +1490,37 @@ export namespace Session {
     const now = Date.now()
     let count = 0
     for (const row of rows) {
-      const data = row.data as any
+      const data = row.payload_json as any
       if (!data || data.type !== "tool") continue
+
+      const messageEdge = db
+        .select({ from_id: EdgesTable.from_id })
+        .from(EdgesTable)
+        .where(
+          and(
+            eq(EdgesTable.from_type, "entry"),
+            eq(EdgesTable.to_id, row.id),
+            eq(EdgesTable.type, "contains"),
+          ),
+        )
+        .get()
+      const messageID = messageEdge?.from_id
+      if (!messageID) continue
+
+      const sessionEdge = db
+        .select({ from_id: EdgesTable.from_id })
+        .from(EdgesTable)
+        .where(
+          and(
+            eq(EdgesTable.from_type, "session"),
+            eq(EdgesTable.to_id, messageID),
+            eq(EdgesTable.type, "contains"),
+          ),
+        )
+        .get()
+      const sessionID = sessionEdge?.from_id
+      if (!sessionID) continue
+
       const prevState = data.state ?? {}
       const startTime =
         (prevState.time && typeof prevState.time.start === "number")
@@ -1512,8 +1528,8 @@ export namespace Session {
           : now
       const next = {
         id: row.id,
-        messageID: row.message_id,
-        sessionID: row.session_id,
+        messageID,
+        sessionID,
         type: "tool" as const,
         callID: data.callID,
         tool: data.tool,

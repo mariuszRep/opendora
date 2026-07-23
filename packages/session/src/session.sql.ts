@@ -1,5 +1,4 @@
 import { sqliteTable, text, integer, index, primaryKey } from "drizzle-orm/sqlite-core"
-import type { MessageV2 } from "./message-v2"
 import type { SessionType, SessionStatus, RetentionPolicy, SendPolicy, EdgeType, EntryType } from "./types"
 
 // Inlined from @/storage/schema.sql — 2-line helper
@@ -26,9 +25,6 @@ export const ProjectTable = sqliteTable("project", {
   sandboxes: text({ mode: "json" }).notNull().$type<string[]>(),
   commands: text({ mode: "json" }).$type<{ start?: string }>(),
 })
-
-type PartData = Omit<MessageV2.Part, "id" | "sessionID" | "messageID">
-type InfoData = Omit<MessageV2.Info, "id" | "sessionID">
 
 // Snapshot.FileDiff is only used as a JSON column — use unknown[] to avoid importing snapshot
 type FileDiff = unknown
@@ -94,75 +90,6 @@ export const SessionTable = sqliteTable(
     index("session_agent_idx").on(table.agent_id),
     index("session_owner_idx").on(table.owner_id),
     index("session_vendor_native_idx").on(table.vendor, table.native_id),
-  ],
-)
-
-export const MessageTable = sqliteTable(
-  "message",
-  {
-    id: text().primaryKey(),
-    session_id: text()
-      .notNull()
-      .references(() => SessionTable.id, { onDelete: "cascade" }),
-    ...Timestamps,
-    parent_message_id: text(),
-    data: text({ mode: "json" }).notNull().$type<InfoData>(),
-    // Vendor import — native id of the source record (Claude uuid, Codex item id, etc.)
-    // and the raw source line preserved verbatim for lossless round-trip.
-    native_id: text(),
-    vendor_raw: text({ mode: "json" }).$type<unknown>(),
-  },
-  (table) => [
-    index("message_session_idx").on(table.session_id),
-    index("message_parent_message_idx").on(table.parent_message_id),
-    index("message_native_idx").on(table.native_id),
-  ],
-)
-
-export const PartTable = sqliteTable(
-  "part",
-  {
-    id: text().primaryKey(),
-    message_id: text()
-      .notNull()
-      .references(() => MessageTable.id, { onDelete: "cascade" }),
-    session_id: text().notNull(),
-    ...Timestamps,
-    data: text({ mode: "json" }).notNull().$type<PartData>(),
-    // Vendor import — native id of the source fragment (e.g. Claude tool_use.id,
-    // Codex function_call.id) and the raw source fragment preserved verbatim.
-    native_id: text(),
-    vendor_raw: text({ mode: "json" }).$type<unknown>(),
-  },
-  (table) => [
-    index("part_message_idx").on(table.message_id),
-    index("part_session_idx").on(table.session_id),
-    index("part_native_idx").on(table.native_id),
-  ],
-)
-
-export const EntryEdgeTable = sqliteTable(
-  "entry_edge",
-  {
-    id: text().primaryKey(),
-    // Hard FK to session — cascade delete cleans up edges when session is removed
-    session_id: text()
-      .notNull()
-      .references(() => SessionTable.id, { onDelete: "cascade" }),
-    // Soft references to message entries — no FK so edges survive individual message deletes
-    // and support cross-session delegation edges
-    source_entry_id: text().notNull(),
-    target_entry_id: text().notNull(),
-    edge_type: text().notNull().$type<EdgeType>(),
-    display_order: integer(),
-    metadata: text({ mode: "json" }).$type<Record<string, unknown>>(),
-    ...Timestamps,
-  },
-  (table) => [
-    index("entry_edge_session_idx").on(table.session_id),
-    index("entry_edge_source_idx").on(table.source_entry_id),
-    index("entry_edge_target_idx").on(table.target_entry_id),
-    index("entry_edge_session_type_idx").on(table.session_id, table.edge_type),
   ],
 )
 

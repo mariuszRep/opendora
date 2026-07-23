@@ -65,7 +65,6 @@ import { retentionDaemon, sessionManager } from "@projectflows/session/session"
 import { configureSessionCore } from "./configure-session-core"
 import { projectflowsStorageAdapter } from "@projectflows/session/storage-adapter"
 import { Session } from "@projectflows/session/session"
-import { migrateAllSessions } from "@projectflows/session"
 import { runWorkflowMigrationIfNeeded } from "@projectflows/workflow/migration"
 import { Identifier } from "@projectflows/util/id"
 import { MessageV2 } from "@projectflows/session/message"
@@ -836,11 +835,6 @@ export namespace Server {
       log.warn("reconcileInterruptedToolParts failed", { error: err instanceof Error ? err.message : String(err) })
     })
 
-    // Backfill reply edges for any existing sessions that pre-date the graph ledger.
-    // Idempotent — sessions with edges already are skipped.
-    migrateAllSessions().catch((err) => {
-      log.warn("graph-migration backfill failed", { error: err instanceof Error ? err.message : String(err) })
-    })
     _corsWhitelist = opts.cors ?? []
 
     // Define before App() is called so the route captures the real function, not the no-op.

@@ -3,16 +3,8 @@ import { Database } from "bun:sqlite"
 import { drizzle } from "drizzle-orm/bun-sqlite"
 import { and, eq } from "drizzle-orm"
 import { configure, getConfig, type SessionCoreConfig } from "../src/config"
-import { migrateAllSessions, migrateSession } from "../src/graph-migration"
 import { Session } from "../src/session"
-import {
-  EdgesTable,
-  EntriesTable,
-  GraphMigrationStateTable,
-  MessageTable,
-  PartTable,
-  SessionTable,
-} from "../src/session.sql"
+import { EdgesTable, EntriesTable, SessionTable } from "../src/session.sql"
 import * as schema from "../src/session.sql"
 
 let previousConfig: SessionCoreConfig | undefined
@@ -77,37 +69,6 @@ function createDb() {
       model TEXT,
       workflow_run TEXT
     );
-    CREATE TABLE message (
-      id TEXT PRIMARY KEY,
-      session_id TEXT NOT NULL,
-      time_created INTEGER NOT NULL,
-      time_updated INTEGER NOT NULL,
-      parent_message_id TEXT,
-      data TEXT NOT NULL,
-      native_id TEXT,
-      vendor_raw TEXT
-    );
-    CREATE TABLE part (
-      id TEXT PRIMARY KEY,
-      message_id TEXT NOT NULL,
-      session_id TEXT NOT NULL,
-      time_created INTEGER NOT NULL,
-      time_updated INTEGER NOT NULL,
-      data TEXT NOT NULL,
-      native_id TEXT,
-      vendor_raw TEXT
-    );
-    CREATE TABLE entry_edge (
-      id TEXT PRIMARY KEY,
-      session_id TEXT NOT NULL,
-      source_entry_id TEXT NOT NULL,
-      target_entry_id TEXT NOT NULL,
-      edge_type TEXT NOT NULL,
-      display_order INTEGER,
-      metadata TEXT,
-      time_created INTEGER NOT NULL,
-      time_updated INTEGER NOT NULL
-    );
     CREATE TABLE entries (
       id TEXT PRIMARY KEY,
       type TEXT NOT NULL,
@@ -129,11 +90,6 @@ function createDb() {
       label TEXT,
       metadata TEXT,
       created_at TEXT NOT NULL
-    );
-    CREATE TABLE graph_migration_state (
-      id TEXT PRIMARY KEY,
-      completed_at TEXT NOT NULL,
-      metadata TEXT
     );
   `)
   const db = drizzle({ client: sqlite, schema })
@@ -161,27 +117,6 @@ function insertSession(sqlite: Database, id = "session_1") {
   )
 }
 
-function insertMessage(
-  sqlite: Database,
-  input: { id: string; sessionID?: string; parent?: string | null; role: "user" | "assistant"; created: number; from?: unknown },
-) {
-  sqlite.run(
-    "INSERT INTO message (id, session_id, time_created, time_updated, parent_message_id, data) VALUES (?, ?, ?, ?, ?, ?)",
-    [
-      input.id,
-      input.sessionID ?? "session_1",
-      input.created,
-      input.created,
-      input.parent ?? null,
-      JSON.stringify({
-        role: input.role,
-        time: { created: input.created },
-        from: input.from,
-      }),
-    ],
-  )
-}
-
 function edgeCount(db: any, input: {
   fromID?: string
   toID?: string
@@ -199,83 +134,6 @@ function edgeCount(db: any, input: {
     )
     .all().length
 }
-
-describe("session graph ledger migration", () => {
-  test("backfills messages, parent links, legacy edges, and tool lifecycle entries", async () => {
-    const { sqlite, db } = createDb()
-    insertSession(sqlite)
-    insertMessage(sqlite, { id: "message_1", role: "user", created: 100 })
-    insertMessage(sqlite, {
-      id: "message_2",
-      role: "assistant",
-      created: 200,
-      parent: "message_1",
-      from: { kind: "agent", id: "agent" },
-    })
-    sqlite.run(
-      "INSERT INTO part (id, message_id, session_id, time_created, time_updated, data) VALUES (?, ?, ?, ?, ?, ?)",
-      [
-        "part_tool",
-        "message_2",
-        "session_1",
-        210,
-        220,
-        JSON.stringify({
-          type: "tool",
-          callID: "call_1",
-          tool: "shell",
-          state: {
-            status: "completed",
-            input: { command: "pwd" },
-            output: "/tmp/project",
-            title: "shell",
-            metadata: {},
-            time: { start: 210, end: 220 },
-          },
-        }),
-      ],
-    )
-    sqlite.run(
-      "INSERT INTO entry_edge (id, session_id, source_entry_id, target_entry_id, edge_type, display_order, metadata, time_created, time_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      ["legacy_edge", "session_1", "message_1", "message_2", "fan_out", null, null, 205, 205],
-    )
-
-    const first = await migrateSession("session_1")
-    const second = await migrateSession("session_1")
-
-    expect(first).toBeGreaterThan(0)
-    expect(second).toBe(0)
-    expect(db.select().from(EntriesTable).all().map((e) => e.id).sort()).toEqual([
-      "message_1",
-      "message_2",
-      "part_tool",
-      "part_tool:result",
-    ])
-    expect(edgeCount(db, { fromID: "session_1", type: "contains" })).toBe(2)
-    expect(edgeCount(db, { fromID: "message_1", toID: "message_2", type: "reply_to" })).toBe(1)
-    expect(edgeCount(db, { fromID: "message_1", toID: "message_2", type: "branch" })).toBe(1)
-    expect(edgeCount(db, { fromID: "part_tool", toID: "shell", type: "used" })).toBe(1)
-    expect(edgeCount(db, { fromID: "part_tool", toID: "part_tool:result", type: "caused" })).toBe(1)
-  })
-
-  test("migrateAllSessions writes a completion marker and skips later full scans", async () => {
-    const { sqlite, db } = createDb()
-    insertSession(sqlite, "session_1")
-    insertMessage(sqlite, { id: "message_1", role: "user", created: 100 })
-
-    await migrateAllSessions()
-    const markers = db.select().from(GraphMigrationStateTable).all()
-    expect(markers).toHaveLength(1)
-
-    insertSession(sqlite, "session_2")
-    insertMessage(sqlite, { id: "message_2", sessionID: "session_2", role: "user", created: 200 })
-    await migrateAllSessions()
-
-    expect(db.select().from(EntriesTable).where(eq(EntriesTable.id, "message_2")).all()).toHaveLength(0)
-    await migrateSession("session_2")
-    expect(db.select().from(EntriesTable).where(eq(EntriesTable.id, "message_2")).all()).toHaveLength(1)
-  })
-})
 
 describe("session ledger write paths", () => {
   test("live tool parts create tool_call and tool_result entries with used/caused edges", async () => {

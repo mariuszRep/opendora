@@ -4,11 +4,6 @@ import { Database } from "@projectflows/storage/db"
 import { Database as BunDatabase } from "bun:sqlite"
 import { UI } from "../ui"
 import { cmd } from "./cmd"
-import { JsonMigration } from "@projectflows/storage/json-migration"
-import { EOL } from "os"
-import { bootstrap } from "../bootstrap"
-import { configureSessionCore } from "@projectflows/server/configure-session-core"
-import { verifyMigration } from "@projectflows/session/graph-migration"
 
 const QueryCommand = cmd({
   command: "$0 [query]",
@@ -63,79 +58,6 @@ const PathCommand = cmd({
   },
 })
 
-const MigrateCommand = cmd({
-  command: "migrate",
-  describe: "migrate JSON data to SQLite (merges with existing data)",
-  handler: async () => {
-    const sqlite = new BunDatabase(Database.Path)
-    const tty = process.stderr.isTTY
-    const width = 36
-    const orange = "\x1b[38;5;214m"
-    const muted = "\x1b[0;2m"
-    const reset = "\x1b[0m"
-    let last = -1
-    if (tty) process.stderr.write("\x1b[?25l")
-    try {
-      const stats = await JsonMigration.run(sqlite, {
-        progress: (event) => {
-          const percent = Math.floor((event.current / event.total) * 100)
-          if (percent === last) return
-          last = percent
-          if (tty) {
-            const fill = Math.round((percent / 100) * width)
-            const bar = `${"■".repeat(fill)}${"･".repeat(width - fill)}`
-            process.stderr.write(
-              `\r${orange}${bar} ${percent.toString().padStart(3)}%${reset} ${muted}${event.current}/${event.total}${reset} `,
-            )
-          } else {
-            process.stderr.write(`sqlite-migration:${percent}${EOL}`)
-          }
-        },
-      })
-      if (tty) process.stderr.write("\n")
-      if (tty) process.stderr.write("\x1b[?25h")
-      else process.stderr.write(`sqlite-migration:done${EOL}`)
-      UI.println(
-        `Migration complete: ${stats.projects} projects, ${stats.sessions} sessions, ${stats.messages} messages`,
-      )
-      if (stats.errors.length > 0) {
-        UI.println(`${stats.errors.length} errors occurred during migration`)
-      }
-    } catch (err) {
-      if (tty) process.stderr.write("\x1b[?25h")
-      UI.error(`Migration failed: ${err instanceof Error ? err.message : String(err)}`)
-      process.exit(1)
-    } finally {
-      sqlite.close()
-    }
-  },
-})
-
-const VerifyGraphCommand = cmd({
-  command: "verify-graph",
-  describe: "verify the entries+edges graph matches legacy message/part data for every session",
-  builder: (yargs: Argv) => {
-    return yargs.option("session", {
-      type: "string",
-      describe: "check a single session ID instead of every session",
-    })
-  },
-  handler: async (args: { session?: string }) => {
-    await bootstrap(process.cwd(), async () => {
-      configureSessionCore()
-      const report = verifyMigration(args.session)
-      UI.println(
-        `Checked ${report.sessionsChecked} session(s): ${report.sessionsClean} clean, ${report.mismatches.length} with mismatches`,
-      )
-      for (const mismatch of report.mismatches) {
-        UI.println(`  ${mismatch.sessionId}:`)
-        for (const issue of mismatch.issues) UI.println(`    - ${issue}`)
-      }
-      if (report.mismatches.length > 0) process.exit(1)
-    })
-  },
-})
-
 export const DbCommand = cmd({
   command: "db",
   describe: "database tools",
@@ -143,8 +65,6 @@ export const DbCommand = cmd({
     return yargs
       .command(QueryCommand)
       .command(PathCommand)
-      .command(MigrateCommand)
-      .command(VerifyGraphCommand)
       .demandCommand()
   },
   handler: () => {},

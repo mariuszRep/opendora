@@ -13,6 +13,7 @@ import os from "os"
 import { importClaudeSession } from "@projectflows/session/import"
 import { importCodexSession } from "@projectflows/session/import"
 import { configure } from "@projectflows/session/config"
+import { Session } from "@projectflows/session/session"
 import * as schema from "@projectflows/session/sql"
 
 const sqlite = new Database(":memory:")
@@ -89,15 +90,16 @@ const claudeSession = sqlite
   .prepare("SELECT vendor, native_id, title FROM session WHERE id = ?")
   .get(claudeResult.sessionID) as any
 console.log("  session row:", claudeSession)
-const claudeMessages = sqlite
-  .prepare("SELECT id, native_id, json_extract(data, '$.role') as role FROM message WHERE session_id = ? ORDER BY time_created")
-  .all(claudeResult.sessionID) as any[]
+const claudeWithParts = await Session.messages({ sessionID: claudeResult.sessionID })
+const claudeMessages = claudeWithParts.map((m) => ({
+  id: m.info.id,
+  native_id: (m.info as any)._native_id,
+  role: m.info.role,
+}))
 console.log("  messages:", claudeMessages)
-const claudeParts = sqlite
-  .prepare(
-    "SELECT json_extract(data, '$.type') as type, json_extract(data, '$.state.status') as tool_status, native_id FROM part WHERE session_id = ? ORDER BY time_created",
-  )
-  .all(claudeResult.sessionID) as any[]
+const claudeParts = claudeWithParts.flatMap((m) =>
+  m.parts.map((p: any) => ({ type: p.type, tool_status: p.state?.status, native_id: p._native_id })),
+)
 console.log("  parts:", claudeParts)
 
 // ─── Codex fixture ───────────────────────────────────────────────────────────
@@ -184,17 +186,12 @@ const codexSession = sqlite
   .prepare("SELECT vendor, native_id, title FROM session WHERE id = ?")
   .get(codexResult.sessionID) as any
 console.log("  session row:", codexSession)
-const codexMessages = sqlite
-  .prepare(
-    "SELECT id, native_id, json_extract(data, '$.role') as role FROM message WHERE session_id = ? ORDER BY time_created",
-  )
-  .all(codexResult.sessionID) as any[]
+const codexWithParts = await Session.messages({ sessionID: codexResult.sessionID })
+const codexMessages = codexWithParts.map((m) => ({ id: m.info.id, role: m.info.role }))
 console.log("  messages:", codexMessages)
-const codexParts = sqlite
-  .prepare(
-    "SELECT json_extract(data, '$.type') as type, json_extract(data, '$.state.status') as tool_status, json_extract(data, '$.tool') as tool FROM part WHERE session_id = ? ORDER BY time_created",
-  )
-  .all(codexResult.sessionID) as any[]
+const codexParts = codexWithParts.flatMap((m) =>
+  m.parts.map((p: any) => ({ type: p.type, tool_status: p.state?.status, tool: p.tool })),
+)
 console.log("  parts:", codexParts)
 
 // ─── Assertions ──────────────────────────────────────────────────────────────
