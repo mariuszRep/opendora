@@ -352,6 +352,32 @@ Bash tool nodes have a fixed command string embedded in the workflow definition.
 
 > This section captures durable intent. No implementation of the Script Node is assumed to exist.
 
+## Run Workflow Composition Contract
+
+The `run_workflow` node composes a reusable child workflow without weakening workflow typing, lifecycle, or error guarantees.
+
+### Input contract
+
+- The canonical node parameters are `workflowId`, `input`, `wait`, and `output`.
+- `input` must resolve to a non-null object. Recursive reference resolution preserves nested native values rather than stringifying them.
+- Parameter validation happens before child execution and reports actionable workflow/node context. Malformed JSON, non-object input, missing required parameters, enum violations, and conflicting explicit/legacy keys fail deterministically.
+- Legacy top-level child parameter fields may be merged temporarily for backward compatibility. New workflow definitions use `input`.
+
+### Execution and result contract
+
+- Native workflow-node composition waits for the child and records the child lifecycle in the parent execution.
+- The child's Output node value is stored as native structured context data. Display text is a projection and is never the source for reconstructing the result.
+- Child failures propagate through `run_workflow`; a failed child cannot produce a successful parent node or allow downstream publish/export nodes to run.
+- Public direct-dispatch compatibility is preserved: explicit `wait=false` remains asynchronous, and existing string-returning APIs remain available through an additive detailed-result contract.
+
+### For-each contract
+
+Each `for_each` iteration resolves child input against its own isolated context. Deterministic configuration or parameter-validation failures are not retried; operational failures follow the documented retry policy. Collected child results preserve their native types and iteration order.
+
+### Verification standard
+
+The package must maintain an integration test covering parent workflow -> `for_each` -> parameterized child workflow, including nested typed input, native child output, iteration isolation, and child-error propagation.
+
 ### Change Note
 
 - 2026-07-02 — Added Pipeline / Data-Ingestion Workflows section. Captured recurring ingestion and curation workflow patterns (AI News-style pipelines) as durable product intent, composed from existing node types.

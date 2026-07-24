@@ -198,6 +198,17 @@ The core package (`opendora`) owns the **runtime behavior** (how tools execute, 
 - `PROJECTFLOWS_PROJECT_ROOT` sets the current project directory for session context (file access, config lookup), but does NOT affect where agents or tools are loaded from.
 - **Development → Publish → Install**: Code lives in `opendora`, artifacts are promoted to `projectflows-website/registry`, users install to `~/.projectflows/`.
 
+## Child Workflow Composition
+
+A workflow may invoke another workflow as a reusable execution unit. Child-workflow composition must preserve the same typed data and failure semantics as an equivalent inlined sub-pipeline.
+
+- `run_workflow` accepts the canonical control shape `{ workflowId, input, wait, output }`; `input` is a recursively resolved JSON object whose nested arrays, objects, numbers, booleans, and null values retain their native types.
+- A waited child completes as part of the parent run and exposes its Output node result as native structured data, not display JSON that callers must parse.
+- Child validation and execution failures propagate to the parent and prevent downstream success or publishing steps.
+- Calls made inside `for_each` receive an isolated iteration context; values from one iteration cannot leak into another.
+- Direct asynchronous dispatch remains available to explicit callers using `wait=false`, while workflow-node composition uses deterministic waited semantics.
+- Compatibility for legacy top-level child parameter fields may exist during migration, but the canonical authored shape is the explicit `input` object.
+
 ## Canonical Operations / Contracts
 
 SDK methods, server routes, runtime flows, tools, plugins, mini-apps, UI extensions, and package integrations must converge on package-owned canonical operations rather than duplicating business behavior.

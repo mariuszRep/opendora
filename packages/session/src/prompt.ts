@@ -1104,6 +1104,8 @@ export namespace SessionPrompt {
           availableIds: () => cfg.workflow!.availableIds?.() ?? Promise.resolve([]),
           run: (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) =>
             cfg.workflow!.run!(workflow, sessionId, input, directory),
+          runDetailed: (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) =>
+            cfg.workflow!.runDetailed!(workflow, sessionId, input, directory),
         } : undefined,
         emit: (type: string, payload: unknown) => {
           cfg.bus?.publish({ type }, payload)

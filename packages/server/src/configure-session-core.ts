@@ -13,6 +13,7 @@ import { Snapshot } from "@projectflows/runtime/snapshot"
 import { Instance } from "@projectflows/runtime/instance"
 import { Agent } from "@projectflows/runtime/agent"
 import { PermissionNext } from "@projectflows/permission/next"
+import { wildcardMatch } from "@projectflows/permission"
 import { Plugin } from "./plugin"
 import { Scheduler } from "@projectflows/runtime/scheduler"
 import { LSP } from "./lsp"
@@ -29,11 +30,12 @@ import { FileTime } from "@projectflows/tools/file/time"
 import { ConfigMarkdown } from "@projectflows/config/markdown"
 import { Command } from "@projectflows/server/command"
 import { TaskTool } from "@projectflows/tools/system/task"
+import { createAgentTargetTool } from "@projectflows/tools/delegation/agent-target"
 import { Shell } from "@projectflows/util/shell"
 import { Truncate } from "@projectflows/tools/truncation-impl"
 import { Skill } from "@projectflows/skills/skill"
 import { WorkflowStorage, configurePluginWorkflowDirs } from "@projectflows/workflow/storage"
-import { runWorkflow } from "@projectflows/workflow/runner"
+import { runWorkflow, runWorkflowDetailed } from "@projectflows/workflow/runner"
 import { Ripgrep } from "@projectflows/tools/filesystem/lib/ripgrep"
 import { SessionPrompt } from "@projectflows/session/prompt"
 import { Session } from "@projectflows/session/session"
@@ -45,14 +47,110 @@ import { register as registerPluginList } from "@projectflows/provider/plugin"
 import { CapabilityRegistry } from "@projectflows/plugin"
 
 async function enrichAgent(agent: any): Promise<any> {
-  const allowedAgents: string[] | undefined = agent?.config?.toolConfig?.delegate?.allowedAgents
-  if (!allowedAgents || allowedAgents.length === 0) return agent
+  if (!agent?.id) return agent
+  let delegateRules = PermissionNext.listRules("agent", agent.id).filter((r) => r.resource === "agent")
+
+  // Lazy migration: agents saved before the rules-based delegate allowlist existed may still
+  // have toolConfig.delegate.allowedAgents populated with zero "agent"-resource rules. Seed
+  // rules from the array here, on first use of this agent — awaited as part of the normal
+  // per-request flow. (Deliberately NOT done as a proactive scan at server boot: an earlier
+  // version did that and it populated Agent.list()'s module-level cache before some tests'
+  // agents existed, and since a few callers create agents via AgentCore.create() directly —
+  // bypassing packages/runtime/src/agent.ts's invalidateEntries() — that stale cache never
+  // got cleared, breaking unrelated defaultAgent() lookups. Seeding here only runs when this
+  // specific agent is actually used, same as any other normal Agent.list() call site.)
+  if (delegateRules.length === 0) {
+    const allowedAgents: string[] | undefined = agent?.config?.toolConfig?.delegate?.allowedAgents
+    if (allowedAgents?.length) {
+      for (const name of allowedAgents) {
+        PermissionNext.addRule({
+          scope: "agent",
+          scope_id: agent.id,
+          resource: "agent",
+          access: "execute",
+          pattern: name,
+          action: "allow",
+        })
+      }
+      delegateRules = PermissionNext.listRules("agent", agent.id).filter((r) => r.resource === "agent")
+    }
+  }
+
+  if (delegateRules.length === 0) return agent
+  const allowRules = delegateRules.filter((r) => r.action === "allow")
   const all = await Agent.list()
-  const delegateAgents = all
-    .filter((a) => allowedAgents.includes(a.name))
-    .filter((a) => a.mode !== "system")
-    .map((a) => ({ name: a.name, description: a.description }))
-  return { ...agent, delegateAgents }
+  const delegateAgents = allowRules.length
+    ? all
+        .filter((a) => a.mode !== "system")
+        // Match by stable id, not the mutable display `name` — names can be edited freely
+        // (and have been, historically) while allowedAgents/rules should stay valid.
+        .filter((a) => allowRules.some((r) => wildcardMatch(a.id, r.pattern)))
+        .map((a) => ({ id: a.id, name: a.name, description: a.description }))
+    : undefined
+
+  // Reconcile the shared agent__<id> delegation tools whenever an agent with delegation rules
+  // actually starts a turn — self-healing on next use of ANY delegating agent, not live/instant.
+  // (Deliberately not a Bus.subscribe("permission.rules.updated", ...) fired from
+  // configureSessionCore: this codebase's Bus is Instance-scoped (packages/runtime/src/bus.ts
+  // reads Instance-scoped state), but configureSessionCore runs once, globally, often outside
+  // any Instance.provide() context — subscribing there throws "No context found for instance."
+  // enrichAgent runs inside real request handling, always within an active Instance, so it's
+  // the safe place for this.)
+  await reconcileDelegationTools().catch((err) => {
+    console.error("[configureSessionCore] reconcileDelegationTools failed:", err)
+  })
+
+  return { ...agent, delegateAgents, delegateRules }
+}
+
+/**
+ * Reconciles the auto-registered agent__<id> delegation tools against the current global set of
+ * "agent"-resource permission rules across all agents. One tool per target agent, shared across
+ * every caller allowed to reach it (not per-caller) — registry size stays O(targets), not
+ * O(targets × callers). Wildcard rule patterns are expanded against the current agent list, so
+ * agents installed after a wildcard rule was created pick up their tool automatically next time
+ * this runs.
+ *
+ * Called from enrichAgent() whenever an agent with delegation rules starts a turn — self-healing
+ * on next use rather than instant/live (see enrichAgent for why this isn't event-driven).
+ * ToolRegistry.init() is idempotent for a stable instance key, so calling it here first is safe
+ * and guarantees dynamically-registered tools survive later init() no-ops.
+ */
+async function reconcileDelegationTools() {
+  await ToolRegistry.init()
+  const all = await Agent.list()
+  const desired = new Map<string, { id: string; name: string; description?: string }>()
+  for (const caller of all) {
+    const rules = PermissionNext.listRules("agent", caller.id).filter(
+      (r) => r.resource === "agent" && r.action === "allow",
+    )
+    if (rules.length === 0) continue
+    for (const target of all) {
+      if (target.mode === "system") continue
+      if (desired.has(target.id)) continue
+      // Match by stable id, not the mutable display `name` (see enrichAgent for why).
+      if (rules.some((r) => wildcardMatch(target.id, r.pattern))) {
+        desired.set(target.id, { id: target.id, name: target.name, description: (target as any).description })
+      }
+    }
+  }
+
+  const existingIds = new Set(
+    ToolRegistry.all()
+      .map((t) => t.id)
+      .filter((id) => id.startsWith("agent__")),
+  )
+  for (const target of desired.values()) {
+    const toolId = `agent__${target.id}`
+    if (!existingIds.has(toolId)) {
+      ToolRegistry.register(createAgentTargetTool(target), "delegation")
+    }
+    existingIds.delete(toolId)
+  }
+  // Anything left in existingIds is no longer desired by any agent — remove it.
+  for (const staleId of existingIds) {
+    ToolRegistry.unregister(staleId)
+  }
 }
 
 let configured = false
@@ -194,6 +292,10 @@ export function configureSessionCore() {
       extractPathBoundaries(ruleset: any) {
         return PermissionNext.extractPathBoundaries(ruleset)
       },
+      listRules(scope: string, scope_id: string) {
+        return PermissionNext.listRules(scope as any, scope_id)
+      },
+      wildcardMatch,
       // Expose error classes for instanceof checks in processor.ts
       get RejectedError() {
         return PermissionNext.RejectedError
@@ -469,6 +571,9 @@ export function configureSessionCore() {
       },
       async run(workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) {
         return runWorkflow({ workflow, sessionId, input, directory })
+      },
+      async runDetailed(workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) {
+        return runWorkflowDetailed({ workflow, sessionId, input, directory })
       },
     },
     // Wire session methods so compaction.create can call them without circular dep.

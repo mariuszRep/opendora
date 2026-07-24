@@ -15,6 +15,7 @@ export type ToolGroupId =
   | "workflows"
   | "schedule"
   | "communication"
+  | "delegation"
   | "system"
   | "tool-registry"
   | "others"
@@ -41,7 +42,7 @@ export type ToolGroupManifest = {
 
 export const TOOL_GROUP_ORDER: ToolGroupId[] = [
   "filesystem", "shell", "web", "browser", "sessions", "agents", "skills",
-  "schedule", "workflows", "tool-registry", "memory", "communication",
+  "schedule", "workflows", "tool-registry", "memory", "communication", "delegation",
   "desktop", "automation", "system", "others",
 ]
 
@@ -58,6 +59,7 @@ export const TOOL_GROUP_LABELS: Record<ToolGroupId, string> = {
   "tool-registry": "Tool Registry",
   "memory": "Memory",
   "communication": "Communication",
+  "delegation": "Agent Delegation",
   "desktop": "Desktop",
   "automation": "Automation",
   "system": "System",
@@ -74,6 +76,7 @@ export function getToolGroup(id: string): ToolGroupId {
   if (id.startsWith("desktop_")) return "desktop"
   if (id.startsWith("pyautogui_")) return "automation"
   if (["session_search", "session_get", "session_analyze", "session_tree", "session_update"].includes(id)) return "sessions"
+  if (id.startsWith("agent__")) return "delegation"
   if (["delegate", "reply", "question", "notify"].includes(id)) return "communication"
   if (["agent_create", "agent_update", "agent_delete", "agent_list", "agent_get"].includes(id)) return "agents"
   if (["skill_load", "skill_list", "skill_search", "skill_install", "skill_create", "skill_edit", "skill_remove"].includes(id)) return "skills"

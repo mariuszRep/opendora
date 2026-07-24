@@ -473,9 +473,40 @@ export namespace Agent {
 
   // ── File-based CRUD (delegates to @projectflows/agent) ───────────────────────
 
+  // Sync a named-resource permission ruleset (agent-scoped, action "allow") against a desired
+  // set of patterns. Shared by skills and delegate-target ("agent" resource) syncing below —
+  // same add/remove-by-diff shape either way.
+  function syncNamedResourceRules(id: string, resource: string, desired: Set<string>) {
+    const existing = PermissionNext.listRules("agent", id).filter((r) => r.resource === resource)
+    for (const rule of existing) {
+      if (!desired.has(rule.pattern)) {
+        PermissionNext.removeRule(rule.id, "agent", id)
+      }
+    }
+    const existingPatterns = new Set(existing.map((r) => r.pattern))
+    for (const name of desired) {
+      if (!existingPatterns.has(name)) {
+        PermissionNext.addRule({
+          scope: "agent",
+          scope_id: id,
+          resource,
+          access: "execute",
+          pattern: name,
+          action: "allow",
+        })
+      }
+    }
+  }
+
   export async function create(id: string, config: AgentStorage.Config, persona = "", injection = "") {
     const result = await AgentCore.create(agentBaseDir(), id, config, persona, injection)
     invalidateEntries()
+    // Seed delegate-target rules from the portable allowedAgents array (same reasoning as the
+    // update() sync below — agent.json is the distributable declaration, rules are the runtime
+    // source of truth read by enrichAgent()/task.ts/the dynamic per-agent tool reconciliation).
+    if (config.toolConfig?.delegate?.allowedAgents?.length) {
+      syncNamedResourceRules(id, "agent", new Set(config.toolConfig.delegate.allowedAgents))
+    }
     return result
   }
 
@@ -486,28 +517,15 @@ export namespace Agent {
     // deriveEnabledSkills reflects the new list on the next agent load without
     // waiting for a re-seed (which only runs when no rules exist yet).
     if (patch.skills !== undefined) {
-      const desired = new Set(patch.skills)
-      const existing = PermissionNext.listRules("agent", id).filter((r) => r.resource === "skill")
-      // Remove rules for skills no longer in the list
-      for (const rule of existing) {
-        if (!desired.has(rule.pattern)) {
-          PermissionNext.removeRule(rule.id, "agent", id)
-        }
-      }
-      // Add allow rules for newly added skills
-      const existingPatterns = new Set(existing.map((r) => r.pattern))
-      for (const name of desired) {
-        if (!existingPatterns.has(name)) {
-          PermissionNext.addRule({
-            scope: "agent",
-            scope_id: id,
-            resource: "skill",
-            access: "execute",
-            pattern: name,
-            action: "allow",
-          })
-        }
-      }
+      syncNamedResourceRules(id, "skill", new Set(patch.skills))
+    }
+    // Sync delegate-target rules ("agent" resource) the same way, whenever allowedAgents is
+    // explicitly patched. The array (agent.json) stays the portable declaration for archives
+    // distributed via the projectflows-website registry; permission rules are the local runtime
+    // source of truth for enrichAgent()/task.ts's allowlist check and for the dynamic
+    // agent__<id> tool reconciliation.
+    if (patch.toolConfig?.delegate?.allowedAgents !== undefined) {
+      syncNamedResourceRules(id, "agent", new Set(patch.toolConfig.delegate.allowedAgents))
     }
     return result
   }

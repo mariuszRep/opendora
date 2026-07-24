@@ -45,6 +45,7 @@ export type ToolGroupId =
   | "workflows"
   | "schedule"
   | "communication"
+  | "delegation"
   | "system"
   | "tool-registry"
   | "others"
@@ -93,5 +94,6 @@ export const GROUP_DIR_FOR_ID: Record<string, string> = {
   workflows: "workflows",
   schedule: "schedule",
   communication: "communication",
+  delegation: "delegation",
   system: "system",
 }

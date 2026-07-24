@@ -1,9 +1,11 @@
 # RunWorkflow Input Fix Specification
 
-**Status:** Approved for implementation
+**Status:** Superseded by canonical ready goal
 **Date:** 2026-07-22
 
 ---
+
+> Historical specification. The canonical implementation goal is `.projectflows/goals/ready/run-workflow-child-composition-contract/GOAL.md`. Preserve this file for discovery history; execute from the goal.
 
 ## Goal
 

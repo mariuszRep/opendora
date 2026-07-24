@@ -31,7 +31,7 @@ import { ProviderRoutes } from "./routes/provider"
 import { AgentRoutes } from "./routes/agent"
 import { ScheduleRoutes } from "./routes/schedule"
 import { WorkflowRoutes } from "@projectflows/workflow/routes"
-import { registerToolExecutor, runWorkflow } from "@projectflows/workflow/runner"
+import { registerToolExecutor, runWorkflow, runWorkflowDetailed } from "@projectflows/workflow/runner"
 import { WorkflowStorage } from "@projectflows/workflow/storage"
 import { CheckpointStore } from "@projectflows/workflow/checkpoint-store"
 import { CronScheduler, type ScheduleDispatchFn } from "@projectflows/schedule/cron-scheduler"
@@ -940,6 +940,8 @@ export namespace Server {
               availableIds: () => WorkflowStorage.availableIds(undefined),
               run: (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) =>
                 runWorkflow({ workflow, sessionId, input, directory }),
+              runDetailed: (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) =>
+                runWorkflowDetailed({ workflow, sessionId, input, directory }),
             },
           },
         }

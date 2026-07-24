@@ -146,13 +146,10 @@ export const ProviderRoutes = lazy(() =>
         // Inject synthetic provider entries for plugins with auth methods not yet in the list
         for (const [providerID, methods] of Object.entries(authMethodMap)) {
           if (!providers[providerID] && methods.length > 0) {
-            const name =
-              providerID === "google-gemini-cli"
-                ? "Google Gemini CLI"
-                : providerID
-                    .split("-")
-                    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                    .join(" ")
+            const name = providerID
+              .split("-")
+              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+              .join(" ")
             providers[providerID] = {
               id: providerID,
               name,

@@ -617,10 +617,6 @@ export namespace Provider {
         },
       }
     },
-    "google-gemini-cli": async () => {
-      const { createGeminiCliLoader } = await import("./google-gemini-cli-loader")
-      return createGeminiCliLoader()
-    },
   }
 
   export const Model = z
@@ -815,17 +811,6 @@ export namespace Provider {
     for (const [providerID, provider] of liveCatalogProviders) {
       if (!database[providerID]) database[providerID] = provider
     }
-    if (!database["google-gemini-cli"]) {
-      database["google-gemini-cli"] = {
-        id: "google-gemini-cli",
-        name: "Google Gemini CLI",
-        source: "custom",
-        env: [],
-        options: {},
-        models: {},
-      }
-    }
-
     if (database["opencode"] && !database["opencode-private"]) {
       const opencode = database["opencode"]
       database["opencode-private"] = {

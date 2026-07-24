@@ -25,7 +25,8 @@
     "./truncation": "./truncation.ts",
     "./truncation-impl": "./truncation-impl.ts",
     "./skill-load-tool": "./skill-load-tool.ts",
-    "./memory/lib": "./memory/lib.ts"
+    "./memory/lib": "./memory/lib.ts",
+    "./delegation/*": "./delegation/*.ts"
   },
   "devDependencies": {
     "@tsconfig/bun": "catalog:",

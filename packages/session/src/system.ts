@@ -307,20 +307,25 @@ export namespace SystemPrompt {
 
     // 6. Delegation restriction — exact text that the agent sees in llm.ts
     const agentToolsConfig = input.agent?.tools as string[] | undefined
-    const hasDelegateTool = agentToolsConfig?.includes("delegate")
-    const allowedAgentNames: string[] | undefined = hasDelegateTool
-      ? input.agent?.config?.toolConfig?.delegate?.allowedAgents
-      : undefined
-    if (allowedAgentNames && allowedAgentNames.length > 0) {
-      const allAgents = await cfg.agent?.list?.() ?? []
-      const entries = (allAgents as any[])
-        .filter((a) => allowedAgentNames.includes(a.name))
-        .map((a: any) => `- **${a.name}**${a.description ? `: ${a.description}` : ""}`)
-      if (entries.length > 0) {
-        sections.push({
-          label: "Available Delegations",
-          content: `${entries.join("\n")}`,
-        })
+    const hasDelegationTool = agentToolsConfig?.includes("delegate") || agentToolsConfig?.includes("task")
+    const agentId = input.agent?.id as string | undefined
+    if (hasDelegationTool && agentId && cfg.permissionNext?.listRules && cfg.permissionNext?.wildcardMatch) {
+      const rules = cfg.permissionNext
+        .listRules("agent", agentId)
+        .filter((r) => r.resource === "agent" && r.action === "allow")
+      if (rules.length > 0) {
+        const allAgents = (await cfg.agent?.list?.()) ?? []
+        const entries = (allAgents as any[])
+          .filter((a) => a.mode !== "system")
+          // Match by stable id, not the mutable display `name` — names can be edited freely.
+          .filter((a) => rules.some((r) => cfg.permissionNext!.wildcardMatch!(a.id, r.pattern)))
+          .map((a: any) => `- **${a.name}**${a.description ? `: ${a.description}` : ""}`)
+        if (entries.length > 0) {
+          sections.push({
+            label: "Available Delegations",
+            content: `${entries.join("\n")}`,
+          })
+        }
       }
     }
 

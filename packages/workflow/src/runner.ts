@@ -506,10 +506,19 @@ async function runSubGraph({
         const resolvedStdin = resolveDeep(params.stdin, input, ctx)
         resolvedArgs.stdin = JSON.stringify(resolvedStdin)
       }
-      // RunWorkflow accepts either an explicit object/JSON object or legacy
-      // individual fields. Keep control and runner bookkeeping keys out of child input.
+      // RunWorkflow accepts only the canonical explicit `input` object/JSON string.
+      // Flat individual fields alongside control keys are not supported — reject
+      // them deterministically so authors move to `input` instead of silently
+      // having two conventions to reason about.
       if (d.nodeType === NodeTypeId.RunWorkflow) {
         const TOOL_KEYS = new Set(["workflowId", "wait", "agentId", "workdir", "input", "output", "resultPath"])
+        const strayKeys = Object.keys(resolvedArgs).filter((key) => !TOOL_KEYS.has(key))
+        if (strayKeys.length > 0) {
+          throw new WorkflowValidationError(
+            `RunWorkflow node "${nodeLabel}" has unsupported field(s) ${strayKeys.map((k) => `"${k}"`).join(", ")} directly on parameters. ` +
+            `Child parameters must be nested under "input" — e.g. { "input": { "${strayKeys[0]}": ... } }.`
+          )
+        }
         const explicit = resolvedArgs.input
         let explicitInput: Record<string, unknown> = {}
         if (explicit !== undefined) {
@@ -527,15 +536,7 @@ async function runSubGraph({
             throw new WorkflowValidationError(`RunWorkflow node "${nodeLabel}" input must resolve to a non-null, non-array object.`)
           }
         }
-        const individual: Record<string, unknown> = {}
-        for (const key of Object.keys(resolvedArgs)) if (!TOOL_KEYS.has(key)) individual[key] = resolvedArgs[key]
-        for (const key of Object.keys(individual)) {
-          if (Object.prototype.hasOwnProperty.call(explicitInput, key)) {
-            throw new WorkflowValidationError(`RunWorkflow node "${nodeLabel}" input key "${key}" is supplied by both explicit input and an individual field.`)
-          }
-        }
-        for (const key of Object.keys(resolvedArgs)) if (!TOOL_KEYS.has(key)) delete resolvedArgs[key]
-        if (explicit !== undefined || Object.keys(individual).length > 0) resolvedArgs.input = { ...explicitInput, ...individual }
+        resolvedArgs.input = explicitInput
         resolvedArgs.wait = true
       }
 
@@ -618,8 +619,18 @@ async function runSubGraph({
       result = toolOutput!
 
       if (d.nodeType === NodeTypeId.RunWorkflow && toolMeta?.outputObject !== undefined) {
-        if (storeAs !== undefined) ctx[storeAs] = toolMeta.outputObject
-        if (nodeKey !== undefined) ctx[nodeKey] = toolMeta.outputObject
+        // The child's detailed result is a completion envelope { status, result? }.
+        // Unwrap to the child's native Output value when present, so downstream
+        // $ref navigation sees the child's actual typed data instead of having to
+        // reach through .result every time. When the child has no Output node,
+        // there is no result to unwrap — store the completion envelope itself
+        // rather than inventing result data.
+        const envelope = toolMeta.outputObject as Record<string, unknown>
+        const childValue = envelope && typeof envelope === "object" && !Array.isArray(envelope) && "result" in envelope
+          ? envelope.result
+          : envelope
+        if (storeAs !== undefined) ctx[storeAs] = childValue
+        if (nodeKey !== undefined) ctx[nodeKey] = childValue
       }
 
       // resultPath: extract a value from tool metadata instead of the raw string output.
@@ -1103,7 +1114,7 @@ async function _runWorkflowDetailed({
     })
   }
 
-  const finalize = async (error?: string) => {
+  const finalize = async (error?: string, errorType?: "validation" | "runtime") => {
     deregisterActiveRun(sessionId)
     const workflowOutput = ctx["__workflow_output__"] as Record<string, unknown> | undefined
     const passed = steps.filter((s) => s.passed).length
@@ -1118,6 +1129,10 @@ async function _runWorkflowDetailed({
       workflow: workflow.name,
       completed: !error,
       ...(error ? { error } : {}),
+      // Distinguishes deterministic input/validation failures (never retried by a
+      // calling for_each/composition boundary) from operational runtime failures
+      // (retried per the established retry policy) — see WorkflowValidationError.
+      ...(error ? { errorType: errorType ?? "runtime" } : {}),
       passed,
       failed,
       steps: steps.map((s) => ({ label: s.label, passed: s.passed })),
@@ -1149,7 +1164,7 @@ async function _runWorkflowDetailed({
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    return finalize(msg)
+    return finalize(msg, isWorkflowValidationError(err) ? "validation" : "runtime")
   }
 
   return finalize()

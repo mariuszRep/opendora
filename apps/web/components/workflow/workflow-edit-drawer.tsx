@@ -1854,6 +1854,14 @@ export function WorkflowEditDrawer({
             const params = (editingNodeData.node.parameters ?? {}) as Record<string, unknown>
             const workflowId = (params.workflowId as string) ?? ""
             const outputKey = (params.output as string) ?? "workflow_result"
+            const inputObj = (params.input && typeof params.input === "object" && !Array.isArray(params.input)
+              ? params.input
+              : {}) as Record<string, unknown>
+            const updateInput = (updates: Record<string, unknown>) =>
+              setEditingNodeData({
+                ...editingNodeData,
+                node: { ...editingNodeData.node, parameters: { ...params, input: { ...inputObj, ...updates } } },
+              })
             const updateParams = (updates: Record<string, unknown>) =>
               setEditingNodeData({
                 ...editingNodeData,
@@ -1903,8 +1911,8 @@ export function WorkflowEditDrawer({
                       {p.description && <p className="text-xs text-muted-foreground">{p.description}</p>}
                       {p.enum && p.enum.length > 0 ? (
                         <Select
-                          value={(params[p.name] as string) ?? ""}
-                          onValueChange={(v) => updateParams({ [p.name]: v })}
+                          value={(inputObj[p.name] as string) ?? ""}
+                          onValueChange={(v) => updateInput({ [p.name]: v })}
                         >
                           <SelectTrigger className="h-8 text-xs font-mono">
                             <SelectValue placeholder="Select a value…" />
@@ -1919,8 +1927,8 @@ export function WorkflowEditDrawer({
                         </Select>
                       ) : (
                         <ExpressionInput
-                          value={(params[p.name] as string) ?? ""}
-                          onChange={(v) => updateParams({ [p.name]: v })}
+                          value={(inputObj[p.name] as string) ?? ""}
+                          onChange={(v) => updateInput({ [p.name]: v })}
                           suggestions={availableRefs}
                           placeholder={`$ctx.${p.name}`}
                         />

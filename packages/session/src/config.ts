@@ -119,6 +119,9 @@ export interface SessionCoreConfig {
     merge?(a: any, b: any): any
     evaluate?(permission: string, name: string, ruleset: any): { action: string }
     extractPathBoundaries?(ruleset: any): { writePaths: string[]; readPath: string | undefined }
+    /** Persisted rules for a scope (e.g. "agent"/agentId) — used to resolve delegate-target allowlists. */
+    listRules?(scope: string, scope_id: string): Array<{ resource: string; pattern: string; action: string }>
+    wildcardMatch?(value: string, pattern: string): boolean
     RejectedError?: any
     Ruleset?: any
   }
@@ -203,6 +206,10 @@ export interface SessionCoreConfig {
     get?(id: string, directory?: string): Promise<any>
     availableIds?(directory?: string): Promise<string[]>
     run?(workflow: any, sessionId: string, input: Record<string, unknown>, directory: string): Promise<string>
+    runDetailed?(workflow: any, sessionId: string, input: Record<string, unknown>, directory: string): Promise<{
+      display: string
+      outputObject: { status: Record<string, unknown>; result?: Record<string, unknown> }
+    }>
   }
   /** Skill-tool registry — tools unlocked per session via skill_load */
   skillTools?: {

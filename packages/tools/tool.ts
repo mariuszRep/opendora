@@ -21,8 +21,10 @@ export namespace Tool {
       sandbox?: boolean
       skills?: string[]
     }
-    /** Resolved agent entries for the delegate tool's allowed list */
-    delegateAgents?: Array<{ name: string; description?: string }>
+    /** Resolved agent entries for the delegate tool's allowed list, and (via id) the caller's implicitly-granted agent__<id> dynamic tools */
+    delegateAgents?: Array<{ id: string; name: string; description?: string }>
+    /** Raw agent-scoped delegate-target permission rules (resource "agent"), including deny/ask — for hard-block checks in delegate/task tools */
+    delegateRules?: Array<{ pattern: string; action: "allow" | "deny" | "ask" }>
     /** Skills allocated to this agent — skill_load is restricted to this list if non-empty */
     skills?: string[]
     /** Workflows allocated to this agent — workflow_run is restricted to this list if non-empty */

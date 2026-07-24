@@ -1,0 +1,10 @@
+{
+  "id": "delegation",
+  "name": "Agent Delegation",
+  "description": "Auto-registered per-agent tools for creating sessions, messaging, and replying to other agents",
+  "icon": "MessageSquare",
+  "sourceGroup": "core",
+  "core": true,
+  "tools": [],
+  "mcp": {}
+}

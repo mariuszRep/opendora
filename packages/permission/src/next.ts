@@ -154,6 +154,11 @@ function toStaticRules(ruleset: Permission.LegacyRuleset): Permission.StaticRule
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export namespace PermissionNext {
+  // Bus event fired whenever a rule is added/removed for any scope — consumers that need to
+  // react to rule changes (e.g. delegation tool reconciliation) subscribe to this directly
+  // rather than re-declaring the event with the same type string.
+  export const RulesUpdatedEvent = PermissionRulesUpdatedEvent
+
   // Re-export legacy types and helpers (used by agent.ts and other config consumers)
   export import Action = Permission.Action
   export import LegacyRule = Permission.LegacyRule

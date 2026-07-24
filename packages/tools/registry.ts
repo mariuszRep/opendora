@@ -130,10 +130,18 @@ export namespace ToolRegistry {
     return _groupManifests
   }
 
-  export function register(tool: Tool.Info) {
+  export function register(tool: Tool.Info, sourceGroup?: string) {
     const idx = _custom.findIndex((t) => t.id === tool.id)
     if (idx >= 0) _custom.splice(idx, 1, tool)
     else _custom.push(tool)
+    if (sourceGroup) _sourceGroups.set(tool.id, sourceGroup)
+  }
+
+  /** Removes a previously `register()`-ed tool by id. No-op if not present (e.g. directory-scanned tools). */
+  export function unregister(id: string): void {
+    const idx = _custom.findIndex((t) => t.id === id)
+    if (idx >= 0) _custom.splice(idx, 1)
+    _sourceGroups.delete(id)
   }
 
   export function all(): Tool.Info[] {

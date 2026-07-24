@@ -12,7 +12,6 @@ import { Session } from "@projectflows/session/session"
 import { NamedError } from "@projectflows/util/error"
 import { CopilotAuthPlugin } from "./copilot"
 import { gitlabAuthPlugin as GitlabAuthPlugin } from "@gitlab/opencode-gitlab-auth"
-import { googleOAuthPlugin as GoogleAuthPlugin } from "@projectflows/provider/google-oauth-plugin"
 import { registerBootstrapHook } from "@projectflows/runtime/bootstrap"
 
 export namespace Plugin {
@@ -21,7 +20,7 @@ export namespace Plugin {
   const BUILTIN = ["opencode-anthropic-auth@0.0.13"]
 
   // Built-in plugins that are directly imported (not installed from npm)
-  const INTERNAL_PLUGINS: PluginInstance[] = [CodexAuthPlugin, CopilotAuthPlugin, GitlabAuthPlugin, GoogleAuthPlugin]
+  const INTERNAL_PLUGINS: PluginInstance[] = [CodexAuthPlugin, CopilotAuthPlugin, GitlabAuthPlugin]
 
   const state = Instance.state(async () => {
     const client = createOpencodeClient({

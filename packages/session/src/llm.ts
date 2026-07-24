@@ -298,7 +298,13 @@ export namespace LLM {
     // A missing `tools` field is treated the same as an explicit `[]` (deny-all-by-default) —
     // only a non-empty array grants anything beyond skill-unlocked tools.
     const declaredTools = agent.tools ?? []
-    const allowedTools = new Set<string>([...declaredTools, ...(skillUnlocked ?? [])])
+    // Dynamic per-target delegation tools (agent__<id>) are granted implicitly from the agent's
+    // resolved "agent"-resource permission rules (enrichAgent's delegateAgents), not by listing
+    // each generated tool id in the static tools array — the rule IS the grant. See
+    // packages/tools/delegation/agent-target.ts and configure-session-core.ts's
+    // reconcileDelegationTools.
+    const delegationGrants = ((agent.delegateAgents ?? []) as Array<{ id: string }>).map((a) => `agent__${a.id}`)
+    const allowedTools = new Set<string>([...declaredTools, ...delegationGrants, ...(skillUnlocked ?? [])])
 
     for (const t of Object.keys(tools)) {
       // Always keep "invalid" tool - it's used internally for tool-call repair

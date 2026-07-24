@@ -262,7 +262,10 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
         workflows: selectedWorkflows,
         toolConfig: (() => {
           const config: any = {}
-          if (delegateAllowedAgents.length > 0) {
+          // Always send delegate.allowedAgents (even empty) when delegate/task is selected —
+          // Agent.create/update only syncs "agent"-resource permission rules when the patch
+          // explicitly includes the field.
+          if (selectedTools.includes("delegate") || selectedTools.includes("task")) {
             config.delegate = { allowedAgents: delegateAllowedAgents }
           }
           if (selectedTools.includes("reply")) {
@@ -679,7 +682,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                           </div>
                         )}
 
-                        {sg === "core" && selectedTools.includes("delegate") && (
+                        {sg === "core" && (selectedTools.includes("delegate") || selectedTools.includes("task")) && (
                           <div className="mt-3 border-t pt-3">
                             <p className="mb-0.5 text-xs font-medium">Allowed agents for delegate</p>
                             <p className="mb-2 text-xs text-muted-foreground">

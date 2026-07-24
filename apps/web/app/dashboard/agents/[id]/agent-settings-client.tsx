@@ -351,7 +351,11 @@ export default function AgentSettingsClient() {
         workflows: selectedWorkflows,
         toolConfig: (() => {
           const tc: any = {}
-          if (delegateAllowedAgents.length > 0) {
+          // Always send delegate.allowedAgents (even empty) when delegate/task is selected, so
+          // clearing every checkbox actually removes the corresponding "agent"-resource
+          // permission rules server-side (Agent.update only syncs rules when the patch
+          // explicitly includes the field — an omitted field is a no-op, not "clear everything").
+          if (selectedTools.includes("delegate") || selectedTools.includes("task")) {
             tc.delegate = { allowedAgents: delegateAllowedAgents }
           }
           if (selectedTools.includes("reply")) {
@@ -868,7 +872,7 @@ export default function AgentSettingsClient() {
                         </Button>
                       )}
 
-                      {sg === "core" && selectedTools.includes("delegate") && (
+                      {sg === "core" && (selectedTools.includes("delegate") || selectedTools.includes("task")) && (
                         <div className="mt-3 border-t pt-3">
                           <p className="mb-0.5 text-xs font-medium">Allowed agents for delegate</p>
                           <p className="mb-2 text-xs text-muted-foreground">

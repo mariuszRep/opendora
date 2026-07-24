@@ -2,6 +2,7 @@ import { Tool } from "../tool.ts"
 import DESCRIPTION from "./task.txt"
 import z from "zod"
 import { host } from "../host.ts"
+import { wildcardMatch } from "@projectflows/permission"
 
 const parameters = z.object({
   description: z.string().describe("A short (3-5 words) description of the task"),
@@ -26,15 +27,28 @@ export const TaskTool = Tool.define("task", async (initCtx) => {
       const h = host(ctx)
 
       if (!ctx.extra?.bypassAgentCheck) {
-        await ctx.ask({
-          permission: "task",
-          patterns: [params.subagent_type],
-          always: ["*"],
-          metadata: {
-            description: params.description,
-            subagent_type: params.subagent_type,
-          },
-        })
+        // Agent-scoped delegate-target rules (resource "agent") take precedence over the
+        // interactive ask: a matching "deny" rule hard-blocks even under interactive approval,
+        // and a matching "allow" rule pre-authorizes without prompting — same semantics as the
+        // delegate tool's allowlist check.
+        const rules = initCtx?.agent?.delegateRules
+        const matched = rules?.findLast((r) => wildcardMatch(params.subagent_type, r.pattern))
+        if (matched?.action === "deny") {
+          throw new Error(
+            `Agent "${params.subagent_type}" is denied for this agent's task delegation (matched rule pattern "${matched.pattern}").`,
+          )
+        }
+        if (matched?.action !== "allow") {
+          await ctx.ask({
+            permission: "task",
+            patterns: [params.subagent_type],
+            always: ["*"],
+            metadata: {
+              description: params.description,
+              subagent_type: params.subagent_type,
+            },
+          })
+        }
       }
 
       if (!h.prompt) {
