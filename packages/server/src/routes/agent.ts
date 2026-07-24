@@ -4,6 +4,7 @@ import z from "zod"
 import { Agent } from "@projectflows/runtime/agent"
 import { AgentStorage } from "@projectflows/agent"
 import { ToolRegistry } from "@projectflows/server/tool-registry"
+import { reconcileDelegationTools } from "@projectflows/server/configure-session-core"
 import { MCP } from "../mcp"
 import { lazy } from "@projectflows/util/lazy"
 import { errors } from "../error"
@@ -133,7 +134,10 @@ export const AgentRoutes = lazy(() =>
         },
       }),
       async (c) => {
-        await ToolRegistry.init()
+        // Ensure every non-system agent's agent__<id> delegation tool is registered before
+        // listing schemas, so the UI's tool-selection checkboxes reliably see them without
+        // needing a session turn to have run first.
+        await reconcileDelegationTools()
         const [internalTools, mcpTools] = await Promise.all([
           ToolRegistry.schemas(),
           MCP.rawTools(),

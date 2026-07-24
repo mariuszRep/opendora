@@ -12,7 +12,7 @@ import { useSessionTreeSettings } from "@/hooks/use-session-tree-settings"
 const ROW_HEIGHT = 32
 const NODE_RADIUS = 5
 const DEPTH_INDENT = 14
-const LINE_WIDTH  = 2
+const LINE_WIDTH  = 1
 const DOT_EDGE_GAP = 2
 const DOT_LINE_GAP = NODE_RADIUS + DOT_EDGE_GAP
 const SPINNER_RADIUS = NODE_RADIUS + 2
@@ -48,7 +48,6 @@ interface SessionDot {
 interface SessionPath {
   id: string
   d: string
-  color: string
 }
 
 function computeTreeLayout(
@@ -111,7 +110,6 @@ function computeTreeLayout(
         `M ${armStartX} ${armStartY}`,
         `C ${armStartX + 8} ${armStartY + 4}, ${firstChildDot.x} ${railStartY - 14}, ${firstChildDot.x} ${railStartY}`,
       ].join(" "),
-      color: parentDot.color,
     })
 
     const railSegments: string[] = []
@@ -125,7 +123,6 @@ function computeTreeLayout(
       paths.push({
         id: `${session.id}-child-rail`,
         d: railSegments.join(" "),
-        color: parentDot.color,
       })
     }
   }
@@ -466,7 +463,7 @@ export const SessionTreePanel = forwardRef<SessionTreePanelHandle, SessionTreePa
                       key={p.id}
                       d={p.d}
                       fill="none"
-                      stroke={p.color}
+                      stroke="var(--muted-foreground)"
                       strokeWidth={LINE_WIDTH}
                       strokeLinecap="round"
                       strokeLinejoin="round"

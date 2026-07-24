@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Typecheck
+        # NOTE: intentionally not `bun typecheck` (turbo). The core packages have
+        # a longstanding circular-dependency tangle (e.g. util <-> permission,
+        # session <-> server) that spans most of packages/*, and turbo 2.5.6 hangs
+        # indefinitely trying to resolve/report on the resulting cycle graph, even
+        # on `turbo ls` with no task involved. Typechecking each package directly
+        # sidesteps turbo's dependency-graph resolution entirely.
+        run: |
+          set -e
+          for pkg in auth config permission plugin provider runtime server session skills storage tools util; do
+            echo "::group::typecheck @projectflows/$pkg"
+            (cd "packages/$pkg" && bun run typecheck)
+            echo "::endgroup::"
+          done
+          echo "::group::typecheck apps/cli"
+          (cd apps/cli && bun run typecheck)
+          echo "::endgroup::"
+          echo "::group::typecheck apps/web"
+          (cd apps/web && bun run typecheck)
+          echo "::endgroup::"
+
+      - name: Test packages
+        run: |
+          set -e
+          for pkg in config permission plugin provider runtime server session skills storage tools util; do
+            echo "::group::test @projectflows/$pkg"
+            (cd "packages/$pkg" && bun test)
+            echo "::endgroup::"
+          done
+          echo "::group::test apps/cli"
+          (cd apps/cli && bun test)
+          echo "::endgroup::"
+
+      - name: Core boundary check
+        run: bun scripts/check-core-boundary.ts

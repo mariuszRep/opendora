@@ -498,14 +498,30 @@ export namespace Agent {
     }
   }
 
+  const AGENT_TOOL_PREFIX = "agent__"
+
+  // agent__<id> entries in a tools array are how the UI now grants delegation targets (tool
+  // selection IS the grant — see agent-target.ts). Extract the target ids from a tools array.
+  function extractDelegateTargetIds(tools: string[] | undefined): string[] {
+    return (tools ?? [])
+      .filter((t) => t.startsWith(AGENT_TOOL_PREFIX))
+      .map((t) => t.slice(AGENT_TOOL_PREFIX.length))
+  }
+
   export async function create(id: string, config: AgentStorage.Config, persona = "", injection = "") {
     const result = await AgentCore.create(agentBaseDir(), id, config, persona, injection)
     invalidateEntries()
-    // Seed delegate-target rules from the portable allowedAgents array (same reasoning as the
-    // update() sync below — agent.json is the distributable declaration, rules are the runtime
-    // source of truth read by enrichAgent()/task.ts/the dynamic per-agent tool reconciliation).
-    if (config.toolConfig?.delegate?.allowedAgents?.length) {
-      syncNamedResourceRules(id, "agent", new Set(config.toolConfig.delegate.allowedAgents))
+    // Seed delegate-target rules from whichever source is present: agent__<id> entries in the
+    // tools array (new, UI-driven) unioned with the portable allowedAgents array (legacy/archive
+    // declaration). Rules are the local runtime source of truth read by
+    // enrichAgent()/task.ts/the dynamic per-agent tool reconciliation; the array stays the
+    // portable declaration for archives distributed via the projectflows-website registry.
+    const desired = new Set([
+      ...extractDelegateTargetIds(config.tools),
+      ...(config.toolConfig?.delegate?.allowedAgents ?? []),
+    ])
+    if (desired.size > 0) {
+      syncNamedResourceRules(id, "agent", desired)
     }
     return result
   }
@@ -519,13 +535,19 @@ export namespace Agent {
     if (patch.skills !== undefined) {
       syncNamedResourceRules(id, "skill", new Set(patch.skills))
     }
-    // Sync delegate-target rules ("agent" resource) the same way, whenever allowedAgents is
-    // explicitly patched. The array (agent.json) stays the portable declaration for archives
-    // distributed via the projectflows-website registry; permission rules are the local runtime
-    // source of truth for enrichAgent()/task.ts's allowlist check and for the dynamic
-    // agent__<id> tool reconciliation.
-    if (patch.toolConfig?.delegate?.allowedAgents !== undefined) {
-      syncNamedResourceRules(id, "agent", new Set(patch.toolConfig.delegate.allowedAgents))
+    // Sync delegate-target rules ("agent" resource) whenever either source is explicitly
+    // patched — union both into a single desired set and sync once. Two separate sync calls
+    // (one per source) would fight each other: each treats its own desired set as authoritative
+    // and removes anything not in it, so the second call would wipe what the first just added.
+    // In practice the current UI only ever sends `tools` (never the legacy allowedAgents field
+    // — see agent-settings-client.tsx/agent-upsert-dialog.tsx), so this union is mainly a
+    // safety net for any other caller still using the old field.
+    if (patch.tools !== undefined || patch.toolConfig?.delegate?.allowedAgents !== undefined) {
+      const desired = new Set([
+        ...extractDelegateTargetIds(patch.tools),
+        ...(patch.toolConfig?.delegate?.allowedAgents ?? []),
+      ])
+      syncNamedResourceRules(id, "agent", desired)
     }
     return result
   }

@@ -132,12 +132,14 @@ export namespace Provider {
 
     if (!hasKey) {
       for (const [key, value] of Object.entries(input.models)) {
-        if (value.cost.input === 0 && value.cost.output === 0) continue
+        if (value.cost.input === 0) continue
         delete input.models[key]
       }
     }
 
-    // Resolve the actual bearer token for all auth types so Authorization is always sent
+    // Resolve the actual bearer token for all auth types so Authorization is always sent.
+    // provider.key (set from env/Auth.all) only covers env vars and type==="api" keys;
+    // oauth.access, wellknown.key, and config apiKey are not reflected in provider.key.
     const apiKey = (() => {
       if (auth?.type === "oauth") return auth.access
       if (auth?.type === "api") return auth.key
@@ -148,7 +150,7 @@ export namespace Provider {
     })()
 
     return {
-      autoload: Object.keys(input.models).length > 0 && (input.id === "opencode" || hasKey),
+      autoload: Object.keys(input.models).length > 0,
       options: apiKey ? { apiKey } : hasKey ? {} : { apiKey: "public" },
     }
   }

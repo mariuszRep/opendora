@@ -96,7 +96,8 @@ export default function AgentSettingsClient() {
   const [fallbackModelOpen, setFallbackModelOpen] = useState(false)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const { schemas: toolSchemas } = useToolSchemas()
-  const availableToolSchemas = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id))
+  // Exclude this agent's own agent__<id> delegation tool — an agent can't delegate to itself.
+  const availableToolSchemas = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id) && t.id !== `agent__${agentId}`)
   const availableTools = availableToolSchemas.map((t) => t.id)
   const groupedBySource = groupToolsBySource(availableToolSchemas)
   const allSourceGroups = sortSourceGroups([...groupedBySource.keys()])
@@ -111,7 +112,6 @@ export default function AgentSettingsClient() {
   const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>([])
   const [workflowSearch, setWorkflowSearch] = useState("")
   const [workflowFilter, setWorkflowFilter] = useState<"all" | "selected" | "deselected">("all")
-  const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
   const [defaultPaths, setDefaultPaths] = useState<string[]>([])
   const [newPathInput, setNewPathInput] = useState("")
@@ -191,7 +191,6 @@ export default function AgentSettingsClient() {
     setSelectedTools(agent.tools ?? [])
     setSelectedSkills(agent.skills ?? (agent as any).config?.skills ?? [])
     setSelectedWorkflows(agent.workflows ?? (agent as any).config?.workflows ?? [])
-    setDelegateAllowedAgents((agent as any).config?.toolConfig?.delegate?.allowedAgents ?? agent.toolConfig?.delegate?.allowedAgents ?? [])
     setReplyStopAfterReply((agent as any).config?.toolConfig?.reply?.stopAfterReply ?? agent.toolConfig?.reply?.stopAfterReply ?? false)
     setDefaultPaths((agent as any).config?.defaultPaths ?? (agent as any).defaultPaths ?? [])
     setNewPathInput("")
@@ -200,8 +199,13 @@ export default function AgentSettingsClient() {
     setInjection((agent as any).injection ?? "")
   }, [agentId, agent]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load enabled skills from agent-scoped `skill` permission rules (source of truth).
-  // Keeps the toggle in sync when rules change elsewhere (e.g. permissions sheet).
+  // Load enabled skills, and delegation targets (agent__<id> tools), from agent-scoped
+  // permission rules (source of truth for both). Keeps them in sync when rules change
+  // elsewhere (e.g. the permissions sheet, or another save). For delegation, tool selection
+  // IS the grant — checking agent__<id> in the tool list creates the "agent"-resource rule
+  // (synced server-side in Agent.create/update) and vice versa, so the tools array must be
+  // kept current with whatever the rules say before any save, or an unrelated save could wipe
+  // a grant that only exists as a rule so far.
   useEffect(() => {
     if (!agentId || isNew) return
     let cancelled = false
@@ -210,12 +214,15 @@ export default function AgentSettingsClient() {
         const rules = await opendora.permission.listRules("agent", agentId)
         if (cancelled) return
         const ids: Record<string, string> = {}
+        const delegateTools: string[] = []
         for (const r of rules) {
           if (r.resource === "skill" && r.action === "allow") ids[r.pattern] = r.id
+          if (r.resource === "agent" && r.action === "allow") delegateTools.push(`agent__${r.pattern}`)
         }
         setSkillRuleIds(ids)
         setSelectedSkills(Object.keys(ids))
-      } catch { /* ignore — fall back to agent.skills already set */ }
+        setSelectedTools((prev) => [...prev.filter((t) => !t.startsWith("agent__")), ...delegateTools])
+      } catch { /* ignore — fall back to agent.skills/tools already set */ }
     }
     load()
     const unsub = opendora.events.subscribe((event) => {
@@ -240,12 +247,6 @@ export default function AgentSettingsClient() {
     if (!id || isNew) return
     opendora.agent.getInjection(agentId).then(setInjection).catch(() => { })
   }, [agentId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  function toggleDelegateAgent(agentName: string) {
-    setDelegateAllowedAgents((prev) =>
-      prev.includes(agentName) ? prev.filter((n) => n !== agentName) : [...prev, agentName],
-    )
-  }
 
   function toggleTool(toolId: string) {
     setSelectedTools((prev) =>
@@ -351,13 +352,9 @@ export default function AgentSettingsClient() {
         workflows: selectedWorkflows,
         toolConfig: (() => {
           const tc: any = {}
-          // Always send delegate.allowedAgents (even empty) when delegate/task is selected, so
-          // clearing every checkbox actually removes the corresponding "agent"-resource
-          // permission rules server-side (Agent.update only syncs rules when the patch
-          // explicitly includes the field — an omitted field is a no-op, not "clear everything").
-          if (selectedTools.includes("delegate") || selectedTools.includes("task")) {
-            tc.delegate = { allowedAgents: delegateAllowedAgents }
-          }
+          // Delegation targets are no longer a separate field — checking agent__<id> tools in
+          // `tools` above is the grant; Agent.create/update syncs the "agent"-resource
+          // permission rules from those entries directly.
           if (selectedTools.includes("reply")) {
             tc.reply = { stopAfterReply: replyStopAfterReply }
           }
@@ -870,42 +867,6 @@ export default function AgentSettingsClient() {
                         >
                           Clear group
                         </Button>
-                      )}
-
-                      {sg === "core" && (selectedTools.includes("delegate") || selectedTools.includes("task")) && (
-                        <div className="mt-3 border-t pt-3">
-                          <p className="mb-0.5 text-xs font-medium">Allowed agents for delegate</p>
-                          <p className="mb-2 text-xs text-muted-foreground">
-                            Leave empty to allow all agents.
-                          </p>
-                          <div className="grid grid-cols-3 gap-x-4 gap-y-2.5">
-                            {allAgents
-                              .filter((a) => a.name !== name.trim())
-                              .map((a) => (
-                                <Label key={(a as any)._id || a.name} className="flex cursor-pointer items-center gap-2 font-normal">
-                                  <Checkbox
-                                    checked={delegateAllowedAgents.includes(a.name)}
-                                    onCheckedChange={() => toggleDelegateAgent(a.name)}
-                                  />
-                                  <span className="font-mono text-xs">{a.name}</span>
-                                </Label>
-                              ))}
-                          </div>
-                          {delegateAllowedAgents.length > 0 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="mt-1 h-auto px-0 text-xs text-muted-foreground"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setDelegateAllowedAgents([])
-                              }}
-                            >
-                              Clear allowed agents
-                            </Button>
-                          )}
-                        </div>
                       )}
 
                       {sg === "core" && selectedTools.includes("reply") && (

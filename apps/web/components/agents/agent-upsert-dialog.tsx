@@ -119,7 +119,8 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [fallbackModel, setFallbackModel] = useState<string>(NONE)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const { schemas: toolSchemas } = useToolSchemas()
-  const availableToolSchemas = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id))
+  // Exclude this agent's own agent__<id> delegation tool — an agent can't delegate to itself.
+  const availableToolSchemas = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id) && t.id !== `agent__${agentId}`)
   const groupedBySource = groupToolsBySource(availableToolSchemas)
   const allSourceGroups = sortSourceGroups([...groupedBySource.keys()])
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
@@ -129,7 +130,6 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
   const [expandedSkill, setExpandedSkill] = useState<string | null>(null)
   const [expandedWorkflow, setExpandedWorkflow] = useState<string | null>(null)
-  const [delegateAllowedAgents, setDelegateAllowedAgents] = useState<string[]>([])
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
   const [defaultPaths, setDefaultPaths] = useState<string[]>([])
   const [newPathInput, setNewPathInput] = useState("")
@@ -168,8 +168,20 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setSelectedTools(a.tools ?? [])
       setSelectedSkills(a.skills ?? (a as any).config?.skills ?? [])
       setSelectedWorkflows(a.workflows ?? (a as any).config?.workflows ?? [])
-      setDelegateAllowedAgents((a as any).config?.toolConfig?.delegate?.allowedAgents ?? a.toolConfig?.delegate?.allowedAgents ?? [])
       setReplyStopAfterReply((a as any).config?.toolConfig?.reply?.stopAfterReply ?? a.toolConfig?.reply?.stopAfterReply ?? false)
+      // Delegation targets: tool selection is the grant (agent__<id> in `tools`). An agent
+      // may still only have "agent"-resource permission rules (from the old allowedAgents
+      // array, or edits made elsewhere) without `tools` reflecting them yet — merge those in
+      // so a save from this dialog doesn't wipe an existing grant that's only a rule so far.
+      if (agentId) {
+        opendora.permission.listRules("agent", agentId).then((rules) => {
+          const delegateTools = rules
+            .filter((r) => r.resource === "agent" && r.action === "allow")
+            .map((r) => `agent__${r.pattern}`)
+          if (delegateTools.length === 0) return
+          setSelectedTools((prev) => [...new Set([...prev, ...delegateTools])])
+        }).catch(() => {})
+      }
       setPersona("")
       setDefaultPaths((a as any).config?.defaultPaths ?? (a as any).defaultPaths ?? [])
       setError(null)
@@ -187,7 +199,6 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setSelectedTools([])
       setSelectedSkills([])
       setSelectedWorkflows([])
-      setDelegateAllowedAgents([])
       setReplyStopAfterReply(false)
       setInjectInstructions(true)
       setPersona("")
@@ -196,12 +207,6 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setError(null)
     }
   }, [open, isEdit, agentId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  function toggleDelegateAgent(name: string) {
-    setDelegateAllowedAgents((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
-    )
-  }
 
   function toggleTool(id: string) {
     setSelectedTools((prev) =>
@@ -262,12 +267,9 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
         workflows: selectedWorkflows,
         toolConfig: (() => {
           const config: any = {}
-          // Always send delegate.allowedAgents (even empty) when delegate/task is selected —
-          // Agent.create/update only syncs "agent"-resource permission rules when the patch
-          // explicitly includes the field.
-          if (selectedTools.includes("delegate") || selectedTools.includes("task")) {
-            config.delegate = { allowedAgents: delegateAllowedAgents }
-          }
+          // Delegation targets are no longer a separate field — checking agent__<id> tools in
+          // `tools` above is the grant; Agent.create/update syncs the "agent"-resource
+          // permission rules from those entries directly.
           if (selectedTools.includes("reply")) {
             config.reply = { stopAfterReply: replyStopAfterReply }
           }
@@ -679,42 +681,6 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                                 Add
                               </Button>
                             </div>
-                          </div>
-                        )}
-
-                        {sg === "core" && (selectedTools.includes("delegate") || selectedTools.includes("task")) && (
-                          <div className="mt-3 border-t pt-3">
-                            <p className="mb-0.5 text-xs font-medium">Allowed agents for delegate</p>
-                            <p className="mb-2 text-xs text-muted-foreground">
-                              Leave empty to allow all agents.
-                            </p>
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                              {allAgents
-                                .filter((a) => a.name !== name.trim())
-                                .map((a) => (
-                                  <Label key={(a as any)._id || a.name} className="flex cursor-pointer items-center gap-2 font-normal">
-                                    <Checkbox
-                                      checked={delegateAllowedAgents.includes(a.name)}
-                                      onCheckedChange={() => toggleDelegateAgent(a.name)}
-                                    />
-                                    <span className="font-mono text-xs">{a.name}</span>
-                                  </Label>
-                                ))}
-                            </div>
-                            {delegateAllowedAgents.length > 0 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="mt-1 h-auto px-0 text-xs text-muted-foreground"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setDelegateAllowedAgents([])
-                                }}
-                              >
-                                Clear allowed agents
-                              </Button>
-                            )}
                           </div>
                         )}
 

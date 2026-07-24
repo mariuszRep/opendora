@@ -11,7 +11,7 @@ import { ToolRegistry } from "@projectflows/server/tool-registry"
 import { addSkillTools, getSkillTools } from "@projectflows/session/skill-tools"
 import type { ToolExecutor } from "@projectflows/workflow/executor"
 import { WorkflowStorage } from "@projectflows/workflow/storage"
-import { runWorkflowDetailed } from "@projectflows/workflow/runner"
+import { runWorkflowDetailed, WorkflowValidationError } from "@projectflows/workflow/runner"
 import { mergeArgs, formatValidationFeedback, toJsonSchema } from "./workflow-tool-fill"
 
 /**
@@ -112,6 +112,16 @@ export function createWorkflowToolExecutor(): ToolExecutor {
     })
 
     if (agentArgs.length === 0) {
+      const parsedFixed = toolDef.parameters.safeParse(fixedArgs)
+      if (!parsedFixed.success) {
+        const nodeLabel = ctx.workflowMeta?.nodeLabel ?? toolId
+        const issues = parsedFixed.error.issues
+          .map((i) => `"${i.path.join(".")}" ${i.message}`)
+          .join(", ")
+        throw new WorkflowValidationError(
+          `Tool node "${nodeLabel}" (action_id "${toolId}") parameters are invalid: ${issues}.`
+        )
+      }
       const execCtx = buildExecCtx(() => fixedArgs)
       const result = await toolDef.execute(fixedArgs, execCtx)
       return { output: result.output, metadata: result.metadata, finalArgs: fixedArgs, outputObject: (result as any).outputObject }

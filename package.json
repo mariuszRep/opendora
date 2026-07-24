@@ -22,6 +22,8 @@
     "desktop:dev": "bun scripts/build-desktop.ts --dev",
     "build:desktop": "bun scripts/build-desktop.ts",
     "dev:desktop": "cd apps/desktop && bun run tauri dev",
+    "check:boundary": "bun scripts/check-core-boundary.ts",
+    "e2e:clean-install": "bun packages/script/e2e-clean-install.ts",
     "test": "echo 'do not run tests from root' && exit 1"
   },
   "workspaces": {

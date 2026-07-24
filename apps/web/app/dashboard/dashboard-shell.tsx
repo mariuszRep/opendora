@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useOpendoraContext } from "./projectflows-context"
 import { FileTreePanel } from "@/components/file-tree/file-tree-panel"
-import { SessionTreePanel } from "@/components/sessions/session-tree-panel"
 import type { FileNode } from "@/lib/projectflows"
 import { sessionOwnPaths, agentPaths, mergePaths } from "@/lib/paths"
 import type { ReactNode } from "react"
@@ -38,7 +37,7 @@ const KIND_BADGE: Record<PathKind, { label: string; className: string }> = {
 }
 
 export function DashboardShell({ children }: DashboardShellProps) {
-  const { fileTreeOpen, sessionTreeOpen, selectedSession, agents, selectedAgent, activeSessions, selectSession, openFilePreview, sessions } = useOpendoraContext()
+  const { fileTreeOpen, selectedSession, agents, selectedAgent, openFilePreview, sessions } = useOpendoraContext()
 
   const currentAgent = agents.find((a) => a._id === selectedAgent)
 
@@ -89,18 +88,6 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
-      {sessionTreeOpen && (
-        <div className="flex w-60 shrink-0 flex-col overflow-hidden border-r bg-sidebar text-sidebar-foreground">
-          <SessionTreePanel
-            onSessionClick={(session) => selectSession(session.id)}
-            selectedSessionId={selectedSession?.id}
-            activeSessions={activeSessions}
-            sessions={sessions}
-            agents={agents}
-          />
-        </div>
-      )}
-
       {fileTreeOpen && (
         <div className="flex w-60 shrink-0 flex-col overflow-hidden border-r bg-sidebar text-sidebar-foreground">
 

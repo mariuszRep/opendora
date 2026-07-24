@@ -5,6 +5,7 @@ import { Instance } from "@projectflows/runtime/instance"
 import { Identifier } from "@projectflows/util/id"
 import { ToolRegistry } from "@projectflows/server/tool-registry"
 import { Question } from "@projectflows/runtime/question"
+import { isWorkflowValidationError } from "@projectflows/workflow/runner"
 
 // createWorkflowToolExecutor drives dynamic-argument tool calls through
 // SessionPrompt.promptWithExtraTools (a real, forced single-tool agent turn).
@@ -90,6 +91,61 @@ describe("createWorkflowToolExecutor", () => {
         expect(result.finalArgs).toEqual({ name: "world" })
         expect(result.outputObject).toEqual({ name: "world" })
         expect(promptWithExtraToolsMock).not.toHaveBeenCalled()
+      },
+    })
+  })
+
+  // Regression test: a fixed-args (agentArgs: []) Tool node whose configured
+  // parameters don't satisfy the target tool's own required schema — e.g. a
+  // "bash" node authored without the tool's required "description" field —
+  // used to fail deep inside toolDef.execute() with a bare Zod dump that
+  // named neither the workflow node nor the file it came from. That failure
+  // is especially costly when the node runs inside a nested/child workflow
+  // (the incident this test guards against), where it surfaced only as
+  // `Child workflow "X" failed: ...` with no indication which node inside X
+  // was misconfigured. The executor must now reject before ever calling
+  // execute(), with a WorkflowValidationError naming the node and the
+  // specific missing/invalid field(s), so the failure is fail-fast and
+  // immediately actionable regardless of nesting depth.
+  test("fixed args failing the tool's own required schema throw a node-attributed WorkflowValidationError before execute() runs", async () => {
+    let executeCalls = 0
+    fakeToolDef = makeFakeTool(
+      z.object({ command: z.string(), description: z.string() }),
+      async (_args: any) => {
+        executeCalls++
+        return { title: "done", output: "ok", metadata: {} }
+      },
+    )
+
+    await using tmp = await tmpdir({ init: async () => {} })
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        await registerFakeTool()
+        const executor = createWorkflowToolExecutor()
+        const call = executor(
+          "fake-tool",
+          { command: "echo hi" },
+          [],
+          {
+            sessionID: Identifier.ascending("session"),
+            workflowMeta: { workflowID: "wf", workflowRunID: "run", nodeLabel: "Write Stories Temp File" },
+          },
+        )
+        await expect(call).rejects.toThrow(/Write Stories Temp File/)
+        await expect(call).rejects.toThrow(/description/)
+        expect(executeCalls).toBe(0)
+
+        try {
+          await executor(
+            "fake-tool",
+            { command: "echo hi" },
+            [],
+            { sessionID: Identifier.ascending("session"), workflowMeta: { workflowID: "wf", workflowRunID: "run", nodeLabel: "n" } },
+          )
+        } catch (err) {
+          expect(isWorkflowValidationError(err)).toBe(true)
+        }
       },
     })
   })

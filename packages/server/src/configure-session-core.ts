@@ -48,6 +48,15 @@ import { CapabilityRegistry } from "@projectflows/plugin"
 
 async function enrichAgent(agent: any): Promise<any> {
   if (!agent?.id) return agent
+
+  // Self-healing registration: make sure every non-system agent's agent__<id> tool exists in
+  // the registry whenever any agent actually starts a turn (real request-handling context —
+  // see reconcileDelegationTools' doc comment for why this must never run from
+  // configureSessionCore's own boot-time body instead).
+  await reconcileDelegationTools().catch((err) => {
+    console.error("[configureSessionCore] reconcileDelegationTools failed:", err)
+  })
+
   let delegateRules = PermissionNext.listRules("agent", agent.id).filter((r) => r.resource === "agent")
 
   // Lazy migration: agents saved before the rules-based delegate allowlist existed may still
@@ -76,78 +85,67 @@ async function enrichAgent(agent: any): Promise<any> {
     }
   }
 
-  if (delegateRules.length === 0) return agent
+  // Union delegation targets granted via agent__<id> entries already in agent.tools (the
+  // primary, UI-driven grant — see llm.ts filterToolsByAgent, which already honors these
+  // directly via declaredTools) with ones matched by permission rules (the rule-derived path,
+  // kept for agents whose tools array hasn't been re-saved through the new UI yet). Both are
+  // consumed by system.ts's "Available Delegations" section and task.ts's allow/deny pre-check.
+  const toolTargetIds = new Set(
+    ((agent.tools as string[] | undefined) ?? [])
+      .filter((t) => t.startsWith("agent__"))
+      .map((t) => t.slice("agent__".length)),
+  )
   const allowRules = delegateRules.filter((r) => r.action === "allow")
+  if (toolTargetIds.size === 0 && allowRules.length === 0) return { ...agent, delegateRules }
+
   const all = await Agent.list()
-  const delegateAgents = allowRules.length
-    ? all
-        .filter((a) => a.mode !== "system")
-        // Match by stable id, not the mutable display `name` — names can be edited freely
-        // (and have been, historically) while allowedAgents/rules should stay valid.
-        .filter((a) => allowRules.some((r) => wildcardMatch(a.id, r.pattern)))
-        .map((a) => ({ id: a.id, name: a.name, description: a.description }))
-    : undefined
+  const delegateAgents = all
+    .filter((a) => a.mode !== "system")
+    // Match by stable id, not the mutable display `name` — names can be edited freely
+    // (and have been, historically) while allowedAgents/rules should stay valid.
+    .filter((a) => toolTargetIds.has(a.id) || allowRules.some((r) => wildcardMatch(a.id, r.pattern)))
+    .map((a) => ({ id: a.id, name: a.name, description: a.description }))
 
-  // Reconcile the shared agent__<id> delegation tools whenever an agent with delegation rules
-  // actually starts a turn — self-healing on next use of ANY delegating agent, not live/instant.
-  // (Deliberately not a Bus.subscribe("permission.rules.updated", ...) fired from
-  // configureSessionCore: this codebase's Bus is Instance-scoped (packages/runtime/src/bus.ts
-  // reads Instance-scoped state), but configureSessionCore runs once, globally, often outside
-  // any Instance.provide() context — subscribing there throws "No context found for instance."
-  // enrichAgent runs inside real request handling, always within an active Instance, so it's
-  // the safe place for this.)
-  await reconcileDelegationTools().catch((err) => {
-    console.error("[configureSessionCore] reconcileDelegationTools failed:", err)
-  })
-
-  return { ...agent, delegateAgents, delegateRules }
+  return { ...agent, delegateAgents: delegateAgents.length ? delegateAgents : undefined, delegateRules }
 }
 
 /**
- * Reconciles the auto-registered agent__<id> delegation tools against the current global set of
- * "agent"-resource permission rules across all agents. One tool per target agent, shared across
- * every caller allowed to reach it (not per-caller) — registry size stays O(targets), not
- * O(targets × callers). Wildcard rule patterns are expanded against the current agent list, so
- * agents installed after a wildcard rule was created pick up their tool automatically next time
- * this runs.
+ * Registers the auto-registered agent__<id> delegation tool for every non-system agent,
+ * unconditionally — registration (does the tool exist, is it offered for selection) is decoupled
+ * from authorization (can a given caller actually use it, which agent.tools + the underlying
+ * "agent"-resource permission rule govern separately, same as any other tool). One tool per
+ * target agent, shared across every potential caller — registry size stays O(agents).
  *
- * Called from enrichAgent() whenever an agent with delegation rules starts a turn — self-healing
- * on next use rather than instant/live (see enrichAgent for why this isn't event-driven).
- * ToolRegistry.init() is idempotent for a stable instance key, so calling it here first is safe
- * and guarantees dynamically-registered tools survive later init() no-ops.
+ * Only ever call this from real request-handling contexts (route handlers, enrichAgent) — never
+ * from configureSessionCore()'s own body. A boot-time Agent.list() call was tried and reverted:
+ * it populates packages/runtime/src/agent.ts's module-level entriesCache before some test files'
+ * agents exist yet, and since a few callers create agents via AgentCore.create() directly
+ * (bypassing that file's own invalidateEntries()), the cache never clears and later
+ * defaultAgent() lookups fail with "no primary visible agent found." ToolRegistry.init() is
+ * idempotent for a stable instance key, so calling it here first is safe and guarantees
+ * dynamically-registered tools survive later init() no-ops.
  */
-async function reconcileDelegationTools() {
+export async function reconcileDelegationTools() {
   await ToolRegistry.init()
   const all = await Agent.list()
-  const desired = new Map<string, { id: string; name: string; description?: string }>()
-  for (const caller of all) {
-    const rules = PermissionNext.listRules("agent", caller.id).filter(
-      (r) => r.resource === "agent" && r.action === "allow",
-    )
-    if (rules.length === 0) continue
-    for (const target of all) {
-      if (target.mode === "system") continue
-      if (desired.has(target.id)) continue
-      // Match by stable id, not the mutable display `name` (see enrichAgent for why).
-      if (rules.some((r) => wildcardMatch(target.id, r.pattern))) {
-        desired.set(target.id, { id: target.id, name: target.name, description: (target as any).description })
-      }
-    }
-  }
 
   const existingIds = new Set(
     ToolRegistry.all()
       .map((t) => t.id)
       .filter((id) => id.startsWith("agent__")),
   )
-  for (const target of desired.values()) {
+  for (const target of all) {
+    if (target.mode === "system") continue
     const toolId = `agent__${target.id}`
     if (!existingIds.has(toolId)) {
-      ToolRegistry.register(createAgentTargetTool(target), "delegation")
+      ToolRegistry.register(
+        createAgentTargetTool({ id: target.id, name: target.name, description: (target as any).description }),
+        "delegation",
+      )
     }
     existingIds.delete(toolId)
   }
-  // Anything left in existingIds is no longer desired by any agent — remove it.
+  // Anything left in existingIds belongs to an agent that no longer exists — remove it.
   for (const staleId of existingIds) {
     ToolRegistry.unregister(staleId)
   }

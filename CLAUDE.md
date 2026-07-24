@@ -10,7 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `cd apps/web && bun dev` — web dev server only (needs a running server at :4097)
 
 ### Typecheck / Build
-- `bun typecheck` — typecheck all packages via Turborepo
+- **Never run `bun typecheck` (or any bare `turbo` command) — it hangs forever.** The core packages have a longstanding circular-dependency tangle (37+ cycles across 14 packages — `util` ↔ `permission`, `session` ↔ `server`, and more); turbo 2.5.6 hangs indefinitely trying to resolve that graph, even for `turbo ls` with no task involved. Confirmed not a network/daemon/lockfile issue. See `AGENTS.md`'s Repository rules for the full writeup.
+- `cd packages/<pkg> && bun run typecheck` — typecheck a package directly (loop over packages as needed — see `.github/workflows/ci.yml`'s `Typecheck` step for the pattern this repo's own CI uses)
 - `cd apps/web && bun run typecheck` — web app only (fast, used after UI changes)
 - `cd apps/web && bun run build` — production build
 

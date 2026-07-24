@@ -18,7 +18,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import type { SessionType } from "@/lib/projectflows"
-import { BellIcon, BotIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, FolderTreeIcon, PlusIcon, PlugIcon, Settings2Icon, NetworkIcon, GalleryHorizontalIcon, GlobeIcon } from "lucide-react"
+import { BellIcon, BotIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, FolderTreeIcon, PlusIcon, PlugIcon, Settings2Icon, GalleryHorizontalIcon, GlobeIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type React from "react"
 import { useRef, useState, useEffect } from "react"
@@ -36,8 +36,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     activeSessions,
     fileTreeOpen,
     toggleFileTree,
-    sessionTreeOpen,
-    toggleSessionTree,
     isChatCentered,
     toggleChatLayout,
     webPreviewOpen,
@@ -159,16 +157,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               >
                 <FolderTreeIcon className="size-4 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">Files</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={toggleSessionTree}
-                tooltip={sessionTreeOpen ? "Hide session tree" : "Show session tree"}
-                isActive={sessionTreeOpen}
-              >
-                <NetworkIcon className="size-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Session Tree</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

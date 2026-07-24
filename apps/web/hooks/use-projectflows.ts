@@ -148,8 +148,6 @@ export type UseOpendoraResult = {
   toggleChatLayout: () => void
   fileTreeOpen: boolean
   toggleFileTree: () => void
-  sessionTreeOpen: boolean
-  toggleSessionTree: () => void
   webPreviewOpen: boolean
   toggleWebPreview: () => void
   webPreviewUrl: string
@@ -270,7 +268,6 @@ export function useOpendora(opts?: {
   const [selectedAgent, setSelectedAgent] = useState<string>("")
   const [isChatCentered, setIsChatCentered] = useState(false)
   const [fileTreeOpen, setFileTreeOpen] = useState(false)
-  const [sessionTreeOpen, setSessionTreeOpen] = useState(false)
   const [webPreviewOpen, setWebPreviewOpen] = useState(false)
   const [webPreviewUrl, setWebPreviewUrl] = useState("")
   const [filePreviewOpen, setFilePreviewOpen] = useState(false)
@@ -1501,10 +1498,6 @@ export function useOpendora(opts?: {
     setFileTreeOpen((prev) => !prev)
   }, [])
 
-  const toggleSessionTree = useCallback(() => {
-    setSessionTreeOpen((prev) => !prev)
-  }, [])
-
   const toggleWebPreview = useCallback(() => {
     setWebPreviewOpen((prev) => !prev)
   }, [])
@@ -1607,8 +1600,6 @@ export function useOpendora(opts?: {
     toggleChatLayout,
     fileTreeOpen,
     toggleFileTree,
-    sessionTreeOpen,
-    toggleSessionTree,
     webPreviewOpen,
     toggleWebPreview,
     webPreviewUrl,
