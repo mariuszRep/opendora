@@ -65,7 +65,21 @@ function mapPartStatusToEntryStatus(status: string): string {
  * position among its parent's existing children — reusing the
  * edges_contains_idx composite index either way. Check-then-insert, safe to
  * call repeatedly (idempotent per parent/child pair).
+ *
+ * seq_in_parent is enforced unique per (from_type, from_id, type) by the
+ * edges_contains_seq_unique partial index (session.sql.ts). A concurrent
+ * writer touching the same parent from a different connection/process (e.g.
+ * a nested workflow's child session) can race the max-read below, so on a
+ * unique-constraint failure this retries with a freshly recomputed seq
+ * instead of silently producing a duplicate or crashing the caller.
  */
+function isUniqueConstraintError(err: unknown): boolean {
+  const code = (err as { code?: string } | undefined)?.code
+  if (code === "SQLITE_CONSTRAINT_UNIQUE" || code === "SQLITE_CONSTRAINT") return true
+  const message = err instanceof Error ? err.message : String(err)
+  return message.includes("UNIQUE constraint failed")
+}
+
 export function writeContainsEdge(
   tx: any,
   input: { fromType: "session" | "entry"; fromID: string; toID: string; createdAt: string },
@@ -84,34 +98,42 @@ export function writeContainsEdge(
     .get()
   if (existing) return 0
 
-  const seqResult = tx
-    .select({ n: sql<number>`count(*)` })
-    .from(EdgesTable)
-    .where(
-      and(
-        eq(EdgesTable.from_type, input.fromType),
-        eq(EdgesTable.from_id, input.fromID),
-        eq(EdgesTable.type, "contains"),
-      ),
-    )
-    .get()
+  const MAX_ATTEMPTS = 5
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const seqResult = tx
+      .select({ n: sql<number>`coalesce(max(seq_in_parent), -1) + 1` })
+      .from(EdgesTable)
+      .where(
+        and(
+          eq(EdgesTable.from_type, input.fromType),
+          eq(EdgesTable.from_id, input.fromID),
+          eq(EdgesTable.type, "contains"),
+        ),
+      )
+      .get()
 
-  tx.insert(EdgesTable)
-    .values({
-      id: Identifier.ascending("edge"),
-      from_type: input.fromType,
-      from_id: input.fromID,
-      to_type: "entry",
-      to_id: input.toID,
-      type: "contains",
-      seq_in_parent: seqResult?.n ?? 0,
-      label: null,
-      metadata: null,
-      created_at: input.createdAt,
-    })
-    .onConflictDoNothing()
-    .run()
-  return 1
+    try {
+      tx.insert(EdgesTable)
+        .values({
+          id: Identifier.ascending("edge"),
+          from_type: input.fromType,
+          from_id: input.fromID,
+          to_type: "entry",
+          to_id: input.toID,
+          type: "contains",
+          seq_in_parent: seqResult?.n ?? 0,
+          label: null,
+          metadata: null,
+          created_at: input.createdAt,
+        })
+        .run()
+      return 1
+    } catch (err) {
+      if (!isUniqueConstraintError(err) || attempt === MAX_ATTEMPTS - 1) throw err
+      // Another writer took this seq_in_parent — loop and retry with a fresh max.
+    }
+  }
+  return 0
 }
 
 /**

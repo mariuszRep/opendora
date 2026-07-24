@@ -826,7 +826,11 @@ export namespace MessageV2 {
           eq(EdgesTable.type, "contains"),
         ),
       )
-      .orderBy(asc(EdgesTable.seq_in_parent))
+      // to_id (an Identifier.ascending("part") value) is a defensive tie-breaker:
+      // seq_in_parent is unique-constrained going forward (edges_contains_seq_unique),
+      // but to_id ascending still reconstructs true creation order if any legacy
+      // duplicate ever slips through.
+      .orderBy(asc(EdgesTable.seq_in_parent), asc(EdgesTable.to_id))
       .all()
     if (partEdges.length === 0) return result
 

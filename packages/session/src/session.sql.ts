@@ -1,4 +1,5 @@
-import { sqliteTable, text, integer, index, primaryKey } from "drizzle-orm/sqlite-core"
+import { sqliteTable, text, integer, index, uniqueIndex, primaryKey } from "drizzle-orm/sqlite-core"
+import { sql } from "drizzle-orm"
 import type { SessionType, SessionStatus, RetentionPolicy, SendPolicy, EdgeType, EntryType } from "./types"
 
 // Inlined from @/storage/schema.sql — 2-line helper
@@ -174,6 +175,11 @@ export const EdgesTable = sqliteTable(
     index("edges_to_idx").on(t.to_type, t.to_id),
     index("edges_type_idx").on(t.type),
     index("edges_contains_idx").on(t.from_type, t.from_id, t.type, t.seq_in_parent),
+    // Prevents two "contains" edges for the same parent sharing a seq_in_parent —
+    // see migration 20260724160000_edges_contains_seq_repair.
+    uniqueIndex("edges_contains_seq_unique")
+      .on(t.from_type, t.from_id, t.type, t.seq_in_parent)
+      .where(sql`${t.type} = 'contains'`),
   ],
 )
 
