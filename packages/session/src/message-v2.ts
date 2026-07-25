@@ -868,7 +868,8 @@ export namespace MessageV2 {
             eq(EdgesTable.type, "contains"),
           ),
         )
-        .orderBy(desc(EdgesTable.seq_in_parent))
+        // to_id tie-breaker — see partsByMessageBatch's orderBy above for rationale.
+        .orderBy(desc(EdgesTable.seq_in_parent), desc(EdgesTable.to_id))
         .limit(size)
         .offset(offset)
         .all()

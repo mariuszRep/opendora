@@ -77,7 +77,7 @@ export function getToolGroup(id: string): ToolGroupId {
   if (id.startsWith("pyautogui_")) return "automation"
   if (["session_search", "session_get", "session_analyze", "session_tree", "session_update"].includes(id)) return "sessions"
   if (id.startsWith("agent__")) return "delegation"
-  if (["delegate", "reply", "question", "notify"].includes(id)) return "communication"
+  if (["question", "notify"].includes(id)) return "communication"
   if (["agent_create", "agent_update", "agent_delete", "agent_list", "agent_get"].includes(id)) return "agents"
   if (["skill_load", "skill_list", "skill_search", "skill_install", "skill_create", "skill_edit", "skill_remove"].includes(id)) return "skills"
   if (["schedule_list", "schedule_create", "schedule_update", "schedule_delete", "schedule_get", "schedule_run"].includes(id)) return "schedule"
