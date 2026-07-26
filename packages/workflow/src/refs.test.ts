@@ -5,6 +5,7 @@ import {
   resolveTemplate,
   resolveDeep,
   resolveSchemaDescriptions,
+  describeCtxManifest,
   getAvailableRefs,
   tokenStart,
   partialToken,
@@ -201,5 +202,74 @@ describe("getAvailableRefs", () => {
   test("only includes upstream nodes", () => {
     const refs = getAvailableRefs("n3", nodes, [{ source: "n3", target: "n1" }])
     expect(refs).toHaveLength(0)
+  })
+})
+
+describe("resolveTemplate pointer mode", () => {
+  const input = { color: "red" }
+  const ctx = { summary: "the full summary text", parsed: { hue: "blue" } }
+
+  test("value mode (default) inlines the full value — unchanged behavior", () => {
+    expect(resolveTemplate("S: $ctx.summary", input, ctx)).toBe("S: the full summary text")
+    expect(resolveTemplate("S: $ctx.summary", input, ctx, { mode: "value" })).toBe(
+      "S: the full summary text",
+    )
+  })
+
+  test("pointer mode renders a compact citation instead of the value for present keys", () => {
+    const presentKeys = new Set(["summary"])
+    const out = resolveTemplate("Use this: $ctx.summary", input, ctx, { mode: "pointer", presentKeys })
+    expect(out).not.toContain("the full summary text")
+    expect(out).toContain("summary")
+  })
+
+  test("pointer mode falls back to full value when key is absent from presentKeys", () => {
+    const presentKeys = new Set<string>() // e.g. hydrated from a checkpoint on resume
+    expect(resolveTemplate("Use: $ctx.summary", input, ctx, { mode: "pointer", presentKeys })).toBe(
+      "Use: the full summary text",
+    )
+  })
+
+  test("pointer mode covers $nodeKey and $nodeKey.field", () => {
+    const presentKeys = new Set(["parsed"])
+    const full = resolveTemplate("Hue: $parsed.hue", input, ctx, { mode: "pointer", presentKeys })
+    expect(full).not.toContain("blue")
+    expect(full).toContain("parsed")
+  })
+
+  test("pointer mode never applies to $input refs — inputs stay full value", () => {
+    const presentKeys = new Set(["color"]) // even if a same-named key were present
+    expect(resolveTemplate("C: $input.color", input, ctx, { mode: "pointer", presentKeys })).toBe(
+      "C: red",
+    )
+  })
+
+  test("custom renderPointer is used when provided", () => {
+    const presentKeys = new Set(["summary"])
+    const out = resolveTemplate("$ctx.summary", input, ctx, {
+      mode: "pointer",
+      presentKeys,
+      renderPointer: (key) => `<<${key}>>`,
+    })
+    expect(out).toBe("<<summary>>")
+  })
+})
+
+describe("describeCtxManifest", () => {
+  test("names each key with a type/shape hint and no full values", () => {
+    const manifest = describeCtxManifest({
+      summary: "hello world",
+      article: { title: "T", body: "B", url: "U" },
+      items: [1, 2, 3],
+      count: 7,
+      done: true,
+    })
+    expect(manifest).toContain("- summary: string (11 chars)")
+    expect(manifest).toContain("- article: object { title, body, url }")
+    expect(manifest).toContain("- items: array[3]")
+    expect(manifest).toContain("- count: number")
+    expect(manifest).toContain("- done: boolean")
+    // the actual string value must not leak
+    expect(manifest).not.toContain("hello world")
   })
 })

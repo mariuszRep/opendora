@@ -267,7 +267,7 @@ export namespace Agent {
     if (entry.config.tools !== undefined) {
       const TOOL_PERMISSIONS = new Set([
         "bash", "read", "glob", "grep", "edit", "write", "apply_patch",
-        "task", "webfetch", "websearch", "codesearch",
+        "webfetch", "websearch", "codesearch",
         "todoread", "todowrite", "question", "skill",
       ])
       const allowedTools = new Set(entry.config.tools)
@@ -514,7 +514,7 @@ export namespace Agent {
     // Seed delegate-target rules from whichever source is present: agent__<id> entries in the
     // tools array (new, UI-driven) unioned with the portable allowedAgents array (legacy/archive
     // declaration). Rules are the local runtime source of truth read by
-    // enrichAgent()/task.ts/the dynamic per-agent tool reconciliation; the array stays the
+    // enrichAgent()/the dynamic per-agent tool reconciliation; the array stays the
     // portable declaration for archives distributed via the projectflows-website registry.
     const desired = new Set([
       ...extractDelegateTargetIds(config.tools),

@@ -17,6 +17,7 @@ import { NamedError } from "@projectflows/util/error"
 import { NotFoundError } from "@projectflows/storage/db"
 import { SessionProcessor } from "./processor.ts"
 import { SessionStatus } from "./status.ts"
+import { Delegation } from "./delegation.ts"
 import { LLM } from "./llm.ts"
 import { ulid } from "ulid"
 import { spawn } from "child_process"
@@ -195,10 +196,25 @@ export namespace SessionPrompt {
     }
 
     if (input.noWait === true) {
-      // Fire LLM in background — caller does not wait for the response
-      loop({ sessionID: input.sessionID }).catch((err) =>
-        log.error("background loop error", { sessionID: input.sessionID, err }),
-      )
+      // Fire LLM in background — caller does not wait for the response.
+      // Layer 1 of delegation delivery: if this message started a delegated
+      // child turn, wake its asker as soon as this loop resolves — the happy
+      // path, backstopped by the session.status bus listener and boot reconcile
+      // (see delegation.ts / delegation-listener.ts) for anything that doesn't
+      // go through here (process crash, unhandled rejection, etc).
+      loop({ sessionID: input.sessionID })
+        .then((finalMsg) => {
+          const text = finalMsg.parts.findLast((p) => p.type === "text")?.text ?? ""
+          return Delegation.deliver(message.info.id, { ...Delegation.classify(finalMsg.info as any), result: text })
+        })
+        .catch((err) => {
+          log.error("background loop error", { sessionID: input.sessionID, err })
+          return Delegation.deliver(message.info.id, {
+            state: "error",
+            reason: "unhandled-loop-exception",
+            result: err instanceof Error ? err.message : String(err),
+          }).catch(() => {})
+        })
       return message
     }
 
@@ -299,8 +315,20 @@ export namespace SessionPrompt {
     return s[sessionID].abort.signal
   }
 
-  export function cancel(sessionID: string) {
-    log.info("cancel", { sessionID })
+  /**
+   * `cascade` is opt-in and defaults to false because this same function is
+   * also invoked unconditionally on every natural loop exit (see the
+   * `defer(() => cancel(sessionID))` in loop() below) — a session going idle
+   * because it has nothing left to do right now (e.g. it just fired an async
+   * delegation and is waiting to be woken) must NOT cancel that delegation.
+   * Only genuine external aborts (the HTTP abort route, agent-target.ts's
+   * ctx.abort) should cascade into the sessions this one is waiting on.
+   */
+  export function cancel(sessionID: string, opts?: { cascade?: boolean }) {
+    log.info("cancel", { sessionID, cascade: opts?.cascade })
+    if (opts?.cascade) {
+      Delegation.cancelSubtree(sessionID).catch((err) => log.error("cancelSubtree failed", { sessionID, err }))
+    }
     const s = state()
     const match = s[sessionID]
     if (!match) {
@@ -327,7 +355,8 @@ export namespace SessionPrompt {
     resume_existing: z.boolean().optional(),
   })
 
-  function isFinalAssistant(info: MessageV2.Info) {
+  /** Exported for Delegation's bus-listener backstop — same terminal-message check the loop itself uses. */
+  export function isFinalAssistant(info: MessageV2.Info) {
     return (
       info.role === "assistant" &&
       (!!info.error || !!info.time.completed || !!info.finish) &&
@@ -335,7 +364,7 @@ export namespace SessionPrompt {
     )
   }
 
-  function isQueuedUser(msg: MessageV2.WithParts) {
+  export function isQueuedUser(msg: MessageV2.WithParts) {
     return msg.info.role === "user" && msg.info.queue?.status === "queued"
   }
 
@@ -344,6 +373,41 @@ export namespace SessionPrompt {
       if (isQueuedUser(msg)) return true
     }
     return false
+  }
+
+  /**
+   * Finds the most recent (user, final-assistant) pair whose turn has actually
+   * concluded — same "should the loop exit" condition as the main loop's own
+   * check (lastAssistant.finish set, terminal, and newer than lastUser; lastUser
+   * not itself still queued). Used by Delegation's session.status bus-listener
+   * backstop, which only knows a sessionID went idle and needs to work out
+   * which user message that idle event actually answers, without duplicating
+   * the loop's internal scan logic.
+   */
+  export async function lastCompletedTurn(
+    sessionID: string,
+  ): Promise<{ userMessageID: string; finalMessage: MessageV2.WithParts } | undefined> {
+    const msgs = await MessageV2.filterCompacted(MessageV2.stream(sessionID))
+    let lastUser: MessageV2.WithParts | undefined
+    let lastUserIndex = -1
+    let lastAssistant: MessageV2.WithParts | undefined
+    let lastAssistantIndex = -1
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      const msg = msgs[i]!
+      if (!lastUser && msg.info.role === "user") {
+        lastUser = msg
+        lastUserIndex = i
+      }
+      if (!lastAssistant && msg.info.role === "assistant") {
+        lastAssistant = msg
+        lastAssistantIndex = i
+      }
+      if (lastUser && lastAssistant) break
+    }
+    if (!lastUser || !lastAssistant) return undefined
+    if (isQueuedUser(lastUser)) return undefined
+    if (!isFinalAssistant(lastAssistant.info) || lastAssistantIndex <= lastUserIndex) return undefined
+    return { userMessageID: lastUser.info.id, finalMessage: lastAssistant }
   }
 
   async function activateQueuedMessage(queued: MessageV2.WithParts) {
@@ -525,7 +589,6 @@ export namespace SessionPrompt {
 
       // pending subtask
       if (task?.type === "subtask") {
-        const taskTool = await cfg.taskTool?.init?.()
         const taskModel = task.model ? await cfg.provider?.getModel(task.model.providerID, task.model.modelID) : model
         const assistantMessage = (await Session.updateMessage({
           id: Identifier.ascending("message"),
@@ -559,7 +622,7 @@ export namespace SessionPrompt {
           sessionID: assistantMessage.sessionID,
           type: "tool",
           callID: ulid(),
-          tool: cfg.taskTool?.id ?? "task",
+          tool: `agent__${task.agent}`,
           state: {
             status: "running",
             input: {
@@ -582,7 +645,7 @@ export namespace SessionPrompt {
         await cfg.plugin?.trigger(
           "tool.execute.before",
           {
-            tool: "task",
+            tool: `agent__${task.agent}`,
             sessionID,
             callID: part.id,
           },
@@ -601,42 +664,61 @@ export namespace SessionPrompt {
             fallback: defaultAgentName,
           })
         }
-        const taskCtx: any = {
-          agent: task.agent,
-          messageID: assistantMessage.id,
-          sessionID: sessionID,
-          abort,
-          callID: part.callID,
-          extra: { bypassAgentCheck: true },
-          messages: msgs,
-          async metadata(metaInput: any) {
-            await Session.updatePart({
-              ...part,
-              type: "tool",
-              state: {
-                ...part.state,
-                ...metaInput,
-              },
-            } satisfies MessageV2.ToolPart)
-          },
-          async ask(req: any) {
-            const skillToolRules = [...(cfg.skillTools?.get(sessionID) ?? new Set<string>())]
-              .filter(t => !t.startsWith("__skill__:"))
-              .map(t => ({ permission: t, pattern: "*", action: "allow" as const }))
-            await cfg.permissionNext?.ask({
-              ...req,
-              sessionID: sessionID,
-              agentID: taskAgent.id,
-              ruleset: cfg.permissionNext?.merge?.(taskAgent.permission, skillToolRules),
-            })
-          },
-        }
-        const result = await taskTool?.execute?.(taskArgs, taskCtx).catch((error: any) => {
+        // Subtask/slash-command-driven delegation runs through the same durable primitives
+        // agent__<name> uses (Session.create + prompt() + Delegation.record/finalizeSync)
+        // instead of the retired standalone `task` tool. Always synchronous — the subtask
+        // mechanism blocks and attaches its result to `part` inline, so there is no async
+        // wake to schedule. No permission `ask()` step: this is a system-synthesized call
+        // (a slash command resolving to a subagent), not the model choosing to invoke a
+        // tool, matching the old task.ts's bypassAgentCheck path it replaces.
+        let result: { title: string; metadata: Record<string, unknown>; output: string } | undefined
+        try {
+          const childSession = await Session.create({
+            title: task.description,
+            sessionType: "worker",
+            agentID: taskAgent.id,
+            ownerID: lastUser.agent,
+            ownerKind: "agent",
+            parentSessionID: sessionID,
+          })
+          const childMessageID = Identifier.ascending("message")
+          const edgeID = Delegation.record({
+            askerSessionID: sessionID,
+            askerMessageID: assistantMessage.id,
+            childSessionID: childSession.id,
+            childMessageID,
+            agent: taskAgent.id,
+            description: task.description,
+            mode: "sync",
+            toolCallID: part.callID,
+          })
+          const childResult = await prompt({
+            sessionID: childSession.id,
+            agent: taskAgent.id,
+            messageID: childMessageID,
+            parentMessageID: assistantMessage.id,
+            parts: await resolvePromptParts(task.prompt),
+          })
+          const text = childResult.parts.findLast((p) => p.type === "text")?.text ?? ""
+          const childError = childResult.info.role === "assistant" ? childResult.info.error : undefined
+          Delegation.finalizeSync(edgeID, { state: childError ? "error" : "completed", result: text })
+          result = {
+            title: task.description,
+            metadata: {
+              sessionId: childSession.id,
+              agent: taskAgent.id,
+              mode: "sync",
+              created: true,
+              action: "create_session",
+            },
+            output: text,
+          }
+        } catch (error: any) {
           executionError = error
           log.error("subtask execution failed", { error, agent: task.agent, description: task.description })
-          return undefined
-        })
-        const attachments = result?.attachments?.map((attachment: any) => ({
+          result = undefined
+        }
+        const attachments = (result as any)?.attachments?.map((attachment: any) => ({
           ...attachment,
           id: Identifier.ascending("part"),
           sessionID,
@@ -645,7 +727,7 @@ export namespace SessionPrompt {
         await cfg.plugin?.trigger(
           "tool.execute.after",
           {
-            tool: "task",
+            tool: `agent__${task.agent}`,
             sessionID,
             callID: part.id,
             args: taskArgs,
@@ -955,6 +1037,14 @@ export namespace SessionPrompt {
       }
 
       if (result === "stop") {
+        // A step-budget-exhausted turn looks identical to a genuine stop — the
+        // MAX_STEPS nudge above tells the model to wrap up, and it dutifully
+        // returns finish="stop" with a confident summary. Tag it so downstream
+        // consumers (Delegation.classify) can tell "done" from "ran out of steps".
+        if (isLastStep && processor.message.finish === "stop" && !processor.message.error) {
+          processor.message.finish = "step-limit"
+          await Session.updateMessage(processor.message)
+        }
         if (await hasQueuedUser(sessionID)) continue
         break
       }
@@ -1085,9 +1175,16 @@ export namespace SessionPrompt {
           setAgentID: (sessionId: string, agentId: string) => Session.setAgentID({ sessionID: sessionId, agentID: agentId }),
           setParentSessionID: (opts: { sessionID: string; parentSessionID: string }) => Session.setParentSessionID(opts),
           setSessionStatus: (sessionId: string, status: string) => Session.setSessionStatus({ sessionID: sessionId, status: status as any }),
+          getStatus: async (sessionId: string) => SessionStatus.get(sessionId),
           createNext: (input: any) => Session.createNext(input),
           setCwd: (input: { sessionID: string; cwd: string }) => Session.setCwd(input),
         },
+        delegation: {
+          record: (input: any) => Delegation.record(input),
+          finalizeSync: (edgeID: string, input: any) => Delegation.finalizeSync(edgeID, input),
+          countPendingForAsker: (askerSessionID: string) => Delegation.countPendingForAsker(askerSessionID),
+        },
+        promptCancel: (sessionID: string) => cancel(sessionID, { cascade: true }),
         prompt: (opts: any) => SessionPrompt.prompt(opts),
         resolvePromptParts: (template: string) => resolvePromptParts(template),
         question: cfg.question ? (params: any) => cfg.question!.ask(params) : undefined,
@@ -1709,7 +1806,7 @@ export namespace SessionPrompt {
         }
 
         if (part.type === "agent") {
-          const perm = cfg.permissionNext?.evaluate?.("task", part.name, agent.permission)
+          const perm = cfg.permissionNext?.evaluate?.("agent", part.name, agent.permission)
           const hint = perm?.action === "deny" ? " . Invoked by user; guaranteed to exist." : ""
           return [
             {
@@ -1723,8 +1820,9 @@ export namespace SessionPrompt {
               type: "text",
               synthetic: true,
               text:
-                " Use the above message and context to generate a prompt and call the task tool with subagent: " +
+                " Use the above message and context to generate a prompt and call agent__" +
                 part.name +
+                " (action: create_session) to delegate to it" +
                 hint,
             },
           ]

@@ -12,7 +12,6 @@ import { Server } from "@projectflows/server/server"
 import { Provider } from "@projectflows/provider/provider"
 import { Agent } from "@projectflows/runtime/agent"
 import { PermissionNext } from "@projectflows/permission/next"
-import { TaskTool } from "@projectflows/tools/system/task"
 import { SkillTool } from "@projectflows/tools/skill-load-tool"
 import { Locale } from "@projectflows/util/locale"
 
@@ -155,14 +154,24 @@ function websearch(info: ToolCall) {
   })
 }
 
-function task(info: ToolCall) {
+function agentDelegate(info: ToolCall) {
   const input = info.part.state.input
   const status = info.part.state.status
-  const subagent =
-    typeof input.subagent_type === "string" && input.subagent_type.trim().length > 0 ? input.subagent_type : "unknown"
-  const agent = Locale.titlecase(subagent)
+  // agent__<id>'s target agent comes from metadata.agent, or failing that the
+  // agent__ prefix stripped off the tool name; its input has no
+  // description/subagent_type — the task description is params.title, falling
+  // back to the prompt text.
+  const rawAgent =
+    typeof info.metadata.agent === "string" && info.metadata.agent.trim().length > 0
+      ? info.metadata.agent
+      : info.part.tool?.replace(/^agent__/, "") || "unknown"
+  const agent = Locale.titlecase(rawAgent)
   const desc =
-    typeof input.description === "string" && input.description.trim().length > 0 ? input.description : undefined
+    typeof input.title === "string" && input.title.trim().length > 0
+      ? input.title
+      : typeof input.prompt === "string" && input.prompt.trim().length > 0
+        ? input.prompt
+        : undefined
   const icon = status === "error" ? "✗" : status === "running" ? "•" : "✓"
   const name = desc ?? `${agent} Task`
   inline({
@@ -413,7 +422,7 @@ export const RunCommand = cmd({
           if (part.tool === "edit") return edit(props(part))
           if (part.tool === "codesearch") return codesearch(props(part))
           if (part.tool === "websearch") return websearch(props(part))
-          if (part.tool === "task") return task(props(part))
+          if (part.tool?.startsWith("agent__")) return agentDelegate(props(part))
           if (part.tool === "todowrite") return todo(props(part))
           if (part.tool === "skill") return skill(props(part))
           return fallback(part)
@@ -468,12 +477,12 @@ export const RunCommand = cmd({
 
             if (
               part.type === "tool" &&
-              part.tool === "task" &&
+              part.tool?.startsWith("agent__") &&
               part.state.status === "running" &&
               args.format !== "json"
             ) {
               if (toggles.get(part.id) === true) continue
-              task(props(part))
+              agentDelegate(props(part))
               toggles.set(part.id, true)
             }
 

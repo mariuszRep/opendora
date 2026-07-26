@@ -6,6 +6,7 @@ import type { PermissionRequest, PermissionReply } from "@/lib/projectflows"
 function getPermissionDescription(request: PermissionRequest) {
   const { resource, access, metadata = {}, patterns = [] } = request
 
+  if (metadata.kind === "workflow_node") return `Approve step: ${metadata.nodeLabel || patterns[0] || "workflow node"}`
   if (resource === "file" && access === "read") return `Read ${patterns[0] || "file"}`
   if (resource === "file" && access === "write") return `Edit ${metadata.filepath || patterns[0] || "file"}`
   if (resource === "bash") return metadata.command ? `Run: ${metadata.command}` : "Run shell command"
@@ -24,6 +25,7 @@ export function PermissionTool(props: {
 }) {
   const description = getPermissionDescription(props.request)
   const hasAgentPatterns = props.request.agent_patterns && props.request.agent_patterns.length > 0
+  const isWorkflowNode = props.request.metadata?.kind === "workflow_node"
 
   if (props.responded) {
     return (
@@ -58,23 +60,54 @@ export function PermissionTool(props: {
           Reject
         </Button>
         <div className="flex items-center gap-2">
-          <Button
-            onClick={() => props.onReply(props.request.id, "session")}
-            type="button"
-            variant="outline"
-            size="sm"
-          >
-            Allow session
-          </Button>
-          {hasAgentPatterns && (
-            <Button
-              onClick={() => props.onReply(props.request.id, "agent")}
-              type="button"
-              size="sm"
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
-            >
-              Allow agent
-            </Button>
+          {isWorkflowNode ? (
+            <>
+              <Button
+                onClick={() => props.onReply(props.request.id, "once")}
+                type="button"
+                variant="outline"
+                size="sm"
+              >
+                Allow once
+              </Button>
+              <Button
+                onClick={() => props.onReply(props.request.id, "session")}
+                type="button"
+                variant="outline"
+                size="sm"
+              >
+                Allow for session
+              </Button>
+              <Button
+                onClick={() => props.onReply(props.request.id, "workflow")}
+                type="button"
+                size="sm"
+                className="bg-accent text-accent-foreground hover:bg-accent/90"
+              >
+                Allow for workflow
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={() => props.onReply(props.request.id, "session")}
+                type="button"
+                variant="outline"
+                size="sm"
+              >
+                Allow session
+              </Button>
+              {hasAgentPatterns && (
+                <Button
+                  onClick={() => props.onReply(props.request.id, "agent")}
+                  type="button"
+                  size="sm"
+                  className="bg-accent text-accent-foreground hover:bg-accent/90"
+                >
+                  Allow agent
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>

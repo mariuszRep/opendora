@@ -190,6 +190,8 @@ export namespace PermissionNext {
     metadata?: Record<string, unknown>
     sessionID: string
     agentID?: string
+    /** Present for workflow-node approval requests — the scope_id for a "workflow" reply. */
+    workflowID?: string
     ruleset: Permission.LegacyRuleset
     tool?: { messageID: string; callID: string }
     id?: string
@@ -203,6 +205,7 @@ export namespace PermissionNext {
       access,
       patterns: input.patterns ?? ["*"],
       agent_patterns: input.always ?? [],
+      workflow_id: input.workflowID,
       metadata: input.metadata ?? {},
       static_rules: toStaticRules(input.ruleset),
       tool: input.tool

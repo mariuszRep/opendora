@@ -2,7 +2,6 @@ import fs from "fs/promises"
 import path from "path"
 import { Global } from "@projectflows/util/global"
 import { Identifier } from "@projectflows/util/id"
-import { PermissionNext } from "@projectflows/permission/next"
 import type { Agent } from "@projectflows/runtime/agent"
 import { Scheduler } from "@projectflows/runtime/scheduler"
 import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
@@ -41,12 +40,6 @@ export namespace Truncate {
       if (Identifier.timestamp(entry) >= cutoff) continue
       await fs.unlink(path.join(DIR, entry)).catch(() => {})
     }
-  }
-
-  function hasTaskTool(agent?: Agent.Info): boolean {
-    if (!agent?.permission) return false
-    const rule = PermissionNext.evaluate("task", "*", agent.permission)
-    return rule.action !== "deny"
   }
 
   export async function output(text: string, options: Options = {}, agent?: Agent.Info): Promise<Result> {
@@ -97,9 +90,7 @@ export namespace Truncate {
     const filepath = path.join(DIR, id)
     await Filesystem.write(filepath, text)
 
-    const hint = hasTaskTool(agent)
-      ? `The tool call succeeded but the output was truncated. Full output saved to: ${filepath}\nUse the Task tool to have explore agent process this file with Grep and Read (with offset/limit). Do NOT read the full file yourself - delegate to save context.`
-      : `The tool call succeeded but the output was truncated. Full output saved to: ${filepath}\nUse Grep to search the full content or Read with offset/limit to view specific sections.`
+    const hint = `The tool call succeeded but the output was truncated. Full output saved to: ${filepath}\nUse Grep to search the full content or Read with offset/limit to view specific sections.`
     const message =
       direction === "head"
         ? `${preview}\n\n...${removed} ${unit} truncated...\n\n${hint}`

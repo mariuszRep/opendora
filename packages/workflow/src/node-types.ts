@@ -159,8 +159,16 @@ export interface WorkflowNodePayload {
     key?: string
     name?: string
     description?: string
-    execution_mode?: "automatic" | "manual"
-    execution_mode_override?: "automatic" | "manual"
+    /** When true, a running workflow pauses at this node and asks the user to approve or deny it
+     *  via the permission engine (Allow once / Allow for session / Allow for workflow / Deny),
+     *  before it executes. Allow for session/workflow persists a rule so the node auto-approves on
+     *  subsequent encounters; Deny fails the node and errors the run. */
+    requires_approval?: boolean
+    /** Session isolation for Prompt/Structured nodes. "inline" (default) runs the node's model turn
+     *  in the shared workflow session, so $ctx references render as compact pointers to outputs
+     *  already in history. "isolated" runs it in its own child session with a fresh context window,
+     *  where $ctx references are expanded to full text. */
+    session_mode?: "inline" | "isolated"
     status?: "draft" | "published" | "archived"
     action_id?: string
     parameters?: Record<string, unknown>

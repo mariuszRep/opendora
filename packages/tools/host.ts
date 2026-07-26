@@ -65,6 +65,14 @@ export interface HostServices {
     setAgentID?(sessionId: string, agentId: string): Promise<void>
     setParentSessionID?(input: { sessionID: string; parentSessionID: string }): Promise<unknown>
     setSessionStatus?(sessionId: string, status: string): Promise<void>
+    /**
+     * Live busy/idle/retry state — NOT the persisted sessionStatus field above.
+     * Must go through the host (not a direct package import) because installed
+     * registry tools get bundled with their dependencies inlined at publish time;
+     * a direct import of the status module would read a disconnected copy of its
+     * in-memory state, not the live server's.
+     */
+    getStatus?(sessionId: string): Promise<{ type: "idle" | "busy" | "retry"; attempt?: number; message?: string; next?: number }>
     setReplyToSessionID?(input: { sessionID: string; replyToSessionID: string }): Promise<unknown>
     reply?(input: { sessionID: string; agentID: string; message: string; parentMessageID?: string }): Promise<unknown>
     pong(sessionId: string, opts: { from: { kind: string; id: string }; content: string; parent: { messageId: string } | null }): Promise<void>
@@ -73,6 +81,25 @@ export interface HostServices {
   prompt?: (options: unknown) => Promise<unknown>
   promptCancel?: (sessionId: string) => void
   resolvePromptParts?: (prompt: string) => Promise<unknown>
+  /** Durable delegation records — see packages/session/src/delegation.ts */
+  delegation?: {
+    record(input: {
+      askerSessionID: string
+      askerMessageID?: string
+      childSessionID: string
+      childMessageID: string
+      agent: string
+      description?: string
+      mode: "sync" | "async"
+      toolCallID?: string
+      resultSchema?: unknown
+    }): string
+    finalizeSync(
+      edgeID: string,
+      input: { state: "completed" | "error" | "incomplete" | "cancelled"; result?: string; reason?: string },
+    ): void
+    countPendingForAsker(askerSessionID: string): number
+  }
   question?: (params: unknown) => Promise<string[][]>
   agents?: {
     list(): Promise<unknown[]>

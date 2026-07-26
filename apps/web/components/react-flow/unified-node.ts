@@ -10,8 +10,6 @@ import { NodeTypeId } from "@projectflows/workflow/node-types"
  */
 export type NodeType = NodeTypeId
 
-export type ExecutionMode = 'automatic' | 'manual'
-
 export type JsonSchemaType =
   | 'string'
   | 'number'
@@ -147,8 +145,14 @@ export interface NodeProperties {
   key?: string
   name?: string
   description?: string
-  execution_mode?: ExecutionMode
-  execution_mode_override?: ExecutionMode
+  /** When true, a running workflow pauses at this node and asks the user to approve or deny it
+   *  (Allow once / Allow for session / Allow for workflow / Deny) before it executes. Allow for
+   *  session/workflow persists a rule so the node auto-approves on subsequent encounters. */
+  requires_approval?: boolean
+  /** Session isolation for Prompt/Structured nodes. "inline" (default) runs in the shared workflow
+   *  session so $ctx references render as compact pointers; "isolated" runs in its own child session
+   *  with a fresh context window where $ctx references expand to full text. */
+  session_mode?: 'inline' | 'isolated'
   status?: 'draft' | 'published' | 'archived'
   action_id?: string
   parameters?: Record<string, unknown>

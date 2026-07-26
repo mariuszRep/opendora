@@ -47,3 +47,31 @@ export function getToolExecutor(): ToolExecutor {
   if (!_toolExecutor) throw new Error("No tool executor registered — call registerToolExecutor() at startup")
   return _toolExecutor
 }
+
+// ─── Node approval gateway ─────────────────────────────────────────────────────
+// Injected the same way as ToolExecutor above, so packages/workflow stays free of a direct
+// dependency on packages/permission/packages/runtime. Resolves = the user approved (or an
+// existing rule already covers it); throws = denied. Nullable: when no gate is registered
+// (e.g. in unit tests), approval is a no-op and the node runs normally.
+
+export type ApprovalRequest = {
+  sessionID: string
+  workflowID: string
+  workflowRunID: string
+  nodeID: string
+  nodeKey?: string
+  nodeLabel: string
+  nodeType: string
+}
+
+export type ApprovalGate = (req: ApprovalRequest) => Promise<void>
+
+let _approvalGate: ApprovalGate | null = null
+
+export function registerApprovalGate(gate: ApprovalGate) {
+  _approvalGate = gate
+}
+
+export function getApprovalGate(): ApprovalGate | null {
+  return _approvalGate
+}

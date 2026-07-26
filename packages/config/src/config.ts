@@ -595,7 +595,6 @@ export namespace Config {
           grep: PermissionRule.optional(),
           list: PermissionRule.optional(),
           bash: PermissionRule.optional(),
-          task: PermissionRule.optional(),
           external_directory: PermissionRule.optional(),
           todowrite: PermissionAction.optional(),
           todoread: PermissionAction.optional(),

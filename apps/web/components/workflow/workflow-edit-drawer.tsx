@@ -290,6 +290,8 @@ export type DrawerFormData = {
   edgeLabel?: string
   model?: NodeModel
   retry?: { maxAttempts: number; delaySeconds: number }
+  session_mode?: "inline" | "isolated"
+  requires_approval?: boolean
 }
 
 interface WorkflowEditDrawerProps {
@@ -477,6 +479,8 @@ export function WorkflowEditDrawer({
         renderLayout: editingNodeData.renderLayout as import("@/lib/format-translator").RenderLayoutConfig | undefined,
         model: formData.model,
         retry: editingNodeData.node.retry,
+        session_mode: editingNodeData.node.session_mode,
+        requires_approval: (editingNodeData.node as any).requires_approval,
       })
     } else {
       onSave(formData)
@@ -1963,21 +1967,6 @@ export function WorkflowEditDrawer({
             return (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="node-exec-mode">Execution Mode</Label>
-                  <Select
-                    value={editingNodeData.node.execution_mode || "automatic"}
-                    onValueChange={(v) => handleNodeChange({ execution_mode: v as "automatic" | "manual" })}
-                  >
-                    <SelectTrigger id="node-exec-mode">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="automatic">Automatic</SelectItem>
-                      <SelectItem value="manual">Manual (User Approval)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
                   <Label>Retry on Failure</Label>
                   <p className="text-xs text-muted-foreground">
                     Automatically retry this step if it fails. Set Max Retries to 0 to disable.
@@ -2047,6 +2036,30 @@ export function WorkflowEditDrawer({
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="node-session-mode">Session</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Isolated runs this step in its own session with a fresh context window;{" "}
+                    <code className="font-mono">$ctx</code> references are expanded to full text.
+                    Inline shares the workflow session and references prior outputs by pointer.
+                  </p>
+                  <Select
+                    value={editingNodeData.node.session_mode || "inline"}
+                    onValueChange={(v) => handleNodeChange({ session_mode: v as "inline" | "isolated" })}
+                  >
+                    <SelectTrigger id="node-session-mode" className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="inline" className="text-xs">
+                        Inline — shared session (references by pointer)
+                      </SelectItem>
+                      <SelectItem value="isolated" className="text-xs">
+                        Isolated — own session (references expanded to full text)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label>Tool use</Label>
                   <p className="text-xs text-muted-foreground">
                     Control whether the agent may call tools during this step.
@@ -2090,6 +2103,30 @@ export function WorkflowEditDrawer({
                     value={formData.model}
                     onChange={(m) => setFormData((prev) => ({ ...prev, model: m }))}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="structured-session-mode">Session</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Isolated runs this step in its own session with a fresh context window;{" "}
+                    <code className="font-mono">$ctx</code> references are expanded to full text.
+                    Inline shares the workflow session and references prior outputs by pointer.
+                  </p>
+                  <Select
+                    value={editingNodeData.node.session_mode || "inline"}
+                    onValueChange={(v) => handleNodeChange({ session_mode: v as "inline" | "isolated" })}
+                  >
+                    <SelectTrigger id="structured-session-mode" className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="inline" className="text-xs">
+                        Inline — shared session (references by pointer)
+                      </SelectItem>
+                      <SelectItem value="isolated" className="text-xs">
+                        Isolated — own session (references expanded to full text)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )
@@ -2635,6 +2672,29 @@ export function WorkflowEditDrawer({
                     </div>
                   )
                 })()}
+              {activeTab === "general" && editType === "node" && editingNodeData && (
+                <div className="mt-4 flex items-center justify-between gap-3 px-3 py-2 rounded-md border">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="node-requires-approval" className="text-sm">
+                      Require approval before running
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Pauses the workflow and asks you to approve or deny this step each time it
+                      runs. Allow for session/workflow remembers the decision so it stops asking.
+                    </p>
+                  </div>
+                  <Switch
+                    id="node-requires-approval"
+                    checked={!!(editingNodeData.node as any).requires_approval}
+                    onCheckedChange={(checked) =>
+                      setEditingNodeData({
+                        ...editingNodeData,
+                        node: { ...editingNodeData.node, requires_approval: checked },
+                      } as any)
+                    }
+                  />
+                </div>
+              )}
             </div>
           </div>
         </>

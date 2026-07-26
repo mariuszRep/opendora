@@ -29,7 +29,6 @@ import { ReadTool } from "@projectflows/tools/filesystem/read"
 import { FileTime } from "@projectflows/tools/file/time"
 import { ConfigMarkdown } from "@projectflows/config/markdown"
 import { Command } from "@projectflows/server/command"
-import { TaskTool } from "@projectflows/tools/system/task"
 import { createAgentTargetTool } from "@projectflows/tools/delegation/agent-target"
 import { Shell } from "@projectflows/util/shell"
 import { Truncate } from "@projectflows/tools/truncation-impl"
@@ -479,12 +478,6 @@ export function configureSessionCore() {
     readTool: {
       async init() {
         return ReadTool.init()
-      },
-    },
-    taskTool: {
-      id: TaskTool.id,
-      async init() {
-        return TaskTool.init()
       },
     },
     fileTime: {

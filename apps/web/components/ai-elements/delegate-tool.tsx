@@ -2,13 +2,19 @@
 
 import type { Session, ToolPart } from "@/lib/projectflows"
 
-import { ArrowRightIcon, BotIcon, ExternalLinkIcon } from "lucide-react"
+import { ArrowRightIcon, BotIcon, ExternalLinkIcon, Loader2Icon } from "lucide-react"
+
+type DelegateAction = "create_session" | "message_session" | "reply_session"
 
 type DelegateMetadata = {
   sessionId?: string
   agent?: string
   messageId?: string
-  kind?: "delegate" | "reply"
+  /** @deprecated legacy delegate/reply tools — kept for old transcripts. Use `action` for agent__<id> calls. */
+  kind?: "delegate" | "reply" | DelegateAction | string
+  action?: DelegateAction
+  mode?: "sync" | "async"
+  created?: boolean
   sourceSessionId?: string
 }
 
@@ -24,6 +30,8 @@ export type DelegateToolContentProps = {
   sessions: Session[]
   onSelectSession: (id: string) => void
   onGoToMessage?: (sessionId: string, messageId: string) => void
+  /** Sessions whose agent loop is currently running — see use-projectflows.ts's activeSessions. */
+  activeSessions?: Set<string>
 }
 
 export const DelegateToolContent = ({
@@ -31,10 +39,12 @@ export const DelegateToolContent = ({
   sessions,
   onSelectSession,
   onGoToMessage,
+  activeSessions,
 }: DelegateToolContentProps) => {
   const input = "input" in tool.state ? tool.state.input : {}
   const metadata = getDelegateMetadata(tool)
-  const isReply = metadata.kind === "reply" || tool.tool === "reply"
+  const action = metadata.action ?? (metadata.kind === "reply" ? "reply_session" : undefined)
+  const isReply = action === "reply_session"
 
   const prompt = input.prompt as string | undefined
   const description = input.description as string | undefined
@@ -48,6 +58,11 @@ export const DelegateToolContent = ({
   const sessionLabel =
     targetSession?.title ??
     (sessionId ? `Session ${sessionId.slice(0, 8)}…` : undefined)
+
+  // Only meaningful for async calls — sync ones have already returned with a
+  // final result by the time this renders, so the target session can't still
+  // be running *this* turn even if it happens to be busy with something else.
+  const isRunning = metadata.mode === "async" && !!sessionId && !!activeSessions?.has(sessionId)
 
   const handleNavigate = () => {
     if (!sessionId) return
@@ -83,6 +98,12 @@ export const DelegateToolContent = ({
               <span className="truncate text-xs text-muted-foreground">{sessionLabel}</span>
             </>
           )}
+          {isRunning && (
+            <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+              <Loader2Icon className="size-3 animate-spin" />
+              Running…
+            </span>
+          )}
         </div>
         {sessionId && (
           <button
@@ -100,26 +121,30 @@ export const DelegateToolContent = ({
 }
 
 /**
- * Derive a readable title for delegate / spawn_session tool headers.
+ * Derive a readable title for agent__<id> (and legacy delegate/reply) tool headers.
  * Falls back to the raw tool name so callers always get a string.
  */
 export function getDelegateToolTitle(tool: ToolPart): string {
   const input = "input" in tool.state ? tool.state.input : {}
   const metadata = getDelegateMetadata(tool)
-  if (metadata.kind === "reply" || tool.tool === "reply") {
+  const agentFromToolName = tool.tool.startsWith("agent__") ? tool.tool.slice("agent__".length) : undefined
+  const agent = metadata.agent ?? (input.agent as string | undefined) ?? agentFromToolName
+
+  const action = metadata.action ?? (metadata.kind === "reply" ? "reply_session" : undefined)
+  if (action === "reply_session" || tool.tool === "reply") {
     const sessionId = metadata.sessionId
     return sessionId ? `Reply → ${sessionId.slice(0, 8)}…` : "Reply"
   }
+
   const description = input.description as string | undefined
-  const agent = input.agent as string | undefined
-  const base = description ?? "Delegate"
+  const base = description ?? (action === "message_session" ? "Message" : "Delegate")
   return agent ? `${base} → ${agent}` : base
 }
 
-const DELEGATE_TOOLS = new Set(["delegate", "reply"])
+const LEGACY_DELEGATE_TOOLS = new Set(["delegate", "reply"])
 
 export function isDelegateTool(toolName: string): boolean {
-  return DELEGATE_TOOLS.has(toolName)
+  return toolName.startsWith("agent__") || LEGACY_DELEGATE_TOOLS.has(toolName)
 }
 
 /** Banner shown inside a spawned/delegated session linking back to its parent. */

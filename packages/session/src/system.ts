@@ -307,7 +307,7 @@ export namespace SystemPrompt {
 
     // 6. Delegation restriction — exact text that the agent sees in llm.ts
     const agentToolsConfig = input.agent?.tools as string[] | undefined
-    const hasDelegationTool = agentToolsConfig?.includes("delegate") || agentToolsConfig?.includes("task")
+    const hasDelegationTool = agentToolsConfig?.some((t) => t.startsWith("agent__"))
     const agentId = input.agent?.id as string | undefined
     if (hasDelegationTool && agentId && cfg.permissionNext?.listRules && cfg.permissionNext?.wildcardMatch) {
       const rules = cfg.permissionNext

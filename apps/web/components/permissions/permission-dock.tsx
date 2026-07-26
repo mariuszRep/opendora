@@ -59,6 +59,13 @@ function getPermissionInfo(request: PermissionRequest) {
     }
   }
 
+  if (metadata.kind === "workflow_node") {
+    return {
+      title: `Approve step: ${(metadata.nodeLabel as string) || patterns[0] || "workflow node"}`,
+      description: "This workflow step requires approval before it runs",
+    }
+  }
+
   return {
     title: `Use ${resource} (${access})`,
     description: "This tool requires permission to execute",
@@ -71,6 +78,7 @@ export function PermissionDock(props: {
 }) {
   const info = getPermissionInfo(props.request)
   const hasAgentPatterns = props.request.agent_patterns && props.request.agent_patterns.length > 0
+  const isWorkflowNode = props.request.metadata?.kind === "workflow_node"
 
   return (
     <Card className="border-warning/30 bg-background/95 shadow-sm">
@@ -99,28 +107,55 @@ export function PermissionDock(props: {
         )}
       </CardContent>
       <CardFooter className="justify-between gap-2">
-        <Button 
-          onClick={() => props.onReply(props.request.id, "reject")} 
-          type="button" 
+        <Button
+          onClick={() => props.onReply(props.request.id, "reject")}
+          type="button"
           variant="ghost"
         >
           Reject
         </Button>
         <div className="flex gap-2">
-          <Button
-            onClick={() => props.onReply(props.request.id, "session")}
-            type="button"
-            variant="outline"
-          >
-            Allow session
-          </Button>
-          {hasAgentPatterns && (
-            <Button
-              onClick={() => props.onReply(props.request.id, "agent")}
-              type="button"
-            >
-              Allow agent
-            </Button>
+          {isWorkflowNode ? (
+            <>
+              <Button
+                onClick={() => props.onReply(props.request.id, "once")}
+                type="button"
+                variant="outline"
+              >
+                Allow once
+              </Button>
+              <Button
+                onClick={() => props.onReply(props.request.id, "session")}
+                type="button"
+                variant="outline"
+              >
+                Allow for session
+              </Button>
+              <Button
+                onClick={() => props.onReply(props.request.id, "workflow")}
+                type="button"
+              >
+                Allow for workflow
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={() => props.onReply(props.request.id, "session")}
+                type="button"
+                variant="outline"
+              >
+                Allow session
+              </Button>
+              {hasAgentPatterns && (
+                <Button
+                  onClick={() => props.onReply(props.request.id, "agent")}
+                  type="button"
+                >
+                  Allow agent
+                </Button>
+              )}
+            </>
           )}
         </div>
       </CardFooter>

@@ -3,9 +3,12 @@ import {
   resolveRefs,
   resolveTemplate,
   resolveDeep,
+  describeCtxManifest,
 } from "./schema"
+import type { RefRenderMode, RefRenderOptions } from "./schema"
 
-export { resolveRef, resolveRefs, resolveTemplate, resolveDeep }
+export { resolveRef, resolveRefs, resolveTemplate, resolveDeep, describeCtxManifest }
+export type { RefRenderMode, RefRenderOptions }
 
 /** Recursively resolve only `description` and `title` strings in a JSON schema. */
 function resolveSchemaDescriptionsImpl(

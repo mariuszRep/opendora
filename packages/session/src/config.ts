@@ -159,12 +159,6 @@ export interface SessionCoreConfig {
   readTool?: {
     init(): Promise<any>
   }
-  /** Task tool */
-  taskTool?: {
-    id?: string
-    init?(): Promise<any>
-    execute?(args: any, ctx: any): Promise<any>
-  }
   /** FileTime service */
   fileTime?: {
     file?(path: string): void

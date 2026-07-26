@@ -32,7 +32,6 @@ import type { AssistantMessage, Part, ToolPart, UserMessage, TextPart, Reasoning
 import { useLocal } from "@tui/context/local"
 import { Locale } from "@projectflows/util/locale"
 import type { Tool } from "@projectflows/tools/tool"
-import type { TaskTool } from "@projectflows/tools/system/task"
 import type { SkillTool } from "@projectflows/tools/skill-load-tool"
 import { useKeyboard, useRenderer, useTerminalDimensions, type JSX } from "@opentui/solid"
 import { useSDK } from "@tui/context/sdk"
@@ -1484,8 +1483,8 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         <Match when={props.part.tool === "edit"}>
           <Edit {...toolprops} />
         </Match>
-        <Match when={props.part.tool === "task"}>
-          <Task {...toolprops} />
+        <Match when={props.part.tool?.startsWith("agent__")}>
+          <AgentDelegate {...toolprops} />
         </Match>
         <Match when={props.part.tool === "apply_patch"}>
           <ApplyPatch {...toolprops} />
@@ -1908,12 +1907,19 @@ function WebSearch(props: ToolProps<any>) {
   )
 }
 
-function Task(props: ToolProps<typeof TaskTool>) {
+function AgentDelegate(props: ToolProps<any>) {
   const { theme } = useTheme()
   const keybind = useKeybind()
   const { navigate } = useRoute()
   const local = useLocal()
   const sync = useSync()
+
+  // agent__<id>'s target agent comes from metadata.agent (set by agent-target.ts's
+  // ctx.metadata call) or, failing that, by stripping the agent__ prefix off the
+  // tool name itself. Its input has no description/subagent_type — the task
+  // description is params.title, falling back to the prompt text.
+  const agentName = createMemo(() => props.metadata.agent ?? props.tool?.replace(/^agent__/, "") ?? "unknown")
+  const description = createMemo(() => props.input.title ?? props.input.prompt ?? props.input.message)
 
   const tools = createMemo(() => {
     const sessionID = props.metadata.sessionId
@@ -1931,9 +1937,9 @@ function Task(props: ToolProps<typeof TaskTool>) {
 
   return (
     <Switch>
-      <Match when={props.input.description || props.input.subagent_type}>
+      <Match when={description() || agentName()}>
         <BlockTool
-          title={"# " + Locale.titlecase(props.input.subagent_type ?? "unknown") + " Task"}
+          title={"# " + Locale.titlecase(agentName()) + " Task"}
           onClick={
             props.metadata.sessionId
               ? () => navigate({ type: "session", sessionID: props.metadata.sessionId! })
@@ -1944,7 +1950,7 @@ function Task(props: ToolProps<typeof TaskTool>) {
         >
           <box>
             <text style={{ fg: theme.textMuted }}>
-              {props.input.description} ({tools().length} toolcalls)
+              {description()} ({tools().length} toolcalls)
             </text>
             <Show when={current()}>
               {(item) => {
@@ -1966,8 +1972,8 @@ function Task(props: ToolProps<typeof TaskTool>) {
         </BlockTool>
       </Match>
       <Match when={true}>
-        <InlineTool icon="#" pending="Delegating..." complete={props.input.subagent_type} part={props.part}>
-          {props.input.subagent_type} Task {props.input.description}
+        <InlineTool icon="#" pending="Delegating..." complete={agentName()} part={props.part}>
+          {agentName()} Task {description()}
         </InlineTool>
       </Match>
     </Switch>

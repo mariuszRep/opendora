@@ -8810,9 +8810,6 @@
               "bash": {
                 "$ref": "#/components/schemas/PermissionRuleConfig"
               },
-              "task": {
-                "$ref": "#/components/schemas/PermissionRuleConfig"
-              },
               "external_directory": {
                 "$ref": "#/components/schemas/PermissionRuleConfig"
               },

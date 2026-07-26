@@ -537,6 +537,8 @@ function WorkflowEditorInner({
                 action_id: formData.action_id,
                 parameters: formData.parameters,
                 ...(formData.retry !== undefined ? { retry: formData.retry } : {}),
+                ...(formData.session_mode !== undefined ? { session_mode: formData.session_mode } : {}),
+                ...(formData.requires_approval !== undefined ? { requires_approval: formData.requires_approval } : {}),
               },
               data: {
                 ...n.data.data,

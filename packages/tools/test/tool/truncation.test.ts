@@ -93,24 +93,16 @@ describe("Truncate", () => {
       expect(written).toBe(lines)
     })
 
-    test("suggests Task tool when agent has task permission", async () => {
+    test("always uses the generic Grep/Read hint regardless of agent permissions", async () => {
+      // The task-tool-specific hint branch was retired along with the task tool itself
+      // (superseded by agent__<id> delegation) — the hint is now constant.
       const lines = Array.from({ length: 100 }, (_, i) => `line${i}`).join("\n")
       const agent = { permission: [{ permission: "task", pattern: "*", action: "allow" as const }] }
       const result = await Truncate.output(lines, { maxLines: 10 }, agent as any)
 
       expect(result.truncated).toBe(true)
       expect(result.content).toContain("Grep")
-      expect(result.content).toContain("Task tool")
-    })
-
-    test("omits Task tool hint when agent lacks task permission", async () => {
-      const lines = Array.from({ length: 100 }, (_, i) => `line${i}`).join("\n")
-      const agent = { permission: [{ permission: "task", pattern: "*", action: "deny" as const }] }
-      const result = await Truncate.output(lines, { maxLines: 10 }, agent as any)
-
-      expect(result.truncated).toBe(true)
-      expect(result.content).toContain("Grep")
-      expect(result.content).not.toContain("Task tool")
+      expect(result.content).toContain("Read with offset/limit")
     })
 
     test("does not write file when not truncated", async () => {

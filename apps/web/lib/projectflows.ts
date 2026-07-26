@@ -306,13 +306,15 @@ export type PermissionRequest = {
   access: "read" | "write" | "execute" | "*"
   patterns: string[]
   agent_patterns: string[]
+  /** Present when the request originates from a workflow node — the scope_id for a "workflow" reply. */
+  workflow_id?: string
   metadata: Record<string, any>
   tool?: { message_id: string; call_id: string }
 }
 
 export type PermissionRule = {
   id: string
-  scope: "session" | "agent"
+  scope: "session" | "agent" | "workflow"
   scope_id: string
   resource: string
   access: "read" | "write" | "execute" | "*"
@@ -322,7 +324,7 @@ export type PermissionRule = {
   time_updated: number
 }
 
-export type PermissionReply = "session" | "agent" | "reject"
+export type PermissionReply = "session" | "agent" | "reject" | "workflow" | "once"
 
 export type Provider = {
   id: string
@@ -537,7 +539,7 @@ export type Event =
   | { type: "question.rejected"; properties: { sessionID: string; requestID: string } }
   | { type: "permission.asked"; properties: PermissionRequest }
   | { type: "permission.replied"; properties: { session_id: string; request_id: string; reply: PermissionReply } }
-  | { type: "permission.rules.updated"; properties: { scope: "session" | "agent"; scope_id: string } }
+  | { type: "permission.rules.updated"; properties: { scope: "session" | "agent" | "workflow"; scope_id: string } }
   | { type: "session.created"; properties: { info: Session } }
   | { type: "session.updated"; properties: { info: Session } }
   | { type: "session.deleted"; properties: { sessionID: string } }
@@ -697,10 +699,10 @@ export const opendora = {
   },
   permission: {
     listPending: () => req<PermissionRequest[]>("/permission/pending"),
-    listRules: (scope: "session" | "agent", scope_id: string) =>
+    listRules: (scope: "session" | "agent" | "workflow", scope_id: string) =>
       req<PermissionRule[]>(`/permission/rules?scope=${scope}&scope_id=${encodeURIComponent(scope_id)}`),
     addRule: (rule: {
-      scope: "session" | "agent"
+      scope: "session" | "agent" | "workflow"
       scope_id: string
       resource: string
       access: "read" | "write" | "execute" | "*"
@@ -711,7 +713,7 @@ export const opendora = {
         method: "POST",
         body: JSON.stringify(rule),
       }),
-    removeRule: (id: string, scope: "session" | "agent", scope_id: string) =>
+    removeRule: (id: string, scope: "session" | "agent" | "workflow", scope_id: string) =>
       req<boolean>(`/permission/rules/${id}`, {
         method: "DELETE",
         body: JSON.stringify({ scope, scope_id }),

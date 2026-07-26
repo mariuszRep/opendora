@@ -31,13 +31,14 @@ import { ProviderRoutes } from "./routes/provider"
 import { AgentRoutes } from "./routes/agent"
 import { ScheduleRoutes } from "./routes/schedule"
 import { WorkflowRoutes } from "@projectflows/workflow/routes"
-import { registerToolExecutor, runWorkflow, runWorkflowDetailed } from "@projectflows/workflow/runner"
+import { registerToolExecutor, registerApprovalGate, runWorkflow, runWorkflowDetailed } from "@projectflows/workflow/runner"
 import { WorkflowStorage } from "@projectflows/workflow/storage"
 import { CheckpointStore } from "@projectflows/workflow/checkpoint-store"
 import { CronScheduler, type ScheduleDispatchFn } from "@projectflows/schedule/cron-scheduler"
 import { Schedule } from "@projectflows/schedule/service"
 import { Database } from "@projectflows/storage/db"
 import { Agent } from "@projectflows/runtime/agent"
+import { PermissionNext } from "@projectflows/permission/next"
 import { ToolRegistry } from "@projectflows/server/tool-registry"
 import { lazy } from "@projectflows/util/lazy"
 import { InstanceBootstrap } from "@projectflows/runtime/bootstrap"
@@ -69,6 +70,9 @@ import { runWorkflowMigrationIfNeeded } from "@projectflows/workflow/migration"
 import { Identifier } from "@projectflows/util/id"
 import { MessageV2 } from "@projectflows/session/message"
 import { createWorkflowToolExecutor } from "./workflow-tool-executor"
+// Side-effect import — registers the delegation bus-listener + boot reconcile
+// bootstrap hook (see packages/session/src/delegation-listener.ts).
+import "@projectflows/session/delegation-listener"
 
 // @ts-ignore This global is needed to prevent ai-sdk from logging warnings to stdout https://github.com/vercel/ai/blob/2dc67e0ef538307f21368db32d5a12345d98831b/packages/ai/src/logger/log-warnings.ts#L85
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -827,6 +831,32 @@ export namespace Server {
 
     configureSessionCore()
     registerToolExecutor(createWorkflowToolExecutor())
+
+    // Node-level approval gateway: a workflow node flagged requires_approval pauses here and
+    // asks via the permission engine — same as a standard tool permission prompt, but scoped
+    // additionally to "workflow" so Allow-for-workflow persists a rule that covers this node on
+    // future runs of the same workflow. Resolves on allow (or an existing rule); throws (and the
+    // runner turns that into a WorkflowValidationError) on deny.
+    registerApprovalGate(async (req) => {
+      const session = await Session.get(req.sessionID)
+      const agent = session.agentID ? await Agent.getByIdOrName(session.agentID).catch(() => undefined) : undefined
+      await PermissionNext.ask({
+        permission: "workflow_node",
+        patterns: [req.nodeKey ?? req.nodeID],
+        sessionID: req.sessionID,
+        agentID: session.agentID ?? "unknown",
+        workflowID: req.workflowID,
+        ruleset: agent?.permission ?? [],
+        metadata: {
+          kind: "workflow_node",
+          nodeLabel: req.nodeLabel,
+          nodeType: req.nodeType,
+          workflowID: req.workflowID,
+          workflowRunID: req.workflowRunID,
+        },
+        id: `${req.workflowRunID}:${req.nodeID}`,
+      })
+    })
 
     // Clear out any tool parts left in pending/running state by a previous
     // process that was killed mid-stream — otherwise the UI shows them stuck

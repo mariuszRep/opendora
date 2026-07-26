@@ -1,6 +1,7 @@
 import z from "zod"
 import { Tool } from "../tool.ts"
 import { host } from "../host.ts"
+import { Identifier } from "@projectflows/util/id"
 
 export interface AgentTarget {
   /** Stable agent id (folder-derived), baked into the tool id as agent__<id> */
@@ -10,13 +11,31 @@ export interface AgentTarget {
   description?: string
 }
 
+/** opencode defaults to 1; we allow deeper legitimate chains (Plan -> Explore -> Verify -> ...) while still bounding runaway fan-out. */
+const MAX_SPAWN_DEPTH = 8
+/** Per-asker cap on concurrently outstanding async delegations, so a misbehaving loop can't fan out unboundedly. */
+const MAX_CONCURRENT_PENDING = 10
+
+const DEFAULT_RESULT_SCHEMA = {
+  type: "object",
+  properties: {
+    status: { type: "string", enum: ["done", "partial", "blocked"] },
+    summary: { type: "string" },
+    artifacts: { type: "array", items: { type: "string" } },
+    open_questions: { type: "array", items: { type: "string" } },
+  },
+  required: ["status", "summary"],
+}
+
 const parameters = z
   .object({
     action: z
       .enum(["create_session", "message_session", "reply_session"])
       .describe(
         "create_session: start a new session with the target agent and an initial message. " +
-          "message_session: post into an existing session of the target agent and trigger its response. " +
+          "message_session: post into an existing session of the target agent and trigger its response — " +
+          "use this for follow-up questions into a session you (or another agent) already spawned, instead " +
+          "of spawning a new one and duplicating work. " +
           "reply_session: post a message into an existing session as an ingest — does NOT trigger a new turn.",
       ),
     session_id: z
@@ -25,7 +44,18 @@ const parameters = z
       .optional(),
     session_type: z
       .enum(["worker", "scope", "scratchpad", "role"])
-      .describe("Type of new session to create. Only used by create_session. Defaults to 'worker'.")
+      .describe(
+        "Type of new session to create. Only used by create_session. Overrides `retain` when set explicitly.",
+      )
+      .optional(),
+    retain: z
+      .enum(["disposable", "conversational"])
+      .describe(
+        "create_session only. 'conversational' keeps the child as a durable scope session so it can field " +
+          "follow-up questions later via message_session — use this whenever the task is exploratory or you " +
+          "expect to need clarification. 'disposable' uses a short-lived worker session for one-shot tasks. " +
+          "Defaults to 'conversational' for async spawns and 'disposable' for sync ones.",
+      )
       .optional(),
     title: z.string().describe("Human-readable session title. Only used by create_session.").optional(),
     prompt: z
@@ -41,20 +71,31 @@ const parameters = z
       .enum(["sync", "async"])
       .describe(
         "create_session/message_session only. 'sync' blocks until the target agent replies inline. " +
-          "'async' fires without blocking — the target agent should post its result back via reply_session " +
-          "to reply_to. Defaults to 'sync' unless reply_to is set.",
+          "'async' fires without blocking — you will be automatically notified in this session when it " +
+          "finishes; do not poll or wait for it yourself. Defaults to 'async' when reply_to is set, else 'sync'.",
       )
       .optional(),
     reply_to: z
       .string()
       .describe(
-        "create_session/message_session only. Session ID the target agent should reply_session into. " +
-          "Required when mode is 'async'.",
+        "create_session/message_session only. Routes the automatic completion notification to this session " +
+          "instead of the caller — use for spawn-and-forward (a coordinator dispatching work whose results " +
+          "should land in a reporting session). Optional; async delegations are notified back to the caller " +
+          "by default.",
       )
       .optional(),
     skills: z
       .array(z.string())
       .describe("create_session only. Skill names to preload into the new session before the prompt is posted.")
+      .optional(),
+    result_schema: z
+      .union([z.literal("default"), z.record(z.string(), z.unknown())])
+      .describe(
+        "create_session/message_session only. Forces the child's final reply through structured output " +
+          "instead of leaving 'done' to be inferred from prose. Pass 'default' for the built-in " +
+          "{status: done|partial|blocked, summary, artifacts?, open_questions?} verdict schema, or your own " +
+          "JSON Schema object. Leave unset for conversational children where prose is the point.",
+      )
       .optional(),
   })
   .superRefine((value, ctx) => {
@@ -77,18 +118,41 @@ const parameters = z
         ctx.addIssue({ code: "custom", path: ["message"], message: "message is required for reply_session" })
       }
     }
-    if (value.mode === "async" && !value.reply_to) {
-      ctx.addIssue({ code: "custom", path: ["reply_to"], message: "async mode requires reply_to" })
-    }
   })
+
+/** Pure — no I/O. deny wins; an empty allow list means "all allowed". */
+function evaluateSendPolicy(policy: { allow?: string[]; deny?: string[] } | null | undefined, actorID: string): "allow" | "deny" {
+  if (!policy) return "allow"
+  if (policy.deny?.includes(actorID)) return "deny"
+  if (policy.allow && policy.allow.length > 0 && !policy.allow.includes(actorID)) return "deny"
+  return "allow"
+}
+
+/** Ancestor walk to the root session — same technique session_tree uses to find the true root. */
+async function findRoot(sessionSvc: any, sessionID: string): Promise<string> {
+  const seen = new Set<string>([sessionID])
+  let cursor = await sessionSvc.get(sessionID).catch(() => undefined)
+  let rootID = sessionID
+  while (cursor?.parentSessionID && !seen.has(cursor.parentSessionID)) {
+    seen.add(cursor.parentSessionID)
+    rootID = cursor.parentSessionID
+    cursor = await sessionSvc.get(cursor.parentSessionID).catch(() => undefined)
+  }
+  return rootID
+}
 
 /**
  * Builds a Tool.Info for a single delegation target agent, covering the 3 interaction modes
  * (create_session / message_session / reply_session) via an `action` param instead of a
- * free-text `agent` param. No allowlist check inside execute() — the tool's mere presence in the
- * caller's available tools (granted implicitly by LLM.filterToolsByAgent from the caller's
- * "agent"-resource permission rules) IS the authorization. See
- * packages/session/src/llm.ts filterToolsByAgent and packages/runtime/src/agent.ts.
+ * free-text `agent` param. No allowlist check inside execute() for WHICH agents can be targeted —
+ * the tool's mere presence in the caller's available tools (granted implicitly by
+ * LLM.filterToolsByAgent from the caller's "agent"-resource permission rules) IS that authorization.
+ * See packages/session/src/llm.ts filterToolsByAgent and packages/runtime/src/agent.ts.
+ *
+ * message_session/reply_session on a session OUTSIDE the caller's own subtree additionally go
+ * through ctx.ask (same convention session_tree uses for cross-session reads) and respect the
+ * target session's sendPolicy — within your own subtree (something you or an ancestor spawned),
+ * no prompt is needed.
  */
 export function createAgentTargetTool(target: AgentTarget): Tool.Info {
   const description = [
@@ -97,7 +161,9 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
     "",
     "Actions:",
     "- create_session: start a new session with an initial message.",
-    "- message_session: post into an existing session and trigger a response.",
+    "- message_session: post a follow-up into an existing session and trigger a response — prefer this over " +
+      "create_session when you already have a live session with this agent and just need clarification or a " +
+      "small additional task, rather than duplicating the exploration/work from scratch.",
     "- reply_session: post a message into an existing session without triggering a new turn (ingest).",
   ]
     .filter(Boolean)
@@ -113,6 +179,29 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
       // HostServices.session type declaration — same widening delegate.ts/reply.ts used.
       const sessionSvc = h.session as any
       if (!sessionSvc) throw new Error("session service not available")
+
+      // ── Cross-subtree gate + sendPolicy — applies to any call naming an existing session_id ──
+      if (params.session_id && (params.action === "message_session" || params.action === "reply_session")) {
+        const target_ = await sessionSvc.get(params.session_id)
+        if (!target_) throw new Error(`Session not found: ${params.session_id}`)
+
+        const [callerRoot, targetRoot] = await Promise.all([
+          findRoot(sessionSvc, ctx.sessionID),
+          findRoot(sessionSvc, params.session_id),
+        ])
+        if (callerRoot !== targetRoot) {
+          await ctx.ask({
+            permission: "session_get",
+            patterns: [],
+            always: ["*"],
+            metadata: { sessionId: params.session_id },
+          })
+        }
+
+        if (evaluateSendPolicy(target_.sendPolicy, ctx.agent) === "deny") {
+          throw new Error(`Session ${params.session_id} does not accept messages from ${ctx.agent}.`)
+        }
+      }
 
       if (params.action === "reply_session") {
         const message =
@@ -154,21 +243,40 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
       const resolvedMode = params.mode ?? (replyToSessionID ? "async" : "sync")
       const wait = resolvedMode === "sync"
 
+      if (!wait && h.delegation) {
+        const pending = h.delegation.countPendingForAsker(ctx.sessionID)
+        if (pending >= MAX_CONCURRENT_PENDING) {
+          throw new Error(
+            `Too many pending delegations from this session (${pending}/${MAX_CONCURRENT_PENDING}). ` +
+              "Wait for one to complete before spawning more.",
+          )
+        }
+      }
+
       let targetSessionId: string
       let created = false
 
       if (params.action === "message_session") {
-        const existing = (await sessionSvc.get(params.session_id!)) as any
-        if (!existing) throw new Error(`Session not found: ${params.session_id}`)
         targetSessionId = params.session_id!
       } else {
+        const caller = await sessionSvc.get(ctx.sessionID)
+        const spawnDepth = (caller?.spawnDepth ?? 0) + 1
+        if (spawnDepth > MAX_SPAWN_DEPTH) {
+          throw new Error(
+            `Delegation depth limit reached (${MAX_SPAWN_DEPTH}). Do this work directly instead of spawning another agent.`,
+          )
+        }
+
+        const retain = params.retain ?? (wait ? "disposable" : "conversational")
+        const sessionType = params.session_type ?? (retain === "conversational" ? "scope" : "worker")
         const newSession = (await sessionSvc.createNext?.({
           title: params.title ?? `Task (@${target.id})`,
-          sessionType: params.session_type ?? "worker",
+          sessionType,
           agentID: target.id,
           ownerID: ctx.agent,
           ownerKind: "agent",
           parentSessionID: ctx.sessionID,
+          spawnDepth,
           ...(replyToSessionID ? { replyToSessionID } : {}),
         })) as any
         if (!newSession?.id) throw new Error("Failed to create session")
@@ -185,7 +293,7 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
       }
 
       // Unlock this caller's own agent__<caller> tool in the target session so a downstream
-      // agent can reply_session back even without a standing allow rule for the caller
+      // agent can reply/message back even without a standing allow rule for the caller
       // (mirrors skill_load's per-session tool-unlock mechanism).
       if (h.skillTools?.add && ctx.agent) {
         h.skillTools.add(targetSessionId, [`agent__${ctx.agent}`])
@@ -236,13 +344,56 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
         })
       }
 
-      const result = (await promptFn({
-        sessionID: targetSessionId,
-        agent: target.id,
-        noWait: !wait,
-        parentMessageID: ctx.messageID,
-        parts: promptParts,
-      })) as any
+      const resultSchema = params.result_schema === "default" ? DEFAULT_RESULT_SCHEMA : params.result_schema
+      const format = resultSchema ? { type: "json_schema" as const, schema: resultSchema } : undefined
+
+      // Pre-generate the child's turn-starting message id so the delegation edge can be
+      // recorded BEFORE the prompt is fired — otherwise an extremely fast (or errored) async
+      // child could finish and attempt delivery before the edge existed to receive it.
+      const childMessageID = Identifier.ascending("message")
+      let edgeID: string | undefined
+      if (h.delegation) {
+        edgeID = h.delegation.record({
+          askerSessionID: ctx.sessionID,
+          askerMessageID: ctx.messageID,
+          childSessionID: targetSessionId,
+          childMessageID,
+          agent: target.id,
+          description: params.title ?? params.prompt,
+          mode: resolvedMode,
+          toolCallID: ctx.callID,
+          resultSchema,
+        })
+      }
+
+      // Only wired for sync calls: an async call's own tool execution returns almost
+      // immediately (it doesn't block on the child), so there's no meaningful window for
+      // the caller's abort to interrupt — the child keeps running by design either way.
+      // For sync, we're blocked on the child's whole turn, so propagate the cancel down.
+      const onAbort = () => {
+        if (wait && h.promptCancel) h.promptCancel(targetSessionId)
+      }
+      if (wait) ctx.abort.addEventListener("abort", onAbort)
+
+      let result: any
+      try {
+        result = (await promptFn({
+          sessionID: targetSessionId,
+          agent: target.id,
+          messageID: childMessageID,
+          // Follow-ups queue behind the target's current turn instead of throwing on busy or
+          // racing its in-flight loop — safe because a queued message on an idle session is
+          // activated immediately on the very next loop iteration, and on a busy session it
+          // is picked up at the next natural turn boundary.
+          queued: params.action === "message_session",
+          noWait: !wait,
+          parentMessageID: ctx.messageID,
+          format,
+          parts: promptParts,
+        })) as any
+      } finally {
+        if (wait) ctx.abort.removeEventListener("abort", onAbort)
+      }
 
       const text = result?.parts?.findLast?.((p: any) => p.type === "text")?.text ?? ""
       const resultTag = created ? "spawn_result" : "delegation_result"
@@ -259,6 +410,8 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
       }
 
       if (!wait) {
+        // Async: nothing to finalize here — Delegation's three delivery layers (loop-end
+        // callback, session.status bus backstop, boot reconcile) own the edge from here on.
         return {
           title: params.title ?? `${params.action} → ${target.id}`,
           metadata: sharedMeta,
@@ -268,8 +421,15 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
             `mode: ${resolvedMode}`,
             `message_id: ${result?.info?.id}`,
             "status: message posted",
+            "Do not wait or poll — you will be notified automatically when this finishes.",
           ].join("\n"),
         }
+      }
+
+      // Sync: the result is already in hand — finalize the edge inline (for graph history /
+      // UI only) so the bus backstop never mistakes this for something still pending.
+      if (edgeID && h.delegation) {
+        h.delegation.finalizeSync(edgeID, { state: result?.info?.error ? "error" : "completed", result: text })
       }
 
       return {

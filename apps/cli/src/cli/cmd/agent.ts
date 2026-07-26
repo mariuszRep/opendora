@@ -23,7 +23,6 @@ const AVAILABLE_TOOLS = [
   "glob",
   "grep",
   "webfetch",
-  "task",
   "todowrite",
   "todoread",
 ]

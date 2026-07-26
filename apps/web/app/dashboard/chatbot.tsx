@@ -287,6 +287,7 @@ export const Chatbot = () => {
     selectAgent,
     compact,
     sessions,
+    activeSessions,
     webPreviewOpen,
     toggleWebPreview,
     setWebPreviewUrl,
@@ -958,6 +959,7 @@ export const Chatbot = () => {
                   messagesLength={visibleMessages.length}
                   status={status}
                   sessions={sessions}
+                  activeSessions={activeSessions}
                   sessionsById={sessionsById}
                   agentsById={agentsById}
                   agentsByName={agentsByName}

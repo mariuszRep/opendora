@@ -24,12 +24,12 @@ beforeAll(async () => {
   await AgentCore.create(baseDir, "build", {
     name: "build",
     mode: "primary",
-    tools: ["bash", "read", "glob", "grep", "edit", "write", "task", "webfetch", "todowrite", "websearch", "codesearch", "apply_patch", "question", "memory_read", "memory_write", "memory_delete"],
+    tools: ["bash", "read", "glob", "grep", "edit", "write", "webfetch", "todowrite", "websearch", "codesearch", "apply_patch", "question", "memory_read", "memory_write", "memory_delete"],
   })
   await AgentCore.create(baseDir, "plan", {
     name: "plan",
     mode: "primary",
-    tools: ["bash", "read", "glob", "grep", "task", "webfetch", "websearch", "codesearch", "question"],
+    tools: ["bash", "read", "glob", "grep", "webfetch", "websearch", "codesearch", "question"],
     permission: { edit: { "*": "deny", ".opencode/plans/*": "allow" } },
   })
   await AgentCore.create(baseDir, "explore", {
@@ -40,7 +40,7 @@ beforeAll(async () => {
   await AgentCore.create(baseDir, "general", {
     name: "general",
     mode: "worker",
-    tools: ["bash", "read", "glob", "grep", "edit", "write", "task", "webfetch", "websearch", "codesearch", "apply_patch", "memory_read", "memory_write", "memory_delete"],
+    tools: ["bash", "read", "glob", "grep", "edit", "write", "webfetch", "websearch", "codesearch", "apply_patch", "memory_read", "memory_write", "memory_delete"],
   })
   // mode "system" matches the actual registry content (fixed from a stale "primary"
   // during remove-hardcoded-agent-templates — see configure-session-core.ts's and

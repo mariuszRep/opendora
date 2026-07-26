@@ -4,12 +4,13 @@ import { SessionPrompt } from "@projectflows/session/prompt"
 import { SessionStatus } from "@projectflows/session/status"
 import { Identifier } from "@projectflows/util/id"
 import { Workflow, WorkflowEdge, WorkflowNode } from "./schema.ts"
-import { resolveRef, resolveRefs, resolveTemplate, resolveDeep, resolveSchemaDescriptions } from "./refs.ts"
+import { resolveRef, resolveRefs, resolveTemplate, resolveDeep, resolveSchemaDescriptions, describeCtxManifest } from "./refs.ts"
+import type { RefRenderOptions } from "./refs.ts"
 import { NodeTypeId } from "./node-types.ts"
-import { getToolExecutor } from "./executor.ts"
+import { getToolExecutor, getApprovalGate } from "./executor.ts"
 import { CheckpointStore, registerActiveRun, deregisterActiveRun, type StepJournalEntry } from "./checkpoint-store.ts"
-export type { WorkflowToolContext } from "./executor.ts"
-export { registerToolExecutor } from "./executor.ts"
+export type { WorkflowToolContext, ApprovalRequest, ApprovalGate } from "./executor.ts"
+export { registerToolExecutor, registerApprovalGate } from "./executor.ts"
 
 /** An input/configuration error which must never be retried by a workflow loop. */
 export class WorkflowValidationError extends Error {
@@ -274,6 +275,28 @@ async function agentPrompt(
     .trim()
 }
 
+// Create an isolated child session for a node marked session_mode: "isolated". Mirrors the
+// child-session pattern used by the RunWorkflow node (routes.ts) and agent delegation: a fresh
+// worker session parented to the current one, so the node's model turn runs against its own
+// context window instead of the shared workflow session.
+async function createIsolatedSession(
+  parentSessionId: string,
+  directory: string,
+  nodeLabel: string,
+): Promise<string> {
+  const parent = await Session.get(parentSessionId)
+  const child = await Session.createNext({
+    directory,
+    title: `Isolated: ${nodeLabel}`,
+    sessionType: "worker",
+    agentID: parent.agentID,
+    ownerKind: "workflow",
+    parentSessionID: parentSessionId,
+  })
+  await Session.setCwd({ sessionID: child.id, cwd: directory })
+  return child.id
+}
+
 function evaluateWhen(op: string, actual: unknown, expected: unknown): boolean {
   switch (op) {
     case "equals":      return actual === expected
@@ -346,6 +369,19 @@ async function runSubGraph({
   // (which outranks message history) would silently override it.
   let carriedModel: NodeModel | undefined
 
+  // Tracks which ctx keys were produced during THIS run (their producing node emitted a tool card
+  // into the shared session), and a human label per key. Inline nodes render $ctx references to
+  // these keys as compact pointers instead of inlining the full value; keys not present here
+  // (e.g. hydrated from a checkpoint on resume) fall back to full text. See resolveTemplate.
+  const presentKeys = new Set<string>()
+  const keyLabels = new Map<string, string>()
+  const renderPointer = (key: string, path: string | undefined, _fallbackLabel: string): string => {
+    const label = keyLabels.get(key) ?? key
+    const field = path ? `.${path}` : ""
+    return `«output of the "${label}" step, shown above (referenced as $${key}${field})»`
+  }
+  const pointerRenderOpts: RefRenderOptions = { mode: "pointer", presentKeys, renderPointer }
+
   while (queue.length > 0) {
     const currentId = queue.shift()!
     if (visited.has(currentId)) continue
@@ -375,6 +411,12 @@ async function runSubGraph({
     const promptToolChoice = (d.promptToolChoice as "auto" | "required" | "none" | undefined)
     const nodeModel = (d.model as NodeModel | undefined) ?? carriedModel
     const nodeLabel = (nd.label as string | undefined) ?? d.nodeType as string ?? currentId
+    const isolated = (nd.session_mode as string | undefined ?? "inline") === "isolated"
+    // Prompt/Structured instructions: inline nodes render $ctx refs as pointers; isolated nodes
+    // (own child session, fresh context window) expand them to full text.
+    const promptRenderOpts: RefRenderOptions | undefined = isolated ? undefined : pointerRenderOpts
+    // Snapshot ctx keys before the node runs so we can mark keys it produces as present-in-session.
+    const ctxKeysBefore = new Set(Object.keys(ctx))
 
     // Set when a node creates its "running" tool part, so the catch block can
     // finalize it to "error" instead of leaving it stuck at "running".
@@ -390,6 +432,30 @@ async function runSubGraph({
       nodeID: currentId,
       nodeType: String(d.nodeType ?? "unknown"),
       nodeLabel,
+    }
+
+    // Approval gateway: nodes flagged requires_approval pause here and wait for the user to
+    // approve/deny via the injected gate (permission-driven in production; a no-op when nothing
+    // is registered, e.g. in unit tests). A deny is terminal — WorkflowValidationError short-
+    // circuits retry and the existing catch block below fails the node/run.
+    const requiresApproval = (nd.requires_approval as boolean | undefined) ?? false
+    if (requiresApproval) {
+      const gate = getApprovalGate()
+      if (gate) {
+        try {
+          await gate({
+            sessionID: sessionId,
+            workflowID: workflowMeta.workflowID,
+            workflowRunID: workflowMeta.workflowRunID,
+            nodeID: currentId,
+            nodeKey,
+            nodeLabel,
+            nodeType: String(d.nodeType ?? "unknown"),
+          })
+        } catch {
+          throw new WorkflowValidationError(`Node "${nodeLabel}" was denied approval by the user`)
+        }
+      }
     }
 
     if (d.nodeType === NodeTypeId.Parameters) {
@@ -446,19 +512,27 @@ async function runSubGraph({
       result = JSON.stringify(received)
 
     } else if (d.nodeType === NodeTypeId.Prompt) {
-      const resolvedText = resolveTemplate(instructions ?? "", input, ctx)
+      const resolvedText = resolveTemplate(instructions ?? "", input, ctx, promptRenderOpts)
       nodeToolHandle = await startNodeToolPart(
         sessionId, "workflow_prompt",
         { instructions: resolvedText, node: nodeLabel },
         currentDir, nodeMeta,
       )
-      result = await agentPrompt(sessionId, resolvedText, nodeModel, promptToolChoice)
+      const runSession = isolated ? await createIsolatedSession(sessionId, currentDir, nodeLabel) : sessionId
+      try {
+        result = await agentPrompt(runSession, resolvedText, nodeModel, promptToolChoice)
+      } finally {
+        // Close the one-shot isolated child session so it doesn't linger as `active`
+        // (default worker retention has no TTL, so the daemon never reaps it). Closing
+        // preserves the transcript; a close failure must never fail the node.
+        if (isolated) await Session.close(runSession).catch(() => {})
+      }
       await nodeToolHandle.finish(result)
 
     } else if (d.nodeType === NodeTypeId.Structured) {
       const rawSchema = (d.outputSchema as Record<string, unknown>) ?? { type: "object", properties: {} }
       const schema = resolveSchemaDescriptions(rawSchema, input, ctx)
-      const resolvedPrompt = resolveTemplate(instructions ?? "", input, ctx)
+      const resolvedPrompt = resolveTemplate(instructions ?? "", input, ctx, promptRenderOpts)
       const safeKey = (nodeKey ?? currentId).replace(/[^a-zA-Z0-9_]/g, "_").replace(/^([^a-zA-Z_])/, "_$1")
 
       nodeToolHandle = await startNodeToolPart(
@@ -466,7 +540,14 @@ async function runSubGraph({
         { node: nodeLabel, instructions: resolvedPrompt },
         currentDir, nodeMeta,
       )
-      const structured = await agentStructuredJson(sessionId, resolvedPrompt, schema, nodeModel)
+      const runSession = isolated ? await createIsolatedSession(sessionId, currentDir, nodeLabel) : sessionId
+      let structured: unknown
+      try {
+        structured = await agentStructuredJson(runSession, resolvedPrompt, schema, nodeModel)
+      } finally {
+        // See Prompt node: close the one-shot isolated child session; never fail the node on close.
+        if (isolated) await Session.close(runSession).catch(() => {})
+      }
       const renderLayout = (d.renderLayout ?? undefined) as Record<string, unknown> | undefined
       const displayProps = (d.schemaProps ?? undefined) as unknown[] | undefined
       await nodeToolHandle.finish(structured, {
@@ -592,7 +673,7 @@ async function runSubGraph({
             abort: new AbortController().signal,
             messageID: nodeToolHandle?.msgId,
             partID: nodeToolHandle?.partId,
-            instructions: instructions ? resolveTemplate(instructions, input, ctx) : undefined,
+            instructions: instructions ? resolveTemplate(instructions, input, ctx, pointerRenderOpts) : undefined,
             workflowContext: Object.keys(ctx).length > 0 ? { ...ctx } : undefined,
             workflowMeta: { ...nodeMeta, attempt },
           })
@@ -680,8 +761,18 @@ async function runSubGraph({
         }
       } else {
         const labelList = cases.map((c) => c.label).join(", ")
-        const inputContext = Object.keys(input).length > 0 ? `\nInput parameters: ${JSON.stringify(input)}` : ""
-        const ctxContext = Object.keys(ctx).length > 0 ? `\nWorkflow context: ${JSON.stringify(ctx)}` : ""
+        // Input params are usually small and may not be in session history (the Parameters node is
+        // optional), so inline their values by default — routing often depends on them. Fall back to
+        // a key-only manifest only for a pathologically large input to avoid bloating the prompt.
+        const inputJson = JSON.stringify(input)
+        const inputContext = Object.keys(input).length === 0
+          ? ""
+          : inputJson.length <= 2000
+            ? `\nInput parameters: ${inputJson}`
+            : `\nInput parameters (keys):\n${describeCtxManifest(input)}`
+        // The Decide agent runs in the shared session and can read the real prior outputs from
+        // history; it only needs the key manifest to route — not a full JSON dump of every value.
+        const ctxContext = Object.keys(ctx).length > 0 ? `\nAvailable context:\n${describeCtxManifest(ctx)}` : ""
         const raw = await agentPrompt(
           sessionId,
           `You are routing a workflow. Choose the correct branch based on the available data.${inputContext}${ctxContext}\n\nReply with exactly one of these labels (nothing else): ${labelList}`,
@@ -745,19 +836,28 @@ async function runSubGraph({
         items = rawArray.map((item) => typeof item === "string" ? resolveTemplate(item, input, ctx) : item)
       }
 
+      // concurrency <= 1 (the default) keeps every iteration on the shared `sessionId`,
+      // exactly as before — the loop body may prompt that session, and concurrent turns
+      // on one session would interleave message history and tool-call state. Only when
+      // concurrency > 1 does each iteration get its own isolated worker session (the
+      // same mechanism session_mode: "isolated" nodes use), so parallel iterations don't
+      // collide with each other or the parent session.
+      const concurrency = Math.max(1, Math.min(Math.floor(Number(params.concurrency) || 1), items.length || 1))
+
       nodeToolHandle = await startNodeToolPart(
         sessionId, "workflow_foreach",
-        { items: itemsMode === "inline" ? inlineItemsList : itemsExpr, item_variable: itemVar, count: items.length },
+        { items: itemsMode === "inline" ? inlineItemsList : itemsExpr, item_variable: itemVar, count: items.length, concurrency },
         currentDir, nodeMeta,
       )
 
-      const iterResults: unknown[] = []
+      const iterResults: unknown[] = new Array(items.length)
       const MAX_RETRIES = 3
       const RETRY_BASE_DELAY_MS = 2000
 
-      for (let i = 0; i < items.length; i++) {
+      const runIteration = async (i: number): Promise<unknown> => {
         const item = items[i]
         let iterCtx: Record<string, unknown> = { ...ctx, [itemVar]: item }
+        const runSessionId = concurrency > 1 ? await createIsolatedSession(sessionId, currentDir, `${nodeLabel} [${i}]`) : sessionId
 
         if (subWf && subWf.nodes.length > 0) {
           let attempt = 0
@@ -770,7 +870,7 @@ async function runSubGraph({
               await runSubGraph({
                 nodes: subWf.nodes,
                 edges: subWf.edges,
-                sessionId,
+                sessionId: runSessionId,
                 input,
                 ctx: iterCtx,
                 steps: iterSteps,
@@ -785,12 +885,17 @@ async function runSubGraph({
               if (attempt >= MAX_RETRIES) throw err
               const delay = RETRY_BASE_DELAY_MS * attempt
               const errMsg = err instanceof Error ? err.message : String(err)
-              SessionStatus.set(sessionId, {
-                type: "retry",
-                attempt,
-                message: `[${i}] ${errMsg.slice(0, 120)}`,
-                next: Date.now() + delay,
-              })
+              // Only meaningful on the shared session — concurrent iterations each run in
+              // their own isolated session, so there's no single "the session" to attribute
+              // a retry to; per-iteration failures are still visible via the `steps` labels.
+              if (concurrency === 1) {
+                SessionStatus.set(sessionId, {
+                  type: "retry",
+                  attempt,
+                  message: `[${i}] ${errMsg.slice(0, 120)}`,
+                  next: Date.now() + delay,
+                })
+              }
               await new Promise((r) => setTimeout(r, delay))
             }
           }
@@ -801,7 +906,23 @@ async function runSubGraph({
         const collected = collectKey
           ? (collectKey.startsWith("$") ? resolveRef(collectKey, input, iterCtx) : iterCtx[collectKey])
           : undefined
-        iterResults.push(collected !== undefined ? collected : item)
+        return collected !== undefined ? collected : item
+      }
+
+      if (concurrency <= 1) {
+        for (let i = 0; i < items.length; i++) {
+          iterResults[i] = await runIteration(i)
+        }
+      } else {
+        let nextIndex = 0
+        const worker = async () => {
+          while (true) {
+            const i = nextIndex++
+            if (i >= items.length) return
+            iterResults[i] = await runIteration(i)
+          }
+        }
+        await Promise.all(Array.from({ length: concurrency }, () => worker()))
       }
 
       result = JSON.stringify(iterResults)
@@ -985,6 +1106,18 @@ async function runSubGraph({
     // Structured/Output/ForEach/Variable already wrote parsed objects above; all other types write the string result.
     if (d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && d.nodeType !== NodeTypeId.ForEach && d.nodeType !== NodeTypeId.Variable && d.nodeType !== NodeTypeId.RunWorkflow && nodeKey !== undefined && result !== undefined) {
       ctx[nodeKey] = result
+    }
+
+    // Mark every ctx key this node produced as present in the shared session (its tool card is
+    // now in history), so downstream inline nodes can reference them as compact pointers. Covers
+    // explicit storeAs/nodeKey plus any auto-derived keys (e.g. Decide's label-based key) that
+    // appeared in ctx during this node's execution. Excludes the internal output sentinel.
+    for (const key of Object.keys(ctx)) {
+      if (key === "__workflow_output__") continue
+      if (!ctxKeysBefore.has(key) || key === storeAs || key === nodeKey) {
+        presentKeys.add(key)
+        keyLabels.set(key, nodeLabel)
+      }
     }
 
     const nodeEdges = adjacency.get(currentId) ?? []

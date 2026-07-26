@@ -10,6 +10,8 @@ export interface AskInput {
   patterns: string[]
   /** Broader patterns to persist at agent scope when the user replies "agent". */
   agent_patterns: string[]
+  /** Present when the request originates from a workflow node — the scope_id for a "workflow" reply. */
+  workflow_id?: string
   metadata?: Record<string, unknown>
   static_rules: Permission.StaticRule[]
   tool?: { message_id: string; call_id: string }
@@ -31,6 +33,7 @@ export function createStore(db: Permission.DB, emitter: Permission.Emitter) {
   const pending = new Map<string, PendingEntry>()
   const sessionCache = new Map<string, Permission.Rule[]>()
   const agentCache = new Map<string, Permission.Rule[]>()
+  const workflowCache = new Map<string, Permission.Rule[]>()
 
   function sessionRules(session_id: string): Permission.Rule[] {
     if (!sessionCache.has(session_id)) sessionCache.set(session_id, db.getRules("session", session_id))
@@ -42,8 +45,14 @@ export function createStore(db: Permission.DB, emitter: Permission.Emitter) {
     return agentCache.get(agent_id)!
   }
 
+  function workflowRules(workflow_id: string): Permission.Rule[] {
+    if (!workflowCache.has(workflow_id)) workflowCache.set(workflow_id, db.getRules("workflow", workflow_id))
+    return workflowCache.get(workflow_id)!
+  }
+
   function invalidate(scope: Permission.Scope, scope_id: string) {
     if (scope === "session") sessionCache.delete(scope_id)
+    else if (scope === "workflow") workflowCache.delete(scope_id)
     else agentCache.delete(scope_id)
   }
 
@@ -56,8 +65,12 @@ export function createStore(db: Permission.DB, emitter: Permission.Emitter) {
         if (staticMatch.action === "allow") continue
       }
 
-      // 2. Check DB rules: agent scope first, session scope overrides
-      const combined = [...agentRules(input.agent_id), ...sessionRules(input.session_id)]
+      // 2. Check DB rules: agent scope first, workflow scope, session scope overrides
+      const combined = [
+        ...agentRules(input.agent_id),
+        ...(input.workflow_id ? workflowRules(input.workflow_id) : []),
+        ...sessionRules(input.session_id),
+      ]
       const dbMatch = evaluateDB(input.resource, input.access, pattern, combined)
       if (dbMatch) {
         if (dbMatch.action === "deny") throw new Permission.DeniedError([dbMatch])
@@ -74,6 +87,7 @@ export function createStore(db: Permission.DB, emitter: Permission.Emitter) {
         access: input.access,
         patterns: input.patterns,
         agent_patterns: input.agent_patterns,
+        workflow_id: input.workflow_id,
         metadata: input.metadata ?? {},
         tool: input.tool,
       }
@@ -109,6 +123,44 @@ export function createStore(db: Permission.DB, emitter: Permission.Emitter) {
         })
         e.reject(new Permission.RejectedError())
       }
+      return
+    }
+
+    if (input.reply === "once") {
+      // One-time allow: unblock the caller without persisting any rule.
+      entry.resolve()
+      return
+    }
+
+    if (input.reply === "workflow") {
+      if (!entry.info.workflow_id) {
+        // No workflow context to scope a rule to — behave like "once".
+        entry.resolve()
+        return
+      }
+      const now = Date.now()
+      for (const pattern of entry.info.patterns) {
+        const rule: Permission.Rule = {
+          id: generateId(),
+          scope: "workflow",
+          scope_id: entry.info.workflow_id,
+          resource: entry.info.resource,
+          access: entry.info.access,
+          pattern,
+          action: "allow",
+          time_created: now,
+          time_updated: now,
+        }
+        db.saveRule(rule)
+        workflowCache.get(entry.info.workflow_id)?.push(rule)
+      }
+      invalidate("workflow", entry.info.workflow_id)
+      entry.resolve()
+      emitter.emit("permission.rules.updated", {
+        scope: "workflow",
+        scope_id: entry.info.workflow_id,
+      })
+      resolveAutoApproved(entry.info.session_id, entry.info.agent_id)
       return
     }
 
@@ -175,7 +227,11 @@ export function createStore(db: Permission.DB, emitter: Permission.Emitter) {
   function resolveAutoApproved(session_id: string, agent_id: string) {
     for (const [id, e] of pending) {
       if (e.info.session_id !== session_id) continue
-      const combined = [...agentRules(agent_id), ...sessionRules(session_id)]
+      const combined = [
+        ...agentRules(agent_id),
+        ...(e.info.workflow_id ? workflowRules(e.info.workflow_id) : []),
+        ...sessionRules(session_id),
+      ]
       const allAllowed = e.info.patterns.every((pattern) => {
         const match = evaluateDB(e.info.resource, e.info.access, pattern, combined)
         return match?.action === "allow"

@@ -66,6 +66,29 @@ export type Workflow = z.infer<typeof Workflow>
 
 // ─── Reference resolution ─────────────────────────────────────────────────────
 
+/** How a $ctx/$node reference embedded in prose is rendered by resolveTemplate.
+ *  - "value"   : inline the full referenced value (String(val)) — the historical behavior.
+ *  - "pointer" : render a compact citation instead of the full value, for nodes that run
+ *                inline in the shared session where the referenced output is already visible. */
+export type RefRenderMode = "value" | "pointer"
+
+export interface RefRenderOptions {
+  mode?: RefRenderMode
+  /** ctx keys whose producing node emitted a tool card during the current run. In "pointer"
+   *  mode a ref is only rendered as a pointer when its top-level key is present here; otherwise
+   *  it falls back to the full value. Keys hydrated from a prior run (resume) are conservatively
+   *  absent, so their refs expand to full text. */
+  presentKeys?: Set<string>
+  /** Produces the citation text for a pointer-eligible reference. `key` is the top-level ctx key,
+   *  `path` the optional dot-path after it, `label` a human-readable name for the producing step. */
+  renderPointer?: (key: string, path: string | undefined, label: string) => string
+}
+
+function defaultRenderPointer(key: string, path: string | undefined, label: string): string {
+  const field = path ? `.${path}` : ""
+  return `«output of the "${label}" step, shown above (referenced as $${key}${field})»`
+}
+
 export function resolveRef(
   value: string,
   input: Record<string, unknown>,
@@ -135,14 +158,36 @@ export function resolveTemplate(
   template: string,
   input: Record<string, unknown>,
   ctx: Record<string, unknown>,
+  opts?: RefRenderOptions,
 ): string {
   // Replace legacy $input.x / $ctx.x / $output.x AND new $nodeKey / $nodeKey.field
   // Path uses dot-separated identifiers (no trailing dot) so sentence punctuation
   // like "$ctx.today_date." does not get consumed as part of the path.
+  const pointerMode = opts?.mode === "pointer"
+  const presentKeys = opts?.presentKeys
+  const renderPointer = opts?.renderPointer ?? defaultRenderPointer
+
+  // A ctx-namespace reference is rendered as a compact pointer instead of its full value when:
+  //   - we're in pointer mode, AND
+  //   - the referenced top-level key was produced during the current run (present in the shared
+  //     session history). $input.x refs are never pointer-eligible: inputs are small params that
+  //     are not written as labeled cards into session history.
+  const asPointer = (key: string, path: string | undefined): string | undefined => {
+    if (!pointerMode) return undefined
+    if (presentKeys && !presentKeys.has(key)) return undefined
+    return renderPointer(key, path, key)
+  }
+
   return template.replace(
     /\$(input|output|ctx)\.([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)|\$([a-z][a-z0-9_]*)(?:\.([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*))?/g,
     (match, legacyNs, legacyPath, nodeKey, nodePath) => {
       if (legacyNs) {
+        if (legacyNs !== "input") {
+          // $ctx.x / $output.x — the top-level ctx key is the first path segment.
+          const [topKey, ...rest] = String(legacyPath).split(".")
+          const pointer = asPointer(topKey!, rest.length > 0 ? rest.join(".") : undefined)
+          if (pointer !== undefined) return pointer
+        }
         const val = getPath(legacyNs === "input" ? input : ctx, legacyPath)
         return val == null ? "" : String(val)
       }
@@ -151,6 +196,8 @@ export function resolveTemplate(
           const val = nodePath ? getPath(input, nodePath) : input
           return val == null ? "" : String(val)
         }
+        const pointer = asPointer(nodeKey, nodePath || undefined)
+        if (pointer !== undefined) return pointer
         const nodeVal = ctx[nodeKey]
         const val = nodePath && nodeVal != null && typeof nodeVal === "object"
           ? getPath(nodeVal as Record<string, unknown>, nodePath)
@@ -160,4 +207,29 @@ export function resolveTemplate(
       return match
     }
   )
+}
+
+/** Compact one-line-per-key description of the workflow ctx, naming each key and a short
+ *  type/shape hint but never the full value. Used in place of JSON.stringify(ctx) for prompts
+ *  that run in the shared session (Decide routing, agent-driven tool fill) where the real
+ *  outputs are already visible in the session history — the model only needs the key manifest. */
+export function describeCtxManifest(ctx: Record<string, unknown>): string {
+  const numberFmt = new Intl.NumberFormat("en-US")
+  const describe = (val: unknown): string => {
+    if (val === null) return "null"
+    if (val === undefined) return "undefined"
+    if (typeof val === "string") return `string (${numberFmt.format(val.length)} chars)`
+    if (typeof val === "number") return "number"
+    if (typeof val === "boolean") return "boolean"
+    if (Array.isArray(val)) return `array[${val.length}]`
+    if (typeof val === "object") {
+      const keys = Object.keys(val as Record<string, unknown>)
+      const shown = keys.slice(0, 8).join(", ")
+      return `object { ${shown}${keys.length > 8 ? ", …" : ""} }`
+    }
+    return typeof val
+  }
+  return Object.entries(ctx)
+    .map(([key, val]) => `- ${key}: ${describe(val)}`)
+    .join("\n")
 }

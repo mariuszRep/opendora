@@ -3,7 +3,7 @@ import z from "zod"
 export namespace Permission {
   // ── Enums ──────────────────────────────────────────────────────────────────
 
-  export const Scope = z.enum(["session", "agent"]).meta({ ref: "PermissionScope" })
+  export const Scope = z.enum(["session", "agent", "workflow"]).meta({ ref: "PermissionScope" })
   export type Scope = z.infer<typeof Scope>
 
   export const Access = z.enum(["read", "write", "execute", "*"]).meta({ ref: "PermissionAccess" })
@@ -12,7 +12,7 @@ export namespace Permission {
   export const Action = z.enum(["allow", "deny", "ask"]).meta({ ref: "PermissionAction" })
   export type Action = z.infer<typeof Action>
 
-  export const Reply = z.enum(["session", "agent", "reject"]).meta({ ref: "PermissionReply" })
+  export const Reply = z.enum(["session", "agent", "reject", "workflow", "once"]).meta({ ref: "PermissionReply" })
   export type Reply = z.infer<typeof Reply>
 
   // ── Persisted rule (stored in DB) ─────────────────────────────────────────
@@ -54,6 +54,8 @@ export namespace Permission {
       patterns: z.string().array(),
       /** Broader patterns to persist at agent scope when reply is "agent". */
       agent_patterns: z.string().array(),
+      /** Present when the request originates from a workflow node — the scope_id for a "workflow" reply. */
+      workflow_id: z.string().optional(),
       metadata: z.record(z.string(), z.any()),
       tool: z
         .object({

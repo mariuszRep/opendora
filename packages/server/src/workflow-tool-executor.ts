@@ -2,6 +2,8 @@ import type { z } from "zod"
 import { tool as aiTool, jsonSchema } from "ai"
 import { Session } from "@projectflows/session/session"
 import { SessionPrompt } from "@projectflows/session/prompt"
+import { Delegation } from "@projectflows/session/delegation"
+import { SessionStatus } from "@projectflows/session/status"
 import { Agent } from "@projectflows/runtime/agent"
 import { Instance } from "@projectflows/runtime/instance"
 import { Question } from "@projectflows/runtime/question"
@@ -12,6 +14,7 @@ import { addSkillTools, getSkillTools } from "@projectflows/session/skill-tools"
 import type { ToolExecutor } from "@projectflows/workflow/executor"
 import { WorkflowStorage } from "@projectflows/workflow/storage"
 import { runWorkflowDetailed, WorkflowValidationError } from "@projectflows/workflow/runner"
+import { describeCtxManifest } from "@projectflows/workflow/refs"
 import { mergeArgs, formatValidationFeedback, toJsonSchema } from "./workflow-tool-fill"
 
 /**
@@ -107,7 +110,14 @@ export function createWorkflowToolExecutor(): ToolExecutor {
           setCwd: (input: { sessionID: string; cwd: string }) => Session.setCwd(input),
           ensureMainSession: (agentID: string) => Session.ensureMainSession(agentID),
           setReplyToSessionID: (input: any) => Session.setReplyToSessionID(input),
+          getStatus: async (sessionId: string) => SessionStatus.get(sessionId),
         },
+        delegation: {
+          record: (input: any) => Delegation.record(input),
+          finalizeSync: (edgeID: string, input: any) => Delegation.finalizeSync(edgeID, input),
+          countPendingForAsker: (askerSessionID: string) => Delegation.countPendingForAsker(askerSessionID),
+        },
+        promptCancel: (sessionID: string) => SessionPrompt.cancel(sessionID, { cascade: true }),
       },
     })
 
@@ -132,9 +142,12 @@ export function createWorkflowToolExecutor(): ToolExecutor {
     const fixedDesc = Object.entries(fixedArgs)
       .map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`)
       .join("\n")
-    const contextEntries = ctx.workflowContext ? Object.entries(ctx.workflowContext) : []
-    const contextDesc = contextEntries.length > 0
-      ? contextEntries.map(([k, v]) => `  ${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`).join("\n")
+    // This fill turn runs in the shared workflow session, so the prior steps' outputs are already
+    // in history — inject only a compact key manifest, not the full serialized values, to avoid
+    // duplicating that context.
+    const workflowContext = ctx.workflowContext as Record<string, unknown> | undefined
+    const contextDesc = workflowContext && Object.keys(workflowContext).length > 0
+      ? describeCtxManifest(workflowContext)
       : ""
     const basePrompt = [
       ctx.instructions ? ctx.instructions : `Call the tool \`${toolId}\` now.`,

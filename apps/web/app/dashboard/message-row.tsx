@@ -57,6 +57,7 @@ export type MessageRowProps = {
   messagesLength: number
   status: "ready" | "submitted" | "streaming" | "error"
   sessions: Session[]
+  activeSessions?: Set<string>
   sessionsById: Map<string, Session>
   agentsById: Map<string, Agent & { _id: string }>
   agentsByName: Map<string, Agent & { _id: string }>
@@ -111,6 +112,7 @@ export const MessageRow = React.memo(function MessageRow({
   messagesLength,
   status,
   sessions,
+  activeSessions,
   sessionsById,
   agentsById,
   agentsByName,
@@ -485,6 +487,7 @@ export const MessageRow = React.memo(function MessageRow({
                             handleGoToMessage={handleGoToMessage}
                             delegateViewModes={delegateViewModes}
                             setDelegateViewModes={setDelegateViewModes}
+                            activeSessions={activeSessions}
                             todoViewModes={todoViewModes}
                             setTodoViewModes={setTodoViewModes}
                             sessionTreeViewModes={sessionTreeViewModes}
@@ -575,6 +578,7 @@ export const MessageRow = React.memo(function MessageRow({
                         handleGoToMessage={handleGoToMessage}
                         delegateViewModes={delegateViewModes}
                         setDelegateViewModes={setDelegateViewModes}
+                        activeSessions={activeSessions}
                         todoViewModes={todoViewModes}
                         setTodoViewModes={setTodoViewModes}
                         sessionTreeViewModes={sessionTreeViewModes}

@@ -35,7 +35,9 @@
     "./token-usage":            "./src/token-usage.ts",
     "./token-usage-file":       "./src/token-usage-file.ts",
     "./share-next":             "./src/share-next.ts",
-    "./graph-writes":           "./src/graph-writes.ts"
+    "./graph-writes":           "./src/graph-writes.ts",
+    "./delegation":             "./src/delegation.ts",
+    "./delegation-listener":    "./src/delegation-listener.ts"
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",

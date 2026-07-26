@@ -20,6 +20,7 @@ export type EdgeType =
   | "used"             // entry → tool/artifact/resource
   | "branch"           // entry → entry (fan-out)
   | "merge"            // entry → entry (fan-in)
+  | "delegated_to"     // session (asker) → entry (child user-message that answers it)
 
 // ─── Graph node types ────────────────────────────────────────────────────────
 

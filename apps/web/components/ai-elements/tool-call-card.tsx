@@ -52,6 +52,7 @@ export type ToolCallCardProps = {
   handleGoToMessage: (sessionId: string, messageId: string) => void
   delegateViewModes: Record<string, ViewMode>
   setDelegateViewModes: (updater: (prev: Record<string, ViewMode>) => Record<string, ViewMode>) => void
+  activeSessions?: Set<string>
 
   // todo
   todoViewModes: Record<string, ViewMode>
@@ -100,6 +101,7 @@ export function ToolCallCard({
   handleGoToMessage,
   delegateViewModes,
   setDelegateViewModes,
+  activeSessions,
   todoViewModes,
   setTodoViewModes,
   sessionTreeViewModes,
@@ -191,6 +193,7 @@ export function ToolCallCard({
           sessions={sessions}
           onSelectSession={selectSession}
           onGoToMessage={handleGoToMessage}
+          activeSessions={activeSessions}
         />
       ),
     },
