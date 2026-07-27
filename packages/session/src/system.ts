@@ -215,35 +215,24 @@ export namespace SystemPrompt {
       }
     }
 
-    // 4b. Available Workflows — list assigned workflows so the agent knows what to run
-    const hasWorkflowRunTool = agentToolsList?.includes("workflow_run") ?? false
-    if (hasWorkflowRunTool) {
-      const agentWorkflowIds = input.agent?.config?.workflows as string[] | undefined
-      if (agentWorkflowIds?.length) {
-        const allWorkflows: any[] = await cfg.workflow?.list?.() ?? []
-        const visibleWorkflows = allWorkflows.filter((w: any) => agentWorkflowIds.includes(w.id))
-        // Include any assigned ids that didn't resolve, so the agent still sees them
-        const resolvedIds = new Set(visibleWorkflows.map((w: any) => w.id))
-        const unresolved = agentWorkflowIds.filter((id) => !resolvedIds.has(id))
-
-        const hasParams = (w: any): boolean => {
-          const paramNode = (w.nodes ?? []).find((n: any) => n.data?.nodeType === "parameters")
-          return ((paramNode?.data?.workflowParameters ?? []) as any[]).length > 0
-        }
-
-        const resolvedRows = visibleWorkflows.map((w: any) => {
-          const name = w.name && w.name !== w.id ? `${w.id} (${w.name})` : w.id
-          const desc = (w.description ?? "").replace(/\|/g, "\\|")
-          return `| ${name} | ${desc} | ${hasParams(w) ? "Yes" : "No"} |`
-        })
-        const unresolvedRows = unresolved.map((id) => `| ${id} | | |`)
-        const allRows = [...resolvedRows, ...unresolvedRows]
-
-        if (allRows.length > 0) {
-          const table = ["| Workflow | Description | Has Parameters |", "| --- | --- | --- |", ...allRows].join("\n")
+    // 4b. Available Workflows — list workflows granted via workflow__<id> tools, same shape
+    // as "Available Delegations" below (section 6) — each is already a distinct, named,
+    // fully-described tool, so this is a discovery aid, not call instructions.
+    const hasWorkflowTool = agentToolsList?.some((t) => t.startsWith("workflow__"))
+    const workflowAgentId = input.agent?.id as string | undefined
+    if (hasWorkflowTool && workflowAgentId && cfg.permissionNext?.listRules && cfg.permissionNext?.wildcardMatch) {
+      const workflowRules = cfg.permissionNext
+        .listRules("agent", workflowAgentId)
+        .filter((r) => r.resource === "workflow" && r.action === "allow")
+      if (workflowRules.length > 0) {
+        const allWorkflows: any[] = (await cfg.workflow?.list?.()) ?? []
+        const entries = allWorkflows
+          .filter((w: any) => workflowRules.some((r) => cfg.permissionNext!.wildcardMatch!(w.id, r.pattern)))
+          .map((w: any) => `- **${w.id}**${w.description ? `: ${w.description}` : ""}`)
+        if (entries.length > 0) {
           sections.push({
             label: "Available Workflows",
-            content: `# Available Workflows\nIf a workflow shows **Yes** in the "Has Parameters" column, call \`workflow_parameters\` with the workflow ID before calling \`workflow_run\`.\n\n${table}`,
+            content: `${entries.join("\n")}`,
           })
         }
       }

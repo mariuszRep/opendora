@@ -157,27 +157,42 @@ function websearch(info: ToolCall) {
 function agentDelegate(info: ToolCall) {
   const input = info.part.state.input
   const status = info.part.state.status
+  const isWorkflow = info.part.tool?.startsWith("workflow__")
   // agent__<id>'s target agent comes from metadata.agent, or failing that the
   // agent__ prefix stripped off the tool name; its input has no
   // description/subagent_type — the task description is params.title, falling
-  // back to the prompt text.
-  const rawAgent =
-    typeof info.metadata.agent === "string" && info.metadata.agent.trim().length > 0
-      ? info.metadata.agent
-      : info.part.tool?.replace(/^agent__/, "") || "unknown"
-  const agent = Locale.titlecase(rawAgent)
-  const desc =
-    typeof input.title === "string" && input.title.trim().length > 0
-      ? input.title
-      : typeof input.prompt === "string" && input.prompt.trim().length > 0
-        ? input.prompt
-        : undefined
+  // back to the prompt text. workflow__<id> follows the same shape via
+  // metadata.workflowName/workflowId (see workflow-target.ts), with structured
+  // params.input instead of a free-text prompt.
+  const rawTarget = isWorkflow
+    ? (typeof info.metadata.workflowName === "string" && info.metadata.workflowName.trim().length > 0
+        ? info.metadata.workflowName
+        : typeof info.metadata.workflowId === "string" && info.metadata.workflowId.trim().length > 0
+          ? info.metadata.workflowId
+          : info.part.tool?.replace(/^workflow__/, "") || "unknown")
+    : (typeof info.metadata.agent === "string" && info.metadata.agent.trim().length > 0
+        ? info.metadata.agent
+        : info.part.tool?.replace(/^agent__/, "") || "unknown")
+  const target = Locale.titlecase(rawTarget)
+  const desc = isWorkflow
+    ? (input.input && typeof input.input === "object" && Object.keys(input.input).length > 0
+        ? JSON.stringify(input.input)
+        : undefined)
+    : (typeof input.title === "string" && input.title.trim().length > 0
+        ? input.title
+        : typeof input.prompt === "string" && input.prompt.trim().length > 0
+          ? input.prompt
+          : undefined)
   const icon = status === "error" ? "✗" : status === "running" ? "•" : "✓"
-  const name = desc ?? `${agent} Task`
+  const name = desc ?? (isWorkflow ? `Run ${target}` : `${target} Task`)
+  const sessionId = typeof info.metadata.sessionId === "string" ? info.metadata.sessionId : undefined
+  // The session link needs to show right away — as soon as it's known, not just once the
+  // call completes — same standard as the web/TUI renderers.
+  const sessionSuffix = sessionId ? ` → session: ${sessionId}` : ""
   inline({
     icon,
-    title: name,
-    description: desc ? `${agent} Worker` : undefined,
+    title: name + sessionSuffix,
+    description: desc ? (isWorkflow ? `Run ${target}` : `${target} Worker`) : undefined,
   })
 }
 
@@ -422,7 +437,7 @@ export const RunCommand = cmd({
           if (part.tool === "edit") return edit(props(part))
           if (part.tool === "codesearch") return codesearch(props(part))
           if (part.tool === "websearch") return websearch(props(part))
-          if (part.tool?.startsWith("agent__")) return agentDelegate(props(part))
+          if (part.tool?.startsWith("agent__") || part.tool?.startsWith("workflow__") || part.tool === "session_message") return agentDelegate(props(part))
           if (part.tool === "todowrite") return todo(props(part))
           if (part.tool === "skill") return skill(props(part))
           return fallback(part)
@@ -477,7 +492,7 @@ export const RunCommand = cmd({
 
             if (
               part.type === "tool" &&
-              part.tool?.startsWith("agent__") &&
+              (part.tool?.startsWith("agent__") || part.tool?.startsWith("workflow__") || part.tool === "session_message") &&
               part.state.status === "running" &&
               args.format !== "json"
             ) {

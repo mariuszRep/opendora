@@ -226,6 +226,20 @@ export namespace ProviderError {
         metadata?: Record<string, string>
       }
 
+  /**
+   * OpenCode Zen's router can return HTTP 401 with a structured ModelError body
+   * ("No provider available") when no upstream provider is available for the model.
+   * This is a transient capacity issue, not a credential failure — the structured
+   * body must override the status code so it's classified as retryable server overload
+   * instead of a hard auth failure.
+   */
+  function isOpenCodeZenModelUnavailable(providerID: string, error: APICallError): boolean {
+    if (!providerID.startsWith("opencode")) return false
+    if (error.statusCode !== 401) return false
+    const body = json(error.responseBody)
+    return !!body && body.type === "error" && body.error?.type === "ModelError" && body.error?.message === "No provider available"
+  }
+
   export function parseAPICallError(input: { providerID: string; error: APICallError }): ParsedAPICallError {
     const m = message(input.providerID, input.error)
     if (isOverflow(m)) {
@@ -237,15 +251,18 @@ export namespace ProviderError {
       }
     }
 
+    const modelUnavailable = isOpenCodeZenModelUnavailable(input.providerID, input.error)
     const metadata = input.error.url ? { url: input.error.url } : undefined
     return {
       type: "api_error",
-      errorKind: classifyErrorKind(input.error.statusCode, m),
+      errorKind: modelUnavailable ? "server" : classifyErrorKind(input.error.statusCode, m),
       message: m,
       statusCode: input.error.statusCode,
-      isRetryable: input.providerID.startsWith("openai")
-        ? isOpenAiErrorRetryable(input.error)
-        : input.error.isRetryable,
+      isRetryable: modelUnavailable
+        ? true
+        : input.providerID.startsWith("openai")
+          ? isOpenAiErrorRetryable(input.error)
+          : input.error.isRetryable,
       responseHeaders: input.error.responseHeaders,
       responseBody: input.error.responseBody,
       metadata,

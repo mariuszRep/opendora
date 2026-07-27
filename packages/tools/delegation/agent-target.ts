@@ -27,144 +27,72 @@ const DEFAULT_RESULT_SCHEMA = {
   required: ["status", "summary"],
 }
 
-const parameters = z
-  .object({
-    action: z
-      .enum(["create_session", "message_session", "reply_session"])
-      .describe(
-        "create_session: start a new session with the target agent and an initial message. " +
-          "message_session: post into an existing session of the target agent and trigger its response — " +
-          "use this for follow-up questions into a session you (or another agent) already spawned, instead " +
-          "of spawning a new one and duplicating work. " +
-          "reply_session: post a message into an existing session as an ingest — does NOT trigger a new turn.",
-      ),
-    session_id: z
-      .string()
-      .describe("Existing session ID. Required for message_session and reply_session. Ignored for create_session.")
-      .optional(),
-    session_type: z
-      .enum(["worker", "scope", "scratchpad", "role"])
-      .describe(
-        "Type of new session to create. Only used by create_session. Overrides `retain` when set explicitly.",
-      )
-      .optional(),
-    retain: z
-      .enum(["disposable", "conversational"])
-      .describe(
-        "create_session only. 'conversational' keeps the child as a durable scope session so it can field " +
-          "follow-up questions later via message_session — use this whenever the task is exploratory or you " +
-          "expect to need clarification. 'disposable' uses a short-lived worker session for one-shot tasks. " +
-          "Defaults to 'conversational' for async spawns and 'disposable' for sync ones.",
-      )
-      .optional(),
-    title: z.string().describe("Human-readable session title. Only used by create_session.").optional(),
-    prompt: z
-      .string()
-      .describe("Message to send. Required for create_session and message_session.")
-      .optional(),
-    message: z.string().describe("Text content to post. Required for reply_session.").optional(),
-    data: z
-      .record(z.string(), z.unknown())
-      .describe("Optional structured JSON payload appended to a reply_session message.")
-      .optional(),
-    mode: z
-      .enum(["sync", "async"])
-      .describe(
-        "create_session/message_session only. 'sync' blocks until the target agent replies inline. " +
-          "'async' fires without blocking — you will be automatically notified in this session when it " +
-          "finishes; do not poll or wait for it yourself. Defaults to 'async' when reply_to is set, else 'sync'.",
-      )
-      .optional(),
-    reply_to: z
-      .string()
-      .describe(
-        "create_session/message_session only. Routes the automatic completion notification to this session " +
-          "instead of the caller — use for spawn-and-forward (a coordinator dispatching work whose results " +
-          "should land in a reporting session). Optional; async delegations are notified back to the caller " +
-          "by default.",
-      )
-      .optional(),
-    skills: z
-      .array(z.string())
-      .describe("create_session only. Skill names to preload into the new session before the prompt is posted.")
-      .optional(),
-    result_schema: z
-      .union([z.literal("default"), z.record(z.string(), z.unknown())])
-      .describe(
-        "create_session/message_session only. Forces the child's final reply through structured output " +
-          "instead of leaving 'done' to be inferred from prose. Pass 'default' for the built-in " +
-          "{status: done|partial|blocked, summary, artifacts?, open_questions?} verdict schema, or your own " +
-          "JSON Schema object. Leave unset for conversational children where prose is the point.",
-      )
-      .optional(),
-  })
-  .superRefine((value, ctx) => {
-    if (value.action === "create_session" && !value.prompt) {
-      ctx.addIssue({ code: "custom", path: ["prompt"], message: "prompt is required for create_session" })
-    }
-    if (value.action === "message_session") {
-      if (!value.session_id) {
-        ctx.addIssue({ code: "custom", path: ["session_id"], message: "session_id is required for message_session" })
-      }
-      if (!value.prompt) {
-        ctx.addIssue({ code: "custom", path: ["prompt"], message: "prompt is required for message_session" })
-      }
-    }
-    if (value.action === "reply_session") {
-      if (!value.session_id) {
-        ctx.addIssue({ code: "custom", path: ["session_id"], message: "session_id is required for reply_session" })
-      }
-      if (!value.message) {
-        ctx.addIssue({ code: "custom", path: ["message"], message: "message is required for reply_session" })
-      }
-    }
-  })
-
-/** Pure — no I/O. deny wins; an empty allow list means "all allowed". */
-function evaluateSendPolicy(policy: { allow?: string[]; deny?: string[] } | null | undefined, actorID: string): "allow" | "deny" {
-  if (!policy) return "allow"
-  if (policy.deny?.includes(actorID)) return "deny"
-  if (policy.allow && policy.allow.length > 0 && !policy.allow.includes(actorID)) return "deny"
-  return "allow"
-}
-
-/** Ancestor walk to the root session — same technique session_tree uses to find the true root. */
-async function findRoot(sessionSvc: any, sessionID: string): Promise<string> {
-  const seen = new Set<string>([sessionID])
-  let cursor = await sessionSvc.get(sessionID).catch(() => undefined)
-  let rootID = sessionID
-  while (cursor?.parentSessionID && !seen.has(cursor.parentSessionID)) {
-    seen.add(cursor.parentSessionID)
-    rootID = cursor.parentSessionID
-    cursor = await sessionSvc.get(cursor.parentSessionID).catch(() => undefined)
-  }
-  return rootID
-}
+const parameters = z.object({
+  session_type: z
+    .enum(["worker", "scope", "scratchpad", "role"])
+    .describe("Type of new session to create. Overrides `retain` when set explicitly.")
+    .optional(),
+  retain: z
+    .enum(["disposable", "conversational"])
+    .describe(
+      "'conversational' keeps the child as a durable scope session so it can field follow-up questions later " +
+        "via session_message — use this whenever the task is exploratory or you expect to need clarification. " +
+        "'disposable' uses a short-lived worker session for one-shot tasks. Defaults to 'conversational' for " +
+        "async spawns and 'disposable' for sync ones.",
+    )
+    .optional(),
+  title: z.string().describe("Human-readable session title.").optional(),
+  prompt: z.string().describe("Message to send to start the session."),
+  mode: z
+    .enum(["sync", "async"])
+    .describe(
+      "'sync' blocks until the target agent replies inline. 'async' fires without blocking — you will be " +
+        "automatically notified in this session when it finishes; do not poll or wait for it yourself. " +
+        "Defaults to 'async' when reply_to is set, else 'sync'.",
+    )
+    .optional(),
+  reply_to: z
+    .string()
+    .describe(
+      "Routes the automatic completion notification to this session instead of the caller — use for " +
+        "spawn-and-forward (a coordinator dispatching work whose results should land in a reporting session). " +
+        "Optional; async delegations are notified back to the caller by default.",
+    )
+    .optional(),
+  skills: z
+    .array(z.string())
+    .describe("Skill names to preload into the new session before the prompt is posted.")
+    .optional(),
+  result_schema: z
+    .union([z.literal("default"), z.record(z.string(), z.unknown())])
+    .describe(
+      "Forces the child's final reply through structured output instead of leaving 'done' to be inferred from " +
+        "prose. Pass 'default' for the built-in {status: done|partial|blocked, summary, artifacts?, " +
+        "open_questions?} verdict schema, or your own JSON Schema object. Leave unset for conversational " +
+        "children where prose is the point.",
+    )
+    .optional(),
+})
 
 /**
- * Builds a Tool.Info for a single delegation target agent, covering the 3 interaction modes
- * (create_session / message_session / reply_session) via an `action` param instead of a
- * free-text `agent` param. No allowlist check inside execute() for WHICH agents can be targeted —
- * the tool's mere presence in the caller's available tools (granted implicitly by
- * LLM.filterToolsByAgent from the caller's "agent"-resource permission rules) IS that authorization.
- * See packages/session/src/llm.ts filterToolsByAgent and packages/runtime/src/agent.ts.
+ * Builds a Tool.Info for a single delegation target agent — spawns a new session with this
+ * agent and an initial prompt. No allowlist check inside execute() for WHICH agents can be
+ * targeted — the tool's mere presence in the caller's available tools (granted implicitly by
+ * LLM.filterToolsByAgent from the caller's "agent"-resource permission rules) IS that
+ * authorization. See packages/session/src/llm.ts filterToolsByAgent and packages/runtime/src/agent.ts.
  *
- * message_session/reply_session on a session OUTSIDE the caller's own subtree additionally go
- * through ctx.ask (same convention session_tree uses for cross-session reads) and respect the
- * target session's sendPolicy — within your own subtree (something you or an ancestor spawned),
- * no prompt is needed.
+ * Create-only: following up into an existing session (whether spawned by this tool or by a
+ * workflow__<id> tool) goes through the generic session_message tool instead — neither
+ * message nor reply actually need a baked-in target agent id, since the session's own stored
+ * agentID already says who owns it. See registry/tools/sessions/src/session-message.ts.
  */
 export function createAgentTargetTool(target: AgentTarget): Tool.Info {
   const description = [
-    `Create a session with, message, or reply to the "${target.name}" agent.`,
+    `Create a session with the "${target.name}" agent and send it an initial prompt.`,
     target.description ? `${target.name}: ${target.description}` : undefined,
     "",
-    "Actions:",
-    "- create_session: start a new session with an initial message.",
-    "- message_session: post a follow-up into an existing session and trigger a response — prefer this over " +
-      "create_session when you already have a live session with this agent and just need clarification or a " +
-      "small additional task, rather than duplicating the exploration/work from scratch.",
-    "- reply_session: post a message into an existing session without triggering a new turn (ingest).",
+    "To follow up into the resulting session later (or into any other session), use session_message instead " +
+      "of spawning a new one and duplicating work.",
   ]
     .filter(Boolean)
     .join("\n")
@@ -176,64 +104,10 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
       const h = host(ctx)
       // Cast: the host-provided session service includes create/createNext at runtime
       // (packages/session/src/prompt.ts resolveTools wiring) but they predate the
-      // HostServices.session type declaration — same widening delegate.ts/reply.ts used.
+      // HostServices.session type declaration — same widening used throughout.
       const sessionSvc = h.session as any
       if (!sessionSvc) throw new Error("session service not available")
 
-      // ── Cross-subtree gate + sendPolicy — applies to any call naming an existing session_id ──
-      if (params.session_id && (params.action === "message_session" || params.action === "reply_session")) {
-        const target_ = await sessionSvc.get(params.session_id)
-        if (!target_) throw new Error(`Session not found: ${params.session_id}`)
-
-        const [callerRoot, targetRoot] = await Promise.all([
-          findRoot(sessionSvc, ctx.sessionID),
-          findRoot(sessionSvc, params.session_id),
-        ])
-        if (callerRoot !== targetRoot) {
-          await ctx.ask({
-            permission: "session_get",
-            patterns: [],
-            always: ["*"],
-            metadata: { sessionId: params.session_id },
-          })
-        }
-
-        if (evaluateSendPolicy(target_.sendPolicy, ctx.agent) === "deny") {
-          throw new Error(`Session ${params.session_id} does not accept messages from ${ctx.agent}.`)
-        }
-      }
-
-      if (params.action === "reply_session") {
-        const message =
-          params.data !== undefined
-            ? `${params.message}\n\n<result_data>\n${JSON.stringify(params.data, null, 2)}\n</result_data>`
-            : params.message!
-
-        if (!sessionSvc.reply) throw new Error("session reply service not available")
-        const msg = (await sessionSvc.reply({
-          sessionID: params.session_id!,
-          agentID: ctx.agent,
-          message,
-          parentMessageID: ctx.messageID,
-        })) as any
-
-        return {
-          title: `Reply → ${params.session_id!.slice(0, 8)}…`,
-          metadata: {
-            sessionId: params.session_id as string | undefined,
-            messageId: msg?.id,
-            agent: target.id,
-            kind: "reply" as string,
-            mode: undefined as string | undefined,
-            created: undefined as boolean | undefined,
-            action: params.action as string,
-            data: params.data as Record<string, unknown> | undefined,
-          },
-          output: `Message posted to session ${params.session_id}.`,
-        }
-      }
-
-      // create_session / message_session
       const promptFn = h.prompt
       if (!promptFn) throw new Error("prompt service not available")
       const resolvePromptParts = h.resolvePromptParts
@@ -253,60 +127,45 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
         }
       }
 
-      let targetSessionId: string
-      let created = false
-
-      if (params.action === "message_session") {
-        targetSessionId = params.session_id!
-      } else {
-        const caller = await sessionSvc.get(ctx.sessionID)
-        const spawnDepth = (caller?.spawnDepth ?? 0) + 1
-        if (spawnDepth > MAX_SPAWN_DEPTH) {
-          throw new Error(
-            `Delegation depth limit reached (${MAX_SPAWN_DEPTH}). Do this work directly instead of spawning another agent.`,
-          )
-        }
-
-        const retain = params.retain ?? (wait ? "disposable" : "conversational")
-        const sessionType = params.session_type ?? (retain === "conversational" ? "scope" : "worker")
-        const newSession = (await sessionSvc.createNext?.({
-          title: params.title ?? `Task (@${target.id})`,
-          sessionType,
-          agentID: target.id,
-          ownerID: ctx.agent,
-          ownerKind: "agent",
-          parentSessionID: ctx.sessionID,
-          spawnDepth,
-          ...(replyToSessionID ? { replyToSessionID } : {}),
-        })) as any
-        if (!newSession?.id) throw new Error("Failed to create session")
-        targetSessionId = newSession.id
-        created = true
+      const caller = await sessionSvc.get(ctx.sessionID)
+      const spawnDepth = (caller?.spawnDepth ?? 0) + 1
+      if (spawnDepth > MAX_SPAWN_DEPTH) {
+        throw new Error(
+          `Delegation depth limit reached (${MAX_SPAWN_DEPTH}). Do this work directly instead of spawning another agent.`,
+        )
       }
 
-      if (targetSessionId === ctx.sessionID) {
-        throw new Error(`Cannot target the current session (${targetSessionId}).`)
-      }
+      const retain = params.retain ?? (wait ? "disposable" : "conversational")
+      const sessionType = params.session_type ?? (retain === "conversational" ? "scope" : "worker")
+      const newSession = (await sessionSvc.createNext?.({
+        title: params.title ?? `Task (@${target.id})`,
+        sessionType,
+        agentID: target.id,
+        ownerID: ctx.agent,
+        ownerKind: "agent",
+        parentSessionID: ctx.sessionID,
+        spawnDepth,
+        ...(replyToSessionID ? { replyToSessionID } : {}),
+      })) as any
+      if (!newSession?.id) throw new Error("Failed to create session")
+      const targetSessionId = newSession.id
 
-      if (replyToSessionID && !created && sessionSvc.setReplyToSessionID) {
-        await sessionSvc.setReplyToSessionID({ sessionID: targetSessionId, replyToSessionID })
-      }
-
-      // Unlock this caller's own agent__<caller> tool in the target session so a downstream
-      // agent can reply/message back even without a standing allow rule for the caller
-      // (mirrors skill_load's per-session tool-unlock mechanism).
-      if (h.skillTools?.add && ctx.agent) {
-        h.skillTools.add(targetSessionId, [`agent__${ctx.agent}`])
+      // Unlock this caller's own session_message tool in the child so it can reply/message
+      // back even without a standing grant of its own (mirrors skill_load's per-session
+      // tool-unlock mechanism). session_message is generic/non-per-target, so unlocking it
+      // once here covers every future reply from this child, not just the return-path hint.
+      if (h.skillTools?.add) {
+        h.skillTools.add(targetSessionId, ["session_message"])
       }
 
       ctx.metadata({
-        title: params.title ?? `${params.action} → ${target.id}`,
-        metadata: { sessionId: targetSessionId, agent: target.id, mode: resolvedMode, created, action: params.action },
+        title: params.title ?? `Delegate → ${target.id}`,
+        metadata: { sessionId: targetSessionId, agent: target.id, mode: resolvedMode, created: true, action: "create_session" },
       })
 
-      const promptParts = (await resolvePromptParts(params.prompt!)) as any[]
+      const promptParts = (await resolvePromptParts(params.prompt)) as any[]
 
-      if (params.action === "create_session" && params.skills?.length && created) {
+      if (params.skills?.length) {
         const skillSvc = h.skills
         if (skillSvc) {
           for (const skillName of params.skills) {
@@ -338,7 +197,7 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
           type: "text",
           text: [
             `Return path: ${replyToSessionID}`,
-            "When you complete this task, use your agent__<caller> reply_session action to send results back.",
+            "When you complete this task, use session_message (action: reply) to send results back.",
           ].join("\n"),
           hidden: true,
         })
@@ -381,11 +240,6 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
           sessionID: targetSessionId,
           agent: target.id,
           messageID: childMessageID,
-          // Follow-ups queue behind the target's current turn instead of throwing on busy or
-          // racing its in-flight loop — safe because a queued message on an idle session is
-          // activated immediately on the very next loop iteration, and on a busy session it
-          // is picked up at the next natural turn boundary.
-          queued: params.action === "message_session",
           noWait: !wait,
           parentMessageID: ctx.messageID,
           format,
@@ -396,16 +250,15 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
       }
 
       const text = result?.parts?.findLast?.((p: any) => p.type === "text")?.text ?? ""
-      const resultTag = created ? "spawn_result" : "delegation_result"
 
       const sharedMeta = {
         sessionId: targetSessionId as string | undefined,
         agent: target.id,
         messageId: result?.info?.id,
-        kind: params.action as string,
+        kind: "create_session" as string,
         mode: resolvedMode as string | undefined,
-        created: created as boolean | undefined,
-        action: params.action as string,
+        created: true as boolean | undefined,
+        action: "create_session" as string,
         data: undefined as Record<string, unknown> | undefined,
       }
 
@@ -413,7 +266,7 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
         // Async: nothing to finalize here — Delegation's three delivery layers (loop-end
         // callback, session.status bus backstop, boot reconcile) own the edge from here on.
         return {
-          title: params.title ?? `${params.action} → ${target.id}`,
+          title: params.title ?? `Delegate → ${target.id}`,
           metadata: sharedMeta,
           output: [
             `session_id: ${targetSessionId}`,
@@ -433,16 +286,16 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
       }
 
       return {
-        title: params.title ?? `${params.action} → ${target.id}`,
+        title: params.title ?? `Delegate → ${target.id}`,
         metadata: sharedMeta,
         output: [
           `session_id: ${targetSessionId}`,
           `agent: ${target.id}`,
           `mode: ${resolvedMode}`,
           "",
-          `<${resultTag}>`,
+          `<spawn_result>`,
           text,
-          `</${resultTag}>`,
+          `</spawn_result>`,
         ].join("\n"),
       }
     },

@@ -46,12 +46,27 @@ function isOverflowMessage(msg: string): boolean {
 }
 
 /**
- * Map an HTTP status code (and optional message) to a semantic error kind string.
+ * Map an HTTP status code (and optional message/responseBody) to a semantic error kind string.
  * Mirrors ProviderError.classifyErrorKind() from @projectflows/provider without
  * creating a cross-package dependency from @projectflows/session.
  */
-function classifyErrorKind(statusCode: number | undefined, message?: string): string {
+function classifyErrorKind(
+  statusCode: number | undefined,
+  message?: string,
+  providerID?: string,
+  responseBody?: string,
+): string {
   if (message && isOverflowMessage(message)) return "overflow"
+  // OpenCode Zen "No provider available" is a transient router-capacity issue
+  // misclassified as 401 auth — override to "server" so it's retryable and fallback-eligible.
+  if (statusCode === 401 && providerID?.startsWith("opencode") && responseBody) {
+    try {
+      const body = JSON.parse(responseBody)
+      if (body?.type === "error" && body?.error?.type === "ModelError" && body?.error?.message === "No provider available") {
+        return "server"
+      }
+    } catch {}
+  }
   switch (statusCode) {
     case 401:
     case 403:
@@ -504,7 +519,7 @@ export namespace SessionProcessor {
             const apiError = error.name === "APIError" ? (error as any) : null
             const errorMessage = (error as any)?.data?.message ?? String(error)
             const errorKind =
-              error.name === "ProviderAuthenticationRequiredError" ? "auth" : classifyErrorKind(statusCode, errorMessage)
+              error.name === "ProviderAuthenticationRequiredError" ? "auth" : classifyErrorKind(statusCode, errorMessage, streamInput.model.providerID, apiError?.data?.responseBody)
 
             if (errorKind === "overflow") {
               // Context overflow: trigger compaction instead of treating as a hard error.

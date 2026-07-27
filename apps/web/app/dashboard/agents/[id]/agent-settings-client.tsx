@@ -96,8 +96,10 @@ export default function AgentSettingsClient() {
   const [fallbackModelOpen, setFallbackModelOpen] = useState(false)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const { schemas: toolSchemas } = useToolSchemas()
-  // Exclude this agent's own agent__<id> delegation tool — an agent can't delegate to itself.
-  const availableToolSchemas = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id) && t.id !== `agent__${agentId}`)
+  // Self-delegation (agent__<own-id>) is allowed — useful for recursive/mining-style agents
+  // that spawn their own child sessions. The tool itself blocks the one unsafe case (replying
+  // to or messaging its own currently-running session); see packages/tools/delegation/agent-target.ts.
+  const availableToolSchemas = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id))
   const availableTools = availableToolSchemas.map((t) => t.id)
   const groupedBySource = groupToolsBySource(availableToolSchemas)
   const allSourceGroups = sortSourceGroups([...groupedBySource.keys()])

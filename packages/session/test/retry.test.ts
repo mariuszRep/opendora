@@ -185,4 +185,46 @@ describe("session.message-v2.fromError", () => {
     const result = MessageV2.fromError(error, { providerID: "openai" }) as MessageV2.APIError
     expect(result.data.isRetryable).toBe(true)
   })
+
+  test("classifies OpenCode Zen 401 'No provider available' as retryable", () => {
+    const responseBody = JSON.stringify({
+      type: "error",
+      error: { type: "ModelError", message: "No provider available" },
+    })
+    const error = new APICallError({
+      message: "No provider available",
+      url: "https://opencode.ai/zen/v1/chat/completions",
+      requestBodyValues: {},
+      statusCode: 401,
+      responseHeaders: { "content-type": "application/json" },
+      responseBody,
+      isRetryable: false,
+    })
+    const result = MessageV2.fromError(error, { providerID: "opencode" }) as MessageV2.APIError
+    expect(MessageV2.APIError.isInstance(result)).toBe(true)
+    expect(result.data.isRetryable).toBe(true)
+    expect(result.data.statusCode).toBe(401)
+
+    const retryable = SessionRetry.retryable(result)
+    expect(retryable).toBeDefined()
+  })
+
+  test("does not classify non-opencode 401 'No provider available' as retryable", () => {
+    const responseBody = JSON.stringify({
+      type: "error",
+      error: { type: "ModelError", message: "No provider available" },
+    })
+    const error = new APICallError({
+      message: "No provider available",
+      url: "https://api.anthropic.com/v1/messages",
+      requestBodyValues: {},
+      statusCode: 401,
+      responseHeaders: { "content-type": "application/json" },
+      responseBody,
+      isRetryable: false,
+    })
+    const result = MessageV2.fromError(error, { providerID: "anthropic" }) as MessageV2.APIError
+    expect(MessageV2.APIError.isInstance(result)).toBe(true)
+    expect(result.data.isRetryable).toBe(false)
+  })
 })

@@ -2,9 +2,9 @@
 
 import type { Session, ToolPart } from "@/lib/projectflows"
 
-import { ArrowRightIcon, BotIcon, ExternalLinkIcon, Loader2Icon } from "lucide-react"
+import { ArrowRightIcon, BotIcon, ExternalLinkIcon, Loader2Icon, WorkflowIcon } from "lucide-react"
 
-type DelegateAction = "create_session" | "message_session" | "reply_session"
+type DelegateAction = "create_session" | "message_session" | "reply_session" | "message" | "reply"
 
 type DelegateMetadata = {
   sessionId?: string
@@ -16,6 +16,9 @@ type DelegateMetadata = {
   mode?: "sync" | "async"
   created?: boolean
   sourceSessionId?: string
+  /** workflow__<id> calls — see packages/tools/workflow-delegation/workflow-target.ts */
+  workflowId?: string
+  workflowName?: string
 }
 
 function getDelegateMetadata(tool: ToolPart): DelegateMetadata {
@@ -43,15 +46,23 @@ export const DelegateToolContent = ({
 }: DelegateToolContentProps) => {
   const input = "input" in tool.state ? tool.state.input : {}
   const metadata = getDelegateMetadata(tool)
+  const isWorkflow = tool.tool.startsWith("workflow__")
   const action = metadata.action ?? (metadata.kind === "reply" ? "reply_session" : undefined)
-  const isReply = action === "reply_session"
+  const isReply = action === "reply_session" || action === "reply"
 
   const prompt = input.prompt as string | undefined
   const description = input.description as string | undefined
   const replyMessage = input.message as string | undefined
   const inputAgent = input.agent as string | undefined
+  // workflow__<id> calls carry structured `input` (parameter values), not a free-text prompt.
+  const workflowInput =
+    isWorkflow && input.input && typeof input.input === "object" && Object.keys(input.input).length > 0
+      ? JSON.stringify(input.input)
+      : undefined
 
   const agent = metadata.agent ?? inputAgent
+  const workflowLabel =
+    metadata.workflowName ?? metadata.workflowId ?? (isWorkflow ? tool.tool.slice("workflow__".length) : undefined)
   const sessionId = metadata.sessionId
 
   const targetSession = sessionId ? sessions.find((s) => s.id === sessionId) : undefined
@@ -75,26 +86,37 @@ export const DelegateToolContent = ({
 
   return (
     <div className="rounded-md border bg-background">
-      {/* Prompt */}
-      {(prompt || replyMessage) && (
+      {/* Prompt / structured input */}
+      {(prompt || replyMessage || workflowInput) && (
         <div className="px-3 py-2.5 space-y-0.5">
-          <p className="text-xs text-muted-foreground">{isReply ? "Reply" : "Message"}</p>
-          <p className="text-sm text-foreground leading-relaxed">{replyMessage ?? prompt}</p>
+          <p className="text-xs text-muted-foreground">{isReply ? "Reply" : isWorkflow ? "Input" : "Message"}</p>
+          <p className={isWorkflow ? "font-mono text-xs text-foreground leading-relaxed" : "text-sm text-foreground leading-relaxed"}>
+            {replyMessage ?? prompt ?? workflowInput}
+          </p>
         </div>
       )}
 
-      {/* Agent + session row */}
+      {/* Agent/workflow + session row */}
       <div className="flex items-center justify-between gap-3 border-t px-3 py-2">
         <div className="flex items-center gap-3 min-w-0">
-          {agent && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <BotIcon className="size-3.5 shrink-0" />
-              <span className="truncate">{agent}</span>
-            </div>
+          {isWorkflow ? (
+            workflowLabel && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <WorkflowIcon className="size-3.5 shrink-0" />
+                <span className="truncate">{workflowLabel}</span>
+              </div>
+            )
+          ) : (
+            agent && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <BotIcon className="size-3.5 shrink-0" />
+                <span className="truncate">{agent}</span>
+              </div>
+            )
           )}
           {sessionLabel && (
             <>
-              {agent && <span className="text-muted-foreground/40 text-xs">·</span>}
+              {(isWorkflow ? workflowLabel : agent) && <span className="text-muted-foreground/40 text-xs">·</span>}
               <span className="truncate text-xs text-muted-foreground">{sessionLabel}</span>
             </>
           )}
@@ -121,19 +143,31 @@ export const DelegateToolContent = ({
 }
 
 /**
- * Derive a readable title for agent__<id> (and legacy delegate/reply) tool headers.
- * Falls back to the raw tool name so callers always get a string.
+ * Derive a readable title for agent__<id> / workflow__<id> (and legacy delegate/reply)
+ * tool headers. Falls back to the raw tool name so callers always get a string.
  */
 export function getDelegateToolTitle(tool: ToolPart): string {
   const input = "input" in tool.state ? tool.state.input : {}
   const metadata = getDelegateMetadata(tool)
+
+  if (tool.tool.startsWith("workflow__")) {
+    const workflowLabel = metadata.workflowName ?? metadata.workflowId ?? tool.tool.slice("workflow__".length)
+    return `Run → ${workflowLabel}`
+  }
+
   const agentFromToolName = tool.tool.startsWith("agent__") ? tool.tool.slice("agent__".length) : undefined
   const agent = metadata.agent ?? (input.agent as string | undefined) ?? agentFromToolName
 
   const action = metadata.action ?? (metadata.kind === "reply" ? "reply_session" : undefined)
-  if (action === "reply_session" || tool.tool === "reply") {
+  if (action === "reply_session" || action === "reply" || tool.tool === "reply") {
     const sessionId = metadata.sessionId
     return sessionId ? `Reply → ${sessionId.slice(0, 8)}…` : "Reply"
+  }
+
+  // session_message has no baked-in target agent name — title by session id instead.
+  if (tool.tool === "session_message") {
+    const sessionId = metadata.sessionId
+    return sessionId ? `Message → ${sessionId.slice(0, 8)}…` : "Message"
   }
 
   const description = input.description as string | undefined
@@ -142,9 +176,40 @@ export function getDelegateToolTitle(tool: ToolPart): string {
 }
 
 const LEGACY_DELEGATE_TOOLS = new Set(["delegate", "reply"])
+/** Static session-inspection tools that already set metadata.sessionId for their own,
+ *  unrelated reason (the session they're inspecting, not one they spawned) — excluded
+ *  from the metadata-driven fallback below so they keep their own (or generic) rendering. */
+const SESSION_INSPECTION_TOOLS = new Set([
+  "session_get",
+  "session_tree",
+  "session_status",
+  "session_search",
+  "session_analyze",
+  "session_update",
+])
 
 export function isDelegateTool(toolName: string): boolean {
-  return toolName.startsWith("agent__") || LEGACY_DELEGATE_TOOLS.has(toolName)
+  return (
+    toolName.startsWith("agent__") ||
+    toolName.startsWith("workflow__") ||
+    toolName === "session_message" ||
+    LEGACY_DELEGATE_TOOLS.has(toolName)
+  )
+}
+
+/**
+ * Broader than isDelegateTool: also catches any tool call whose metadata carries a
+ * sessionId, even if we don't recognize the tool name — so a future spawn-shaped tool
+ * gets the standard "session link, visible immediately" treatment without needing this
+ * file updated again, the way workflow__ and session_message both did. Excludes the
+ * fixed set of session-inspection tools, which set sessionId for an unrelated reason and
+ * already have (or should keep) their own rendering.
+ */
+export function hasSessionLink(tool: ToolPart): boolean {
+  if (isDelegateTool(tool.tool)) return true
+  if (SESSION_INSPECTION_TOOLS.has(tool.tool)) return false
+  const metadata = getDelegateMetadata(tool)
+  return typeof metadata.sessionId === "string" && metadata.sessionId.length > 0
 }
 
 /** Banner shown inside a spawned/delegated session linking back to its parent. */

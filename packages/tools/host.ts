@@ -161,6 +161,18 @@ export interface HostServices {
     get(): Promise<unknown>
     directories(): Promise<string[]>
   }
+  /** Wired in prompt.ts's resolveTools and workflow-tool-executor.ts; was previously used only via an `as any` cast. */
+  workflow?: {
+    get(id: string): Promise<unknown | undefined>
+    availableIds?(): Promise<string[]>
+    run(workflow: unknown, sessionId: string, input: Record<string, unknown>, directory: string): Promise<string>
+    runDetailed(
+      workflow: unknown,
+      sessionId: string,
+      input: Record<string, unknown>,
+      directory: string,
+    ): Promise<{ display: string; outputObject: any }>
+  }
   flags?: Record<string, string | boolean>
   instructionPrompt?: (sessionId: string, messages: unknown[], filepath: string, messageID: string) => Promise<Array<{ filepath: string; content: string }>>
   todo?: {

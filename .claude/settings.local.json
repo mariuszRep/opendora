@@ -22,7 +22,8 @@
       "Read(//mnt/fileshare/projects/projectflows/**)",
       "Read(//home/mariusz/projects/**)",
       "Bash(git stash *)",
-      "Bash(pip3 --version)"
+      "Bash(pip3 --version)",
+      "Bash(bun run *)"
     ]
   }
 }

@@ -304,7 +304,19 @@ export namespace LLM {
     // packages/tools/delegation/agent-target.ts and configure-session-core.ts's
     // reconcileDelegationTools.
     const delegationGrants = ((agent.delegateAgents ?? []) as Array<{ id: string }>).map((a) => `agent__${a.id}`)
-    const allowedTools = new Set<string>([...declaredTools, ...delegationGrants, ...(skillUnlocked ?? [])])
+    // Same mechanism, for per-workflow tools (workflow__<id>) — granted via the agent's
+    // "workflow"-resource permission rules (enrichAgent's delegateWorkflows), sourced from the
+    // Workflows tab's agent.workflows[] array. See packages/tools/workflow-delegation/workflow-target.ts
+    // and configure-session-core.ts's reconcileWorkflowTools.
+    const workflowDelegationGrants = ((agent.delegateWorkflows ?? []) as Array<{ id: string }>).map(
+      (w) => `workflow__${w.id}`,
+    )
+    const allowedTools = new Set<string>([
+      ...declaredTools,
+      ...delegationGrants,
+      ...workflowDelegationGrants,
+      ...(skillUnlocked ?? []),
+    ])
 
     for (const t of Object.keys(tools)) {
       // Always keep "invalid" tool - it's used internally for tool-call repair

@@ -30,6 +30,7 @@ import { FileTime } from "@projectflows/tools/file/time"
 import { ConfigMarkdown } from "@projectflows/config/markdown"
 import { Command } from "@projectflows/server/command"
 import { createAgentTargetTool } from "@projectflows/tools/delegation/agent-target"
+import { createWorkflowTargetTool } from "@projectflows/tools/workflow-delegation/workflow-target"
 import { Shell } from "@projectflows/util/shell"
 import { Truncate } from "@projectflows/tools/truncation-impl"
 import { Skill } from "@projectflows/skills/skill"
@@ -48,12 +49,15 @@ import { CapabilityRegistry } from "@projectflows/plugin"
 async function enrichAgent(agent: any): Promise<any> {
   if (!agent?.id) return agent
 
-  // Self-healing registration: make sure every non-system agent's agent__<id> tool exists in
-  // the registry whenever any agent actually starts a turn (real request-handling context —
-  // see reconcileDelegationTools' doc comment for why this must never run from
-  // configureSessionCore's own boot-time body instead).
+  // Self-healing registration: make sure every non-system agent's agent__<id> tool, and every
+  // workflow's workflow__<id> tool, exist in the registry whenever any agent actually starts a
+  // turn (real request-handling context — see reconcileDelegationTools' doc comment for why
+  // this must never run from configureSessionCore's own boot-time body instead).
   await reconcileDelegationTools().catch((err) => {
     console.error("[configureSessionCore] reconcileDelegationTools failed:", err)
+  })
+  await reconcileWorkflowTools().catch((err) => {
+    console.error("[configureSessionCore] reconcileWorkflowTools failed:", err)
   })
 
   let delegateRules = PermissionNext.listRules("agent", agent.id).filter((r) => r.resource === "agent")
@@ -84,28 +88,66 @@ async function enrichAgent(agent: any): Promise<any> {
     }
   }
 
+  // Same lazy migration, for the "Workflows" tab's agent.workflows[] array — it existed and
+  // saved data well before anything synced it into "workflow"-resource permission rules
+  // (see packages/runtime/src/agent.ts's create/update). Seed once here so already-saved
+  // selections start granting workflow__<id> tools without requiring a re-save.
+  let workflowRules = PermissionNext.listRules("agent", agent.id).filter((r) => r.resource === "workflow")
+  if (workflowRules.length === 0) {
+    const configuredWorkflows: string[] | undefined = agent?.config?.workflows
+    if (configuredWorkflows?.length) {
+      for (const id of configuredWorkflows) {
+        PermissionNext.addRule({
+          scope: "agent",
+          scope_id: agent.id,
+          resource: "workflow",
+          access: "execute",
+          pattern: id,
+          action: "allow",
+        })
+      }
+      workflowRules = PermissionNext.listRules("agent", agent.id).filter((r) => r.resource === "workflow")
+    }
+  }
+
   // Union delegation targets granted via agent__<id> entries already in agent.tools (the
   // primary, UI-driven grant — see llm.ts filterToolsByAgent, which already honors these
   // directly via declaredTools) with ones matched by permission rules (the rule-derived path,
   // kept for agents whose tools array hasn't been re-saved through the new UI yet). Both are
-  // consumed by system.ts's "Available Delegations" section and task.ts's allow/deny pre-check.
+  // consumed by system.ts's "Available Delegations" section.
   const toolTargetIds = new Set(
     ((agent.tools as string[] | undefined) ?? [])
       .filter((t) => t.startsWith("agent__"))
       .map((t) => t.slice("agent__".length)),
   )
   const allowRules = delegateRules.filter((r) => r.action === "allow")
-  if (toolTargetIds.size === 0 && allowRules.length === 0) return { ...agent, delegateRules }
 
-  const all = await Agent.list()
-  const delegateAgents = all
-    .filter((a) => a.mode !== "system")
-    // Match by stable id, not the mutable display `name` — names can be edited freely
-    // (and have been, historically) while allowedAgents/rules should stay valid.
-    .filter((a) => toolTargetIds.has(a.id) || allowRules.some((r) => wildcardMatch(a.id, r.pattern)))
-    .map((a) => ({ id: a.id, name: a.name, description: a.description }))
+  let delegateAgents: { id: string; name: string; description?: string }[] | undefined
+  if (toolTargetIds.size > 0 || allowRules.length > 0) {
+    const all = await Agent.list()
+    delegateAgents = all
+      .filter((a) => a.mode !== "system")
+      // Match by stable id, not the mutable display `name` — names can be edited freely
+      // (and have been, historically) while allowedAgents/rules should stay valid.
+      .filter((a) => toolTargetIds.has(a.id) || allowRules.some((r) => wildcardMatch(a.id, r.pattern)))
+      .map((a) => ({ id: a.id, name: a.name, description: a.description }))
+  }
 
-  return { ...agent, delegateAgents: delegateAgents.length ? delegateAgents : undefined, delegateRules }
+  const workflowAllowRules = workflowRules.filter((r) => r.action === "allow")
+  let delegateWorkflows: { id: string; name: string; description?: string }[] | undefined
+  if (workflowAllowRules.length > 0) {
+    const allWorkflows = await WorkflowStorage.list()
+    delegateWorkflows = allWorkflows
+      .filter((w) => workflowAllowRules.some((r) => wildcardMatch(w.id, r.pattern)))
+      .map((w) => ({ id: w.id, name: w.name, description: w.description }))
+  }
+
+  return {
+    ...agent,
+    delegateAgents: delegateAgents?.length ? delegateAgents : undefined,
+    delegateWorkflows: delegateWorkflows?.length ? delegateWorkflows : undefined,
+    delegateRules,
+  }
 }
 
 /**
@@ -114,6 +156,12 @@ async function enrichAgent(agent: any): Promise<any> {
  * from authorization (can a given caller actually use it, which agent.tools + the underlying
  * "agent"-resource permission rule govern separately, same as any other tool). One tool per
  * target agent, shared across every potential caller — registry size stays O(agents).
+ *
+ * Always re-registers every current agent (ToolRegistry.register is an id-based upsert — see
+ * registry.ts), not just ones missing from the registry, so an edit to an agent's name/description
+ * is picked up on the very next call — this function already runs every turn via enrichAgent, so
+ * that's the very next turn. No restart, no separate "did anything change" diffing needed; the
+ * cost is one cheap in-memory object rebuild per agent per turn, not I/O.
  *
  * Only ever call this from real request-handling contexts (route handlers, enrichAgent) — never
  * from configureSessionCore()'s own body. A boot-time Agent.list() call was tried and reverted:
@@ -136,15 +184,55 @@ export async function reconcileDelegationTools() {
   for (const target of all) {
     if (target.mode === "system") continue
     const toolId = `agent__${target.id}`
-    if (!existingIds.has(toolId)) {
-      ToolRegistry.register(
-        createAgentTargetTool({ id: target.id, name: target.name, description: (target as any).description }),
-        "delegation",
-      )
-    }
+    ToolRegistry.register(
+      createAgentTargetTool({ id: target.id, name: target.name, description: (target as any).description }),
+      "delegation",
+    )
     existingIds.delete(toolId)
   }
   // Anything left in existingIds belongs to an agent that no longer exists — remove it.
+  for (const staleId of existingIds) {
+    ToolRegistry.unregister(staleId)
+  }
+}
+
+/**
+ * Same self-healing, always-live registration as reconcileDelegationTools, mirrored for
+ * workflows: one auto-registered workflow__<id> tool per workflow, unconditionally re-registered
+ * every pass (upsert-by-id — see ToolRegistry.register) so an edited workflow's parameter schema
+ * refreshes on the very next turn, not just at first creation. Registration is decoupled from
+ * authorization — agent.workflows[] + the "workflow"-resource permission rule govern who can
+ * actually see/call it (see enrichAgent's delegateWorkflows resolution and llm.ts's
+ * filterToolsByAgent). WorkflowStorage.list() has no module-level cache to worry about (unlike
+ * Agent.list()), but this stays in the same lazy per-request call site as reconcileDelegationTools
+ * for consistency.
+ */
+export async function reconcileWorkflowTools() {
+  await ToolRegistry.init()
+  const all = await WorkflowStorage.list()
+
+  const existingIds = new Set(
+    ToolRegistry.all()
+      .map((t) => t.id)
+      .filter((id) => id.startsWith("workflow__")),
+  )
+  for (const wf of all) {
+    const toolId = `workflow__${wf.id}`
+    const paramNode = (wf.nodes ?? []).find((n: any) => (n.data as any)?.nodeType === "parameters")
+    const parameters = ((paramNode?.data as any)?.workflowParameters ?? []) as Array<{
+      name: string
+      type?: string
+      required?: boolean
+      description?: string
+      enum?: string[]
+    }>
+    ToolRegistry.register(
+      createWorkflowTargetTool({ id: wf.id, name: wf.name, description: wf.description, parameters }),
+      "workflow-delegation",
+    )
+    existingIds.delete(toolId)
+  }
+  // Anything left in existingIds belongs to a workflow that no longer exists — remove it.
   for (const staleId of existingIds) {
     ToolRegistry.unregister(staleId)
   }

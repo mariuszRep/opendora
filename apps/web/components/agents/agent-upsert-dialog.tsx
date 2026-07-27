@@ -119,8 +119,10 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [fallbackModel, setFallbackModel] = useState<string>(NONE)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const { schemas: toolSchemas } = useToolSchemas()
-  // Exclude this agent's own agent__<id> delegation tool — an agent can't delegate to itself.
-  const availableToolSchemas = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id) && t.id !== `agent__${agentId}`)
+  // Self-delegation (agent__<own-id>) is allowed — useful for recursive/mining-style agents
+  // that spawn their own child sessions. The tool itself blocks the one unsafe case (replying
+  // to or messaging its own currently-running session); see packages/tools/delegation/agent-target.ts.
+  const availableToolSchemas = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id))
   const groupedBySource = groupToolsBySource(availableToolSchemas)
   const allSourceGroups = sortSourceGroups([...groupedBySource.keys()])
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
@@ -130,7 +132,6 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
   const [expandedSkill, setExpandedSkill] = useState<string | null>(null)
   const [expandedWorkflow, setExpandedWorkflow] = useState<string | null>(null)
-  const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
   const [defaultPaths, setDefaultPaths] = useState<string[]>([])
   const [newPathInput, setNewPathInput] = useState("")
   const [persona, setPersona] = useState("")
@@ -168,7 +169,6 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setSelectedTools(a.tools ?? [])
       setSelectedSkills(a.skills ?? (a as any).config?.skills ?? [])
       setSelectedWorkflows(a.workflows ?? (a as any).config?.workflows ?? [])
-      setReplyStopAfterReply((a as any).config?.toolConfig?.reply?.stopAfterReply ?? a.toolConfig?.reply?.stopAfterReply ?? false)
       // Delegation targets: tool selection is the grant (agent__<id> in `tools`). An agent
       // may still only have "agent"-resource permission rules (from the old allowedAgents
       // array, or edits made elsewhere) without `tools` reflecting them yet — merge those in
@@ -199,7 +199,6 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
       setSelectedTools([])
       setSelectedSkills([])
       setSelectedWorkflows([])
-      setReplyStopAfterReply(false)
       setInjectInstructions(true)
       setPersona("")
       setDefaultPaths([])
@@ -265,16 +264,6 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
         tools: selectedTools.length > 0 ? selectedTools : undefined,
         skills: selectedSkills,
         workflows: selectedWorkflows,
-        toolConfig: (() => {
-          const config: any = {}
-          // Delegation targets are no longer a separate field — checking agent__<id> tools in
-          // `tools` above is the grant; Agent.create/update syncs the "agent"-resource
-          // permission rules from those entries directly.
-          if (selectedTools.includes("reply")) {
-            config.reply = { stopAfterReply: replyStopAfterReply }
-          }
-          return Object.keys(config).length > 0 ? config : undefined
-        })(),
         defaultPaths: defaultPaths.length > 0 ? defaultPaths : undefined,
         injectInstructions: injectInstructions ? undefined : false,
       }
@@ -684,22 +673,6 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
                           </div>
                         )}
 
-                        {sg === "core" && selectedTools.includes("reply") && (
-                          <div className="mt-3 border-t pt-3">
-                            <Label className="flex cursor-pointer items-center gap-2 font-normal">
-                              <Checkbox
-                                checked={replyStopAfterReply}
-                                onCheckedChange={(checked) => setReplyStopAfterReply(checked === true)}
-                              />
-                              <div>
-                                <p className="text-xs font-medium">Stop after reply</p>
-                                <p className="text-xs text-muted-foreground">
-                                  Agent stops processing immediately after using the reply tool, waiting for user response.
-                                </p>
-                              </div>
-                            </Label>
-                          </div>
-                        )}
                       </CardContent>
                     )}
                   </Card>
@@ -777,7 +750,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
           <TabsContent value="workflows" className="flex-1 overflow-y-auto pr-1">
             <div className="flex flex-col gap-3 pb-2 pt-3">
               <p className="text-xs text-muted-foreground">
-                Attach workflows to this agent. The agent can run any assigned workflow via the workflow_run tool.
+                Attach workflows to this agent. Each assigned workflow becomes its own tool the agent can call directly.
               </p>
               {availableWorkflows.length === 0 ? (
                 <p className="text-xs text-muted-foreground">No workflows found.</p>

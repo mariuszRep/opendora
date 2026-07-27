@@ -563,8 +563,7 @@ async function runSubGraph({
       result = JSON.stringify(structured)
 
     } else if (d.nodeType === NodeTypeId.Tool || d.nodeType === NodeTypeId.RunWorkflow) {
-      // RunWorkflow is a Tool node with action_id pre-set to "workflow_run"
-      const actionId = (nd.action_id as string | undefined) ||
+      let actionId = (nd.action_id as string | undefined) ||
         (d.nodeType === NodeTypeId.RunWorkflow ? "workflow_run" : undefined)
       if (!actionId) { steps.push({ label: nodeLabel, passed: true }); continue }
       const _toolExecutor = getToolExecutor()
@@ -577,6 +576,19 @@ async function runSubGraph({
         if (k !== "output") args[k] = v
       }
       const resolvedArgs = resolveDeep(args, input, ctx) as Record<string, unknown>
+
+      // RunWorkflow targets one specific sub-workflow chosen at design time — dispatch
+      // to that workflow's own workflow__<id> tool (typed per-workflow parameter schema,
+      // same treatment as model-facing delegation) instead of the generic, opaque-input
+      // workflow_run. The executor force-registers the target's tool on demand if it
+      // isn't already in the global registry (see workflow-tool-executor.ts).
+      if (d.nodeType === NodeTypeId.RunWorkflow) {
+        const targetWorkflowId = resolvedArgs.workflowId as string | undefined
+        if (!targetWorkflowId) {
+          throw new WorkflowValidationError(`RunWorkflow node "${nodeLabel}" has no workflowId set.`)
+        }
+        actionId = `workflow__${targetWorkflowId}`
+      }
 
 
       // If a `stdin` parameter is present, resolve it with resolveDeep (preserves

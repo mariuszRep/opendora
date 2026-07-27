@@ -17,7 +17,7 @@ import { SessionManager } from "./session-manager"
 import { RetentionDaemon } from "./daemon"
 import type { SessionType, RetentionPolicy, SendPolicy, CreateSessionOptions, PongOptions, EdgeType, Edge } from "./types"
 import { NotFoundError } from "@projectflows/storage/db"
-import { writeToolPartEntries, writeGenericPartEntry, deriveActor, deleteEntryGraph, deleteToolPartGraph } from "./graph-writes.ts"
+import { writeToolPartEntries, writeGenericPartEntry, writeContainsEdge, deriveActor, deleteEntryGraph, deleteToolPartGraph } from "./graph-writes.ts"
 
 // Inline iife utility
 function iife<T>(fn: () => T): T {
@@ -1245,6 +1245,8 @@ export namespace Session {
 
     // Phase 1: contains edge — canonical timeline order via seq_in_parent.
     // Only on first write; updates to message data don't change position.
+    // Uses writeContainsEdge (max(seq_in_parent)+1 with retry) instead of count(*)
+    // to avoid seq_in_parent collisions after message deletions (revert/remove).
     const existingContains = db
       .select({ id: EdgesTable.id })
       .from(EdgesTable)
@@ -1259,32 +1261,12 @@ export namespace Session {
       .limit(1)
       .get()
     if (!existingContains) {
-      const seqResult = db
-        .select({ n: sql<number>`count(*)` })
-        .from(EdgesTable)
-        .where(
-          and(
-            eq(EdgesTable.from_type, "session"),
-            eq(EdgesTable.from_id, sessionID),
-            eq(EdgesTable.type, "contains"),
-          ),
-        )
-        .get()
-      db.insert(EdgesTable)
-        .values({
-          id: Identifier.ascending("edge"),
-          from_type: "session",
-          from_id: sessionID,
-          to_type: "entry",
-          to_id: id,
-          type: "contains",
-          seq_in_parent: seqResult?.n ?? 0,
-          label: null,
-          metadata: null,
-          created_at: new Date().toISOString(),
-        })
-        .onConflictDoNothing()
-        .run()
+      writeContainsEdge(db, {
+        fromType: "session",
+        fromID: sessionID,
+        toID: id,
+        createdAt: new Date().toISOString(),
+      })
     }
 
     const entryActor = deriveActor(data as Record<string, unknown>)

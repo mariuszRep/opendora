@@ -1483,7 +1483,13 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         <Match when={props.part.tool === "edit"}>
           <Edit {...toolprops} />
         </Match>
-        <Match when={props.part.tool?.startsWith("agent__")}>
+        <Match
+          when={
+            props.part.tool?.startsWith("agent__") ||
+            props.part.tool?.startsWith("workflow__") ||
+            props.part.tool === "session_message"
+          }
+        >
           <AgentDelegate {...toolprops} />
         </Match>
         <Match when={props.part.tool === "apply_patch"}>
@@ -1497,6 +1503,22 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         </Match>
         <Match when={props.part.tool === "skill"}>
           <Skill {...toolprops} />
+        </Match>
+        {/* Broader than the fixed name list above: catches any future spawn-shaped tool
+            whose metadata carries a sessionId, without needing this file updated again —
+            excluding the static session-inspection tools, which set sessionId for their
+            own unrelated reason (the session they're inspecting, not one they spawned)
+            and have no bespoke CLI rendering of their own either, so they belong on the
+            generic fallback below, same as today. */}
+        <Match
+          when={
+            !!(props.part.state.status !== "pending" && (props.part.state as any).metadata?.sessionId) &&
+            !["session_get", "session_tree", "session_status", "session_search", "session_analyze", "session_update"].includes(
+              props.part.tool,
+            )
+          }
+        >
+          <AgentDelegate {...toolprops} />
         </Match>
         <Match when={true}>
           <GenericTool {...toolprops} />
@@ -1914,12 +1936,26 @@ function AgentDelegate(props: ToolProps<any>) {
   const local = useLocal()
   const sync = useSync()
 
+  const isWorkflow = createMemo(() => !!props.tool?.startsWith("workflow__"))
+
   // agent__<id>'s target agent comes from metadata.agent (set by agent-target.ts's
   // ctx.metadata call) or, failing that, by stripping the agent__ prefix off the
-  // tool name itself. Its input has no description/subagent_type — the task
-  // description is params.title, falling back to the prompt text.
-  const agentName = createMemo(() => props.metadata.agent ?? props.tool?.replace(/^agent__/, "") ?? "unknown")
-  const description = createMemo(() => props.input.title ?? props.input.prompt ?? props.input.message)
+  // tool name itself. workflow__<id> calls follow the same shape via metadata.workflowName
+  // /workflowId (see workflow-target.ts). Neither call's input has description/subagent_type —
+  // the task description is params.title/params.prompt for agents, or the structured
+  // params.input object for workflows.
+  const targetName = createMemo(() =>
+    isWorkflow()
+      ? (props.metadata.workflowName ?? props.metadata.workflowId ?? props.tool?.replace(/^workflow__/, "") ?? "unknown")
+      : (props.metadata.agent ?? props.tool?.replace(/^agent__/, "") ?? "unknown"),
+  )
+  const description = createMemo(() => {
+    if (isWorkflow()) {
+      const input = props.input.input
+      return input && typeof input === "object" && Object.keys(input).length > 0 ? JSON.stringify(input) : undefined
+    }
+    return props.input.title ?? props.input.prompt ?? props.input.message
+  })
 
   const tools = createMemo(() => {
     const sessionID = props.metadata.sessionId
@@ -1937,9 +1973,9 @@ function AgentDelegate(props: ToolProps<any>) {
 
   return (
     <Switch>
-      <Match when={description() || agentName()}>
+      <Match when={description() || targetName()}>
         <BlockTool
-          title={"# " + Locale.titlecase(agentName()) + " Task"}
+          title={isWorkflow() ? "# Run " + Locale.titlecase(targetName()) : "# " + Locale.titlecase(targetName()) + " Task"}
           onClick={
             props.metadata.sessionId
               ? () => navigate({ type: "session", sessionID: props.metadata.sessionId! })
@@ -1972,8 +2008,8 @@ function AgentDelegate(props: ToolProps<any>) {
         </BlockTool>
       </Match>
       <Match when={true}>
-        <InlineTool icon="#" pending="Delegating..." complete={agentName()} part={props.part}>
-          {agentName()} Task {description()}
+        <InlineTool icon="#" pending={isWorkflow() ? "Running..." : "Delegating..."} complete={targetName()} part={props.part}>
+          {isWorkflow() ? `Run ${targetName()}` : `${targetName()} Task`} {description()}
         </InlineTool>
       </Match>
     </Switch>

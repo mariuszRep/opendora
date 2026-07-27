@@ -10,7 +10,7 @@ import {
 } from "./tool"
 import { QuestionTool } from "@/components/questions/question-tool"
 import { PermissionTool } from "@/components/permissions/permission-tool"
-import { DelegateToolContent, isDelegateTool, getDelegateToolTitle } from "./delegate-tool"
+import { DelegateToolContent, hasSessionLink, getDelegateToolTitle } from "./delegate-tool"
 import { TodoToolContent, isTodoTool, getTodoToolTitle } from "./todo-tool"
 import { SessionTreeToolContent, isSessionTreeTool, getSessionTreeToolTitle } from "./session-tree-tool"
 import { WebFetchToolContent, isWebFetchTool, getWebFetchToolTitle, getWebFetchUrl } from "./webfetch-tool"
@@ -174,7 +174,7 @@ export function ToolCallCard({
   // one fixed view.
   const viewToggleConfigs: {
     kind: string
-    predicate: (toolName: string) => boolean
+    predicate: (t: ToolPart) => boolean
     currentMode: ViewMode
     setMode: (mode: ViewMode) => void
     getTitle: (t: ToolPart) => string
@@ -182,24 +182,8 @@ export function ToolCallCard({
     renderActions?: () => ReactNode
   }[] = [
     {
-      kind: "delegate",
-      predicate: isDelegateTool,
-      currentMode: delegateViewModes[tool.id] ?? "view",
-      setMode: (mode) => setDelegateViewModes(prev => ({ ...prev, [tool.id]: mode })),
-      getTitle: getDelegateToolTitle,
-      renderContent: (t) => (
-        <DelegateToolContent
-          tool={t}
-          sessions={sessions}
-          onSelectSession={selectSession}
-          onGoToMessage={handleGoToMessage}
-          activeSessions={activeSessions}
-        />
-      ),
-    },
-    {
       kind: "todo",
-      predicate: isTodoTool,
+      predicate: (t) => isTodoTool(t.tool),
       currentMode: todoViewModes[tool.id] ?? "view",
       setMode: (mode) => setTodoViewModes(prev => ({ ...prev, [tool.id]: mode })),
       getTitle: getTodoToolTitle,
@@ -207,7 +191,7 @@ export function ToolCallCard({
     },
     {
       kind: "session-tree",
-      predicate: isSessionTreeTool,
+      predicate: (t) => isSessionTreeTool(t.tool),
       currentMode: sessionTreeViewModes[tool.id] ?? "view",
       setMode: (mode) => setSessionTreeViewModes(prev => ({ ...prev, [tool.id]: mode })),
       getTitle: getSessionTreeToolTitle,
@@ -215,7 +199,7 @@ export function ToolCallCard({
     },
     {
       kind: "webfetch",
-      predicate: isWebFetchTool,
+      predicate: (t) => isWebFetchTool(t.tool),
       currentMode: webfetchViewModes[tool.id] ?? "code",
       setMode: (mode) => setWebfetchViewModes(prev => ({ ...prev, [tool.id]: mode })),
       getTitle: getWebFetchToolTitle,
@@ -241,9 +225,29 @@ export function ToolCallCard({
         </TooltipProvider>
       ),
     },
+    // Listed last: broader than a fixed tool-name list — also catches any tool call whose
+    // metadata carries a sessionId (agent__<id>, workflow__<id>, session_message, and any
+    // future spawn-shaped tool), so it must yield to the more specific renderers above.
+    // See hasSessionLink's doc comment.
+    {
+      kind: "delegate",
+      predicate: hasSessionLink,
+      currentMode: delegateViewModes[tool.id] ?? "view",
+      setMode: (mode) => setDelegateViewModes(prev => ({ ...prev, [tool.id]: mode })),
+      getTitle: getDelegateToolTitle,
+      renderContent: (t) => (
+        <DelegateToolContent
+          tool={t}
+          sessions={sessions}
+          onSelectSession={selectSession}
+          onGoToMessage={handleGoToMessage}
+          activeSessions={activeSessions}
+        />
+      ),
+    },
   ]
 
-  const matchedToggle = viewToggleConfigs.find((c) => c.predicate(tool.tool))
+  const matchedToggle = viewToggleConfigs.find((c) => c.predicate(tool))
 
   const skillLoadActions = isSkillLoadToolCall && skillLoadDefinitionPath ? (
     <TooltipProvider>

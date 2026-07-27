@@ -523,6 +523,11 @@ export namespace Agent {
     if (desired.size > 0) {
       syncNamedResourceRules(id, "agent", desired)
     }
+    // Seed "workflow"-resource rules from the Workflows tab's agent.workflows[] array —
+    // mirrors the "skill" resource sync below, one source, no legacy dual-source union needed.
+    if (config.workflows?.length) {
+      syncNamedResourceRules(id, "workflow", new Set(config.workflows))
+    }
     return result
   }
 
@@ -548,6 +553,11 @@ export namespace Agent {
         ...(patch.toolConfig?.delegate?.allowedAgents ?? []),
       ])
       syncNamedResourceRules(id, "agent", desired)
+    }
+    // Sync "workflow"-resource rules when the Workflows tab's selection is explicitly patched,
+    // same add/remove-by-diff shape as skills/delegate-targets above.
+    if (patch.workflows !== undefined) {
+      syncNamedResourceRules(id, "workflow", new Set(patch.workflows))
     }
     return result
   }

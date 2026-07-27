@@ -9,13 +9,16 @@ import { describe, expect, test, mock, beforeEach } from "bun:test"
 // they require a live DB/Instance context that isn't needed to prove the
 // composition contract itself.
 //
-// The fake "workflow_run" tool executor mirrors exactly the fix applied to the
-// real registry tool (projectflows-website/registry/tools/workflows/src/
-// workflow-run.ts): when the child's detailed result reports status.completed
-// === false, it throws instead of returning a "successful" tool result — that
-// throw is what lets the RunWorkflow node's existing retry/error handling in
-// runner.ts (isWorkflowValidationError short-circuit, lastError rethrow) turn a
-// child failure into a failed parent node.
+// RunWorkflow nodes dispatch to the target's own workflow__<id> tool (see
+// runner.ts's actionId computation and workflow-tool-executor.ts's force-
+// registration), so the fake executor below is keyed by toolId "workflow__<id>",
+// not the generic "workflow_run". It mirrors exactly the fix applied to the real
+// per-target tool (packages/tools/workflow-delegation/workflow-target.ts): when
+// the child's detailed result reports status.completed === false, it throws
+// instead of returning a "successful" tool result — that throw is what lets the
+// RunWorkflow node's existing retry/error handling in runner.ts
+// (isWorkflowValidationError short-circuit, lastError rethrow) turn a child
+// failure into a failed parent node.
 
 mock.module("@projectflows/session/session", () => ({
   Session: {
@@ -105,9 +108,10 @@ function edge(source: string, target: string) {
 
 function makeToolExecutor(workflows: Record<string, any>) {
   return async (toolId: string, fixedArgs: Record<string, unknown>, _agentArgs: string[], ctx: { directory?: string }) => {
-    if (toolId !== "workflow_run") throw new Error(`unexpected tool "${toolId}"`)
-    const workflow = workflows[fixedArgs.workflowId as string]
-    if (!workflow) throw new Error(`Workflow "${fixedArgs.workflowId}" not found`)
+    if (!toolId.startsWith("workflow__")) throw new Error(`unexpected tool "${toolId}"`)
+    const targetId = toolId.slice("workflow__".length)
+    const workflow = workflows[targetId]
+    if (!workflow) throw new Error(`Workflow "${targetId}" not found`)
     const input = (fixedArgs.input ?? {}) as Record<string, unknown>
     const detailed = await runWorkflowDetailed({
       workflow,

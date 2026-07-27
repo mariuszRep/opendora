@@ -116,6 +116,43 @@ fork()         →  new session (copies messages)
 - Storage contracts: `packages/storage`
 - Workflow runner: `packages/workflow/src/runner.ts`
 
+## Error classification — OpenCode Zen 401 "No provider available"
+
+OpenCode Zen's router (`opencode.ai/zen/v1/chat/completions`) can return **HTTP 401** with a
+structured `ModelError` body when no upstream provider is available for the requested model. This
+is a **transient router-capacity issue**, not a credential failure — but the 401 status code
+alone causes it to be classified as a hard, non-retryable auth failure, killing the session
+instead of retrying or falling back.
+
+**Detection** is narrow: `opencode` provider prefix + HTTP 401 + response body matching
+`{type:"error", error:{type:"ModelError", message:"No provider available"}}`. Genuine 401s from
+other providers are unaffected.
+
+**Three classification sites were patched** (all must stay in sync):
+
+1. **`message-v2.ts` → `fromError()`** — `isOpenCodeZenModelUnavailable()` helper checks the
+   structured body and sets `isRetryable: true` on the resulting `MessageV2.APIError`. This is
+   the primary fix: `SessionRetry.retryable()` checks `error.data.isRetryable` and returns a
+   non-undefined value, enabling the retry loop in `processor.ts`.
+
+2. **`processor.ts` → `classifyErrorKind()`** — Extended to accept `providerID` and
+   `responseBody` parameters. Returns `"server"` instead of `"auth"` for the Zen 401 pattern.
+   This ensures the fallback-group path (`errorKind !== "auth"`) is not blocked, allowing the
+   processor to switch to a backup provider if one is configured.
+
+3. **`@projectflows/provider` → `ProviderError.parseAPICallError()`** — Same detection in
+   `packages/provider/src/provider/error.ts`. Overrides `errorKind` to `"server"` and
+   `isRetryable` to `true`. See `packages/provider/AGENTS.md` for details.
+
+**Known upstream issues** documenting this behavior:
+- https://github.com/anomalyco/opencode/issues/33229
+- https://github.com/anomalyco/opencode/issues/30192
+- https://github.com/anomalyco/opencode/issues/38257
+
+**Regression tests** are in `test/retry.test.ts`:
+- "classifies OpenCode Zen 401 'No provider available' as retryable"
+- "does not classify non-opencode 401 'No provider available' as retryable"
+
 ## Common mistakes
 
 - **Assuming `MessageTable`/`PartTable`/`EntryEdgeTable` are read anywhere** — they still exist in
@@ -129,3 +166,7 @@ fork()         →  new session (copies messages)
 - **Writing a part without going through `writeGenericPartEntry`/`writeToolPartEntries`** — every
   part needs both its own entry and a `contains` edge from its message entry, or `parts()` will
   silently omit it.
+- **Classifying OpenCode Zen 401 "No provider available" as auth** — this is a transient
+  router-capacity issue, not a credential failure. All three classification sites (see above)
+  must override it to `"server"` / retryable. Do not remove the `isOpenCodeZenModelUnavailable`
+  checks without replacing them.

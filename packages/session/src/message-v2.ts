@@ -964,6 +964,25 @@ export namespace MessageV2 {
     return result
   }
 
+  /**
+   * OpenCode Zen's router occasionally has no upstream provider for the requested
+   * model (transient capacity issue, not a credential problem) and signals this with
+   * HTTP 401 and a structured ModelError body — the status code alone is misleading
+   * and would otherwise be classified as a hard, non-retryable auth failure. Detected
+   * narrowly (opencode provider + exact structured body) so genuine 401s elsewhere are
+   * unaffected. See https://github.com/anomalyco/opencode/issues/33229, #30192, #38257.
+   */
+  function isOpenCodeZenModelUnavailable(providerID: string, apiErr: APICallError): boolean {
+    if (!providerID.startsWith("opencode")) return false
+    if (apiErr.statusCode !== 401) return false
+    try {
+      const body = apiErr.responseBody ? JSON.parse(apiErr.responseBody) : undefined
+      return body?.type === "error" && body?.error?.type === "ModelError" && body?.error?.message === "No provider available"
+    } catch {
+      return false
+    }
+  }
+
   export function fromError(e: unknown, ctx: { providerID: string }) {
     switch (true) {
       case e instanceof DOMException && e.name === "AbortError":
@@ -1013,6 +1032,21 @@ export namespace MessageV2 {
 
         // OpenAI 404 is transient (model routing) — retry
         if (ctx.providerID === "openai" && statusCode === 404) {
+          return new MessageV2.APIError(
+            {
+              message,
+              statusCode,
+              isRetryable: true,
+              responseHeaders: apiErr.responseHeaders,
+              responseBody: apiErr.responseBody,
+            },
+            { cause: e },
+          ).toObject()
+        }
+
+        // OpenCode Zen "No provider available" is a transient router-capacity issue,
+        // not a credential failure — classify as retryable despite the 401 status code.
+        if (isOpenCodeZenModelUnavailable(ctx.providerID, apiErr)) {
           return new MessageV2.APIError(
             {
               message,

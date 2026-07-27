@@ -274,11 +274,11 @@ export namespace Delegation {
     if (result) lines.push(`<result>`, result, `</result>`)
     if (state === "completed") {
       lines.push(
-        `<follow_up>This session is still live. Ask follow-ups via agent__${input.agent}(action:"message_session", session_id:"${input.childSessionID}") instead of starting a new task.</follow_up>`,
+        `<follow_up>This session is still live. Ask follow-ups via session_message(session_id:"${input.childSessionID}", action:"message") instead of starting a new task.</follow_up>`,
       )
     } else if (state === "incomplete") {
       lines.push(
-        `<follow_up>This task did not finish (${reason ?? "incomplete"}). Resume it via agent__${input.agent}(action:"message_session", session_id:"${input.childSessionID}").</follow_up>`,
+        `<follow_up>This task did not finish (${reason ?? "incomplete"}). Resume it via session_message(session_id:"${input.childSessionID}", action:"message").</follow_up>`,
       )
     }
     lines.push(`</task_completed>`)

@@ -1,0 +1,10 @@
+{
+  "id": "workflow-delegation",
+  "name": "Workflow Delegation",
+  "description": "Auto-registered per-workflow tools for running workflows granted to this agent",
+  "icon": "Workflow",
+  "sourceGroup": "core",
+  "core": true,
+  "tools": [],
+  "mcp": {}
+}

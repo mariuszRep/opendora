@@ -15,6 +15,7 @@ import type { ToolExecutor } from "@projectflows/workflow/executor"
 import { WorkflowStorage } from "@projectflows/workflow/storage"
 import { runWorkflowDetailed, WorkflowValidationError } from "@projectflows/workflow/runner"
 import { describeCtxManifest } from "@projectflows/workflow/refs"
+import { createWorkflowTargetTool } from "@projectflows/tools/workflow-delegation/workflow-target"
 import { mergeArgs, formatValidationFeedback, toJsonSchema } from "./workflow-tool-fill"
 
 /**
@@ -30,7 +31,35 @@ import { mergeArgs, formatValidationFeedback, toJsonSchema } from "./workflow-to
 export function createWorkflowToolExecutor(): ToolExecutor {
   return async (toolId, fixedArgs, agentArgs, ctx) => {
     await ToolRegistry.init()
-    const toolInfo = ToolRegistry.all().find((t) => t.id === toolId)
+    let toolInfo = ToolRegistry.all().find((t) => t.id === toolId)
+
+    // workflow__<id> tools are normally registered by reconcileWorkflowTools() during a
+    // live agent turn, gated on that agent's own workflows[] grant — but a RunWorkflow
+    // node's target is chosen by the workflow author at design time, independent of any
+    // agent's grants, so it isn't guaranteed to be registered yet. Force-register it here
+    // on demand, mirroring reconcileWorkflowTools()'s own parameter-extraction logic.
+    if (!toolInfo && toolId.startsWith("workflow__")) {
+      const targetId = toolId.slice("workflow__".length)
+      const lookupDirectory = ctx.directory
+        ?? await Session.effectiveDefaultPath(ctx.sessionID).catch(() => Instance.directory)
+      const wf = await WorkflowStorage.get(lookupDirectory, targetId)
+      if (wf) {
+        const paramNode = (wf.nodes ?? []).find((n: any) => (n.data as any)?.nodeType === "parameters")
+        const parameters = ((paramNode?.data as any)?.workflowParameters ?? []) as Array<{
+          name: string
+          type?: string
+          required?: boolean
+          description?: string
+          enum?: string[]
+        }>
+        ToolRegistry.register(
+          createWorkflowTargetTool({ id: wf.id, name: wf.name, description: wf.description, parameters }),
+          "workflow-delegation",
+        )
+        toolInfo = ToolRegistry.all().find((t) => t.id === toolId)
+      }
+    }
+
     if (!toolInfo) throw new Error(`Tool "${toolId}" not found in registry`)
 
     const initCtx = {
