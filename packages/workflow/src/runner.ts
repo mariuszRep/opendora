@@ -41,6 +41,7 @@ type WorkflowMeta = {
   nodeID?: string
   nodeType?: string
   nodeLabel?: string
+  nodeDescription?: string
   attempt?: number
 }
 
@@ -115,7 +116,10 @@ async function startNodeToolPart(
           input: resolvedInput ?? input,
           output: typeof output === "string" ? output : JSON.stringify(output, null, 2),
           title: toolName,
-          metadata: (metadata ?? {}) as any,
+          metadata: {
+            ...(metadata ?? {}),
+            ...(meta.nodeDescription ? { nodeDescription: meta.nodeDescription } : {}),
+          } as any,
           time: { start: startTime, end: endTime },
         },
       } as any)
@@ -427,11 +431,13 @@ async function runSubGraph({
     const currentDir = await Session.effectiveDefaultPath(sessionId)
     let result: string | undefined
 
+    const nodeDescription = typeof nd.description === "string" && nd.description.trim().length > 0 ? nd.description : undefined
     const nodeMeta: WorkflowMeta = {
       ...workflowMeta,
       nodeID: currentId,
       nodeType: String(d.nodeType ?? "unknown"),
       nodeLabel,
+      nodeDescription,
     }
 
     // Approval gateway: nodes flagged requires_approval pause here and wait for the user to
@@ -541,13 +547,38 @@ async function runSubGraph({
         currentDir, nodeMeta,
       )
       const runSession = isolated ? await createIsolatedSession(sessionId, currentDir, nodeLabel) : sessionId
+
+      // Optional per-node retry (same nd.retry config shape as Tool/RunWorkflow,
+      // see below) — agentStructuredJson() already retries internally (strict
+      // schema-forced call, then a prose+regex fallback), both synchronous with
+      // no delay between them, so this is for the outer "the whole node failed,
+      // wait and try the full thing again" case (e.g. a large/ambiguous payload
+      // or a transient provider issue), not a replacement for that inner retry.
+      const structuredRetryConfig = nd.retry as { maxAttempts?: number; delaySeconds?: number } | undefined
+      const structuredMaxAttempts = Math.max(1, structuredRetryConfig?.maxAttempts ?? 1)
+      const structuredDelayMs = Math.max(0, (structuredRetryConfig?.delaySeconds ?? 0) * 1000)
+
       let structured: unknown
+      let structuredLastError: unknown
       try {
-        structured = await agentStructuredJson(runSession, resolvedPrompt, schema, nodeModel)
+        for (let attempt = 1; attempt <= structuredMaxAttempts; attempt++) {
+          try {
+            structured = await agentStructuredJson(runSession, resolvedPrompt, schema, nodeModel)
+            structuredLastError = undefined
+            break
+          } catch (err) {
+            structuredLastError = err
+            if (isWorkflowValidationError(err)) break
+            if (attempt < structuredMaxAttempts) {
+              await new Promise<void>((r) => setTimeout(r, structuredDelayMs))
+            }
+          }
+        }
       } finally {
         // See Prompt node: close the one-shot isolated child session; never fail the node on close.
         if (isolated) await Session.close(runSession).catch(() => {})
       }
+      if (structuredLastError !== undefined) throw structuredLastError
       const renderLayout = (d.renderLayout ?? undefined) as Record<string, unknown> | undefined
       const displayProps = (d.schemaProps ?? undefined) as unknown[] | undefined
       await nodeToolHandle.finish(structured, {

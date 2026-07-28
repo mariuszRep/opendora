@@ -92,6 +92,7 @@ export default function AgentSettingsClient() {
   const [steps, setSteps] = useState("")
   const [model, setModel] = useState<ModelValue>(undefined)
   const [fallbackModel, setFallbackModel] = useState<ModelValue>(undefined)
+  const [defaultGroupID, setDefaultGroupID] = useState<string | undefined>(undefined)
   const [modelOpen, setModelOpen] = useState(false)
   const [fallbackModelOpen, setFallbackModelOpen] = useState(false)
   const [selectedTools, setSelectedTools] = useState<string[]>([])
@@ -113,6 +114,15 @@ export default function AgentSettingsClient() {
   const [selectedWorkflows, setSelectedWorkflows] = useState<string[]>([])
   const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>([])
   const [workflowSearch, setWorkflowSearch] = useState("")
+
+  useEffect(() => {
+    opendora.config.get().then((config) => {
+      const configuredModel = config?.model
+      setDefaultGroupID(
+        typeof configuredModel === "string" && configuredModel.startsWith("group:") ? configuredModel.slice(6) : undefined,
+      )
+    }).catch(() => {})
+  }, [])
   const [workflowFilter, setWorkflowFilter] = useState<"all" | "selected" | "deselected">("all")
   const [replyStopAfterReply, setReplyStopAfterReply] = useState(false)
   const [defaultPaths, setDefaultPaths] = useState<string[]>([])
@@ -670,7 +680,14 @@ export default function AgentSettingsClient() {
 
             {/* Model + Fallback */}
             <div className="grid grid-cols-2 gap-4">
-              {renderModelSelector("Preferred model", model, modelOpen, setModelOpen, setModel, "Use default")}
+              {renderModelSelector(
+                "Preferred model",
+                model,
+                modelOpen,
+                setModelOpen,
+                setModel,
+                `Use default${defaultGroupID ? ` (${modelGroups.find((group) => group.id === defaultGroupID)?.name ?? "model group"})` : ""}`,
+              )}
               {renderModelSelector("Fallback model", fallbackModel, fallbackModelOpen, setFallbackModelOpen, setFallbackModel, "None")}
             </div>
 

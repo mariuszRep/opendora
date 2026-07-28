@@ -410,6 +410,39 @@ test("defaultModel respects config model setting", async () => {
   })
 })
 
+test("defaultModel resolves a configured model group", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      await Bun.write(
+        path.join(dir, "opencode.json"),
+        JSON.stringify({
+          $schema: "https://projectflows.ai/config.json",
+          model: "group:auto-router",
+          model_groups: [
+            {
+              id: "auto-router",
+              name: "Auto Router",
+              models: [{ providerID: "anthropic", modelID: "claude-sonnet-4-20250514" }],
+            },
+          ],
+        }),
+      )
+    },
+  })
+  await Instance.provide({
+    directory: tmp.path,
+    init: async () => {
+      Env.set("ANTHROPIC_API_KEY", "test-api-key")
+    },
+    fn: async () => {
+      await expect(Provider.defaultModel()).resolves.toEqual({
+        providerID: "anthropic",
+        modelID: "claude-sonnet-4-20250514",
+      })
+    },
+  })
+})
+
 test("provider with baseURL from config", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {

@@ -51,7 +51,20 @@ function block(info: Inline, output?: string) {
 
 function fallback(part: ToolPart) {
   const state = part.state
-  const input = "input" in state ? state.input : undefined
+  const input = "input" in state ? (state.input as Record<string, any>) : undefined
+  const metadata = "metadata" in state ? (state.metadata as Record<string, any>) : undefined
+  const description =
+    (typeof input?.description === "string" && input.description.trim().length > 0 ? input.description : undefined) ??
+    (typeof metadata?.nodeDescription === "string" && metadata.nodeDescription.trim().length > 0
+      ? metadata.nodeDescription
+      : undefined)
+  if (description) {
+    inline({
+      icon: "⚙",
+      title: `${part.tool}: ${description}`,
+    })
+    return
+  }
   const title =
     ("title" in state && state.title ? state.title : undefined) ||
     (input && typeof input === "object" && Object.keys(input).length > 0 ? JSON.stringify(input) : "Unknown")
@@ -206,10 +219,12 @@ function skill(info: ToolCall) {
 function bash(info: ToolCall) {
   const input = info.input as Partial<{ command: string; timeout?: number; workdir?: string; description: string }>
   const output = info.part.state.status === "completed" ? info.part.state.output?.trim() : undefined
+  const description = input.description || (info.metadata.nodeDescription as string | undefined)
   block(
     {
       icon: "$",
       title: `${input.command}`,
+      ...(description && { description }),
     },
     output,
   )

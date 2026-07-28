@@ -1548,18 +1548,28 @@ function GenericTool(props: ToolProps<any>) {
     if (expanded() || !overflow()) return output()
     return [...lines().slice(0, maxLines), "…"].join("\n")
   })
+  const description = createMemo(() => {
+    const fromInput = props.input?.description
+    if (typeof fromInput === "string" && fromInput.trim().length > 0) return fromInput
+    const fromNode = props.metadata?.nodeDescription
+    if (typeof fromNode === "string" && fromNode.trim().length > 0) return fromNode
+    return undefined
+  })
+  const summary = createMemo(() =>
+    description() ? `${props.tool}: ${description()}` : `${props.tool} ${input(props.input, ["description"])}`,
+  )
 
   return (
     <Show
       when={props.output && ctx.showGenericToolOutput()}
       fallback={
         <InlineTool icon="⚙" pending="Writing command..." complete={true} part={props.part}>
-          {props.tool} {input(props.input)}
+          {summary()}
         </InlineTool>
       }
     >
       <BlockTool
-        title={`# ${props.tool} ${input(props.input)}`}
+        title={`# ${summary()}`}
         part={props.part}
         onClick={overflow() ? () => setExpanded((prev) => !prev) : undefined}
       >

@@ -120,6 +120,12 @@ export function ToolCallCard({
   const error = "error" in toolState ? formatToolPayload((toolState as any).error) : undefined
   const outputObject = "metadata" in toolState ? (toolState as any).metadata?.outputObject : undefined
   const hasOutputObject = outputObject !== undefined && outputObject !== null
+  const nodeDescription = "metadata" in toolState ? (toolState as any).metadata?.nodeDescription : undefined
+  const toolDescription =
+    (typeof (input as any)?.description === "string" && (input as any).description.trim().length > 0
+      ? (input as any).description
+      : undefined) ??
+    (typeof nodeDescription === "string" && nodeDescription.trim().length > 0 ? nodeDescription : undefined)
   const renderLayout = "metadata" in toolState ? (toolState as any).metadata?.renderLayout : undefined
   const displayProps = "metadata" in toolState ? (toolState as any).metadata?.displayProps : undefined
   const answered =
@@ -265,6 +271,12 @@ export function ToolCallCard({
   const title = matchedToggle ? matchedToggle.getTitle(tool)
     : isSkillLoadToolCall ? getSkillLoadToolTitle(tool)
     : isMemoryWriteToolCall ? getMemoryWriteToolTitle(tool)
+    : toolDescription ? (
+        <>
+          {tool.tool}
+          <span className="font-normal text-muted-foreground">: {toolDescription}</span>
+        </>
+      )
     : tool.tool
 
   const actionsContent = matchedToggle?.renderActions?.() ?? skillLoadActions

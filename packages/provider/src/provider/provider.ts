@@ -17,6 +17,7 @@ import { iife } from "@projectflows/util/iife"
 import { Global } from "@projectflows/util/global"
 import path from "path"
 import { Filesystem } from "@projectflows/util/filesystem"
+import { ProviderFallback } from "./fallback"
 
 // Direct imports for bundled providers
 import { createAmazonBedrock, type AmazonBedrockProviderSettings } from "@ai-sdk/amazon-bedrock"
@@ -1406,7 +1407,23 @@ export namespace Provider {
 
   export async function defaultModel() {
     const cfg = await getConfig()
-    if (cfg.model) return parseModel(cfg.model)
+    if (cfg.model) {
+      const groupID = cfg.model.startsWith("group:") ? cfg.model.slice("group:".length) : undefined
+      if (groupID) {
+        // `model_groups` are configuration-level routing aliases, not provider IDs.
+        // Resolve them here so every consumer of the package-level default (including
+        // agents that inherit the default) receives an invokable provider/model pair.
+        ProviderFallback.setCustomGroups(
+          (cfg.model_groups ?? []).map((group) => ({
+            id: group.id,
+            displayName: group.name,
+            slots: group.models,
+          })),
+        )
+        return ProviderFallback.resolve(groupID)
+      }
+      return parseModel(cfg.model)
+    }
 
     const providers = await list()
     const recent = (await Filesystem.readJson<{ recent?: { providerID: string; modelID: string }[] }>(
