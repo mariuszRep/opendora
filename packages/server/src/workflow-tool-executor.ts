@@ -126,6 +126,8 @@ export function createWorkflowToolExecutor(): ToolExecutor {
             runWorkflowDetailed({ workflow, sessionId, input, directory }),
           run: async (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) =>
             (await runWorkflowDetailed({ workflow, sessionId, input, directory })).display,
+          sandboxRun: (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string, seedCtx?: Record<string, unknown>) =>
+            runWorkflowDetailed({ workflow, sessionId, input, directory, seedCtx, sandbox: true }),
         },
         prompt: (opts: any) => SessionPrompt.prompt(opts),
         resolvePromptParts: (template: string) => SessionPrompt.resolvePromptParts(template),

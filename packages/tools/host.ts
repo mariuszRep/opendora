@@ -172,6 +172,14 @@ export interface HostServices {
       input: Record<string, unknown>,
       directory: string,
     ): Promise<{ display: string; outputObject: any }>
+    /** Runs an ad-hoc, never-persisted node/edge snippet through the real engine — no checkpoints, no WorkflowStorage — so a node (or a few) can be tested before it's added to a real workflow. */
+    sandboxRun?(
+      workflow: unknown,
+      sessionId: string,
+      input: Record<string, unknown>,
+      directory: string,
+      seedCtx?: Record<string, unknown>,
+    ): Promise<{ display: string; outputObject: any }>
   }
   flags?: Record<string, string | boolean>
   instructionPrompt?: (sessionId: string, messages: unknown[], filepath: string, messageID: string) => Promise<Array<{ filepath: string; content: string }>>

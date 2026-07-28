@@ -820,11 +820,18 @@ export namespace SessionPrompt {
         continue
       }
 
-      // context overflow, needs compaction
+      // context overflow, needs compaction.
+      // Measured against both the previous call's provider-reported usage AND the size of
+      // what's actually about to be sent — a large tool result added since lastFinished
+      // (or a fresh session with no completed call yet) wouldn't show up in lastFinished.tokens
+      // alone, and would otherwise sail past this guard straight into a hard provider error.
       if (
-        lastFinished &&
-        lastFinished.summary !== true &&
-        (await SessionCompaction.isOverflow({ tokens: lastFinished.tokens, model }))
+        (!lastFinished || lastFinished.summary !== true) &&
+        (await SessionCompaction.isOverflow({
+          tokens: lastFinished?.tokens,
+          model,
+          freshMessages: MessageV2.toModelMessages(msgs, model),
+        }))
       ) {
         await SessionCompaction.create({
           sessionID,
@@ -1203,6 +1210,8 @@ export namespace SessionPrompt {
             cfg.workflow!.run!(workflow, sessionId, input, directory),
           runDetailed: (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) =>
             cfg.workflow!.runDetailed!(workflow, sessionId, input, directory),
+          sandboxRun: (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string, seedCtx?: Record<string, unknown>) =>
+            cfg.workflow!.sandboxRun!(workflow, sessionId, input, directory, seedCtx),
         } : undefined,
         emit: (type: string, payload: unknown) => {
           cfg.bus?.publish({ type }, payload)

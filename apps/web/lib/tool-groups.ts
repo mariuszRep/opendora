@@ -81,7 +81,7 @@ export function getToolGroup(id: string): ToolGroupId {
   if (["agent_create", "agent_update", "agent_delete", "agent_list", "agent_get"].includes(id)) return "agents"
   if (["skill_load", "skill_list", "skill_search", "skill_install", "skill_create", "skill_edit", "skill_remove"].includes(id)) return "skills"
   if (["schedule_list", "schedule_create", "schedule_update", "schedule_delete", "schedule_get", "schedule_run"].includes(id)) return "schedule"
-  if (["workflow_run", "workflow_create", "workflow_get", "workflow_list", "workflow_update", "workflow_delete", "workflow_node_catalog"].includes(id)) return "workflows"
+  if (["workflow_run", "workflow_create", "workflow_get", "workflow_list", "workflow_update", "workflow_delete", "workflow_node_catalog", "workflow_sandbox_run"].includes(id)) return "workflows"
   if (id.startsWith("workflow__")) return "workflows"
   if (["tool_list", "tool_get", "tool_update"].includes(id)) return "tool-registry"
   if (["memory_read", "memory_write", "memory_delete"].includes(id)) return "memory"

@@ -654,6 +654,9 @@ export function configureSessionCore() {
       async runDetailed(workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) {
         return runWorkflowDetailed({ workflow, sessionId, input, directory })
       },
+      async sandboxRun(workflow: any, sessionId: string, input: Record<string, unknown>, directory: string, seedCtx?: Record<string, unknown>) {
+        return runWorkflowDetailed({ workflow, sessionId, input, directory, seedCtx, sandbox: true })
+      },
     },
     // Wire session methods so compaction.create can call them without circular dep.
     // Extra methods beyond the interface are used via dynamic access; IIFE bypasses

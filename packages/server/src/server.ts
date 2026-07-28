@@ -972,6 +972,8 @@ export namespace Server {
                 runWorkflow({ workflow, sessionId, input, directory }),
               runDetailed: (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string) =>
                 runWorkflowDetailed({ workflow, sessionId, input, directory }),
+              sandboxRun: (workflow: any, sessionId: string, input: Record<string, unknown>, directory: string, seedCtx?: Record<string, unknown>) =>
+                runWorkflowDetailed({ workflow, sessionId, input, directory, seedCtx, sandbox: true }),
             },
           },
         }

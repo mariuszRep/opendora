@@ -204,6 +204,17 @@ export interface SessionCoreConfig {
       display: string
       outputObject: { status: Record<string, unknown>; result?: Record<string, unknown> }
     }>
+    /** Runs an ad-hoc, never-persisted node/edge snippet through the real engine — no checkpoints, no WorkflowStorage. */
+    sandboxRun?(
+      workflow: any,
+      sessionId: string,
+      input: Record<string, unknown>,
+      directory: string,
+      seedCtx?: Record<string, unknown>,
+    ): Promise<{
+      display: string
+      outputObject: { status: Record<string, unknown>; result?: Record<string, unknown> }
+    }>
   }
   /** Skill-tool registry — tools unlocked per session via skill_load */
   skillTools?: {

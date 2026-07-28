@@ -1186,11 +1186,17 @@ export async function runWorkflowDetailed({
   sessionId,
   input,
   directory,
+  seedCtx,
+  sandbox,
 }: {
   workflow: Workflow
   sessionId: string
   input: Record<string, unknown>
   directory: string
+  /** Initial ctx values (e.g. mocked predecessor outputs), used instead of {} — ignored if a real checkpoint is resumed. */
+  seedCtx?: Record<string, unknown>
+  /** Skips checkpoint persistence and active-run tracking — for one-off test/sandbox runs that must leave no trace. */
+  sandbox?: boolean
 }): Promise<WorkflowRunDetailedResult> {
   if (workflow.nodes.length === 0) throw new Error("Workflow has no nodes")
 
@@ -1203,7 +1209,7 @@ export async function runWorkflowDetailed({
   const activeStack = new Set(parentStack ?? [])
   activeStack.add(workflow.id)
 
-  return _callStack.run(activeStack, () => _runWorkflowDetailed({ workflow, sessionId, input, directory }))
+  return _callStack.run(activeStack, () => _runWorkflowDetailed({ workflow, sessionId, input, directory, seedCtx, sandbox }))
 }
 
 async function _runWorkflowDetailed({
@@ -1211,28 +1217,34 @@ async function _runWorkflowDetailed({
   sessionId,
   input,
   directory,
+  seedCtx,
+  sandbox,
 }: {
   workflow: Workflow
   sessionId: string
   input: Record<string, unknown>
   directory: string
+  seedCtx?: Record<string, unknown>
+  sandbox?: boolean
 }): Promise<WorkflowRunDetailedResult> {
-  // Hydrate ctx and step journal from latest checkpoint if resuming
-  let ctx: Record<string, unknown> = {}
+  // Hydrate ctx and step journal from latest checkpoint if resuming (skipped entirely in sandbox mode)
+  let ctx: Record<string, unknown> = seedCtx ? { ...seedCtx } : {}
   const steps: GraphStep[] = []
   let completedNodeIds: Set<string> | undefined
 
-  const existingCkp = await CheckpointStore.getLatest(sessionId)
-  if (existingCkp && existingCkp.workflow_id === workflow.id && existingCkp.status !== "done" && existingCkp.status !== "error") {
-    ctx = (existingCkp.ctx as Record<string, unknown>) ?? {}
-    const journal = (existingCkp.step_journal as StepJournalEntry[]) ?? []
-    completedNodeIds = new Set(journal.map((e) => e.nodeId))
+  if (!sandbox) {
+    const existingCkp = await CheckpointStore.getLatest(sessionId)
+    if (existingCkp && existingCkp.workflow_id === workflow.id && existingCkp.status !== "done" && existingCkp.status !== "error") {
+      ctx = (existingCkp.ctx as Record<string, unknown>) ?? {}
+      const journal = (existingCkp.step_journal as StepJournalEntry[]) ?? []
+      completedNodeIds = new Set(journal.map((e) => e.nodeId))
+    }
   }
 
   const workflowRunID = Identifier.ascending("workflow_run")
   const baseWorkflowMeta: WorkflowMeta = { workflowID: workflow.id, workflowRunID }
 
-  registerActiveRun(sessionId, { ctx, stepJournal: [] })
+  if (!sandbox) registerActiveRun(sessionId, { ctx, stepJournal: [] })
 
   await Session.setWorkflowRun({
     sessionID: sessionId,
@@ -1241,7 +1253,7 @@ async function _runWorkflowDetailed({
 
   const journalEntries: StepJournalEntry[] = []
 
-  const checkpointWriter = async (nodeId: string, nodeType: string): Promise<void> => {
+  const checkpointWriter = sandbox ? undefined : async (nodeId: string, nodeType: string): Promise<void> => {
     journalEntries.push({
       stepId: Identifier.ascending("step"),
       nodeId,
@@ -1260,15 +1272,17 @@ async function _runWorkflowDetailed({
   }
 
   const finalize = async (error?: string, errorType?: "validation" | "runtime") => {
-    deregisterActiveRun(sessionId)
+    if (!sandbox) deregisterActiveRun(sessionId)
     const workflowOutput = ctx["__workflow_output__"] as Record<string, unknown> | undefined
     const passed = steps.filter((s) => s.passed).length
     const failed = steps.filter((s) => !s.passed).length
     await Session.setWorkflowRun({ sessionID: sessionId, workflowRun: null })
-    if (error) {
-      await CheckpointStore.markError(sessionId, workflow.id, error)
-    } else {
-      await CheckpointStore.complete(sessionId, ctx, journalEntries)
+    if (!sandbox) {
+      if (error) {
+        await CheckpointStore.markError(sessionId, workflow.id, error)
+      } else {
+        await CheckpointStore.complete(sessionId, ctx, journalEntries)
+      }
     }
     const status = {
       workflow: workflow.name,

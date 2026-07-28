@@ -18,7 +18,7 @@ import { getConfig } from "./config.ts"
 import { LLM } from "./llm.ts"
 
 // Token.estimate — rough approximation: 1 token ≈ 4 chars
-function estimateTokens(text: any): number {
+export function estimateTokens(text: any): number {
   if (!text) return 0
   const str = typeof text === "string" ? text : JSON.stringify(text)
   return Math.ceil(str.length / 4)
@@ -33,7 +33,17 @@ export namespace SessionCompaction {
 
   const COMPACTION_BUFFER = 20_000
 
-  export async function isOverflow(input: { tokens: MessageV2.Assistant["tokens"]; model: any }) {
+  export async function isOverflow(input: {
+    // Provider-reported usage from the last completed call. Absent on a session's
+    // first turn, or when nothing has completed since the last compaction.
+    tokens?: MessageV2.Assistant["tokens"]
+    model: any
+    // The message list actually about to be sent to the model. A large tool result
+    // added since lastFinished (or a fresh session with no completed call at all)
+    // wouldn't show up in `tokens`, so this is measured independently and the larger
+    // of the two counts wins.
+    freshMessages?: unknown
+  }) {
     const cfg = getConfig()
     const configSvc = cfg.config
     if (configSvc) {
@@ -55,9 +65,12 @@ export namespace SessionCompaction {
     if (!context || context === 0) return false
     const effectiveContext = context
 
-    const count =
-      input.tokens.total ||
-      input.tokens.input + input.tokens.output + input.tokens.cache.read + input.tokens.cache.write
+    const providerCount = input.tokens
+      ? input.tokens.total ||
+        input.tokens.input + input.tokens.output + input.tokens.cache.read + input.tokens.cache.write
+      : 0
+    const freshCount = input.freshMessages !== undefined ? estimateTokens(input.freshMessages) : 0
+    const count = Math.max(providerCount, freshCount)
 
     if (!count) return false   // no token data yet — can't determine overflow
 

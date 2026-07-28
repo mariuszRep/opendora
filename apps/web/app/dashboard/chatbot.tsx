@@ -379,19 +379,25 @@ export const Chatbot = () => {
       }
     }
 
-    // Fallback: text-length estimate from visible message content only.
-    // This misses system prompts and tool results, so it always underestimates.
+    // Fallback: text-length estimate from visible message content, including tool
+    // input/output — those are inlined verbatim into the actual model request
+    // (see MessageV2.toModelMessages), so omitting them makes this always underestimate,
+    // sometimes drastically (e.g. a large delegation reply or scraped ingestion result).
+    // Still misses the system prompt, so it remains a lower bound.
     let inputTokens = 0
     let outputTokens = 0
 
     for (const message of messages) {
-      if (message.info.role === "user") {
-        const text = getMessageText(message.parts)
-        inputTokens += Math.ceil(text.length / 4)
-      } else if (message.info.role === "assistant") {
-        const text = getMessageText(message.parts)
-        outputTokens += Math.ceil(text.length / 4)
+      const text = getMessageText(message.parts)
+      let toolChars = 0
+      for (const tool of getToolParts(message.parts)) {
+        if (tool.state.status === "completed") toolChars += JSON.stringify(tool.state.output ?? "").length
+        else if (tool.state.status === "error") toolChars += tool.state.error?.length ?? 0
+        toolChars += JSON.stringify(tool.state.input ?? "").length
       }
+      const tokens = Math.ceil((text.length + toolChars) / 4)
+      if (message.info.role === "user") inputTokens += tokens
+      else if (message.info.role === "assistant") outputTokens += tokens
     }
 
     return {
