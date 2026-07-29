@@ -583,7 +583,7 @@ async function req<T>(path: string, opts?: RequestInit): Promise<T> {
 
 export const opendora = {
   session: {
-    list: () => req<Session[]>(`/session`),
+    list: () => req<Session[]>(`/session?limit=10000`),
     status: () => req<Record<string, { type: "idle" | "busy" | "retry"; attempt?: number; message?: string; next?: number }>>("/session/status"),
     create: (input?: { sessionType?: SessionType; agentID?: string | null; title?: string }) =>
       req<Session>("/session", { method: "POST", body: JSON.stringify(input ?? {}) }),
