@@ -59,6 +59,32 @@ describe("reference resolution", () => {
     )
   })
 
+  test("embeds an object reference as real JSON, not [object Object]", () => {
+    expect(resolveTemplate("Payload: $ctx.parsed", input, ctx)).toBe(
+      `Payload: ${JSON.stringify({ hue: "blue" })}`,
+    )
+  })
+
+  test("embeds an array reference as real JSON, not comma-joined garbage", () => {
+    const ctxWithArray = { ...ctx, decisions: [{ id: "a", select: true }, { id: "b", select: false }] }
+    expect(resolveTemplate("Decisions: $ctx.decisions", input, ctxWithArray)).toBe(
+      `Decisions: ${JSON.stringify(ctxWithArray.decisions)}`,
+    )
+  })
+
+  test("plain string/number/boolean values are still embedded bare, not JSON-quoted", () => {
+    const ctxWithScalars = { ...ctx, flag: true, n: 7 }
+    expect(resolveTemplate("$ctx.summary / $ctx.flag / $ctx.n", input, ctxWithScalars)).toBe(
+      "hello world / true / 7",
+    )
+  })
+
+  test("new $nodeKey form also embeds objects/arrays as real JSON", () => {
+    expect(resolveTemplate("Parsed: $parsed", input, ctx)).toBe(
+      `Parsed: ${JSON.stringify({ hue: "blue" })}`,
+    )
+  })
+
   test("resolveRefs resolves a record of args", () => {
     expect(resolveRefs({ a: "$input.color", b: "$ctx.summary" }, input, ctx)).toEqual({
       a: "red",

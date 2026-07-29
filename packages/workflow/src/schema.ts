@@ -154,6 +154,18 @@ export function resolveDeep(
   return value
 }
 
+// Plain values embed as-is (String(42) === "42", no surprise quoting); objects/arrays
+// have no meaningful String() form ("[object Object]" / comma-joined garbage), so those
+// get JSON.stringify'd instead — lets a bash/tool node's command reference a structured
+// node's array/object field (e.g. "$ctx.review.decisions") directly and receive real,
+// parseable JSON, instead of every workflow author needing the node to *also* emit a
+// redundant hand-serialized "payload_json" string just to work around this.
+function stringifyRefValue(val: unknown): string {
+  if (val == null) return ""
+  if (typeof val === "object") return JSON.stringify(val)
+  return String(val)
+}
+
 export function resolveTemplate(
   template: string,
   input: Record<string, unknown>,
@@ -189,12 +201,12 @@ export function resolveTemplate(
           if (pointer !== undefined) return pointer
         }
         const val = getPath(legacyNs === "input" ? input : ctx, legacyPath)
-        return val == null ? "" : String(val)
+        return stringifyRefValue(val)
       }
       if (nodeKey) {
         if (nodeKey === "input") {
           const val = nodePath ? getPath(input, nodePath) : input
-          return val == null ? "" : String(val)
+          return stringifyRefValue(val)
         }
         const pointer = asPointer(nodeKey, nodePath || undefined)
         if (pointer !== undefined) return pointer
@@ -202,7 +214,7 @@ export function resolveTemplate(
         const val = nodePath && nodeVal != null && typeof nodeVal === "object"
           ? getPath(nodeVal as Record<string, unknown>, nodePath)
           : nodeVal
-        return val == null ? "" : String(val)
+        return stringifyRefValue(val)
       }
       return match
     }
