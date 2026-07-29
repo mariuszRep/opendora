@@ -27,7 +27,8 @@
     "./skill-load-tool": "./skill-load-tool.ts",
     "./memory/lib": "./memory/lib.ts",
     "./delegation/*": "./delegation/*.ts",
-    "./workflow-delegation/*": "./workflow-delegation/*.ts"
+    "./workflow-delegation/*": "./workflow-delegation/*.ts",
+    "./sessions/*": "./sessions/*.ts"
   },
   "devDependencies": {
     "@tsconfig/bun": "catalog:",

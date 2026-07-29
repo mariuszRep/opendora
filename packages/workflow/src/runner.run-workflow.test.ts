@@ -89,7 +89,7 @@ function runWorkflowNode(
 
 function forEachNode(
   nodeId: string,
-  parameters: { items: string; item_variable: string; collect: string; output: string },
+  parameters: { items: string; item_variable: string; collect: string; output: string; continue_on_error?: boolean },
   subWorkflow: { nodes: unknown[]; edges: unknown[] },
 ) {
   return {
@@ -418,5 +418,56 @@ describe("run_workflow child composition", () => {
     // Only the first (failing) iteration's child ran — no retries, and the loop
     // stopped instead of continuing to remaining items.
     expect(invocationCount).toBe(1)
+  })
+
+  test("for_each can continue after exhausted iteration failures when explicitly configured", async () => {
+    const child = {
+      id: "child-fails-one",
+      name: "Child Fails One",
+      version: "1.0.0",
+      nodes: [parametersNode("p", [{ name: "n", required: true }]), outputNode("out", { n: "$input.n" })],
+      edges: [edge("p", "out")],
+    }
+    const parent = {
+      id: "parent-foreach-continue",
+      name: "Parent ForEach Continue",
+      version: "1.0.0",
+      nodes: [
+        forEachNode(
+          "loop",
+          { items: "$input.items", item_variable: "n", collect: "$ctx.child_result", output: "curated", continue_on_error: true },
+          {
+            nodes: [runWorkflowNode("child_run", {
+              workflowId: "child-fails-one",
+              input: { n: "$n" },
+              wait: "true",
+              output: "child_result",
+            }, "child_result")],
+            edges: [],
+          },
+        ),
+        outputNode("final", { results: "$curated" }),
+      ],
+      edges: [edge("loop", "final")],
+    }
+    const executor = makeToolExecutor({ "child-fails-one": child })
+    registerToolExecutor(async (...args: Parameters<typeof executor>) => {
+      if ((args[1].input as { n: number }).n === 2) {
+        const error = new Error("invalid item")
+        error.name = "WorkflowValidationError"
+        throw error
+      }
+      return executor(...args)
+    })
+
+    const result = await runWorkflowDetailed({ workflow: parent as any, sessionId: "s-foreach-continue", input: { items: [1, 2, 3] }, directory: "/tmp" })
+    const output = result.outputObject as any
+
+    expect(output.status.completed).toBe(true)
+    expect(output.result.results).toEqual([
+      { n: 1 },
+      { status: "error", item: 2, error: "invalid item", errorType: "validation" },
+      { n: 3 },
+    ])
   })
 })

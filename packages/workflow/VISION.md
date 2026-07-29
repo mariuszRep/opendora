@@ -372,7 +372,7 @@ The `run_workflow` node composes a reusable child workflow without weakening wor
 
 ### For-each contract
 
-Each `for_each` iteration resolves child input against its own isolated context. Deterministic configuration or parameter-validation failures are not retried; operational failures follow the documented retry policy. Collected child results preserve their native types and iteration order.
+Each `for_each` iteration resolves child input against its own isolated context. Deterministic configuration or parameter-validation failures are not retried; operational failures follow the documented retry policy. By default, an exhausted iteration failure propagates and fails the parent node. A workflow may explicitly set `continue_on_error: true` when its downstream stages can compensate for individual failures; in that mode the collection retains iteration order and the failed slot is `{ status: "error", item, error, errorType }`, allowing an explicit skip, alert, or other recovery step.
 
 ### Verification standard
 

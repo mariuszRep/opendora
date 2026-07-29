@@ -1,0 +1,9 @@
+{
+  "id": "sessions",
+  "name": "Sessions",
+  "description": "Message or reply into any existing session by id",
+  "icon": "MessageCircle",
+  "sourceGroup": "core",
+  "tools": ["session_message"],
+  "mcp": {}
+}

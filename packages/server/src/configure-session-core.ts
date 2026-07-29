@@ -31,6 +31,7 @@ import { ConfigMarkdown } from "@projectflows/config/markdown"
 import { Command } from "@projectflows/server/command"
 import { createAgentTargetTool } from "@projectflows/tools/delegation/agent-target"
 import { createWorkflowTargetTool } from "@projectflows/tools/workflow-delegation/workflow-target"
+import { createSessionMessageTool } from "@projectflows/tools/sessions/session-message"
 import { Shell } from "@projectflows/util/shell"
 import { Truncate } from "@projectflows/tools/truncation-impl"
 import { Skill } from "@projectflows/skills/skill"
@@ -58,6 +59,9 @@ async function enrichAgent(agent: any): Promise<any> {
   })
   await reconcileWorkflowTools().catch((err) => {
     console.error("[configureSessionCore] reconcileWorkflowTools failed:", err)
+  })
+  await reconcileCoreTools().catch((err) => {
+    console.error("[configureSessionCore] reconcileCoreTools failed:", err)
   })
 
   let delegateRules = PermissionNext.listRules("agent", agent.id).filter((r) => r.resource === "agent")
@@ -236,6 +240,18 @@ export async function reconcileWorkflowTools() {
   for (const staleId of existingIds) {
     ToolRegistry.unregister(staleId)
   }
+}
+
+/**
+ * Registers the single, static `session_message` tool — the generic non-per-target counterpart
+ * to agent__<id>/workflow__<id>: it messages or replies into ANY existing session by id, so
+ * (unlike those two) there's no per-target loop here, just one unconditional upsert per call.
+ * Runs from the same per-request enrichAgent() lazy-registration site as the other two reconciles
+ * for consistency, even though a static tool has no per-agent/per-workflow staleness to clean up.
+ */
+export async function reconcileCoreTools() {
+  await ToolRegistry.init()
+  ToolRegistry.register(createSessionMessageTool(), "sessions")
 }
 
 let configured = false

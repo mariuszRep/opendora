@@ -637,7 +637,7 @@ const BUILTIN_DEFINITIONS: NodeDefinition[] = [
       node: {
         label: "For Each",
         description: "",
-        parameters: { items: "", item_variable: "item", collect: "", output: "results" },
+        parameters: { items: "", item_variable: "item", collect: "", output: "results", continue_on_error: false },
       },
       data: { inputs: [], outputs: [] },
       subWorkflow: { nodes: [], edges: [] },

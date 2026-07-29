@@ -75,7 +75,7 @@ export function getToolGroup(id: string): ToolGroupId {
   if (id === "playwright_browser_mode") return "browser"
   if (id.startsWith("desktop_")) return "desktop"
   if (id.startsWith("pyautogui_")) return "automation"
-  if (["session_search", "session_get", "session_analyze", "session_tree", "session_update"].includes(id)) return "sessions"
+  if (["session_message", "session_search", "session_get", "session_analyze", "session_tree", "session_update"].includes(id)) return "sessions"
   if (id.startsWith("agent__")) return "delegation"
   if (["question", "notify"].includes(id)) return "communication"
   if (["agent_create", "agent_update", "agent_delete", "agent_list", "agent_get"].includes(id)) return "agents"

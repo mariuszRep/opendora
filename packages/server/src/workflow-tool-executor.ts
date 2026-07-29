@@ -134,7 +134,10 @@ export function createWorkflowToolExecutor(): ToolExecutor {
         session: {
           list: (filter?: any) => Session.list(filter),
           get: (id: string) => Session.get(id),
-          messages: (id: string) => Session.messages({ sessionID: id }),
+          // Match the session host contract used by installed session tools.
+          // These tools pass the Session.messages input object directly; wrapping
+          // it again turns sessionID into an object and fails its Zod validation.
+          messages: (input: { sessionID: string; limit?: number }) => Session.messages(input),
           setTitle: (id: string, title: string) => Session.setTitle({ sessionID: id, title }),
           create: (input: any) => Session.create(input),
           createNext: (input: any) => Session.createNext(input),

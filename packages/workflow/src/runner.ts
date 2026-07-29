@@ -910,6 +910,9 @@ async function runSubGraph({
       const inlineItemsList = Array.isArray(params.itemsList) ? (params.itemsList as string[]) : null
       const itemVar = (params.item_variable as string | undefined) ?? "item"
       const collectKey = (params.collect as string | undefined) || undefined
+      // Keep fail-fast as the platform default. Pipelines which can safely
+      // degrade one bad item into an explicit result opt in to continuation.
+      const continueOnError = params.continue_on_error === true
       const subWf = d.subWorkflow as { nodes: WorkflowNode[]; edges: WorkflowEdge[] } | undefined
 
       let items: unknown[]
@@ -937,7 +940,13 @@ async function runSubGraph({
 
       nodeToolHandle = await startNodeToolPart(
         sessionId, "workflow_foreach",
-        { items: itemsMode === "inline" ? inlineItemsList : itemsExpr, item_variable: itemVar, count: items.length, concurrency },
+        {
+          items: itemsMode === "inline" ? inlineItemsList : itemsExpr,
+          item_variable: itemVar,
+          count: items.length,
+          concurrency,
+          continue_on_error: continueOnError,
+        },
         currentDir, nodeMeta,
       )
 
@@ -1000,9 +1009,27 @@ async function runSubGraph({
         return collected !== undefined ? collected : item
       }
 
+      const runAndCapture = async (i: number): Promise<unknown> => {
+        try {
+          return await runIteration(i)
+        } catch (err) {
+          if (!continueOnError) throw err
+          const message = err instanceof Error ? err.message : String(err)
+          // An error is data only when the workflow explicitly opted in. This
+          // preserves the source item, error, and retry classification for a
+          // downstream compensating step (for example, marking a record skipped).
+          return {
+            status: "error",
+            item: items[i],
+            error: message,
+            errorType: isWorkflowValidationError(err) ? "validation" : "runtime",
+          }
+        }
+      }
+
       if (concurrency <= 1) {
         for (let i = 0; i < items.length; i++) {
-          iterResults[i] = await runIteration(i)
+          iterResults[i] = await runAndCapture(i)
         }
       } else {
         let nextIndex = 0
@@ -1010,7 +1037,7 @@ async function runSubGraph({
           while (true) {
             const i = nextIndex++
             if (i >= items.length) return
-            iterResults[i] = await runIteration(i)
+            iterResults[i] = await runAndCapture(i)
           }
         }
         await Promise.all(Array.from({ length: concurrency }, () => worker()))
