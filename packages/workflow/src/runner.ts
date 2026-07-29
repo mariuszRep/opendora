@@ -334,6 +334,23 @@ function buildAdjacency(edges: WorkflowEdge[]): Map<string, WorkflowEdge[]> {
 
 type GraphStep = { label: string; passed: boolean }
 
+// Node types whose own branch already writes a native (non-string) value into ctx — each
+// does an explicit ctx[storeAs]/ctx[nodeKey] write and must never have the generic
+// string-write below re-clobber it. One shared set means adding a new self-writing node
+// type is one edit, not two easy-to-miss ones (see the Tool/resultPath clobber this fixes,
+// which happened because Tool was in neither list).
+const NATIVE_CTX_WRITE_NODE_TYPES = new Set<string>([
+  NodeTypeId.Decide,
+  NodeTypeId.Structured,
+  NodeTypeId.Output,
+  NodeTypeId.ForEach,
+  NodeTypeId.Variable,
+  NodeTypeId.RunWorkflow,
+  NodeTypeId.Tool,
+  NodeTypeId.Parameters,
+  NodeTypeId.ConfigureSession,
+])
+
 // ─── Core graph executor ──────────────────────────────────────────────────────
 // Runs a flat node/edge graph within an existing session. Mutates ctx and steps
 // in place so the caller retains accumulated results even when an error is thrown.
@@ -515,6 +532,10 @@ async function runSubGraph({
       }
 
       await nodeToolHandle.finish(lines.join("\n"), { outputObject: received })
+      // Store the native params object directly — mirrors Variable's own explicit write — so
+      // a downstream $ctx.key.field reference navigates real types instead of a stringified blob.
+      if (storeAs !== undefined) ctx[storeAs] = received
+      if (nodeKey !== undefined) ctx[nodeKey] = received
       result = JSON.stringify(received)
 
     } else if (d.nodeType === NodeTypeId.Prompt) {
@@ -761,6 +782,7 @@ async function runSubGraph({
       // Allows question/multi-choice tools to store machine-readable answers array
       // rather than the human display string.
       const resultPath = params.resultPath as string | undefined
+      let resultPathApplied = false
       if (resultPath && toolMeta) {
         const extracted = resolveRef(`$ctx.${resultPath}`, input, { ...ctx, metadata: toolMeta })
         if (extracted !== undefined) {
@@ -768,7 +790,33 @@ async function runSubGraph({
           if (storeAs !== undefined) ctx[storeAs] = pathValue
           if (nodeKey !== undefined) ctx[nodeKey] = pathValue
           result = typeof pathValue === "string" ? pathValue : JSON.stringify(pathValue)
+          resultPathApplied = true
         }
+      }
+
+      // Tool (not RunWorkflow): auto-parse stdout as JSON so a downstream $ctx.key.field
+      // reference navigates it natively, the same way Structured/Variable/ForEach already
+      // store their own native results — a bash `tool` node whose command does e.g.
+      // `print(json.dumps(...))` no longer forces downstream nodes/authors to work around
+      // a stringified ctx value. Gated on the trimmed stdout actually starting with `{` or
+      // `[` so a plain scalar/prose stdout (e.g. literal text "42" or "true") is never
+      // silently coerced into a JSON primitive, which could change an existing decide
+      // node's exact-string comparison against it. Writes ctx explicitly here (mirroring
+      // Structured/Variable's own explicit writes) — Tool is in NATIVE_CTX_WRITE_NODE_TYPES,
+      // so this is Tool's only ctx write for storeAs/nodeKey. This also fixes a pre-existing
+      // bug where resultPath's own explicit write above was immediately clobbered back to a
+      // stringified value by the generic write further below, since Tool previously wasn't
+      // excluded from it.
+      if (d.nodeType === NodeTypeId.Tool && !resultPathApplied) {
+        const raw = toolOutput ?? ""
+        const trimmed = raw.trim()
+        let parsed: unknown = raw
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+          try { parsed = JSON.parse(trimmed) } catch { parsed = raw }
+        }
+        if (storeAs !== undefined) ctx[storeAs] = parsed
+        if (nodeKey !== undefined) ctx[nodeKey] = parsed
+        result = raw
       }
 
       if (nodeToolHandle) {
@@ -1059,7 +1107,13 @@ async function runSubGraph({
         `Session configured: ${summary}\nVerified session state: ${JSON.stringify(readback)}`,
         { outputObject: { applied, readback }, applied, readback },
       )
-      result = JSON.stringify({ applied, readback })
+      // Store the native {applied, readback} object directly — mirrors Variable/Parameters'
+      // own explicit writes — so a downstream $ctx.key.field reference (e.g.
+      // $ctx.cfg.readback.cwd) navigates real types instead of a stringified blob.
+      const configureSessionResult = { applied, readback }
+      if (storeAs !== undefined) ctx[storeAs] = configureSessionResult
+      if (nodeKey !== undefined) ctx[nodeKey] = configureSessionResult
+      result = JSON.stringify(configureSessionResult)
 
     } else if (d.nodeType === NodeTypeId.Variable) {
       type VariableFieldEntry = { key: string; value: string }
@@ -1142,12 +1196,12 @@ async function runSubGraph({
       await nodeToolHandle.finish(resolved, { outputObject: resolved })
     }
 
-    // Structured/Output/ForEach/Decide/Variable nodes already wrote native values into ctx above; skip the string overwrite.
-    if (d.nodeType !== NodeTypeId.Decide && d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && d.nodeType !== NodeTypeId.ForEach && d.nodeType !== NodeTypeId.Variable && d.nodeType !== NodeTypeId.RunWorkflow && storeAs !== undefined && result !== undefined) ctx[storeAs] = result
+    // Node types in NATIVE_CTX_WRITE_NODE_TYPES already wrote native values into ctx above; skip the string overwrite.
+    if (!NATIVE_CTX_WRITE_NODE_TYPES.has(d.nodeType as string) && storeAs !== undefined && result !== undefined) ctx[storeAs] = result
 
     // Write under the stable node key so downstream nodes can use $nodeKey references.
-    // Structured/Output/ForEach/Variable already wrote parsed objects above; all other types write the string result.
-    if (d.nodeType !== NodeTypeId.Structured && d.nodeType !== NodeTypeId.Output && d.nodeType !== NodeTypeId.ForEach && d.nodeType !== NodeTypeId.Variable && d.nodeType !== NodeTypeId.RunWorkflow && nodeKey !== undefined && result !== undefined) {
+    // Node types in NATIVE_CTX_WRITE_NODE_TYPES already wrote parsed/native values above; all other types write the string result.
+    if (!NATIVE_CTX_WRITE_NODE_TYPES.has(d.nodeType as string) && nodeKey !== undefined && result !== undefined) {
       ctx[nodeKey] = result
     }
 
