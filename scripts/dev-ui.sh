@@ -19,6 +19,14 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
+# Kill any stale process on port 4097 before starting
+stale_pid=$(lsof -t -i :4097 2>/dev/null || true)
+if [ -n "$stale_pid" ]; then
+  echo "Killing stale process on port 4097 (PID $stale_pid)…"
+  kill "$stale_pid" 2>/dev/null || true
+  sleep 1
+fi
+
 PROJECTFLOWS_PROJECT_ROOT="$PWD" \
 PROJECTFLOWS_CONFIG_DIR="$HOME/.projectflows" \
 bun run apps/cli/src/index.ts serve --port 4097 --hostname 0.0.0.0 </dev/null &

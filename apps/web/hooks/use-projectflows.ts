@@ -707,6 +707,14 @@ export function useOpendora(opts?: {
             if (isNewIncompleteAssistant) setStatus("streaming")
             break
           }
+          case "message.removed": {
+            const { sessionID, messageID } = (
+              event as { type: string; properties: { sessionID: string; messageID: string } }
+            ).properties
+            if (sessionID !== selectedSessionRef.current?.id) break
+            setMessages((prev) => prev.filter((m) => m.info.id !== messageID))
+            break
+          }
           case "session.idle": {
             // Deprecated: superseded by `session.status` { type: "idle" }.
             // Kept as a no-op for older servers; the status handler below is authoritative.

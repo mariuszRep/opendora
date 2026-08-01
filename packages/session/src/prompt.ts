@@ -461,6 +461,14 @@ export namespace SessionPrompt {
       },
     }
     await Session.updateMessage(next)
+
+    // If the loop already exited before this flag landed, nothing will ever
+    // recheck it — kick a fresh loop so the queued message actually drains.
+    if (!state()[input.sessionID]) {
+      loop({ sessionID: input.sessionID }).catch((err) =>
+        log.error("activation loop error", { sessionID: input.sessionID, err }),
+      )
+    }
   }
 
   function modelContextForQueuedTurn(msgs: MessageV2.WithParts[], activeQueuedUserID?: string) {
