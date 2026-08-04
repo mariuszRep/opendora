@@ -557,6 +557,37 @@ export class SessionBusyError extends Error {
   }
 }
 
+export type PtyInfo = {
+  id: string
+  title: string
+  command: string
+  args: string[]
+  cwd: string
+  status: "running" | "exited"
+  pid: number
+}
+
+export type PtyCreateInput = {
+  command?: string
+  args?: string[]
+  cwd?: string
+  title?: string
+  env?: Record<string, string>
+}
+
+export type PtyUpdateInput = {
+  title?: string
+  size?: { rows: number; cols: number }
+}
+
+function wsUrl(path: string): string {
+  if (/^https?:\/\//i.test(PROJECTFLOWS_URL)) {
+    return PROJECTFLOWS_URL.replace(/^http/i, "ws") + path
+  }
+  const proto = window.location.protocol === "https:" ? "wss:" : "ws:"
+  return `${proto}//${window.location.host}${PROJECTFLOWS_URL}${path}`
+}
+
 async function req<T>(path: string, opts?: RequestInit): Promise<T> {
   const res = await fetch(`${PROJECTFLOWS_URL}${path}`, {
     ...opts,
@@ -929,6 +960,47 @@ export const opendora = {
         }
       }
       return () => es.close()
+    },
+  },
+  pty: {
+    list: () => req<PtyInfo[]>("/pty"),
+    create: (input?: PtyCreateInput) => req<PtyInfo>("/pty", { method: "POST", body: JSON.stringify(input ?? {}) }),
+    get: (id: string) => req<PtyInfo>(`/pty/${id}`),
+    update: (id: string, patch: PtyUpdateInput) => req<PtyInfo>(`/pty/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
+    remove: (id: string) => req<boolean>(`/pty/${id}`, { method: "DELETE" }),
+    connect: (
+      id: string,
+      handlers: { onData: (chunk: string) => void; onOpen?: () => void; onClose?: () => void; onCursor?: (cursor: number) => void },
+      cursor?: number,
+    ): { send: (data: string) => void; close: () => void } => {
+      const qs = cursor !== undefined ? `?cursor=${cursor}` : ""
+      const ws = new WebSocket(wsUrl(`/pty/${id}/connect${qs}`))
+      ws.binaryType = "arraybuffer"
+      ws.onopen = () => handlers.onOpen?.()
+      ws.onclose = () => handlers.onClose?.()
+      ws.onmessage = (e) => {
+        if (typeof e.data === "string") {
+          handlers.onData(e.data)
+          return
+        }
+        const bytes = new Uint8Array(e.data as ArrayBuffer)
+        if (bytes.length > 0 && bytes[0] === 0) {
+          try {
+            const meta = JSON.parse(new TextDecoder().decode(bytes.slice(1))) as { cursor: number }
+            handlers.onCursor?.(meta.cursor)
+          } catch {
+            // ignore malformed control frame
+          }
+          return
+        }
+        handlers.onData(new TextDecoder().decode(bytes))
+      }
+      return {
+        send: (data: string) => {
+          if (ws.readyState === WebSocket.OPEN) ws.send(data)
+        },
+        close: () => ws.close(),
+      }
     },
   },
   memory: {
