@@ -29,6 +29,7 @@ export type ChatStatus = "ready" | "submitted" | "streaming" | "error"
 
 const DEFAULT_AGENT_KEY = "opendora:default-agent"
 const LAST_SESSION_BY_AGENT_KEY = "opendora:last-session-by-agent"
+const TERMINAL_PANEL_STORAGE_KEY = "opendora:terminal-panel"
 function createClientMessageID(): string {
   const time = Date.now().toString(16).padStart(12, "0")
   const random =
@@ -148,6 +149,10 @@ export type UseOpendoraResult = {
   toggleChatLayout: () => void
   fileTreeOpen: boolean
   toggleFileTree: () => void
+  terminalPanelOpen: boolean
+  toggleTerminalPanel: () => void
+  terminalPanelHeight: number
+  setTerminalPanelHeight: (percent: number) => void
   webPreviewOpen: boolean
   toggleWebPreview: () => void
   webPreviewUrl: string
@@ -268,6 +273,20 @@ export function useOpendora(opts?: {
   const [selectedAgent, setSelectedAgent] = useState<string>("")
   const [isChatCentered, setIsChatCentered] = useState(false)
   const [fileTreeOpen, setFileTreeOpen] = useState(false)
+  const [terminalPanelOpen, setTerminalPanelOpen] = useState(false)
+  const [terminalPanelHeight, setTerminalPanelHeightState] = useState(30)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(TERMINAL_PANEL_STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored) as { open?: boolean; height?: number }
+        if (typeof parsed.open === "boolean") setTerminalPanelOpen(parsed.open)
+        if (typeof parsed.height === "number") setTerminalPanelHeightState(Math.min(80, Math.max(10, parsed.height)))
+      }
+    } catch {
+      // ignore malformed/missing storage
+    }
+  }, [])
   const [webPreviewOpen, setWebPreviewOpen] = useState(false)
   const [webPreviewUrl, setWebPreviewUrl] = useState("")
   const [filePreviewOpen, setFilePreviewOpen] = useState(false)
@@ -1506,6 +1525,33 @@ export function useOpendora(opts?: {
     setFileTreeOpen((prev) => !prev)
   }, [])
 
+  const persistTerminalPanel = useCallback((patch: { open?: boolean; height?: number }) => {
+    try {
+      const stored = localStorage.getItem(TERMINAL_PANEL_STORAGE_KEY)
+      const prev = stored ? (JSON.parse(stored) as { open?: boolean; height?: number }) : {}
+      localStorage.setItem(TERMINAL_PANEL_STORAGE_KEY, JSON.stringify({ ...prev, ...patch }))
+    } catch {
+      // ignore — e.g. private browsing quota
+    }
+  }, [])
+
+  const toggleTerminalPanel = useCallback(() => {
+    setTerminalPanelOpen((prev) => {
+      const next = !prev
+      persistTerminalPanel({ open: next })
+      return next
+    })
+  }, [persistTerminalPanel])
+
+  const setTerminalPanelHeight = useCallback(
+    (percent: number) => {
+      const clamped = Math.min(80, Math.max(10, percent))
+      setTerminalPanelHeightState(clamped)
+      persistTerminalPanel({ height: clamped })
+    },
+    [persistTerminalPanel],
+  )
+
   const toggleWebPreview = useCallback(() => {
     setWebPreviewOpen((prev) => !prev)
   }, [])
@@ -1608,6 +1654,10 @@ export function useOpendora(opts?: {
     toggleChatLayout,
     fileTreeOpen,
     toggleFileTree,
+    terminalPanelOpen,
+    toggleTerminalPanel,
+    terminalPanelHeight,
+    setTerminalPanelHeight,
     webPreviewOpen,
     toggleWebPreview,
     webPreviewUrl,

@@ -157,12 +157,6 @@ export namespace ToolRegistry {
     await init()
     const result = (await Promise.all(
       all()
-        .filter((t) => {
-          const usePatch = model.modelID.includes("gpt-") && !model.modelID.includes("oss") && !model.modelID.includes("gpt-4")
-          if (t.id === "apply_patch") return usePatch
-          if (t.id === "edit" || t.id === "write") return !usePatch
-          return true
-        })
         .map(async (t) => {
           try {
             const tool = await t.init({ agent, model })

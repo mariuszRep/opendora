@@ -1,15 +1,17 @@
 "use client"
 
 import { useEffect } from "react"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { Chatbot } from './chatbot'
 import { Header } from './header'
 import { useOpendoraContext } from './projectflows-context'
-import { useWorkspaceLayoutContext } from './workspace-layout-context'
 import { PreviewPanel } from "@/components/ai-elements/preview-panel"
-import { WorkspacePanel } from "@/components/workspace/workspace-panel"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { opendora } from "@/lib/projectflows"
+
+// xterm.js touches browser-only globals at import time, so it must never enter the server render.
+const TerminalPanel = dynamic(() => import("@/components/terminal-panel").then((m) => m.TerminalPanel), { ssr: false })
 
 export default function Page() {
   const router = useRouter()
@@ -26,8 +28,10 @@ export default function Page() {
     filePreviewPath,
     filePreviewDisplay,
     closePreview,
+    terminalPanelOpen,
+    terminalPanelHeight,
+    setTerminalPanelHeight,
   } = useOpendoraContext()
-  const { panelOpen, panelHeight, setPanelHeight } = useWorkspaceLayoutContext()
 
   const sidePanelOpen = webPreviewOpen || filePreviewOpen
 
@@ -59,18 +63,18 @@ export default function Page() {
   return (
     <>
       <Header />
-      {panelOpen ? (
+      {terminalPanelOpen ? (
         <ResizablePanelGroup orientation="vertical" className="min-h-0 flex-1">
-          <ResizablePanel defaultSize={100 - panelHeight} minSize={20}>
+          <ResizablePanel defaultSize={100 - terminalPanelHeight} minSize={20}>
             {mainContent}
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel
-            defaultSize={panelHeight}
+            defaultSize={terminalPanelHeight}
             minSize={10}
-            onResize={(size) => setPanelHeight(size.asPercentage)}
+            onResize={(size) => setTerminalPanelHeight(size.asPercentage)}
           >
-            <WorkspacePanel />
+            <TerminalPanel />
           </ResizablePanel>
         </ResizablePanelGroup>
       ) : (

@@ -1,7 +1,6 @@
 "use client"
 
 import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
-import { useWorkspaceLayoutContext } from "@/app/dashboard/workspace-layout-context"
 import { NotificationBlade } from "@/components/notifications/notification-blade"
 import { SessionCreateDialog } from "@/components/sessions/session-create-dialog"
 import { SessionTreePanel, type SessionTreePanelHandle } from "@/components/sessions/session-tree-panel"
@@ -19,7 +18,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import type { SessionType } from "@/lib/projectflows"
-import { BellIcon, BotIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, Columns2Icon, FolderTreeIcon, LayoutGridIcon, MinusIcon, PlusIcon, PlugIcon, Settings2Icon, GalleryHorizontalIcon, GlobeIcon, TerminalIcon } from "lucide-react"
+import { BellIcon, BotIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, FolderTreeIcon, PlusIcon, PlugIcon, Settings2Icon, GalleryHorizontalIcon, GlobeIcon, TerminalIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type React from "react"
 import { useRef, useState, useEffect } from "react"
@@ -37,6 +36,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     activeSessions,
     fileTreeOpen,
     toggleFileTree,
+    terminalPanelOpen,
+    toggleTerminalPanel,
     isChatCentered,
     toggleChatLayout,
     webPreviewOpen,
@@ -50,7 +51,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     replyPermission,
     allPermissionRequests,
   } = useOpendoraContext()
-  const { panelOpen, togglePanel, layoutMode, setLayoutMode, splitCount, increaseSplit, decreaseSplit } = useWorkspaceLayoutContext()
 
   const [notificationBladeOpen, setNotificationBladeOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -181,52 +181,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <span className="group-data-[collapsible=icon]:hidden">Preview</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          </SidebarMenu>
-          <div className="border-t my-2" />
-          <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
-                onClick={togglePanel}
-                tooltip={panelOpen ? "Hide terminal panel" : "Show terminal panel"}
-                isActive={panelOpen}
+                onClick={toggleTerminalPanel}
+                tooltip={terminalPanelOpen ? "Hide terminal" : "Show terminal"}
+                isActive={terminalPanelOpen}
               >
                 <TerminalIcon className="size-4 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">Terminal</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => setLayoutMode(layoutMode === "split" ? "tabs" : "split")}
-                tooltip={layoutMode === "split" ? "Switch to tab view" : "Switch to split view"}
-                isActive={layoutMode === "split"}
-                disabled={!panelOpen}
-              >
-                {layoutMode === "split" ? (
-                  <LayoutGridIcon className="size-4 shrink-0" />
-                ) : (
-                  <Columns2Icon className="size-4 shrink-0" />
-                )}
-                <span className="group-data-[collapsible=icon]:hidden">{layoutMode === "split" ? "Split" : "Tabs"}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={decreaseSplit}
-                tooltip="Fewer panes"
-                disabled={!panelOpen || layoutMode !== "split" || splitCount <= 2}
-              >
-                <MinusIcon className="size-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Fewer panes</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={increaseSplit}
-                tooltip="More panes"
-                disabled={!panelOpen || layoutMode !== "split" || splitCount >= 6}
-              >
-                <PlusIcon className="size-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">More panes</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

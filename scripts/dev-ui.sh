@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+set -m # each background job gets its own process group, so we can kill its whole tree
 
 pids=()
 
@@ -9,7 +10,9 @@ cleanup() {
 
   for pid in "${pids[@]:-}"; do
     if kill -0 "$pid" 2>/dev/null; then
-      kill "$pid" 2>/dev/null || true
+      # negative PID = signal the whole process group, catching children
+      # (e.g. `next dev` -> `next-server`) that would otherwise be orphaned
+      kill -- "-$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
     fi
   done
 
