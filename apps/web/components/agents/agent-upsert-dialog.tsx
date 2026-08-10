@@ -38,7 +38,6 @@ import { useOpendoraContext } from "@/app/dashboard/projectflows-context"
 import { opendora, type Agent, type AgentConfig, type Provider, type Skill, type Workflow } from "@/lib/projectflows"
 import { useToolSchemas } from "@/hooks/use-tool-schemas"
 import {
-  HIDDEN_TOOLS,
   groupToolsBySource,
   sortSourceGroups,
   sourceGroupLabel,
@@ -122,7 +121,7 @@ export function AgentUpsertDialog({ open, onOpenChange, agent, onSaved }: Props)
   // Self-delegation (agent__<own-id>) is allowed — useful for recursive/mining-style agents
   // that spawn their own child sessions. The tool itself blocks the one unsafe case (replying
   // to or messaging its own currently-running session); see packages/tools/delegation/agent-target.ts.
-  const availableToolSchemas = toolSchemas.filter((t) => !HIDDEN_TOOLS.has(t.id))
+  const availableToolSchemas = toolSchemas
   const groupedBySource = groupToolsBySource(availableToolSchemas)
   const allSourceGroups = sortSourceGroups([...groupedBySource.keys()])
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])

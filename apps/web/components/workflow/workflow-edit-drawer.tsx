@@ -62,7 +62,7 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
 } from "@/components/ai-elements/model-selector"
-import { TOOL_GROUP_ORDER, TOOL_GROUP_LABELS, getToolGroup, HIDDEN_TOOLS } from "@/lib/tool-groups"
+import { TOOL_GROUP_ORDER, TOOL_GROUP_LABELS, getToolGroup } from "@/lib/tool-groups"
 import { ExpressionInput } from "./expression-input"
 import { PromptInput } from "./prompt-input"
 import { SchemaBuilder, schemaPropsToJsonSchema, jsonSchemaToProps, type SchemaProp } from "./schema-builder"
@@ -557,7 +557,6 @@ export function WorkflowEditDrawer({
           if (nodeType === NodeTypeId.Tool) {
             const q = toolSearch.toLowerCase()
             const visibleSchemas = schemas
-              .filter((s) => !HIDDEN_TOOLS.has(s.id))
               .filter((s) => !q || s.id.includes(q) || s.description?.toLowerCase().includes(q))
             const internalSchemas = visibleSchemas.filter((s) => s.source !== "mcp")
             const mcpSchemas = visibleSchemas.filter((s) => s.source === "mcp")

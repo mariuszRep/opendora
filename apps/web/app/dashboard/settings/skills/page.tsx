@@ -397,7 +397,7 @@ function SkillPreviewDialog({
 
 export default function SkillsPage() {
   const { schemas: toolSchemas } = useToolSchemas()
-  const availableTools = toolSchemas.map((t) => t.id).filter((id) => !HIDDEN_TOOLS.has(id))
+  const availableTools = toolSchemas.map((t) => t.id)
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<CatalogFilter>("all")
   const [selected, setSelected] = useState<Skill | null>(null)

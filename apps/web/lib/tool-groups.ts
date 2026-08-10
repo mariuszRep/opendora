@@ -1,5 +1,3 @@
-export const HIDDEN_TOOLS = new Set(["invalid", "plan_exit"])
-
 // Local type mirrors packages/tools/group-manifest.ts — web app cannot import packages directly.
 export type ToolGroupId =
   | "filesystem"
@@ -85,7 +83,7 @@ export function getToolGroup(id: string): ToolGroupId {
   if (id.startsWith("workflow__")) return "workflows"
   if (["tool_list", "tool_get", "tool_update"].includes(id)) return "tool-registry"
   if (["memory_read", "memory_write", "memory_delete"].includes(id)) return "memory"
-  if (["todo_write", "log_lesson", "lsp", "invalid"].includes(id)) return "system"
+  if (["todowrite", "todoread", "log", "lsp", "invalid"].includes(id)) return "system"
   return "others"
 }
 

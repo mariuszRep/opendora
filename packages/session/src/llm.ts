@@ -295,9 +295,12 @@ export namespace LLM {
     const disabled = cfg.permissionNext?.disabled(Object.keys(tools), agent.permission) ?? new Set<string>()
 
     // Apply agent's tools filter, expanded by any tools unlocked via skill_load.
-    // A missing `tools` field is treated the same as an explicit `[]` (deny-all-by-default) —
-    // only a non-empty array grants anything beyond skill-unlocked tools.
-    const declaredTools = agent.tools ?? []
+    // An explicit `tools` array (including `[]`) is a restriction; a MISSING `tools` field
+    // means "no restriction" — every registered tool stays, matching the UI default
+    // ("leave all unchecked to allow all tools") and the system-prompt endpoint's
+    // hasToolRestriction semantics.
+    const hasRestriction = Array.isArray(agent.tools)
+    const declaredTools = hasRestriction ? (agent.tools as string[]) : []
     // Dynamic per-target delegation tools (agent__<id>) are granted implicitly from the agent's
     // resolved "agent"-resource permission rules (enrichAgent's delegateAgents), not by listing
     // each generated tool id in the static tools array — the rule IS the grant. See
@@ -322,7 +325,20 @@ export namespace LLM {
       // Always keep "invalid" tool - it's used internally for tool-call repair
       if (t === "invalid") continue
 
-      // Filter by agent's tools configuration (plus skill-unlocked tools)
+      // No explicit tools list → no restriction. Only user-level and permission denies apply.
+      if (!hasRestriction) {
+        if (userTools?.[t] === false) {
+          delete tools[t]
+          continue
+        }
+        if (disabled.has(t)) {
+          delete tools[t]
+        }
+        continue
+      }
+
+      // Explicit tools list ([] = deny-all, non-empty = allowlist, both expanded by
+      // skill-unlocked and delegation grants)
       if (!allowedTools.has(t)) {
         delete tools[t]
         continue

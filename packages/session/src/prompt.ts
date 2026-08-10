@@ -1411,22 +1411,17 @@ export namespace SessionPrompt {
     }
 
     // Filter by agent tools allowlist, expanded by any tools unlocked via skill_load.
-    // A missing `tools` field is treated the same as an explicit `[]` (deny-all-by-default) —
-    // only a non-empty array grants anything beyond skill-unlocked tools.
+    // An explicit `tools` array (including `[]`) is a restriction; a MISSING `tools` field
+    // means "no restriction" — every registered tool stays, matching the UI default
+    // ("leave all unchecked to allow all tools") and the system-prompt endpoint's
+    // hasToolRestriction semantics.
     {
       const skillUnlocked = cfg.skillTools?.get(input.session.id) ?? new Set<string>()
-      const base: string[] = input.agent.tools ?? []
-      if (base.length > 0 || skillUnlocked.size > 0) {
-        const allowed = new Set([...base, ...skillUnlocked])
+      const declaredTools = input.agent.tools as string[] | undefined
+      if (Array.isArray(declaredTools)) {
+        const allowed = new Set([...declaredTools, ...skillUnlocked])
         for (const id of Object.keys(tools)) {
           if (id !== "invalid" && id !== "StructuredOutput" && !allowed.has(id)) {
-            delete tools[id]
-          }
-        }
-      } else {
-        // No declared tools and no skill tools means no tools (except "invalid")
-        for (const id of Object.keys(tools)) {
-          if (id !== "invalid" && id !== "StructuredOutput") {
             delete tools[id]
           }
         }
