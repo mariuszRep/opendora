@@ -1179,7 +1179,11 @@ export namespace SessionPrompt {
           list: (filter?: any) => Session.list(filter),
           children: (id: string) => Session.children(id),
           get: (id: string) => Session.get(id),
-          messages: (id: string) => Session.messages({ sessionID: id }),
+          messages: (id: string | { sessionID?: string }) => {
+            const sessionID = typeof id === "string" ? id : id?.sessionID
+            if (!sessionID) throw new Error("session.messages requires sessionID (string) or { sessionID: string }")
+            return Session.messages({ sessionID })
+          },
           create: (opts: any) => Session.create(opts),
           ensureMainSession: (agentID: string) => Session.ensureMainSession(agentID),
           setReplyToSessionID: (opts: any) => Session.setReplyToSessionID(opts),
