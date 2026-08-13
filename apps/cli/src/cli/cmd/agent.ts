@@ -9,23 +9,11 @@ import fs from "fs/promises"
 import { Filesystem } from "@projectflows/tools/filesystem/lib/primitives"
 import matter from "gray-matter"
 import { Instance } from "@projectflows/runtime/instance"
+import { ToolRegistry } from "@projectflows/server/tool-registry"
 import { EOL } from "os"
 import type { Argv } from "yargs"
 
 type AgentMode = "all" | "primary" | "subagent" | "worker" | "system"
-
-const AVAILABLE_TOOLS = [
-  "bash",
-  "read",
-  "write",
-  "edit",
-  "list",
-  "glob",
-  "grep",
-  "webfetch",
-  "todowrite",
-  "todoread",
-]
 
 const AgentCreateCommand = cmd({
   command: "create",
@@ -47,7 +35,7 @@ const AgentCreateCommand = cmd({
       })
       .option("tools", {
         type: "string",
-        describe: `comma-separated list of tools to enable (default: all). Available: "${AVAILABLE_TOOLS.join(", ")}"`,
+        describe: "comma-separated list of tools to enable (default: all)",
       })
       .option("model", {
         type: "string",
@@ -128,18 +116,20 @@ const AgentCreateCommand = cmd({
         })
         spinner.stop(`Agent ${generated.identifier} generated`)
 
+        const availableTools = await ToolRegistry.ids()
+
         // Select tools
         let selectedTools: string[]
         if (cliTools !== undefined) {
-          selectedTools = cliTools ? cliTools.split(",").map((t) => t.trim()) : AVAILABLE_TOOLS
+          selectedTools = cliTools ? cliTools.split(",").map((t) => t.trim()) : availableTools
         } else {
           const result = await prompts.multiselect({
             message: "Select tools to enable (Space to toggle)",
-            options: AVAILABLE_TOOLS.map((tool) => ({
+            options: availableTools.map((tool) => ({
               label: tool,
               value: tool,
             })),
-            initialValues: AVAILABLE_TOOLS,
+            initialValues: availableTools,
           })
           if (prompts.isCancel(result)) throw new UI.CancelledError()
           selectedTools = result
@@ -187,7 +177,7 @@ const AgentCreateCommand = cmd({
 
         // Build tools config
         const tools: Record<string, boolean> = {}
-        for (const tool of AVAILABLE_TOOLS) {
+        for (const tool of availableTools) {
           if (!selectedTools.includes(tool)) {
             tools[tool] = false
           }

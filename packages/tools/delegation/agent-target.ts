@@ -250,6 +250,10 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
       }
 
       const text = result?.parts?.findLast?.((p: any) => p.type === "text")?.text ?? ""
+      const resultError = result?.info?.error as { name?: string; data?: { message?: string } } | undefined
+      const errorText = resultError
+        ? (resultError.data as { message?: string } | undefined)?.message ?? resultError.name ?? "unknown error"
+        : undefined
 
       const sharedMeta = {
         sessionId: targetSessionId as string | undefined,
@@ -293,6 +297,7 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
           `agent: ${target.id}`,
           `mode: ${resolvedMode}`,
           "",
+          ...(errorText ? [`ERROR: ${target.id} failed to complete: ${errorText}`, ""] : []),
           `<spawn_result>`,
           text,
           `</spawn_result>`,

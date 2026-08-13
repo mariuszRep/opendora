@@ -505,6 +505,7 @@ export namespace SessionPrompt {
 
     // Structured output state
     let structuredOutput: unknown | undefined
+    let structuredOutputRetries = 0
 
     let step = 0
     const session = await Session.get(sessionID)
@@ -1042,9 +1043,32 @@ export namespace SessionPrompt {
 
       if (modelFinished && !processor.message.error) {
         if (format.type === "json_schema") {
+          const maxStructuredOutputRetries = format.retryCount ?? 2
+          if (structuredOutputRetries < maxStructuredOutputRetries) {
+            structuredOutputRetries++
+            const nudgeMsg: MessageV2.User = {
+              id: Identifier.ascending("message"),
+              sessionID,
+              role: "user",
+              time: { created: Date.now() },
+              agent: lastUser.agent,
+              model: lastUser.model,
+              format,
+            }
+            await Session.updateMessage(nudgeMsg)
+            await Session.updatePart({
+              id: Identifier.ascending("part"),
+              messageID: nudgeMsg.id,
+              sessionID,
+              type: "text",
+              text: `You did not call the \`${structuredToolName}\` tool. You MUST call it now with your final answer formatted according to the schema — do not respond with plain text.`,
+              synthetic: true,
+            } satisfies MessageV2.TextPart)
+            continue
+          }
           processor.message.error = new MessageV2.StructuredOutputError({
             message: "Model did not produce structured output",
-            retries: 0,
+            retries: structuredOutputRetries,
           }).toObject()
           await Session.updateMessage(processor.message)
           break
