@@ -1051,7 +1051,7 @@ export const SessionRoutes = lazy(() =>
           sessionID: z.string().meta({ description: "Session ID" }),
         }),
       ),
-      validator("json", SessionPrompt.PromptInput.omit({ sessionID: true, queued: true })),
+      validator("json", SessionPrompt.PromptInput.omit({ sessionID: true, queued: true, format: true })),
       async (c) => {
         c.status(200)
         c.header("Content-Type", "application/json")
@@ -1086,7 +1086,7 @@ export const SessionRoutes = lazy(() =>
           sessionID: z.string().meta({ description: "Session ID" }),
         }),
       ),
-      validator("json", SessionPrompt.PromptInput.omit({ sessionID: true, queued: true })),
+      validator("json", SessionPrompt.PromptInput.omit({ sessionID: true, queued: true, format: true })),
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
         const body = c.req.valid("json")

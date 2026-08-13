@@ -172,12 +172,37 @@ function schemaToTemplate(schema: Record<string, unknown>, depth = 0): string {
   return `null${comment}`
 }
 
-function extractJsonFromText(text: string): unknown | undefined {
+// Some providers leak a hallucinated tool call as literal text instead of making a real
+// API tool call — observed as special-token markup (e.g. DeepSeek-style "DSML" tags via
+// OpenCode Zen's "big-pickle" model) wrapping each argument in its own
+// <...parameter name="X">value</...parameter>-shaped tag rather than emitting plain or
+// fenced JSON. Reconstructs the {name: value} object those tags represent, keyed by
+// argument name, so it still validates against the target schema. Matched loosely (any
+// tag-like wrapper containing "parameter" + a name attribute) rather than the exact
+// special-token characters, since those vary by provider/model and aren't worth pinning.
+function extractDsmlToolCallArgs(text: string): Record<string, unknown> | undefined {
+  const pattern = /<[^>]*\bparameter\b[^>]*\bname="([^"]+)"[^>]*>([\s\S]*?)<\/[^>]*\bparameter\b[^>]*>/g
+  const result: Record<string, unknown> = {}
+  let matched = false
+  for (const match of text.matchAll(pattern)) {
+    matched = true
+    const [, name, rawValue] = match
+    const trimmed = (rawValue ?? "").trim()
+    try {
+      result[name!] = JSON.parse(trimmed)
+    } catch {
+      result[name!] = trimmed
+    }
+  }
+  return matched ? result : undefined
+}
+
+export function extractJsonFromText(text: string): unknown | undefined {
   const candidates = [text.trim(), ...[...text.matchAll(/```(?:json)?\s*([\s\S]*?)\s*```/gi)].map((match) => match[1] ?? "")]
   for (const candidate of candidates) {
     try { return JSON.parse(candidate) } catch {}
   }
-  return undefined
+  return extractDsmlToolCallArgs(text)
 }
 
 function schemaError(value: unknown, schema: Record<string, unknown>, path = "$output"): string | undefined {

@@ -16,17 +16,6 @@ const MAX_SPAWN_DEPTH = 8
 /** Per-asker cap on concurrently outstanding async delegations, so a misbehaving loop can't fan out unboundedly. */
 const MAX_CONCURRENT_PENDING = 10
 
-const DEFAULT_RESULT_SCHEMA = {
-  type: "object",
-  properties: {
-    status: { type: "string", enum: ["done", "partial", "blocked"] },
-    summary: { type: "string" },
-    artifacts: { type: "array", items: { type: "string" } },
-    open_questions: { type: "array", items: { type: "string" } },
-  },
-  required: ["status", "summary"],
-}
-
 const parameters = z.object({
   session_type: z
     .enum(["worker", "scope", "scratchpad", "role"])
@@ -62,15 +51,6 @@ const parameters = z.object({
   skills: z
     .array(z.string())
     .describe("Skill names to preload into the new session before the prompt is posted.")
-    .optional(),
-  result_schema: z
-    .union([z.literal("default"), z.record(z.string(), z.unknown())])
-    .describe(
-      "Forces the child's final reply through structured output instead of leaving 'done' to be inferred from " +
-        "prose. Pass 'default' for the built-in {status: done|partial|blocked, summary, artifacts?, " +
-        "open_questions?} verdict schema, or your own JSON Schema object. Leave unset for conversational " +
-        "children where prose is the point.",
-    )
     .optional(),
 })
 
@@ -203,9 +183,6 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
         })
       }
 
-      const resultSchema = params.result_schema === "default" ? DEFAULT_RESULT_SCHEMA : params.result_schema
-      const format = resultSchema ? { type: "json_schema" as const, schema: resultSchema } : undefined
-
       // Pre-generate the child's turn-starting message id so the delegation edge can be
       // recorded BEFORE the prompt is fired — otherwise an extremely fast (or errored) async
       // child could finish and attempt delivery before the edge existed to receive it.
@@ -221,7 +198,6 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
           description: params.title ?? params.prompt,
           mode: resolvedMode,
           toolCallID: ctx.callID,
-          resultSchema,
         })
       }
 
@@ -242,7 +218,6 @@ export function createAgentTargetTool(target: AgentTarget): Tool.Info {
           messageID: childMessageID,
           noWait: !wait,
           parentMessageID: ctx.messageID,
-          format,
           parts: promptParts,
         })) as any
       } finally {
