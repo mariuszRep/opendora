@@ -789,6 +789,10 @@ export namespace SessionPrompt {
             },
             agent: lastUser.agent,
             model: lastUser.model,
+            // See the structured-output retry nudge above for why this matters: dropping
+            // hidden here would make a hidden caller's subtask-summary turn (and everything
+            // after it) suddenly visible in the session timeline.
+            ...(lastUser.hidden ? { hidden: true } : {}),
           }
           await Session.updateMessage(summaryUserMsg)
           await Session.updatePart({
@@ -1054,6 +1058,12 @@ export namespace SessionPrompt {
               agent: lastUser.agent,
               model: lastUser.model,
               format,
+              // Inherit hidden-ness from the turn this retry chain started from — otherwise
+              // a hidden caller (e.g. agentStructuredJson's internal strict-path prompt)
+              // loses that status the moment a retry nudge fires, and every subsequent
+              // assistant turn (including the model's raw retry/garbage text) becomes
+              // visible in the session timeline instead of staying internal.
+              ...(lastUser.hidden ? { hidden: true } : {}),
             }
             await Session.updateMessage(nudgeMsg)
             await Session.updatePart({
@@ -1923,6 +1933,7 @@ export namespace SessionPrompt {
             time: { created: Date.now() },
             agent: (userMessage.info as any).agent,
             model: (userMessage.info as any).model,
+            ...((userMessage.info as any).hidden ? { hidden: true } : {}),
           } as any,
           parts: [
             {

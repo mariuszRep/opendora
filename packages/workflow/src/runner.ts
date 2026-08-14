@@ -197,12 +197,32 @@ function extractDsmlToolCallArgs(text: string): Record<string, unknown> | undefi
   return matched ? result : undefined
 }
 
-export function extractJsonFromText(text: string): unknown | undefined {
-  const candidates = [text.trim(), ...[...text.matchAll(/```(?:json)?\s*([\s\S]*?)\s*```/gi)].map((match) => match[1] ?? "")]
-  for (const candidate of candidates) {
-    try { return JSON.parse(candidate) } catch {}
+// The model doesn't wrap its hallucinated DSML tool-call consistently — sometimes the single
+// parameter is named after the schema's own top-level property (e.g. "decisions"), sometimes
+// it's an arbitrary name like "output" whose *value* is the actual result object. Try every
+// interpretation and, when a schema is available, pick whichever one actually validates —
+// otherwise fall back to the first successfully-parsed candidate (preserves prior behavior for
+// callers that don't pass a schema).
+export function extractJsonFromText(text: string, schema?: Record<string, unknown>): unknown | undefined {
+  const candidates: unknown[] = []
+  const rawCandidates = [text.trim(), ...[...text.matchAll(/```(?:json)?\s*([\s\S]*?)\s*```/gi)].map((match) => match[1] ?? "")]
+  for (const candidate of rawCandidates) {
+    try { candidates.push(JSON.parse(candidate)) } catch {}
   }
-  return extractDsmlToolCallArgs(text)
+  const dsmlArgs = extractDsmlToolCallArgs(text)
+  if (dsmlArgs !== undefined) {
+    candidates.push(dsmlArgs)
+    const values = Object.values(dsmlArgs)
+    // Exactly one parameter: also offer its bare value, in case the model's chosen wrapper
+    // key doesn't match any property the schema actually expects.
+    if (values.length === 1) candidates.push(values[0])
+  }
+  if (candidates.length === 0) return undefined
+  if (schema) {
+    const valid = candidates.find((c) => !schemaError(c, schema))
+    if (valid !== undefined) return valid
+  }
+  return candidates[0]
 }
 
 function schemaError(value: unknown, schema: Record<string, unknown>, path = "$output"): string | undefined {
@@ -278,7 +298,7 @@ export async function agentStructuredJson(
     ...(model ? { model } : {}),
   })
   const text = ((fallbackResult as any).parts ?? []).filter((part: any) => part.type === "text" && !part.synthetic).map((part: any) => part.text ?? "").join("")
-  const fallbackOutput = extractJsonFromText(text)
+  const fallbackOutput = extractJsonFromText(text, schema)
   if (fallbackOutput !== undefined && !schemaError(fallbackOutput, schema)) return fallbackOutput
 
   throw new Error(info?.error?.data?.message ?? "Structured node: model did not produce structured output")
