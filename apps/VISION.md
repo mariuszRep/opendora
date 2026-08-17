@@ -15,7 +15,8 @@ Apps own the unified catalog-management presentation for agents, skills, tools, 
 
 - Web UI.
 - CLI (command-line and terminal UI).
-- Desktop application (Phase 2, Tauri v2 cross-platform shell).
+- Desktop application (Phase 2, Electron cross-platform shell; migrated from an earlier Tauri v2 direction).
+- Android application (Phase 2, Capacitor wrapper; exact app directory finalized by `capacitor-android-wrapper-and-ota`).
 - Application-specific presentation, interaction, navigation, and user experience logic.
 
 ## Does Not Own
@@ -34,12 +35,13 @@ Apps own the unified catalog-management presentation for agents, skills, tools, 
 
 ## Boundary Rules
 
-- Web, CLI, and desktop live under `apps/`; CLI includes integrated terminal UI support.
-- Desktop app (Phase 2) is a Tauri v2 shell wrapping the same statically-exported web UI. It uses SDK for backend communication; UI components are reused across embedded web and desktop where feasible.
+- Web, CLI, desktop, and the planned Android wrapper live under `apps/`; CLI includes integrated terminal UI support.
+- Desktop app (Phase 2) is an Electron shell wrapping the same statically-exported web UI. It uses SDK for backend communication; UI components are reused across embedded web and desktop where feasible.
+- Android app (Phase 2) is a Capacitor shell wrapping the same statically-exported web UI, updated OTA via a versioned GitHub Release web-bundle archive for web-only changes and via a signed APK for native changes. It uses SDK for backend communication.
 - Apps call SDK methods instead of hand-writing server calls or importing backend packages.
 - Apps must not duplicate package-owned domain behavior.
 - Apps must not bypass server auth, permission, validation, or runtime coordination.
-- Desktop app must not import backend/domain internals — it follows the same app rules as web and CLI.
+- Desktop and Android apps must not import backend/domain internals — they follow the same app rules as web and CLI.
 
 ## Visual Language
 

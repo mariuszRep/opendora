@@ -1,6 +1,12 @@
 # apps/desktop — Projectflows Desktop App
 
 > Tauri v2 native desktop shell for Projectflows.
+>
+> **Note:** The approved desktop direction is migrating from Tauri to Electron — see
+> `.projectflows/goals/done/shared-static-export-release-foundation/GOAL.md` and
+> `.projectflows/goals/ready/electron-desktop-wrapper-and-updates/GOAL.md`. Everything
+> below describes the current, functional Tauri implementation, which stays in place
+> until the Electron replacement is built and verified.
 
 **Status:** Phase 2 scaffold. The Tauri shell, sidecar launch path, and local staging script exist.
 
@@ -78,4 +84,4 @@ on Linux/macOS it produces the native bundle formats supported by the local Taur
 ## See also
 
 - [VISION.md](./VISION.md) — desktop app vision and architecture
-- [cross-platform-delivery GOAL](/.projectflows/goals/cross-platform-delivery/GOAL.md) — full delivery plan
+- [cross-platform-delivery GOAL](/.projectflows/goals/blocked/cross-platform-delivery/GOAL.md) — historical Phase 1/2 delivery record

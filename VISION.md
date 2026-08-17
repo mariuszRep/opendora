@@ -35,7 +35,7 @@ The graph-backed session ledger and its UI projection are one delivery — store
 ## Owns
 
 - Product-level architecture and boundaries for Projectflows.
-- User-facing applications: web UI, CLI (CLI includes integrated terminal UI mode), and desktop application (Phase 2, Tauri-based cross-platform shell).
+- User-facing applications: web UI, CLI (CLI includes integrated terminal UI mode), desktop application (Phase 2, Electron-based cross-platform shell), and Android application (Phase 2, Capacitor-based wrapper).
 - A typed SDK gateway for application access.
 - A server/service boundary that exposes Projectflows behavior.
 - Runtime execution for live agentic work.
@@ -57,6 +57,7 @@ The graph-backed session ledger and its UI projection are one delivery — store
 
 ```text
 apps/web | apps/cli | apps/desktop
+apps/mobile (Capacitor Android, planned — exact directory finalized by capacitor-android-wrapper-and-ota)
   -> sdk
     -> server
       -> auth
@@ -118,7 +119,8 @@ domain packages that persist data
 - Mini-apps must use Projectflows-approved context, permission, storage, and UI/design-system contracts instead of depending on app internals.
 - Extension UI must be built from Projectflows-approved primitives and design-system contracts so plugins and mini-apps remain visually consistent without copying app-owned implementation details.
 - Agent Builder reuses workflow/canvas authoring infrastructure but owns composition/compilation semantics distinct from workflow execution. It does not change scheduled workflow execution ownership.
-- Desktop application (Phase 2) is a Tauri v2 shell that wraps the same statically-exported web UI. It follows the same app rules: uses SDK, does not import backend internals, reuses shared UI components where feasible.
+- Desktop application (Phase 2) is an Electron shell that wraps the same statically-exported web UI. It follows the same app rules: uses SDK, does not import backend internals, reuses shared UI components where feasible. (Superseded from an earlier Tauri v2 direction — see `.projectflows/goals/done/shared-static-export-release-foundation/GOAL.md` and `.projectflows/goals/ready/electron-desktop-wrapper-and-updates/GOAL.md`.)
+- Android application (Phase 2) is a Capacitor wrapper around the same statically-exported web UI. Web-only changes ship OTA via a versioned GitHub Release web-bundle archive (`@capgo/capacitor-updater`); native changes ship as a signed APK on the same release. It follows the same app rules: uses SDK, does not import backend internals. See `.projectflows/goals/ready/capacitor-android-wrapper-and-ota/GOAL.md`.
 
 ## Directory Layout
 

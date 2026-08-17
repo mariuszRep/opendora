@@ -23,8 +23,9 @@ or `%LOCALAPPDATA%\projectflows\bin` (Windows), add the binary to your PATH, and
 the background service.
 
 > **Status:** Install scripts are under development. See [INSTALL.md](/INSTALL.md) for
-> current install options and [the delivery plan](/.projectflows/goals/cross-platform-delivery/GOAL.md) for the
-> full rollout schedule.
+> current install options, [the Phase 1 delivery record](/.projectflows/goals/blocked/cross-platform-delivery/GOAL.md),
+> and [the shared release foundation](/.projectflows/goals/done/shared-static-export-release-foundation/GOAL.md)
+> for the Electron/Android rollout direction.
 
 ### Basic usage
 
@@ -49,12 +50,14 @@ returned by `findRoot()`).
 
 - **Web UI** — browser-based agent interaction, workflow management, and system administration.
 - **CLI** — terminal-based commands and integrated terminal UI mode.
-- **Desktop app** — *(Phase 2)* native cross-platform desktop shell via Tauri.
+- **Desktop app** — *(Phase 2)* native cross-platform desktop shell via Electron (migrating from an earlier Tauri implementation).
+- **Android app** — *(Phase 2, planned)* Capacitor wrapper with GitHub Releases OTA updates for web changes and signed APKs for native changes.
 
 ## Documentation
 
 - [Install & upgrade](/INSTALL.md)
-- [Cross-platform delivery plan](/.projectflows/goals/cross-platform-delivery/GOAL.md)
+- [Cross-platform delivery plan (Phase 1 record; Phase 2 Tauri notes historical)](/.projectflows/goals/blocked/cross-platform-delivery/GOAL.md)
+- [Shared static export & release foundation](/.projectflows/goals/done/shared-static-export-release-foundation/GOAL.md)
 - [Vision & architecture](/VISION.md)
 - [Agent working instructions](/AGENTS.md)
 

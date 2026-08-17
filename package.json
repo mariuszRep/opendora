@@ -17,6 +17,8 @@
     "typecheck": "bun turbo typecheck",
     "build:binary": "bun scripts/build-binary.ts",
     "build:core": "bun scripts/package-core.ts",
+    "build:release-manifest": "bun scripts/build-release-manifest.ts",
+    "validate:release-assets": "bun scripts/validate-release-assets.ts",
     "dev:setup": "bun scripts/package-core.ts --install",
     "desktop:stage": "bun scripts/build-desktop.ts --stage-only",
     "desktop:dev": "bun scripts/build-desktop.ts --dev",
@@ -103,7 +105,8 @@
     "quansync": "1.0.0",
     "react": "19.2.5",
     "typescript": "catalog:",
-    "xlsx": "0.18.5"
+    "xlsx": "0.18.5",
+    "zod": "catalog:"
   },
   "repository": {
     "type": "git",

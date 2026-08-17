@@ -155,7 +155,7 @@ The install script registers a user-level launchd plist when available:
 | Windows Service API | Not yet implemented |
 | Approach | Windows service stub exists; full implementation deferred |
 | Alternatives | Task Scheduler, user-startup shortcut, or nssm wrapper |
-| Decision | See `.projectflows/goals/cross-platform-delivery/GOAL.md` open questions section |
+| Decision | See `.projectflows/goals/blocked/cross-platform-delivery/GOAL.md` open questions section |
 
 ## Troubleshooting
 
@@ -179,8 +179,18 @@ The install script registers a user-level launchd plist when available:
 - **Bun binary embedding:** The single-binary distribution approach (embed vs. bundle archive)
   has performance and size implications still under evaluation.
 
+## Release asset contract
+
+Electron desktop installers, `electron-updater` metadata, signed Android APKs, and the
+Android OTA web-bundle archive are published exclusively as assets on GitHub Releases
+(`github.com/mariuszRep/opendora/releases`), all under one shared version tag. A
+`release-manifest.json` asset on each release records the required assets, their
+filenames, and sha256 checksums — see
+`.projectflows/goals/done/shared-static-export-release-foundation/GOAL.md`.
+
 ## See also
 
 - [README.md](/README.md) — quickstart and basic usage
-- [Cross-platform delivery plan](/.projectflows/goals/cross-platform-delivery/GOAL.md) — full Phase 1/Phase 2 roadmap
+- [Cross-platform delivery plan](/.projectflows/goals/blocked/cross-platform-delivery/GOAL.md) — Phase 1 record; Phase 2 Tauri notes historical
+- [Shared static export & release foundation](/.projectflows/goals/done/shared-static-export-release-foundation/GOAL.md)
 - [VISION.md](/VISION.md) — product architecture and intent

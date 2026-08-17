@@ -20,7 +20,10 @@ Nested files inherit parent context by default. Treat nested files as stricter o
 When working on planned or migration work, read the relevant GOAL.md first:
 
 - **Unified Durable Run** (checkpoint-driven runner, suspend/resume, unified executor): `.projectflows/goals/unified-durable-run/GOAL.md`
-- **Cross-platform delivery** (single-binary install, Tauri desktop): `.projectflows/goals/cross-platform-delivery/GOAL.md`
+- **Cross-platform delivery** (single-binary install; Phase 2 desktop direction superseded, see below): `.projectflows/goals/blocked/cross-platform-delivery/GOAL.md`
+- **Shared static export & release foundation** (canonical static export + atomic GitHub Release contract): `.projectflows/goals/done/shared-static-export-release-foundation/GOAL.md`
+- **Electron desktop wrapper** (replaces Tauri): `.projectflows/goals/ready/electron-desktop-wrapper-and-updates/GOAL.md`
+- **Capacitor Android wrapper & OTA**: `.projectflows/goals/ready/capacitor-android-wrapper-and-ota/GOAL.md`
 - **Session graph ledger** (entries + universal edges): `.projectflows/goals/session-graph-ledger-and-chat-rail/GOAL.md`
 - Other active goals: browse `.projectflows/goals/<slug>/GOAL.md`
 
@@ -43,7 +46,8 @@ See the nearest `VISION.md` where present for target intent.
 **Target applications:**
 - `apps/web` — web frontend
 - `apps/cli` — CLI binary with integrated terminal UI (TUI) mode/subcommand
-- `apps/desktop` — Tauri v2 desktop shell (Phase 2, until implementation begins)
+- `apps/desktop` — Electron desktop shell (Phase 2; migrating from an earlier Tauri v2 implementation, which stays in place until the Electron replacement has verified equivalent coverage — see `electron-desktop-wrapper-and-updates`)
+- Android wrapper (Capacitor, Phase 2, not yet created) — directory to be finalized by `capacitor-android-wrapper-and-ota`
 - `server/` — Hono API server + typed client export
 
 **Target packages (self-contained, no cross-pollination):**

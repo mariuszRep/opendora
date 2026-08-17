@@ -18,6 +18,13 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Guard against known static-export regressions
+        run: |
+          if [ -f apps/web/app/api/event/route.ts ]; then
+            echo "::error::apps/web/app/api/event/route.ts must not exist — it breaks output:'export' (see .projectflows/goals/blocked/cross-platform-delivery/GOAL.md 'Do Not Repeat'). This has recurred 4 times as collateral damage from unrelated refactors. SSE is proxied via next.config.ts rewrites in dev and fetched directly against the backend in the static export."
+            exit 1
+          fi
+
       - name: Typecheck
         # NOTE: intentionally not `bun typecheck` (turbo). The core packages have
         # a longstanding circular-dependency tangle (e.g. util <-> permission,
